@@ -113,19 +113,6 @@ const EventCard = ({ event, cacheInfo = null }) => {
     });
   }, [event.id]);
 
-  const handleCopyLink = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    navigator.clipboard
-      .writeText(`${window.location.origin}/events/${event.id}`)
-      .then(() => {
-        toast.success("Event link copied to clipboard!", { autoClose: 2000 });
-      })
-      .catch(() => {
-        toast.error("Could not copy link. Please try again.", { autoClose: 2500 });
-      });
-  }, [event.id]);
 
   const handleBookmarkToggle = useCallback((e) => {
     e.preventDefault();
@@ -186,28 +173,17 @@ const EventCard = ({ event, cacheInfo = null }) => {
           </div>
         </ShareMenu>
 
-        <button
-          type="button"
-          onClick={handleCopyLink}
-          className="relative min-h-[36px] min-w-[36px] rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-indigo-500 hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-300 dark:hover:border-indigo-500 dark:hover:text-indigo-400 transition-all duration-200"
-          title="Copy Event Link"
-          aria-label={`Copy link for ${event.title}`}
-        >
-          <Share2 size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
-        </button>
 
         <a
           href={addEventToGoogleCalendar(event)}
-          target="_blank" rel="noopener noreferrer"
+          target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
           title="Add to Google Calendar"
           aria-label={`Add ${event.title} to Google Calendar`}
-          className="rounded-full focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
-          <div className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200">
-            <Calendar size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
-          </div>
+          <Calendar size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
         </a>
       </div>
 

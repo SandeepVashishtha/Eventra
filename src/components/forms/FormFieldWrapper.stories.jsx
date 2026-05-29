@@ -135,6 +135,17 @@ export const Success = {
   },
 };
 
+// 🔥 Added the 'Valid' story to verify our fix
+export const Valid = {
+  render: Template,
+  args: {
+    id: "valid-email",
+    label: "Email",
+    validationState: "valid",
+    message: "Field verified successfully.",
+  },
+};
+
 export const Error = {
   render: Template,
   args: {

@@ -1,10 +1,32 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+/**
+ * useFormValidation
+ *
+ * Generic form state + validation hook.
+ *
+ * @param {object}  initialState     - Initial field values keyed by field name
+ * @param {object}  validationRules  - Validator per field: function(value, allValues) → error string | null
+ * @param {object}  [options]
+ * @param {number}  [options.debounceMs=300]    - Debounce delay for inline validation on change
+ * @param {boolean} [options.validateOnBlur=false] - When true, validation fires on blur only
+ */
 export const useFormValidation = (initialState, validationRules, options = {}) => {
   const { debounceMs = 300, validateOnBlur = false } = options;
+
+  // Use a ref for the debounce timer so clearTimeout can reach it from
+  // the cleanup effect regardless of which render created the timer.
   const timeoutRef = useRef(null);
+
+  // Keep the latest rule set and initial state in refs so callbacks that
+  // close over them do not need to list them as dependencies — which would
+  // cause handleChange / handleBlur to be recreated on every render.
   const validationRulesRef = useRef(validationRules);
   const initialStateRef = useRef(initialState);
+
+  // Also keep validateOnBlur and debounceMs in a ref so handleChange
+  // doesn't need them in its dependency array and is never recreated.
+  const optionsRef = useRef({ debounceMs, validateOnBlur });
 
   useEffect(() => {
     validationRulesRef.current = validationRules;
@@ -13,35 +35,33 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   useEffect(() => {
     initialStateRef.current = initialState;
   }, [initialState]);
-  
+
+  useEffect(() => {
+    optionsRef.current = { debounceMs, validateOnBlur };
+  }, [debounceMs, validateOnBlur]);
+
   const [values, setValues] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
 
-  const debounceTimerRef = useRef(null);
-
-  // Validate a single field
+  // Validate a single field against its rule. Returns the error string or null.
   const validateField = useCallback((name, value, allValues) => {
     if (!validationRulesRef.current[name]) return null;
-
     const validator = validationRulesRef.current[name];
     let error;
-
     if (typeof validator === 'function') {
       error = validator(value, allValues);
     } else if (typeof validator === 'object' && validator.validate) {
       error = validator.validate(value, allValues);
     }
-
     return error === true ? null : error;
   }, []);
 
-  // Validate all fields
+  // Validate all fields synchronously. Returns true when all pass.
   const validateAll = useCallback(() => {
     const newErrors = {};
     let isValid = true;
-
     Object.keys(validationRulesRef.current).forEach((name) => {
       const error = validateField(name, values[name], values);
       if (error) {
@@ -49,76 +69,77 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
         isValid = false;
       }
     });
-
     setErrors(newErrors);
     setIsFormValid(isValid);
     return isValid;
   }, [values, validateField]);
 
-  // Handle input change — just updates state, debounced validation is in useEffect
+  // Handle input change — clears the field error immediately for responsiveness
+  // then schedules a debounced validation run. Uses optionsRef so this callback
+  // is never recreated when debounceMs or validateOnBlur changes.
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setValues(prev => ({ ...prev, [name]: value }));
 
-    setTouched(prev => ({ ...prev, [name]: true }));
+    setValues((prev) => ({ ...prev, [name]: value }));
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    setErrors((prev) => ({ ...prev, [name]: null }));
 
-    setErrors(prev => ({ ...prev, [name]: null }));
+    if (!validationRulesRef.current[name]) return;
+    if (optionsRef.current.validateOnBlur) return;
 
-    if (validationRulesRef.current[name] && !validateOnBlur) {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
-      timeoutRef.current = setTimeout(() => {
-        const error = validateField(name, value, { ...values, [name]: value });
-        setErrors(prev => ({ ...prev, [name]: error }));
-      }, debounceMs);
-    }
-  }, [validateOnBlur, debounceMs, validateField, values]);
+    timeoutRef.current = setTimeout(() => {
+      // Read the current field value from the functional-update closure to
+      // avoid the stale-closure problem that arose when `values` was in the
+      // dependency array of the callback.
+      setValues((prev) => {
+        const currentValues = { ...prev, [name]: value };
+        const error = validateField(name, value, currentValues);
+        setErrors((errs) => ({ ...errs, [name]: error }));
+        return prev; // no state change — we only needed prev for validation
+      });
+    }, optionsRef.current.debounceMs);
+  }, [validateField]);
 
-  // Clean up timeout on unmount
+  // Cancel the pending debounce timer when the hook unmounts to prevent
+  // setState calls on an unmounted component.
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
 
-  // Handle blur for validation
+  // Handle blur — run validation immediately without waiting for the debounce.
   const handleBlur = useCallback((e) => {
     const { name, value } = e.target;
-    setTouched(prev => ({ ...prev, [name]: true }));
-
-    if (validationRulesRef.current[name]) {
-      const error = validateField(name, value, values);
-      setErrors(prev => ({ ...prev, [name]: error }));
-    }
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    if (!validationRulesRef.current[name]) return;
+    const error = validateField(name, value, values);
+    setErrors((prev) => ({ ...prev, [name]: error }));
   }, [validateField, values]);
 
-  // Update form validity when values or errors change
+  // Derive overall form validity whenever field values, errors, or touch
+  // state changes. A field is considered satisfied when it has been touched
+  // OR when it already has a non-empty initial value.
   useEffect(() => {
-    const hasErrors = Object.values(errors).some(error => error !== null);
-    const allRequiredFieldsTouched = Object.keys(validationRulesRef.current).every(
-      key => touched[key] || values[key] !== ''
+    const hasErrors = Object.values(errors).some((error) => error !== null);
+    const allRequiredFieldsSatisfied = Object.keys(validationRulesRef.current).every(
+      (key) => touched[key] || values[key] !== '',
     );
-
-    setIsFormValid(!hasErrors && allRequiredFieldsTouched);
+    setIsFormValid(!hasErrors && allRequiredFieldsSatisfied);
   }, [errors, touched, values]);
 
-  // Reset form
+  // Reset form to initial state and clear all validation state.
   const resetForm = useCallback(() => {
     setValues(initialStateRef.current);
     setErrors({});
     setTouched({});
     setIsFormValid(false);
-  }, []);
-
-  // Cleanup debounce timer on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
   }, []);
 
   return {
