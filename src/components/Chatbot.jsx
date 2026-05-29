@@ -47,12 +47,16 @@ export default function Chatbot() {
 
   // Expiration check on mount (2 hours threshold)
   useEffect(() => {
-    const lastActive = localStorage.getItem("eventra_chatbot_last_active");
-    const twoHours = 2 * 60 * 60 * 1000;
-    if (lastActive && Date.now() - parseInt(lastActive) > twoHours) {
-      setMessages(INITIAL_MESSAGES);
+    try {
+      const lastActive = localStorage.getItem("eventra_chatbot_last_active");
+      const twoHours = 2 * 60 * 60 * 1000;
+      if (lastActive && Date.now() - parseInt(lastActive) > twoHours) {
+        setMessages(INITIAL_MESSAGES);
+      }
+      localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
+    } catch (e) {
+      console.warn("localStorage unavailable for Chatbot expiration check");
     }
-    localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
   }, [setMessages]);
 
   useEffect(() => {
@@ -63,7 +67,11 @@ export default function Chatbot() {
 
   // Sync last active timestamp when messages change
   useEffect(() => {
-    localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
+    try {
+      localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
+    } catch (e) {
+      console.warn("localStorage unavailable for Chatbot sync");
+    }
   }, [messages]);
 
   const handleClearConversation = () => {
