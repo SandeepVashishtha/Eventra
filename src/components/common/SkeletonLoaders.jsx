@@ -513,3 +513,39 @@ export const DashboardTableSkeleton = ({ rows = 5 }) => (
     </table>
   </div>
 );
+
+export const EventDetailSkeleton = () => (
+  <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
+      {/* Header */}
+      <div className="space-y-3">
+        <SkeletonBlock className="h-9 w-3/4" />
+        <SkeletonBlock className="h-5 w-1/2" />
+      </div>
+      {/* Action buttons */}
+      <div className="flex gap-3 flex-wrap">
+        {[...Array(4)].map((_, i) => (
+          <SkeletonBlock key={i} className="h-10 w-32 rounded-full" />
+        ))}
+      </div>
+      {/* Main grid */}
+      <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr]">
+        {/* Left */}
+        <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
+          <SkeletonBlock className="h-96 w-full rounded-3xl" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[...Array(4)].map((_, i) => (
+              <SkeletonBlock key={i} className="h-20 rounded-3xl" />
+            ))}
+          </div>
+        </div>
+        {/* Right */}
+        <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
+          <SkeletonBlock className="h-24 rounded-3xl" />
+          <SkeletonBlock className="h-32 rounded-3xl" />
+          <SkeletonBlock className="h-40 rounded-3xl" />
+        </div>
+      </div>
+    </div>
+  </div>
+);

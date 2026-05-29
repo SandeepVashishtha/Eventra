@@ -86,16 +86,19 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         aria-label="Primary navigation"
         className="sticky top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
       >
-        <div className="h-full px-4 flex items-center justify-between">
-          <Link to="/" aria-label="Eventra home logo template">
-            <div className="flex items-center justify-center gap-3">
-              <img src="/Eventra.png" alt="Eventra Brand Logo" className="h-12 w-auto object-contain rounded-xl bg-gray-200 dark:bg-transparent p-1" />
-              <h1 className="text-2xl font-heading font-bold text-text">Eventra</h1>
+        <div className="h-full px-4 flex items-center justify-between gap-4">
+          <Link to="/" aria-label="Eventra home logo template" className="flex items-center shrink-0">
+            <div className="flex items-center justify-center gap-2 xl:gap-3">
+              <img src="/favicon.png" alt="Eventra Brand Logo" className="h-9 sm:h-10 xl:h-11 w-auto object-contain rounded-xl bg-gray-200 dark:bg-transparent p-1" />
+              <h1 className="text-lg sm:text-xl xl:text-2xl font-heading font-bold text-text">Eventra</h1>
             </div>
           </Link>
 
-          <div className="flex items-center gap-4">
-            <DesktopNavbar isAuthenticated={authenticated} user={user} logout={logout} />
+          {/* Desktop Links should be in the middle of the navbar */}
+          <DesktopNavbar isAuthenticated={authenticated} user={user} logout={logout} />
+
+          {/* Right Controls Container */}
+          <div className="flex items-center gap-2 xl:gap-4 shrink-0">
             <button
               type="button"
               onClick={toggleTheme}

@@ -38,6 +38,22 @@ const getDB = () => {
   });
 };
 
+// Helper to attach error/abort handlers to an IndexedDB transaction and request
+const attachIdbReadHandlers = (transaction, request, resolve, fallbackValue, functionName) => {
+  transaction.onerror = (err) => {
+    console.error(`${functionName} transaction error:`, err);
+    resolve(fallbackValue);
+  };
+  transaction.onabort = (err) => {
+    console.error(`${functionName} transaction aborted:`, err);
+    resolve(fallbackValue);
+  };
+  request.onerror = (err) => {
+    console.error(`${functionName} request error:`, err);
+    resolve(fallbackValue);
+  };
+};
+
 // Check if all chunks for a file exist in IndexedDB
 export async function isFileCached(fileId) {
   try {
@@ -46,11 +62,12 @@ export async function isFileCached(fileId) {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
       
-      // Let's search by keys
       const request = store.openCursor();
       let chunksCount = 0;
       let totalChunks = 0;
       
+      attachIdbReadHandlers(transaction, request, resolve, false, "isFileCached");
+
       request.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
@@ -77,9 +94,12 @@ export async function getCachedFile(fileId) {
     return new Promise((resolve) => {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
+
       const request = store.openCursor();
       const chunks = [];
       
+      attachIdbReadHandlers(transaction, request, resolve, null, "getCachedFile");
+
       request.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {

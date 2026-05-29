@@ -116,6 +116,32 @@ git push origin feature/amazing-feature
 6. Open a Pull Request
    Submit a PR with a clear description of your changes.
 
+## ⚙️ Local Setup (Quick Start)
+
+Follow these commands to get the project running locally:
+
+1. Install dependencies
+
+```bash
+npm install
+```
+
+2. Start the development server
+
+```bash
+npm run dev
+```
+
+3. Run tests
+
+```bash
+npm test
+# or run Playwright e2e tests
+npm run test:e2e
+```
+
+If you are on Windows and encounter environment-related issues, run the `dev` script directly with `npm run dev` which sets the environment flag automatically.
+
 ## 🧩 Code Standards
 
 Maintaining consistent coding standards ensures readability, maintainability, and collaboration across **Eventra**.
