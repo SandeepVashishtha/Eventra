@@ -34,10 +34,10 @@ export function getRelativeTime(dateInput) {
 }
 
 export function getSmartDateLabel(dateInput, timeInput = "") {
-  if (!dateInput) return "\u2014";
+  if (!dateInput) return "TBD";
 
   const parsed = new Date(dateInput);
-  if (isNaN(parsed.getTime())) return "\u2014";
+  if (isNaN(parsed.getTime())) return "TBD";
 
   const relative = getRelativeTime(timeInput ? `${dateInput} ${timeInput}` : dateInput);
 

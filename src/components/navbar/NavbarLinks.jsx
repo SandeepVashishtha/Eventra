@@ -1,40 +1,37 @@
 import React, {
-  memo,
   lazy,
   Suspense,
   useRef,
   useState,
   useEffect,
-  useCallback,
-  useMemo,
 } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { 
-  Moon, Sun, Search, Bell, User, ChevronDown, 
-  Plus, Settings, LogOut, HelpCircle, Globe, 
-  WifiOff, Download, X 
+
+import { NavLink, useLocation } from "react-router-dom";
+
+import {
+  Moon,
+  Sun,
+  Search,
+  ChevronDown,
+  Plus,
+  HelpCircle,
+  X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../../context/AuthContext";
+
 import { useTheme } from "../../context/ThemeContext";
-import DesktopNavbar from "./DesktopNavbar";
-import MobileNavbar from "./MobileNavbar";
-import CursorToggle from "./CursorToggle";
-import useBodyScrollLock from "./hooks/useBodyScrollLock";
-import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import { useScrollProgress } from "../../hooks/useScrollProgress"; // custom hook (implemented in src/hooks)
 import { NAV_ITEMS } from "./constants/navItems";
-// Lazy-load the modal so it is only bundled when first rendered.
-// Using React.lazy here (instead of a static import) ensures the module
-// is code-split and does NOT conflict with the lazy import in App.jsx,
-// removing the "dynamically imported but also statically imported" Rollup warning.
-const KeyboardShortcutsModal = lazy(() => import("../common/KeyboardShortcutsModal"));
+
+const KeyboardShortcutsModal = lazy(() =>
+  import("../common/KeyboardShortcutsModal")
+);
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
   const navRef = useRef(null);
+
   const [openGroup, setOpenGroup] = useState(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
+
   const { isDarkMode } = useTheme();
 
   useEffect(() => {
@@ -93,6 +90,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         const isSubItemActive = item.subItems?.some(
           (sub) => location.pathname === sub.href
         );
+
         const isOpen = openGroup === item.name;
 
         if (item.subItems) {
@@ -109,7 +107,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                   onClick={onClick}
                   aria-haspopup={!vertical ? "menu" : undefined}
                   aria-expanded={!vertical ? isOpen : undefined}
-                  aria-controls={!vertical ? `navbar-links-menu-${item.name.toLowerCase().replace(/\s+/g, "-")}` : undefined}
+                  aria-controls={
+                    !vertical
+                      ? `navbar-links-menu-${item.name
+                          .toLowerCase()
+                          .replace(/\s+/g, "-")}`
+                      : undefined
+                  }
                   className={({ isActive }) =>
                     getNavLinkClasses(isActive || isSubItemActive)
                   }
@@ -121,33 +125,59 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                 {!vertical && (
                   <button
                     type="button"
-                    onClick={() => setOpenGroup((current) => (current === item.name ? null : item.name))}
+                    onClick={() =>
+                      setOpenGroup((current) =>
+                        current === item.name ? null : item.name
+                      )
+                    }
                     onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
+                      if (
+                        event.key === "Enter" ||
+                        event.key === " "
+                      ) {
                         event.preventDefault();
-                        setOpenGroup((current) => (current === item.name ? null : item.name));
+
+                        setOpenGroup((current) =>
+                          current === item.name ? null : item.name
+                        );
                       }
                     }}
                     aria-expanded={isOpen}
-                    aria-controls={`navbar-links-menu-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
-                    aria-label={`${isOpen ? "Collapse" : "Expand"} ${item.name} submenu`}
+                    aria-controls={`navbar-links-menu-${item.name
+                      .toLowerCase()
+                      .replace(/\s+/g, "-")}`}
+                    aria-label={`${
+                      isOpen ? "Collapse" : "Expand"
+                    } ${item.name} submenu`}
                     className={`ml-auto inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
                       isSubItemActive
                         ? "text-black dark:text-white"
                         : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white"
                     }`}
                   >
-                    <ChevronDown className={`w-4 h-4 opacity-70 transition-transform duration-200 ${isOpen ? "rotate-180" : "group-hover/nav:rotate-180"}`} />
+                    <ChevronDown
+                      className={`w-4 h-4 opacity-70 transition-transform duration-200 ${
+                        isOpen
+                          ? "rotate-180"
+                          : "group-hover/nav:rotate-180"
+                      }`}
+                    />
                   </button>
                 )}
               </div>
 
               <div
-                id={`navbar-links-menu-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                id={`navbar-links-menu-${item.name
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")}`}
                 className={
                   vertical
                     ? "mt-1 block w-full space-y-1 rounded-lg bg-gray-50 p-2 dark:bg-gray-800/60"
-                    : `${isOpen ? "block" : "hidden group-hover/nav:block"} absolute top-full left-0 bg-white dark:bg-gray-800 shadow-lg rounded-md p-2 min-w-55 z-50 border border-gray-100 dark:border-gray-700 mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
+                    : `${
+                        isOpen
+                          ? "block"
+                          : "hidden group-hover/nav:block"
+                      } absolute top-full left-0 bg-white dark:bg-gray-800 shadow-lg rounded-md p-2 min-w-55 z-50 border border-gray-100 dark:border-gray-700 mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
                 }
                 role={!vertical ? "menu" : undefined}
                 aria-label={`${item.name} submenu`}
@@ -180,7 +210,9 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             key={item.name}
             to={item.href}
             onClick={onClick}
-            className={({ isActive }) => getNavLinkClasses(isActive)}
+            className={({ isActive }) =>
+              getNavLinkClasses(isActive)
+            }
           >
             {item.icon}
             <span>{item.name}</span>
@@ -188,17 +220,36 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         );
       })}
 
-      {/* Keyboard Shortcuts Modal — loaded lazily to avoid bundling upfront */}
       <Suspense fallback={null}>
         <KeyboardShortcutsModal
           isOpen={showShortcuts}
           onClose={() => setShowShortcuts(false)}
           shortcuts={[
-            { keys: ["Ctrl", "K"], action: "Open search", icon: Search },
-            { keys: ["Ctrl", "N"], action: "Create new event", icon: Plus },
-            { keys: ["T"], action: "Toggle theme", icon: isDarkMode ? Sun : Moon },
-            { keys: ["?"], action: "Show shortcuts", icon: HelpCircle },
-            { keys: ["Esc"], action: "Close modals", icon: X },
+            {
+              keys: ["Ctrl", "K"],
+              action: "Open search",
+              icon: Search,
+            },
+            {
+              keys: ["Ctrl", "N"],
+              action: "Create new event",
+              icon: Plus,
+            },
+            {
+              keys: ["T"],
+              action: "Toggle theme",
+              icon: isDarkMode ? Sun : Moon,
+            },
+            {
+              keys: ["?"],
+              action: "Show shortcuts",
+              icon: HelpCircle,
+            },
+            {
+              keys: ["Esc"],
+              action: "Close modals",
+              icon: X,
+            },
           ]}
         />
       </Suspense>

@@ -937,16 +937,18 @@ GET /api/projects
 |--------|----------|
 | GET | `/api/projects/categories` |
 
-Returns a list of available project categories. No authentication required.
+Returns the static list of supported project categories used by the Projects gallery/module.
 
-### Example Request
+### Authentication
+Not required. Public endpoint.
 
-```bash
-GET /api/projects/categories
-```
+### Request
+No request body.
 
-### Successful Response (200)
+### Success Response
+Status: `200 OK`
 
+#### Response example:
 ```json
 [
   "Mobile Development",
@@ -954,9 +956,16 @@ GET /api/projects/categories
   "Developer Tools",
   "Machine Learning",
   "DevOps",
-  "Design"
+  "Design",
+  "IoT",
+  "Blockchain"
 ]
 ```
+
+### Notes
+- This endpoint is public and does not require JWT authentication.
+- This PR only documents the project categories endpoint.
+- Other Projects APIs will be documented separately when implemented.
 
 ---
 

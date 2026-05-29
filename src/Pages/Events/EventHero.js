@@ -4,9 +4,11 @@ import { Award, Calendar, Clock, Code2, Sparkles, TrendingUp, Trash2, Users } fr
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
-import CountUp from "react-countup";
+import CountUpLib from "react-countup";
 import { darkTheme } from "../../components/styles/theme";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+
+const CountUp = CountUpLib.default;
 
 // 🔥 THE FIX: Single, clean declarations placed in the correct order 🔥
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";

@@ -87,10 +87,17 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         className="sticky top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
       >
         <div className="h-full px-4 flex items-center justify-between gap-4">
-          <Link to="/" aria-label="Eventra home logo template" className="flex items-center shrink-0">
-            <div className="flex items-center justify-center gap-2 xl:gap-3">
-              <img src="/favicon.png" alt="Eventra Brand Logo" className="h-9 sm:h-10 xl:h-11 w-auto object-contain rounded-xl bg-gray-200 dark:bg-transparent p-1" />
-              <h1 className="text-lg sm:text-xl xl:text-2xl font-heading font-bold text-text">Eventra</h1>
+          <Link to="/" aria-label="Eventra home logo template" className="flex items-center shrink-0 min-w-0">
+            <div className="flex min-w-0 items-center gap-2 xl:gap-3">
+              <div className="flex h-10 w-10 xl:h-11 xl:w-11 flex-none items-center justify-center overflow-hidden rounded-xl bg-gray-100 p-1 shadow-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+                <img
+                  src="/favicon.png"
+                  alt="Eventra Brand Logo"
+                  className="block h-full w-full object-contain"
+                  loading="lazy"
+                />
+              </div>
+              <h1 className="truncate text-lg sm:text-xl xl:text-2xl font-heading font-bold text-text">Eventra</h1>
             </div>
           </Link>
 

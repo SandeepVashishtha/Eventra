@@ -52,6 +52,11 @@ function App() {
   const location = useLocation();
   const isDashboardOrAdmin =
     location.pathname === "/dashboard" || location.pathname === "/admin";
+  const pageLoader = (
+    <div className="flex items-center justify-center min-h-screen text-gray-500">
+      Loading page...
+    </div>
+  );
   const [cursorEnabled, setCursorEnabled] = useState(
     localStorage.getItem("cursor") !== "off",
   );
@@ -116,7 +121,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-    <ThemeProvider>
+      <ThemeProvider>
         <AuthProvider>
           <NotificationProvider>
             <MyEventsProvider>
@@ -150,7 +155,7 @@ function App() {
                     id="main-content"
                     className="relative z-10 min-h-[85vh] bg-white dark:bg-slate-950 text-black dark:text-white transition-colors duration-300"
                   >
-                    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-gray-500">Loading page...</div>}>
+                    <Suspense fallback={pageLoader}>
                       <PageTransition>
                         <SectionErrorBoundary label="Page Content">
                           <Routes>
