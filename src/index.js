@@ -18,11 +18,13 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
   <React.StrictMode>
-    <GlobalErrorBoundary>
-      <ThemeProvider>
+    {/* Move ThemeProvider to the outside */}
+    <ThemeProvider>
+      {/* Wrap App inside the GlobalErrorBoundary */}
+      <GlobalErrorBoundary>
         <App />
-      </ThemeProvider>
-    </GlobalErrorBoundary>
+      </GlobalErrorBoundary>
+    </ThemeProvider>
   </React.StrictMode>
 );
 
