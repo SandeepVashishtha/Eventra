@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Wifi, WifiOff } from "lucide-react";
 import { getQueue } from "../../utils/offlineQueue";
 import "./OfflineBanner.css";

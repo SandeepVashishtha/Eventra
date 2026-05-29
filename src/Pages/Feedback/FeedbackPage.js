@@ -25,7 +25,7 @@ import { analyzeSentiment, getSentimentDisplay } from "../../utils/sentiment.js"
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
-  const prefersReducedMotion = useReducedMotion();
+  useReducedMotion();
   const [hoveredRating, setHoveredRating] = useState(0);
 
   const handleStarClick = (star) => {
@@ -183,8 +183,7 @@ const CustomFloatingSelect = ({
   options,
   required = true,
   error,
-  icon: Icon,
-}) => {
+  }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const hasValue = value && value.length > 0;
@@ -457,15 +456,6 @@ const FeedbackPage = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Store feedback in component state instead of localStorage
-      const payload = {
-        name: formData.name?.trim(),
-        email: formData.email?.trim(),
-        message: formData.message?.trim(),
-        feedbackType: formData.feedbackType,
-        rating: formData.rating,
-        sentimentScore: sentimentScore,
-        submittedAt: new Date().toISOString(),
-      };
 
 
       toast.success(

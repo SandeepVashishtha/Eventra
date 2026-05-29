@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LogIn, UserPlus } from "lucide-react";
 import NavbarLinks from "./NavbarLinks";

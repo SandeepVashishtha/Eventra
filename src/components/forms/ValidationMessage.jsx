@@ -1,4 +1,3 @@
-import React from "react";
 
 const stateClasses = {
   error: "text-red-600 dark:text-red-400",

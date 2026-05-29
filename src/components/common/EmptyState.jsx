@@ -1,4 +1,3 @@
-import React from "react";
 import { Search, FilterX, Inbox } from "lucide-react";
 import { motion } from "framer-motion";
 

@@ -35,7 +35,7 @@
  *   const { myEvents, addRegistration, isRegistered, removeRegistration } = useMyEvents();
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
 import { safeJsonParse } from "../utils/safeJsonParse";
 
@@ -109,7 +109,7 @@ export const MyEventsProvider = ({ children }) => {
   // formData is absent from persisted records; it is available only for
   // registrations added during the current session.
   const [myEvents, setMyEvents] = useState(() => loadFromStorage(userId));
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   // Guard ref — skips the first save on load to prevent overwriting valid data
   const isInitialLoad = useRef(true);

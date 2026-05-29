@@ -1,8 +1,7 @@
-import React, { lazy } from "react";
+import { lazy } from "react";
 import { Route } from "react-router-dom";
 import PageLayout from "../Layout/PageLayout";
 import ProtectedRoute from "../auth/ProtectedRoute";
-import SectionErrorBoundary from "../common/SectionErrorBoundary";
 const HealthCheckPage = lazy(() => import("../../Pages/HealthCheckPage"));
 
 // ─── Lazy-loaded page components ─────────────────────────────────────────────

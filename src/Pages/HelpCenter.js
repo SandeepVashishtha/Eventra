@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, useAnimation } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
