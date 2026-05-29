@@ -34,6 +34,8 @@ export const sanitizeSearchQuery = (query = '') => {
     /\\/g, // Escape characters
     /\n/g, // Newlines
     /\r/g, // Carriage returns
+    /</g,  // HTML tags / XSS
+    />/g,
   ];
 
   // Remove dangerous characters
@@ -109,10 +111,7 @@ export const sanitizeInputText = (text = '') => {
     return '';
   }
 
-  // 1. Strip all HTML elements
-  let cleaned = text.replace(/<\/?[^>]+(>|$)/g, "");
-
-  // 2. Escape HTML special characters for absolute safety
+  // Escape HTML special characters for absolute safety
   const htmlEscapes = {
     '&': '&amp;',
     '<': '&lt;',
@@ -122,5 +121,5 @@ export const sanitizeInputText = (text = '') => {
     '/': '&#x2F;'
   };
 
-  return cleaned.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
+  return text.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
 };

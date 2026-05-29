@@ -104,7 +104,7 @@ const AdvancedFilterPanel = ({
         <div className="flex items-center gap-2">
           {hasFilters && (
             <button
-              onClick={(e) = aria-label="button"> {
+              onClick={(e) => {
                 e.stopPropagation();
                 handleClearAll();
               }}
@@ -126,7 +126,7 @@ const AdvancedFilterPanel = ({
           {/* Category Filter Section */}
           <div>
             <button
-              onClick={() = aria-label="button"> toggleSection("category")}
+              onClick={() => toggleSection("category")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
               <span>Categories</span>
@@ -151,7 +151,7 @@ const AdvancedFilterPanel = ({
           {/* Mode Filter Section */}
           <div>
             <button
-              onClick={() = aria-label="button"> toggleSection("mode")}
+              onClick={() => toggleSection("mode")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
               <span>Event Mode</span>
@@ -176,7 +176,7 @@ const AdvancedFilterPanel = ({
           {/* Status Filter Section */}
           <div>
             <button
-              onClick={() = aria-label="button"> toggleSection("status")}
+              onClick={() => toggleSection("status")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
               <span>Event Status</span>
@@ -201,7 +201,7 @@ const AdvancedFilterPanel = ({
           {/* Price Range Section */}
           <div>
             <button
-              onClick={() = aria-label="button"> toggleSection("price")}
+              onClick={() => toggleSection("price")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
               <span>Price Range</span>
@@ -228,7 +228,7 @@ const AdvancedFilterPanel = ({
           {/* Date Range Section */}
           <div>
             <button
-              onClick={() = aria-label="button"> toggleSection("date")}
+              onClick={() => toggleSection("date")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
               <span>Date Range</span>

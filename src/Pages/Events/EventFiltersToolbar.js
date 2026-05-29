@@ -15,7 +15,7 @@ const FilterButton = ({ filter, filterType, onFilterChange }) => {
   const isActive = filterType === filter.key;
   return (
     <button
-      onClick={() = aria-label="button"> onFilterChange(filter.key)}
+      onClick={() => onFilterChange(filter.key)}
       className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition ${
         isActive
           ? "bg-black text-white dark:bg-white dark:text-black"
@@ -32,7 +32,7 @@ const ViewModeButton = ({ mode, activeMode, onViewModeChange, icon: Icon }) => {
   const isActive = activeMode === mode;
   return (
     <button
-      onClick={() = aria-label="button"> onViewModeChange(mode)}
+      onClick={() => onViewModeChange(mode)}
       className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
         isActive
           ? "bg-black text-white shadow-md dark:bg-white dark:text-black"

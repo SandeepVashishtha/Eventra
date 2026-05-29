@@ -8,6 +8,10 @@ module.exports = {
 
   theme: {
     extend: {
+      screens: {
+        xs: '380px',
+        short: { raw: '(max-height: 520px) and (orientation: landscape)' },
+      },
 
       // =========================
       // FONT SIZES
@@ -53,6 +57,27 @@ module.exports = {
         // Navbar & Sidebar
         navbar: 'var(--navbar-color)',
         sidebar: 'var(--sidebar-color)',
+      },
+
+      spacing: {
+        'safe-top': 'var(--safe-area-top)',
+        'safe-right': 'var(--safe-area-right)',
+        'safe-bottom': 'var(--safe-area-bottom)',
+        'safe-left': 'var(--safe-area-left)',
+      },
+
+      minHeight: {
+        svh: '100svh',
+        dvh: '100dvh',
+      },
+
+      height: {
+        svh: '100svh',
+        dvh: '100dvh',
+      },
+
+      maxWidth: {
+        drawer: 'min(92vw, 24rem)',
       },
 
       // =========================
