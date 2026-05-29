@@ -526,7 +526,7 @@ export default function LeaderBoard() {
 
                   <a
                     href={top3[1].profile}
-                    target="_blank"
+                    target="_blank" rel="noopener noreferrer"
                     rel="noopener noreferrer"
                     className="text-base font-black text-slate-900 dark:text-white hover:text-indigo-500 transition-colors truncate max-w-[200px]"
                   >
@@ -584,7 +584,7 @@ export default function LeaderBoard() {
 
                   <a
                     href={top3[0].profile}
-                    target="_blank"
+                    target="_blank" rel="noopener noreferrer"
                     rel="noopener noreferrer"
                     className="text-lg font-black bg-gradient-to-r from-slate-950 via-indigo-950 to-pink-950 dark:from-white dark:via-indigo-200 dark:to-pink-100 bg-clip-text text-transparent hover:text-indigo-500 transition-colors truncate max-w-[220px]"
                   >
@@ -636,7 +636,7 @@ export default function LeaderBoard() {
 
                   <a
                     href={top3[2].profile}
-                    target="_blank"
+                    target="_blank" rel="noopener noreferrer"
                     rel="noopener noreferrer"
                     className="text-base font-black text-slate-900 dark:text-white hover:text-indigo-500 transition-colors truncate max-w-[200px]"
                   >
@@ -871,7 +871,7 @@ export default function LeaderBoard() {
                               <div>
                                 <a
                                   href={c.profile}
-                                  target="_blank"
+                                  target="_blank" rel="noopener noreferrer"
                                   rel="noopener noreferrer"
                                   className="text-sm font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                                 >

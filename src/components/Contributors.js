@@ -373,7 +373,7 @@ const Contributors = () => {
                 <div className="mt-auto w-full">
                   <a
                     href={c.html_url}
-                    target="_blank"
+                    target="_blank" rel="noopener noreferrer"
                     className="group inline-flex items-center justify-center gap-2 bg-black text-white px-5 py-2.5 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 transition-all duration-300 ease-out transform hover:scale-105 relative overflow-hidden"
                     rel="noopener noreferrer"
                   >

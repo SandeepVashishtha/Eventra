@@ -320,7 +320,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
               </button>
               <a
                 href={addHackathonToGoogleCalendar(normalizedHackathon)}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-slate-50 hover:text-indigo-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
                 rel="noopener noreferrer"
               >

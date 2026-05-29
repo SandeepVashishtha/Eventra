@@ -381,7 +381,7 @@ const MyCalendar = () => {
                                 </button>
                                 <a
                                   href={generateGoogleCalendarLink(item.event)}
-                                  target="_blank"
+                                  target="_blank" rel="noopener noreferrer"
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl border border-slate-250 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition"
                                 >
@@ -468,7 +468,7 @@ const MyCalendar = () => {
                               </button>
                               <a
                                 href={generateGoogleCalendarLink(item.event)}
-                                target="_blank"
+                                target="_blank" rel="noopener noreferrer"
                                 rel="noopener noreferrer"
                                 className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-sm flex items-center gap-1.5"
                               >
