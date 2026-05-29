@@ -133,7 +133,7 @@ const EventCreation = () => {
       }
     }
 
-    if (!formData.isVirtual && !formData.location.name.trim()) {
+    if (!formData.isVirtual && !formData.location?.name?.trim()) {
       newErrors.location = "Location name is required for offline events";
     }
 
@@ -268,10 +268,13 @@ const EventCreation = () => {
   const createEvent = () => {
     try {
       let coordinates = null;
-      if (formData.location.coordinates.latitude && formData.location.coordinates.longitude) {
+      if (
+        formData.location?.coordinates?.latitude &&
+        formData.location?.coordinates?.longitude
+      ) {
         coordinates = validateCoordinates(
-          formData.location.coordinates.latitude,
-          formData.location.coordinates.longitude
+          formData.location?.coordinates?.latitude,
+          formData.location?.coordinates?.longitude
         );
       }
 
