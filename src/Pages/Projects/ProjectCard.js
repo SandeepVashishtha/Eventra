@@ -349,8 +349,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           aria-hidden="true"
           className={`absolute inset-0 w-full h-full object-cover blur-xl scale-110 transition-opacity duration-500 z-0 ${
             isLoaded ? "opacity-0" : "opacity-100"
-          }`}
-        />
+          }`} loading="lazy"/>
         <img
           src={project.image}
           alt={project.title}
@@ -419,7 +418,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                   onClick={handleIncrementStar}
                   className="flex flex-col items-center justify-center bg-amber-50/50 hover:bg-amber-100/80 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border border-amber-100/20 dark:border-amber-900/10 rounded-xl py-1 text-amber-600 dark:text-amber-400 font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95"
                   title="Click to Star repository!"
-                >
+                 aria-label="button">
                   <FiStar className="mb-0.5" />
                   <span>{metrics?.stars || 0}</span>
                 </button>
@@ -428,7 +427,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                   onClick={handleIncrementFork}
                   className="flex flex-col items-center justify-center bg-teal-50/50 hover:bg-teal-100/80 dark:bg-teal-950/20 dark:hover:bg-teal-950/40 border border-teal-100/20 dark:border-teal-900/10 rounded-xl py-1 text-teal-600 dark:text-teal-400 font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95"
                   title="Click to Fork repository!"
-                >
+                 aria-label="button">
                   <FiGithub className="mb-0.5" />
                   <span>{metrics?.forks || 0}</span>
                 </button>

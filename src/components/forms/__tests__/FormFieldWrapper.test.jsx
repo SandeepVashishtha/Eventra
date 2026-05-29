@@ -5,13 +5,16 @@ import FormFieldWrapper from "../FormFieldWrapper";
 let container;
 let root;
 
+/* eslint-disable no-undef */
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+/* eslint-enable no-undef */
 
 const render = (element) => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
+  // eslint-disable-next-line testing-library/no-unnecessary-act
   act(() => {
     root.render(element);
   });
@@ -21,6 +24,7 @@ const render = (element) => {
 
 afterEach(() => {
   if (root) {
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     act(() => {
       root.unmount();
     });
@@ -182,5 +186,22 @@ describe("FormFieldWrapper", () => {
     expect(container.querySelector("input").classList.contains("custom-input")).toBe(
       true,
     );
+  });
+
+  it("renders optional prefix and suffix content", () => {
+    render(
+      <FormFieldWrapper
+        id="email"
+        label="Email"
+        prefix={<span data-testid="prefix">prefix</span>}
+        suffix={<button type="button" aria-label="button">toggle</button>}
+      >
+        <input />
+      </FormFieldWrapper>,
+    );
+
+    expect(container.querySelector('[data-testid="prefix"]')).not.toBeNull();
+    expect(container.querySelector("button").textContent).toBe("toggle");
+    expect(container.querySelector("input").className).toContain("pr-");
   });
 });

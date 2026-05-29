@@ -265,8 +265,8 @@ const SearchFilter = () => {
                 <span className="rating-value">{event.rating}</span>
               </div>
               <div className="event-actions">
-                <button className="btn-primary">Register Now</button>
-                <button className="btn-outline">Learn More</button>
+                <button className="btn-primary" aria-label="button">Register Now</button>
+                <button className="btn-outline" aria-label="button">Learn More</button>
               </div>
             </div>
           </motion.div>

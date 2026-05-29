@@ -31,10 +31,17 @@ export function useTicketDownload(ticketRef, ticketId = "ticket") {
     setDownloading(true);
     try {
       const canvas = await captureCanvas();
-      const link = document.createElement("a");
-      link.download = `eventra-ticket-${ticketId}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      
+      // Use toBlob instead of toDataURL to prevent massive base64 memory allocation
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `eventra-ticket-${ticketId}.png`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      }, "image/png");
     } catch (err) {
       console.error("[QRTicket] PNG download failed:", err);
     } finally {
@@ -50,7 +57,6 @@ export function useTicketDownload(ticketRef, ticketId = "ticket") {
       const canvas = await captureCanvas();
       const { jsPDF } = await import("jspdf");
 
-      const imgData = canvas.toDataURL("image/png");
       // Ticket dimensions in mm (340px wide at 96dpi ≈ 90mm)
       const pxToMm = (px) => (px * 25.4) / 96;
       const widthMm = pxToMm(canvas.width / 3);   // divide by scale
@@ -62,7 +68,8 @@ export function useTicketDownload(ticketRef, ticketId = "ticket") {
         format: [widthMm, heightMm],
       });
 
-      pdf.addImage(imgData, "PNG", 0, 0, widthMm, heightMm);
+      // Pass the canvas directly to jsPDF instead of generating a massive base64 string
+      pdf.addImage(canvas, "PNG", 0, 0, widthMm, heightMm);
       pdf.save(`eventra-ticket-${ticketId}.pdf`);
     } catch (err) {
       console.error("[QRTicket] PDF download failed:", err);

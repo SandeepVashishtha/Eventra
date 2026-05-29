@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { syncSecureStorage } from "../../utils/secureStorage";
 
 import {
   User as UserIcon,
@@ -83,7 +84,7 @@ const EditProfile = () => {
 
   // Initialize with fallback progression to prevent undefined fields
   const [form, setForm] = useState(() => {
-    const saved = localStorage.getItem("user");
+    const saved = syncSecureStorage.getItem("user");
     const parsed = safeJsonParse(saved, null);
     if (parsed) {
       return parsed;
@@ -100,7 +101,7 @@ const EditProfile = () => {
 
   // Keep state synchronized if the auth context updates lazily
   useEffect(() => {
-    const saved = localStorage.getItem("user");
+    const saved = syncSecureStorage.getItem("user");
     if (!saved && user) {
       setForm((prev) => ({ ...prev, ...user }));
     }
@@ -207,7 +208,7 @@ const EditProfile = () => {
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(resolvedForm);
-      localStorage.setItem("user", JSON.stringify(resolvedForm));
+      syncSecureStorage.setItem("user", JSON.stringify(resolvedForm));
 
       setTimeout(() => {
         navigate("/dashboard/profile");
@@ -607,7 +608,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
             type="button"
             onClick={onCancel}
             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
+           aria-label="button">
             Cancel
           </button>
           <button
@@ -615,7 +616,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
             onClick={onConfirm}
             disabled={loading}
             className="px-4 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
-          >
+           aria-label="button">
             {loading ? "Saving..." : "Save"}
           </button>
         </div>

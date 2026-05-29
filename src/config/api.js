@@ -28,9 +28,7 @@ const resolveEnvApiBaseUrl = () => {
     return normalizeApiBaseUrl(envUrl);
   }
   if (process.env.NODE_ENV === "production") {
-    if (isDev) {
-      console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
-    }
+    console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
     return "";
   }
   return "http://localhost:8080";
@@ -213,12 +211,10 @@ API.interceptors.response.use(
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: buildApiUrl("/api/auth/login"),
-    GOOGLE: buildApiUrl("/api/auth/google"),
     REGISTER: buildApiUrl("/api/auth/signup"),
     SIGNUP: buildApiUrl("/api/auth/signup"),
     LOGOUT: buildApiUrl("/api/auth/logout"),
     RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
-    OAUTH: buildApiUrl("/api/auth/oauth"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),
@@ -226,7 +222,11 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
+    // Convenience helper — appends ?page=&size= for callers that build the
+    // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
+    PAGINATED: (page, size) => buildApiUrl(`/api/events?page=${page}&size=${size}`),
   },
   PROJECTS: {
     ALL: buildApiUrl("/api/projects"),
@@ -245,6 +245,9 @@ export const API_ENDPOINTS = {
     ALL: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
+    PREFERENCES: buildApiUrl("/api/notifications/preferences"),
+    PUSH_SUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions"),
+    PUSH_UNSUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions/unsubscribe"),
   },
   USERS: {
     PROFILE: buildApiUrl("/api/users/profile"),
@@ -274,3 +277,10 @@ export const apiUtils = {
 export default API;
 
 export { normalizeApiError };
+
+// Centralized configuration cache store for fallback endpoints
+export const apiConfigCache = {
+  store: new Map(),
+  get(key) { return this.store.get(key); },
+  set(key, val) { this.store.set(key, val); }
+};
