@@ -13,9 +13,6 @@ import {
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  fetchProfileWithCache,
-} from "../../../utils/githubProfileCache";
 import { throttleProfileFetch } from "../../../components/Contributors";
 import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
 
@@ -23,9 +20,10 @@ import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
 
 const STORAGE_KEY = "github_contributors";
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
+const CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hr
+const STALE_REVALIDATE_WINDOW = 2 * 60 * 60 * 1000; // 2 hr
 const REQUEST_TIMEOUT = 10000;
-const MAX_CONTRIBUTOR_PAGES = 2; // Limit carousel to top contributors
+const MAX_CONTRIBUTOR_PAGES = 1; // Limit carousel to top contributors
 // Delay inserted between batches (not between individual requests) to avoid
 // triggering GitHub's unauthenticated rate limit of 60 req/hr.
 const BATCH_DELAY_MS = 200;
@@ -74,11 +72,16 @@ const getRoleByGitHubActivity = (contributor) => {
 const getCachedContributors = () => {
   try {
     const cachedData = localStorage.getItem(STORAGE_KEY);
-    if (!cachedData) return null;
+    if (!cachedData) return { data: null, isStale: false };
     const { data, timestamp } = JSON.parse(cachedData);
-    return Date.now() - timestamp > CACHE_DURATION ? null : data;
+    const age = Date.now() - timestamp;
+    if (age <= CACHE_DURATION) return { data, isStale: false };
+    if (age <= CACHE_DURATION + STALE_REVALIDATE_WINDOW) {
+      return { data, isStale: true };
+    }
+    return { data: null, isStale: false };
   } catch {
-    return null;
+    return { data: null, isStale: false };
   }
 };
 const cacheContributors = (data) => {
@@ -136,31 +139,27 @@ const Contributors = () => {
   }, []);
 
   // Fetches a single GitHub user profile via the backend proxy.
-  // Wrapped by fetchProfileWithCache so repeated calls for the same username
-  // within the session return the cached value without a network round-trip.
   const fetchGitHubProfile = useCallback(async (username) => {
     await throttleProfileFetch();
     try {
-      return await fetchProfileWithCache(username, async () => {
-        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
-          `/users/${username}`
-        )}`;
+      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
+        `/users/${username}`
+      )}`;
 
-        const { data: profile } = await fetchWithTimeout(
-          proxyUrl,
-          {},
-          REQUEST_TIMEOUT
-        );
+      const { data: profile } = await fetchWithTimeout(
+        proxyUrl,
+        {},
+        REQUEST_TIMEOUT
+      );
 
-        return {
-          followers: profile.followers || 0,
-          public_repos: profile.public_repos || 0,
-          name: profile.name || username,
-          bio: profile.bio || "Open source contributor",
-          company: profile.company,
-          location: profile.location,
-        };
-      });
+      return {
+        followers: profile.followers || 0,
+        public_repos: profile.public_repos || 0,
+        name: profile.name || username,
+        bio: profile.bio || "Open source contributor",
+        company: profile.company,
+        location: profile.location,
+      };
     } catch {
       return {
         followers: 0,
@@ -174,13 +173,15 @@ const Contributors = () => {
   }, []);
 
   // Fetch contributors
-  const fetchContributors = useCallback(async () => {
-    setLoading(true);
+  const fetchContributors = useCallback(async ({ backgroundRefresh = false } = {}) => {
+    if (!backgroundRefresh) setLoading(true);
     const cached = getCachedContributors();
-    if (cached) {
-      setContributors(cached);
-      setLoading(false);
-      return;
+    if (cached.data) {
+      setContributors(cached.data);
+      if (!cached.isStale) {
+        if (!backgroundRefresh) setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -233,13 +234,13 @@ const Contributors = () => {
     } catch (error) {
       console.error("Failed to fetch contributors:", error);
 
-      setContributors([]);
+      if (!backgroundRefresh) setContributors([]);
 
       if (error.name === "AbortError") {
         console.error("Contributor request timed out");
       }
     } finally {
-      setLoading(false);
+      if (!backgroundRefresh) setLoading(false);
     }
   }, [fetchGitHubProfile]);
 
