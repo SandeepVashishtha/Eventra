@@ -128,6 +128,15 @@ const EventsPage = () => {
     listing.setAdvancedFilters({});
   }, [listing]);
 
+  const clearSearchAndFilters = () => {
+    setLocalSearchInput("");
+    listing.setSearchQuery("");
+    listing.setFilterType("all");
+    listing.setSortType("Newest");
+    listing.setViewMode("grid");
+    listing.setAdvancedFilters({});
+  };
+
   const hasActiveFilters =
     listing.filterType !== "all" ||
     listing.sortType !== "Newest" ||
