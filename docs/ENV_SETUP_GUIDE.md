@@ -1,10 +1,10 @@
-# ⚙️ Eventra Environment Setup Guide
+# Eventra Environment Setup Guide
 
 A comprehensive guide to configuring the Eventra event management platform for local development, testing, and deployment.
 
 ---
 
-## 📌 Introduction
+## Introduction
 
 Eventra is a **distributed event management platform** with a clear separation between frontend and backend services. Proper environment configuration is critical because:
 
@@ -14,14 +14,14 @@ Eventra is a **distributed event management platform** with a clear separation b
 - **Security depends on** proper secret management and deployment-specific configuration
 
 This guide helps you:
-- ✅ Set up the project locally for development
-- ✅ Understand required vs optional environment variables
-- ✅ Debug common configuration issues
-- ✅ Avoid security and deployment mistakes
+- Set up the project locally for development
+- Understand required vs optional environment variables
+- Debug common configuration issues
+- Avoid security and deployment mistakes
 
 ---
 
-## 🏗️ Local Development Architecture
+## Local Development Architecture
 
 Eventra uses a **client-server architecture** with clear communication boundaries. Here's how it works:
 
@@ -29,14 +29,14 @@ Eventra uses a **client-server architecture** with clear communication boundarie
 
 ```mermaid
 graph TB
-    A["🌐 Browser<br/>localhost:3000"] -->|HTTP/HTTPS| B["⚛️ React Frontend<br/>Port 3000"]
-    B -->|API Calls<br/>Via Axios| C["🔗 API Layer<br/>src/config/api.js"]
-    C -->|HTTP<br/>localhost:8080/api| D["☕ Spring Boot Backend<br/>Port 8080"]
-    D -->|Database<br/>Queries| E[("💾 MySQL/H2<br/>Database")]
+    A["Browser<br/>localhost:3000"] -->|HTTP/HTTPS| B["React Frontend<br/>Port 3000"]
+    B -->|API Calls<br/>Via Axios| C["API Layer<br/>src/config/api.js"]
+    C -->|HTTP<br/>localhost:8080/api| D["Spring Boot Backend<br/>Port 8080"]
+    D -->|Database<br/>Queries| E[("MySQL/H2<br/>Database")]
     
-    B -->|Optional:<br/>Real-time Updates| F["📡 SSE Mock Server<br/>Port 5000"]
-    B -->|Optional:<br/>OAuth| G["🔐 Google OAuth<br/>servers.google.com"]
-    B -->|Optional:<br/>Email| H["📧 EmailJS<br/>api.emailjs.com"]
+    B -->|Optional:<br/>Real-time Updates| F["SSE Mock Server<br/>Port 5000"]
+    B -->|Optional:<br/>OAuth| G["Google OAuth<br/>servers.google.com"]
+    B -->|Optional:<br/>Email| H["EmailJS<br/>api.emailjs.com"]
     
     style A fill:#e1f5ff
     style B fill:#c8e6c9
@@ -70,14 +70,14 @@ graph TB
 
 In production (Vercel), the `vercel.json` rewrites `/api/*` requests to the Azure-hosted backend:
 ```
-/api/events → https://eventra-backend-springboot-*.azurewebsites.net/api/events
+/api/events -> https://eventra-backend-springboot-*.azurewebsites.net/api/events
 ```
 
 This allows frontend and backend to deploy independently.
 
 ---
 
-## 📂 Environment File Setup
+## Environment File Setup
 
 ### Where to Place `.env` Files
 
@@ -85,12 +85,12 @@ Environment variables in Eventra are configured through `.env` files in the proj
 
 ```
 Eventra/
-├── .env              ← Local development (gitignored)
-├── .env.local        ← Optional local overrides (gitignored)
-├── .env.example      ← Template with placeholder values (committed)
-├── .env.production   ← Production variables (Vercel-managed)
-├── package.json
-└── src/
++-- .env              <- Local development (gitignored)
++-- .env.local        <- Optional local overrides (gitignored)
++-- .env.example      <- Template with placeholder values (committed)
++-- .env.production   <- Production variables (Vercel-managed)
++-- package.json
++-- src/
 ```
 
 ### Creating Your `.env` File
@@ -100,7 +100,7 @@ Eventra/
    cp .env.example .env
    ```
 
-2. **Fill in your values** (see [Environment Variables Reference](#-environment-variables-reference))
+2. **Fill in your values** (see [Environment Variables Reference](#environment-variables-reference))
 
 3. **Restart dev server** for changes to take effect:
    ```bash
@@ -110,21 +110,21 @@ Eventra/
 ### File Priority (Highest to Lowest)
 
 ```
-.env.local              ← Override everything (local-only)
-    ↓
-.env.development        ← Development mode specifics
-    ↓
-.env                    ← General configuration
-    ↓
-.env.example            ← Fallback defaults
+.env.local              <- Override everything (local-only)
+    v
+.env.development        <- Development mode specifics
+    v
+.env                    <- General configuration
+    v
+.env.example            <- Fallback defaults
 ```
 
 ### Important Notes
 
-- ⚠️ **Never commit secrets** to `.env` (it's gitignored)
-- ✅ **Keep `.env.example` updated** when adding new variables
-- 🔄 **Dev server must restart** when `.env` changes
-- 📌 **REACT_APP prefix is required** for variables accessible in browser
+- Warning: **Never commit secrets** to `.env` (it's gitignored)
+- **Keep `.env.example` updated** when adding new variables
+- **Dev server must restart** when `.env` changes
+- **REACT_APP prefix is required** for variables accessible in browser
 
 ### Example `.env` File
 
@@ -160,7 +160,7 @@ REACT_APP_SSE_URL=http://localhost:4001
 
 ---
 
-## 🔑 Environment Variables Reference
+## Environment Variables Reference
 
 ### Complete Variable Documentation
 
@@ -180,7 +180,7 @@ REACT_APP_SSE_URL=http://localhost:4001
 
 ---
 
-## 🧩 Feature Mapping for Optional Integrations
+## Feature Mapping for Optional Integrations
 
 Understanding what happens when optional integrations are missing helps prevent surprise bugs.
 
@@ -207,7 +207,7 @@ if (!process.env.REACT_APP_GOOGLE_CLIENT_ID) {
 
 ---
 
-## 🔄 Real API vs Mock API Mode
+## Real API vs Mock API Mode
 
 Eventra supports two development workflows depending on your needs:
 
@@ -215,14 +215,14 @@ Eventra supports two development workflows depending on your needs:
 
 ```mermaid
 graph TD
-    A["🤔 What are you working on?"] -->|"Frontend features<br/>UI/UX work"| B["Use Mock Mode<br/>REACT_APP_USE_REAL_API=false"]
+    A["What are you working on?"] -->|"Frontend features<br/>UI/UX work"| B["Use Mock Mode<br/>REACT_APP_USE_REAL_API=false"]
     A -->|"Backend integration<br/>API testing"| C["Use Real Mode<br/>REACT_APP_USE_REAL_API=true"]
     
-    B --> B1["✅ Benefits:<br/>- No backend required<br/>- Faster iterations<br/>- Offline testing<br/>- Predictable data"]
-    C --> C1["✅ Benefits:<br/>- Test real API<br/>- Full-stack flow<br/>- Database changes<br/>- Authentication"]
+    B --> B1["Benefits:<br/>- No backend required<br/>- Faster iterations<br/>- Offline testing<br/>- Predictable data"]
+    C --> C1["Benefits:<br/>- Test real API<br/>- Full-stack flow<br/>- Database changes<br/>- Authentication"]
     
-    B1 --> B2["⚠️ Limitations:<br/>- No live data<br/>- No real auth<br/>- Mock events only"]
-    C1 --> C2["⚠️ Requirements:<br/>- Backend running<br/>- Port 8080 open<br/>- Database configured"]
+    B1 --> B2["Limitations:<br/>- No live data<br/>- No real auth<br/>- Mock events only"]
+    C1 --> C2["Requirements:<br/>- Backend running<br/>- Port 8080 open<br/>- Database configured"]
     
     style A fill:#e3f2fd
     style B fill:#c8e6c9
@@ -234,39 +234,39 @@ graph TD
 ### Configuration Comparison
 
 ```markdown
-┌──────────────────────────────────────────────────────────────┐
-│                    MOCK MODE (Recommended for UI Work)       │
-├──────────────────────────────────────────────────────────────┤
-│ REACT_APP_USE_REAL_API=false                                 │
-│ REACT_APP_API_URL=http://localhost:3000/api                  │
-│                                                              │
-│ ✅ Frontend renders with hardcoded mock data                 │
-│ ✅ No network requests to backend                            │
-│ ✅ Faster page loads                                         │
-│ ✅ Works without Spring Boot running                         │
-│ ✅ Perfect for GitHub Actions CI/CD                          │
-│                                                              │
-│ npm start → http://localhost:3000 (mock data)                │
-└──────────────────────────────────────────────────────────────┘
++--------------------------------------------------------------+
+|                    MOCK MODE (Recommended for UI Work)       |
++--------------------------------------------------------------+
+| REACT_APP_USE_REAL_API=false                                 |
+| REACT_APP_API_URL=http://localhost:3000/api                  |
+|                                                              |
+| Frontend renders with hardcoded mock data                 |
+| No network requests to backend                            |
+| Faster page loads                                         |
+| Works without Spring Boot running                         |
+| Perfect for GitHub Actions CI/CD                          |
+|                                                              |
+| npm start -> http://localhost:3000 (mock data)                |
++--------------------------------------------------------------+
 ```
 
 ```markdown
-┌──────────────────────────────────────────────────────────────┐
-│                  REAL MODE (Full-Stack Testing)              │
-├──────────────────────────────────────────────────────────────┤
-│ REACT_APP_USE_REAL_API=true                                  │
-│ REACT_APP_API_URL=http://localhost:8080/api                  │
-│                                                              │
-│ ✅ Communicates with actual Spring Boot backend              │
-│ ✅ Real database operations                                  │
-│ ✅ Tests authentication flow                                 │
-│ ✅ Validates API contracts                                   │
-│ ⚠️  Backend must be running on port 8080                     │
-│ ⚠️  Slower development cycle                                 │
-│                                                              │
-│ npm start → localhost:3000                                   │
-│ java -jar backend.jar → localhost:8080 (separate terminal)   │
-└──────────────────────────────────────────────────────────────┘
++--------------------------------------------------------------+
+|                  REAL MODE (Full-Stack Testing)              |
++--------------------------------------------------------------+
+| REACT_APP_USE_REAL_API=true                                  |
+| REACT_APP_API_URL=http://localhost:8080/api                  |
+|                                                              |
+| Communicates with actual Spring Boot backend              |
+| Real database operations                                  |
+| Tests authentication flow                                 |
+| Validates API contracts                                   |
+| Warning: Backend must be running on port 8080                     |
+| Warning: Slower development cycle                                 |
+|                                                              |
+| npm start -> localhost:3000                                   |
+| java -jar backend.jar -> localhost:8080 (separate terminal)   |
++--------------------------------------------------------------+
 ```
 
 ### API Layer Detection
@@ -299,7 +299,7 @@ if (REACT_APP_USE_REAL_API === 'false') {
 
 ---
 
-## 🧪 Running the Project Locally
+## Running the Project Locally
 
 ### Prerequisites
 
@@ -414,20 +414,20 @@ curl http://localhost:8080/api/health
 
 ```
 Terminal 1:                    Terminal 2:
-├─ cd Eventra                  ├─ cd Eventra-Backend
-├─ npm install                 ├─ mvn clean install
-├─ npm start                   ├─ mvn spring-boot:run
-└─ http://localhost:3000       └─ http://localhost:8080
++- cd Eventra                  +- cd Eventra-Backend
++- npm install                 +- mvn clean install
++- npm start                   +- mvn spring-boot:run
++- http://localhost:3000       +- http://localhost:8080
 ```
 
 **For Frontend-Only Development:**
 
 ```
 Terminal 1:
-├─ cd Eventra
-├─ npm install
-├─ REACT_APP_USE_REAL_API=false npm start
-└─ http://localhost:3000
++- cd Eventra
++- npm install
++- REACT_APP_USE_REAL_API=false npm start
++- http://localhost:3000
 ```
 
 ### Health Check URLs
@@ -443,9 +443,9 @@ After startup, verify everything is running:
 
 ---
 
-## 🚨 Troubleshooting & Common Issues
+## Troubleshooting & Common Issues
 
-### ❌ CORS Errors
+### CORS Errors
 
 **Symptom:**
 ```
@@ -488,13 +488,13 @@ has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is pres
 
 4. **Check Browser Console:**
    ```
-   F12 → Console → Look for blue CORS error
-   F12 → Network → Check Request Headers for Origin
+   F12 -> Console -> Look for blue CORS error
+   F12 -> Network -> Check Request Headers for Origin
    ```
 
 ---
 
-### ❌ Port Conflicts
+### Port Conflicts
 
 **Symptom:**
 ```
@@ -519,13 +519,13 @@ PORT=3001 npm start
 **Port Reference:**
 | Port | Service | Required |
 |------|---------|----------|
-| **3000** | React Frontend | ✅ Yes (or configure different) |
-| **8080** | Spring Boot Backend | ✅ Yes (if using real API) |
-| **5000** | SSE Mock Server | ❌ Optional |
+| **3000** | React Frontend | Yes (or configure different) |
+| **8080** | Spring Boot Backend | Yes (if using real API) |
+| **5000** | SSE Mock Server | Optional |
 
 ---
 
-### ❌ Google OAuth Issues
+### Google OAuth Issues
 
 **Symptom:**
 ```
@@ -537,8 +537,8 @@ Google Sign-In popup blocked or not working
 1. **Missing Client ID:**
    ```bash
    # .env is missing or has wrong value
-   REACT_APP_GOOGLE_CLIENT_ID=                # ❌ Empty
-   REACT_APP_GOOGLE_CLIENT_ID=123456789...    # ✅ Correct
+   REACT_APP_GOOGLE_CLIENT_ID=                # Empty
+   REACT_APP_GOOGLE_CLIENT_ID=123456789...    # Correct
    ```
    - Solution: Get Client ID from Google Cloud Console
 
@@ -560,7 +560,7 @@ Google Sign-In popup blocked or not working
 
 ---
 
-### ❌ Environment Variable Not Loading
+### Environment Variable Not Loading
 
 **Symptom:**
 ```javascript
@@ -573,7 +573,7 @@ console.log(process.env.REACT_APP_API_URL);  // undefined
 |-------|-------|----------|
 | Variable not in `.env` | File exists: `ls -la .env` | Add variable to `.env` |
 | Wrong variable name | Use `REACT_APP_` prefix | Rename to `REACT_APP_MYVAR` |
-| Dev server not restarted | Terminal running? | `npm start` → Ctrl+C → `npm start` |
+| Dev server not restarted | Terminal running? | `npm start` -> Ctrl+C -> `npm start` |
 | `.env` file in wrong location | Check `pwd` in terminal | `.env` must be in root `/Eventra` |
 | Syntax error in `.env` | No spaces around `=` | Change `A = B` to `A=B` |
 | Comment syntax wrong | Only `#` comments valid | Change `REACT_APP_A=value # comment` to two lines |
@@ -589,12 +589,12 @@ console.log(process.env.REACT_APP_API_URL);  // Should print value
 
 ---
 
-### ❌ API Request Failures (404, 401, 500)
+### API Request Failures (404, 401, 500)
 
 **Symptom:**
 ```
-GET http://localhost:8080/api/events → 404 Not Found
-GET http://localhost:8080/api/auth/login → 401 Unauthorized
+GET http://localhost:8080/api/events -> 404 Not Found
+GET http://localhost:8080/api/auth/login -> 401 Unauthorized
 ```
 
 **Debugging Steps:**
@@ -613,8 +613,8 @@ cat .env | grep REACT_APP_API_URL
 # Should show: REACT_APP_API_URL=http://localhost:8080/api
 
 # Step 4: Check browser network tab
-# F12 → Network → Look for failed requests
-# → Click request → Response tab for error details
+# F12 -> Network -> Look for failed requests
+# -> Click request -> Response tab for error details
 ```
 
 **Common Status Codes:**
@@ -629,7 +629,7 @@ cat .env | grep REACT_APP_API_URL
 
 ---
 
-### ❌ Real-time Features Not Working
+### Real-time Features Not Working
 
 **Symptom:**
 ```
@@ -656,11 +656,11 @@ EventSource connection failed
 
 3. **Browser Not Supporting SSE:**
    - SSE works in all modern browsers except older IE
-   - Check: F12 → Network → Look for EventSource connection
+   - Check: F12 -> Network -> Look for EventSource connection
 
 ---
 
-### ❌ Offline or Network Issues
+### Offline or Network Issues
 
 **Symptom:**
 ```
@@ -689,32 +689,32 @@ Network unavailable, but app should work offline
 
 ---
 
-## 🔐 Deployment & Security Guidelines
+## Deployment & Security Guidelines
 
-### ⚠️ CRITICAL: Frontend Environment Variables Are Public
+### Warning CRITICAL: Frontend Environment Variables Are Public
 
 **Remember:** Variables prefixed with `REACT_APP_` are embedded in your production build and **visible to anyone**.
 
 ```javascript
 // This is visible in the browser:
-console.log(process.env.REACT_APP_API_URL);  // ✅ Fine to expose
-console.log(process.env.REACT_APP_GOOGLE_CLIENT_ID);  // ✅ Fine (it's a public ID)
+console.log(process.env.REACT_APP_API_URL);  // Fine to expose
+console.log(process.env.REACT_APP_GOOGLE_CLIENT_ID);  // Fine (it's a public ID)
 
 // This will NOT be included (good!):
-console.log(process.env.DATABASE_PASSWORD);  // ❌ Cannot access (no REACT_APP_ prefix)
+console.log(process.env.DATABASE_PASSWORD);  // Cannot access (no REACT_APP_ prefix)
 ```
 
 ### Safe vs Unsafe Variables
 
 | Variable | Safe to Expose? | Why | Storage |
 |----------|-----------------|-----|---------|
-| `REACT_APP_API_URL` | ✅ Yes | It's a public endpoint | Frontend bundle |
-| `REACT_APP_GOOGLE_CLIENT_ID` | ✅ Yes | Google OAuth requires public ID | Frontend bundle |
-| `REACT_APP_EMAILJS_PUBLIC_KEY` | ✅ Yes | EmailJS public key; name says "public" | Frontend bundle |
-| `GITHUB_TOKEN` | ❌ **No** | Private authentication token | Backend only / Vercel secrets |
-| `DATABASE_PASSWORD` | ❌ **No** | Database credentials must be private | Backend .env (not in repo) |
-| `JWT_SECRET` | ❌ **No** | Secret for signing tokens | Backend only |
-| `EMAILJS_PRIVATE_KEY` | ❌ **No** | Private key (different from public) | Backend only |
+| `REACT_APP_API_URL` | Yes | It's a public endpoint | Frontend bundle |
+| `REACT_APP_GOOGLE_CLIENT_ID` | Yes | Google OAuth requires public ID | Frontend bundle |
+| `REACT_APP_EMAILJS_PUBLIC_KEY` | Yes | EmailJS public key; name says "public" | Frontend bundle |
+| `GITHUB_TOKEN` | **No** | Private authentication token | Backend only / Vercel secrets |
+| `DATABASE_PASSWORD` | **No** | Database credentials must be private | Backend .env (not in repo) |
+| `JWT_SECRET` | **No** | Secret for signing tokens | Backend only |
+| `EMAILJS_PRIVATE_KEY` | **No** | Private key (different from public) | Backend only |
 
 ### Deployment Secrets Checklist
 
@@ -729,10 +729,10 @@ Before deploying to production:
   ```
 
 - [ ] **Use Vercel Secrets Dashboard for production**
-  - Navigate to: Settings → Environment Variables
-  - Add `REACT_APP_API_URL` → production backend URL
-  - Add `REACT_APP_GOOGLE_CLIENT_ID` → production client ID
-  - ⚠️ Never paste `GITHUB_TOKEN` into Vercel UI (if used at build time)
+  - Navigate to: Settings -> Environment Variables
+  - Add `REACT_APP_API_URL` -> production backend URL
+  - Add `REACT_APP_GOOGLE_CLIENT_ID` -> production client ID
+  - Warning: Never paste `GITHUB_TOKEN` into Vercel UI (if used at build time)
 
 - [ ] **Keep `.env.example` without secrets**
   ```bash
@@ -769,43 +769,43 @@ This means:
 
 ---
 
-## 📦 Recommended Developer Workflow
+## Recommended Developer Workflow
 
 ### Best Practices for Configuration Management
 
 ```markdown
-┌─────────────────────────────────────────────────────────────────┐
-│                    DEVELOPMENT WORKFLOW                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ 1️⃣  BEFORE STARTING                                            │
-│    └─ cp .env.example .env                                     │
-│    └─ Edit .env with your local values                         │
-│    └─ Never commit .env (it's in .gitignore)                   │
-│                                                                 │
-│ 2️⃣  WHEN ADDING NEW VARIABLES                                  │
-│    └─ Add to .env (local development)                          │
-│    └─ Add to .env.example (shared template)                    │
-│    └─ Commit only .env.example to Git                          │
-│    └─ Document in docs/ENV_SETUP_GUIDE.md (this file)          │
-│                                                                 │
-│ 3️⃣  WHEN CHANGING ENVIRONMENT                                  │
-│    └─ Update .env for your environment                         │
-│    └─ Restart dev server: npm start                            │
-│    └─ Clear browser cache if needed: Ctrl+Shift+Del            │
-│                                                                 │
-│ 4️⃣  BEFORE PUSHING CODE                                        │
-│    └─ Verify .env is in .gitignore: git check-ignore .env      │
-│    └─ Confirm secrets not in recent commits: git log -p        │
-│    └─ Update .env.example with new variables                   │
-│                                                                 │
-│ 5️⃣  BEFORE DEPLOYING TO PRODUCTION                             │
-│    └─ Add variables to Vercel dashboard (not in code)          │
-│    └─ Double-check REACT_APP_API_URL points to prod backend    │
-│    └─ Remove debug/mock variables before build                 │
-│    └─ Test production build locally: npm run build             │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------+
+|                    DEVELOPMENT WORKFLOW                         |
++-----------------------------------------------------------------+
+|                                                                 |
+| 1  BEFORE STARTING                                            |
+|    +- cp .env.example .env                                     |
+|    +- Edit .env with your local values                         |
+|    +- Never commit .env (it's in .gitignore)                   |
+|                                                                 |
+| 2  WHEN ADDING NEW VARIABLES                                  |
+|    +- Add to .env (local development)                          |
+|    +- Add to .env.example (shared template)                    |
+|    +- Commit only .env.example to Git                          |
+|    +- Document in docs/ENV_SETUP_GUIDE.md (this file)          |
+|                                                                 |
+| 3  WHEN CHANGING ENVIRONMENT                                  |
+|    +- Update .env for your environment                         |
+|    +- Restart dev server: npm start                            |
+|    +- Clear browser cache if needed: Ctrl+Shift+Del            |
+|                                                                 |
+| 4  BEFORE PUSHING CODE                                        |
+|    +- Verify .env is in .gitignore: git check-ignore .env      |
+|    +- Confirm secrets not in recent commits: git log -p        |
+|    +- Update .env.example with new variables                   |
+|                                                                 |
+| 5  BEFORE DEPLOYING TO PRODUCTION                             |
+|    +- Add variables to Vercel dashboard (not in code)          |
+|    +- Double-check REACT_APP_API_URL points to prod backend    |
+|    +- Remove debug/mock variables before build                 |
+|    +- Test production build locally: npm run build             |
+|                                                                 |
++-----------------------------------------------------------------+
 ```
 
 ### Environment-Specific Configurations
@@ -833,7 +833,7 @@ REACT_APP_DEBUG=false  # Disable debug logs in production
 
 ---
 
-## 🧠 Contributor Notes
+## Contributor Notes
 
 ### Key Files for Environment & Configuration
 
@@ -856,8 +856,8 @@ import axios from 'axios';
 
 // 1. Read environment variable
 const API_BASE_URL = process.env.REACT_APP_API_URL;
-// → http://localhost:8080/api (local dev)
-// → https://eventra-backend-*.azurewebsites.net/api (production)
+// -> http://localhost:8080/api (local dev)
+// -> https://eventra-backend-*.azurewebsites.net/api (production)
 
 // 2. Create Axios instance with base URL
 const api = axios.create({
@@ -867,7 +867,7 @@ const api = axios.create({
 
 // 3. Use in components
 const response = await api.get('/events');
-// → Actual request: GET http://localhost:8080/api/events
+// -> Actual request: GET http://localhost:8080/api/events
 ```
 
 ### Testing Your Configuration
@@ -878,20 +878,20 @@ const response = await api.get('/events');
 console.log({
   apiUrl: process.env.REACT_APP_API_URL,
   useRealApi: process.env.REACT_APP_USE_REAL_API,
-  googleClientId: process.env.REACT_APP_GOOGLE_CLIENT_ID ? '✅ Loaded' : '❌ Missing',
+  googleClientId: process.env.REACT_APP_GOOGLE_CLIENT_ID ? 'Loaded' : 'Missing',
 });
 
 // Output example:
 // {
 //   apiUrl: "http://localhost:8080/api",
 //   useRealApi: "true",
-//   googleClientId: "✅ Loaded"
+//   googleClientId: "Loaded"
 // }
 ```
 
 ---
 
-## 🚀 Future Improvements
+## Future Improvements
 
 Potential enhancements to environment setup:
 
@@ -906,7 +906,7 @@ Potential enhancements to environment setup:
 
 ---
 
-## 📞 Getting Help
+## Getting Help
 
 ### Common Resources
 

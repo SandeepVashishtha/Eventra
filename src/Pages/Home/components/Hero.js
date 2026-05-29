@@ -540,10 +540,10 @@ text-gray-600 dark:text-gray-300"
                   variants={fadeUp}
                   whileHover={{ y: -5 }}
                   transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-                  className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-200/60 dark:border-gray-800/60 shadow-sm"
+                  className="flex flex-col items-center justify-center p-6 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-gray-200/80 dark:border-slate-800/80 shadow-lg hover:shadow-indigo-500/10 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300"
                 >
                   
-                  <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+                  <p className="text-4xl font-extrabold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
                     {statsReady ? (
                       // AFTER
 <CountUp
