@@ -1050,7 +1050,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
                   tabIndex={0}
                   role="button"
                   aria-label={`Floor plan element: ${el.label}, type: ${el.type.replace("-", " ")}, ${el.seatsCount > 0 ? `${Object.keys(el.assignedAttendees).length} of ${el.seatsCount} seats occupied` : "no seating"}, position: X ${Math.round(el.x)}, Y ${Math.round(el.y)}`}
-                  aria-selected={isSelected}
+                  aria-pressed={isSelected}
                   onFocus={() => {
                     setSelectedId(el.id);
                     selectedIdRef.current = el.id;
