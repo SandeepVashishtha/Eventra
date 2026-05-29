@@ -7,7 +7,6 @@ import useReducedMotion from "../../../hooks/useReducedMotion";
 import TicketTiersSection from "./components/TicketTiersSection";
 import GeneralInfoStep from "./components/GeneralInfoStep";
 import { exportAttendeesToCSV } from "../../../utils/exportCsv";
-import ProgressStepper from "../common/ProgressStepper";
 import {
   DRAFT_KEY,
   CREATION_STEPS,
@@ -69,35 +68,7 @@ const EventCreation = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return;
     }
-const CREATION_STEPS = [
-  { id: "general", label: "General Info" },
-  { id: "location", label: "Location" },
-  { id: "tickets", label: "Tickets" },
-  { id: "preview", label: "Preview" },
-];
 
-// In the component, add state:
-const [currentStep, setCurrentStep] = useState(0);
-
-// Add navigation functions:
-const handleNext = () => {
-  if (currentStep < CREATION_STEPS.length - 1) {
-    setCurrentStep((prev) => prev + 1);
-  }
-};
-
-const handlePrevious = () => {
-  if (currentStep > 0) {
-    setCurrentStep((prev) => prev - 1);
-  }
-};
-
-const handleStepClick = (index) => {
-  // Only allow going back to completed steps
-  if (index <= currentStep) {
-    setCurrentStep(index);
-  }
-};
     const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
     const result = response.data;
 
@@ -394,7 +365,7 @@ const handleStepClick = (index) => {
         toast.success("Draft restored successfully!");
       }
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     }
 
     setShowRestoreModal(false);
@@ -573,55 +544,6 @@ const handleStepClick = (index) => {
       duration-300
     "
             >
-              <div className="max-w-4xl mx-auto px-4 py-8">
-  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
-    Create New Event
-  </h1>
-  
-  {/* Progress Stepper */}
-  <ProgressStepper steps={CREATION_STEPS} currentStep={currentStep} />
-
-  {/* Form Steps */}
-  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-    {currentStep === 0 && <GeneralInfoStep formData={formData} setFormData={setFormData} />}
-    {currentStep === 1 && <LocationStep formData={formData} setFormData={setFormData} />}
-    {currentStep === 2 && <TicketsStep formData={formData} setFormData={setFormData} />}
-    {currentStep === 3 && <PreviewStep formData={formData} />}
-
-    {/* Navigation Buttons */}
-    <div className="flex justify-between mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-      <button
-        type="button"
-        onClick={handlePrevious}
-        disabled={currentStep === 0}
-        className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-          currentStep === 0
-            ? "bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
-            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-        }`}
-      >
-        Previous
-      </button>
-
-      {currentStep < CREATION_STEPS.length - 1 ? (
-        <button
-          type="button"
-          onClick={handleNext}
-          className="px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
-        >
-          Next
-        </button>
-      ) : (
-        <button
-          type="submit"
-          className="px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg"
-        >
-          Create Event
-        </button>
-      )}
-    </div>
-  </div>
-</div>
               <Download size={18} />
               Download CSV
             </button>
