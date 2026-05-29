@@ -170,27 +170,27 @@ const EventCard = ({ event, cacheInfo = null }) => {
           title={isBookmarked ? "Remove bookmark" : "Bookmark event"}
           className={`min-h-[36px] min-w-[36px] rounded-full border p-2 shadow transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 ${
             isBookmarked
-              ? "border-indigo-200 bg-indigo-50/95 text-indigo-600"
-              : "border-gray-200 bg-white/90 text-gray-600 hover:border-indigo-200 hover:text-indigo-600"
+              ? "border-indigo-200 bg-indigo-50/95 text-indigo-600 dark:border-indigo-800 dark:bg-indigo-950/95 dark:text-indigo-400"
+              : "border-gray-200 bg-white/90 text-gray-600 hover:border-indigo-200 hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-300 dark:hover:border-indigo-500 dark:hover:text-indigo-400"
           }`}
         >
           {isBookmarked ? <BookmarkCheck size={14} fill="currentColor" /> : <Bookmark size={14} />}
         </button>
 
         <ShareMenu shareData={eventSharingData} position="above" menuClassName="!z-[999] shadow-2xl">
-          <div className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm">
-            <Share2 size={14} className="text-gray-600" aria-hidden="true" />
+          <div className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm cursor-pointer hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200">
+            <Share2 size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
           </div>
         </ShareMenu>
 
         <button
           type="button"
           onClick={handleCopyLink}
-          className="relative min-h-[36px] min-w-[36px] rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="relative min-h-[36px] min-w-[36px] rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-indigo-500 hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-300 dark:hover:border-indigo-500 dark:hover:text-indigo-400 transition-all duration-200"
           title="Copy Event Link"
           aria-label={`Copy link for ${event.title}`}
         >
-          <Share2 size={14} className="text-gray-600" aria-hidden="true" />
+          <Share2 size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
         </button>
 
         <a
@@ -202,8 +202,8 @@ const EventCard = ({ event, cacheInfo = null }) => {
           aria-label={`Add ${event.title} to Google Calendar`}
           className="rounded-full focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
-          <div className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm">
-            <Calendar size={14} className="text-gray-600" aria-hidden="true" />
+          <div className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200">
+            <Calendar size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
           </div>
         </a>
       </div>
