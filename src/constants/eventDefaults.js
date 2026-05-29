@@ -1,4 +1,5 @@
 export const DRAFT_KEY = "eventra_create_event_draft";
+export const CREATION_STEPS = { FORM: "form", PREVIEW: "preview" };
 
 export const categories = [
   { label: "Conference", value: "CONFERENCE" },
