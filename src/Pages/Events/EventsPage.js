@@ -151,14 +151,20 @@ const EventsPage = () => {
 
   const handleClearFilters = useCallback(() => {
     setLocalSearchInput("");
-  const clearSearchAndFilters = () => {
     listing.setSearchQuery("");
     listing.setFilterType("all");
     listing.setSortType("Newest");
     listing.setViewMode("grid");
     listing.setAdvancedFilters({});
   }, [listing]);
+
+  const clearSearchAndFilters = () => {
     setLocalSearchInput("");
+    listing.setSearchQuery("");
+    listing.setFilterType("all");
+    listing.setSortType("Newest");
+    listing.setViewMode("grid");
+    listing.setAdvancedFilters({});
   };
 
   const hasActiveFilters =
