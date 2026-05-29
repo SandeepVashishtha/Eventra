@@ -23,17 +23,19 @@ import CursorToggle from "./CursorToggle";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import { useScrollProgress } from "../../hooks/useScrollProgress"; // custom hook (implemented in src/hooks)
+import { NAV_ITEMS } from "./constants/navItems";
 // Lazy-load the modal so it is only bundled when first rendered.
 // Using React.lazy here (instead of a static import) ensures the module
 // is code-split and does NOT conflict with the lazy import in App.jsx,
 // removing the "dynamically imported but also statically imported" Rollup warning.
 const KeyboardShortcutsModal = lazy(() => import("../common/KeyboardShortcutsModal"));
-import { NAV_ITEMS } from "./constants/navItems";
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
   const navRef = useRef(null);
   const [openGroup, setOpenGroup] = useState(null);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     setOpenGroup(null);

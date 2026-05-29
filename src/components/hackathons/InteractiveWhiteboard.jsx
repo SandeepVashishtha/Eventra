@@ -185,12 +185,73 @@ const InteractiveWhiteboard = () => {
     toast.info("Canvas cleared successfully.");
   };
 
-  const handleMouseUp = useCallback(() => {
-    if (!isDrawing || !currentElement) return;
-    setElements((prev) => [...prev, currentElement]);
-    setCurrentElement(null);
+  const getCanvasCoords = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.clientX ?? (e.touches?.[0]?.clientX ?? 0);
+    const clientY = e.clientY ?? (e.touches?.[0]?.clientY ?? 0);
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+
+  const handleMouseDown = useCallback((e) => {
+    if (tool === "sticky") return;
+    e.stopPropagation();
+    const coords = getCanvasCoords(e);
+    if (tool === "pen") {
+      setCurrentElement({
+        type: "path", color, size, isSolid,
+        points: [{ x: coords.x, y: coords.y }],
+      });
+    } else {
+      setCurrentElement({
+        type: "shape", shapeType: tool, color, size, isSolid,
+        x: coords.x, y: coords.y, width: 0, height: 0,
+      });
+    }
+    setIsDrawing(true);
+  }, [tool, color, size, isSolid]);
+
+  // Drawing move handler
+  const handleMouseMove = (e) => {
+    if (tool === "sticky") return;
+    if (!isDrawing) return;
+    e.stopPropagation();
+    const coords = getCanvasCoords(e);
+
+    setCurrentElement((prev) => {
+      if (!prev) return prev;
+      if (prev.type === "path") {
+        return {
+          ...prev,
+          points: [...prev.points, { x: coords.x, y: coords.y }],
+        };
+      }
+
+      // shape
+      return {
+        ...prev,
+        width: coords.x - prev.x,
+        height: coords.y - prev.y,
+      };
+    });
+  };
+
+  // Finalize drawing on mouse up / touch end
+  const handleMouseUp = (e) => {
+    if (tool === "sticky") return;
+    if (!isDrawing) return;
+    e.stopPropagation();
+
+    setCurrentElement((prev) => {
+      if (!prev) return null;
+      const finalized = prev;
+      setElements((els) => [...els, finalized]);
+      return null;
+    });
+
     setIsDrawing(false);
-  }, [isDrawing, currentElement]);
+  };
 
   return (
     <div 
