@@ -4,6 +4,7 @@ import { Share2, Copy, Mail, Check } from 'lucide-react';
 import { FiFacebook, FiLinkedin } from 'react-icons/fi';
 import { FaWhatsapp, FaTelegram } from 'react-icons/fa';
 import { generateSharingUrl, copyToClipboard } from '../../../utils/shareUtils';
+import { toast } from 'react-toastify';
 import './ShareMenu.css';
 
 /**
@@ -98,7 +99,10 @@ const ShareMenu = ({
         url: shareData.url || window.location.href,
       })
       .then(()=>setIsOpen(false))
-      .catch((err)=>console.error('Error sharing:', err));
+      .catch((err) => {
+        console.error('Error sharing:', err);
+        toast.error("Failed to share event", { autoClose: 2000 });
+      });
       return;
     }
     if (platform === 'copy') {
@@ -217,7 +221,7 @@ const ShareMenu = ({
                 onClick={handleCopyLink}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-               aria-label="button">
+               aria-label="Copy link to clipboard">
                 <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                   {copied ? (
                     <Check className="w-4 h-4 text-green-600" />

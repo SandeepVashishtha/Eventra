@@ -1,5 +1,5 @@
 import "./EventDetails.print.css";
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
@@ -9,10 +9,10 @@ import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtil
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
-import mockEvents from "./eventsMockData.json";
 import CertificateDownload from "../../components/CertificateDownload";
 import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
+import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
 import { useAuth } from "../../context/AuthContext";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
@@ -24,8 +24,7 @@ import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import { safeParseJson } from "../../utils/jsonUtils";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
-
-// Removed mockRegistrants
+import mockEvents from "./eventsMockData.json";
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -36,7 +35,6 @@ const EventDetails = () => {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [exportingRegistrants, setExportingRegistrants] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [event, setEvent] = useState(null);
   const [fetchLoading, setFetchLoading] = useState(true);
@@ -72,7 +70,7 @@ const EventDetails = () => {
     loadEvent();
   }, [loadEvent]);
 
-  // FIX: Safely handle localStorage with try-catch
+  // Safely handle localStorage with try-catch
   useEffect(() => {
     if (!event) return;
 
@@ -84,12 +82,11 @@ const EventDetails = () => {
       ].slice(0, 6);
 
       localStorage.setItem("recentlyViewedEvents", JSON.stringify(updatedEvents));
-    } catch (error) {
-      console.warn("[EventDetails] Failed to access or save recently viewed events in localStorage:", error);
+    } catch {
+      // localStorage unavailable — not critical
     }
   }, [event]);
 
-  // FIX: Print stability handler
   const handlePrint = () => {
     setIsPrinting(true);
     setTimeout(() => {
@@ -116,26 +113,13 @@ const EventDetails = () => {
           textArea.remove();
         }
       }
-      setCopied(true);
       toast.success("Link copied!");
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
     } catch (err) {
       toast.error("Failed to copy link");
     }
   };
 
-  if (fetchLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-          <p className="text-gray-500 dark:text-gray-400">Loading event…</p>
-        </div>
-      </div>
-    );
-  }
+  if (fetchLoading) return <EventDetailSkeleton />;
 
   if (fetchError || !event) {
     return (
@@ -177,7 +161,7 @@ const EventDetails = () => {
 
       <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl space-y-8">
-          
+
           {/* Header */}
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -228,7 +212,8 @@ const EventDetails = () => {
                 onClick={handlePrint}
                 disabled={isPrinting}
                 className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-               aria-label="button">
+                aria-label="Print or save as PDF"
+              >
                 {isPrinting ? "Preparing..." : "🖨️ Print / Save as PDF"}
               </button>
 

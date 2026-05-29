@@ -27,7 +27,7 @@ const FluidCursor = ({ enabled = true }) => {
   }, []);
 
   useEffect(() => {
-    if (!enabled || isMobileViewport) {
+    if (!enabled || isMobileViewport || prefersReducedMotion) {
       return undefined;
     }
 

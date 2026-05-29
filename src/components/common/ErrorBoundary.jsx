@@ -152,7 +152,7 @@ ${sessionSnapshot}
 Language: ${navigator.language}
 Platform: ${navigator.platform}
 Cookies Enabled: ${navigator.cookieEnabled}
-==================================`;
+--- End of Report ---`;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -185,39 +185,14 @@ class ErrorBoundary extends React.Component {
     };
   }
 
-  // Log Errors
-  componentDidCatch(
-    error,
-    errorInfo
-  ) {
-    // 🟢 Flag the error immediately to stop globalErrorHandler from double-reporting
-    if (error && typeof error === 'object') {
-      error.__isReactHandled = true;
-    }
-
-    // 🟢 Construct the aligned telemetry payload structure
-    const payload = {
-      event: 'app_crash',
-      level: 'fatal',
-      source: 'React.GlobalErrorBoundary',
-      message: error?.message || 'React component tree crash',
-      metadata: {
-        errorId: this.state.errorId,
-        stack: error?.stack || null,
-        componentStack: errorInfo?.componentStack || null,
-      }
-    };
-
-    // 🟢 Log using the unified structure
-    logError(payload);
-
-    this.setState({
-      errorInfo,
-    });
+  componentDidCatch(error, errorInfo) {
+    const errorId = this.state.errorId ?? generateErrorId();
+    this.setState({ errorInfo, errorId });
+    persistErrorLog(errorId, error, errorInfo);
 
     try {
       logError(error, errorInfo);
-    } catch (_) {}
+    } catch (_) { }
 
     console.error("Captured by ErrorBoundary:", error, errorInfo);
   }
@@ -228,6 +203,24 @@ class ErrorBoundary extends React.Component {
     setTimeout(() => window.location.reload(), 300);
   };
 
+  handleCopyReport = async () => {
+    const { error, errorInfo } = this.state;
+
+    const safeError =
+      error?.toString()?.trim() || "Unknown error";
+
+    const safeStack =
+      error?.stack?.trim() || "No stack";
+
+    const safeComponentStack =
+      errorInfo?.componentStack?.trim() || "Unavailable";
+
+    let safeLocalStorage = "{}";
+
+    try {
+      safeLocalStorage = JSON.stringify(localStorage, null, 2) || "{}";
+    } catch (err) {
+      safeLocalStorage = "Unable to read localStorage";
   handleTryAgain = () => {
     const { retryCount } = this.state;
     if (retryCount >= 3) {

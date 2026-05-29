@@ -60,7 +60,7 @@ const getDerivedKey = () => {
       ['deriveKey'],
     );
 
-    const salt = encoder.encode(`eventra:${window.location.origin}:storage-key-v1`);
+    const salt = DERIVED_KEY_SALT;
 
     return crypto.subtle.deriveKey(
       {
@@ -124,7 +124,6 @@ const isCryptoAvailable = () => {
 };
 
 const cryptoSupported = isCryptoAvailable();
-
 
 // ---------------------------------------------------------------------------
 // Encrypted key-value storage wrapper (localStorage — AES-GCM encrypted)

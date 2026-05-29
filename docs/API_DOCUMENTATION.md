@@ -256,7 +256,11 @@ Authenticates the user via Google OAuth and returns a JWT token. Creates a new u
 |--------|----------|
 | POST | `/api/auth/logout` |
 
-Logs out the authenticated user and invalidates their JWT token. Requires JWT authentication.
+Logs out the authenticated user and invalidates the current JWT session. This endpoint invalidates the JWT by adding it to a server-side blacklist; once logged out, the same token can no longer be used to access protected APIs.
+
+### Authentication
+
+Requires a valid Bearer JWT in the `Authorization` header.
 
 ### Request Headers
 
@@ -264,22 +268,21 @@ Logs out the authenticated user and invalidates their JWT token. Requires JWT au
 Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
+### Request Body
+
+None required.
+
 ### Successful Response (200)
 
-```json
-{
-  "message": "Logged out successfully",
-  "timestamp": "2026-05-27T16:00:00.000Z"
-}
+```text
+Logged out successfully
 ```
 
 ### Error Responses
 
 | Status | Reason |
 |--------|--------|
-| `401 Unauthorized` | Missing, invalid, or expired token |
-| `401 Unauthorized` | Token has already been invalidated (logged out) |
-| `405 Method Not Allowed` | Invalid HTTP method (only POST allowed) |
+| `401 Unauthorized` | Missing, malformed, invalid, or blacklisted token |
 
 ---
 
@@ -934,16 +937,18 @@ GET /api/projects
 |--------|----------|
 | GET | `/api/projects/categories` |
 
-Returns a list of available project categories. No authentication required.
+Returns the static list of supported project categories used by the Projects gallery/module.
 
-### Example Request
+### Authentication
+Not required. Public endpoint.
 
-```bash
-GET /api/projects/categories
-```
+### Request
+No request body.
 
-### Successful Response (200)
+### Success Response
+Status: `200 OK`
 
+#### Response example:
 ```json
 [
   "Mobile Development",
@@ -951,9 +956,16 @@ GET /api/projects/categories
   "Developer Tools",
   "Machine Learning",
   "DevOps",
-  "Design"
+  "Design",
+  "IoT",
+  "Blockchain"
 ]
 ```
+
+### Notes
+- This endpoint is public and does not require JWT authentication.
+- This PR only documents the project categories endpoint.
+- Other Projects APIs will be documented separately when implemented.
 
 ---
 
