@@ -9,7 +9,7 @@ import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
-import CountUp from "react-countup";
+import CountUpLib from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 
