@@ -339,7 +339,7 @@ const ModernTestimonialTrain = () => {
                   initial="hidden"
                   animate="visible"
                   whileHover="hover"
-                  className="relative flex-shrink-0 w-80 p-6 rounded-2xl bg-white/10 dark:bg-gray-800/20 backdrop-blur-xl border border-white/20 dark:border-gray-700/40 shadow-lg cursor-pointer"
+                  className="relative flex-shrink-0 w-80 p-6 rounded-2xl bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200 dark:border-gray-700/40 shadow-lg cursor-pointer"
                   onClick={() => setExpandedCard(expandedCard === index ? null : index)}
                   role="article"
                   aria-label={`Testimonial from ${testimonial.author}`}
@@ -385,7 +385,7 @@ const ModernTestimonialTrain = () => {
                           <img src={testimonial.companyLogo} alt={`${testimonial.company} logo`} className="h-4 opacity-70" loading="lazy" />
                         )}
                       </div>
-                      <div className="text-[10px] text-gray-400 dark:text-gray-600 mt-1">{testimonial.date}</div>
+                      <div className="text-[10px] text-gray-400 dark:text-gray-400 mt-1">{testimonial.date}</div>
                     </div>
                   </div>
 

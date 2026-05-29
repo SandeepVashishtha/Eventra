@@ -7,6 +7,7 @@ import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
 import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
+import { toast } from "react-toastify";
 import { getEventStatus } from "../../utils/eventUtils";
 // Note: eventsMockData.json is NOT statically imported here.
 // It is loaded dynamically (and only in development/fallback mode) so that
@@ -39,7 +40,7 @@ const EventDetailsPage = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard write failed silently
+      toast.error("Failed to copy link to clipboard");
     }
   };
 
@@ -51,7 +52,11 @@ const EventDetailsPage = () => {
           text: shareText,
           url: shareUrl,
         });
-      } catch {}
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          toast.error("Unable to share event");
+        }
+      }
     }
   };
 

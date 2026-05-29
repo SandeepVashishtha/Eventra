@@ -73,7 +73,6 @@ export const validate = {
 
   fullName: (val) => (val && val.trim() !== "") || "Full name is required",
 
-
   /**
    * Phone: length check first (min 10), then linear-time regex.
    * Avoids `{10,}` quantifier inside the pattern itself.

@@ -81,6 +81,13 @@ export class ApiError extends Error {
   }
 }
 
+export class RateLimitError extends ApiError {
+  constructor(message, { status = 429, data = null } = {}) {
+    super(message, { status, data });
+    this.name = "RateLimitError";
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Axios Instance
 // ---------------------------------------------------------------------------
@@ -157,6 +164,13 @@ const normalizeApiError = (error) => {
     );
   }
 
+  if (status === 429) {
+    return new RateLimitError(
+      error.response?.data?.message || "Too many requests, please try again later.",
+      { status, data: error.response?.data || null }
+    );
+  }
+
   return new ApiError(
     error.response?.data?.message ||
       error.message ||
@@ -188,16 +202,21 @@ API.interceptors.response.use(
     }
 
     const retryCount = config._retryCount || 0;
-    if (RETRYABLE_STATUS_CODES.includes(status) && retryCount < MAX_RETRIES) {
+    const isNonMutating = config.method?.toUpperCase() === 'GET';
+    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status) || (status === 429);
+    
+    // Retry non-mutating requests with exponential backoff
+    if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
       config._retryCount = retryCount + 1;
+      const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
       if (isDev) {
         console.debug(
-          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${RETRY_DELAY_MS}ms (attempt ${config._retryCount})...`
+          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
         );
       }
 
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      await new Promise((resolve) => setTimeout(resolve, delay));
       return API(config);
     }
     throw normalizeApiError(error);

@@ -9,9 +9,9 @@
  * database URLs, secret keys) into the client-side JavaScript bundle.
  *
  * HOW IT WORKS:
- * 1. Scans all REACT_APP_* vars (the only ones CRA bundles into JS).
+ * 1. Scans all VITE_* vars (the only ones Vite bundles into JS).
  * 2. Detects variable names or values matching common secret patterns.
- * 3. If any leaks are found, exits with code 1 — stopping the webpack build.
+ * 3. If any leaks are found, exits with code 1 — stopping the build.
  *
  * USAGE: Called automatically via the "prebuild" npm script hook.
  */
@@ -19,7 +19,7 @@
 'use strict';
 
 // ── Sensitive key-name patterns ───────────────────────────────────────────────
-// If a REACT_APP_ variable's NAME matches any of these, it is likely a secret.
+// If a VITE_ variable's NAME matches any of these, it is likely a secret.
 const SENSITIVE_KEY_PATTERNS = [
   /private[_\-]?key/i,
   /secret[_\-]?key/i,
@@ -41,9 +41,9 @@ const SENSITIVE_KEY_PATTERNS = [
   /ssh[_\-]?key/i,
   /encryption[_\-]?key/i,
   /signing[_\-]?key/i,
-  // Generic token and secret patterns — catches REACT_APP_GITHUB_TOKEN,
-  // REACT_APP_*_TOKEN, REACT_APP_*_SECRET, REACT_APP_*_PASSWORD, etc.
-  // Any bearer/API/personal access token must never be in a REACT_APP_ var.
+  // Generic token and secret patterns — catches VITE_GITHUB_TOKEN,
+  // VITE_*_TOKEN, VITE_*_SECRET, VITE_*_PASSWORD, etc.
+  // Any bearer/API/personal access token must never be in a VITE_ var.
   /github[_\-]?token/i,
   /access[_\-]?token/i,
   /bearer[_\-]?token/i,
@@ -59,7 +59,7 @@ const SENSITIVE_KEY_PATTERNS = [
 ];
 
 // ── Sensitive value patterns ──────────────────────────────────────────────────
-// If a REACT_APP_ variable's VALUE matches these, it is almost certainly a secret.
+// If a VITE_ variable's VALUE matches these, it is almost certainly a secret.
 const SENSITIVE_VALUE_PATTERNS = [
   { pattern: /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, label: 'PEM private key' },
   { pattern: /AIza[0-9A-Za-z\-_]{35}/, label: 'Google API key' },
@@ -77,38 +77,38 @@ const SENSITIVE_VALUE_PATTERNS = [
 // Variables that are expected and safe even if they match sensitive key patterns.
 // For example, Google Client ID is public — it is safe to expose in the browser.
 const ALLOWED_EXCEPTIONS = new Set([
-  'REACT_APP_GOOGLE_CLIENT_ID',
-  'REACT_APP_EMAILJS_PUBLIC_KEY',
+  'VITE_GOOGLE_CLIENT_ID',
+  'VITE_EMAILJS_PUBLIC_KEY',
 ]);
 
-// Required REACT_APP_ variables that MUST be present for the app to function.
+// Required VITE_ variables that MUST be present for the app to function.
 const REQUIRED_VARS = [
-  'REACT_APP_API_URL',
+  'VITE_API_URL',
 ];
 
 // Variables that require proper format validation
 const FORMAT_VALIDATED_VARS = {
-  'REACT_APP_API_URL': {
+  'VITE_API_URL': {
     pattern: /^https?:\/\/.+/,
-    message: 'REACT_APP_API_URL must be a valid HTTP/HTTPS URL (e.g., https://api.example.com)',
+    message: 'VITE_API_URL must be a valid HTTP/HTTPS URL (e.g., https://api.example.com)',
   },
-  'REACT_APP_GOOGLE_CLIENT_ID': {
+  'VITE_GOOGLE_CLIENT_ID': {
     pattern: /^[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$/,
-    message: 'REACT_APP_GOOGLE_CLIENT_ID must be a valid Google OAuth client ID format',
+    message: 'VITE_GOOGLE_CLIENT_ID must be a valid Google OAuth client ID format',
   },
-  'REACT_APP_SSE_URL': {
+  'VITE_SSE_URL': {
     pattern: /^https?:\/\/.+/,
-    message: 'REACT_APP_SSE_URL must be a valid HTTP/HTTPS URL',
+    message: 'VITE_SSE_URL must be a valid HTTP/HTTPS URL',
   },
 };
 
-// Optional REACT_APP_ variables that may enable extra features.
+// Optional VITE_ variables that may enable extra features.
 const OPTIONAL_VARS = [
-  'REACT_APP_GOOGLE_CLIENT_ID',
-  'REACT_APP_EMAILJS_SERVICE_ID',
-  'REACT_APP_EMAILJS_TEMPLATE_ID',
-  'REACT_APP_EMAILJS_PUBLIC_KEY',
-  'REACT_APP_SSE_URL',
+  'VITE_GOOGLE_CLIENT_ID',
+  'VITE_EMAILJS_SERVICE_ID',
+  'VITE_EMAILJS_TEMPLATE_ID',
+  'VITE_EMAILJS_PUBLIC_KEY',
+  'VITE_SSE_URL',
 ];
 
 // ── Validation logic ──────────────────────────────────────────────────────────
@@ -156,11 +156,11 @@ for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   }
 }
 
-// Scan all REACT_APP_ variables for credential leaks
-console.log('\n🔐 Scanning REACT_APP_* variables for credential leaks...');
-const reactAppVars = Object.keys(process.env).filter(k => k.startsWith('REACT_APP_'));
+// Scan all VITE_ variables for credential leaks
+console.log('\n🔐 Scanning VITE_* variables for credential leaks...');
+const viteVars = Object.keys(process.env).filter(k => k.startsWith('VITE_'));
 
-for (const key of reactAppVars) {
+for (const key of viteVars) {
   if (ALLOWED_EXCEPTIONS.has(key)) continue;
 
   const value = process.env[key] || '';
@@ -168,7 +168,7 @@ for (const key of reactAppVars) {
   // Check variable name against sensitive patterns
   for (const pattern of SENSITIVE_KEY_PATTERNS) {
     if (pattern.test(key)) {
-      const msg = `[SECURITY LEAK] ${key}: variable name matches sensitive pattern "${pattern}". Private keys MUST NOT be prefixed with REACT_APP_ — they will be bundled into the JS output visible to all users.`;
+      const msg = `[SECURITY LEAK] ${key}: variable name matches sensitive pattern "${pattern}". Private keys MUST NOT be prefixed with VITE_ — they will be bundled into the JS output visible to all users.`;
       errors.push(msg);
       hasErrors = true;
       break;
@@ -216,13 +216,13 @@ if (criticalErrors.length > 0) {
         errors.filter(e => e.includes('[FORMAT ERROR]')).map(e => `    • ${e}`).join('\n') + '\n' +
         '  ─────────────────────────────────────────────────────────────────────\n'
       : '') +
-    '  Private credentials must NEVER be prefixed with REACT_APP_.\n'
+    '  Private credentials must NEVER be prefixed with VITE_.\n'
   );
   process.exit(1);
 } else {
   console.log(
     `\n✅ [validate-env] Environment check passed — no credential leaks detected.\n` +
-    `  Scanned ${reactAppVars.length} REACT_APP_* variable(s).\n`
+    `  Scanned ${viteVars.length} VITE_* variable(s).\n`
   );
   process.exit(0);
 }

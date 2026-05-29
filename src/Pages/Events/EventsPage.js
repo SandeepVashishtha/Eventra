@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import EventHero from "./EventHero";
-import FeedbackButton from "../../components/FeedbackButton";
+import EventCard from "./EventCard";
+import { getEventStatus } from "../../utils/eventUtils";
+import {
+  Grid,
+  List,
+  Loader2,
+} from "lucide-react";
 import EventCTA from "./EventCTA";
 import EventCardSection from "./EventCardSection";
 import EventFiltersToolbar from "./EventFiltersToolbar";
@@ -120,6 +126,15 @@ const EventsPage = () => {
     listing.setAdvancedFilters({});
   }, [listing]);
 
+  const clearSearchAndFilters = () => {
+    setLocalSearchInput("");
+    listing.setSearchQuery("");
+    listing.setFilterType("all");
+    listing.setSortType("Newest");
+    listing.setViewMode("grid");
+    listing.setAdvancedFilters({});
+  };
+
   const hasActiveFilters =
     listing.filterType !== "all" ||
     listing.sortType !== "Newest" ||
@@ -223,7 +238,6 @@ const EventsPage = () => {
       </main>
 
       <EventCTA />
-      <FeedbackButton />
     </div>
   );
 };
