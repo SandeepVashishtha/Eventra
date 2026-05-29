@@ -7,7 +7,6 @@ import SectionErrorBoundary from "../common/SectionErrorBoundary";
 // ─── Lazy-loaded page components ─────────────────────────────────────────────
 // All components are loaded on-demand to keep the initial bundle small.
 
-const OAuthCallback = lazy(() => import("../auth/OAuthCallback"));
 const MockApiResponse = lazy(() => import("../MockApiResponse"));
 
 const HomePage = lazy(() => import("../../Pages/Home/HomePage"));
@@ -34,6 +33,7 @@ const ApiDocs = lazy(() => import("../../Pages/ApiDocs"));
 const HelpCenter = lazy(() => import("../../Pages/HelpCenter"));
 const ContactUs = lazy(() => import("../../Pages/Contact/ContactUs"));
 const FeedbackPage = lazy(() => import("../../Pages/Feedback/FeedbackPage"));
+const HealthCheckPage = lazy(() => import("../../Pages/HealthCheckPage"));
 
 // ─── Auth-required page components ───────────────────────────────────────────
 // These are imported separately to make the intent explicit: they MUST be
@@ -45,10 +45,12 @@ const FloorPlanDesignerPage = lazy(() => import("../../Pages/Events/FloorPlanDes
 const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
 
 export const getPublicRoutes = () => [
+  // Health check endpoint — must be first and require no auth so uptime
+  // monitors can poll it without a session cookie.
+  <Route key="/health" path="/health" element={<HealthCheckPage />} />,
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
-  <Route key="/oauth/callback" path="/oauth/callback" element={<OAuthCallback />} />,
   <Route
     key="/register"
     path="/events/:eventId/register"

@@ -7,8 +7,99 @@
  * should be present.
  */
 
+/** sessionStorage key names for persisted rate-limit state. */
+export const STORAGE_KEY_ATTEMPTS = 'eventra:login:attempts';
+export const STORAGE_KEY_LOCKOUT_UNTIL = 'eventra:login:lockoutUntil';
+
 /** Maximum number of failed login attempts before a lockout is imposed. */
 export const MAX_LOGIN_ATTEMPTS = 5;
+
+/**
+ * Reads persisted rate-limit state from sessionStorage.
+ * Returns zeroed defaults if the data is missing, corrupt, or from a future
+ * lockout that has already expired.
+ *
+ * @returns {{ attempts: number, lockoutUntil: number }}
+ */
+export function readPersistedRateLimit() {
+  try {
+    const rawAttempts = sessionStorage.getItem(STORAGE_KEY_ATTEMPTS);
+    const rawLockout = sessionStorage.getItem(STORAGE_KEY_LOCKOUT_UNTIL);
+
+    const attempts = rawAttempts !== null ? parseInt(rawAttempts, 10) : 0;
+    const lockoutUntil = rawLockout !== null ? parseInt(rawLockout, 10) : 0;
+
+    if (!Number.isFinite(attempts) || attempts < 0) return { attempts: 0, lockoutUntil: 0 };
+
+    // Discard expired lockouts — don't start with a stale "locked" state
+    const validLockout = Number.isFinite(lockoutUntil) && lockoutUntil > Date.now()
+      ? lockoutUntil
+      : 0;
+
+    return { attempts, lockoutUntil: validLockout };
+  } catch {
+    return { attempts: 0, lockoutUntil: 0 };
+  }
+}
+
+/**
+ * Writes current rate-limit state to sessionStorage.
+ * sessionStorage is tab-scoped and cleared when the tab is closed, which
+ * provides the right scope: resist refresh-bypass within a tab session while
+ * not permanently blocking a legitimate user across browser restarts.
+ *
+ * @param {number} attempts
+ * @param {number} lockoutUntil - Unix timestamp (ms), 0 if not locked.
+ */
+export function persistRateLimit(attempts, lockoutUntil) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY_ATTEMPTS, String(attempts));
+    sessionStorage.setItem(STORAGE_KEY_LOCKOUT_UNTIL, String(lockoutUntil));
+  } catch {
+    // sessionStorage may be full or blocked in privacy mode — fail silently.
+    // The in-memory state is still active; this is a best-effort durability layer.
+  }
+}
+
+/**
+ * Removes all persisted rate-limit state from sessionStorage.
+ * Call this on successful login or intentional reset.
+ */
+export function clearPersistedRateLimit() {
+  try {
+    sessionStorage.removeItem(STORAGE_KEY_ATTEMPTS);
+    sessionStorage.removeItem(STORAGE_KEY_LOCKOUT_UNTIL);
+  } catch {
+    // Ignore — clearing is best-effort
+  }
+}
+
+/**
+ * Parses the Retry-After HTTP response header value into milliseconds.
+ * Handles both the integer-seconds form ("30") and the HTTP-date form.
+ *
+ * @param {string|null|undefined} headerValue - Raw Retry-After header value.
+ * @returns {number} Delay in milliseconds, or 0 if unparseable.
+ */
+export function parseRetryAfterMs(headerValue) {
+  if (!headerValue) return 0;
+
+  const trimmed = String(headerValue).trim();
+
+  // Integer seconds form: "30"
+  const asSeconds = parseInt(trimmed, 10);
+  if (!isNaN(asSeconds) && String(asSeconds) === trimmed) {
+    return Math.max(0, asSeconds) * 1000;
+  }
+
+  // HTTP-date form: "Wed, 21 Oct 2025 07:28:00 GMT"
+  const asDate = Date.parse(trimmed);
+  if (!isNaN(asDate)) {
+    return Math.max(0, asDate - Date.now());
+  }
+
+  return 0;
+}
 
 /**
  * Minimum number of seconds a user must wait between password-reset

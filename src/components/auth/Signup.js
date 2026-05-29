@@ -3,8 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 import { useAuth } from "../../context/AuthContext";
-import GoogleLoginButton from "./GoogleLoginButton";
 import {
   Sparkles, Check, ArrowRight, EyeOff, Eye, User, Mail, Lock, AlertCircle, X
 } from "lucide-react";
@@ -218,16 +218,12 @@ const Signup = () => {
       setSubmitStatus('error');
       setErrors(prev => ({ 
         ...prev, 
-        submit: err.message.includes('email') 
-          ? "This email is already registered. Try logging in instead." 
-          : err.message 
+        submit: getPublicErrorMessage(err, AUTH_ERRORS.registrationFailed) 
       }));
     } finally {
       setLoading(false);
     }
   };
-
-  // Social login is handled by `GoogleLoginButton`.
 
   // Animation variants
   const containerVariants = {
@@ -344,11 +340,6 @@ const Signup = () => {
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
                   Start your journey with Eventra today
                 </p>
-              </div>
-
-              {/* Social Login Buttons */}
-              <div className="mb-6 flex justify-center w-full">
-                <GoogleLoginButton />
               </div>
 
               <div className="relative mb-6">

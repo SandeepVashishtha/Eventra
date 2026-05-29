@@ -7,10 +7,6 @@ const DesktopNavbar = ({
   isAuthenticated,
   user,
   logout,
-  isDarkMode,
-  toggleTheme,
-  cursorEnabled,
-  toggleCursor,
 }) => {
   return (
     <div className="hidden xl:flex items-center justify-between flex-1 min-w-0 gap-2">

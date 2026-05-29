@@ -1,3 +1,4 @@
+import { getPublicErrorMessage, FORM_ERRORS } from "../../utils/errorMessages";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { FiGithub, FiExternalLink, FiPlus, FiX } from "react-icons/fi";
@@ -105,7 +106,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
       }, 2000);
     } catch (err) {
       const backendMessage = err.response?.data?.message;
-      setError(backendMessage || err.message || "An error occurred while submitting the project");
+      setError(getPublicErrorMessage(err, FORM_ERRORS.submitFailed));
     } finally {
       setIsSubmitting(false);
     }
