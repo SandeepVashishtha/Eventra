@@ -943,6 +943,45 @@ Returns a JSON array of project objects. Returns `[]` if no projects exist.
 
 ---
 
+## Get Project By ID
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/projects/{id}` |
+
+Returns the details of a specific project by its ID.
+
+### Authentication
+Not required. Public endpoint.
+
+### Success response example:
+
+```json
+{
+  "id": 1,
+  "title": "Manual Test Project",
+  "description": "Project detail API manual verification",
+  "category": "Web Development",
+  "thumbnailUrl": "https://example.com/project.png",
+  "githubUrl": "https://github.com/example/project",
+  "upvotes": 0
+}
+```
+
+### Missing project response example:
+
+```json
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "Project not found with id: 999999",
+  "path": "/api/projects/999999",
+  "timestamp": "2026-05-30T02:01:54.6254625"
+}
+```
+
+---
+
 ## Get Project Categories
 
 | Method | Endpoint |
