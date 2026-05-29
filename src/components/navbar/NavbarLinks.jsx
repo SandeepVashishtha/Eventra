@@ -1,39 +1,24 @@
 import React, {
-  memo,
   lazy,
   Suspense,
   useRef,
   useState,
   useEffect,
-  useCallback,
-  useMemo,
 } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+
+import { NavLink, useLocation } from "react-router-dom";
+
 import {
   Moon,
   Sun,
   Search,
-  Bell,
-  User,
   ChevronDown,
   Plus,
-  Settings,
-  LogOut,
   HelpCircle,
-  Globe,
-  WifiOff,
-  Download,
   X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../../context/AuthContext";
+
 import { useTheme } from "../../context/ThemeContext";
-import DesktopNavbar from "./DesktopNavbar";
-import MobileNavbar from "./MobileNavbar";
-import CursorToggle from "./CursorToggle";
-import useBodyScrollLock from "./hooks/useBodyScrollLock";
-import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import { useScrollProgress } from "../../hooks/useScrollProgress";
 import { NAV_ITEMS } from "./constants/navItems";
 
 const KeyboardShortcutsModal = lazy(() =>
@@ -44,9 +29,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
   const navRef = useRef(null);
 
-const [openGroup, setOpenGroup] = useState(null);
-const [showShortcuts, setShowShortcuts] = useState(false);
-const { isDarkMode } = useTheme();
+  const [openGroup, setOpenGroup] = useState(null);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     setOpenGroup(null);
@@ -234,7 +220,6 @@ const { isDarkMode } = useTheme();
         );
       })}
 
-      {/* Keyboard Shortcuts Modal */}
       <Suspense fallback={null}>
         <KeyboardShortcutsModal
           isOpen={showShortcuts}
