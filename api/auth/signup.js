@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 
@@ -218,6 +219,7 @@ export default async function handler(req, res) {
       email: newUser.email,
       roles: newUser.roles,
       permissions: newUser.permissions,
+      jti: crypto.randomUUID(),
     };
 
     const token = jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });

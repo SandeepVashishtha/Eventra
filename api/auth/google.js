@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { users } from "./signup.js";
@@ -337,6 +338,7 @@ export default async function handler(req, res) {
       roles: roles,
       permissions: permissions,
       provider: user.provider || "google",
+      jti: crypto.randomUUID(),
     };
 
     const token = jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });

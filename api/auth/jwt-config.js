@@ -1,20 +1,20 @@
 // Centralized JWT configuration shared by all auth endpoints.
-// Production must fail closed if the signing secret is missing; otherwise a
-// predictable fallback would let attackers forge valid Eventra tokens.
-const DEVELOPMENT_JWT_SECRET = "eventra-local-development-jwt-secret";
+// JWT_SECRET must be configured in every environment. Falling back to a
+// predictable signing key would allow token forgery.
+const requireJwtSecret = () => {
+  const secret = process.env.JWT_SECRET?.trim();
 
-export const getJwtSecret = () => {
-  const secret = process.env.JWT_SECRET;
-
-  if (secret && secret.trim()) {
+  if (secret) {
     return secret;
   }
 
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("JWT_SECRET must be configured in production");
-  }
-
-  return DEVELOPMENT_JWT_SECRET;
+  throw new Error(
+    "Missing required environment variable: JWT_SECRET. Eventra cannot start without a JWT signing secret."
+  );
 };
+
+export const getJwtSecret = () => requireJwtSecret();
+
+export const JWT_SECRET = requireJwtSecret();
 
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";

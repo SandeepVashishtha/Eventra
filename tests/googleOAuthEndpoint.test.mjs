@@ -1,3 +1,4 @@
+import "./helpers/authTestEnv.mjs";
 import assert from "node:assert/strict";
 
 // ---------------------------------------------------------------------------
@@ -82,10 +83,10 @@ const createRequest = (method, body) => ({
 // Simulated Google OAuth Handler (mirrors api/auth/google.js logic)
 // ---------------------------------------------------------------------------
 
-import { users } from "../api/auth/signup.js";
+const { users } = await import("../api/auth/signup.js");
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "test-jwt-secret";
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 
 const DEFAULT_ROLES = ["USER"];
