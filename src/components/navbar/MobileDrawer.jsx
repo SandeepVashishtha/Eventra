@@ -183,60 +183,7 @@ const MobileDrawer = ({
             </div>
           )}
         </div>
-            <Link
-              to="/dashboard"
-              onClick={closeMenu}
-              className="text-sm font-medium py-2"
-            >
-              Dashboard
-            </Link>
-            {/* Standardized "View Profile" route to route consistently to /dashboard/profile across mobile and desktop viewports */}
-            <Link
-              to="/dashboard/profile"
-              onClick={closeMenu}
-              className="text-sm font-medium py-2"
-            >
-              View Profile
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                logout();
-                closeMenu();
-              }}
-              className="flex items-center gap-3 py-3 px-1 w-full text-left text-base text-gray-600 dark:text-gray-300 hover:text-red-500 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4 mt-4">
-            <Link
-              to="/login"
-              onClick={closeMenu}
-              className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
-                isActive("/login")
-                  ? "text-black dark:text-white border-black dark:border-white font-semibold"
-                  : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
-              }`}
-            >
-              <LogIn className="w-5 h-5" />
-              Login
-            </Link>
-            <Link
-              to="/signup"
-              onClick={closeMenu}
-              className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
-                isActive("/signup")
-                  ? "text-black dark:text-white border-black dark:border-white font-semibold"
-                  : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
-              }`}
-            >
-              <UserPlus className="w-5 h-5" />
-              Sign Up
-            </Link>
-          </div>
-        )}
+
       </div>
     </div>
   );

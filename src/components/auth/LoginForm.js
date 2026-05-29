@@ -69,8 +69,6 @@ const LoginForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -89,11 +87,7 @@ const LoginForm = () => {
       setError({ general: message });
       toast.error(message);
       console.error("Login error:", err);
-      const errorMsg = err.message || "Invalid email or password";
-      setError({ general: errorMsg });
-      toast.error(errorMsg);
     }
-    // Note: loading state is now handled by authRequest.loading from context
   };
 
   return (
@@ -151,35 +145,6 @@ const LoginForm = () => {
             className="bg-[#0f172a]/60 text-white placeholder:text-slate-600 hover:border-slate-600 hover:bg-[#0f172a]/80"
           />
         </FormFieldWrapper>
-        {/* Username/Email Field */}
-        <div className="space-y-1.5">
-          <label htmlFor="usernameOrEmail" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-            Email or username <span className='ml-1 text-red-400'>*</span>
-          </label>
-          <div className="relative group">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-400 transition-all duration-300 pointer-events-none" />
-            <input
-              id="usernameOrEmail"
-              name="usernameOrEmail"
-              type="text"
-              value={formData.usernameOrEmail}
-              onChange={handleChange}
-              required
-              disabled={loading}
-              placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
-              aria-invalid={!!error.usernameOrEmail}
-              aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
-              className={`w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border ${
-                error.usernameOrEmail ? "border-red-500" : "border-slate-700/50"
-              } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
-            />
-          </div>
-          {error.usernameOrEmail && (
-            <motion.p id="usernameOrEmail-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
-              <span>⚠</span> {error.usernameOrEmail}
-            </motion.p>
-          )}
-        </div>
 
         {/* Password Field */}
         <div className="space-y-1.5">
@@ -209,11 +174,6 @@ const LoginForm = () => {
               </button>
             }
           >
-          <label htmlFor="password" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-            Password <span className='ml-1 text-red-400'>*</span>
-          </label>
-          <div className="relative group">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-400 transition-all duration-300 pointer-events-none" />
             <input
               id="password"
               name="password"
@@ -223,33 +183,9 @@ const LoginForm = () => {
               required
               disabled={isLoading}
               placeholder="Enter your password"
-              className="bg-[#0f172a]/60 text-white placeholder:text-slate-600 hover:border-slate-600 hover:bg-[#0f172a]/80"
+              className="w-full bg-[#0f172a]/60 text-white placeholder:text-slate-600 hover:border-slate-600 hover:bg-[#0f172a]/80 rounded-lg py-2.5 pl-9 pr-9 border border-slate-700/50"
             />
           </FormFieldWrapper>
-
-              disabled={loading}
-              placeholder="Create a secure password"
-              aria-invalid={!!error.password}
-              aria-describedby={error.password ? "password-error" : undefined}
-              className={`w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border ${
-                error.password ? "border-red-500" : "border-slate-700/50"
-              } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400 transition-all duration-200"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              tabIndex={-1}
-            >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            </button>
-          </div>
-          {error.password && (
-            <motion.p id="password-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
-              <span>⚠</span> {error.password}
-            </motion.p>
-          )}
           <div className="flex justify-end pt-1">
             <Link
               to="/password-reset"
@@ -291,15 +227,6 @@ const LoginForm = () => {
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#0f172a] border-t-transparent" />
               Signing In...
             </span>
-          disabled={loading}
-          className="relative w-full overflow-hidden flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400 hover:from-blue-300 hover:to-indigo-300 shadow-[0_0_20px_rgba(59,130,246,0.4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0f172a] focus:ring-blue-500 transition-all duration-300 group"
-        >
-          <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-          {loading ? (
-            <div className="flex items-center gap-2 relative z-10">
-              <div className="w-4 h-4 border-2 border-[#0f172a] border-t-transparent rounded-full animate-spin"></div>
-              <span>Signing In...</span>
-            </div>
           ) : (
             <span className="relative z-10 flex items-center gap-2">
               <LogIn className="h-4 w-4" />
@@ -313,11 +240,6 @@ const LoginForm = () => {
         <div className="h-px flex-1 bg-gradient-to-r from-transparent to-slate-700" />
         <span className="text-xs uppercase tracking-widest text-slate-600">or</span>
         <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-700" />
-      {/* Divider */}
-      <div className="flex items-center gap-3 my-5">
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent to-slate-700"></div>
-        <span className="text-xs text-slate-600 uppercase tracking-widest">or</span>
-        <div className="flex-1 h-px bg-gradient-to-l from-transparent to-slate-700"></div>
       </div>
 
       {/* Signup Link */}
@@ -332,8 +254,6 @@ const LoginForm = () => {
       </p>
 
       <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-600">
-      {/* Terms & Privacy */}
-      <p className="text-[11px] text-center text-slate-600 mt-4 leading-relaxed">
         By signing in, you agree to our{" "}
         <Link
           to="/terms"

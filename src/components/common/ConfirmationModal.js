@@ -51,10 +51,6 @@ const ConfirmationModal = ({
         return;
       }
 
-      if (
-        event.shiftKey &&
-        document.activeElement === firstElement
-      ) {
       if (event.shiftKey && document.activeElement === firstElement) {
         event.preventDefault();
         lastElement?.focus();

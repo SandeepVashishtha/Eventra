@@ -1,10 +1,8 @@
-import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { useEffect, useId, useState, memo } from "react";
+import { memo, useCallback, useId, useMemo, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Bookmark,
@@ -26,13 +24,12 @@ import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
-import { useMyEvents } from "../../context/MyEventsContext";
+
 import ReminderControls from "../../components/reminders/ReminderControls";
 import {
   addBookmarkedEvent,
   isEventBookmarked,
   removeBookmarkedEvent,
-  subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
 
 const getCapacityStyles = (ratio, isFull) => {
@@ -58,10 +55,9 @@ const getCapacityStyles = (ratio, isFull) => {
 
 const EventCard = ({ event }) => {
   const navigate = useNavigate();
-  const [savedEvents, setSavedEvents] = useState([]);
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
-  const { isRegistered } = useMyEvents();
+
   const [randomIcon] = useState(() => {
     const icons = [
       <Star size={16} className="text-yellow-500" aria-hidden="true" />,
@@ -80,7 +76,6 @@ const EventCard = ({ event }) => {
     [event.date, event.time],
   );
   const isPastEvent = computedStatus === "past" || computedStatus === "ended" || eventDateTime < new Date();
-  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
 
   const eventSharingData = useMemo(
     () =>
@@ -93,15 +88,7 @@ const EventCard = ({ event }) => {
       }),
     [event],
   );
-  // Check if this event conflicts with registered events
-  const conflictCheck = checkRegistrationConflict(event, myEvents);
-  const hasConflict = conflictCheck.hasConflict;
-  const isUserRegistered = isRegistered(event.id);
 
-  useEffect(() => {
-    const saved = getBookmarkedEvents();
-    setSavedEvents(saved);
-  }, []);
 
   const handleCopyLink = useCallback((e) => {
     e.preventDefault();
@@ -122,8 +109,7 @@ const EventCard = ({ event }) => {
       });
   }, [event.id]);
 
-  const computedStatus = useMemo(() => getEventStatus(event), [event]);
-  const canSetReminder = isBookmarked || isRegistered(event.id);
+
   const formattedDate = useMemo(
     () =>
       new Date(event.date).toLocaleDateString("en-US", {
@@ -155,33 +141,7 @@ const EventCard = ({ event }) => {
       ...styles,
     };
   }, [event.attendees, event.maxAttendees]);
-  const canSetReminder = isBookmarked || isRegistered(event.id);
 
-  useEffect(() => {
-    setIsBookmarked(isEventBookmarked(event.id));
-
-    return subscribeToBookmarkChanges(() => {
-      setIsBookmarked(isEventBookmarked(event.id));
-    });
-  }, [event.id]);
-
-  const handleCopyLink = useCallback((e) => {
-    e.preventDefault();
-    const shareUrl = `${window.location.origin}/events/${event.id}`;
-
-    navigator.clipboard
-      .writeText(shareUrl)
-      .then(() => {
-        toast.success("Event link copied to clipboard!", {
-          autoClose: 2000,
-        });
-      })
-      .catch(() => {
-        toast.error("Could not copy link. Please try again.", {
-          autoClose: 2500,
-        });
-      });
-  }, [event.id]);
 
   const handleBookmarkToggle = useCallback((e) => {
     e.preventDefault();
@@ -217,7 +177,6 @@ const EventCard = ({ event }) => {
       aria-label={`Event: ${event.title}`}
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${event.id}`); } }}
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 hover:z-50 hover:shadow-2xl hover:-translate-y-2 overflow-hidden border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700"
     >
       <div className="absolute right-3 top-[5.5rem] z-[200] flex space-x-1.5">
         <button
@@ -315,17 +274,7 @@ const EventCard = ({ event }) => {
           width={640}
           height={360}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-      {/* Image */}
-      <div className="relative h-40 overflow-hidden bg-gray-100 dark:bg-gray-800">
-        <LazyImage
-  src={event.image}
-  alt={event.imageAlt || `${event.title} event thumbnail`}
-  width={800}
-  height={160}
-  loading={index < 2 ? 'eager' : 'lazy'}  // First 2 cards eager load
-  decoding="async"
-  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-/>
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
       </div>
 
@@ -354,6 +303,7 @@ const EventCard = ({ event }) => {
         <div className="flex min-w-0 items-center gap-2">
           <Calendar size={14} className="shrink-0 text-indigo-500" aria-hidden="true" />
           <span className="truncate">{formattedDate}</span>
+        </div>
         {/* Event Date */}
         <div className="flex items-start gap-2">
           <Calendar size={14} className="text-indigo-500 flex-shrink-0 mt-0.5" />
@@ -371,12 +321,9 @@ const EventCard = ({ event }) => {
       </div>
 
       <div className="border-t border-gray-100 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
-        <ReminderControls event={event} canSetReminder={canSetReminder} compact />
+        <ReminderControls event={event} compact />
       </div>
 
-      {capacityInfo && (
-        <div className="border-t border-gray-100 bg-gray-50/50 px-5 py-3 dark:border-gray-800 dark:bg-gray-800/30">
-          <div className="mb-1.5 flex items-center justify-between">
       {capacityInfo && (
         <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
           <div className="flex items-center justify-between mb-1.5">
@@ -384,7 +331,6 @@ const EventCard = ({ event }) => {
               Seats
             </span>
             {capacityInfo.isFull ? (
-              <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-300">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
                 Full
               </span>
@@ -395,7 +341,6 @@ const EventCard = ({ event }) => {
             )}
           </div>
           <div
-            className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
             className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
             role="progressbar"
             aria-valuenow={capacityInfo.percent}
@@ -408,7 +353,6 @@ const EventCard = ({ event }) => {
               style={{ width: `${capacityInfo.percent}%` }}
             />
           </div>
-          <div className="mt-1 text-[11px] text-gray-500 tabular-nums dark:text-gray-500">
           <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
             {capacityInfo.registered} / {capacityInfo.capacity} registered
           </div>
@@ -429,11 +373,6 @@ const EventCard = ({ event }) => {
           </Link>
         )}
 
-        <Link
-          to={`/events/${event.id}`}
-          className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-2xl border border-indigo-200 bg-white/80 px-4 py-3 text-sm font-semibold text-indigo-700 shadow-md transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-800 hover:shadow-lg dark:border-indigo-700 dark:bg-gray-800 dark:text-indigo-300 dark:hover:bg-indigo-900/30 dark:hover:text-white sm:hover:scale-[1.03]"
-        >
-          View Details
         <Link to={`/events/${event.id}`} aria-label={`View details for ${event.title}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-white/80 dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 px-4 py-3 text-sm font-semibold shadow-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-800 dark:hover:text-white hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
           <span>
             View Details

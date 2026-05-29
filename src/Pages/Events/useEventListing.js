@@ -40,13 +40,6 @@ const eventMatchesSearch = (event, query) => {
   return searchableText.includes(safeQuery);
 };
 
-const useEventListing = () => {
-  const fallbackEvents = useMemo(() => mockEvents.map(normalizeEvent), []);
-  const [events, setEvents] = useState(fallbackEvents);
-import useDebounce from "../../hooks/useDebounce";
-import { getPriceStats, getDateRange } from "../../utils/advancedFilterUtils";
-import { DEFAULT_EVENTS_PER_PAGE, clampPage } from "./eventPaginationUtils";
-
 const SORT_MAPPING = {
   Newest: "date,desc",
   Oldest: "date,asc",
@@ -112,14 +105,8 @@ const useEventListing = () => {
     setLoadError("");
 
     try {
-      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
-      const responseData = response?.data;
-      const apiEvents = Array.isArray(responseData?.content)
       const query = buildQueryParams();
-      const response = await apiUtils.get(
-        `${API_ENDPOINTS.EVENTS.LIST}?${query}`,
-      );
-
+      const response = await apiUtils.get(`${API_ENDPOINTS.EVENTS.LIST}?${query}`);
       const responseData = response?.data || {};
       const apiEvents = Array.isArray(responseData.content)
         ? responseData.content
@@ -133,37 +120,10 @@ const useEventListing = () => {
       setEvents(fallbackEvents);
 
       if (process.env.NODE_ENV !== "development") {
-        setLoadError("Failed to load events. Please try again later.");
-      if (process.env.NODE_ENV === "development") {
-        const normalizedMockEvents = mockEvents.map((event) => ({
-          ...event,
-          status: getEventStatus(event),
-        }));
-
-        setEvents(normalizedMockEvents);
-        setPagination({
-          totalPages: 1,
-          totalElements: normalizedMockEvents.length,
-          first: true,
-          last: true,
-        });
-      } else {
-        setEvents([]);
-        setPagination({
-          totalPages: 1,
-          totalElements: 0,
-          first: true,
-          last: true,
-        });
-
         if (error?.response?.status === 403) {
-          setLoadError(
-            "Access to events is currently restricted. Please try again later.",
-          );
+          setLoadError("Access to events is currently restricted. Please try again later.");
         } else {
-          setLoadError(
-            "Failed to load events. Please try again later.",
-          );
+          setLoadError("Failed to load events. Please try again later.");
         }
       }
     } finally {
@@ -266,51 +226,7 @@ const useEventListing = () => {
       viewMode,
     ],
   );
-  const setSafePage = useCallback((page) => {
-    if (page < 1) {
-      setCurrentPage(1);
-      return;
-    }
-    if (page > pagination.totalPages) {
-      setCurrentPage(pagination.totalPages);
-      return;
-    }
-    setCurrentPage(page);
-  }, [pagination.totalPages]);
 
-  const filteredEvents = useMemo(() => events, [events]);
-  const paginatedEvents = useMemo(() => events, [events]);
-
-  const priceStats = useMemo(() => getPriceStats(events), [events]);
-  const dateRangeStats = useMemo(() => getDateRange(events), [events]);
-
-  return {
-    currentPage,
-    eventsPerPage,
-    fetchEvents,
-    filteredEvents,
-    filterType,
-    loadError,
-    isLoading,
-    paginatedEvents,
-    searchQuery,
-    sortType,
-    totalPages: pagination.totalPages,
-    totalElements: pagination.totalElements,
-    viewMode,
-    advancedFilters,
-    isAdvancedFiltersOpen,
-    priceStats,
-    dateRangeStats,
-    setEventsPerPage,
-    setFilterType,
-    setSafePage,
-    setSearchQuery,
-    setSortType,
-    setViewMode,
-    setAdvancedFilters,
-    setIsAdvancedFiltersOpen,
-  };
 };
 
 export default useEventListing;
