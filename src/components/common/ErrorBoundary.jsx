@@ -152,7 +152,7 @@ ${sessionSnapshot}
 Language: ${navigator.language}
 Platform: ${navigator.platform}
 Cookies Enabled: ${navigator.cookieEnabled}
-==================================`;
+--- End of Report ---`;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
