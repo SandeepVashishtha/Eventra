@@ -100,9 +100,22 @@ export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
 
+/**
+ * Normalise the optional config/token argument accepted by apiUtils methods.
+ *
+ * IMPORTANT — do not pass a raw JWT string as the third argument to
+ * apiUtils.post / .put / .patch:
+ *   apiUtils.post(url, data, token)   ← WRONG: token is silently discarded
+ *
+ * Authentication is carried automatically via the HttpOnly session cookie
+ * (withCredentials: true on the Axios instance). Callers must never include
+ * user identity fields (userId, adminId) in the request body either — the
+ * backend must derive identity from the verified JWT, not from client-supplied
+ * body fields.
+ */
 const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-  
+
   if ("skipAuth" in config) {
     delete config.skipAuth;
   }
