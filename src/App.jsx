@@ -115,8 +115,8 @@ function App() {
   }, []);
 
   return (
+    <ErrorBoundary>
     <ThemeProvider>
-      <ErrorBoundary>
         <AuthProvider>
           <NotificationProvider>
             <MyEventsProvider>
@@ -212,8 +212,8 @@ function App() {
             </MyEventsProvider>
           </NotificationProvider>
         </AuthProvider>
-      </ErrorBoundary>
-    </ThemeProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
