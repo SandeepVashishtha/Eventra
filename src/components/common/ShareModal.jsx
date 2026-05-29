@@ -45,8 +45,7 @@ const ShareModal = ({ event, onClose }) => {
           <img
             src={event.image}
             alt={event.title}
-            className="h-40 w-full rounded-xl object-cover"
-          />
+            className="h-40 w-full rounded-xl object-cover" loading="lazy"/>
 
           <h3 className="mt-4 text-lg font-bold">
             {event.title}
@@ -61,7 +60,7 @@ const ShareModal = ({ event, onClose }) => {
           <a
             href={shareLinks.twitter}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="rounded-xl bg-black px-4 py-3 text-center text-white"
           >
             Twitter/X
@@ -70,7 +69,7 @@ const ShareModal = ({ event, onClose }) => {
           <a
             href={shareLinks.linkedin}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="rounded-xl bg-blue-700 px-4 py-3 text-center text-white"
           >
             LinkedIn
@@ -79,7 +78,7 @@ const ShareModal = ({ event, onClose }) => {
           <a
             href={shareLinks.whatsapp}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="rounded-xl bg-green-600 px-4 py-3 text-center text-white"
           >
             WhatsApp

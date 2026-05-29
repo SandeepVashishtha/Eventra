@@ -133,3 +133,5 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     setValues,
   };
 };
+
+export default useFormValidation;

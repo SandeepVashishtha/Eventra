@@ -185,10 +185,35 @@ class ErrorBoundary extends React.Component {
     };
   }
 
-  componentDidCatch(error, errorInfo) {
-    const { errorId } = this.state;
-    this.setState({ errorInfo });
-    persistErrorLog(errorId, error, errorInfo);
+  // Log Errors
+  componentDidCatch(
+    error,
+    errorInfo
+  ) {
+    // 🟢 Flag the error immediately to stop globalErrorHandler from double-reporting
+    if (error && typeof error === 'object') {
+      error.__isReactHandled = true;
+    }
+
+    // 🟢 Construct the aligned telemetry payload structure
+    const payload = {
+      event: 'app_crash',
+      level: 'fatal',
+      source: 'React.GlobalErrorBoundary',
+      message: error?.message || 'React component tree crash',
+      metadata: {
+        errorId: this.state.errorId,
+        stack: error?.stack || null,
+        componentStack: errorInfo?.componentStack || null,
+      }
+    };
+
+    // 🟢 Log using the unified structure
+    logError(payload);
+
+    this.setState({
+      errorInfo,
+    });
 
     try {
       logError(error, errorInfo);
@@ -258,7 +283,7 @@ class ErrorBoundary extends React.Component {
         try {
           const blob = new Blob([report], { type: "text/plain" });
           const url = URL.createObjectURL(blob);
-          window.open(url, "_blank");
+          window.open(url, "_blank", "noopener,noreferrer");
         } catch (_) {}
       });
   };

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
 import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
@@ -87,11 +88,17 @@ const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 // AnimatedCounter uses requestAnimationFrame instead of setInterval to keep
 // count-up animations aligned with the browser's paint cycle, avoiding
 // invisible ticks that setInterval fires even when the tab is hidden.
-
-
+//
+// React.memo prevents unnecessary re-renders from parent SSE updates: the
+// leaderboard streams live data via useLeaderboardStream, causing the parent
+// to re-render on every tick. Without React.memo, every AnimatedCounter on
+// the page would cancel its in-progress RAF loop and restart the animation
+// from zero — causing visible flicker on each stream update. With React.memo,
+// an AnimatedCounter only re-renders (and restarts its animation) when its
+// own `value` prop actually changes.
 
 // Custom lightweight high-performance count-up component
-const AnimatedCounter = ({ value }) => {
+const AnimatedCounter = React.memo(({ value }) => {
   const [count, setCount] = useState(0);
   const rafRef = useRef(null);
 
@@ -99,6 +106,10 @@ const AnimatedCounter = ({ value }) => {
     const end = parseInt(value, 10);
     if (isNaN(end)) return;
     if (end === 0) { setCount(0); return; }
+
+    // Cancel any in-flight animation before starting a new one so that a
+    // rapid value change does not leave two concurrent RAF loops running.
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
     const duration = 1200; // ms
     const startTime = performance.now();
@@ -120,7 +131,7 @@ const AnimatedCounter = ({ value }) => {
   }, [value]);
 
   return <span>{count}</span>;
-};
+});
 
 function LiveStatusBadge({ status }) {
   if (status === SSE_STATUS.CONNECTED) {
@@ -343,6 +354,12 @@ const sortedContributors = useMemo(
 
     storageManager.set(STORAGE_KEYS.RECENT_SEARCHES, updatedSearches);
   };
+  const performanceData = [
+  { name: "Participated", value: 80 },
+  { name: "Won", value: 20 },
+];
+
+const COLORS = ["#6366F1", "#22C55E"];
 
   const totalPages = useMemo(
     () => totalLeaderboardPages(filteredContributors.length, CONTRIBUTORS_PER_PAGE),
@@ -401,6 +418,7 @@ const sortedContributors = useMemo(
               Honoring our elite open-source creators driving the core features of Eventra with
               robust code and design improvements.
             </p>
+
           </div>
 
           {/* ── HIGH-FIDELITY OLYMPIC PODIUM (Top 3) ───────────────────────────── */}
@@ -453,8 +471,7 @@ const sortedContributors = useMemo(
                           <img
                             src={item.avatar}
                             alt={item.username}
-                            className={`relative ${size} rounded-full border-4 ${borderColor} shadow-md object-cover`}
-                          />
+                            className={`relative ${size} rounded-full border-4 ${borderColor} shadow-md object-cover`} loading="lazy"/>
                           {isFirst && <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl animate-bounce">👑</div>}
                           <div className={`absolute -bottom-2 -right-1 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black uppercase tracking-tight shadow ${medalColor}`}>
                             {position}
