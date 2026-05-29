@@ -1,4 +1,3 @@
-import React from 'react';
 import { formatTimeRange } from '../utils/conflictDetection';
 import { getUserTimezone } from '../utils/timezoneUtils';
 

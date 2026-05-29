@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { X, Download, ShieldCheck, Calendar, MapPin, Clock, User, Mail, Award, Loader2, RefreshCw, FileText, Sparkles, Map } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import "./EventTicket.css";
 import { useMyEvents } from "../../context/MyEventsContext";
 import SpatialSeatSelector from "../events/SpatialSeatSelector";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 
 const EventTicket = ({ event, user, onClose }) => {
   const ticketRef = useRef(null);

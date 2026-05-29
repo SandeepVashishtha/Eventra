@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
@@ -6,7 +6,7 @@ const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deleti
   const [currentText, setCurrentText] = useState("");
   const [textIndex, setTextIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
-  const prefersReducedMotion = useReducedMotion();
+  useReducedMotion();
 
   useEffect(() => {
     let timeout;
