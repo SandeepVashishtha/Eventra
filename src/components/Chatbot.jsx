@@ -111,6 +111,27 @@ export default function Chatbot() {
   };
   // Auto-scroll messages to bottom of container when new ones arrive or state changes
   const chatLogsRef = useRef(null);
+  // Auto-scroll messages to bottom when new ones arrive
+  const messagesEndRef = useRef(null);
+  useEffect(() => {
+    if (!isMinimized && isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isMinimized, isOpen, isTyping]);
+
+  // Listen for Escape key to close the chatbot (accessibility)
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && isOpen) {
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
   const wasOpenRef = useRef(false);
   const wasMinimizedRef = useRef(false);
 
