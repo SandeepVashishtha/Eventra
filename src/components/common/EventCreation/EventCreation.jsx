@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import { Download } from "lucide-react";
 import { logger } from "../../../utils/logger";
 import useReducedMotion from "../../../hooks/useReducedMotion";
-import TicketTiersSection from "./components/TicketTiersSection";
+import TicketsStep from "./components/TicketsStep";
 import GeneralInfoStep from "./components/GeneralInfoStep";
 import { exportAttendeesToCSV } from "../../../utils/exportCsv";
 import {
@@ -1085,7 +1085,7 @@ const EventCreation = () => {
                 </label>
               </motion.div>
 
-              <TicketTiersSection
+              <TicketsStep
                 formData={formData}
                 setFormData={setFormData}
                 errors={errors}
