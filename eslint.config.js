@@ -40,11 +40,6 @@ export default [
       "react/jsx-no-target-blank": "error",
       // apply react-hooks recommended rules but relax some strict checks
       ...reactHooks.configs.recommended.rules,
-      // Relax rules that produce many repo-wide errors when enabling flat config
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/purity": "warn",
-      "react-hooks/globals": "warn",
-      "react-hooks/refs": "warn",
       "react-hooks/exhaustive-deps": "warn",
       // Disable testing-library rule if plugin not available in some environments
       "testing-library/no-unnecessary-act": "off",
