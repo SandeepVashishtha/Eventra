@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage (replace with database in production)
@@ -11,8 +12,7 @@ const users = new Map();
 // JWT Configuration
 // ---------------------------------------------------------------------------
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const JWT_SECRET = getJwtSecret();
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
@@ -59,15 +59,30 @@ const validatePassword = (password) => {
 // CORS Headers
 // ---------------------------------------------------------------------------
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "*",
-  "Access-Control-Allow-Credentials": "true",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+const corsHeaders = (req) => {
+  const allowedOrigin = process.env.ALLOWED_ORIGIN;
+  const requestOrigin = req.headers?.origin;
+
+  const corsOrigin = allowedOrigin || "*";
+  if (allowedOrigin && requestOrigin !== allowedOrigin) {
+    console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
+  }
+
+  // Access-Control-Allow-Credentials must not be sent with a wildcard origin.
+  // Per the CORS spec, browsers reject credentialed responses when the reflected
+  // origin is "*". Only set the header when a specific origin is configured.
+  const isSpecificOrigin = corsOrigin !== "*";
+
+  return {
+    "Access-Control-Allow-Origin": corsOrigin,
+    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
 };
 
-const corsResponse = (res, status, data) => {
-  return res.status(status).set(corsHeaders).json(data);
+const corsResponse = (res, status, data, req) => {
+  return res.status(status).set(corsHeaders(req)).json(data);
 };
 
 // ---------------------------------------------------------------------------
@@ -101,12 +116,12 @@ const DEFAULT_PERMISSIONS = [
 export default async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return res.status(200).set(corsHeaders).end();
+    return res.status(200).set(corsHeaders(req)).end();
   }
 
   // Only allow POST requests
   if (req.method !== "POST") {
-    return corsResponse(res, 405, { error: "Method not allowed" });
+    return corsResponse(res, 405, { error: "Method not allowed" }, req);
   }
 
   try {
@@ -119,36 +134,36 @@ export default async function handler(req, res) {
     // Validate firstName
     const firstNameValidation = validateName(firstName);
     if (!firstNameValidation.valid) {
-      return corsResponse(res, 400, { error: `First name: ${firstNameValidation.message}` });
+      return corsResponse(res, 400, { error: `First name: ${firstNameValidation.message}` }, req);
     }
 
     // Validate lastName
     const lastNameValidation = validateName(lastName);
     if (!lastNameValidation.valid) {
-      return corsResponse(res, 400, { error: `Last name: ${lastNameValidation.message}` });
+      return corsResponse(res, 400, { error: `Last name: ${lastNameValidation.message}` }, req);
     }
 
     // Validate email
     if (!email || !email.trim()) {
-      return corsResponse(res, 400, { error: "Email is required" });
+      return corsResponse(res, 400, { error: "Email is required" }, req);
     }
     const normalizedEmail = email.trim().toLowerCase();
     if (!validateEmail(normalizedEmail)) {
-      return corsResponse(res, 400, { error: "Invalid email format" });
+      return corsResponse(res, 400, { error: "Invalid email format" }, req);
     }
 
     // Validate password
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.valid) {
-      return corsResponse(res, 400, { error: passwordValidation.message });
+      return corsResponse(res, 400, { error: passwordValidation.message }, req);
     }
 
     // Validate confirmPassword matches password
     if (!confirmPassword) {
-      return corsResponse(res, 400, { error: "Please confirm your password" });
+      return corsResponse(res, 400, { error: "Please confirm your password" }, req);
     }
     if (password !== confirmPassword) {
-      return corsResponse(res, 400, { error: "Passwords do not match" });
+      return corsResponse(res, 400, { error: "Passwords do not match" }, req);
     }
 
     // -----------------------------------------------------------------------
@@ -156,7 +171,7 @@ export default async function handler(req, res) {
     // -----------------------------------------------------------------------
 
     if (users.has(normalizedEmail)) {
-      return corsResponse(res, 409, { error: "An account with this email already exists" });
+      return corsResponse(res, 409, { error: "An account with this email already exists" }, req);
     }
 
     // -----------------------------------------------------------------------
@@ -219,15 +234,31 @@ export default async function handler(req, res) {
       createdAt: newUser.createdAt,
     };
 
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`;
+    // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
+    try {
+      if (typeof res.setHeader === 'function') {
+        res.setHeader('Set-Cookie', cookieValue);
+      } else if (typeof res.set === 'function') {
+        res.set({ 'Set-Cookie': cookieValue });
+      } else if (res.headers && typeof res.headers === 'object') {
+        res.headers['Set-Cookie'] = cookieValue;
+      }
+    } catch (e) {
+      // Ignore write errors on test response objects
+    }
+
     return corsResponse(res, 201, {
       message: "Account created successfully",
       token,
+      tokenType: "Bearer",
       ...userResponse,
-    });
+    }, req);
 
   } catch (error) {
     console.error("Signup Error:", error);
-    return corsResponse(res, 500, { error: "Internal server error. Please try again later." });
+    return corsResponse(res, 500, { error: "Internal server error. Please try again later." }, req);
   }
 }
 

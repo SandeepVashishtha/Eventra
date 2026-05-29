@@ -1,4 +1,5 @@
-import { parseEventDateTimeLocal } from "./timezoneUtils";
+import { parseEventDateTimeLocal } from "./timezoneUtils.js";
+import { safeJsonParse } from "./safeJsonParse.js";
 
 export const REMINDERS_STORAGE_KEY = "eventra_event_reminders";
 export const REMINDERS_CHANGED_EVENT = "eventraRemindersChanged";
@@ -11,8 +12,7 @@ export const REMINDER_TIMINGS = [
 
 const normalizeEventId = (eventId) => String(eventId);
 
-export const getReminderId = (eventId, timing) =>
-  `${normalizeEventId(eventId)}::${timing}`;
+export const getReminderId = (eventId, timing) => `${normalizeEventId(eventId)}::${timing}`;
 
 export const getEventDateTime = (event) => {
   if (!event?.date) return null;
@@ -38,7 +38,7 @@ const readReminders = () => {
 
   try {
     const rawReminders = window.localStorage.getItem(REMINDERS_STORAGE_KEY);
-    const parsedReminders = rawReminders ? JSON.parse(rawReminders) : [];
+    const parsedReminders = safeJsonParse(rawReminders, []);
     return Array.isArray(parsedReminders) ? parsedReminders : [];
   } catch {
     return [];
@@ -70,9 +70,7 @@ export const getActiveReminders = () => {
 
 export const getEventReminders = (eventId) => {
   const normalizedId = normalizeEventId(eventId);
-  return readReminders().filter(
-    (reminder) => normalizeEventId(reminder.eventId) === normalizedId
-  );
+  return readReminders().filter((reminder) => normalizeEventId(reminder.eventId) === normalizedId);
 };
 
 export const hasReminder = (eventId, timing) => {

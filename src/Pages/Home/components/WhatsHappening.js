@@ -19,7 +19,13 @@ const WhatsHappening = () => {
 
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(!prefersReducedMotion);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setIsAutoPlaying(false);
+    }
+  }, [prefersReducedMotion]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -164,9 +170,9 @@ const WhatsHappening = () => {
   }, [isAutoPlaying]);
 
   const cardVariants = {
-    enter: (dir) => ({ opacity: 0, x: dir > 0 ? 300 : -300 }),
+    enter: (dir) => ({ opacity: 0, x: prefersReducedMotion ? 0 : (dir > 0 ? 300 : -300) }),
     center: { opacity: 1, x: 0 },
-    exit: (dir) => ({ opacity: 0, x: dir > 0 ? -300 : 300 }),
+    exit: (dir) => ({ opacity: 0, x: prefersReducedMotion ? 0 : (dir > 0 ? -300 : 300) }),
   };
 
   const activeDotIndex =
@@ -190,10 +196,10 @@ border-t border-gray-100 dark:border-slate-800/80"
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         >
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-white">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
             What's Happening Now
           </h2>
-          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-black dark:text-gray-300">
+          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-gray-600 dark:text-gray-300">
             Stay updated with {upcomingEvents.length} upcoming events, community
             programs, and opportunities to contribute to Eventra
           </p>
@@ -205,7 +211,7 @@ border-t border-gray-100 dark:border-slate-800/80"
           <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-20">
             <button
               onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-              className="p-2 rounded-full bg-white/20 dark:bg-gray-700/90 shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
               title={isAutoPlaying ? "Pause auto-play" : "Resume auto-play"}
             >
               {isAutoPlaying ? (
@@ -232,7 +238,7 @@ border-t border-gray-100 dark:border-slate-800/80"
           <button
             onClick={prevSlide}
             className="absolute left-0 sm:left-2 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 z-10 text-gray-700 dark:text-gray-200 transition-all hover:scale-105"
-          >
+           aria-label="Previous slide">
             <svg
               className="w-4 h-4 sm:w-5 sm:h-5"
               fill="currentColor"
@@ -255,6 +261,7 @@ border-t border-gray-100 dark:border-slate-800/80"
               setIsAutoPlaying(false);
             }}
             className="absolute right-0 sm:right-2 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 z-10 text-gray-700 dark:text-gray-200 transition-all hover:scale-105"
+            aria-label="Next slide"
           >
             <svg
               className="w-4 h-4 sm:w-5 sm:h-5"
@@ -325,8 +332,11 @@ border-t border-gray-100 dark:border-slate-800/80"
                           onMouseLeave={() => setIsAutoPlaying(true)}
                         >
                           <div
-                            className="w-full h-full absolute transition-transform duration-700 group-hover:[transform:rotateY(180deg)]"
-                            style={{ transformStyle: "preserve-3d" }}
+                            className="w-full h-full absolute transition-transform group-hover:[transform:rotateY(180deg)]"
+                            style={{ 
+                              transformStyle: "preserve-3d",
+                              transitionDuration: prefersReducedMotion ? "0ms" : "700ms"
+                            }}
                           >
                             {/* Front Face */}
                             <div

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import QuestCenter from '../components/gamification/QuestCenter';
+import EventBadgeGenerator from '../components/user/EventBadgeGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import {
@@ -26,6 +27,7 @@ export default function UserAchievements() {
   const { achievements, fetchAchievements } = useNotification();
   const [expandedBadgeId, setExpandedBadgeId] = useState(null);
   const [activeShareBadge, setActiveShareBadge] = useState(null);
+  const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
 
   useEffect(() => {
     fetchAchievements();
@@ -211,6 +213,15 @@ export default function UserAchievements() {
             <p className="text-slate-550 dark:text-slate-400 mt-2 text-xs sm:text-sm max-w-2xl leading-relaxed">
               Track your open-source growth milestones, streak multipliers, and XP progression. Claim developer tokens as you host, contribute, and engage in events.
             </p>
+          </div>
+          <div className="shrink-0">
+            <button
+              onClick={() => setIsBadgeModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98] cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300 animate-spin-slow" />
+              <span>Attendee Badge Center</span>
+            </button>
           </div>
         </div>
 
@@ -647,6 +658,16 @@ export default function UserAchievements() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* ATTENDEE EVENT BADGE GENERATOR OVERLAY MODAL */}
+      <AnimatePresence>
+        {isBadgeModalOpen && (
+          <EventBadgeGenerator
+            onClose={() => setIsBadgeModalOpen(false)}
+            userStats={{ totalEvents, currentStreak, unlockedCount }}
+          />
         )}
       </AnimatePresence>
     </div>

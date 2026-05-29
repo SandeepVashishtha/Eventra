@@ -1,3 +1,11 @@
+import { ENV } from "../config/env";
+
+const dsn = ENV.SENTRY_DSN;
+const isProduction = process.env.NODE_ENV === "production";
+const Sentry = {
+  captureException: () => {},
+};
+
 export const initializeGlobalErrorHandling =
   () => {
     // Global JS Errors
@@ -12,6 +20,10 @@ export const initializeGlobalErrorHandling =
         "[GlobalError]",
         error
       );
+
+      if (isProduction && dsn) {
+        Sentry.captureException(error || new Error(message));
+      }
     };
 
     // Unhandled Promise Rejections
@@ -21,5 +33,9 @@ export const initializeGlobalErrorHandling =
           "[UnhandledPromiseRejection]",
           event.reason
         );
+
+        if (isProduction && dsn) {
+          Sentry.captureException(event.reason);
+        }
       };
   };

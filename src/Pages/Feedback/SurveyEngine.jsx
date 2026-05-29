@@ -6,9 +6,13 @@ import {
   FiEye,
   FiPlusCircle,
   FiSave,
+  FiArrowUp,
+  FiArrowDown,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SurveyAnalytics from "../../components/admin/SurveyAnalytics";
+import { validate } from "../../validation";
 
 const SurveyEngine = () => {
   useDocumentTitle("Eventra | Dynamic Survey Engine");
@@ -132,8 +136,13 @@ const SurveyEngine = () => {
 
   // Update question properties
   const updateQuestionText = (id, text) => {
+    // Show validation notifications if HTML is detected
+    if (validate.detectHTML(text)) {
+      toast.warning("HTML elements detected. They will be automatically sanitized to prevent XSS.");
+    }
+    const sanitized = validate.sanitizeSurveyPrompt(text);
     setQuestions(
-      questions.map((q) => (q.id === id ? { ...q, questionText: text } : q))
+      questions.map((q) => (q.id === id ? { ...q, questionText: sanitized } : q))
     );
   };
 
@@ -146,6 +155,14 @@ const SurveyEngine = () => {
   const deleteQuestion = (id) => {
     setQuestions(questions.filter((q) => q.id !== id));
     toast.warn("Question removed");
+  };
+
+  const moveQuestion = (index, direction) => {
+    const nextIndex = direction === "up" ? index - 1 : index + 1;
+    if (nextIndex < 0 || nextIndex >= questions.length) return;
+    const updated = [...questions];
+    [updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
+    setQuestions(updated);
   };
 
   // Multiple choice option helpers
@@ -161,11 +178,15 @@ const SurveyEngine = () => {
   };
 
   const updateOptionText = (questionId, optionIndex, text) => {
+    if (validate.detectHTML(text)) {
+      toast.warning("HTML elements detected. They will be automatically sanitized to prevent XSS.");
+    }
+    const sanitized = validate.sanitizeSurveyOption(text);
     setQuestions(
       questions.map((q) => {
         if (q.id === questionId) {
           const updatedOptions = [...q.options];
-          updatedOptions[optionIndex] = text;
+          updatedOptions[optionIndex] = sanitized;
           return { ...q, options: updatedOptions };
         }
         return q;
@@ -227,26 +248,39 @@ const SurveyEngine = () => {
           
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setActiveTab(activeTab === "builder" ? "preview" : "builder")}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 dark:hover:border-indigo-400 transition-all"
-            >
-              <FiEye className="w-5 h-5 text-indigo-500" />
-              {activeTab === "builder" ? "Live Preview" : "Back to Editor"}
-            </button>
-            
-            <button
               onClick={handleSaveSurvey}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
-            >
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
+             aria-label="button">
               <FiSave className="w-5 h-5" />
               Publish Survey
             </button>
           </div>
         </div>
 
+        {/* HIGH-FIDELITY NAVIGATION TABS */}
+        <div className="flex border-b border-slate-200 dark:border-slate-800 mb-8 overflow-x-auto gap-8">
+          {[
+            { id: "builder", label: "Survey Builder" },
+            { id: "preview", label: "Live Preview" },
+            { id: "analytics", label: "Submission Analytics" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`pb-4 px-1 text-sm font-bold border-b-2 transition-all shrink-0 cursor-pointer ${
+                activeTab === tab.id
+                  ? "border-indigo-550 text-indigo-600 dark:text-indigo-400"
+                  : "border-transparent text-slate-450 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {/* MAIN LAYOUT */}
         <AnimatePresence mode="wait">
-          {activeTab === "builder" ? (
+          {activeTab === "builder" && (
             <motion.div
               key="builder-tab"
               initial={{ opacity: 0, y: 15 }}
@@ -274,13 +308,13 @@ const SurveyEngine = () => {
                     <button
                       onClick={handleRestoreDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-sm transition"
-                    >
+                     aria-label="button">
                       Restore Template
                     </button>
                     <button
                       onClick={handleDiscardDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-350 dark:hover:bg-slate-750 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl transition"
-                    >
+                     aria-label="button">
                       Discard
                     </button>
                   </div>
@@ -343,24 +377,62 @@ const SurveyEngine = () => {
                             placeholder="Type your question prompt here..."
                             className="w-full text-lg font-semibold bg-transparent border-b border-slate-200 dark:border-slate-800 focus:border-indigo-500 outline-none pb-1 transition-all"
                           />
+                          
+                          {/* REAL-TIME VALIDATION WARNINGS & COUNTERS */}
+                          <div className="flex justify-between items-center text-[10px] font-semibold pt-1">
+                            <div className="text-rose-500 flex items-center gap-1">
+                              {question.questionText.length >= 140 && (
+                                <span>⚠️ Reached character boundary limit (150 max)</span>
+                              )}
+                            </div>
+                            <span className={`text-[10px] ${question.questionText.length >= 140 ? "text-rose-500 font-extrabold" : "text-slate-400"}`}>
+                              {question.questionText.length} / 150
+                            </span>
+                          </div>
                         </div>
 
-                        <button
-                           id="ymjlwm"
-onClick={() =>
-  setConfirmModal({
-    open: true,
-    type: "question",
-    questionId: question.id
-  })
-}
-
-
-                          className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
-                          title="Remove question"
-                        >
-                          <FiTrash2 className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => moveQuestion(index, "up")}
+                            disabled={index === 0}
+                            className={`p-2 rounded-xl border transition-all ${
+                              index === 0
+                                ? "text-slate-300 border-slate-100 dark:border-slate-800/40 dark:text-slate-700 cursor-not-allowed opacity-40"
+                                : "text-slate-500 border-slate-200 dark:border-slate-800 dark:text-slate-400 hover:text-indigo-500 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 cursor-pointer"
+                            }`}
+                            title="Move question up"
+                          >
+                            <FiArrowUp className="w-4 h-4" />
+                          </button>
+                          
+                          <button
+                            onClick={() => moveQuestion(index, "down")}
+                            disabled={index === questions.length - 1}
+                            className={`p-2 rounded-xl border transition-all ${
+                              index === questions.length - 1
+                                ? "text-slate-300 border-slate-100 dark:border-slate-800/40 dark:text-slate-700 cursor-not-allowed opacity-40"
+                                : "text-slate-500 border-slate-200 dark:border-slate-800 dark:text-slate-400 hover:text-indigo-500 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 cursor-pointer"
+                            }`}
+                            title="Move question down"
+                          >
+                            <FiArrowDown className="w-4 h-4" />
+                          </button>
+                          
+                          <button
+                            id="ymjlwm"
+                            onClick={() =>
+                              setConfirmModal({
+                                open: true,
+                                type: "question",
+                                questionId: question.id
+                              })
+                            }
+                            className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer ml-1"
+                            title="Remove question"
+                          >
+                            <FiTrash2 className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* CHOICE SELECTIONS CREATOR */}
@@ -376,17 +448,25 @@ onClick={() =>
                                 className="flex items-center gap-3"
                               >
                                 <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-700 bg-transparent" />
-                                <input
-                                  type="text"
-                                  value={option}
-                                  onChange={(e) =>
-                                    updateOptionText(question.id, optIdx, e.target.value)
-                                  }
-                                  className="flex-1 max-w-md bg-transparent border-b border-slate-100 dark:border-slate-800 focus:border-indigo-500 outline-none text-sm py-0.5"
-                                />
+                                <div className="flex-1 max-w-md space-y-1">
+                                  <input
+                                    type="text"
+                                    value={option}
+                                    onChange={(e) =>
+                                      updateOptionText(question.id, optIdx, e.target.value)
+                                    }
+                                    className="w-full bg-transparent border-b border-slate-100 dark:border-slate-800 focus:border-indigo-500 outline-none text-sm py-0.5"
+                                  />
+                                  <div className="flex justify-between items-center text-[9px] font-semibold text-slate-400">
+                                    <span className="text-rose-500">
+                                      {option.length >= 70 && "⚠️ Option near max limit (80 max)"}
+                                    </span>
+                                    <span>{option.length} / 80</span>
+                                  </div>
+                                </div>
                                 <button
                                   onClick={() => setConfirmModal({ open: true, type: "option", questionId: question.id, optionIndex: optIdx }) }
-                                  className="text-slate-400 hover:text-red-500 p-1"
+                                  className="text-slate-400 hover:text-red-500 p-1 self-start"
                                 >
                                   <FiTrash2 className="w-4 h-4" />
                                 </button>
@@ -448,7 +528,8 @@ onClick={() =>
                 </div>
               </div>
             </motion.div>
-          ) : (
+          )}
+          {activeTab === "preview" && (
             <motion.div
               key="preview-tab"
               initial={{ opacity: 0, y: 15 }}
@@ -518,10 +599,20 @@ onClick={() =>
                 <button
                   disabled
                   className="px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-semibold cursor-not-allowed text-sm"
-                >
+                 aria-label="button">
                   Submit Survey Feedback
                 </button>
               </div>
+            </motion.div>
+          )}
+          {activeTab === "analytics" && (
+            <motion.div
+              key="analytics-tab"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+            >
+              <SurveyAnalytics questions={questions} surveyTitle={surveyTitle} />
             </motion.div>
           )}
         </AnimatePresence>

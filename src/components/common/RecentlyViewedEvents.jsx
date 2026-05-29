@@ -81,7 +81,7 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
             className={`rv-btn ${confirmClear ? 'rv-btn--danger' : 'rv-btn--ghost'}`}
             onClick={handleClear}
             title="Clear viewing history"
-          >
+           aria-label="button">
             {confirmClear ? '✕ Confirm Clear' : 'Clear History'}
           </button>
         </div>

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { ENV } from "./env";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -22,14 +23,12 @@ const normalizeApiBaseUrl = (value = "") => {
 const isDev = process.env.NODE_ENV === "development";
 
 const resolveEnvApiBaseUrl = () => {
-  const envUrl = process.env.REACT_APP_API_URL;
+  const envUrl = ENV.API_URL;
   if (envUrl) {
     return normalizeApiBaseUrl(envUrl);
   }
   if (process.env.NODE_ENV === "production") {
-    if (isDev) {
-      console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
-    }
+    console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
     return "";
   }
   return "http://localhost:8080";
@@ -101,29 +100,12 @@ export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
 
-const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
+const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-  const skipAuth = config.skipAuth === true;
+  
   if ("skipAuth" in config) {
     delete config.skipAuth;
   }
-
-  const token =
-    skipAuth
-      ? ""
-      : typeof configOrToken === "string"
-      ? configOrToken
-      : typeof maybeToken === "string"
-        ? maybeToken
-        : sessionStorage.getItem("token") || "";
-
-  if (token) {
-    config.headers = {
-      ...(config.headers || {}),
-      Authorization: `Bearer ${token}`,
-    };
-  }
-
   return config;
 };
 
@@ -146,18 +128,52 @@ const wrapAxiosResponse = (response) => {
       typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };
 };
+const normalizeApiError = (error) => {
+  const config = error.config || {};
+  const status = error?.response?.status;
 
-API.interceptors.request.use((config) => {
-  if (!config.signal) {
-    const controller = new AbortController();
-    config.signal = controller.signal;
-    config._abortController = controller;
+  if (
+    error.code === "ECONNABORTED" ||
+    error.name === "AbortError" ||
+    error.message?.includes("timeout")
+  ) {
+    return new ApiError(
+      `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
+      {
+        status,
+        isTimeout: true,
+      }
+    );
   }
 
+  if (!error.response) {
+    return new ApiError(
+      error.message ||
+        `Network error: ${config.method?.toUpperCase()} ${config.url}`,
+      {
+        status,
+        isNetworkError: true,
+      }
+    );
+  }
+
+  return new ApiError(
+    error.response?.data?.message ||
+      error.message ||
+      `Request failed with status ${status}`,
+    {
+      status,
+      data: error.response?.data || null,
+    }
+  );
+};
+
+// 🔥 HERE IS WHERE WE FIXED THE BUG 🔥
+// We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
+API.interceptors.request.use((config) => {
   if (isDev) {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
-
   return config;
 });
 
@@ -184,32 +200,7 @@ API.interceptors.response.use(
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
       return API(config);
     }
-
-    if (
-      error.code === "ECONNABORTED" ||
-      error.name === "AbortError" ||
-      error.message?.includes("timeout")
-    ) {
-      throw new ApiError(
-        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-        { isTimeout: true }
-      );
-    }
-
-    if (!error.response) {
-      throw new ApiError(
-        error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-        { isNetworkError: true }
-      );
-    }
-
-    throw new ApiError(
-      error.response?.data?.message || error.message || `Request failed with status ${status}`,
-      {
-        status: error.response.status,
-        data: error.response.data,
-      }
-    );
+    throw normalizeApiError(error);
   }
 );
 
@@ -220,7 +211,6 @@ API.interceptors.response.use(
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: buildApiUrl("/api/auth/login"),
-    GOOGLE: buildApiUrl("/api/auth/google"),
     REGISTER: buildApiUrl("/api/auth/signup"),
     SIGNUP: buildApiUrl("/api/auth/signup"),
     LOGOUT: buildApiUrl("/api/auth/logout"),
@@ -228,11 +218,18 @@ export const API_ENDPOINTS = {
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),
+    ALL: buildApiUrl("/api/events"),
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+
+    REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
+    // Convenience helper — appends ?page=&size= for callers that build the
+    // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
+    PAGINATED: (page, size) => buildApiUrl(`/api/events?page=${page}&size=${size}`),
   },
   PROJECTS: {
+    ALL: buildApiUrl("/api/projects"),
     LIST: buildApiUrl("/api/projects"),
     DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
     CATEGORIES: buildApiUrl("/api/projects/categories"),
@@ -245,34 +242,45 @@ export const API_ENDPOINTS = {
   },
   NOTIFICATIONS: {
     BASE: buildApiUrl("/api/notifications"),
+    ALL: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
+    PREFERENCES: buildApiUrl("/api/notifications/preferences"),
+    PUSH_SUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions"),
+    PUSH_UNSUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions/unsubscribe"),
   },
   USERS: {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
   },
+  VALIDATION: {
+    EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
+    USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
+    PHONE: buildApiUrl("/api/validate/phone"),
+  },
 };
 
+
 export const apiUtils = {
-  get: (url, configOrToken = {}, maybeToken) =>
-    API.get(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  post: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.post(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  put: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.put(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  patch: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.patch(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  delete: (url, configOrToken = {}, maybeToken) =>
-    API.delete(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
+  get: (url, config = {}) =>
+    API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  post: (url, data = {}, config = {}) =>
+    API.post(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  put: (url, data = {}, config = {}) =>
+    API.put(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  patch: (url, data = {}, config = {}) =>
+    API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  delete: (url, config = {}) =>
+    API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
 };
 
 export default API;
 
-export const API_ENDPOINTS_UPDATED = {
-  ...API_ENDPOINTS,
-  NOTIFICATIONS: {
-    ...API_ENDPOINTS.NOTIFICATIONS,
-    READ_ALL: buildApiUrl("/api/notifications/read-all"),
-  }
+export { normalizeApiError };
+
+// Centralized configuration cache store for fallback endpoints
+export const apiConfigCache = {
+  store: new Map(),
+  get(key) { return this.store.get(key); },
+  set(key, val) { this.store.set(key, val); }
 };

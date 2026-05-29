@@ -9,12 +9,53 @@ import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
-import RespawningText from "../../../jhalak/RespawningText";
+import RespawningText from "../../../components/visual/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import CountUp from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
+import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
+import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 
 const MotionLink = motion(Link);
+
+// ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
+// Moved outside component to prevent expensive re-instantiation on every render
+const createSearchItem = (item, type, searchType) => ({
+  id: item.id,
+  title: item.title,
+  description: item.description,
+  location: item.location,
+  tags: item.tags,
+  techStack: item.techStack,
+  category: item.category,
+  author: item.author,
+  organizer: item.organizer,
+  searchType,
+  type,
+});
+
+const allData = [
+  ...eventsData.map((item) => createSearchItem(item, "event", "Events")),
+  ...hackathonsData.map((item) => createSearchItem(item, "hackathon", "Hackathons")),
+  ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
+];
+
+const fuse = new Fuse(allData, {
+  keys: [
+    "title",
+    "description",
+    "location",
+    "tags",
+    "techStack",
+    "category",
+    "author",
+    "organizer",
+    "type",
+  ],
+  threshold: 0.3,
+  includeScore: true,
+});
+// ─────────────────────────────────────────────────────────────────────────────
 
 const Hero = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -57,7 +98,7 @@ const Hero = () => {
   const shapeTransforms = [yShape0, yShape1, yShape2, yShape3, yShape4, yShape5, yShape6, yShape7, yShape8];
 
   const [index, setIndex] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
+  const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [statsReady, setStatsReady] = useState(false);
@@ -96,79 +137,54 @@ const Hero = () => {
   }, [controls]);
 
   useEffect(() => {
-    const onResize = () => setIsMobileView(window.innerWidth <= 420);
+    const timeoutRef = { current: null };
+
+    const onResize = () => {
+      if (typeof window === "undefined") return;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+      timeoutRef.current = setTimeout(() => {
+        setIsMobileView(window.innerWidth <= 420);
+      }, 150);
+    };
+
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
-  useEffect(() => {
-    setStatsReady(true);
-  }, []);
   // FIXED
 useEffect(() => {
   const timer = setTimeout(() => setStatsReady(true), 100);
   return () => clearTimeout(timer);
 }, []);
 
-  // Global search functionality
-  const createSearchItem = (item, type, searchType) => ({
-    id: item.id,
-    title: item.title,
-    description: item.description,
-    location: item.location,
-    tags: item.tags,
-    techStack: item.techStack,
-    category: item.category,
-    author: item.author,
-    organizer: item.organizer,
-    searchType,
-  });
-
-  const allData = [
-    ...eventsData.map((item) => createSearchItem(item, "event", "Events")),
-    ...hackathonsData.map((item) =>
-      createSearchItem(item, "hackathon", "Hackathons")
-    ),
-    ...projectsData.map((item) =>
-      createSearchItem(item, "project", "Projects")
-    ),
-  ];
-
-  const fuse = new Fuse(allData, {
-    keys: [
-      "title",
-      "description",
-      "location",
-      "tags",
-      "techStack",
-      "category",
-      "author",
-      "organizer",
-      "type",
-    ],
-    threshold: 0.3,
-    includeScore: true,
-  });
-
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    if (query.trim()) {
-      const results = fuse.search(query).slice(0, 8);
+  // Watch the debounced term and execute the search logic
+  useEffect(() => {
+    if (debouncedTerm.trim()) {
+      const results = fuse.search(debouncedTerm).slice(0, 8);
       setSearchResults(results);
       setShowResults(true);
     } else {
       setSearchResults([]);
       setShowResults(false);
     }
+  }, [debouncedTerm]);
+
+  const handleSearch = (query) => {
+    setSearchTerm(query);
   };
 
   const clearSearch = () => {
     setShowResults(false);
-    setSearchQuery("");
+    clearSearchTerm();
   };
 
   const getResultHref = (item) => {
-    const query = encodeURIComponent(item.title || searchQuery);
+    const query = encodeURIComponent(item.title || debouncedTerm);
     if (item.type === "event") return `/events?search=${query}`;
     if (item.type === "hackathon") return `/hackathons?search=${query}`;
     if (item.type === "project") return `/projects?search=${query}`;
@@ -249,10 +265,10 @@ border-b border-gray-100 dark:border-slate-900">
               background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
               filter: "blur(2px)",
               boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
-              y: shapeTransforms[i],
+              y: prefersReducedMotion ? 0 : shapeTransforms[i],
               willChange: "transform",
             }}
-            animate={floatShape(i)}
+            animate={prefersReducedMotion ? {} : floatShape(i)}
           />
         ))}
       </div>
@@ -260,14 +276,16 @@ border-b border-gray-100 dark:border-slate-900">
       {/* Hero Content */}
       <motion.div 
         className="mx-auto px-6 lg:px-8 relative z-10 pt-20"
-        style={{
-          backgroundImage: "url('/background.png')",
+       style={{
+  backgroundImage: isDark
+    ? "url('/background-dark.png')"
+    : "url('/background.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
           minHeight: "100vh",
-          width: "100vw",
-          y: isTouch ? 0 : yText,
+          width: "100%",
+           y: (isTouch || prefersReducedMotion) ? 0 : yText,
           opacity: isTouch ? 1 : opacityHero,
           willChange: "transform, opacity",
         }}
@@ -330,7 +348,7 @@ border-b border-gray-100 dark:border-slate-900">
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-800 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
+            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
@@ -339,10 +357,10 @@ border-b border-gray-100 dark:border-slate-900">
           {/* Global Search Bar (Glassmorphism) */}
           <div className="w-full max-w-2xl mx-auto mb-10 p-2 sm:p-2.5 bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl shadow-indigo-500/5">
             <ModernSearchInput
-              value={searchQuery}
+              value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search events, hackathons, projects..."
-              onFocus={() => searchQuery && setShowResults(true)}
+              onFocus={() => searchTerm && setShowResults(true)}
               onBlur={() => setTimeout(() => setShowResults(false), 200)}
             >
               {/* Search Results Dropdown */}
@@ -397,7 +415,7 @@ text-gray-600 dark:text-gray-300"
                                       {result.item.searchType}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
                                     {result.item.description?.substring(0, 80)}...
                                   </p>
                                 </div>
@@ -416,7 +434,7 @@ text-gray-600 dark:text-gray-300"
                         >
                           No results match "
                           <span className="font-medium text-gray-700 dark:text-white">
-                            {searchQuery}
+                            {searchTerm}
                           </span>
                           "
                         </motion.div>
@@ -504,11 +522,12 @@ text-gray-600 dark:text-gray-300"
           </motion.div>
 
           {/* Animated Stats Cards */}
-          {!searchQuery.trim() && (
+          {!searchTerm.trim() && (
+            <SectionErrorBoundary label="Statistics">
             <motion.div
               variants={fadeUp}
               style={{
-                y: isTouch ? 0 : yStats,
+                y: (isTouch || prefersReducedMotion) ? 0 : yStats,
                 willChange: "transform",
               }}
               className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
@@ -521,10 +540,10 @@ text-gray-600 dark:text-gray-300"
                   variants={fadeUp}
                   whileHover={{ y: -5 }}
                   transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-                  className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-200/60 dark:border-gray-800/60 shadow-sm"
+                  className="flex flex-col items-center justify-center p-6 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-gray-200/80 dark:border-slate-800/80 shadow-lg hover:shadow-indigo-500/10 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300"
                 >
                   
-                  <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+                  <p className="text-4xl font-extrabold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
                     {statsReady ? (
                       // AFTER
 <CountUp
@@ -540,12 +559,13 @@ text-gray-600 dark:text-gray-300"
                       </>
                     )}
                   </p>
-                  <p className="text-gray-500 dark:text-gray-600 text-xs sm:text-sm font-semibold uppercase tracking-wider">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
                     {stat.label}
                   </p>
                 </motion.div>
               ))}
             </motion.div>
+            </SectionErrorBoundary>
           )}
         </motion.div>
       </motion.div>
