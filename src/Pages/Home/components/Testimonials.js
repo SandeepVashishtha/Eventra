@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaQuoteLeft, FaStar, FaPlay, FaPause, FaChevronLeft, FaChevronRight, FaShareAlt, FaCheckCircle } from "react-icons/fa";
 import { FiExternalLink } from "react-icons/fi";
@@ -329,9 +329,6 @@ const ModernTestimonialTrain = () => {
         >
           <AnimatePresence>
             {scrollItems.map((testimonial, index) => {
-              const isOriginal = index < filteredTestimonials.length;
-              const displayIndex = isOriginal ? index : index - filteredTestimonials.length;
-              
               return (
                 <motion.div
                   key={`${testimonial.id}-${index}`}

@@ -1,4 +1,3 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { logger } from "../../utils/logger";
 import { Check, AlertCircle, Loader } from "lucide-react";

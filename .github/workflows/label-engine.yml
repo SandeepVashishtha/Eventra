@@ -1,0 +1,647 @@
+name: "🏷️ Label Engine"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Single source of truth for all label automation. Replaces:
+#   difficulty.yml · quality-labeler.yml · type-labeler.yml
+#   pr-label-inheritance.yml · pr-conflict-labeler.yml · gssoc-approved-label.yml
+#
+# Label namespace (exclusively owned by this workflow — no other workflow touches these):
+#   level:*            ← difficulty labels
+#   quality:*          ← quality labels
+#   type:*             ← type labels
+#   needs:difficulty   ← issue needs exactly one level:* label
+#   needs:quality      ← issue needs exactly one quality:* label
+#   gssoc:approved     ← valid GSSoC contribution
+#   pr:has-conflicts   ← PR has unresolved merge conflicts
+#   pr:merged          ← PR was merged
+#   pr:pending-review  ← PR is open and awaiting review
+#
+# Jobs:
+#   validate-issue-labels  → triggered by issue events
+#   sync-pr-labels         → triggered by pull_request_target events
+#   scan-all-prs           → triggered by push to master / schedule / workflow_dispatch
+# ──────────────────────────────────────────────────────────────────────────────
+
+on:
+  issues:
+    types: [labeled, unlabeled, opened, edited]
+  pull_request_target:
+    types: [opened, reopened, synchronize, closed]
+  push:
+    branches: [master]
+  schedule:
+    - cron: "0 */2 * * *"   # Every 2 hours — catches GitHub's delayed mergeable computation
+  workflow_dispatch: {}
+
+# One run per PR / issue at a time — cancels any queued duplicate run.
+concurrency:
+  group: label-engine-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+
+  # ============================================================================
+  # JOB 1 — Issue Label Validation
+  # Enforces: exactly one level:* label, exactly one quality:* label.
+  # Adds needs:difficulty / needs:quality when the constraint is violated.
+  # ============================================================================
+  validate-issue-labels:
+    name: "🔍 Validate Issue Labels"
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Enforce difficulty & quality constraints
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const repo        = { owner: context.repo.owner, repo: context.repo.repo };
+            const issueNumber = context.payload.issue.number;
+
+            // ── Label catalogue ──────────────────────────────────────────────
+            const LABEL_META = {
+              'level:beginner':      { color: '0E8A16', description: 'Good for new contributors' },
+              'level:intermediate':  { color: 'FBCA04', description: 'Moderate complexity' },
+              'level:advanced':      { color: 'D93F0B', description: 'High complexity' },
+              'level:critical':      { color: 'B60205', description: 'Core / breaking change' },
+              'quality:clean':       { color: '0E8A16', description: 'Well-structured, maintainable change' },
+              'quality:exceptional': { color: '006B75', description: 'Exemplary contribution' },
+              'type:bug':            { color: 'd73a4a', description: 'Something is broken or incorrect' },
+              'type:feature':        { color: '0075ca', description: 'New feature or enhancement' },
+              'type:docs':           { color: '0052cc', description: 'Documentation improvements' },
+              'type:testing':        { color: '5319e7', description: 'Tests added or improved' },
+              'type:security':       { color: 'e4e669', description: 'Security improvement or fix' },
+              'type:performance':    { color: 'f9d0c4', description: 'Performance improvement' },
+              'type:design':         { color: 'fef2c0', description: 'UI/UX design changes' },
+              'type:refactor':       { color: 'c5def5', description: 'Code refactoring without behaviour change' },
+              'type:devops':         { color: 'bfd4f2', description: 'CI/CD, infrastructure, or tooling changes' },
+              'type:accessibility':  { color: 'e4e4e4', description: 'Accessibility improvements' },
+              'gssoc:approved':      { color: '7B2D8B', description: 'Valid GSSoC 2026 contribution' },
+              'pr:has-conflicts':    { color: 'B60205', description: 'PR has merge conflicts — resolve before merging' },
+              'pr:merged':           { color: '6f42c1', description: 'PR has been merged' },
+              'pr:pending-review':   { color: 'FBCA04', description: 'Awaiting maintainer review' },
+              'needs:difficulty':    { color: 'FF6B35', description: 'Issue needs exactly one difficulty label' },
+              'needs:quality':       { color: 'FF6B35', description: 'Issue needs exactly one quality label' },
+            };
+
+            const DIFFICULTY_LABELS = ['level:beginner', 'level:intermediate', 'level:advanced', 'level:critical'];
+            const QUALITY_LABELS    = ['quality:clean', 'quality:exceptional'];
+
+            // ── Helpers ──────────────────────────────────────────────────────
+            async function ensureAllLabels() {
+              await Promise.all(
+                Object.entries(LABEL_META).map(async ([name, { color, description }]) => {
+                  try {
+                    await github.rest.issues.getLabel({ ...repo, name });
+                  } catch (err) {
+                    if (err.status !== 404) throw err;
+                    await github.rest.issues.createLabel({ ...repo, name, color, description });
+                    console.log(`✅ Created label: ${name}`);
+                  }
+                })
+              );
+            }
+
+            async function getLabels(num) {
+              const { data } = await github.rest.issues.get({ ...repo, issue_number: num });
+              return data.labels.map(l => (typeof l === 'string' ? l : l.name));
+            }
+
+            async function safeAdd(num, label, current) {
+              if (current.includes(label)) return;
+              await github.rest.issues.addLabels({ ...repo, issue_number: num, labels: [label] });
+              console.log(`🏷  Added   [${label}] → #${num}`);
+            }
+
+            async function safeRemove(num, label, current) {
+              if (!current.includes(label)) return;
+              try {
+                await github.rest.issues.removeLabel({ ...repo, issue_number: num, name: label });
+                console.log(`🗑  Removed [${label}] ← #${num}`);
+              } catch (err) {
+                if (err.status !== 404) throw err; // already gone — fine
+              }
+            }
+
+            // ── Main ─────────────────────────────────────────────────────────
+            await ensureAllLabels();
+
+            let current = await getLabels(issueNumber);
+            console.log(`\n🔍 Issue #${issueNumber} current labels: [${current.join(', ')}]`);
+
+            // ── Difficulty constraint ─────────────────────────────────────────
+            const diffPresent = current.filter(l => DIFFICULTY_LABELS.includes(l));
+
+            if (diffPresent.length === 0) {
+              console.log('⚠️  No difficulty label → adding needs:difficulty');
+              await safeAdd(issueNumber, 'needs:difficulty', current);
+            } else if (diffPresent.length === 1) {
+              console.log(`✅ Difficulty OK: ${diffPresent[0]}`);
+              await safeRemove(issueNumber, 'needs:difficulty', current);
+            } else {
+              console.log(`⚠️  Multiple difficulty labels [${diffPresent.join(', ')}] → clearing all, adding needs:difficulty`);
+              await Promise.all(diffPresent.map(l => safeRemove(issueNumber, l, current)));
+              const afterDiff = current.filter(l => !DIFFICULTY_LABELS.includes(l));
+              await safeAdd(issueNumber, 'needs:difficulty', afterDiff);
+            }
+
+            // Re-fetch after difficulty changes to get fresh state
+            current = await getLabels(issueNumber);
+
+            // ── Quality constraint ───────────────────────────────────────────
+            const qualPresent = current.filter(l => QUALITY_LABELS.includes(l));
+
+            if (qualPresent.length === 0) {
+              console.log('⚠️  No quality label → adding needs:quality');
+              await safeAdd(issueNumber, 'needs:quality', current);
+            } else if (qualPresent.length === 1) {
+              console.log(`✅ Quality OK: ${qualPresent[0]}`);
+              await safeRemove(issueNumber, 'needs:quality', current);
+            } else {
+              console.log(`⚠️  Multiple quality labels [${qualPresent.join(', ')}] → clearing all, adding needs:quality`);
+              await Promise.all(qualPresent.map(l => safeRemove(issueNumber, l, current)));
+              const afterQual = current.filter(l => !QUALITY_LABELS.includes(l));
+              await safeAdd(issueNumber, 'needs:quality', afterQual);
+            }
+
+            console.log(`\n✅ Issue #${issueNumber} validation complete.`);
+
+  # ============================================================================
+  # JOB 2 — PR Label Sync
+  # Inherits labels from linked issues on open/reopen/synchronize.
+  # Handles conflict detection, gssoc:approved, and PR lifecycle labels.
+  # ============================================================================
+  sync-pr-labels:
+    name: "🔄 Sync PR Labels"
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Inherit labels from linked issues & manage PR lifecycle
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const repo     = { owner: context.repo.owner, repo: context.repo.repo };
+            const pr       = context.payload.pull_request;
+            const prNumber = pr.number;
+            const action   = context.payload.action;
+
+            // ── Label catalogue ──────────────────────────────────────────────
+            const LABEL_META = {
+              'level:beginner':      { color: '0E8A16', description: 'Good for new contributors' },
+              'level:intermediate':  { color: 'FBCA04', description: 'Moderate complexity' },
+              'level:advanced':      { color: 'D93F0B', description: 'High complexity' },
+              'level:critical':      { color: 'B60205', description: 'Core / breaking change' },
+              'quality:clean':       { color: '0E8A16', description: 'Well-structured, maintainable change' },
+              'quality:exceptional': { color: '006B75', description: 'Exemplary contribution' },
+              'type:bug':            { color: 'd73a4a', description: 'Something is broken or incorrect' },
+              'type:feature':        { color: '0075ca', description: 'New feature or enhancement' },
+              'type:docs':           { color: '0052cc', description: 'Documentation improvements' },
+              'type:testing':        { color: '5319e7', description: 'Tests added or improved' },
+              'type:security':       { color: 'e4e669', description: 'Security improvement or fix' },
+              'type:performance':    { color: 'f9d0c4', description: 'Performance improvement' },
+              'type:design':         { color: 'fef2c0', description: 'UI/UX design changes' },
+              'type:refactor':       { color: 'c5def5', description: 'Code refactoring without behaviour change' },
+              'type:devops':         { color: 'bfd4f2', description: 'CI/CD, infrastructure, or tooling changes' },
+              'type:accessibility':  { color: 'e4e4e4', description: 'Accessibility improvements' },
+              'gssoc:approved':      { color: '7B2D8B', description: 'Valid GSSoC 2026 contribution' },
+              'pr:has-conflicts':    { color: 'B60205', description: 'PR has merge conflicts — resolve before merging' },
+              'pr:merged':           { color: '6f42c1', description: 'PR has been merged' },
+              'pr:pending-review':   { color: 'FBCA04', description: 'Awaiting maintainer review' },
+              'needs:difficulty':    { color: 'FF6B35', description: 'Issue needs exactly one difficulty label' },
+              'needs:quality':       { color: 'FF6B35', description: 'Issue needs exactly one quality label' },
+            };
+
+            const DIFFICULTY_LABELS = ['level:beginner', 'level:intermediate', 'level:advanced', 'level:critical'];
+            const QUALITY_LABELS    = ['quality:clean', 'quality:exceptional'];
+            const TYPE_LABELS       = [
+              'type:bug', 'type:feature', 'type:docs', 'type:testing', 'type:security',
+              'type:performance', 'type:design', 'type:refactor', 'type:devops', 'type:accessibility',
+            ];
+
+            // ── Keyword rules — fallback type detection when issue has no type labels ──
+            const KEYWORD_RULES = [
+              { label: 'type:bug',           keywords: ['fix', 'bug', 'patch', 'hotfix', 'revert', 'regression', 'crash', 'error'] },
+              { label: 'type:feature',       keywords: ['feat', 'feature', 'add', 'new', 'implement', 'enhance', 'improve', 'support'] },
+              { label: 'type:docs',          keywords: ['doc', 'docs', 'readme', 'changelog', 'wiki', 'guide', 'comment'] },
+              { label: 'type:testing',       keywords: ['test', 'spec', 'e2e', 'unit', 'integration', 'coverage', 'jest', 'cypress'] },
+              { label: 'type:security',      keywords: ['security', 'auth', 'vuln', 'vulnerability', 'cve', 'sanitize', 'xss', 'csrf', 'token', 'secret'] },
+              { label: 'type:performance',   keywords: ['perf', 'performance', 'speed', 'optimize', 'cache', 'lazy', 'bundle', 'compress'] },
+              { label: 'type:design',        keywords: ['design', 'style', 'css', 'ui', 'ux', 'layout', 'theme', 'color', 'responsive', 'animation'] },
+              { label: 'type:refactor',      keywords: ['refactor', 'cleanup', 'clean', 'restructure', 'reorganize', 'rename', 'simplify'] },
+              { label: 'type:devops',        keywords: ['ci', 'cd', 'pipeline', 'workflow', 'action', 'deploy', 'docker', 'infra', 'build', 'release'] },
+              { label: 'type:accessibility', keywords: ['a11y', 'accessibility', 'aria', 'wcag', 'keyboard', 'contrast', 'alt'] },
+            ];
+
+            const FILE_RULES = [
+              { label: 'type:docs',        patterns: [/\.md$/i, /\.mdx$/i, /^docs\//i, /readme/i, /changelog/i] },
+              { label: 'type:testing',     patterns: [/\.(test|spec)\.(js|jsx|ts|tsx)$/i, /\/__tests__\//i, /\/tests?\//i, /cypress\//i] },
+              { label: 'type:devops',      patterns: [/^\.github\/workflows\//i, /dockerfile/i, /docker-compose/i, /^infra\//i] },
+              { label: 'type:design',      patterns: [/\.(css|scss|sass|less)$/i, /tailwind\.config/i, /theme\.(js|ts)/i] },
+              { label: 'type:security',    patterns: [/auth\.(js|ts|jsx|tsx)/i, /middleware\/auth/i, /jwt/i, /\.env/i] },
+              { label: 'type:performance', patterns: [/lazy/i, /memo/i, /cache/i, /bundle/i, /webpack/i, /vite\.config/i] },
+            ];
+
+            // ── Helpers ──────────────────────────────────────────────────────
+            async function ensureAllLabels() {
+              await Promise.all(
+                Object.entries(LABEL_META).map(async ([name, { color, description }]) => {
+                  try {
+                    await github.rest.issues.getLabel({ ...repo, name });
+                  } catch (err) {
+                    if (err.status !== 404) throw err;
+                    await github.rest.issues.createLabel({ ...repo, name, color, description });
+                    console.log(`✅ Created label: ${name}`);
+                  }
+                })
+              );
+            }
+
+            async function getLabels(num) {
+              const { data } = await github.rest.issues.get({ ...repo, issue_number: num });
+              return data.labels.map(l => (typeof l === 'string' ? l : l.name));
+            }
+
+            async function safeAdd(num, label, current) {
+              if (current.includes(label)) return;
+              await github.rest.issues.addLabels({ ...repo, issue_number: num, labels: [label] });
+              console.log(`🏷  Added   [${label}] → #${num}`);
+            }
+
+            async function safeRemove(num, label, current) {
+              if (!current.includes(label)) return;
+              try {
+                await github.rest.issues.removeLabel({ ...repo, issue_number: num, name: label });
+                console.log(`🗑  Removed [${label}] ← #${num}`);
+              } catch (err) {
+                if (err.status !== 404) throw err;
+              }
+            }
+
+            // Parse "Fixes/Closes/Resolves #N" from PR body
+            function parseLinkedIssues(body) {
+              const regex = /(?:fixes|closes|resolves|fixed|closed|resolved)\s+#(\d+)/gi;
+              return [...new Set([...(body || '').matchAll(regex)].map(m => parseInt(m[1])))];
+            }
+
+            // Fetch mergeable with exponential back-off (GitHub computes it async)
+            async function getMergeable(prNum) {
+              const delays = [3000, 6000, 12000, 20000];
+              for (let i = 0; i <= delays.length; i++) {
+                const { data } = await github.rest.pulls.get({ ...repo, pull_number: prNum });
+                if (data.mergeable !== null) return data.mergeable;
+                if (i < delays.length) {
+                  console.log(`⏳ mergeable=null (attempt ${i + 1}/${delays.length + 1}) — waiting ${delays[i] / 1000}s…`);
+                  await new Promise(r => setTimeout(r, delays[i]));
+                }
+              }
+              console.log('⚠️  mergeable still null after retries — conflict state unchanged');
+              return null;
+            }
+
+            // Keyword + file-path based type detection (fallback only)
+            function detectTypesFromPR(title, branch, filenames) {
+              const text = `${title} ${branch}`.toLowerCase();
+              const detected = new Set();
+              for (const { label, keywords } of KEYWORD_RULES) {
+                if (keywords.some(kw => text.includes(kw))) detected.add(label);
+              }
+              for (const { label, patterns } of FILE_RULES) {
+                if (filenames.some(f => patterns.some(p => p.test(f)))) detected.add(label);
+              }
+              return [...detected];
+            }
+
+            // Collect inherited labels from all linked issues
+            async function inheritFromLinkedIssues(prNum, prBody, prTitle, headRef) {
+              const linkedIssues = parseLinkedIssues(prBody);
+              console.log(`🔗 Linked issues: ${linkedIssues.length > 0 ? linkedIssues.join(', ') : 'none'}`);
+
+              let inheritedDifficulty = null;
+              let inheritedQuality    = null;
+              const inheritedTypes    = new Set();
+
+              for (const issueNum of linkedIssues) {
+                try {
+                  const { data: issue } = await github.rest.issues.get({ ...repo, issue_number: issueNum });
+                  const labels = issue.labels.map(l => (typeof l === 'string' ? l : l.name));
+
+                  const diff = labels.filter(l => DIFFICULTY_LABELS.includes(l));
+                  if (diff.length === 1) inheritedDifficulty = diff[0];
+
+                  const qual = labels.filter(l => QUALITY_LABELS.includes(l));
+                  if (qual.length === 1) inheritedQuality = qual[0];
+
+                  labels.filter(l => TYPE_LABELS.includes(l)).forEach(l => inheritedTypes.add(l));
+
+                  const typeList = labels.filter(l => TYPE_LABELS.includes(l));
+                  console.log(`  Issue #${issueNum}: diff=${diff[0] || 'none'}, qual=${qual[0] || 'none'}, types=[${typeList.join(', ')}]`);
+                } catch (err) {
+                  console.warn(`⚠️  Could not fetch issue #${issueNum}: ${err.message}`);
+                }
+              }
+
+              // Fallback: detect types from PR title + branch + files when issue has none
+              if (inheritedTypes.size === 0) {
+                console.log('🔍 No type labels on linked issues — running fallback type detection from PR');
+                const files = await github.paginate(github.rest.pulls.listFiles, {
+                  ...repo, pull_number: prNum, per_page: 100,
+                });
+                const filenames = files.map(f => f.filename);
+                const fallback  = detectTypesFromPR(prTitle || '', headRef || '', filenames);
+                fallback.forEach(t => inheritedTypes.add(t));
+                if (fallback.length > 0) {
+                  console.log(`  Detected: [${fallback.join(', ')}]`);
+                } else {
+                  console.log('  No types detected from PR either.');
+                }
+              }
+
+              return { inheritedDifficulty, inheritedQuality, inheritedTypes };
+            }
+
+            // ── Main ─────────────────────────────────────────────────────────
+            console.log(`\n📣 PR #${prNumber} | action: ${action}`);
+
+            await ensureAllLabels();
+
+            // ── CLOSED ───────────────────────────────────────────────────────
+            if (action === 'closed') {
+              const isMerged = pr.merged === true;
+              const current  = await getLabels(prNumber);
+
+              // Always clean up open-state labels
+              await Promise.all([
+                safeRemove(prNumber, 'pr:pending-review', current),
+                safeRemove(prNumber, 'pr:has-conflicts',  current),
+              ]);
+
+              if (isMerged) {
+                // Merged: add pr:merged; intentionally preserve gssoc:approved & inherited labels
+                await safeAdd(prNumber, 'pr:merged', current);
+                console.log(`✅ PR #${prNumber} merged → added pr:merged, preserved inherited labels & gssoc:approved`);
+              } else {
+                // Closed without merge: revoke gssoc:approved
+                await safeRemove(prNumber, 'gssoc:approved', current);
+                console.log(`🔴 PR #${prNumber} closed without merge → revoked gssoc:approved`);
+              }
+              return;
+            }
+
+            // ── OPENED / REOPENED / SYNCHRONIZE ─────────────────────────────
+            const { inheritedDifficulty, inheritedQuality, inheritedTypes } =
+              await inheritFromLinkedIssues(prNumber, pr.body, pr.title, pr.head.ref);
+
+            const mergeable  = await getMergeable(prNumber);
+            const hasConflict = mergeable === false;
+            console.log(`🔀 Mergeable: ${mergeable === null ? 'unknown' : mergeable} → ${hasConflict ? '⚠️ CONFLICT' : '✅ CLEAN'}`);
+
+            const current = await getLabels(prNumber);
+
+            if (hasConflict) {
+              // ── Conflict state ───────────────────────────────────────────
+              // Strip all inherited labels and block gssoc:approved
+              console.log(`⚠️  Conflict detected — stripping inherited labels`);
+              await Promise.all([
+                ...DIFFICULTY_LABELS.map(l => safeRemove(prNumber, l, current)),
+                ...QUALITY_LABELS.map(l    => safeRemove(prNumber, l, current)),
+                ...TYPE_LABELS.map(l       => safeRemove(prNumber, l, current)),
+                safeRemove(prNumber, 'gssoc:approved',    current),
+                safeRemove(prNumber, 'pr:pending-review', current),
+              ]);
+              await safeAdd(prNumber, 'pr:has-conflicts', current);
+
+            } else if (mergeable === true) {
+              // ── Clean state — converge labels to correct state ───────────
+              console.log('✅ No conflicts — converging labels');
+
+              // Step 1: remove conflict label first
+              await safeRemove(prNumber, 'pr:has-conflicts', current);
+
+              // Step 2: re-fetch to get post-removal state
+              const fresh = await getLabels(prNumber);
+
+              // Step 3: remove stale difficulty (keep only the inherited one)
+              await Promise.all(
+                DIFFICULTY_LABELS
+                  .filter(l => l !== inheritedDifficulty && fresh.includes(l))
+                  .map(l => safeRemove(prNumber, l, fresh))
+              );
+
+              // Step 4: remove stale quality (keep only the inherited one)
+              await Promise.all(
+                QUALITY_LABELS
+                  .filter(l => l !== inheritedQuality && fresh.includes(l))
+                  .map(l => safeRemove(prNumber, l, fresh))
+              );
+
+              // Step 5: remove stale type labels (keep only the inherited set)
+              await Promise.all(
+                TYPE_LABELS
+                  .filter(l => !inheritedTypes.has(l) && fresh.includes(l))
+                  .map(l => safeRemove(prNumber, l, fresh))
+              );
+
+              // Step 6: batch-add all missing labels in one API call (minimal writes)
+              const toAdd = [];
+              if (inheritedDifficulty && !fresh.includes(inheritedDifficulty)) toAdd.push(inheritedDifficulty);
+              if (inheritedQuality    && !fresh.includes(inheritedQuality))    toAdd.push(inheritedQuality);
+              [...inheritedTypes].filter(l => !fresh.includes(l)).forEach(l => toAdd.push(l));
+              if (!fresh.includes('gssoc:approved'))    toAdd.push('gssoc:approved');
+              if (!fresh.includes('pr:pending-review')) toAdd.push('pr:pending-review');
+
+              if (toAdd.length > 0) {
+                await github.rest.issues.addLabels({ ...repo, issue_number: prNumber, labels: toAdd });
+                console.log(`🏷  Applied: [${toAdd.join(', ')}]`);
+              } else {
+                console.log('✔  All labels already correct — no API writes needed.');
+              }
+
+            } else {
+              // mergeable === null (GitHub hasn't computed it yet)
+              // Leave labels as-is; the scheduled scan will catch this PR
+              console.log('⏭  mergeable unknown — deferring to scheduled scan');
+            }
+
+            console.log(`\n✅ PR #${prNumber} sync complete.`);
+
+  # ============================================================================
+  # JOB 3 — Periodic Conflict Scan
+  # Re-checks every open PR when master changes or on schedule.
+  # Also reapplies gssoc:approved if it was accidentally removed.
+  # ============================================================================
+  scan-all-prs:
+    name: "🔀 Scan All PRs for Conflicts"
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Recalculate conflict state for every open PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const repo = { owner: context.repo.owner, repo: context.repo.repo };
+
+            const DIFFICULTY_LABELS = ['level:beginner', 'level:intermediate', 'level:advanced', 'level:critical'];
+            const QUALITY_LABELS    = ['quality:clean', 'quality:exceptional'];
+            const TYPE_LABELS       = [
+              'type:bug', 'type:feature', 'type:docs', 'type:testing', 'type:security',
+              'type:performance', 'type:design', 'type:refactor', 'type:devops', 'type:accessibility',
+            ];
+
+            // ── Helpers ──────────────────────────────────────────────────────
+            async function getLabels(num) {
+              const { data } = await github.rest.issues.get({ ...repo, issue_number: num });
+              return data.labels.map(l => (typeof l === 'string' ? l : l.name));
+            }
+
+            async function safeAdd(num, label, current) {
+              if (current.includes(label)) return;
+              await github.rest.issues.addLabels({ ...repo, issue_number: num, labels: [label] });
+              console.log(`🏷  Added   [${label}] → #${num}`);
+            }
+
+            async function safeRemove(num, label, current) {
+              if (!current.includes(label)) return;
+              try {
+                await github.rest.issues.removeLabel({ ...repo, issue_number: num, name: label });
+                console.log(`🗑  Removed [${label}] ← #${num}`);
+              } catch (err) {
+                if (err.status !== 404) throw err;
+              }
+            }
+
+            function parseLinkedIssues(body) {
+              const regex = /(?:fixes|closes|resolves|fixed|closed|resolved)\s+#(\d+)/gi;
+              return [...new Set([...(body || '').matchAll(regex)].map(m => parseInt(m[1])))];
+            }
+
+            // Returns { mergeable: bool|null, freshPR: object }
+            async function getMergeableState(prNum) {
+              const delays = [3000, 6000, 12000, 20000];
+              let freshPR = null;
+              for (let i = 0; i <= delays.length; i++) {
+                const { data } = await github.rest.pulls.get({ ...repo, pull_number: prNum });
+                freshPR = data;
+                if (data.mergeable !== null) return { mergeable: data.mergeable, freshPR: data };
+                if (i < delays.length) {
+                  console.log(`⏳ PR #${prNum} mergeable=null (attempt ${i + 1}) — waiting ${delays[i] / 1000}s…`);
+                  await new Promise(r => setTimeout(r, delays[i]));
+                }
+              }
+              console.log(`⚠️  PR #${prNum}: mergeable still null — skipping (caught next scheduled run)`);
+              return { mergeable: null, freshPR };
+            }
+
+            // Fetch inherited labels from linked issues
+            async function inheritFromLinkedIssues(prBody) {
+              const linkedIssues = parseLinkedIssues(prBody);
+              let inheritedDifficulty = null;
+              let inheritedQuality    = null;
+              const inheritedTypes    = new Set();
+
+              for (const issueNum of linkedIssues) {
+                try {
+                  const { data: issue } = await github.rest.issues.get({ ...repo, issue_number: issueNum });
+                  const labels = issue.labels.map(l => (typeof l === 'string' ? l : l.name));
+                  const diff = labels.filter(l => DIFFICULTY_LABELS.includes(l));
+                  if (diff.length === 1) inheritedDifficulty = diff[0];
+                  const qual = labels.filter(l => QUALITY_LABELS.includes(l));
+                  if (qual.length === 1) inheritedQuality = qual[0];
+                  labels.filter(l => TYPE_LABELS.includes(l)).forEach(l => inheritedTypes.add(l));
+                } catch (err) {
+                  console.warn(`⚠️  Could not fetch issue #${issueNum}: ${err.message}`);
+                }
+              }
+              return { inheritedDifficulty, inheritedQuality, inheritedTypes };
+            }
+
+            // ── Process a single open PR ─────────────────────────────────────
+            async function processPR(prData) {
+              const prNum = prData.number;
+
+              const { mergeable, freshPR } = await getMergeableState(prNum);
+              if (mergeable === null) return; // defer to next run
+
+              const hasConflict      = mergeable === false;
+              const current          = await getLabels(prNum);
+              const hasConflictLabel = current.includes('pr:has-conflicts');
+
+              if (hasConflict && !hasConflictLabel) {
+                // ── New conflict detected ─────────────────────────────────
+                console.log(`⚠️  PR #${prNum}: conflict detected → stripping labels`);
+                await Promise.all([
+                  ...DIFFICULTY_LABELS.map(l => safeRemove(prNum, l, current)),
+                  ...QUALITY_LABELS.map(l    => safeRemove(prNum, l, current)),
+                  ...TYPE_LABELS.map(l       => safeRemove(prNum, l, current)),
+                  safeRemove(prNum, 'gssoc:approved',    current),
+                  safeRemove(prNum, 'pr:pending-review', current),
+                ]);
+                await safeAdd(prNum, 'pr:has-conflicts', current);
+
+              } else if (!hasConflict && hasConflictLabel) {
+                // ── Conflict resolved — restore inherited labels ───────────
+                console.log(`✅ PR #${prNum}: conflict resolved → restoring labels`);
+                await safeRemove(prNum, 'pr:has-conflicts', current);
+
+                const prBody = freshPR ? freshPR.body : prData.body;
+                const { inheritedDifficulty, inheritedQuality, inheritedTypes } =
+                  await inheritFromLinkedIssues(prBody);
+
+                const fresh  = await getLabels(prNum);
+                const toAdd  = [];
+                if (inheritedDifficulty && !fresh.includes(inheritedDifficulty)) toAdd.push(inheritedDifficulty);
+                if (inheritedQuality    && !fresh.includes(inheritedQuality))    toAdd.push(inheritedQuality);
+                [...inheritedTypes].filter(l => !fresh.includes(l)).forEach(l => toAdd.push(l));
+                if (!fresh.includes('gssoc:approved'))    toAdd.push('gssoc:approved');
+                if (!fresh.includes('pr:pending-review')) toAdd.push('pr:pending-review');
+
+                if (toAdd.length > 0) {
+                  await github.rest.issues.addLabels({ ...repo, issue_number: prNum, labels: toAdd });
+                  console.log(`🏷  Restored: [${toAdd.join(', ')}] → #${prNum}`);
+                }
+
+              } else if (!hasConflict && !hasConflictLabel) {
+                // ── Clean PR — reapply gssoc:approved if missing ──────────
+                if (!current.includes('gssoc:approved')) {
+                  await safeAdd(prNum, 'gssoc:approved', current);
+                  console.log(`🔄 PR #${prNum}: reapplied accidentally-removed gssoc:approved`);
+                } else {
+                  console.log(`✔  PR #${prNum}: clean, labels correct — no changes needed`);
+                }
+
+              } else {
+                // hasConflict && hasConflictLabel — already labeled, nothing to do
+                console.log(`ℹ️  PR #${prNum}: conflict label already present — no action`);
+              }
+            }
+
+            // ── Fetch and batch-process all open PRs ─────────────────────────
+            const allPRs = await github.paginate(github.rest.pulls.list, {
+              ...repo, state: 'open', per_page: 100,
+            });
+
+            console.log(`\n📋 Found ${allPRs.length} open PR(s)`);
+
+            if (allPRs.length === 0) {
+              console.log('No open PRs — nothing to do.');
+              return;
+            }
+
+            // Batches of 5 with a 2s gap to stay within API rate limits
+            const BATCH_SIZE  = 5;
+            const BATCH_DELAY = 2000;
+
+            for (let i = 0; i < allPRs.length; i += BATCH_SIZE) {
+              const batch = allPRs.slice(i, i + BATCH_SIZE);
+              await Promise.all(batch.map(p => processPR(p)));
+              if (i + BATCH_SIZE < allPRs.length) {
+                await new Promise(r => setTimeout(r, BATCH_DELAY));
+              }
+            }
+
+            console.log('\n✅ Conflict scan complete.');

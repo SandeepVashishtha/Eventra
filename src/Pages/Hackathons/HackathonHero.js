@@ -27,7 +27,6 @@ const Tag = ({ tag, onRemove }) => (
 );
 
 export default function HackathonHero({
-  hackathons = [],
   searchQuery,
   setSearchQuery,
   scrollToCards,

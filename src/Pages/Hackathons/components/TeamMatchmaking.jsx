@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Check, AlertTriangle, User, Briefcase, Award, Zap, Code, Plus, X, ExternalLink, Settings } from "lucide-react";
+import { useState } from "react";
+import { Check, AlertTriangle, User, Briefcase, Zap, Code, Plus, ExternalLink, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const TeamMatchmaking = () => {

@@ -1,9 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-} from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
@@ -11,14 +6,9 @@ import { useAuth } from "../../context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { User, AtSign, Lock, Eye, EyeOff, Zap } from "lucide-react";
-import {
-  validate,
-  validateEmailAvailability,
-  validatePasswordStrength,
-} from "../../validation";
+import { validate, validateEmailAvailability, validatePasswordStrength } from "../../validation";
 
-const getResultMessage = (result, fallback) =>
-  result?.isValid ? "" : result?.message || fallback;
+const getResultMessage = (result, fallback) => (result?.isValid ? "" : result?.message || fallback);
 
 const parseSignupResponse = async (response) => {
   if (typeof response?.text === "function") {
@@ -63,7 +53,7 @@ const SignupForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
-  
+
   // Reconstructed missing state variables from the fragmented file
   const [error, setError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
@@ -162,7 +152,7 @@ const SignupForm = () => {
       }
     };
     validatePwd();
-    
+
     return () => {
       isActive = false;
     };
@@ -170,7 +160,7 @@ const SignupForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // 🔥 FIX 1: Prevent double-click API spam by returning early if already loading
     if (loading) return;
 
@@ -182,11 +172,10 @@ const SignupForm = () => {
 
     const valid = await runValidation();
     if (!valid) {
-        // 🔥 FIX 3: Safely unlock the form if validation fails
-        setLoading(false);
-        return;
+      // 🔥 FIX 3: Safely unlock the form if validation fails
+      setLoading(false);
+      return;
     }
-
     try {
       const signupEndpoint = API_ENDPOINTS.AUTH.REGISTER || API_ENDPOINTS.AUTH.SIGNUP;
       const response = await apiUtils.post(signupEndpoint, {
@@ -225,6 +214,7 @@ const SignupForm = () => {
       };
 
       setAuthSession(sessionToken, sessionUser);
+      setLoading(false);
       setSuccess("Account created successfully. Redirecting to dashboard...");
       setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
     } catch (err) {
@@ -249,16 +239,55 @@ const SignupForm = () => {
         aria-describedby="signup-form-error signup-form-success"
       >
         <div className="grid grid-cols-2 gap-4">
-          <FormFieldWrapper id="firstName" label="First name" message={errors.firstName} prefix={<User className="w-4 h-4 text-slate-500" />}>
-            <input name="firstName" type="text" value={formData.firstName} onChange={handleChange} className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
+          <FormFieldWrapper
+            id="firstName"
+            label="First name"
+            message={errors.firstName}
+            prefix={<User className="w-4 h-4 text-slate-500" />}
+          >
+            <input
+              name="firstName"
+              type="text"
+              value={formData.firstName}
+              onChange={handleChange}
+              className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white"
+              required
+              disabled={loading}
+            />
           </FormFieldWrapper>
-          <FormFieldWrapper id="lastName" label="Last name" message={errors.lastName} prefix={<User className="w-4 h-4 text-slate-500" />}>
-            <input name="lastName" type="text" value={formData.lastName} onChange={handleChange} className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
+          <FormFieldWrapper
+            id="lastName"
+            label="Last name"
+            message={errors.lastName}
+            prefix={<User className="w-4 h-4 text-slate-500" />}
+          >
+            <input
+              name="lastName"
+              type="text"
+              value={formData.lastName}
+              onChange={handleChange}
+              className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white"
+              required
+              disabled={loading}
+            />
           </FormFieldWrapper>
         </div>
 
-        <FormFieldWrapper id="email" label="Email" message={errors.email} prefix={<AtSign className="w-4 h-4 text-slate-500" />}>
-          <input name="email" type="email" value={formData.email} onChange={handleChange} className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
+        <FormFieldWrapper
+          id="email"
+          label="Email"
+          message={errors.email}
+          prefix={<AtSign className="w-4 h-4 text-slate-500" />}
+        >
+          <input
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white"
+            required
+            disabled={loading}
+          />
         </FormFieldWrapper>
 
         <FormFieldWrapper
@@ -267,16 +296,31 @@ const SignupForm = () => {
           message={errors.password}
           prefix={<Lock className="w-4 h-4 text-slate-500" />}
           suffix={
-            <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400" aria-label={showPassword ? "Hide password" : "Show password"}>
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           }
         >
-          <input name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleChange} className="w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
+          <input
+            name="password"
+            type={showPassword ? "text" : "password"}
+            value={formData.password}
+            onChange={handleChange}
+            className="w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white"
+            required
+            disabled={loading}
+          />
         </FormFieldWrapper>
 
         {errors.password && (
-          <p id="password-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.password}</p>
+          <p id="password-error" className="text-red-400 text-[10px] mt-1" role="alert">
+            {errors.password}
+          </p>
         )}
         {formData.password && <PasswordStrengthIndicator password={formData.password} />}
 
@@ -287,8 +331,11 @@ const SignupForm = () => {
           <div className="relative group">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 pointer-events-none" />
             <input
-              id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"}
-              value={formData.confirmPassword} onChange={handleChange}
+              id="confirmPassword"
+              name="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              value={formData.confirmPassword}
+              onChange={handleChange}
               placeholder="Confirm your password"
               aria-invalid={!!errors.confirmPassword}
               aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
@@ -296,14 +343,17 @@ const SignupForm = () => {
                 errors.confirmPassword
                   ? "border-red-500"
                   : formData.confirmPassword
-                    ? passwordMatchMessage ? "border-green-500" : "border-red-400"
+                    ? passwordMatchMessage
+                      ? "border-green-500"
+                      : "border-red-400"
                     : "border-slate-700/50 focus:border-blue-500"
               }`}
               required
               disabled={loading}
             />
             <button
-              type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
               aria-label={showConfirmPassword ? "Hide password" : "Show password"}
             >
@@ -311,10 +361,16 @@ const SignupForm = () => {
             </button>
           </div>
           {errors.confirmPassword && (
-            <p id="confirmPassword-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.confirmPassword}</p>
+            <p id="confirmPassword-error" className="text-red-400 text-[10px] mt-1" role="alert">
+              {errors.confirmPassword}
+            </p>
           )}
           {passwordMatchMessage && !errors.confirmPassword && (
-            <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-[10px] mt-1 text-green-400">
+            <motion.p
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="text-[10px] mt-1 text-green-400"
+            >
               {passwordMatchMessage}
             </motion.p>
           )}
@@ -345,7 +401,10 @@ const SignupForm = () => {
       </form>
 
       <p className="text-center text-sm text-slate-400 mt-4">
-        Already have an account? <Link to="/login" className="text-blue-400 hover:text-blue-300">Sign in</Link>
+        Already have an account?{" "}
+        <Link to="/login" className="text-blue-400 hover:text-blue-300">
+          Sign in
+        </Link>
       </p>
     </div>
   );

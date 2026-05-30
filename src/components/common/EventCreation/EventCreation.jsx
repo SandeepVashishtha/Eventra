@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
@@ -19,39 +19,28 @@ import {
 import {
   ArrowRightIcon,
   CalendarIcon,
-  MapPinIcon,
   UsersIcon,
   ClipboardDocumentListIcon,
-  TicketIcon,
   TagIcon,
   CheckCircleIcon,
-  PencilIcon,
-} from "@heroicons/react/24/solid";
+  } from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import {
   Calendar,
   MapPin,
   Link2,
   Users,
-  Image,
-  ClipboardList,
-  FileText,
-  Layers,
   Globe,
   CalendarPlus,
   CalendarX,
   Map,
   Navigation,
   Compass,
-  Upload,
   Plus,
 } from "lucide-react";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
-import { LoadingButton } from "../../ui/LoadingButton";
 import {
   parseTimeToMinutes,
-  formatDate,
-  formatTime,
   validateCoordinates,
 } from "../../../utils/eventCreationUtils";
 
@@ -260,12 +249,7 @@ const EventCreation = () => {
     }));
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      setCurrentStep(CREATION_STEPS.PREVIEW);
-    }
-  };
-  const handleNext = () => {
+    const handleNext = () => {
   try {
     if (currentStep === CREATION_STEPS.FORM) {
       const isValid = validateForm();
@@ -409,7 +393,9 @@ const EventCreation = () => {
     // Prevent saving before draft restoration
     if (!isDraftLoaded) return;
 
-    const { banner, bannerPreview, ...saveable } = formData;
+    const saveable = { ...formData };
+    delete saveable.banner;
+    delete saveable.bannerPreview;
 
     localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
   }, [formData, isDraftLoaded]);

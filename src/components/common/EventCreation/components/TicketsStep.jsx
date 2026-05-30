@@ -1,4 +1,3 @@
-import React from "react";
 import TicketTiersSection from "./TicketTiersSection";
 
 const TicketsStep = ({ formData, setFormData, errors, setErrors }) => {
