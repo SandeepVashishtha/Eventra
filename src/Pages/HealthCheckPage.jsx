@@ -11,7 +11,7 @@
  *   - Basic app metadata (version, build time)
  */
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
 const APP_VERSION = process.env.REACT_APP_VERSION || "1.0.0";
 const BUILD_TIME = process.env.REACT_APP_BUILD_TIME || new Date().toISOString();

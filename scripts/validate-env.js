@@ -79,6 +79,16 @@ const SENSITIVE_VALUE_PATTERNS = [
 const ALLOWED_EXCEPTIONS = new Set([
   'VITE_GOOGLE_CLIENT_ID',
   'VITE_EMAILJS_PUBLIC_KEY',
+  'REACT_APP_API_URL',
+  'REACT_APP_SENTRY_DSN',
+  'REACT_APP_GITHUB_REPO',
+  'REACT_APP_PUBLIC_URL',
+  'REACT_APP_VAPID_PUBLIC_KEY',
+  'REACT_APP_CSP_REPORT_URI',
+  'REACT_APP_FACEBOOK_APP_ID',
+  'REACT_APP_EMAILJS_PUBLIC_KEY',
+  'REACT_APP_EMAILJS_SERVICE_ID',
+  'REACT_APP_EMAILJS_TEMPLATE_ID',
 ]);
 
 // Required VITE_ variables that MUST be present for the app to function.
@@ -128,6 +138,12 @@ for (const varName of REQUIRED_VARS) {
   } else {
     console.log(`  ✓  ${varName} = [set]`);
   }
+}
+
+if (process.env.REACT_APP_GROQ_API_KEY) {
+  const msg = '[SECURITY LEAK] REACT_APP_GROQ_API_KEY: Groq credentials must never be exposed through a REACT_APP_ variable. Move the secret to GROQ_API_KEY and keep it server-side only.';
+  errors.push(msg);
+  hasErrors = true;
 }
 
 // Check optional variables

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,6 +27,11 @@ const ICON_MAP = {
   Navigation,
   Ticket,
 };
+
+// Maximum number of messages retained in localStorage.
+// Older messages beyond this cap are dropped from the front of the array so
+// the serialised JSON never grows large enough to exhaust the 5 MB quota.
+const MAX_STORED_MESSAGES = 100;
 
 // ─── Component ────────────────-----------------------------------------------
 
@@ -146,8 +151,11 @@ export default function Chatbot() {
     const cleanMessage = messageText.trim();
     if (!cleanMessage || isTyping) return;
 
-    // Append User Message
-    setMessages((prev) => [...prev, { role: "user", content: cleanMessage }]);
+    // Append User Message, pruning the oldest entries when the cap is exceeded.
+    setMessages((prev) => {
+      const next = [...prev, { role: "user", content: cleanMessage }];
+      return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
+    });
     setDraft("");
     setIsTyping(true);
 
@@ -155,10 +163,10 @@ export default function Chatbot() {
     clearReplyTimer();
     replyTimerRef.current = setTimeout(() => {
       const reply = getAssistantReply(cleanMessage);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: reply.answer, actions: reply.actions },
-      ]);
+      setMessages((prev) => {
+        const next = [...prev, { role: "assistant", content: reply.answer, actions: reply.actions }];
+        return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
+      });
       setIsTyping(false);
       replyTimerRef.current = null;
     }, 850);

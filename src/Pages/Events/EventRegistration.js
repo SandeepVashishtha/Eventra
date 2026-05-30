@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
@@ -41,20 +41,23 @@ import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 
 const MAX_NOTES_CHARS = 500;
 
-const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
-const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
-
-function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
-  const finalName = userName || "Participant";
-  if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
-    window.emailjs.init(EMAILJS_PUBLIC_KEY);
-    window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email: userEmail,
-      to_name: finalName,
-      event_name: eventName,
-      event_date: eventDate,
-    }).catch(() => { });
+// EmailJS credentials are no longer read from REACT_APP_* environment
+// variables here. They were previously bundled into the frontend JavaScript,
+// allowing any visitor to extract them and abuse the EmailJS quota.
+//
+// Confirmation emails are now sent via the /api/send-email serverless handler
+// which reads EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, and EMAILJS_PUBLIC_KEY
+// as server-only environment variables (no REACT_APP_ prefix).
+async function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  try {
+    await apiUtils.post("/api/send-email", {
+      toEmail: userEmail,
+      toName: userName || "Participant",
+      eventName: eventName || "",
+      eventDate: eventDate || "",
+    });
+  } catch {
+    // Confirmation email failure is non-fatal — registration already succeeded
   }
 }
 
@@ -106,7 +109,7 @@ const EventRegistration = () => {
   const eventId = routeEventId || routeId;
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, token, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
   const isHackathonPath = location.pathname.startsWith("/register");
@@ -117,6 +120,7 @@ const EventRegistration = () => {
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
+  const formContainerRef = useRef(null);
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -247,6 +251,39 @@ const EventRegistration = () => {
 
     loadEvent();
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+
+  // fix: trap keyboard focus inside registration form (fixes #3341)
+  // Previously Tab/Shift+Tab would escape the form and land on background elements,
+  // making the form inaccessible for keyboard-only and screen reader users.
+  useEffect(() => {
+    const container = formContainerRef.current;
+    if (!container) return;
+
+    const focusableSelectors =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const handleTabKey = (e) => {
+      if (e.key !== "Tab") return;
+      const focusable = Array.from(container.querySelectorAll(focusableSelectors));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    container.addEventListener("keydown", handleTabKey);
+    return () => container.removeEventListener("keydown", handleTabKey);
+  }, [loading, registered]);
 
   const checkEventCapacity = async (id, currentEvent) => {
     try {
@@ -678,7 +715,12 @@ const EventRegistration = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div
+      ref={formContainerRef}
+      role="main"
+      aria-label="Event registration form"
+      className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
+    >
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link

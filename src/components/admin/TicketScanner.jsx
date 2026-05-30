@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import {
   Camera,
@@ -104,7 +104,7 @@ export default function TicketScanner() {
         (decodedText) => {
           handleScanSuccess(decodedText);
         },
-        (errorMessage) => {
+        () => {
           // Silent failure during continuous frame scanning to avoid spamming logs
         }
       );

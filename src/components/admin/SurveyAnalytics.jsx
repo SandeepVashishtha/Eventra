@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   FiUsers,
   FiActivity,
   FiSmile,
   FiPlay,
   FiStar,
-  FiMessageSquare,
-  FiCheckCircle,
   FiDownload,
 } from "react-icons/fi";
 import { exportSurveyToCSV } from "../../utils/exportCsv";
@@ -37,7 +35,7 @@ const FEEDBACK_COMMENTS_POOL = [
 ];
 
 const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
-  const [isActive, setIsActive] = useState(true);
+  const [isActive] = useState(true);
 
   // Hook handles mock data generation - decoupled from UI components
   const {

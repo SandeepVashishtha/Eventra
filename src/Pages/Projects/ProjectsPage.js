@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiAlertCircle, FiChevronDown, FiSearch, FiX } from "react-icons/fi";
 
@@ -131,7 +131,6 @@ const ProjectGallery = () => {
           publicRequestConfig
         );
         const projectsData = response.data;
-
         // only use API data if it is non-empty; otherwise fall back to mock
         if (projectsData && projectsData.length > 0) {
           setProjects(projectsData);

@@ -26,7 +26,7 @@ import {
   totalLeaderboardPages,
   buildRanksMap,
   computeLeaderboardStats,
-  calculatePrPoints,
+  
   applyAchievementBonus,
 } from "../../utils/leaderboardUtils";
 import { getAchievementBadge } from "../../utils/leaderboardUtils";
@@ -34,7 +34,6 @@ import { logger } from "../../utils/logger";
 import { storageManager } from "../../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
 import { validators } from "../../utils/storage/storageValidators";
-import { ENV } from "../../config/env";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
@@ -81,21 +80,29 @@ function RankMovementIndicator({ liveDifference }) {
 }
 
 // Repository constant — update if the leaderboard should point to another repo
-const GITHUB_REPO = ENV.GITHUB_REPO;
+ 
 // Token is managed securely by the backend proxy
 const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
-// AnimatedCounter uses requestAnimationFrame instead of setInterval to keep
-// count-up animations aligned with the browser's paint cycle, avoiding
-// invisible ticks that setInterval fires even when the tab is hidden.
-//
-// React.memo prevents unnecessary re-renders from parent SSE updates: the
-// leaderboard streams live data via useLeaderboardStream, causing the parent
-// to re-render on every tick. Without React.memo, every AnimatedCounter on
-// the page would cancel its in-progress RAF loop and restart the animation
-// from zero — causing visible flicker on each stream update. With React.memo,
-// an AnimatedCounter only re-renders (and restarts its animation) when its
-// own `value` prop actually changes.
+// Points mapping for PR labels (keeps scoring logic centralized)
+const POINTS = {
+  gssoclevel1: 3,
+  gssoclevel2: 7,
+  gssoclevel3: 10,
+};
+const DEFAULT_MERGED_PR_POINTS = 1;
+
+const normalizeLabel = (label = "") =>
+  label.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const calculatePrPoints = (labels) => {
+  const levelPoints = labels.reduce((total, label) => {
+    const normalized = normalizeLabel(label);
+    return total + (POINTS[normalized] || 0);
+  }, 0);
+
+  return levelPoints || DEFAULT_MERGED_PR_POINTS;
+};
 
 // Custom lightweight high-performance count-up component
 const AnimatedCounter = React.memo(({ value }) => {
@@ -168,7 +175,8 @@ export default function LeaderBoard() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  const [, setDebouncedSearch] = useState(search);
   const [recentSearches, setRecentSearches] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
@@ -335,7 +343,8 @@ export default function LeaderBoard() {
   [contributors, search, activeCategory]
 );
 
-const sortedContributors = useMemo(
+ 
+useMemo(
   () => sortContributors(filteredContributors, sortBy),
   [filteredContributors, sortBy]
 );
@@ -354,12 +363,10 @@ const sortedContributors = useMemo(
 
     storageManager.set(STORAGE_KEYS.RECENT_SEARCHES, updatedSearches);
   };
-  const performanceData = [
-  { name: "Participated", value: 80 },
-  { name: "Won", value: 20 },
-];
+  
 
-const COLORS = ["#6366F1", "#22C55E"];
+ 
+
 
   const totalPages = useMemo(
     () => totalLeaderboardPages(filteredContributors.length, CONTRIBUTORS_PER_PAGE),
@@ -428,76 +435,140 @@ const COLORS = ["#6366F1", "#22C55E"];
                 Contributor Hall of Fame
               </h2>
 
-              {/* Responsive grid: Desktop side-by-side, mobile stacked */}
-              <div className="flex flex-col md:flex-row items-end justify-center gap-6 max-w-4xl mx-auto">
-                <AnimatePresence mode="popLayout">
-                  {podiumDisplay.map(({ item, position, orderClass, wClass, borderClass, ringClass, title, ptBadgeClass, size, pointsClass, isFirst, medalColor, borderColor }) => {
-                    const isStreak = streaks[item.username]?.onFire;
-                    return (
-                      <motion.div
-                        key={item.username}
-                        layout
-                        layoutId={`podium-card-${item.username}`}
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ 
-                          opacity: 1, 
-                          y: 0,
-                          boxShadow: isStreak 
-                            ? "0 20px 25px -5px rgba(239, 68, 68, 0.15), 0 0 25px 5px rgba(239, 68, 68, 0.2)" 
-                            : "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
-                        }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ type: "spring", stiffness: 180, damping: 20 }}
-                        whileHover={{ y: -6, scale: 1.02 }}
-                        className={`${wClass} ${orderClass} flex flex-col items-center bg-white/70 dark:bg-slate-900/75 backdrop-blur-md rounded-3xl p-6 border border-slate-200/50 dark:border-slate-800/40 border-b-8 ${borderClass} relative overflow-hidden`}
-                      >
-                        {isFirst && (
-                          <span className="absolute -top-12 left-1/2 -translate-x-1/2 w-32 h-32 bg-amber-500/10 dark:bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
-                        )}
-                        {isStreak && (
-                          <span className="absolute -top-12 left-1/2 -translate-x-1/2 w-32 h-32 bg-red-500/15 dark:bg-red-500/20 rounded-full blur-3xl pointer-events-none" />
-                        )}
+            {/* Responsive grid: Desktop side-by-side, mobile stacked */}
+            <div className="flex flex-col md:flex-row items-end justify-center gap-6 max-w-4xl mx-auto">
+              
+              {/* 2nd Place Card (Left Column) */}
+              {top3[1] && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: "spring", stiffness: 180, damping: 20, delay: 0.15 }}
+                  whileHover={{ y: -6, scale: 1.02 }}
+                  className="w-full md:w-72 order-2 md:order-1 flex flex-col items-center bg-white/70 dark:bg-slate-900/75 backdrop-blur-md rounded-3xl p-6 border-b-8 border-slate-300 dark:border-slate-700 border border-slate-200/50 dark:border-slate-800/40 shadow-xl"
+                >
+                  <div className="relative mb-4">
+                    {/* Prestige Aura/Laurel Ring */}
+                    <span className="absolute -inset-1 rounded-full bg-gradient-to-r from-slate-200 to-zinc-400 blur-sm opacity-80" />
+                    <img
+                      src={top3[1].avatar}
+                      alt={top3[1].username}
+                      className="relative h-18 w-18 rounded-full border-4 border-slate-300 shadow-md object-cover"
+                    />
+                    <div className="absolute -bottom-2 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-slate-800 text-[10px] font-black uppercase tracking-tight shadow">
+                      2nd
+                    </div>
+                  </div>
 
-                        <div className="relative mb-4">
-                          {/* Prestige Aura/Laurel Ring */}
-                          <span className={`absolute -inset-1 rounded-full bg-gradient-to-r ${ringClass} blur-sm opacity-80 ${isStreak ? "animate-pulse" : ""}`} />
-                          {isStreak && (
-                            <motion.span
-                              animate={{ rotate: 360 }}
-                              transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-                              className="absolute -inset-2 rounded-full bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 blur opacity-60"
-                            />
-                          )}
-                          <img
-                            src={item.avatar}
-                            alt={item.username}
-                            className={`relative ${size} rounded-full border-4 ${borderColor} shadow-md object-cover`} loading="lazy"/>
-                          {isFirst && <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl animate-bounce">👑</div>}
-                          <div className={`absolute -bottom-2 -right-1 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black uppercase tracking-tight shadow ${medalColor}`}>
-                            {position}
-                          </div>
-                        </div>
+                  <a
+                    href={top3[1].profile}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-base font-black text-slate-900 dark:text-white hover:text-indigo-500 transition-colors truncate max-w-[200px]"
+                  >
+                    {top3[1].username}
+                  </a>
 
-                        <div className="flex items-center gap-1.5">
-                          <a
-                            href={item.profile}
-                            target="_blank" rel="noopener noreferrer"
-                            rel="noopener noreferrer"
-                            className={`text-base font-black hover:text-indigo-500 transition-colors truncate max-w-[150px] ${isFirst ? "bg-gradient-to-r from-slate-950 via-indigo-950 to-pink-950 dark:from-white dark:via-indigo-200 dark:to-pink-100 bg-clip-text text-transparent" : "text-slate-900 dark:text-white"}`}
-                          >
-                            {item.username}
-                          </a>
-                          {isStreak && (
-                            <motion.span
-                              animate={{ rotate: [-10, 10, -10] }}
-                              transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut" }}
-                              className="text-sm"
-                              title="On Fire!"
-                            >
-                              🔥
-                            </motion.span>
-                          )}
-                        </div>
+                  <div className="mt-2.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/40">
+                    Platinum Contributor
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-around w-full border-t border-slate-200/50 dark:border-slate-800/40 pt-4">
+                    <div className="text-center">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Points</span>
+                      <p className="text-lg font-black text-slate-800 dark:text-slate-100 mt-0.5">
+                        <AnimatedCounter value={top3[1].points} />
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">PRs</span>
+                      <p className="text-lg font-black text-indigo-500 mt-0.5">
+                        <AnimatedCounter value={top3[1].prs} />
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* 1st Place Card (Middle Column - Tallest) */}
+              {top3[0] && (
+                <motion.div
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: "spring", stiffness: 180, damping: 18, delay: 0 }}
+                  whileHover={{ y: -8, scale: 1.03 }}
+                  className="w-full md:w-80 order-1 md:order-2 flex flex-col items-center bg-white dark:bg-slate-900 backdrop-blur-lg rounded-3xl p-7 border-b-8 border-yellow-400 dark:border-yellow-500 border border-slate-200/60 dark:border-slate-800/60 shadow-2xl relative overflow-hidden"
+                >
+                  {/* Amber ambient backlight glow */}
+                  <span className="absolute -top-12 left-1/2 -translate-x-1/2 w-32 h-32 bg-amber-500/10 dark:bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
+
+                  <div className="relative mb-5">
+                    {/* Breathing Golden Halo Aura */}
+                    <span className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 blur opacity-75 animate-pulse" />
+                    <img
+                      src={top3[0].avatar}
+                      alt={top3[0].username}
+                      className="relative h-22 w-22 rounded-full border-4 border-yellow-400 dark:border-yellow-500 shadow-lg object-cover"
+                    />
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl">
+                      👑
+                    </div>
+                    <div className="absolute -bottom-2 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-amber-950 text-xs font-black uppercase tracking-tight shadow-[0_2px_8px_rgba(234,179,8,0.4)]">
+                      1st
+                    </div>
+                  </div>
+
+                  <a
+                    href={top3[0].profile}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-lg font-black bg-gradient-to-r from-slate-950 via-indigo-950 to-pink-950 dark:from-white dark:via-indigo-200 dark:to-pink-100 bg-clip-text text-transparent hover:text-indigo-500 transition-colors truncate max-w-[220px]"
+                  >
+                    {top3[0].username}
+                  </a>
+
+                  <div className="mt-2.5 px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-yellow-400 text-yellow-950 shadow-[0_2px_10px_rgba(234,179,8,0.3)] border border-yellow-300/30">
+                    Grandmaster / Diamond Tier
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-around w-full border-t border-slate-200/50 dark:border-slate-800/40 pt-4">
+                    <div className="text-center">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Points</span>
+                      <p className="text-xl font-black text-amber-500 mt-0.5">
+                        <AnimatedCounter value={top3[0].points} />
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">PRs</span>
+                      <p className="text-xl font-black text-indigo-500 mt-0.5">
+                        <AnimatedCounter value={top3[0].prs} />
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* 3rd Place Card (Right Column) */}
+              {top3[2] && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: "spring", stiffness: 180, damping: 20, delay: 0.2 }}
+                  whileHover={{ y: -6, scale: 1.02 }}
+                  className="w-full md:w-72 order-3 md:order-3 flex flex-col items-center bg-white/70 dark:bg-slate-900/75 backdrop-blur-md rounded-3xl p-6 border-b-8 border-amber-600 dark:border-orange-700 border border-slate-200/50 dark:border-slate-880/40 shadow-xl"
+                >
+                  <div className="relative mb-4">
+                    {/* Prestige Aura/Laurel Ring */}
+                    <span className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-600 to-orange-500 blur-sm opacity-80" />
+                    <img
+                      src={top3[2].avatar}
+                      alt={top3[2].username}
+                      className="relative h-18 w-18 rounded-full border-4 border-amber-600 dark:border-orange-700 shadow-md object-cover"
+                    />
+                    <div className="absolute -bottom-2 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-amber-600 text-white text-[10px] font-black uppercase tracking-tight shadow">
+                      3rd
+                    </div>
+                  </div>
 
                         <div className={`mt-2.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase border ${ptBadgeClass}`}>
                           {isStreak ? "🔥 Streak Master" : title}
@@ -709,55 +780,45 @@ const COLORS = ["#6366F1", "#22C55E"];
                                 </div>
                               </td>
 
-                              {/* AVATAR + LINKS */}
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center gap-3">
-                                  <div className="relative">
-                                    {/* Small prestige indicator halo ring in the row */}
-                                    {rank <= 3 && (
-                                      <span
-                                        className={`absolute -inset-0.5 rounded-full blur-xs opacity-75 animate-pulse bg-gradient-to-r ${
-                                          rank === 1
-                                            ? "from-yellow-400 to-amber-500"
-                                            : rank === 2
-                                              ? "from-slate-200 to-zinc-400"
-                                              : "from-amber-600 to-orange-500"
-                                        }`}
-                                      />
-                                    )}
-                                    <img
-                                      loading="lazy"
-                                      decoding="async"
-                                      width="40"
-                                      height="40"
-                                      className={`relative h-10 w-10 rounded-full border-2 bg-slate-100 shadow-sm object-cover ${
-                                        rank === 1
-                                          ? "border-yellow-400 shadow-yellow-500/10"
-                                          : rank === 2
-                                            ? "border-slate-300"
-                                            : rank === 3
-                                              ? "border-amber-600"
-                                              : "border-indigo-100 dark:border-slate-800"
-                                      }`}
-                                      src={c.avatar}
-                                      alt={c.username}
-                                    />
+                          {/* AVATAR + LINKS */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="relative">
+                                {/* Small prestige indicator halo ring in the row */}
+                                {rank <= 3 && (
+                                  <span className={`absolute -inset-0.5 rounded-full blur-xs opacity-75 animate-pulse bg-gradient-to-r ${
+                                    rank === 1 ? "from-yellow-400 to-amber-500" : rank === 2 ? "from-slate-200 to-zinc-400" : "from-amber-600 to-orange-500"
+                                  }`} />
+                                )}
+                                <img
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="40"
+                                  height="40"
+                                  className={`relative h-10 w-10 rounded-full border-2 bg-slate-100 shadow-sm object-cover ${
+                                    rank === 1 ? "border-yellow-400 shadow-yellow-500/10" : rank === 2 ? "border-slate-300" : rank === 3 ? "border-amber-600" : "border-indigo-100 dark:border-slate-800"
+                                  }`}
+                                  src={c.avatar}
+                                  alt={c.username}
+                                />
+                              </div>
+                              <div>
+                                <a
+                                  href={c.profile}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                                >
+                                  {c.username}
+                                </a>
+                                {c.name && c.name !== c.username && (
+                                  <div className="text-xs text-slate-400 mt-0.5">
+                                    {c.name}
                                   </div>
-                                  <div>
-                                    <a
-                                      href={c.profile}
-                                      target="_blank" rel="noopener noreferrer"
-                                      rel="noopener noreferrer"
-                                      className="text-sm font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                                    >
-                                      {c.username}
-                                    </a>
-                                    {c.name && c.name !== c.username && (
-                                      <div className="text-xs text-slate-400 mt-0.5">{c.name}</div>
-                                    )}
-                                  </div>
-                                </div>
-                              </td>
+                                )}
+                              </div>
+                            </div>
+                          </td>
 
                               {/* GAMIFICATION BADGES */}
                               <td className="px-6 py-4 whitespace-nowrap">

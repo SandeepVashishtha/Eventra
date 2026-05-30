@@ -1,6 +1,5 @@
-import React from "react";
 import { useTheme } from "../../context/ThemeContext";
-import { Sliders, RotateCcw, Palette } from "lucide-react";
+import { RotateCcw, Palette } from "lucide-react";
 
 export default function ThemeCustomizer() {
   const { customHsl, setCustomHsl } = useTheme();
