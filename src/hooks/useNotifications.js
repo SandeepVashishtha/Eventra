@@ -12,6 +12,10 @@ const STORAGE_KEY = "eventra_notifications";
  * A custom React hook that manages in-app notifications with
  * IndexedDB persistence using idb-keyval.
  *
+ * Loads stored notifications on mount, persists updates after the
+ * initial load completes, and exposes helpers to add notifications,
+ * mark all as read, and request push permission.
+ *
  * @returns {{
  *   notifications: Object[],
  *   unreadCount: number,

@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useInView } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb, Code2, GitBranch, BookOpen, Users, CheckCircle,
+  Trophy, Clock, Star, ArrowRight, Search, Filter, ExternalLink,
   Trophy, Clock, Star, ArrowRight, Search, ExternalLink,
   Calendar, Award, MessageCircle, Zap, Target, Globe,
   Copy, Bell, WifiOff
@@ -472,6 +473,7 @@ const GSSoCContribution = () => {
   
   // Stats section visibility
   const statsRef = useRef(null);
+   
   useInView(statsRef, { once: true, margin: "-100px" });
   
   if (isLoading) {

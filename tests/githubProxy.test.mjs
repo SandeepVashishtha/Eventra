@@ -1,12 +1,14 @@
+import "./helpers/authTestEnv.mjs";
 import assert from "node:assert/strict";
 import jwt from "jsonwebtoken";
-import handler from "../api/github-proxy.js";
+const { default: handler } = await import("../api/github-proxy.js");
+const { users } = await import("../api/auth/signup.js");
 
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
 
-const DEV_JWT_SECRET = "eventra-local-development-jwt-secret";
+const DEV_JWT_SECRET = process.env.JWT_SECRET;
 
 const makeToken = (payload = {}) =>
   jwt.sign({ id: "user-test-1", email: "test@example.com", ...payload }, DEV_JWT_SECRET, {
@@ -57,6 +59,22 @@ globalThis.fetch = async (url, options) => {
 };
 
 process.env.GITHUB_TOKEN = "test-token";
+
+users.set("test@example.com", {
+  id: "user-test-1",
+  email: "test@example.com",
+  username: "test@example.com",
+  roles: ["USER"],
+  permissions: ["events:view"],
+});
+
+users.set("ratelimit@example.com", {
+  id: "user-rate-limit-test",
+  email: "ratelimit@example.com",
+  username: "ratelimit@example.com",
+  roles: ["USER"],
+  permissions: ["events:view"],
+});
 
 // ---------------------------------------------------------------------------
 // 1. Unauthenticated requests must be rejected with 401

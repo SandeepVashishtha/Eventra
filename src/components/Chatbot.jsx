@@ -28,6 +28,11 @@ const ICON_MAP = {
   Ticket,
 };
 
+// Maximum number of messages retained in localStorage.
+// Older messages beyond this cap are dropped from the front of the array so
+// the serialised JSON never grows large enough to exhaust the 5 MB quota.
+const MAX_STORED_MESSAGES = 100;
+
 // ─── Component ────────────────-----------------------------------------------
 
 export default function Chatbot() {
@@ -111,6 +116,27 @@ export default function Chatbot() {
   };
   // Auto-scroll messages to bottom of container when new ones arrive or state changes
   const chatLogsRef = useRef(null);
+  // Auto-scroll messages to bottom when new ones arrive
+  const messagesEndRef = useRef(null);
+  useEffect(() => {
+    if (!isMinimized && isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isMinimized, isOpen, isTyping]);
+
+  // Listen for Escape key to close the chatbot (accessibility)
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && isOpen) {
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
   const wasOpenRef = useRef(false);
   const wasMinimizedRef = useRef(false);
 
@@ -146,8 +172,11 @@ export default function Chatbot() {
     const cleanMessage = messageText.trim();
     if (!cleanMessage || isTyping) return;
 
-    // Append User Message
-    setMessages((prev) => [...prev, { role: "user", content: cleanMessage }]);
+    // Append User Message, pruning the oldest entries when the cap is exceeded.
+    setMessages((prev) => {
+      const next = [...prev, { role: "user", content: cleanMessage }];
+      return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
+    });
     setDraft("");
     setIsTyping(true);
 
@@ -155,10 +184,10 @@ export default function Chatbot() {
     clearReplyTimer();
     replyTimerRef.current = setTimeout(() => {
       const reply = getAssistantReply(cleanMessage);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: reply.answer, actions: reply.actions },
-      ]);
+      setMessages((prev) => {
+        const next = [...prev, { role: "assistant", content: reply.answer, actions: reply.actions }];
+        return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
+      });
       setIsTyping(false);
       replyTimerRef.current = null;
     }, 850);
