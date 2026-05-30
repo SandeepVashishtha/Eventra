@@ -14,7 +14,7 @@ const EventsPage = lazy(() => import("../../Pages/Events/EventsPage"));
 const EventDetails = lazy(() => import("../../Pages/Events/EventDetails"));
 const EventRegistration = lazy(() => import("../../Pages/Events/EventRegistration"));
 const HackathonPage = lazy(() => import("../../Pages/Hackathons/HackathonPage"));
-const VirtualVenueWalkthrough = lazy(() => import("../../Pages/Events/VirtualVenueWalkthrough"));
+const LiveInteractionHub = lazy(() => import("../../Pages/Events/LiveInteractionHub"));
 const HackathonDetailsPage = lazy(() => import("../../Pages/Hackathons/HackathonDetailsPage"));
 const HackathonLifecycle = lazy(() => import('../../Pages/Hackathons/HackathonLifecycle'));
 const ProjectsPage = lazy(() => import("../../Pages/Projects/ProjectsPage"));
