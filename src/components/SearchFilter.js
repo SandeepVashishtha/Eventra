@@ -1,23 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import useDebounce from "../hooks/useDebounce";
 import "./styles/components.css";
 
 const SearchFilter = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm]);
 
   const categories = [
     { value: "all", label: "All Categories" },
