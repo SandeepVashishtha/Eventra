@@ -3,8 +3,28 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 
 // ---------------------------------------------------------------------------
-// In-memory user storage (replace with database in production)
+// In-memory user storage
 // ---------------------------------------------------------------------------
+// WARNING: This Map is module-level and resets to empty on every serverless
+// cold start (Vercel, AWS Lambda, etc.). All registered accounts are lost
+// on restart, causing previously valid credentials to return 401.
+//
+// This store is suitable for local development only. For any deployed
+// environment, replace this Map with a durable database (Supabase, MongoDB,
+// PlanetScale, etc.) and update login.js and google.js accordingly.
+//
+// See GitHub issue #4195 for full details on the production impact.
+// ---------------------------------------------------------------------------
+
+if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
+  // Emit a clear error rather than silently accepting registrations that will
+  // vanish on the next cold start. This prevents the confusing 401 behaviour
+  // that users experience after a serverless function restart.
+  console.error(
+    "[signup.js] FATAL: In-memory user store is active in a production environment. " +
+    "Set DATABASE_URL to a persistent database to prevent data loss on cold starts."
+  );
+}
 
 const users = new Map();
 

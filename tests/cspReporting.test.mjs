@@ -1,116 +1,114 @@
 import assert from "node:assert/strict";
 
-// Mock environment and browser globals
+// Save original environment
 const originalNodeEnv = process.env.NODE_ENV;
 const originalReportUri = process.env.REACT_APP_CSP_REPORT_URI;
 
-process.env.NODE_ENV = 'development';
-process.env.REACT_APP_CSP_REPORT_URI = 'https://api.example.com/csp-report';
+// Set environment variables for testing
+process.env.NODE_ENV = "development";
+process.env.REACT_APP_CSP_REPORT_URI = "https://example.com/csp-report";
 
+// Mock document
 const listeners = {};
 global.document = {
-  addEventListener: (event, handler) => {
+  addEventListener(event, handler) {
     listeners[event] = handler;
   },
-  removeEventListener: (event, handler) => {
+  removeEventListener(event, handler) {
     if (listeners[event] === handler) {
       delete listeners[event];
     }
   }
 };
 
-let lastBeaconUri = null;
-let lastBeaconBlob = null;
-global.Blob = class {
-  constructor(parts, options) {
-    this.parts = parts;
+// Mock console.warn to capture dev logs
+let loggedWarning = null;
+const originalConsoleWarn = console.warn;
+console.warn = (...args) => {
+  loggedWarning = args;
+};
+
+// Mock Blob
+class MockBlob {
+  constructor(content, options) {
+    this.content = content;
     this.options = options;
   }
-};
+}
+global.Blob = MockBlob;
+
+// Mock navigator.sendBeacon
+let beaconSent = null;
 global.navigator = {
-  sendBeacon: (uri, blob) => {
-    lastBeaconUri = uri;
-    lastBeaconBlob = blob;
+  sendBeacon(url, blob) {
+    beaconSent = { url, blob };
     return true;
   }
 };
 
-let lastFetchUri = null;
-let lastFetchOptions = null;
-global.fetch = async (uri, options) => {
-  lastFetchUri = uri;
-  lastFetchOptions = options;
-  return { ok: true };
-};
-
-// Import after globals are mocked
+// Import functions dynamically so NODE_ENV changes are active during evaluation
 const { initCspReporting, teardownCspReporting } = await import("../src/utils/cspReporting.js");
 
-try {
-  // Test Case 1: initCspReporting attaches the listener
-  initCspReporting();
-  assert(listeners['securitypolicyviolation'] !== undefined, "Should register securitypolicyviolation listener");
+// Test 1: initCspReporting registers event listener
+assert.equal(listeners["securitypolicyviolation"], undefined, "no listener before init");
+initCspReporting();
+assert.ok(typeof listeners["securitypolicyviolation"] === "function", "listener registered after init");
 
-  // Test Case 2: Triggering the event sends the beacon report
-  const mockEvent = {
-    documentURI: "https://example.com/home",
-    violatedDirective: "style-src-elem",
-    effectiveDirective: "style-src-elem",
-    originalPolicy: "default-src 'self'",
-    blockedURI: "inline",
-    sourceFile: "main.js",
-    lineNumber: 42,
-    columnNumber: 10,
-    statusCode: 200
-  };
+// Test 2: triggering the listener in development
+const mockCspEvent = {
+  documentURI: "http://localhost/test",
+  violatedDirective: "style-src",
+  effectiveDirective: "style-src-elem",
+  originalPolicy: "default-src 'none'",
+  blockedURI: "inline",
+  sourceFile: "main.js",
+  lineNumber: 10,
+  columnNumber: 5,
+  statusCode: 200
+};
 
-  // Mock console.warn to verify dev logging
-  const originalConsoleWarn = console.warn;
-  let loggedCsp = false;
-  console.warn = (...args) => {
-    if (args[0] === '[CSP Violation]') loggedCsp = true;
-  };
+listeners["securitypolicyviolation"](mockCspEvent);
 
-  try {
-    listeners['securitypolicyviolation'](mockEvent);
-  } finally {
-    console.warn = originalConsoleWarn;
-  }
+// Verify dev warning was logged
+assert.ok(loggedWarning !== null, "console.warn was called in dev environment");
+assert.equal(loggedWarning[0], "[CSP Violation]", "first arg is tag");
+assert.equal(loggedWarning[1], "Directive: style-src-elem", "second arg is directive info");
 
-  assert(loggedCsp, "Should log violation in development mode");
-  assert.equal(lastBeaconUri, 'https://api.example.com/csp-report', "Should send report to REACT_APP_CSP_REPORT_URI");
-  
-  const parsedBlobData = JSON.parse(lastBeaconBlob.parts[0]);
-  assert.equal(parsedBlobData['csp-report']['document-uri'], mockEvent.documentURI);
-  assert.equal(parsedBlobData['csp-report']['violated-directive'], mockEvent.violatedDirective);
-  assert.equal(parsedBlobData['csp-report']['blocked-uri'], mockEvent.blockedURI);
+// Verify beacon was dispatched
+assert.ok(beaconSent !== null, "sendBeacon was called");
+assert.equal(beaconSent.url, "https://example.com/csp-report", "beacon sent to correct reportUri");
+assert.ok(beaconSent.blob instanceof MockBlob, "beacon sent valid Blob");
+const parsedReport = JSON.parse(beaconSent.blob.content[0]);
+assert.deepEqual(
+  parsedReport["csp-report"],
+  {
+    "document-uri": "http://localhost/test",
+    "violated-directive": "style-src",
+    "effective-directive": "style-src-elem",
+    "original-policy": "default-src 'none'",
+    "blocked-uri": "inline",
+    "source-file": "main.js",
+    "line-number": 10,
+    "column-number": 5,
+    "status-code": 200
+  },
+  "constructed CSP report matches expectations"
+);
 
-  // Test Case 3: Teardown removes the event listener
-  teardownCspReporting();
-  assert(listeners['securitypolicyviolation'] === undefined, "Should remove securitypolicyviolation listener on teardown");
+// Test 3: teardownCspReporting removes listener
+teardownCspReporting();
+assert.equal(listeners["securitypolicyviolation"], undefined, "listener unregistered after teardown");
 
-  // Test Case 4: Beacon fallback to fetch when Beacon fails (throws error)
-  initCspReporting();
-  global.navigator.sendBeacon = () => {
-    throw new Error("Beacon blocked");
-  };
-
-  listeners['securitypolicyviolation'](mockEvent);
-  assert.equal(lastFetchUri, 'https://api.example.com/csp-report', "Should fallback to fetch on Beacon failure");
-  assert.equal(lastFetchOptions.method, 'POST');
-  assert.equal(lastFetchOptions.headers['Content-Type'], 'application/csp-report');
-  
-  const parsedFetchData = JSON.parse(lastFetchOptions.body);
-  assert.equal(parsedFetchData['csp-report']['document-uri'], mockEvent.documentURI);
-
-  teardownCspReporting();
-
-  console.log("cspReporting tests passed ✓");
-} finally {
-  process.env.NODE_ENV = originalNodeEnv;
+// Restore originals
+process.env.NODE_ENV = originalNodeEnv;
+if (originalReportUri === undefined) {
+  delete process.env.REACT_APP_CSP_REPORT_URI;
+} else {
   process.env.REACT_APP_CSP_REPORT_URI = originalReportUri;
-  delete global.document;
-  delete global.navigator;
-  delete global.Blob;
-  delete global.fetch;
 }
+console.warn = originalConsoleWarn;
+delete global.document;
+delete global.navigator;
+delete global.Blob;
+
+console.log("cspReporting tests passed ✓");

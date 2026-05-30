@@ -39,7 +39,8 @@ const ValidationMessage = ({
   className = "",
   ...props
 }) => {
-  if (message === null || message === undefined || message === "") {
+  // 🔥 FIX 1: Added check for false to prevent empty tags
+  if (!message) {
     return null;
   }
 
@@ -55,7 +56,9 @@ const ValidationMessage = ({
       )}
       data-state={state}
       role={role}
+      // 🔥 FIX 2: aria-atomic="true" ensures screen readers announce the full message when it updates
       aria-live={role === "alert" ? "assertive" : "polite"}
+      aria-atomic="true"
       {...props}
     >
       {message}
