@@ -16,7 +16,8 @@ const useKeyboardShortcuts = ({
 
       const isTyping =
         active &&
-        ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName);
+        (["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName) ||
+          active.getAttribute("contenteditable") === "true");
 
       if (isTyping) return;
 
@@ -98,6 +99,9 @@ const useKeyboardShortcuts = ({
         keyBuffer.current = [];
       } else if (combo === "ga") {
         navigate("/leaderBoard");
+        keyBuffer.current = [];
+      } else if (combo === "gn") {
+        navigate("/notifications");
         keyBuffer.current = [];
       } else if (combo === "gf") {
         navigate("/faq");
