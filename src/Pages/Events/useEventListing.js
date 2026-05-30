@@ -129,7 +129,47 @@ const useEventListing = () => {
       });
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
-        const normalizedMockEvents = mockEvents.map(normalizeEvent);
+        let filteredMock = mockEvents;
+        
+        // Apply search query
+        if (debouncedSearchQuery.trim()) {
+          const q = debouncedSearchQuery.trim().toLowerCase();
+          filteredMock = filteredMock.filter(item => 
+            (item.title || "").toLowerCase().includes(q) ||
+            (item.location || "").toLowerCase().includes(q) ||
+            (item.description || "").toLowerCase().includes(q)
+          );
+        }
+
+        // Apply advanced category filter
+        if (advancedFilters?.category) {
+          const cat = advancedFilters.category.toLowerCase();
+          filteredMock = filteredMock.filter(item => 
+            (item.type || item.category || "").toLowerCase() === cat
+          );
+        }
+
+        // Apply advanced location filter
+        if (advancedFilters?.location) {
+          const loc = advancedFilters.location.toLowerCase();
+          filteredMock = filteredMock.filter(item => 
+            (item.location || "").toLowerCase().includes(loc)
+          );
+        }
+
+        // Apply status (filterType) filter (upcoming/past)
+        const now = new Date();
+        if (filterType === "upcoming") {
+          filteredMock = filteredMock.filter(item => new Date(item.date) >= now);
+        } else if (filterType === "past") {
+          filteredMock = filteredMock.filter(item => new Date(item.date) < now);
+        } else if (filterType && filterType !== "all") {
+          filteredMock = filteredMock.filter(item => 
+            (item.type || item.category || "").toLowerCase() === filterType.toLowerCase()
+          );
+        }
+
+        const normalizedMockEvents = filteredMock.map(normalizeEvent);
         setEvents(normalizedMockEvents);
         setPagination({
           totalPages: 1,
@@ -254,8 +294,6 @@ const useEventListing = () => {
   // 4. Advanced filters
   return applyAdvancedFilters(filtered, advancedFilters);
 }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
- 
-    
 
   const sortedEvents = useMemo(() => {
     return [...filteredEvents].sort((a, b) => {
