@@ -416,10 +416,14 @@ export default function TicketScanner() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                <label
+                  htmlFor="manual-attendee-name"
+                  className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block"
+                >
                   Attendee Name
                 </label>
                 <input
+                  id="manual-attendee-name"
                   type="text"
                   placeholder="e.g. Priyanshu Ranjan"
                   value={manualAttendeeName}
@@ -430,10 +434,14 @@ export default function TicketScanner() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                <label
+                  htmlFor="manual-ticket-code"
+                  className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block"
+                >
                   Ticket Code
                 </label>
                 <input
+                  id="manual-ticket-code"
                   type="text"
                   placeholder="e.g. GLO-PRI-8F39A"
                   value={manualTicketId}
@@ -444,10 +452,14 @@ export default function TicketScanner() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                <label
+                  htmlFor="manual-event-destination"
+                  className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block"
+                >
                   Event Destination
                 </label>
                 <select
+                  id="manual-event-destination"
                   value={manualEventName}
                   onChange={(e) => setManualEventName(e.target.value)}
                   className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-semibold focus:outline-none focus:border-indigo-500"
