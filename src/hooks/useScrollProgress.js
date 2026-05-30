@@ -1,5 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 
+/**
+ * Tracks page scroll progress as a percentage between 0 and 100.
+ *
+ * Uses requestAnimationFrame to throttle scroll/resize handlers and clamps
+ * the computed value so callers can bind it to progress indicators safely.
+ *
+ * @returns {number} Scroll progress percentage from 0 to 100
+ */
 export function useScrollProgress() {
   const [progress, setProgress] = useState(0);
   const rafRef = useRef(null);
