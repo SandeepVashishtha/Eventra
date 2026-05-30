@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { useAuth } from "../context/AuthContext";
 import FeatureErrorBoundary from "../components/common/FeatureErrorBoundary";
 import Loading from "./common/Loading";

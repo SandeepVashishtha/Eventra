@@ -203,6 +203,24 @@ class ErrorBoundary extends React.Component {
     setTimeout(() => window.location.reload(), 300);
   };
 
+  handleCopyReport = async () => {
+    const { error, errorInfo } = this.state;
+
+    const safeError =
+      error?.toString()?.trim() || "Unknown error";
+
+    const safeStack =
+      error?.stack?.trim() || "No stack";
+
+    const safeComponentStack =
+      errorInfo?.componentStack?.trim() || "Unavailable";
+
+    let safeLocalStorage = "{}";
+
+    try {
+      safeLocalStorage = JSON.stringify(localStorage, null, 2) || "{}";
+    } catch (err) {
+      safeLocalStorage = "Unable to read localStorage";
   handleTryAgain = () => {
     const { retryCount } = this.state;
     if (retryCount >= 3) {

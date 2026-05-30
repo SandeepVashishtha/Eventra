@@ -59,7 +59,7 @@
     "preview": "vite preview",
     "validate-env": "node scripts/validate-env.js",
     "test": "npm run test:unit",
-    "test:unit": "node tests/eventPaginationUtils.test.mjs && node tests/routeSearchUtils.test.mjs && node tests/userNameUtils.test.mjs && node tests/relativeTime.test.mjs && node tests/registerUtils.test.mjs && node tests/bookmarkUtils.test.mjs && node tests/auth.test.mjs && node tests/passwordResetEndpoint.test.mjs && node tests/eventDraftUtils.test.mjs && node tests/exportCsv.test.mjs && node tests/githubProxy.test.mjs && node tests/hackathonFilterUtils.test.mjs && node tests/loginEndpoint.test.mjs && node tests/googleOAuthEndpoint.test.mjs && node tests/logoutEndpoint.test.mjs && node tests/tokenRevocation.test.mjs && node tests/themeConsistency.test.mjs && node tests/sseMultiplexer.test.mjs",
+    "test:unit": "node tests/eventPaginationUtils.test.mjs && node tests/routeSearchUtils.test.mjs && node tests/userNameUtils.test.mjs && node tests/relativeTime.test.mjs && node tests/safeJsonParse.test.mjs && node tests/registerUtils.test.mjs && node tests/bookmarkUtils.test.mjs && node tests/auth.test.mjs && node tests/passwordResetEndpoint.test.mjs && node tests/eventDraftUtils.test.mjs && node tests/exportCsv.test.mjs && node tests/githubProxy.test.mjs && node tests/hackathonFilterUtils.test.mjs && node tests/loginEndpoint.test.mjs && node tests/googleOAuthEndpoint.test.mjs && node tests/logoutEndpoint.test.mjs && node tests/tokenRevocation.test.mjs && node tests/themeConsistency.test.mjs && node tests/sseMultiplexer.test.mjs",
     "test:e2e": "playwright test",
     "lint": "eslint src --ext .js,.jsx --max-warnings=-1",
     "lint:fix": "eslint src --ext .js,.jsx --fix",
@@ -67,12 +67,6 @@
     "prepare": "node scripts/setup-git-config.js",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
   },
   "jest": {
     "moduleNameMapper": {
@@ -112,10 +106,11 @@
     "@testing-library/react": "16.3.2",
     "@vitejs/plugin-react": "6.0.2",
     "autoprefixer": "^10.4.21",
-    "bcryptjs": "3.0.3",
     "cross-env": "^10.1.0",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-storybook": "10.4.1",
-    "jsonwebtoken": "9.0.3",
+    "globals": "17.6.0",
     "lint-staged": "^15.5.1",
     "postcss": "8.5.15",
     "prettier": "^3.2.5",

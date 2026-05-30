@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useRecentlyViewed from '../../hooks/useRecentlyViewed';
 import './RecentlyViewedEvents.css';
