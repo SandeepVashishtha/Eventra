@@ -446,7 +446,41 @@ export const NotificationProvider = ({ children }) => {
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         }));
 
-      window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(subscription));
+      // Store only non-sensitive subscription metadata locally.
+      //
+      // The full Web Push subscription object includes keys.p256dh and keys.auth —
+      // a 128-bit symmetric secret used to encrypt push payloads. Storing it in
+      // plaintext localStorage exposes it to any XSS payload or malicious browser
+      // extension that can read localStorage, allowing arbitrary push notifications
+      // to be sent to the user's device without the server's VAPID private key.
+      //
+      // Store only { endpoint, subscribed, subscribedAt } for local status checks.
+      // The full subscription (including keys) is sent to the backend over HTTPS
+      // where it is stored securely server-side and never re-read by the client.
+      const safeLocalRecord = {
+        endpoint: subscription?.endpoint ?? "",
+        subscribed: true,
+        subscribedAt: new Date().toISOString(),
+      };
+      try {
+        window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
+      } catch {
+        // Non-fatal — the subscription is still active; local status just won't persist
+      }
+
+      // Migrate: remove any existing full subscription object that may have been
+      // stored by a previous version of this code before this fix was applied.
+      // This runs once per subscribe() call and is a no-op if the key is absent.
+      const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
+      if (existing) {
+        try {
+          const parsed = JSON.parse(existing);
+          if (parsed?.keys) {
+            // Old format with sensitive keys — replace with the safe record
+            window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
+          }
+        } catch { /* non-fatal */ }
+      }
 
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
       if (token && isValidEndpoint(endpoint)) {
