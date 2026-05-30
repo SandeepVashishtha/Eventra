@@ -1,5 +1,3 @@
-import React from "react";
-import { X } from "lucide-react";
 import FilterBadge from "../../components/common/FilterBadge";
 import { getCategoryLabel } from "../../utils/advancedFilterUtils";
 
@@ -11,18 +9,6 @@ const FILTER_LABELS = {
   workshop: "Workshops",
 };
 
-const Badge = ({ children, onClear }) => (
-  <span className="inline-flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 px-3 py-1 rounded-full text-sm shadow-sm border border-gray-200 dark:border-gray-700">
-    <span className="truncate max-w-[12rem]">{children}</span>
-    <button
-      onClick={onClear}
-      aria-label="Remove filter"
-      className="opacity-70 hover:opacity-100 ml-1 -mr-1 p-1 rounded-full transition"
-    >
-      <X size={14} />
-    </button>
-  </span>
-);
 
 const ActiveFilters = ({
   searchQuery,
