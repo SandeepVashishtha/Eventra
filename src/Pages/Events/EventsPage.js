@@ -9,6 +9,7 @@ import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { getEventTimingStatus } from "./eventPaginationUtils";
 
 const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   if (isLoading) {
@@ -78,12 +79,11 @@ const EventsPage = () => {
     }
 
     const final = results.filter((event) => {
-      return (
-        filterType === "all" ||
-        (filterType === "upcoming" && event.status === "upcoming") ||
-        (filterType === "past" && event.status === "past") ||
-        event.type === filterType
-      );
+      if (filterType === "all") return true;
+      if (filterType === "upcoming" || filterType === "past") {
+        return getEventTimingStatus(event) === filterType;
+      }
+      return event.type === filterType;
     });
 
     setFilteredEvents(final);

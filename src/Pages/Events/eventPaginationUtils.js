@@ -32,14 +32,28 @@ export const getVisiblePaginationPages = (currentPage, totalPages, siblingCount 
   };
 };
 
-export const filterEventsByType = (events, filterType) => {
+export const getEventDateTime = (event) => {
+  if (!event?.date) return null;
+  const time = event.time || "23:59";
+  const parsed = new Date(`${event.date}T${time}`);
+  return Number.isNaN(parsed.getTime()) ? new Date(event.date) : parsed;
+};
+
+export const getEventTimingStatus = (event, now = new Date()) => {
+  const eventDateTime = getEventDateTime(event);
+  if (!eventDateTime) {
+    return event?.status === "past" ? "past" : "upcoming";
+  }
+  return eventDateTime < now ? "past" : "upcoming";
+};
+
+export const filterEventsByType = (events, filterType, now = new Date()) => {
   return events.filter((event) => {
-    return (
-      filterType === "all" ||
-      (filterType === "upcoming" && event.status === "upcoming") ||
-      (filterType === "past" && event.status === "past") ||
-      event.type === filterType
-    );
+    if (filterType === "all") return true;
+    if (filterType === "upcoming" || filterType === "past") {
+      return getEventTimingStatus(event, now) === filterType;
+    }
+    return event.type === filterType;
   });
 };
 
