@@ -106,6 +106,13 @@ export const generateSharingUrl = (shareData, platform) => {
     case 'telegram':
       return `https://telegram.me/share/url?url=${encodedUrl}&text=${encodedTitle}`;
 
+    case 'bluesky':
+    case 'bsky':
+      return `https://bsky.app/intent/compose?text=${encodedTitle}%20${encodedUrl}`;
+
+    case 'mastodon':
+      return `https://mastodonshare.com/?text=${encodedTitle}&url=${encodedUrl}`;
+
     case 'copy':
       return url;
 
