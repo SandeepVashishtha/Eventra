@@ -62,6 +62,7 @@ export default function GitHubStats() {
     let mounted = true;
     const cached = readCache();
     if (cached && mounted) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStats(cached);
       setIsLoading(false);
     }
@@ -91,7 +92,7 @@ export default function GitHubStats() {
             contribCount = contributors.length;
           }
         } else {
-          console.warn("Failed to fetch contributor count:", contributorsResult.reason);
+          //console.warn("Failed to fetch contributor count:", contributorsResult.reason);
         }
 
         // Pull request count — graceful fallback on failure
@@ -102,7 +103,7 @@ export default function GitHubStats() {
             prCount = pullRequests.length;
           }
         } else {
-          console.warn("Failed to fetch pull request count:", pullRequestsResult.reason);
+         //console.warn("Failed to fetch pull request count:", pullRequestsResult.reason);
         }
 
         const next = {
@@ -126,8 +127,8 @@ export default function GitHubStats() {
           writeCache(next);
           setIsLoading(false);
         }
-      } catch (err) {
-        console.warn("GitHub stats fetch failed", err);
+      } catch {
+        //console.warn("GitHub stats fetch failed", err);
         if (!cached && mounted) {
           setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
           setIsLoading(false);

@@ -232,12 +232,12 @@ const Contributors = () => {
       setContributors(enhanced);
       cacheContributors(enhanced);
     } catch (error) {
-      console.error("Failed to fetch contributors:", error);
+      //console.error("Failed to fetch contributors:", error);
 
       if (!backgroundRefresh) setContributors([]);
 
       if (error.name === "AbortError") {
-        console.error("Contributor request timed out");
+        //console.error("Contributor request timed out");
       }
     } finally {
       if (!backgroundRefresh) setLoading(false);
@@ -245,6 +245,7 @@ const Contributors = () => {
   }, [fetchGitHubProfile]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchContributors();
   }, [fetchContributors]);
 

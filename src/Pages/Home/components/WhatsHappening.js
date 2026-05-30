@@ -23,6 +23,7 @@ const WhatsHappening = () => {
 
   useEffect(() => {
     if (prefersReducedMotion) {
+      // eslint-disable-next-line
       setIsAutoPlaying(false);
     }
   }, [prefersReducedMotion]);
@@ -187,7 +188,7 @@ const WhatsHappening = () => {
           transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         >
           <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            What's Happening Now
+            What&apos;s Happening Now
           </h2>
           <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg text-slate-600 dark:text-slate-400">
             Stay updated with {upcomingEvents.length} upcoming events, community
