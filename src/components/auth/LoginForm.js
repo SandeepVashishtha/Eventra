@@ -1,17 +1,17 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
-import { FormFieldWrapper, ValidationMessage } from "../forms";
+import { ValidationMessage } from "../forms";
 import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { validate as fieldValidators } from "../../validation";
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
   const [error, setError] = useState({});
-  const [validationState, setValidationState] = useState({
+  const [, setValidationState] = useState({
     usernameOrEmail: "idle",
     password: "idle",
   });

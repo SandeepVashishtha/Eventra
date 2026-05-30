@@ -2,7 +2,6 @@ import { useRef, useEffect, useState } from "react";
 import { useSearchParams, useLocation } from "react-router-dom"; // ✅ useLocation added here
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
-import { getEventStatus } from "../../utils/eventUtils";
 import { Grid, List } from "lucide-react";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";

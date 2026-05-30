@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Layout, MapPin, Users, Award, Coffee, Eye,
   Maximize2, Volume2, Info, ChevronRight
