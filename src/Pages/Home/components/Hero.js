@@ -126,9 +126,27 @@ const Hero = () => {
   const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  const shapeTransforms = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) =>
-    useTransform(scrollYProgress, [0, 1], [0, i % 2 === 0 ? 220 - i * 20 : -150 + i * 15])
-  );
+  const shapeTransform0 = useTransform(scrollYProgress, [0, 1], [0, 220]);
+  const shapeTransform1 = useTransform(scrollYProgress, [0, 1], [0, -135]);
+  const shapeTransform2 = useTransform(scrollYProgress, [0, 1], [0, 180]);
+  const shapeTransform3 = useTransform(scrollYProgress, [0, 1], [0, -105]);
+  const shapeTransform4 = useTransform(scrollYProgress, [0, 1], [0, 140]);
+  const shapeTransform5 = useTransform(scrollYProgress, [0, 1], [0, -75]);
+  const shapeTransform6 = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  const shapeTransform7 = useTransform(scrollYProgress, [0, 1], [0, -45]);
+  const shapeTransform8 = useTransform(scrollYProgress, [0, 1], [0, 60]);
+
+  const shapeTransforms = [
+    shapeTransform0,
+    shapeTransform1,
+    shapeTransform2,
+    shapeTransform3,
+    shapeTransform4,
+    shapeTransform5,
+    shapeTransform6,
+    shapeTransform7,
+    shapeTransform8,
+  ];
 
   // ─── HANDLERS ──────────────────────────────────────────────────────────────
   const handleSearch = useCallback((query) => setSearchTerm(query), [setSearchTerm]);

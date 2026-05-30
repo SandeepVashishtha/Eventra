@@ -35,31 +35,18 @@ import {
   computeLeaderboardStats,
   applyAchievementBonus,
 } from "../../utils/leaderboardUtils";
-import { getAchievementBadge, type Contributor, type StreakData } from "../../utils/leaderboardUtils";
+import { getAchievementBadge } from "../../utils/leaderboardUtils";
 import { logger } from "../../utils/logger";
 import { storageManager } from "../../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
 import { validators } from "../../utils/storage/storageValidators";
-
-// ─── Types ───────────────────────────────────────────────
-interface LeaderboardCache {
-  data: Contributor[];
-  timestamp: number;
-}
-
-interface SearchHistory {
-  queries: string[];
-  lastUpdated: number;
-}
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
   { id: "overall", label: "Overall Leaders", icon: "🏆", description: "All-time top contributors" },
   { id: "monthly", label: "Monthly Stars", icon: "⭐", description: "This month's active contributors" },
   { id: "mentors", label: "Project Mentors", icon: "🎓", description: "Guiding the next generation" },
-] as const;
-
-type CategoryFilter = typeof CATEGORY_FILTERS[number]["id"];
+];
 
 // ─── Constants ───────────────────────────────────────────────
 const LEADERBOARD_CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -79,21 +66,21 @@ const POINTS = {
   gssoclevel1: 3,
   gssoclevel2: 7,
   gssoclevel3: 10,
-} as const;
+};
 const DEFAULT_MERGED_PR_POINTS = 1;
 
 // ─── Utility Functions ───────────────────────────────────────────────
 const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-const calculatePrPoints = (labels: string[]): number => {
+const calculatePrPoints = (labels) => {
   const levelPoints = labels.reduce((total, label) => {
     const normalized = normalizeLabel(label);
-    return total + (POINTS[normalized as keyof typeof POINTS] || 0);
+    return total + (POINTS[normalized] || 0);
   }, 0);
   return levelPoints || DEFAULT_MERGED_PR_POINTS;
 };
 
-const formatLastUpdated = (timestamp: number | string): string => {
+const formatLastUpdated = (timestamp) => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
@@ -105,8 +92,8 @@ const formatLastUpdated = (timestamp: number | string): string => {
 };
 
 // ─── Custom Hooks ───────────────────────────────────────────────
-const useDebouncedValue = <T,>(value: T, delay: number): T => {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+const useDebouncedValue = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedValue(value), delay);
@@ -116,17 +103,17 @@ const useDebouncedValue = <T,>(value: T, delay: number): T => {
   return debouncedValue;
 };
 
-const useLocalStorage = <T,>(key: string, initialValue: T): [T, (value: T) => void] => {
-  const [storedValue, setStoredValue] = useState<T>(() => {
+const useLocalStorage = (key, initialValue) => {
+  const [storedValue, setStoredValue] = useState(() => {
     try {
-      const item = storageManager.get(key, validators.isObject) as T;
+      const item = storageManager.get(key, validators.isObject);
       return item ?? initialValue;
     } catch {
       return initialValue;
     }
   });
 
-  const setValue = useCallback((value: T) => {
+  const setValue = useCallback((value) => {
     try {
       storageManager.set(key, value);
       setStoredValue(value);
@@ -140,7 +127,7 @@ const useLocalStorage = <T,>(key: string, initialValue: T): [T, (value: T) => vo
 
 // ─── Sub-Components ───────────────────────────────────────────────
 
-const RankMovementIndicator: React.FC<{ liveDifference?: number }> = React.memo(({ liveDifference }) => {
+const RankMovementIndicator = React.memo(({ liveDifference }) => {
   const diff = liveDifference ?? 0;
   
   if (diff > 0) {
@@ -179,10 +166,10 @@ const RankMovementIndicator: React.FC<{ liveDifference?: number }> = React.memo(
   );
 });
 
-const AnimatedCounter: React.FC<{ value: number | string; duration?: number }> = React.memo(
+const AnimatedCounter = React.memo(
   ({ value, duration = 1200 }) => {
     const [count, setCount] = useState(0);
-    const rafRef = useRef<number>();
+    const rafRef = useRef();
     const endValue = useMemo(() => {
       const num = typeof value === "string" ? parseInt(value, 10) : value;
       return isNaN(num) ? 0 : num;
@@ -198,7 +185,7 @@ const AnimatedCounter: React.FC<{ value: number | string; duration?: number }> =
 
       const startTime = performance.now();
 
-      const tick = (now: number) => {
+      const tick = (now) => {
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
@@ -219,7 +206,7 @@ const AnimatedCounter: React.FC<{ value: number | string; duration?: number }> =
   }
 );
 
-const LiveStatusBadge: React.FC<{ status: SSE_STATUS }> = ({ status }) => {
+const LiveStatusBadge = ({ status }) => {
   const statusConfig = {
     [SSE_STATUS.CONNECTED]: {
       label: "Live",
@@ -257,21 +244,7 @@ const LiveStatusBadge: React.FC<{ status: SSE_STATUS }> = ({ status }) => {
   );
 };
 
-const PodiumCard: React.FC<{
-  contributor: Contributor;
-  position: "1st" | "2nd" | "3rd";
-  orderClass: string;
-  styling: {
-    borderClass: string;
-    ringClass: string;
-    title: string;
-    badgeClass: string;
-    size: string;
-    pointsClass: string;
-    medalClass: string;
-  };
-  isFirst?: boolean;
-}> = React.memo(({ contributor, position, orderClass, styling, isFirst = false }) => {
+const PodiumCard = React.memo(({ contributor, position, orderClass, styling, isFirst = false }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -339,24 +312,24 @@ export default function LeaderBoard() {
   useDocumentTitle("Eventra | Leaderboard");
   
   // State
-  const [contributors, setContributors] = useState<Contributor[]>([]);
-  const [streaks, setStreaks] = useState<Record<string, StreakData>>({});
+  const [contributors, setContributors] = useState([]);
+  const [streaks, setStreaks] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string>("");
+  const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState("");
   const [search, setSearch] = useState("");
-  const [recentSearches, setRecentSearches] = useLocalStorage<SearchHistory>(
+  const [recentSearches, setRecentSearches] = useLocalStorage(
     STORAGE_KEYS.RECENT_SEARCHES,
     { queries: [], lastUpdated: Date.now() }
   );
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState<"points" | "prs" | "username">("points");
-  const [activeCategory, setActiveCategory] = useState<CategoryFilter>("overall");
+  const [sortBy, setSortBy] = useState("points");
+  const [activeCategory, setActiveCategory] = useState("overall");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Refs
-  const lastAppliedSyncRef = useRef<number | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const lastAppliedSyncRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   // Context
   const {
@@ -427,7 +400,7 @@ export default function LeaderBoard() {
 
     setContributors((prev) => {
       setStreaks((prevStreaks) => {
-        const updatedStreaks: Record<string, StreakData> = { ...prevStreaks };
+        const updatedStreaks = { ...prevStreaks };
         const prevRanks = new Map(prev.map((c, idx) => [c.username, idx + 1]));
 
         streamContributors.forEach((c, newIdx) => {
@@ -456,7 +429,7 @@ export default function LeaderBoard() {
     
     // Update cache
     try {
-      const cacheData: LeaderboardCache = {
+      const cacheData = {
         data: streamContributors,
         timestamp: lastSynced,
       };
@@ -476,7 +449,7 @@ export default function LeaderBoard() {
         setError(null);
 
         // Try cache first
-        const cached = storageManager.get<LeaderboardCache>(
+        const cached = storageManager.get(
           STORAGE_KEYS.LEADERBOARD_CACHE,
           validators.isObject
         );
@@ -534,7 +507,7 @@ export default function LeaderBoard() {
 
   // ─── Handlers ───────────────────────────────────────────────
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = useCallback((e) => {
     const query = e.target.value;
     setSearch(query);
     setCurrentPage(1);
@@ -608,7 +581,7 @@ export default function LeaderBoard() {
     URL.revokeObjectURL(link.href);
   }, [sortedContributors, ranksMap]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e) => {
     // Keyboard shortcuts
     if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
       e.preventDefault();
@@ -631,7 +604,7 @@ export default function LeaderBoard() {
   // ─── Podium Configuration ───────────────────────────────────────────────
   const podiumConfig = useMemo(() => [
     {
-      position: "2nd" as const,
+      position: "2nd",
       contributor: top3[1],
       orderClass: "order-2 md:order-1",
       styling: {
@@ -645,7 +618,7 @@ export default function LeaderBoard() {
       },
     },
     {
-      position: "1st" as const,
+      position: "1st",
       contributor: top3[0],
       orderClass: "order-1 md:order-2",
       styling: {
@@ -660,7 +633,7 @@ export default function LeaderBoard() {
       isFirst: true,
     },
     {
-      position: "3rd" as const,
+      position: "3rd",
       contributor: top3[2],
       orderClass: "order-3 md:order-3",
       styling: {
@@ -715,7 +688,7 @@ export default function LeaderBoard() {
                 {podiumConfig.map((podium, index) => (
                   <PodiumCard
                     key={podium.position}
-                    contributor={podium.contributor!}
+                    contributor={podium.contributor}
                     position={podium.position}
                     orderClass={podium.orderClass}
                     styling={podium.styling}
@@ -776,7 +749,7 @@ export default function LeaderBoard() {
                 options={sortOptions.map((opt) => opt.label)}
                 onChange={(value) => {
                   const selected = sortOptions.find((opt) => opt.label === value);
-                  if (selected) setSortBy(selected.value as typeof sortBy);
+                  if (selected) setSortBy(selected.value);
                 }}
                 icon={<FaFilter className="w-3 h-3" aria-hidden="true" />}
               />

@@ -4,7 +4,6 @@ import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb, Code2, GitBranch, BookOpen, Users, CheckCircle,
   Trophy, Clock, Star, ArrowRight, Search, Filter, ExternalLink,
-  Trophy, Clock, Star, ArrowRight, Search, ExternalLink,
   Calendar, Award, MessageCircle, Zap, Target, Globe,
   Copy, Bell, WifiOff
 } from "lucide-react";
