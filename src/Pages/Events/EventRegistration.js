@@ -41,20 +41,23 @@ import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 
 const MAX_NOTES_CHARS = 500;
 
-const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
-const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
-
-function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
-  const finalName = userName || "Participant";
-  if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
-    window.emailjs.init(EMAILJS_PUBLIC_KEY);
-    window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email: userEmail,
-      to_name: finalName,
-      event_name: eventName,
-      event_date: eventDate,
-    }).catch(() => { });
+// EmailJS credentials are no longer read from REACT_APP_* environment
+// variables here. They were previously bundled into the frontend JavaScript,
+// allowing any visitor to extract them and abuse the EmailJS quota.
+//
+// Confirmation emails are now sent via the /api/send-email serverless handler
+// which reads EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, and EMAILJS_PUBLIC_KEY
+// as server-only environment variables (no REACT_APP_ prefix).
+async function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  try {
+    await apiUtils.post("/api/send-email", {
+      toEmail: userEmail,
+      toName: userName || "Participant",
+      eventName: eventName || "",
+      eventDate: eventDate || "",
+    });
+  } catch {
+    // Confirmation email failure is non-fatal — registration already succeeded
   }
 }
 
