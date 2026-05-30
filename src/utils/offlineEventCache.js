@@ -72,6 +72,12 @@ export const getCachedEvents = () => {
   return cached;
 };
 
+/**
+ * Write a single event detail entry to the cache.
+ * Reads the existing cache object, adds the entry, and writes back.
+ * Use saveAllCachedEventDetails() when persisting many events at once
+ * to avoid O(n) read+write cycles.
+ */
 // ---------------------------------------------------------------------------
 // Event detail cache
 // ---------------------------------------------------------------------------
@@ -89,6 +95,37 @@ export const saveCachedEventDetail = (event) => {
 };
 
 /**
+ * Batch-write multiple event detail entries to the cache in a single
+ * localStorage read+write cycle.
+ *
+ * Use this instead of nextEvents.forEach(saveCachedEventDetail) — the
+ * forEach pattern triggers N independent read+write pairs, each one
+ * loading and saving the entire cache object. For 50+ events this is
+ * 100+ synchronous localStorage operations on the main thread.
+ *
+ * This function reads once, applies all entries, and writes once
+ * regardless of N.
+ *
+ * @param {Array} events - Array of event objects to cache.
+ * @returns {boolean} True if the write succeeded.
+ */
+export const saveAllCachedEventDetails = (events = []) => {
+  if (!Array.isArray(events) || events.length === 0) {
+    return false;
+  }
+
+  const cached = readJson(EVENT_DETAILS_CACHE_KEY, {});
+  const now = new Date().toISOString();
+
+  events.forEach((event) => {
+    if (event?.id) {
+      cached[event.id] = { cachedAt: now, event };
+    }
+  });
+
+  return writeJson(EVENT_DETAILS_CACHE_KEY, cached);
+};
+
  * Returns the cached detail for a single event, or null if absent or older
  * than DETAIL_CACHE_TTL_MS. Prunes the expired entry and any other stale
  * sibling entries from the detail cache on access.

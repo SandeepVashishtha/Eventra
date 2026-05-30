@@ -2,6 +2,31 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
+import { applyAdvancedFilters, getDateRange, getPriceStats } from "../../utils/advancedFilterUtils";
+import {
+  DEFAULT_EVENTS_PER_PAGE,
+  clampPage,
+  filterEventsByType,
+  getPaginatedEvents,
+  getTotalPages,
+  sortEventsByDate,
+} from "./eventPaginationUtils.mjs";
+import {
+  getCacheAgeLabel,
+  getCachedEvents,
+  saveAllCachedEventDetails,
+  saveCachedEvents,
+} from "../../utils/offlineEventCache";
+
+const normalizeEvent = (event) => ({
+  ...event,
+  status: event.status || getEventStatus(event),
+});
+
+const FUSE_OPTIONS = {
+  keys: ['title', 'description', 'location', 'category', 'type', 'tags'],
+  threshold: 0.4,
+  includeScore: true,
 import useDebounce from "../../hooks/useDebounce";
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
@@ -96,6 +121,19 @@ const useEventListing = () => {
 
       const apiEvents = Array.isArray(responseData.content)
         ? responseData.content
+        : Array.isArray(responseData)
+          ? responseData
+          : [];
+
+      const nextEvents = (apiEvents.length > 0 ? apiEvents : fallbackEvents).map(normalizeEvent);
+      setEvents(nextEvents);
+      setCacheInfo(null);
+      saveCachedEvents(nextEvents);
+      // Batch-write all detail entries in a single read+write cycle.
+      // Replaces nextEvents.forEach(saveCachedEventDetail) which triggered
+      // N independent localStorage read+write pairs — O(n) synchronous
+      // main-thread I/O that blocked the UI for each event in the list.
+      saveAllCachedEventDetails(nextEvents);
         : [];
 
       const normalizedEvents = apiEvents.map((event) => ({
