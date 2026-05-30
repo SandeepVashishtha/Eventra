@@ -130,6 +130,8 @@ export default function CommandPalette({
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
+      setQuery("");
+      setActiveIndex(0);
     }
     return () => {
       document.body.style.overflow = "";

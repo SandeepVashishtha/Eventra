@@ -7,13 +7,11 @@ name: PR Status Lifecycle Labeler
 #   deploy:verified   — Vercel deployment succeeded; PR is clean and ready
 #   changes:required  — Vercel failed OR a reviewer requested changes
 #
-# Additionally controls gssoc:approved:
-#   Added  → only when Vercel deploy succeeds (PR is truly verified)
-#   Removed → when new commits arrive, deploy fails, or changes are requested
-#
 # Label namespace owned exclusively by this workflow:
 #   review:*, deploy:*, changes:*
-#   gssoc:* (shared with pr-auto-assign.yml which no longer sets it on open)
+#
+# NOTE: gssoc:approved is managed exclusively by label-engine.yml.
+#       This workflow does NOT touch the gssoc:* namespace.
 # ──────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -54,19 +52,16 @@ jobs:
               }
             };
 
-            const GSSOC_APPROVED = 'gssoc:approved';
-            const GSSOC_META = {
-              color: '7B2D8B',
-              description: '🎉 Verified GSSoC 2026 contribution — deployment passed'
-            };
 
             const STATUS_LABEL_NAMES = Object.keys(STATUS_LABELS);
 
+
+            // NOTE: gssoc:approved is owned by label-engine.yml — never touched here.
+
             // ── Helpers ────────────────────────────────────────────────────
             async function ensureLabelsExist() {
-              const all = { ...STATUS_LABELS, [GSSOC_APPROVED]: GSSOC_META };
               await Promise.all(
-                Object.entries(all).map(async ([name, { color, description }]) => {
+                Object.entries(STATUS_LABELS).map(async ([name, { color, description }]) => {
                   try {
                     await github.rest.issues.getLabel({ ...repo, name });
                   } catch (err) {
@@ -134,16 +129,18 @@ jobs:
                 await addLabels(prNumber, ['review:needed']);
 
               } else if (action === 'synchronize') {
-                // Contributor pushed new commits → reset all outcome labels,
+                // Contributor pushed new commits → reset outcome labels,
                 // re-request review (deployment needs to re-run, review is stale)
-                await removeLabels(prNumber, ['changes:required', 'deploy:verified', GSSOC_APPROVED]);
+                // NOTE: gssoc:approved is managed by label-engine.yml — not touched here
+                await removeLabels(prNumber, ['changes:required', 'deploy:verified']);
                 await addLabels(prNumber, ['review:needed']);
                 console.log(`🔄 PR #${prNumber}: new commits pushed — reset to review:needed`);
 
               } else if (action === 'closed') {
-                // PR merged or closed — clean up all status labels
-                await removeLabels(prNumber, [...STATUS_LABEL_NAMES, GSSOC_APPROVED]);
-                console.log(`🧹 PR #${prNumber}: closed — cleared all status labels`);
+                // PR merged or closed — clean up status labels only
+                // NOTE: gssoc:approved is managed by label-engine.yml — not touched here
+                await removeLabels(prNumber, STATUS_LABEL_NAMES);
+                console.log(`🧹 PR #${prNumber}: closed — cleared status labels`);
               }
 
             // ──────────────────────────────────────────────────────────────
@@ -186,14 +183,16 @@ jobs:
               console.log(`Matched PR #${prNumber} for branch "${branchRef}"`);
 
               if (state === 'success') {
-                // Vercel passed — PR is clean and verified for GSSoC
+                // Vercel passed — deployment verified
+                // NOTE: gssoc:approved is managed by label-engine.yml — not touched here
                 await removeLabels(prNumber, ['review:needed', 'changes:required']);
-                await addLabels(prNumber, ['deploy:verified', GSSOC_APPROVED]);
-                console.log(`✅ Deploy SUCCESS → PR #${prNumber}: deploy:verified + gssoc:approved`);
+                await addLabels(prNumber, ['deploy:verified']);
+                console.log(`✅ Deploy SUCCESS → PR #${prNumber}: deploy:verified`);
 
               } else {
                 // state === 'failure' || 'error'
-                await removeLabels(prNumber, ['review:needed', 'deploy:verified', GSSOC_APPROVED]);
+                // NOTE: gssoc:approved is managed by label-engine.yml — not touched here
+                await removeLabels(prNumber, ['review:needed', 'deploy:verified']);
                 await addLabels(prNumber, ['changes:required']);
                 console.log(`❌ Deploy FAILED → PR #${prNumber}: changes:required`);
               }
@@ -210,16 +209,15 @@ jobs:
 
               if (reviewState === 'changes_requested') {
                 // Maintainer explicitly requested changes
-                await removeLabels(prNumber, ['review:needed', 'deploy:verified', GSSOC_APPROVED]);
+                // NOTE: gssoc:approved is managed by label-engine.yml — not touched here
+                await removeLabels(prNumber, ['review:needed', 'deploy:verified']);
                 await addLabels(prNumber, ['changes:required']);
                 console.log(`❌ Changes requested → PR #${prNumber}: added changes:required`);
 
               } else if (reviewState === 'approved') {
-                // Review approved — remove request/required labels
-                // Note: gssoc:approved is NOT added here — it requires Vercel success too
+                // Review approved — remove awaiting-review labels
                 await removeLabels(prNumber, ['review:needed', 'changes:required']);
                 console.log(`✔  Review approved → PR #${prNumber}: removed review:needed + changes:required`);
-                console.log(`ℹ️  gssoc:approved will be added when Vercel deployment also succeeds`);
 
               }
               // 'commented' state — informational only, no label change

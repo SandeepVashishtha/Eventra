@@ -62,8 +62,13 @@ const WhatsHappening = () => {
   };
 
   const formatHackathonsData = (hackathons) => {
+    const now = new Date();
     return hackathons
-      .filter((hackathon) => hackathon.status !== "ended")
+      .filter(
+        (hackathon) =>
+          hackathon.status !== "ended" &&
+          new Date(hackathon.endDate) >= now
+      )
       .map((hackathon) => ({
         id: `hackathon-${hackathon.id}`,
         title: hackathon.title,

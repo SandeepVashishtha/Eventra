@@ -120,6 +120,7 @@ const EventRegistration = () => {
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
+  const formContainerRef = useRef(null);
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -250,6 +251,39 @@ const EventRegistration = () => {
 
     loadEvent();
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+
+  // fix: trap keyboard focus inside registration form (fixes #3341)
+  // Previously Tab/Shift+Tab would escape the form and land on background elements,
+  // making the form inaccessible for keyboard-only and screen reader users.
+  useEffect(() => {
+    const container = formContainerRef.current;
+    if (!container) return;
+
+    const focusableSelectors =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const handleTabKey = (e) => {
+      if (e.key !== "Tab") return;
+      const focusable = Array.from(container.querySelectorAll(focusableSelectors));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    container.addEventListener("keydown", handleTabKey);
+    return () => container.removeEventListener("keydown", handleTabKey);
+  }, [loading, registered]);
 
   const checkEventCapacity = async (id, currentEvent) => {
     try {
@@ -681,7 +715,12 @@ const EventRegistration = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div
+      ref={formContainerRef}
+      role="main"
+      aria-label="Event registration form"
+      className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
+    >
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link
