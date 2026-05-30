@@ -37,10 +37,10 @@ export default function ThemeCustomizer() {
           </div>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-center">
-          <button onClick={handleReset} className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 transition" aria-label="button">
-            <RotateCcw className="w-4.5 h-4.5" />
+          <button onClick={handleReset} className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 transition" aria-label="Reset theme color">
+            <RotateCcw className="w-4.5 h-4.5" aria-hidden="true" />
           </button>
-          <button onClick={handleToggle} className={`px-4 py-2 rounded-xl text-xs font-bold transition ${active ? "bg-indigo-600 text-white" : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300"}`} aria-label="button">
+          <button onClick={handleToggle} className={`px-4 py-2 rounded-xl text-xs font-bold transition ${active ? "bg-indigo-600 text-white" : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300"}`} aria-label={active ? "Disable custom theme color" : "Enable custom theme color"}>
             {active ? "Custom Active" : "Enable Custom"}
           </button>
         </div>
@@ -57,28 +57,28 @@ export default function ThemeCustomizer() {
           {/* Hue */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-semibold">
-              <span>Hue</span>
+              <label htmlFor="theme-hue">Hue</label>
               <span className="font-mono">{h}°</span>
             </div>
-            <input type="range" min="0" max="360" value={h} onChange={(e) => updateHsl("h", e.target.value)} className="w-full h-2 rounded-lg appearance-none cursor-pointer" style={{ background: "linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)" }} />
+            <input id="theme-hue" type="range" min="0" max="360" value={h} onChange={(e) => updateHsl("h", e.target.value)} className="w-full h-2 rounded-lg appearance-none cursor-pointer" style={{ background: "linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)" }} />
           </div>
 
           {/* Saturation */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-semibold">
-              <span>Saturation</span>
+              <label htmlFor="theme-saturation">Saturation</label>
               <span className="font-mono">{s}%</span>
             </div>
-            <input type="range" min="0" max="100" value={s} onChange={(e) => updateHsl("s", e.target.value)} className="w-full h-2 rounded-lg appearance-none cursor-pointer" style={{ background: `linear-gradient(to right, hsl(${h}, 0%, 50%), hsl(${h}, 100%, 50%))` }} />
+            <input id="theme-saturation" type="range" min="0" max="100" value={s} onChange={(e) => updateHsl("s", e.target.value)} className="w-full h-2 rounded-lg appearance-none cursor-pointer" style={{ background: `linear-gradient(to right, hsl(${h}, 0%, 50%), hsl(${h}, 100%, 50%))` }} />
           </div>
 
           {/* Lightness */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-semibold">
-              <span>Lightness</span>
+              <label htmlFor="theme-lightness">Lightness</label>
               <span className="font-mono">{l}%</span>
             </div>
-            <input type="range" min="10" max="90" value={l} onChange={(e) => updateHsl("l", e.target.value)} className="w-full h-2 rounded-lg appearance-none cursor-pointer" style={{ background: `linear-gradient(to right, #000000, hsl(${h}, ${s}%, 50%), #ffffff)` }} />
+            <input id="theme-lightness" type="range" min="10" max="90" value={l} onChange={(e) => updateHsl("l", e.target.value)} className="w-full h-2 rounded-lg appearance-none cursor-pointer" style={{ background: `linear-gradient(to right, #000000, hsl(${h}, ${s}%, 50%), #ffffff)` }} />
           </div>
         </div>
       </div>
