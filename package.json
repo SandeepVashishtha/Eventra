@@ -60,7 +60,7 @@
     "preview": "vite preview",
     "validate-env": "node scripts/validate-env.js",
     "test": "npm run test:unit",
-    "test:unit": "node tests/eventPaginationUtils.test.mjs && node tests/routeSearchUtils.test.mjs && node tests/userNameUtils.test.mjs && node tests/relativeTime.test.mjs && node tests/safeJsonParse.test.mjs && node tests/registerUtils.test.mjs && node tests/bookmarkUtils.test.mjs && node tests/auth.test.mjs && node tests/passwordResetEndpoint.test.mjs && node tests/eventDraftUtils.test.mjs && node tests/exportCsv.test.mjs && node tests/githubProxy.test.mjs && node tests/hackathonFilterUtils.test.mjs && node tests/loginEndpoint.test.mjs && node tests/googleOAuthEndpoint.test.mjs && node tests/logoutEndpoint.test.mjs && node tests/themeConsistency.test.mjs && node tests/sseMultiplexer.test.mjs",
+    "test:unit": "node tests/eventPaginationUtils.test.mjs && node tests/routeSearchUtils.test.mjs && node tests/userNameUtils.test.mjs && node tests/relativeTime.test.mjs && node tests/safeJsonParse.test.mjs && node tests/registerUtils.test.mjs && node tests/bookmarkUtils.test.mjs && node tests/auth.test.mjs && node tests/passwordResetEndpoint.test.mjs && node tests/eventDraftUtils.test.mjs && node tests/exportCsv.test.mjs && node tests/githubProxy.test.mjs && node tests/hackathonFilterUtils.test.mjs && node tests/loginEndpoint.test.mjs && node tests/googleOAuthEndpoint.test.mjs && node tests/logoutEndpoint.test.mjs && node tests/themeConsistency.test.mjs && node tests/sseMultiplexer.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/readTimeUtils.test.mjs",
     "test:e2e": "playwright test",
     "lint": "eslint src --max-warnings=-1",
     "lint:fix": "eslint src --fix",
