@@ -198,7 +198,6 @@ const Footer = () => {
     <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
       
       <div className="mt-10 max-w-full mx-auto px-6 py-20 grid lg:grid-cols-3 gap-x-12 gap-y-12 bg-gradient-to-t from-slate-50 dark:from-slate-900"> 
-      {/* //<div className="mt-10 max-w-full mx-auto px-6 py-20 grid lg:grid-cols-3 gap-x-12 gap-y-12 bg-gradient-to-t from-slate-50 dark:from-slate-900"> */}
         
         {/* BRAND */}
         <div className="lg:col-span-1 flex flex-col gap-6 items-center">
