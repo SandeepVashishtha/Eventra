@@ -472,7 +472,10 @@ const handleSubmit = async (e) => {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.05 }}
             >
-              <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor={field.name}
+                className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 <field.icon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
                 {field.label}
                 {requiredFields.includes(field.name) && (
@@ -492,11 +495,14 @@ const handleSubmit = async (e) => {
                   }`}
                 >
                   <input
+                    id={field.name}
                     type="file"
                     accept="image/*"
                     ref={fileInputRef}
                     className="hidden"
                     onChange={handleFileChange}
+                    aria-invalid={errors[field.name] ? "true" : "false"}
+                    aria-describedby={errors[field.name] ? `${field.name}-error` : undefined}
                   />
                   {formData.projectImage ? (
                     <div className="relative w-full max-w-[200px] aspect-square flex items-center justify-center rounded-lg border border-gray-250 dark:border-gray-700 overflow-hidden bg-gray-50/50 dark:bg-gray-900 group">
@@ -528,17 +534,20 @@ const handleSubmit = async (e) => {
                 </div>
               ) : (
                 <input
+                  id={field.name}
                   type={field.type}
                   name={field.name}
                   value={formData[field.name]}
                   onChange={handleChange}
                   placeholder={field.placeholder}
                   ref={inputRefs[field.name]}
+                  aria-invalid={errors[field.name] ? "true" : "false"}
+                  aria-describedby={errors[field.name] ? `${field.name}-error` : undefined}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
                 />
               )}
               {errors[field.name] && (
-                <p className="text-red-500 text-xs mt-1">
+                <p id={`${field.name}-error`} className="text-red-500 text-xs mt-1" role="alert" aria-live="polite">
                   {errors[field.name]}
                 </p>
               )}
@@ -550,21 +559,24 @@ const handleSubmit = async (e) => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="description" className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               <DocumentTextIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
               Project Description <span className="text-red-500 ml-1">*</span>
             </label>
             <textarea
+              id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
               ref={inputRefs.description}
               rows="4"
               placeholder="Briefly describe your project, its purpose, and features."
+              aria-invalid={errors.description ? "true" : "false"}
+              aria-describedby={errors.description ? "description-error" : undefined}
               className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
             />
             {errors.description && (
-              <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+              <p id="description-error" className="text-red-500 text-xs mt-1" role="alert" aria-live="polite">{errors.description}</p>
             )}
           </motion.div>
           <motion.div
@@ -573,11 +585,12 @@ const handleSubmit = async (e) => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="additionalNotes" className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               <PencilSquareIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
               Additional Notes
             </label>
             <textarea
+              id="additionalNotes"
               name="additionalNotes"
               value={formData.additionalNotes}
               onChange={handleChange}

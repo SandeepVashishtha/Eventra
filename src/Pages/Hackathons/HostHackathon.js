@@ -380,7 +380,10 @@ const HostHackathon = () => {
               data-aos="fade-right"
               data-aos-delay={index * 50 + 500}
             >
-              <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor={field.name}
+                className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 <field.icon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
                 {field.label}{" "}
                 {requiredFields.includes(field.name) && (
@@ -388,16 +391,19 @@ const HostHackathon = () => {
                 )}
               </label>
               <input
+                id={field.name}
                 type={field.type}
                 name={field.name}
                 value={formData[field.name]}
                 onChange={handleChange}
                 placeholder={field.placeholder}
                 ref={inputRefs[field.name]}
+                aria-invalid={errors[field.name] ? "true" : "false"}
+                aria-describedby={errors[field.name] ? `${field.name}-error` : undefined}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
               />
               {errors[field.name] && (
-                <p className="text-red-500 text-xs mt-1">
+                <p id={`${field.name}-error`} className="text-red-500 text-xs mt-1" role="alert" aria-live="polite">
                   {errors[field.name]}
                 </p>
               )}
@@ -412,18 +418,21 @@ const HostHackathon = () => {
           >
             {["startDate", "endDate"].map((name) => (
               <div key={name}>
-                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label htmlFor={name} className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   <CalendarDaysIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
                   {name === "startDate" ? "Start Date" : "End Date"}{" "}
                   <span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
+                  id={name}
                   ref={inputRefs[name]}
                   type="date"
                   name={name}
                   value={formData[name]}
                   onChange={handleChange}
                   min={today}
+                  aria-invalid={errors[name] ? "true" : "false"}
+                  aria-describedby={errors[name] ? `${name}-error` : undefined}
                   className="w-full text-gray-700 dark:text-gray-300 
         bg-white dark:bg-gray-700 
         rounded-lg p-3 
@@ -433,7 +442,7 @@ const HostHackathon = () => {
         transition duration-150 ease-in-out"
                 />
                 {errors[name] && (
-                  <p className="text-red-500 text-xs mt-1">{errors[name]}</p>
+                  <p id={`${name}-error`} className="text-red-500 text-xs mt-1" role="alert" aria-live="polite">{errors[name]}</p>
                 )}
               </div>
             ))}
@@ -448,21 +457,24 @@ const HostHackathon = () => {
             data-aos="fade-up"
             data-aos-delay="1000"
           >
-            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="description" className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               <DocumentTextIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
               Description <span className="text-red-500 ml-1">*</span>
             </label>
             <textarea
+              id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
               ref={inputRefs.description}
               rows="4"
               placeholder="Briefly describe your hackathon"
+              aria-invalid={errors.description ? "true" : "false"}
+              aria-describedby={errors.description ? "description-error" : undefined}
               className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
             />
             {errors.description && (
-              <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+              <p id="description-error" className="text-red-500 text-xs mt-1" role="alert" aria-live="polite">{errors.description}</p>
             )}
           </motion.div>
 

@@ -27,6 +27,7 @@ import { analyzeSentiment, getSentimentDisplay } from "../../utils/sentiment.js"
 const StarRating = ({ rating, onRatingChange, error }) => {
   useReducedMotion();
   const [hoveredRating, setHoveredRating] = useState(0);
+  const errorId = "rating-error";
 
   const handleStarClick = (star) => {
     if (rating === star) {
@@ -48,7 +49,12 @@ const StarRating = ({ rating, onRatingChange, error }) => {
       >
         Overall Rating <span className="text-red-500">*</span>
       </motion.label>
-      <div className="flex items-center space-x-1">
+      <div
+        className="flex items-center space-x-1"
+        role="radiogroup"
+        aria-invalid={error ? "true" : "false"}
+        aria-describedby={error ? errorId : undefined}
+      >
         {[1, 2, 3, 4, 5].map((star) => (
           <motion.button
             key={star}
@@ -59,6 +65,8 @@ const StarRating = ({ rating, onRatingChange, error }) => {
             className="focus:outline-none"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
+            role="radio"
+            aria-checked={rating === star}
             aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
             title={`Click to rate ${star} star${star > 1 ? "s" : ""
               } (click again to deselect)`}
@@ -87,9 +95,12 @@ const StarRating = ({ rating, onRatingChange, error }) => {
       </div>
       {error && (
         <motion.p
+          id={errorId}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-red-500 dark:text-red-400 text-xs mt-1"
+          role="alert"
+          aria-live="polite"
         >
           {error}
         </motion.p>
@@ -110,6 +121,7 @@ const FloatingInput = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const hasValue = value && value.length > 0;
+  const errorId = `${id}-error`;
 
   return (
     <div className="relative mt-6">
@@ -125,6 +137,8 @@ const FloatingInput = ({
           onChange={onChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          aria-invalid={error ? "true" : "false"}
+          aria-describedby={error ? errorId : undefined}
           className={`w-full px-4 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 ${Icon ? "pl-14" : ""
             } ${error
               ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
@@ -154,10 +168,13 @@ const FloatingInput = ({
       <AnimatePresence>
         {error && (
           <motion.p
+            id={errorId}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="text-red-500 dark:text-red-400 text-xs mt-2 ml-1 flex items-center gap-1"
+            role="alert"
+            aria-live="polite"
           >
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -187,6 +204,7 @@ const CustomFloatingSelect = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const hasValue = value && value.length > 0;
+  const errorId = `${id}-error`;
   const selectedOption = options.find((opt) => opt.value === value);
   const selectedLabel = selectedOption ? selectedOption.label : "";
   const selectedIcon = selectedOption ? selectedOption.icon : FiMessageSquare;
@@ -224,6 +242,10 @@ const CustomFloatingSelect = ({
           type="button"
           id={id}
           onClick={() => setIsOpen(!isOpen)}
+          aria-invalid={error ? "true" : "false"}
+          aria-describedby={error ? errorId : undefined}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
           className={`w-full text-left px-4 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 ${selectedIcon ? "pl-12" : "pl-4"
             } pr-12 ${error
               ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
@@ -263,6 +285,7 @@ const CustomFloatingSelect = ({
         <AnimatePresence>
           {isOpen && (
             <motion.ul
+              role="listbox"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -274,6 +297,8 @@ const CustomFloatingSelect = ({
                 <li
                   key={option.value}
                   onClick={() => handleSelect(option.value)}
+                  role="option"
+                  aria-selected={value === option.value}
                   className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center
                      ${value === option.value
                       ? "bg-indigo-100 dark:bg-indigo-500"
@@ -297,10 +322,13 @@ const CustomFloatingSelect = ({
       <AnimatePresence>
         {error && (
           <motion.p
+            id={errorId}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="text-red-500 dark:text-red-400 text-xs mt-2 ml-1 flex items-center gap-1"
+            role="alert"
+            aria-live="polite"
           >
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -629,6 +657,8 @@ const FeedbackPage = () => {
                       maxLength={500}
                       value={formData.message}
                       onChange={handleChange}
+                      aria-invalid={errors.message ? "true" : "false"}
+                      aria-describedby={errors.message ? "message-error" : undefined}
                       className={`w-full px-4 pl-14 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 resize-none ${errors.message
                           ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
                           : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
@@ -710,7 +740,7 @@ const FeedbackPage = () => {
                   })()}
 
                   {errors.message && (
-                    <p className="text-red-500 text-xs mt-2 ml-1">
+                    <p id="message-error" className="text-red-500 text-xs mt-2 ml-1" role="alert" aria-live="polite">
                       {errors.message}
                     </p>
                   )}

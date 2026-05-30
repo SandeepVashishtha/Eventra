@@ -5,17 +5,26 @@ const FormInput = ({
   className = "",
   ...props
 }) => {
+  const fieldId = props.id || props.name;
+  const errorId = fieldId ? `${fieldId}-error` : undefined;
+
   return (
     <div className="w-full space-y-2">
       
       {label && (
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label
+          htmlFor={fieldId}
+          className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+        >
           {label}
         </label>
       )}
 
       <input
         {...props}
+        id={fieldId}
+        aria-invalid={error ? "true" : "false"}
+        aria-describedby={error && errorId ? errorId : props["aria-describedby"]}
         className={`
           w-full
           px-4
@@ -44,7 +53,7 @@ const FormInput = ({
       />
 
       {error && (
-        <p className="text-sm text-red-500">
+        <p id={errorId} className="text-sm text-red-500" role="alert" aria-live="polite">
           {error}
         </p>
       )}

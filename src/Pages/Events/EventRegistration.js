@@ -750,6 +750,8 @@ const EventRegistration = () => {
                     value={formData.fullName}
                     onChange={handleChange}
                     onBlur={handleBlur}
+                    aria-invalid={errors.fullName && touched.fullName ? "true" : "false"}
+                    aria-describedby={errors.fullName && touched.fullName ? "fullName-error" : undefined}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.fullName && touched.fullName
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
@@ -758,7 +760,7 @@ const EventRegistration = () => {
                   />
                 </div>
                 {errors.fullName && touched.fullName && (
-                  <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
+                  <p id="fullName-error" className="text-red-500 text-sm mt-1" role="alert" aria-live="polite">{errors.fullName}</p>
                 )}
               </div>
 
@@ -779,6 +781,8 @@ const EventRegistration = () => {
                     value={formData.email}
                     onChange={handleChange}
                     onBlur={handleBlur}
+                    aria-invalid={errors.email && touched.email ? "true" : "false"}
+                    aria-describedby={errors.email && touched.email ? "email-error" : undefined}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.email && touched.email
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
@@ -787,7 +791,7 @@ const EventRegistration = () => {
                   />
                 </div>
                 {errors.email && touched.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                  <p id="email-error" className="text-red-500 text-sm mt-1" role="alert" aria-live="polite">{errors.email}</p>
                 )}
               </div>
 
@@ -808,6 +812,8 @@ const EventRegistration = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     onBlur={handleBlur}
+                    aria-invalid={errors.phone && touched.phone ? "true" : "false"}
+                    aria-describedby={errors.phone && touched.phone ? "phone-error" : undefined}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.phone && touched.phone
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
@@ -816,7 +822,7 @@ const EventRegistration = () => {
                   />
                 </div>
                 {errors.phone && touched.phone && (
-                  <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                  <p id="phone-error" className="text-red-500 text-sm mt-1" role="alert" aria-live="polite">{errors.phone}</p>
                 )}
               </div>
 
