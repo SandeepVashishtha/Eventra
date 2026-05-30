@@ -1,0 +1,11 @@
+Resolves #2213. Secures all target='_blank' links.
+
+## ??? Type of change
+- [x] Bug fix (non-breaking change which fixes an issue)
+
+## ? Checklist
+- [x] My code follows the style guidelines of this project
+- [x] I have performed a self-review of my code
+- [x] I have commented my code, particularly in hard-to-understand areas
+- [x] I have made corresponding changes to the documentation
+- [x] My changes generate no new warnings

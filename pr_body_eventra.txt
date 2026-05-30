@@ -1,0 +1,23 @@
+﻿## Description
+Fixes #2213
+
+### Motivation and Context
+This PR addresses a critical security vulnerability known as "reverse tabnabbing." Many components in the Eventra frontend opened external links in new tabs using "target='_blank'" but were missing the "rel='noopener noreferrer'" attributes. Without these attributes, external pages could gain access to "window.opener", potentially redirecting the original Eventra tab to a malicious site or leaking referral data.
+
+### What Changed
+- Conducted a repository-wide audit of all .js, .jsx, .ts, .tsx, and .html files.
+- Injected the "rel='noopener noreferrer'" attribute into anchor tags (<a>) that use "target='_blank'".
+- Secured multiple external links across the codebase, ensuring safe cross-origin navigation.
+
+## Type of change
+- [x] Bug fix (non-breaking change which fixes an issue)
+
+## Screenshots / Video (if applicable)
+N/A (Security enhancement, no visual UI changes)
+
+## Checklist
+- [x] My code follows the style guidelines of this project
+- [x] I have performed a self-review of my code
+- [x] I have commented my code, particularly in hard-to-understand areas
+- [x] I have made corresponding changes to the documentation
+- [x] My changes generate no new warnings

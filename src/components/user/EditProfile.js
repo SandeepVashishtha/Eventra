@@ -99,6 +99,14 @@ const EditProfile = () => {
   const [currentSkillInput, setCurrentSkillInput] = useState("");
   const fileInputRef = useRef(null);
 
+  // 🔥 FIX 1: Track mount state to prevent ghost navigations
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   // Keep state synchronized if the auth context updates lazily
   useEffect(() => {
     const saved = syncSecureStorage.getItem("user");
@@ -204,13 +212,26 @@ const EditProfile = () => {
     setLoading(true);
 
     setTimeout(() => {
+      // 🔥 FIX 1: If user navigated away, stop executing!
+      if (!isMounted.current) return;
+
       setLoading(false);
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(resolvedForm);
-      syncSecureStorage.setItem("user", JSON.stringify(resolvedForm));
+      
+      // 🔥 FIX 2: Strip massive Base64 strings before saving to storage to prevent QuotaExceededError crashes
+      const safeStorageUser = { ...resolvedForm };
+      delete safeStorageUser.avatarBase64;
+      
+      try {
+        syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
+      } catch (e) {
+        console.warn("Could not save to secure storage, quota exceeded.");
+      }
 
       setTimeout(() => {
+        if (!isMounted.current) return;
         navigate("/dashboard/profile");
       }, 1000);
     }, 1500);

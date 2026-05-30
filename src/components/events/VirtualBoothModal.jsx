@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   X, Briefcase, Mail, Globe, Linkedin, Twitter, Github,
   Send, User, MessageSquare, ArrowLeft

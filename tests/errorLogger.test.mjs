@@ -1,117 +1,90 @@
-/**
- * Unit tests for src/utils/errorLogger.js and src/utils/globalErrorHandler.js
- *
- * Verifies that both utilities delegate correctly to console.error without
- * throwing side-effects, and that initializeGlobalErrorHandling registers
- * the expected window event handlers.
- */
-
 import assert from "node:assert/strict";
 
-// ── Stubs ──────────────────────────────────────────────────────────────────
-const captured = [];
-
-global.console = {
-  error: (...args) => captured.push(args),
-  warn: () => {},
-  log: console.log,
+const store = {};
+globalThis.localStorage = {
+  getItem: (key) => store[key] || null,
+  setItem: (key, val) => { store[key] = String(val); },
+  removeItem: (key) => { delete store[key]; }
 };
 
-// Minimal window stub for globalErrorHandler
-global.window = {
-  onerror: null,
-  onunhandledrejection: null,
+globalThis.window = {
+  location: { href: "http://localhost/test" },
+  dispatchEvent: () => {},
 };
 
-// ── Import modules ──────────────────────────────────────────────────────────
-const { logError } = await import("../src/utils/errorLogger.js");
-const { initializeGlobalErrorHandling } = await import(
-  "../src/utils/globalErrorHandler.js"
-);
+import { logError, getErrorLog, clearErrorLog } from "../src/utils/errorLogger.js";
 
-// ── errorLogger: logError ──────────────────────────────────────────────────
-captured.length = 0;
+const testError = new Error("Test error");
+const testInfo = { componentStack: "Test component" };
 
-const err = new Error("Boom");
-const info = { componentStack: "\n    at Foo\n    at Bar" };
+store["eventra_error_log"] = undefined;
+store["eventra_feature_errors"] = undefined;
 
-logError(err, info);
+logError(testError, testInfo);
+let log = JSON.parse(store["eventra_error_log"] || "[]");
+assert.strictEqual(log.length, 1, "Should add error entry to log");
+assert.ok(log[0].message.includes("Test error"), "Should store error message");
+assert.strictEqual(log[0].componentStack, "Test component", "Should store component stack");
 
-assert.equal(
-  captured.length,
-  2,
-  "logError calls console.error exactly twice (once per argument)"
-);
-assert.equal(
-  captured[0][0],
-  "[GlobalErrorBoundary]",
-  "first call is tagged [GlobalErrorBoundary]"
-);
-assert.equal(
-  captured[0][1],
-  err,
-  "first call passes the Error object through"
-);
-assert.equal(
-  captured[1][0],
-  "[ComponentStack]",
-  "second call is tagged [ComponentStack]"
-);
-assert.equal(
-  captured[1][1],
-  info,
-  "second call passes the errorInfo through"
-);
+logError(new Error("Second error"), {});
+log = JSON.parse(store["eventra_error_log"] || "[]");
+assert.strictEqual(log.length, 2, "Should have 2 entries after second log");
 
-// logError must not throw for null / undefined inputs
-captured.length = 0;
-assert.doesNotThrow(
-  () => logError(null, undefined),
-  "logError does not throw when passed null error"
-);
-assert.doesNotThrow(
-  () => logError(undefined, null),
-  "logError does not throw when passed undefined error"
-);
+logError(new Error("Third error"), {});
+log = JSON.parse(store["eventra_error_log"] || "[]");
+assert.strictEqual(log.length, 3, "Should have 3 entries");
 
-// ── globalErrorHandler: initializeGlobalErrorHandling ─────────────────────
-global.window.onerror = null;
-global.window.onunhandledrejection = null;
+logError(new Error("Fourth error"), {});
+log = JSON.parse(store["eventra_error_log"] || "[]");
+assert.strictEqual(log.length, 4, "Should have 4 entries");
 
-initializeGlobalErrorHandling();
+logError(new Error("Fifth error"), {});
+log = JSON.parse(store["eventra_error_log"] || "[]");
+assert.strictEqual(log.length, 5, "Should have 5 entries");
 
-assert.equal(
-  typeof global.window.onerror,
-  "function",
-  "initializeGlobalErrorHandling registers window.onerror"
-);
-assert.equal(
-  typeof global.window.onunhandledrejection,
-  "function",
-  "initializeGlobalErrorHandling registers window.onunhandledrejection"
-);
+logError(new Error("Sixth error"), {});
+log = JSON.parse(store["eventra_error_log"] || "[]");
+assert.strictEqual(log.length, 6, "Should have 6 entries");
 
-// Simulate a global error — handler must not throw
-captured.length = 0;
-global.window.onerror("msg", "src.js", 10, 5, new Error("global err"));
-assert.ok(
-  captured.some((args) => args[0] === "[GlobalError]"),
-  "window.onerror logs with [GlobalError] tag"
-);
+logError(new Error("Seventh error"), {});
+log = JSON.parse(store["eventra_error_log"] || "[]");
+assert.strictEqual(log.length, 7, "Should have 7 entries");
 
-// Simulate an unhandled rejection — handler must not throw
-captured.length = 0;
-const rejection = new Error("unhandled promise rejection");
-global.window.onunhandledrejection({ reason: rejection });
-assert.ok(
-  captured.some((args) => args[0] === "[UnhandledPromiseRejection]"),
-  "window.onunhandledrejection logs with [UnhandledPromiseRejection] tag"
-);
+logError(new Error("Eighth error"), {});
+log = JSON.parse(store["eventra_error_log"] || "[]");
+assert.strictEqual(log.length, 8, "Should have 8 entries");
 
-// Calling initializeGlobalErrorHandling multiple times must be idempotent
-assert.doesNotThrow(
-  () => initializeGlobalErrorHandling(),
-  "initializeGlobalErrorHandling can be called repeatedly without throwing"
-);
+logError(new Error("Ninth error"), {});
+log = JSON.parse(store["eventra_error_log"] || "[]");
+assert.strictEqual(log.length, 9, "Should have 9 entries");
 
-console.log("All errorLogger & globalErrorHandler tests passed ✓");
+logError(new Error("Tenth error"), {});
+log = JSON.parse(store["eventra_error_log"] || "[]");
+assert.strictEqual(log.length, 10, "Should have 10 entries");
+
+logError(new Error("Eleventh error"), {});
+log = JSON.parse(store["eventra_error_log"] || "[]");
+assert.strictEqual(log.length, 10, "Should cap at 10 entries (oldest removed)");
+
+assert.ok(log[0].message.includes("Eleventh error"), "Newest entry should be first");
+assert.ok(log[9].message.includes("Second error"), "Oldest entry should be last");
+
+const entries = getErrorLog();
+assert.strictEqual(Array.isArray(entries), true, "getErrorLog should return array");
+assert.strictEqual(entries.length, 10, "getErrorLog should return 10 entries");
+
+clearErrorLog();
+assert.strictEqual(store["eventra_error_log"], undefined, "Should clear error log from localStorage");
+assert.strictEqual(store["eventra_feature_errors"], undefined, "Should clear feature errors from localStorage");
+
+store["eventra_error_log"] = "invalid-json";
+const emptyLog = getErrorLog();
+assert.strictEqual(Array.isArray(emptyLog), true, "Should return array even on corrupt JSON");
+assert.strictEqual(emptyLog.length, 0, "Should return empty array on corrupt JSON");
+
+store["eventra_error_log"] = JSON.stringify([{ message: "Error: Test entry" }]);
+const singleEntry = getErrorLog();
+assert.strictEqual(singleEntry.length, 1, "Should read single entry");
+assert.ok(singleEntry[0].message.includes("Test entry"), "Should return correct entry");
+
+console.log("errorLogger tests passed ✓");

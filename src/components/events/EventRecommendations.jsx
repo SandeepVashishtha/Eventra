@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Sparkles,
@@ -111,7 +111,7 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
   }, [currentEventId, currentCategory]);
 
   const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1 >= recommendedEvents.length - 2 ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev + 1 > recommendedEvents.length - 3 ? 0 : prev + 1));
   };
 
   const prevSlide = () => {

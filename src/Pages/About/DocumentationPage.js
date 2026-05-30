@@ -1,5 +1,4 @@
 // src/Pages/Documentation/DocumentationPage.jsx
-import React from "react";
 import {
   FiBookOpen,
   FiLayers,
