@@ -542,10 +542,10 @@ const [activeTab, setActiveTab] = useState('analytics');
             </div>
           ))}
         </div>
+      </div>
       </>
   )}
 </div>
-    </div>
   );
 };
 
