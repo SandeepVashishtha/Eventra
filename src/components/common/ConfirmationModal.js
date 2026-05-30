@@ -34,21 +34,21 @@ const ConfirmationModal = ({
     document.body.style.overflow = "hidden";
     cancelButtonRef.current?.focus();
 
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
         onClose();
         return;
       }
 
-      if (e.key !== "Tab" || !modalRef.current) return;
+      if (event.key !== "Tab") return;
 
       const focusableElements = Array.from(
         modalRef.current.querySelectorAll(FOCUSABLE_SELECTOR)
       ).filter((el) => !el.hasAttribute("disabled"));
 
       if (focusableElements.length === 0) {
-        e.preventDefault();
-        modalRef.current.focus();
+        event.preventDefault();
+        modalRef.current?.focus();
         return;
       }
 
@@ -56,20 +56,20 @@ const ConfirmationModal = ({
       const lastFocusableElement = focusableElements[focusableElements.length - 1];
       const activeElement = document.activeElement;
 
-      if (e.shiftKey && activeElement === firstFocusableElement) {
-        e.preventDefault();
+      if (event.shiftKey && activeElement === firstFocusableElement) {
+        event.preventDefault();
         lastFocusableElement.focus();
         return;
       }
 
-      if (!e.shiftKey && activeElement === lastFocusableElement) {
-        e.preventDefault();
+      if (!event.shiftKey && activeElement === lastFocusableElement) {
+        event.preventDefault();
         firstFocusableElement.focus();
         return;
       }
 
-      if (!modalRef.current.contains(activeElement)) {
-        e.preventDefault();
+      if (!modalRef.current?.contains(activeElement)) {
+        event.preventDefault();
         firstFocusableElement.focus();
       }
     };

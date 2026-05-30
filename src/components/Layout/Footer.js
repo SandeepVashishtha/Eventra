@@ -146,7 +146,7 @@ const Social = () => (
       <ExternalLink
         key={name}
         href={href}
-        className="p-3 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-110 transition"
+        className="p-3 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-110 hover:-translate-y-1 hover:bg-indigo-500/10 hover:text-indigo-400 transition-all duration-300"
         aria-label={name}
       >
         <Icon size={18} />
@@ -162,19 +162,23 @@ const Social = () => (
 const FooterLinks = () => (
   <div className="max-w-full grid sm:grid-cols-3 gap-x-12">
     {Object.entries(footerLinks).map(([key, links]) => (
-      <div key={key} className="flex flex-col gap-4 items-center">
-        <h4 className="text-xs uppercase tracking-wide text-slate-500">
+      <div key={key} className="flex flex-col gap-4 items-center mb-6 sm:mb-0">
+        <h4 className="text-xs uppercase tracking-wider font-semibold text-slate-500">
           {formatTitle(key)}
         </h4>
 
-        <ul className="flex flex-col gap-1.5">
+
+        <ul
+          className={`flex flex-col gap-1.5 ${key === "community" ? "pl-8" : ""
+            }`}
+        >
           {links.map(({ name, href, icon: Icon }) => (
             <li key={name}>
               <Link
                 to={href}
-                className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition"
+                className="group flex items-center gap-3 text-base text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-300  hover:translate-x-1"
               >
-                <Icon size={14} />
+                <Icon size={16} className="transition-transform duration-300 group-hover:scale-125" />
                 {name}
               </Link>
             </li>
@@ -194,7 +198,7 @@ const Footer = () => {
     <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
       
       <div className="mt-10 max-w-full mx-auto px-6 py-20 grid lg:grid-cols-3 gap-x-12 gap-y-12 bg-gradient-to-t from-slate-50 dark:from-slate-900"> 
-      //<div className="mt-10 max-w-full mx-auto px-6 py-20 grid lg:grid-cols-3 gap-x-12 gap-y-12 bg-gradient-to-t from-slate-50 dark:from-slate-900">
+      {/* //<div className="mt-10 max-w-full mx-auto px-6 py-20 grid lg:grid-cols-3 gap-x-12 gap-y-12 bg-gradient-to-t from-slate-50 dark:from-slate-900"> */}
         
         {/* BRAND */}
         <div className="lg:col-span-1 flex flex-col gap-6 items-center">
@@ -223,7 +227,7 @@ const Footer = () => {
       {/* BOTTOM BAR */}
       <div className="border-t border-slate-200 dark:border-slate-800">
         <div className="max-w-full mx-auto px-6 py-8 flex flex-col justify-center items-center gap-1 text-sm text-slate-500 h-[100px]">
-          
+
           <p>© {new Date().getFullYear()} Eventra</p>
 
           <div className="flex gap-3">
