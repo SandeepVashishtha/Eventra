@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -381,7 +381,7 @@ const MyCalendar = () => {
                                     const theme = getCategoryTheme(item.event?.category);
                                     return (
                                       <span
-                                        key={i}
+                                        key={`${item.eventId}-${i}`}
                                         className={`w-1.5 h-1.5 rounded-full ${
                                           selected ? "bg-white" : `bg-gradient-to-r ${theme.color}`
                                         }`}
@@ -484,7 +484,7 @@ const MyCalendar = () => {
                       <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
 
                       <div className="space-y-8">
-                      {timelineEvents.map((item, index) => {
+                        {timelineEvents.map((item, index) => {
                         const theme = getCategoryTheme(item.event?.category);
                         const eventDate = new Date(item.event.date);
 

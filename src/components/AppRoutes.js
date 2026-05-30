@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import { getPublicRoutes } from "./routes/PublicRoutes";
@@ -22,31 +22,33 @@ const RouteFallback = () => (
   </div>
 );
 
-const AppRoutes = () => (
-  <Suspense fallback={<RouteFallback />}>
-    <Routes>
-      {/* Public Routes */}
-      {getPublicRoutes()}
+const AppRoutes = () => {
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
+        {/* Public Routes */}
+        {getPublicRoutes()}
 
-      {/* Protected Routes */}
-      {getProtectedRoutes()}
+        {/* Protected Routes */}
+        {getProtectedRoutes()}
 
-      {/* Auth Routes */}
-      {getAuthRoutes()}
+        {/* Auth Routes */}
+        {getAuthRoutes()}
 
-      {/* Achievements Route */}
-      <Route
-        path="/dashboard/achievements"
-        element={
-          <ProtectedRoute>
-            <UserAchievements />
-          </ProtectedRoute>
-        }
-      />
+        {/* Achievements Route */}
+        <Route
+          path="/dashboard/achievements"
+          element={
+            <ProtectedRoute>
+              <UserAchievements />
+            </ProtectedRoute>
+          }
+        />
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Suspense>
-);
+  );
+};
 
 export default AppRoutes;

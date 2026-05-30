@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiPlus,
   FiTrash2,
-  FiEye,
   FiPlusCircle,
   FiSave,
   FiArrowUp,
@@ -220,12 +219,6 @@ const SurveyEngine = () => {
       return;
     }
 
-    const payload = {
-      title: surveyTitle,
-      description: surveyDescription,
-      questions: questions,
-      createdAt: new Date().toISOString(),
-    };
 
     localStorage.removeItem("eventra_survey_builder_draft");
     toast.success("Survey published and active for attendees!");

@@ -1,15 +1,15 @@
-import React, { lazy } from "react";
+import { lazy } from "react";
 import { Route } from "react-router-dom";
 
 import ProtectedRoute from "../auth/ProtectedRoute";
 import { ROLES, PERMISSIONS } from "../../config/roles";
+const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
 
 const EventCreation = lazy(() => import("../common/EventCreation/EventCreation"));
 const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
 const UserProfile = lazy(() => import("../user/UserProfile"));
 const EditProfile = lazy(() => import("../user/EditProfile"));
 const Settings = lazy(() => import("../../Pages/Settings"));
-const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
 const AuthPage = lazy(() => import("../auth/AuthPage"));
 const Unauthorized = lazy(() => import("../auth/Unauthorized"));
 const PasswordReset = lazy(() => import("../auth/PasswordReset"));

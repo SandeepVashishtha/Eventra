@@ -1,10 +1,4 @@
-import React, {
-  memo,
-  useRef,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Moon, Sun } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -86,11 +80,18 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         aria-label="Primary navigation"
         className="sticky top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
       >
-        <div className="h-full px-4 flex items-center justify-between">
-          <Link to="/" aria-label="Eventra home logo template">
-            <div className="flex items-center justify-center gap-3">
-              <img src="/Eventra.png" alt="Eventra Brand Logo" className="h-12 w-auto object-contain rounded-xl bg-gray-200 dark:bg-transparent p-1" />
-              <h1 className="text-2xl font-heading font-bold text-text">Eventra</h1>
+        <div className="h-full px-4 flex items-center justify-between gap-4">
+          <Link to="/" aria-label="Eventra home logo template" className="flex items-center shrink-0 min-w-0">
+            <div className="flex min-w-0 items-center gap-2 xl:gap-3">
+              <div className="flex h-10 w-10 xl:h-11 xl:w-11 flex-none items-center justify-center overflow-hidden rounded-xl bg-gray-100 p-1 shadow-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+                <img
+                  src="/favicon.png"
+                  alt="Eventra Brand Logo"
+                  className="block h-full w-full object-contain"
+                  loading="lazy"
+                />
+              </div>
+              <h1 className="truncate text-lg sm:text-xl xl:text-2xl font-heading font-bold text-text">Eventra</h1>
             </div>
           </Link>
 
@@ -98,6 +99,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           <div className="flex items-center justify-center gap-4 h-full">
             <DesktopNavbar isAuthenticated={authenticated} user={user} logout={logout} />
             
+          {/* Desktop Links should be in the middle of the navbar */}
+          <DesktopNavbar isAuthenticated={authenticated} user={user} logout={logout} />
+
+          {/* Right Controls Container */}
+          <div className="flex items-center gap-2 xl:gap-4 shrink-0">
+          {/* Hide these on mobile */}
+          <div className="hidden sm:flex items-center gap-2 xl:gap-4">
             <button
               type="button"
               onClick={toggleTheme}
@@ -111,10 +119,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </button>
             
             <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+            </div>
             <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
+        <div iv className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
           <div className="h-full bg-blue-500 transition-all duration-100 ease-out" style={{ width: `${scrollProgress}%` }} />
         </div>
       </nav>

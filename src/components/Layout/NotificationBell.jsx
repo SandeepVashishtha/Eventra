@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Bell, CheckCheck, Settings } from "lucide-react";
 import { useNotification } from "../../context/NotificationContext";

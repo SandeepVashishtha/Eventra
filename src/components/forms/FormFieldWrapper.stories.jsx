@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Mail } from "lucide-react";
 import { validate } from "../../validation";
 import FormFieldWrapper from "./FormFieldWrapper";
@@ -132,6 +132,17 @@ export const Success = {
     label: "Email",
     validationState: "success",
     message: "Email is available.",
+  },
+};
+
+// 🔥 Added the 'Valid' story to verify our fix
+export const Valid = {
+  render: Template,
+  args: {
+    id: "valid-email",
+    label: "Email",
+    validationState: "valid",
+    message: "Field verified successfully.",
   },
 };
 

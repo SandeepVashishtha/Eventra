@@ -10,7 +10,6 @@ export const safeParseJson = (jsonString, fallback = null) => {
   try {
     return JSON.parse(jsonString);
   } catch (error) {
-    console.error("Failed to parse JSON:", error);
     return fallback;
   }
 };

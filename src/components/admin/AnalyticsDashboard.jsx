@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Users, Clock, TrendingUp, Activity, CheckCircle2, Play, Zap } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { toast } from "react-toastify";
 import { useAnalyticsStream, SSE_STATUS } from "../../context/RealTimeContext";
+import BudgetPlanner from "./BudgetPlanner";
 
 // =========================================================================
 // CONSTANTS & INITIAL DATA
@@ -80,36 +81,6 @@ const MOCK_CATEGORY_DATA = [
  * Isolated payload generator ensuring visual graphs are decoupled
  * from the local state generation mechanisms.
  */
-const generateMockCheckinPayload = (isManual = false) => {
-  const checkinNames = [
-    "Aditya Rao", "Ishaan Roy", "Meera Nair", "Rohan Das", "Zoya Ali",
-    "Aryan Joshi", "Tanya Sen", "Kabir Dutt", "Riya Pillai", "Aravind Swami"
-  ];
-  const simulatorNames = ["Gaurav Kumar", "Shruti Shah", "Manish Pandey", "Pooja Hegde"];
-  
-  const checkinEvents = [
-    "Web Dev Workshop", "Global AI Hackathon", "AI & ML Bootcamp",
-    "React Conference 2025", "Hack for Sustainability"
-  ];
-
-  const pool = isManual ? simulatorNames : checkinNames;
-  const randomName = pool[Math.floor(Math.random() * pool.length)];
-  const randomEvent = isManual ? "Global AI Hackathon" : checkinEvents[Math.floor(Math.random() * checkinEvents.length)];
-  const randomStatus = isManual ? "Verified" : (Math.random() > 0.08 ? "Verified" : "Flagged");
-  const hourlyIncrement = isManual ? 3 : 1;
-
-  return {
-    id: isManual ? `c-manual-${Date.now()}` : `c-${Date.now()}`,
-    name: randomName,
-    event: randomEvent,
-    time: "Just now",
-    status: randomStatus,
-    meta: {
-      hourlyIncrement,
-      velocityDelta: parseFloat((Math.random() * 0.4 - 0.2).toFixed(1))
-    }
-  };
-};
 
 // =========================================================================
 // SUB-COMPONENTS
@@ -173,6 +144,7 @@ const AnalyticsDashboard = () => {
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
+const [activeTab, setActiveTab] = useState('analytics');
 
   // Real-time SSE stream — takes priority over local simulation when connected
   const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
@@ -332,6 +304,26 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="space-y-8 text-slate-800 dark:text-slate-100">
+  {/* Tab Navigation */}
+  <div className="flex gap-2 mb-4">
+    <button
+      onClick={() => setActiveTab('analytics')}
+      className={`px-4 py-2 rounded ${activeTab === 'analytics' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+    >
+      Analytics
+    </button>
+    <button
+      onClick={() => setActiveTab('budget')}
+      className={`px-4 py-2 rounded ${activeTab === 'budget' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+    >
+      Budget
+    </button>
+  </div>
+  {activeTab === 'budget' ? (
+    <BudgetPlanner />
+  ) : (
+    // Original analytics UI starts here
+    <>
       {/* CONTROL BANNER */}
       <div className="flex flex-col gap-4 p-5 bg-white border shadow-sm sm:flex-row sm:items-center sm:justify-between dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl">
         <div>
@@ -551,7 +543,9 @@ const AnalyticsDashboard = () => {
           ))}
         </div>
       </div>
-    </div>
+      </>
+  )}
+</div>
   );
 };
 
