@@ -75,7 +75,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  if (loading) return;
     if (isLockedOut()) return;
     if (!validate()) return;
 
