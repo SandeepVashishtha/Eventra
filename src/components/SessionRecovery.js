@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSessionRecovery } from '../context/SessionRecoveryContext';
-import { WifiOff, RefreshCw, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, X, CheckCircle, AlertCircle } from 'lucide-react';
 
 const SessionRecovery = () => {
   const {
@@ -14,6 +14,19 @@ const SessionRecovery = () => {
   } = useSessionRecovery();
 
   const [isRestoring, setIsRestoring] = useState(false);
+  const [showOnlineToast, setShowOnlineToast] = useState(false);
+  const prevOnlineRef = useRef(isOnline);
+
+  useEffect(() => {
+    if (!prevOnlineRef.current && isOnline) {
+      setShowOnlineToast(true);
+      const timer = setTimeout(() => {
+        setShowOnlineToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+    prevOnlineRef.current = isOnline;
+  }, [isOnline]);
 
   const handleRestore = async () => {
     setIsRestoring(true);
@@ -57,6 +70,20 @@ const SessionRecovery = () => {
           <div>
             <p className="font-semibold text-sm">Reconnecting...</p>
             <p className="text-xs opacity-90">Attempting to restore connection</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isOnline && showOnlineToast && !showRecoveryPrompt) {
+    return (
+      <div className="fixed bottom-4 right-4 z-[45] animate-slide-up">
+        <div className="bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
+          <Wifi size={20} />
+          <div>
+            <p className="font-semibold text-sm">You're back online</p>
+            <p className="text-xs opacity-90">Connection restored</p>
           </div>
         </div>
       </div>
