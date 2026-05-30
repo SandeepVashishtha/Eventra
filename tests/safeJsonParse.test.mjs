@@ -14,6 +14,11 @@ try {
   assert.equal(safeJsonParse(""), null, "empty string returns fallback");
   assert.equal(safeJsonParse("invalid-json"), null, "invalid JSON returns fallback");
   assert.deepEqual(safeJsonParse('{"value": 1}'), { value: 1 }, "valid JSON parses correctly");
+  assert.deepEqual(
+    safeJsonParse("invalid-json", { fallback: true }),
+    { fallback: true },
+    "invalid JSON returns fallback object by structure"
+  );
 
   assert.equal(safeParseJson(null), null, "null returns fallback");
   assert.equal(safeParseJson("invalid-json"), null, "invalid JSON returns fallback");
