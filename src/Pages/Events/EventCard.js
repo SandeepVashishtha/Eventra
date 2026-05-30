@@ -138,8 +138,8 @@ const EventCard = ({ event }) => {
       toastId: `bookmark-${event.id}`,
       autoClose: 1800,
       className: "custom-toast",
-    });
-  }, [computedStatus, event, isBookmarked]);
+   });
+}, [computedStatus, event, isBookmarked]);
 
   return (
     <article
