@@ -232,7 +232,6 @@ export default function GitHubStats() {
                   key={label}
                   href={link}
                   target="_blank" rel="noopener noreferrer"
-                  rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, rotate: 1 }}
                   whileTap={{ scale: 0.95 }}
                   // UPDATED: Card background, border, and responsive sizing
