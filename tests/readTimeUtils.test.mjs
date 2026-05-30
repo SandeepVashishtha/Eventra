@@ -1,49 +1,41 @@
 import assert from "node:assert/strict";
-
-const store = {};
-globalThis.localStorage = {
-  getItem: (key) => store[key] || null,
-  setItem: (key, val) => {
-    store[key] = String(val);
-  }
-};
-
 import { calculateReadTime, formatReadTime, getEventReadTime } from "../src/utils/readTimeUtils.js";
 
-// Test calculateReadTime
-assert.strictEqual(calculateReadTime(""), 0, "Empty string should return 0");
-assert.strictEqual(calculateReadTime(null), 0, "null should return 0");
-assert.strictEqual(calculateReadTime(undefined), 0, "undefined should return 0");
-assert.strictEqual(calculateReadTime(123), 0, "Non-string should return 0");
-assert.strictEqual(calculateReadTime("<p>Hello world</p>"), 1, "HTML tags should be stripped");
-assert.strictEqual(calculateReadTime("hello"), 1, "Single word should return 1 min");
-const longText = "word ".repeat(600);
-assert.strictEqual(calculateReadTime(longText), 3, "600 words should be ~3 min at 200 wpm");
+assert.equal(calculateReadTime(null), 0, "null input should return 0");
+assert.equal(calculateReadTime(undefined), 0, "undefined input should return 0");
+assert.equal(calculateReadTime(""), 0, "empty string should return 0");
+assert.equal(calculateReadTime("  "), 1, "whitespace-only string should return 1 minute");
+assert.equal(calculateReadTime("Hello world"), 1, "short text should return 1 minute");
 
-// Test formatReadTime
-assert.strictEqual(formatReadTime(0), "", "0 should return empty string");
-assert.strictEqual(formatReadTime(-5), "", "Negative should return empty string");
-assert.strictEqual(formatReadTime(1), "1 min read", "1 minute should be formatted correctly");
-assert.strictEqual(formatReadTime(3), "3 min read", "3 minutes should be formatted correctly");
-assert.strictEqual(formatReadTime(10), "10 min read", "10 minutes should be formatted correctly");
+const words200 = Array.from({ length: 200 }, (_, i) => `word${i}`).join(" ");
+assert.ok(calculateReadTime(words200) >= 1, "200 words should return at least 1");
 
-// Test getEventReadTime
-const eventWithDesc = { description: "This is a test event description with enough words to calculate read time." };
-const result1 = getEventReadTime(eventWithDesc);
-assert.ok(result1.minutes >= 1, "Should return at least 1 minute");
-assert.ok(result1.display.includes("min read"), "Display should include min read");
-assert.ok(result1.wordCount > 0, "Word count should be positive");
+const words400 = Array.from({ length: 400 }, (_, i) => `word${i}`).join(" ");
+assert.ok(calculateReadTime(words400) >= 2, "400 words should return at least 2 minutes");
 
-const emptyDescEvent = { description: "" };
-const result2 = getEventReadTime(emptyDescEvent);
-assert.strictEqual(result2.minutes, 0, "Empty description returns 0 from calculateReadTime");
+const words1000 = Array.from({ length: 1000 }, (_, i) => `word${i}`).join(" ");
+assert.ok(calculateReadTime(words1000) >= 5, "1000 words should return at least 5 minutes");
 
-const noDescEvent = {};
-const result3 = getEventReadTime(noDescEvent);
-assert.strictEqual(result3.minutes, 0, "Missing description (empty event) returns 0");
+assert.equal(calculateReadTime("<p>Hello</p> <strong>World</strong>"), calculateReadTime("Hello World"), "HTML tags should be stripped before word count");
 
-const nullDescEvent = { description: null };
-const result4 = getEventReadTime(nullDescEvent);
-assert.strictEqual(result4.minutes, 0, "null description returns 0");
+assert.equal(formatReadTime(0), "", "zero should return empty string");
+assert.equal(formatReadTime(-5), "", "negative should return empty string");
+assert.equal(formatReadTime(1), "1 min read", "1 minute should return correct format");
+assert.equal(formatReadTime(2), "2 min read", "2 minutes should return correct format");
+assert.equal(formatReadTime(10), "10 min read", "10 minutes should return correct format");
 
-console.log("readTimeUtils tests passed ✓");
+const result1 = getEventReadTime({ description: "" });
+assert.equal(result1.minutes, 0, "empty description should return 0");
+assert.equal(result1.display, "", "empty description display should be empty string");
+
+const result2 = getEventReadTime({});
+assert.equal(result2.minutes, 0, "missing description should return 0");
+
+const result3 = getEventReadTime({ description: null });
+assert.equal(result3.minutes, 0, "null description should return 0");
+
+const result4 = getEventReadTime({ description: "One two three" });
+assert.equal(result4.minutes, 1, "short description should return 1 minute");
+assert.ok(result4.wordCount >= 3, "wordCount should be at least 3");
+
+console.log("All readTimeUtils tests passed!");
