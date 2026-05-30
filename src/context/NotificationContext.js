@@ -86,8 +86,32 @@ export const NotificationProvider = ({ children }) => {
 
   const isMounted = useRef(true);
   const activeTokenRef = useRef(token);
-  const seenNotificationIds = useRef(new Set());
   const hasCompletedInitialFetch = useRef(false);
+
+  // ---------------------------------------------------------------------------
+  // Bounded seen-notification Set
+  //
+  // seenNotificationIds deduplicates incoming notifications so browser push
+  // alerts do not fire twice for the same ID across polling cycles. The Set
+  // previously grew without bound: every polled ID was added but nothing was
+  // ever removed. On long-running sessions (open tabs left running overnight)
+  // the Set accumulated thousands of string IDs, increasing GC pressure.
+  //
+  // MAX_SEEN_IDS caps the Set. When the cap is reached the insertion helper
+  // evicts the oldest entry (Sets preserve insertion order, so the first value
+  // is the oldest) before adding the new one — a constant-time O(1) eviction.
+  // ---------------------------------------------------------------------------
+  const MAX_SEEN_IDS = 500;
+  const seenNotificationIds = useRef(new Set());
+
+  const addSeenId = (id) => {
+    if (seenNotificationIds.current.has(id)) return;
+    if (seenNotificationIds.current.size >= MAX_SEEN_IDS) {
+      const oldest = seenNotificationIds.current.values().next().value;
+      seenNotificationIds.current.delete(oldest);
+    }
+    seenNotificationIds.current.add(id);
+  };
 
   const groupedNotifications = useMemo(() => {
     return notifications.reduce((groups, notification) => {
@@ -285,7 +309,7 @@ export const NotificationProvider = ({ children }) => {
           return isNew && !notification.isRead;
         });
 
-        normalizedData.forEach((notification) => seenNotificationIds.current.add(notification.id));
+        normalizedData.forEach((notification) => addSeenId(notification.id));
         setNotifications(normalizedData);
         setUnreadCount(normalizedData.filter((n) => !n.isRead).length);
 
