@@ -571,7 +571,7 @@ const FeedbackPage = () => {
                   className="text-3xl font-extrabold text-gray-900 dark:text-gray-100"
                   style={{ fontFamily: '"Anton", sans-serif' }}
                 >
-                  We'd Love to Hear From You
+                  We&apos;d Love to Hear From You
                 </h2>
 
                 <p className="mt-2 text-gray-600 dark:text-gray-400">

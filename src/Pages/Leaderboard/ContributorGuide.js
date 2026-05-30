@@ -186,7 +186,7 @@ const ContributorGuide = () => {
           Welcome to Eventra Contributions!
         </h1>
         <p className="text-gray-700 dark:text-gray-300 text-base max-w-3xl mx-auto">
-          We're excited to have you join the Eventra community! This guide
+          We&apos;re excited to have you join the Eventra community! This guide
           provides detailed, actionable instructions, examples, and interactive
           tips to help first-time contributors succeed.
         </p>
@@ -671,7 +671,6 @@ const ContributorGuide = () => {
         <motion.a
           href="https://github.com/SandeepVashishtha/Eventra"
           target="_blank" rel="noopener noreferrer"
-          rel="noopener noreferrer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-sky-100 to-amber-100 text-black font-semibold px-8 py-3 rounded-full shadow-lg hover:from-sky-200 hover:to-amber-200 transition-all duration-300"
