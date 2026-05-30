@@ -8,6 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import ConfirmationModal from "../common/ConfirmationModal";
 import CommandPalette from "../common/CommandPalette";
+import { globalShortcutManager } from "../../utils/shortcutManager";
 
 import {
   Home,
@@ -797,14 +798,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setShowCommandPalette((prev) => !prev);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return globalShortcutManager.register({
+      id: "command-palette.toggle",
+      shortcut: "primary+k",
+      handler: () => setShowCommandPalette((prev) => !prev),
+    });
   }, []);
 
   const drawerRef = useRef(null);

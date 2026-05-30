@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { globalShortcutManager } from "../../utils/shortcutManager";
 
 // ============ CONSTANTS ============
 const GSSOC_TIMELINE = [
@@ -73,19 +74,6 @@ const calculateTimeLeft = (endDate) => {
     seconds: Math.floor((diff / 1000) % 60),
     ended: false
   };
-};
-
-const useKeyboardShortcut = (key, callback, deps = []) => {
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.key === key && !e.target.matches("input, textarea")) {
-        e.preventDefault();
-        callback();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, deps); // eslint-disable-line react-hooks/exhaustive-deps
 };
 
 const useToast = () => {
@@ -417,9 +405,15 @@ const GSSoCContribution = () => {
   }, []);
   
   // Keyboard shortcut: "/" to focus search
-  useKeyboardShortcut("/", () => {
-    searchInputRef.current?.focus();
-    addToast("🔍 Search focused. Start typing...", "info", 1500);
+  useEffect(() => {
+    return globalShortcutManager.register({
+      id: "gssoc.search.focus",
+      shortcut: "/",
+      handler: () => {
+        searchInputRef.current?.focus();
+        addToast("🔍 Search focused. Start typing...", "info", 1500);
+      },
+    });
   }, [addToast]);
   
   // Filtered resources with difficulty filter

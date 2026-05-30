@@ -70,14 +70,14 @@ describe("useKeyboardShortcuts", () => {
     expect(onOpenHelp).toHaveBeenCalledTimes(1);
   });
 
-  it("closes the help modal when Escape is pressed", () => {
+  it("does not treat Escape as a global shortcut", () => {
     renderHook(
       () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: true }),
       { wrapper }
     );
 
     fireKey("Escape");
-    expect(onCloseHelp).toHaveBeenCalledTimes(1);
+    expect(onCloseHelp).not.toHaveBeenCalled();
   });
 
   // ─── Navigation shortcuts ──────────────────────────────────────────────────

@@ -3,7 +3,6 @@ import {
   useRef,
   useState,
   useEffect,
-  useCallback,
 } from "react";
 import { Link } from "react-router-dom";
 import { Moon, Sun } from "lucide-react";
@@ -13,7 +12,6 @@ import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
-import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -25,31 +23,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const { isDarkMode, toggleTheme } = useTheme();
 
   useBodyScrollLock(isMobileMenuOpen);
-  const handleCloseModals = useCallback(() => {
-    setIsMobileMenuOpen(false);
-  }, []);
-
-  const handleSearchFocus = useCallback(() => {
-    const searchInput = document.querySelector(
-      'input[type="text"], input[type="search"]'
-    );
-
-    if (searchInput) searchInput.focus();
-  }, []);
-
-  const handleNewEvent = useCallback(() => {
-    const createEventBtn = document.querySelector(
-      '[aria-label*="Create Event"], [aria-label*="create"]'
-    );
-
-    if (createEventBtn) createEventBtn.click();
-  }, []);
-
-  useKeyboardShortcuts({
-    onCloseModals: handleCloseModals,
-    onSearchFocus: handleSearchFocus,
-    onNewEvent: handleNewEvent,
-  });
 
   useEffect(() => {
     let ticking = false;
