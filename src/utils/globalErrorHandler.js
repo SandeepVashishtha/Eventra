@@ -6,36 +6,38 @@ const Sentry = {
   captureException: () => {},
 };
 
-export const initializeGlobalErrorHandling =
-  () => {
-    // Global JS Errors
-    window.onerror = (
-      message,
-      source,
-      lineno,
-      colno,
-      error
-    ) => {
-      console.error(
-        "[GlobalError]",
-        error
-      );
+let isInitialized = false;
 
-      if (isProduction && dsn) {
-        Sentry.captureException(error || new Error(message));
-      }
-    };
+export const initializeGlobalErrorHandling = () => {
+  if (isInitialized) {
+    return;
+  }
 
-    // Unhandled Promise Rejections
-    window.onunhandledrejection =
-      (event) => {
-        console.error(
-          "[UnhandledPromiseRejection]",
-          event.reason
-        );
+  // Global JS Errors
+  window.onerror = (message, source, lineno, colno, error) => {
+    console.error("[GlobalError]", error);
 
-        if (isProduction && dsn) {
-          Sentry.captureException(event.reason);
-        }
-      };
+    if (isProduction && dsn) {
+      Sentry.captureException(error || new Error(message));
+    }
   };
+
+  // Unhandled Promise Rejections
+  window.onunhandledrejection = (event) => {
+    console.error("[UnhandledPromiseRejection]", event.reason);
+
+    if (isProduction && dsn) {
+      Sentry.captureException(event.reason);
+    }
+  };
+
+  isInitialized = true;
+};
+
+export const resetGlobalErrorHandling = () => {
+  if (typeof window !== "undefined") {
+    window.onerror = null;
+    window.onunhandledrejection = null;
+  }
+  isInitialized = false;
+};
