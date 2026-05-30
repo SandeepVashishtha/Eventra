@@ -39,6 +39,7 @@ const BookmarkedEvents = lazy(() => import('../../Pages/Events/BookmarkedEvents'
 const RemindersPage = lazy(() => import('../../Pages/Events/RemindersPage'));
 const EventAnalyticsDashboard = lazy(() => import('../../Pages/Events/EventAnalyticsDashboard'));
 const FloorPlanDesignerPage = lazy(() => import('../../Pages/Events/FloorPlanDesignerPage'));
+const VirtualVenueWalkthrough = lazy(() => import('../../Pages/Events/VirtualVenueWalkthrough'));
 const MyCalendar = lazy(() => import('../../Pages/Calendar/MyCalendar'));
 
 export const getPublicRoutes = () => [
