@@ -18,7 +18,6 @@ import SectionErrorBoundary from "../../../components/common/SectionErrorBoundar
 const CountUp = CountUpLib.default || CountUpLib;
 
 const MotionLink = motion(Link);
-const CountUp = CountUpLib.default;
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
