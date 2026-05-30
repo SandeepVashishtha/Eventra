@@ -366,12 +366,12 @@ const EventRegistration = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-          Registration Unavailable
+          join Waitlist
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
           {isPastEvent 
             ? "This event has already ended." 
-            : "This event has reached maximum capacity."}
+            : "This event is full. You can join the waitlist for future availability."}
         </p>
         <Link
           to={`/events/${eventId}`}
