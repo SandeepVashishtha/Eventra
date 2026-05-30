@@ -131,10 +131,11 @@ const ProjectGallery = () => {
           publicRequestConfig
         );
         const projectsData = response.data;
-        // only use API data if it is non-empty; otherwise fall back to mock
-        if (projectsData && projectsData.length > 0) {
-          setProjects(projectsData);
-
+const projectsList = Array.isArray(projectsData)
+  ? projectsData
+  : projectsData?.content || projectsData?.projects || [];
+if (projectsList.length > 0) {
+  setProjects(projectsList);
           // Attempt to fetch categories from API
           try {
             const categoriesResponse = await apiUtils.get(
@@ -193,7 +194,7 @@ const ProjectGallery = () => {
     fetchProjects();
   }, [fetchProjects]);
 
-  const filteredAndSortedProjects = projects
+ const filteredAndSortedProjects = (Array.isArray(projects) ? projects : [])
     .filter((project) => {
       if (filterCategory === "bookmarked") {
         if (!bookmarks.includes(project.id)) {
