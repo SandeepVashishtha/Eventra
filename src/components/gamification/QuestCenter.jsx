@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Zap, Clock, CheckCircle, Lock, Gift, Target,
-  Flame, Star, ChevronDown, Trophy, Sparkles, Timer,
+  Zap, CheckCircle, Gift, Target,
+  Flame, Star, Trophy, Sparkles, Timer,
 } from 'lucide-react';
 
 // ─── localStorage helpers ──────────────────────────────────────────────────────

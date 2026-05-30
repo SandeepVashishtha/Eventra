@@ -1,8 +1,14 @@
-import React, { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * PriceRangeSlider Component
- * Allows users to select a price range with dual sliders
+ * Allows users to select a price range with dual sliders.
+ *
+ * Performance note: onChange only updates local visual state so the track and
+ * price labels stay in sync while the user is dragging. The parent's
+ * onRangeChange callback is intentionally fired only on mouseup/touchend so
+ * the costly event-list filter recalculation runs once per drag, not on every
+ * individual slider tick.
  */
 const PriceRangeSlider = ({
   minPrice = 0,
@@ -15,12 +21,16 @@ const PriceRangeSlider = ({
   const [min, setMin] = useState(minPrice);
   const [max, setMax] = useState(maxPrice);
 
+  // Sync external prop changes (e.g. filter reset from parent) into local state.
   useEffect(() => {
-    if (onRangeChange) {
-      onRangeChange({ min, max });
-    }
-  }, [min, max, onRangeChange]);
+    setMin(minPrice);
+  }, [minPrice]);
 
+  useEffect(() => {
+    setMax(maxPrice);
+  }, [maxPrice]);
+
+  // Visual-only handlers — update local state on every tick for smooth UI.
   const handleMinChange = (e) => {
     const value = Math.min(Number(e.target.value), max - 1);
     setMin(value);
@@ -31,6 +41,14 @@ const PriceRangeSlider = ({
     setMax(value);
   };
 
+  // Commit handler — fires the parent callback once the user releases the handle.
+  // This prevents triggering expensive re-renders on every slider tick.
+  const commitRange = useCallback(() => {
+    if (onRangeChange) {
+      onRangeChange({ min, max });
+    }
+  }, [min, max, onRangeChange]);
+
   const minPercent = ((min - minLimit) / (maxLimit - minLimit)) * 100;
   const maxPercent = ((max - minLimit) / (maxLimit - minLimit)) * 100;
 
@@ -40,7 +58,7 @@ const PriceRangeSlider = ({
         {/* Track background */}
         <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
 
-        {/* Range track */}
+        {/* Active range track */}
         <div
           className="absolute h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full top-2"
           style={{
@@ -49,30 +67,34 @@ const PriceRangeSlider = ({
           }}
         ></div>
 
-        {/* Min slider */}
+        {/* Min slider — visual updates on onChange, parent notified on release */}
         <input
           type="range"
           min={minLimit}
           max={maxLimit}
           value={min}
           onChange={handleMinChange}
+          onMouseUp={commitRange}
+          onTouchEnd={commitRange}
           disabled={disabled}
           className="absolute w-full h-2 top-2 rounded-full appearance-none cursor-pointer bg-transparent pointer-events-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-indigo-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-indigo-500 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:shadow-md disabled:opacity-50"
         />
 
-        {/* Max slider */}
+        {/* Max slider — visual updates on onChange, parent notified on release */}
         <input
           type="range"
           min={minLimit}
           max={maxLimit}
           value={max}
           onChange={handleMaxChange}
+          onMouseUp={commitRange}
+          onTouchEnd={commitRange}
           disabled={disabled}
           className="absolute w-full h-2 top-2 rounded-full appearance-none cursor-pointer bg-transparent pointer-events-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-purple-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-purple-600 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:shadow-md disabled:opacity-50"
         />
       </div>
 
-      {/* Price display */}
+      {/* Price display — always reflects current drag position instantly */}
       <div className="flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300">
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-600 dark:text-gray-400">Min:</span>

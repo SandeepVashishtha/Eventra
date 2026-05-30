@@ -1,7 +1,12 @@
-import { parseEventDateTimeLocal } from "./timezoneUtils";
+import { parseEventDateTimeLocal } from "./timezoneUtils.js";
+import { safeJsonParse } from "./safeJsonParse.js";
 
 export const REMINDERS_STORAGE_KEY = "eventra_event_reminders";
 export const REMINDERS_CHANGED_EVENT = "eventraRemindersChanged";
+
+// Maximum number of active reminders stored in localStorage.
+// Prevents unbounded localStorage growth; oldest entry is dropped when exceeded.
+export const MAX_REMINDERS = 100;
 
 export const REMINDER_TIMINGS = [
   { value: "1d", label: "1 day before", minutesBefore: 24 * 60 },
@@ -11,8 +16,7 @@ export const REMINDER_TIMINGS = [
 
 const normalizeEventId = (eventId) => String(eventId);
 
-export const getReminderId = (eventId, timing) =>
-  `${normalizeEventId(eventId)}::${timing}`;
+export const getReminderId = (eventId, timing) => `${normalizeEventId(eventId)}::${timing}`;
 
 export const getEventDateTime = (event) => {
   if (!event?.date) return null;
@@ -38,7 +42,7 @@ const readReminders = () => {
 
   try {
     const rawReminders = window.localStorage.getItem(REMINDERS_STORAGE_KEY);
-    const parsedReminders = rawReminders ? JSON.parse(rawReminders) : [];
+    const parsedReminders = safeJsonParse(rawReminders, []);
     return Array.isArray(parsedReminders) ? parsedReminders : [];
   } catch {
     return [];
@@ -70,9 +74,7 @@ export const getActiveReminders = () => {
 
 export const getEventReminders = (eventId) => {
   const normalizedId = normalizeEventId(eventId);
-  return readReminders().filter(
-    (reminder) => normalizeEventId(reminder.eventId) === normalizedId
-  );
+  return readReminders().filter((reminder) => normalizeEventId(reminder.eventId) === normalizedId);
 };
 
 export const hasReminder = (eventId, timing) => {
@@ -102,6 +104,12 @@ export const addReminder = (event, timing) => {
   }
 
   const timingConfig = REMINDER_TIMINGS.find((item) => item.value === timing);
+
+  // Store only the minimal display fields needed to render the reminder UI
+  // and fire the browser notification. The event description is intentionally
+  // excluded — it can be large, may contain organizer contact details, and is
+  // not needed at notification time. Full event data is fetched on demand when
+  // the user taps the notification.
   const nextReminder = {
     id,
     eventId: normalizeEventId(event.id),
@@ -111,17 +119,23 @@ export const addReminder = (event, timing) => {
     createdAt: new Date().toISOString(),
     event: {
       id: event.id,
-      title: event.title,
-      date: event.date,
-      time: event.time,
-      location: event.location,
-      type: event.type,
-      image: event.image,
-      description: event.description,
+      title: event.title ?? "",
+      date: event.date ?? "",
+      time: event.time ?? "",
+      location: event.location ?? "",
+      type: event.type ?? event.category ?? "",
+      image: event.image ?? event.imageUrl ?? "",
     },
   };
 
-  const nextReminders = [nextReminder, ...reminders];
+  let nextReminders = [nextReminder, ...reminders];
+
+  // Enforce MAX_REMINDERS cap: drop the oldest entry (last in the prepended
+  // list, which is sorted newest-first) when exceeded.
+  if (nextReminders.length > MAX_REMINDERS) {
+    nextReminders = nextReminders.slice(0, MAX_REMINDERS);
+  }
+
   writeReminders(nextReminders);
   return { ok: true, reminder: nextReminder, reminders: nextReminders };
 };

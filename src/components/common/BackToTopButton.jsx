@@ -1,18 +1,18 @@
-import React, {
+import {
   useEffect,
   useState,
 } from "react";
 
 import { ChevronUp } from "lucide-react";
 
-const BackToTopButton = () => {
+const BackToTopButton = ({ threshold = 300, positionClass = "bottom-6 right-6" }) => {
   const [visible, setVisible] =
     useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
       setVisible(
-        window.scrollY > 300
+        window.scrollY > threshold
       );
     };
 
@@ -26,7 +26,7 @@ const BackToTopButton = () => {
         "scroll",
         handleScroll
       );
-  }, []);
+  }, [threshold]);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -42,8 +42,6 @@ const BackToTopButton = () => {
       title="Back to top"
       className={`
         fixed
-        bottom-6
-        right-6
         z-50
         p-3
         rounded-full
@@ -59,6 +57,7 @@ const BackToTopButton = () => {
         focus:ring-indigo-500
         focus:ring-offset-2
         active:scale-95
+        ${positionClass}
         ${
           visible
             ? "opacity-100 translate-y-0"

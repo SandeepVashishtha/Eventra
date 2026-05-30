@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import "./ConfirmationModal.css";
 
 const ConfirmationModal = ({
@@ -70,6 +70,7 @@ const ConfirmationModal = ({
       previouslyFocusedElement?.focus?.();
     };
   }, [isOpen, onClose]);
+
 
   if (!isOpen) return null;
 

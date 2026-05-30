@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -8,7 +8,6 @@ import {
   Circle, 
   Trophy, 
   ArrowRight, 
-  X, 
   Sparkles, 
   Award,
   ChevronUp,
@@ -71,7 +70,7 @@ export default function OnboardingChecklist() {
     return localStorage.getItem("eventra_onboarding_dismissed") === "true";
   });
   const [showCelebration, setShowCelebration] = useState(false);
-  
+
   // Checklist task states
   const [tasks, setTasks] = useState([
     {
@@ -210,16 +209,7 @@ export default function OnboardingChecklist() {
     setIsOpen(false);
   };
 
-  const handleReset = () => {
-    localStorage.removeItem("eventra_onboarding_dismissed");
-    localStorage.removeItem("eventra_onboarding_completed_fired");
-    localStorage.removeItem("eventra_sandbox_executed");
-    localStorage.removeItem("eventra_ai_recommendation_generated");
-    setIsDismissed(false);
-    setIsOpen(true);
-    checkTaskStatus();
-  };
-
+  
   // Render check
   if (!user || isDismissed) {
     // Hidden except if they want to reset it on settings page (can trigger reset)
@@ -354,34 +344,53 @@ export default function OnboardingChecklist() {
                       : "bg-white dark:bg-slate-850 border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
                   }`}
                 >
-                  {/* Status Checkbox Indicator */}
-                  <div className="mt-0.5 shrink-0">
-                    {task.completed ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-500 dark:text-green-400 fill-current" />
-                    ) : (
-                      <Circle className="w-5 h-5 text-slate-300 dark:text-slate-700" />
-                    )}
-                  </div>
+                  {/* Semantic visually-hidden checkbox with dynamic description */}
+                  <input
+                    type="checkbox"
+                    id={`onboarding-task-${task.id}`}
+                    checked={task.completed}
+                    disabled
+                    className="sr-only"
+                    aria-describedby={`onboarding-desc-${task.id}`}
+                  />
+                  
+                  <label 
+                    htmlFor={`onboarding-task-${task.id}`}
+                    className="flex-1 flex items-start gap-3 cursor-default"
+                  >
+                    {/* Status Checkbox Indicator */}
+                    <div className="mt-0.5 shrink-0" aria-hidden="true">
+                      {task.completed ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500 dark:text-green-400 fill-current" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-slate-300 dark:text-slate-700" />
+                      )}
+                    </div>
 
-                  {/* Task details */}
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-bold leading-tight ${
-                      task.completed ? "text-slate-500 line-through" : "text-slate-850 dark:text-white"
-                    }`}>
-                      {task.label}
-                    </p>
-                    <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
-                      {task.desc}
-                    </p>
-                  </div>
+                    {/* Task details */}
+                    <div className="flex-1 min-w-0">
+                      <span className="sr-only">
+                        {task.completed ? "[Completed Quest] " : "[Active Quest] "}
+                      </span>
+                      <p className={`text-xs font-bold leading-tight ${
+                        task.completed ? "text-slate-500 line-through" : "text-slate-850 dark:text-white"
+                      }`}>
+                        {task.label}
+                      </p>
+                      <p id={`onboarding-desc-${task.id}`} className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                        {task.desc}
+                      </p>
+                    </div>
+                  </label>
 
                   {/* Arrow Action link */}
                   {!task.completed && (
                     <Link
                       to={task.path}
                       onClick={() => setIsOpen(false)}
-                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-indigo-500 hover:text-indigo-600 shrink-0 self-center"
+                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-indigo-500 hover:text-indigo-600 shrink-0 self-center focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                       title={`Go to ${task.label}`}
+                      aria-label={`Go to ${task.label}`}
                     >
                       <ArrowRight className="w-4 h-4" />
                     </Link>
@@ -395,7 +404,7 @@ export default function OnboardingChecklist() {
               <button
                 onClick={handleDismiss}
                 className="text-[10px] font-bold text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors uppercase tracking-wider"
-              >
+               aria-label="button">
                 Dismiss Quest
               </button>
 

@@ -1,6 +1,7 @@
-import { useEffect, useId, useState, memo } from "react";
+import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
@@ -8,7 +9,6 @@ import {
   BookmarkCheck,
   Calendar,
   MapPin,
-  
   Tag,
   Star,
   Heart,
@@ -21,9 +21,9 @@ import {
 import { toast } from "react-toastify";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
+import LazyImage from "../../components/common/LazyImage";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
-import LazyImage from "../../components/common/LazyImage";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
@@ -33,9 +33,30 @@ import {
   removeBookmarkedEvent,
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
+import { getBookmarkedEvents } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
+// savedEvents state is component-scoped to avoid calling hooks at module level
+const getCapacityStyles = (ratio, isFull) => {
+  if (isFull || ratio >= 0.85) {
+    return {
+      barColor: "bg-red-500",
+      textColor: "text-red-600 dark:text-red-400",
+    };
+  }
+  if (ratio >= 0.6) {
+    return {
+      barColor: "bg-amber-500",
+      textColor: "text-amber-600 dark:text-amber-400",
+    };
+  }
+  return {
+    barColor: "bg-emerald-500",
+    textColor: "text-emerald-600 dark:text-emerald-400",
+  };
+};
 
 const EventCard = ({ event }) => {
+  const [savedEvents, setSavedEvents] = useState([]);
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
@@ -58,7 +79,12 @@ const EventCard = ({ event }) => {
   const isUserRegistered = isRegistered(event.id);
 
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+useEffect(() => {
+  const saved =
+    getBookmarkedEvents();
 
+  setSavedEvents(saved);
+}, []);
   const eventSharingData = generateEventSharingData({
     ...event,
     title: event.title,
@@ -79,7 +105,7 @@ const EventCard = ({ event }) => {
         });
       })
       .catch((err) => {
-        console.error("Failed to copy: ", err);
+        logger.error("Failed to copy: ", err);
         toast.error("Could not copy link. Please try again.", {
           autoClose: 2500,
         });
@@ -97,7 +123,7 @@ const EventCard = ({ event }) => {
     });
   }, [event.id]);
 
-  const handleBookmarkToggle = (e) => {
+  const handleBookmarkToggle = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -191,7 +217,7 @@ const EventCard = ({ event }) => {
         <button
           type="button"
           onClick={handleCopyLink}
-          className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200 group/copy relative focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
           title="Copy Event Link"
           aria-label={`Copy link for ${event.title}`}
         >
@@ -205,7 +231,7 @@ const EventCard = ({ event }) => {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="text-gray-600"
+            className="text-gray-600 dark:text-gray-300"
             aria-hidden="true"
           >
             <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
@@ -220,11 +246,9 @@ const EventCard = ({ event }) => {
           onClick={(e) => e.stopPropagation()}
           title="Add to Google Calendar"
           aria-label={`Add ${event.title} to Google Calendar`}
-          className="group/cal focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full"
+          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
-          <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200">
-            <Calendar size={14} className="text-gray-600" aria-hidden="true" />
-          </div>
+          <Calendar size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
         </a>
       </div>
 
@@ -270,7 +294,7 @@ const EventCard = ({ event }) => {
       <div className="relative h-40 overflow-hidden">
         <LazyImage
           src={event.image}
-          alt={`${event.title} event thumbnail`}
+          alt={event.imageAlt || `${event.title} event thumbnail`}
           width={800}
           height={160}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -331,21 +355,7 @@ const EventCard = ({ event }) => {
         const percent = Math.round(ratio * 100);
         const spotsLeft = Math.max(capacity - registered, 0);
 
-        const barColor = isFull
-          ? "bg-red-500"
-          : ratio >= 0.85
-            ? "bg-red-500"
-            : ratio >= 0.6
-              ? "bg-amber-500"
-              : "bg-emerald-500";
-
-        const textColor = isFull
-          ? "text-red-600 dark:text-red-400"
-          : ratio >= 0.85
-            ? "text-red-600 dark:text-red-400"
-            : ratio >= 0.6
-              ? "text-amber-600 dark:text-amber-400"
-              : "text-emerald-600 dark:text-emerald-400";
+        const { barColor, textColor } = getCapacityStyles(ratio, isFull);
 
         return (
           <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
@@ -408,3 +418,4 @@ const EventCard = ({ event }) => {
 };
 
 export default memo(EventCard);
+// OPTIMIZATION: Implemented image lazy-loading, decoding='async' and standard aspect-ratio styles to minimize Cumulative Layout Shift (CLS).

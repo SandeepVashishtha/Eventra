@@ -13,12 +13,15 @@ const formatToICSDate = (dateStr) => {
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 };
 
-// Helper to safely escape special characters in ICS strings
+// Helper to safely escape special characters in ICS strings (RFC 5545 compliant).
+// Carriage returns (\r) are stripped before newlines are escaped so that
+// user-supplied text cannot inject extra ICS content lines via CRLF sequences.
 const escapeICSText = (text = "") => {
   return text
     .replace(/\\/g, "\\\\")
     .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
+    .replace(/\r/g, "")
     .replace(/\n/g, "\\n");
 };
 
@@ -64,10 +67,16 @@ export const downloadICSFile = (event) => {
   const link = document.createElement("a");
   link.href = url;
   link.setAttribute("download", `${(title || "event").toLowerCase().replace(/[^a-z0-9]/g, "-")}.ics`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  
+  try {
+    document.body.appendChild(link);
+    link.click();
+  } finally {
+    if (document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+    URL.revokeObjectURL(url);
+  }
 };
 
 /**
@@ -170,9 +179,15 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
   const link = document.createElement("a");
   link.href = url;
   link.setAttribute("download", `${filename.toLowerCase().replace(/[^a-z0-9]/g, "-")}.ics`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  
+  try {
+    document.body.appendChild(link);
+    link.click();
+  } finally {
+    if (document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+    URL.revokeObjectURL(url);
+  }
 };
 

@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FiMessageSquare } from "react-icons/fi";
@@ -9,7 +8,7 @@ const FeedbackButton = () => {
 
   return (
     <motion.div
-      layout 
+      layout
       transition={prefersReducedMotion ? {} : { type: "spring", stiffness: 300, damping: 30 }}
       className={"fixed left-[1.625rem] z-[100] translate-y-1/2 bottom-6 fixed-floating-widget transition-opacity duration-300"}
       initial={{ opacity: 0, scale: 0 }}
@@ -26,7 +25,7 @@ const FeedbackButton = () => {
           whileTap={{ scale: 0.95 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
         >
-          <FiMessageSquare className="text-2xl" />
+          <FiMessageSquare className="text-2xl text-black" />
         </motion.div>
 
         <div className="pointer-events-none absolute left-full mr-3 whitespace-nowrap rounded-lg bg-white border border-black/15 px-3 py-2 text-sm text-black opacity-0 shadow-md transition-opacity duration-300 group-hover:opacity-100">

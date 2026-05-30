@@ -3,7 +3,10 @@ import { motion, useInView } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import CountUp from "react-countup";
+import CountUpLib from "react-countup";
+import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+
+const CountUp = CountUpLib.default;
 
 // Framer Motion Variants
 const container = {
@@ -146,32 +149,34 @@ export default function ModernAbout() {
             and experience events with ease.
           </motion.p>
 
-          <motion.div
-            variants={container}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-6"
-          >
-            {stats.map((s) => (
-              <motion.div
-                key={s.label}
-                variants={scaleIn}
-                whileHover={prefersReducedMotion ? {} : { scale: 1.05, y: -4 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-4 sm:p-5 cursor-default"
-              >
-                <h3 className="text-black dark:text-white text-xl sm:text-2xl font-bold mb-1">
-                  {s.value.includes("+") ? (
-                    <CountUp start={0} end={parseInt(s.value)} duration={3} suffix="+" />
-                  ) : (
-                    s.value
-                  )}
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400 text-xs">{s.label}</p>
-              </motion.div>
-            ))}
-          </motion.div>
+          <SectionErrorBoundary label="Statistics">
+            <motion.div
+              variants={container}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-6"
+            >
+              {stats.map((s) => (
+                <motion.div
+                  key={s.label}
+                  variants={scaleIn}
+                  whileHover={prefersReducedMotion ? {} : { scale: 1.05, y: -4 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-4 sm:p-5 cursor-default"
+                >
+                  <h3 className="text-black dark:text-white text-xl sm:text-2xl font-bold mb-1">
+                    {s.value.includes("+") ? (
+                      <CountUp start={0} end={parseInt(s.value)} duration={3} suffix="+" enableScrollSpy scrollSpyOnce />
+                    ) : (
+                      s.value
+                    )}
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">{s.label}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </SectionErrorBoundary>
         </div>
       </section>
 

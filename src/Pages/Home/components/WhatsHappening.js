@@ -19,7 +19,13 @@ const WhatsHappening = () => {
 
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(!prefersReducedMotion);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setIsAutoPlaying(false);
+    }
+  }, [prefersReducedMotion]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -97,17 +103,6 @@ const WhatsHappening = () => {
     ...formatHackathonsData(hackathonsData),
   ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
 
-  const statusColors = {
-    "Registration Open":
-      "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
-    "Coming Soon":
-      "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
-    "Live Now": "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
-    "Live Event":
-      "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
-    Planning:
-      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300",
-  };
 
   const [cardsPerView, setCardsPerView] = useState(1);
 
@@ -164,9 +159,9 @@ const WhatsHappening = () => {
   }, [isAutoPlaying]);
 
   const cardVariants = {
-    enter: (dir) => ({ opacity: 0, x: dir > 0 ? 300 : -300 }),
+    enter: (dir) => ({ opacity: 0, x: prefersReducedMotion ? 0 : (dir > 0 ? 300 : -300) }),
     center: { opacity: 1, x: 0 },
-    exit: (dir) => ({ opacity: 0, x: dir > 0 ? -300 : 300 }),
+    exit: (dir) => ({ opacity: 0, x: prefersReducedMotion ? 0 : (dir > 0 ? -300 : 300) }),
   };
 
   const activeDotIndex =
@@ -176,24 +171,20 @@ const WhatsHappening = () => {
   return (
     <section
       ref={ref}
-      className="py-12 sm:py-16 
-bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white
-dark:from-slate-950 dark:via-slate-900 dark:to-black
-text-slate-900 dark:text-gray-100 
-border-t border-gray-100 dark:border-slate-800/80"
+      className="py-16 sm:py-20 bg-gradient-to-b from-slate-50 via-indigo-50/20 to-white dark:from-slate-950 dark:via-slate-900/50 dark:to-slate-950 text-slate-900 dark:text-gray-100 border-t border-slate-200/50 dark:border-slate-800/80"
     >
-      <div className="relative z-[50] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading */}
         <motion.div
-          className="text-center mb-8 sm:mb-12"
+          className="text-center mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         >
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-white">
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
             What's Happening Now
           </h2>
-          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-black dark:text-gray-300">
+          <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg text-slate-600 dark:text-slate-400">
             Stay updated with {upcomingEvents.length} upcoming events, community
             programs, and opportunities to contribute to Eventra
           </p>
@@ -201,16 +192,16 @@ border-t border-gray-100 dark:border-slate-800/80"
 
         {/* Carousel */}
         <div className="relative w-full max-w-7xl mx-auto">
-          {/* FIX 1: Auto-play button — moved closer to edge on mobile */}
+          {/* Play/Pause Button */}
           <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-20">
             <button
               onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-              className="p-2 rounded-full bg-white/20 dark:bg-gray-700/90 shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
+              className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-800 shadow-md backdrop-blur-md hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
               title={isAutoPlaying ? "Pause auto-play" : "Resume auto-play"}
             >
               {isAutoPlaying ? (
                 <svg
-                  className="w-4 h-4 text-gray-600 dark:text-gray-300"
+                  className="w-4 h-4"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -218,7 +209,7 @@ border-t border-gray-100 dark:border-slate-800/80"
                 </svg>
               ) : (
                 <svg
-                  className="w-4 h-4 text-gray-600 dark:text-gray-300"
+                  className="w-4 h-4"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -228,21 +219,20 @@ border-t border-gray-100 dark:border-slate-800/80"
             </button>
           </div>
 
-          {/* FIX 2: Nav buttons flush to edge on mobile */}
+          {/* Navigation Controls */}
           <button
             onClick={prevSlide}
-            className="absolute left-0 sm:left-2 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 z-10 text-gray-700 dark:text-gray-200 transition-all hover:scale-105"
+            className="absolute left-0 sm:-left-4 top-1/2 -translate-y-1/2 p-3 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/50 dark:border-slate-800 shadow-lg hover:bg-white dark:hover:bg-slate-800 z-10 text-slate-700 dark:text-slate-250 transition-all hover:scale-105"
+            aria-label="Previous events"
           >
             <svg
-              className="w-4 h-4 sm:w-5 sm:h-5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
             >
-              <path
-                fillRule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
           </button>
 
@@ -254,24 +244,23 @@ border-t border-gray-100 dark:border-slate-800/80"
               );
               setIsAutoPlaying(false);
             }}
-            className="absolute right-0 sm:right-2 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 z-10 text-gray-700 dark:text-gray-200 transition-all hover:scale-105"
+            className="absolute right-0 sm:-right-4 top-1/2 -translate-y-1/2 p-3 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/50 dark:border-slate-800 shadow-lg hover:bg-white dark:hover:bg-slate-800 z-10 text-slate-700 dark:text-slate-250 transition-all hover:scale-105"
+            aria-label="Next events"
           >
             <svg
-              className="w-4 h-4 sm:w-5 sm:h-5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
             >
-              <path
-                fillRule="evenodd"
-                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                clipRule="evenodd"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </button>
 
-          {/* FIX 3: px-16 → px-8 sm:px-16 — was crushing cards on mobile */}
+          {/* Content Area */}
           <div
-            className="overflow-hidden px-8 sm:px-16 py-5 pointer-events-none"
+            className="overflow-hidden px-4 sm:px-8 py-5"
             onMouseEnter={() => setIsAutoPlaying(false)}
             onMouseLeave={() => setIsAutoPlaying(true)}
           >
@@ -284,7 +273,7 @@ border-t border-gray-100 dark:border-slate-800/80"
                 animate="center"
                 exit="exit"
                 transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: "easeInOut" }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto relative z-[50]"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto relative z-10"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.2}
@@ -316,142 +305,90 @@ border-t border-gray-100 dark:border-slate-800/80"
                       )
                       .slice(0, cardsPerView)
                       .map((event) => (
-                        // FIX 4: min-h-[360px] → min-h-[300px] sm:min-h-[360px]
                         <div
                           key={event.id}
-                          className="group relative w-full min-h-[300px] sm:min-h-[360px]"
-                          style={{ perspective: "1000px" }}
+                          className="group relative w-full flex flex-col rounded-2xl overflow-hidden bg-white/70 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-800/80 p-5 sm:p-6 shadow-md shadow-indigo-500/5 hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-500/40 hover:-translate-y-1.5 transition-all duration-300 flex-1 min-h-[340px] pointer-events-auto"
                           onMouseEnter={() => setIsAutoPlaying(false)}
                           onMouseLeave={() => setIsAutoPlaying(true)}
                         >
-                          <div
-                            className="w-full h-full absolute transition-transform duration-700 group-hover:[transform:rotateY(180deg)]"
-                            style={{ transformStyle: "preserve-3d" }}
-                          >
-                            {/* Front Face */}
-                            <div
-                              className="absolute inset-0 w-full h-full flex flex-col rounded-xl overflow-hidden shadow-md bg-white dark:bg-black/80 ring-2 ring-sky-200 dark:ring-sky-700/60"
-                              style={{ backfaceVisibility: "hidden" }}
-                            >
-                              <div className="p-4 sm:p-6 flex-1 flex flex-col">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
-                                  <span
-                                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
-                                      statusColors[event.status] ||
-                                      "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300"
-                                    }`}
-                                  >
-                                    {event.status}
-                                  </span>
-                                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                                    {event.type}
-                                  </span>
-                                </div>
-
-                                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                                  {event.title}
-                                </h3>
-                                <p className="text-gray-600 dark:text-gray-400 flex-1 mb-3 sm:mb-4 text-sm sm:text-base line-clamp-3">
-                                  {event.description}
-                                </p>
-
-                                {event.prize && (
-                                  <div className="flex items-center text-xs sm:text-sm text-rose-500 dark:text-rose-300 mb-2">
-                                    <svg
-                                      className="w-4 h-4 mr-1.5"
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95 .69h3.462c.969 0 1.371 1.24 .588 1.81l-2.8 2.034a1 1 0 0 0 -.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0 -1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0 -.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292z"/>
-                                    </svg>
-                                    {event.prize}
-                                  </div>
-                                )}
-
-                                {(event.participants || event.attendees) && (
-                                  <div className="flex items-center text-xs sm:text-sm text-blue-600 dark:text-blue-400 mb-2">
-                                    <svg
-                                      className="w-4 h-4 mr-1.5"
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM17 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 0 0-1.5-4.33A5 5 0 0 1 19 16v1h-6.07zM6 11a5 5 0 0 1 5 5v1H1v-1a5 5 0 0 1 5-5z" />
-                                    </svg>
-                                    {event.participants
-                                      ? `${event.participants} participants`
-                                      : `${event.attendees} attendees`}
-                                  </div>
-                                )}
-
-                                <div className="flex items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2 sm:mt-4">
-                                  <svg
-                                    className="flex-shrink-0 mr-1.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 dark:text-gray-500"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                    />
-                                  </svg>
-                                  {event.date}
-                                </div>
-                              </div>
-                              <div className="mt-auto ml-3 mb-4 flex flex-col gap-2">
-                                <div className="inline-flex items-center gap-1.5 w-fit px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-semibold shadow-sm">
-                                  {event.timeLeft === "Ended" ? (
-                                    <>
-                                      <CheckCircle2 className="w-3.5 h-3.5" /> Ended
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Hourglass className="w-3.5 h-3.5" /> Starts in {event.timeLeft}
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Back Face */}
-                            <div
-                              className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl shadow-lg flex flex-col items-center justify-center p-6 text-white text-center ring-2 ring-indigo-400"
-                              style={{
-                                backfaceVisibility: "hidden",
-                                transform: "rotateY(180deg)",
-                              }}
-                            >
-                              <h3 className="text-xl sm:text-2xl font-bold mb-4 px-2">
-                                {event.title}
-                              </h3>
-                              <p className="text-indigo-100 text-sm mb-8 px-4">
-                                Don't miss out on this amazing opportunity. Connect with the community and learn something new!
-                              </p>
-                              <Link
-                                to={event.link}
-                                className={`inline-flex items-center justify-center px-6 py-2.5 rounded-full shadow-lg font-bold transition-all duration-300 hover:scale-105 ${
-                                  event.featured
-                                    ? "bg-white text-indigo-600 hover:bg-indigo-50"
-                                    : "bg-black/30 text-white hover:bg-black/50 border border-white/20"
+                          {/* Card Content */}
+                          <div className="flex flex-col flex-1">
+                            <div className="flex items-center justify-between mb-4 gap-2">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                                  event.status === "Live Now" || event.status === "Live Event"
+                                    ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                    : event.status === "Registration Open"
+                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
                                 }`}
                               >
-                                {event.featured ? "Join Now" : "Learn More"}
-                                <svg
-                                  className="ml-2 -mr-1 w-4 h-4"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                                    clipRule="evenodd"
-                                  />
+                                {event.status}
+                              </span>
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/50">
+                                {event.type}
+                              </span>
+                            </div>
+
+                            <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                              {event.title}
+                            </h3>
+                            
+                            <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-3 leading-relaxed flex-1">
+                              {event.description}
+                            </p>
+
+                            <div className="flex flex-wrap gap-2.5 mb-4">
+                              {event.prize && (
+                                <div className="inline-flex items-center text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/5 dark:bg-rose-500/10 px-2.5 py-1.5 rounded-xl border border-rose-500/10">
+                                  <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.251-.11a3.375 3.375 0 000-6.166l-.251-.1a3.375 3.375 0 000 6.166zm6 0l.251-.11a3.375 3.375 0 000-6.166l-.251-.1a3.375 3.375 0 000 6.166z" />
+                                  </svg>
+                                  {event.prize}
+                                </div>
+                              )}
+
+                              {(event.participants || event.attendees) && (
+                                <div className="inline-flex items-center text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 dark:bg-indigo-500/10 px-2.5 py-1.5 rounded-xl border border-indigo-500/10">
+                                  <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A2.25 2.25 0 0112.75 21.5h-1.5a2.25 2.25 0 01-2.25-2.263V19.13m-2.625.372A9.336 9.336 0 011.5 18.552a4.125 4.125 0 017.533-2.493m0 0a9.38 9.38 0 012.625.372 9.336 9.336 0 004.121-.952m-4.121.952v-.002c0-1.113-.285-2.16-.786-3.07M9 10.125c0 .621.504 1.125 1.125 1.125h1.75c.621 0 1.125-.504 1.125-1.125V8.875c0-.621-.504-1.125-1.125-1.125h-1.75C9.504 7.75 9 8.254 9 8.875v1.25z" />
+                                  </svg>
+                                  {event.participants ? `${event.participants} participants` : `${event.attendees} attendees`}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                              <div className="flex items-center text-xs font-medium text-slate-500 dark:text-slate-400">
+                                <svg className="w-4 h-4 mr-1.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                                 </svg>
-                              </Link>
+                                {event.date}
+                              </div>
+
+                              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-500/20">
+                                {event.timeLeft === "Ended" ? (
+                                  <>
+                                    <CheckCircle2 className="w-3.5 h-3.5" /> Ended
+                                  </>
+                                ) : (
+                                  <>
+                                    <Hourglass className="w-3.5 h-3.5" /> {event.timeLeft}
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
+
+                          <Link
+                            to={event.link}
+                            className="mt-4 inline-flex items-center justify-center w-full px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-white dark:text-indigo-300 text-sm font-semibold transition-all duration-200 border border-transparent dark:border-indigo-500/20 hover:scale-[1.02]"
+                          >
+                            {event.featured ? "Register Now" : "Learn More"}
+                            <svg className="ml-2 w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                            </svg>
+                          </Link>
                         </div>
                       ))}
               </motion.div>
@@ -459,8 +396,8 @@ border-t border-gray-100 dark:border-slate-800/80"
           </div>
         </div>
 
-        {/* FIX 5: Dots — increased mobile tap target from w-3 to w-5 */}
-        <div className="flex justify-center items-center mt-4 space-x-1 sm:space-x-2">
+        {/* Carousel Dots */}
+        <div className="flex justify-center items-center mt-6 space-x-2">
           {Array.from(
             { length: Math.ceil(upcomingEvents.length / cardsPerView) },
             (_, index) => (
@@ -471,23 +408,16 @@ border-t border-gray-100 dark:border-slate-800/80"
                   setDirection(index * cardsPerView > current ? 1 : -1);
                   setIsAutoPlaying(false);
                 }}
-                className="relative group"
+                className="relative group focus:outline-none"
+                aria-label={`Go to slide group ${index + 1}`}
               >
                 <div
-                  className={`w-5 h-2 sm:w-8 sm:h-2 rounded-full transition-colors duration-300 ${
+                  className={`w-6 h-1.5 sm:w-8 sm:h-1.5 rounded-full transition-colors duration-300 ${
                     activeDotIndex === index
-                      ? "bg-blue-600 dark:bg-blue-500"
-                      : "bg-gray-300 dark:bg-slate-700 group-hover:bg-gray-400 dark:group-hover:bg-slate-600"
+                      ? "bg-indigo-600 dark:bg-indigo-500"
+                      : "bg-slate-300 dark:bg-slate-800 group-hover:bg-slate-400 dark:group-hover:bg-slate-700"
                   }`}
                 />
-                {activeDotIndex === index && isAutoPlaying && (
-                  <div className="absolute inset-0 rounded-full border-2 border-sky-300 dark:border-sky-400">
-                    <div
-                      className="w-full h-full rounded-full bg-sky-200/20 dark:bg-sky-400/20"
-                      style={{ animation: "progress 2.5s linear infinite" }}
-                    />
-                  </div>
-                )}
               </button>
             ),
           )}
