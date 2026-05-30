@@ -1,7 +1,7 @@
-import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
@@ -20,8 +20,8 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
-import ShareMenu from "../../components/common/ShareMenu";
 import LazyImage from "../../components/common/LazyImage";
+import ShareModal from "../../components/common/ShareModal";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
@@ -33,9 +33,8 @@ import {
   removeBookmarkedEvent,
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
-import { getBookmarkedEvents } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
-// savedEvents state is component-scoped to avoid calling hooks at module level
+
 const getCapacityStyles = (ratio, isFull) => {
   if (isFull || ratio >= 0.85) {
     return {
@@ -56,18 +55,18 @@ const getCapacityStyles = (ratio, isFull) => {
 };
 
 const EventCard = ({ event }) => {
-  const [savedEvents, setSavedEvents] = useState([]);
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
   const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [randomIcon] = useState(() => {
     const icons = [
-      <Star size={16} className="text-yellow-500" />,
-      <Heart size={16} className="text-red-500" />,
-      <Zap size={16} className="text-pink-500" />,
-      <BookOpen size={16} className="text-indigo-500" />,
-      <Gift size={16} className="text-pink-500" />,
+      <Star key="star" size={16} className="text-yellow-500" />,
+      <Heart key="heart" size={16} className="text-red-500" />,
+      <Zap key="zap" size={16} className="text-pink-500" />,
+      <BookOpen key="book-open" size={16} className="text-indigo-500" />,
+      <Gift key="gift" size={16} className="text-pink-500" />,
     ];
 
     return icons[Math.floor(Math.random() * icons.length)];
@@ -79,12 +78,6 @@ const EventCard = ({ event }) => {
   const isUserRegistered = isRegistered(event.id);
 
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
-useEffect(() => {
-  const saved =
-    getBookmarkedEvents();
-
-  setSavedEvents(saved);
-}, []);
   const eventSharingData = generateEventSharingData({
     ...event,
     title: event.title,
@@ -146,7 +139,7 @@ useEffect(() => {
       autoClose: 1800,
       className: "custom-toast",
     });
-  };
+  }, [computedStatus, event, isBookmarked]);
 
   return (
     <article
@@ -203,16 +196,28 @@ useEffect(() => {
           </AnimatePresence>
         </div>
 
-        <ShareMenu
-          shareData={eventSharingData}
-          position="above"
-          menuClassName="!z-[999] shadow-2xl"
-          buttonClassName=""
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsShareModalOpen(true);
+          }}
+          className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200 group/share transition-all duration-200"
+          aria-label={`Share ${event.title}`}
         >
-          <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200 group/share">
-            <Share2 size={14} className="text-gray-600" aria-hidden="true" />
-          </div>
-        </ShareMenu>
+          <Share2 size={14} className="text-gray-600" aria-hidden="true" />
+        </button>
+
+        <AnimatePresence>
+          {isShareModalOpen && (
+            <ShareModal
+              isOpen={isShareModalOpen}
+              onClose={() => setIsShareModalOpen(false)}
+              event={event}
+            />
+          )}
+        </AnimatePresence>
 
         <button
           type="button"

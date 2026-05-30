@@ -120,6 +120,7 @@ const EventRegistration = () => {
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
+  const formContainerRef = useRef(null);
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -250,6 +251,39 @@ const EventRegistration = () => {
 
     loadEvent();
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+
+  // fix: trap keyboard focus inside registration form (fixes #3341)
+  // Previously Tab/Shift+Tab would escape the form and land on background elements,
+  // making the form inaccessible for keyboard-only and screen reader users.
+  useEffect(() => {
+    const container = formContainerRef.current;
+    if (!container) return;
+
+    const focusableSelectors =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const handleTabKey = (e) => {
+      if (e.key !== "Tab") return;
+      const focusable = Array.from(container.querySelectorAll(focusableSelectors));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    container.addEventListener("keydown", handleTabKey);
+    return () => container.removeEventListener("keydown", handleTabKey);
+  }, [loading, registered]);
 
   const checkEventCapacity = async (id, currentEvent) => {
     try {
@@ -603,7 +637,6 @@ const EventRegistration = () => {
               <a
                 href={googleCalendarUrl}
                 target="_blank" rel="noopener noreferrer"
-                rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
@@ -614,7 +647,6 @@ const EventRegistration = () => {
               <a
                 href={outlookCalendarUrl}
                 target="_blank" rel="noopener noreferrer"
-                rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
@@ -633,7 +665,6 @@ const EventRegistration = () => {
               <a
                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
                 target="_blank" rel="noopener noreferrer"
-                rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on Twitter / X"
               >
@@ -644,7 +675,6 @@ const EventRegistration = () => {
               <a
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
                 target="_blank" rel="noopener noreferrer"
-                rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-[#0077b5] hover:bg-[#006297] rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on LinkedIn"
               >
@@ -681,7 +711,12 @@ const EventRegistration = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div
+      ref={formContainerRef}
+      role="main"
+      aria-label="Event registration form"
+      className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
+    >
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link

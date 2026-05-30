@@ -243,7 +243,7 @@ console.log("Running login endpoint tests...");
   assert.ok(payload.id, "JWT should contain user id");
   assert.ok(payload.email, "JWT should contain email");
   assert.ok(payload.roles, "JWT should contain roles");
-  assert.ok(payload.permissions, "JWT should contain permissions");
+  assert.equal(payload.permissions, undefined, "JWT should NOT contain permissions");
   assert.ok(payload.exp, "JWT should contain expiration");
   console.log("✓ Test 11: JWT token contains required claims");
 }
