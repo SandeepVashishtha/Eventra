@@ -157,7 +157,7 @@ function App() {
                   >
                     <Suspense fallback={pageLoader}>
                       <PageTransition>
-                        <SectionErrorBoundary label="Page Content">
+                        <ErrorBoundary>
                           <Routes>
                             <Route
                               path="/register/:id"
@@ -171,7 +171,7 @@ function App() {
                             <Route path="/saved-events" element={<SavedEventsPage />} />
                             <Route path="*" element={<AppRoutes />} />
                           </Routes>
-                        </SectionErrorBoundary>
+                        </ErrorBoundary>
                       </PageTransition>
                     </Suspense>
                   </main>
