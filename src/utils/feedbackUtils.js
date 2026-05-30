@@ -123,6 +123,54 @@ export const getAverageRating = (eventId) => {
 };
 
 /**
+ * Get recommendation percentage
+ * @param {string} eventId - Event identifier
+ * @returns {number} Percentage (0-100)
+ */
+export const getRecommendationPercentage = (eventId) => {
+  const stats = getRecommendationStats(eventId);
+  return stats.percentage;
+};
+
+/**
+ * Get rating breakdown
+ * @param {string} eventId - Event identifier
+ * @returns {Object} Count of each rating { 1, 2, 3, 4, 5 }
+ */
+export const getRatingBreakdown = (eventId) => {
+  try {
+    const feedback = getEventFeedback(eventId);
+    const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+
+    feedback.forEach((f) => {
+      if (f.rating && breakdown[f.rating] !== undefined) {
+        breakdown[f.rating]++;
+      }
+    });
+
+    return breakdown;
+  } catch (error) {
+    console.error('Error calculating rating breakdown:', error);
+    return { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  }
+};
+
+/**
+ * Get top feedback tags
+ * @param {string} eventId - Event identifier
+ * @param {number} limit - Max tags to return
+ * @returns {Array} Array of tag strings
+ */
+export const getTopFeedbackTags = (eventId, limit = 5) => {
+  const tagStats = getTagStats(eventId);
+  return Object.entries(tagStats)
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([tag]) => tag);
+};
+
+/**
  * Get recommendation stats
  * @param {string} eventId - Event identifier
  * @returns {Object} { recommendCount, notRecommendCount, percentage }
