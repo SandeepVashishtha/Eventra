@@ -36,6 +36,7 @@ const useEventListing = () => {
   const [advancedFilters, setAdvancedFilters] = useState({
     category: "",
     status: "",
+    location: "",
   });
 
   const [pagination, setPagination] = useState({
@@ -64,6 +65,10 @@ const useEventListing = () => {
 
     if (advancedFilters?.category) {
       params.append("category", advancedFilters.category);
+    }
+
+    if (advancedFilters?.location) {
+      params.append("location", advancedFilters.location);
     }
 
     if (advancedFilters?.status) {
@@ -117,7 +122,47 @@ const useEventListing = () => {
       console.error("Failed to fetch events:", error);
 
       if (process.env.NODE_ENV === "development") {
-        const normalizedMockEvents = mockEvents.map(normalizeEvent);
+        let filteredMock = mockEvents;
+        
+        // Apply search query
+        if (debouncedSearchQuery.trim()) {
+          const q = debouncedSearchQuery.trim().toLowerCase();
+          filteredMock = filteredMock.filter(item => 
+            (item.title || "").toLowerCase().includes(q) ||
+            (item.location || "").toLowerCase().includes(q) ||
+            (item.description || "").toLowerCase().includes(q)
+          );
+        }
+
+        // Apply advanced category filter
+        if (advancedFilters?.category) {
+          const cat = advancedFilters.category.toLowerCase();
+          filteredMock = filteredMock.filter(item => 
+            (item.type || item.category || "").toLowerCase() === cat
+          );
+        }
+
+        // Apply advanced location filter
+        if (advancedFilters?.location) {
+          const loc = advancedFilters.location.toLowerCase();
+          filteredMock = filteredMock.filter(item => 
+            (item.location || "").toLowerCase().includes(loc)
+          );
+        }
+
+        // Apply status (filterType) filter (upcoming/past)
+        const now = new Date();
+        if (filterType === "upcoming") {
+          filteredMock = filteredMock.filter(item => new Date(item.date) >= now);
+        } else if (filterType === "past") {
+          filteredMock = filteredMock.filter(item => new Date(item.date) < now);
+        } else if (filterType && filterType !== "all") {
+          filteredMock = filteredMock.filter(item => 
+            (item.type || item.category || "").toLowerCase() === filterType.toLowerCase()
+          );
+        }
+
+        const normalizedMockEvents = filteredMock.map(normalizeEvent);
         setEvents(normalizedMockEvents);
         setPagination({
           totalPages: 1,
@@ -182,15 +227,34 @@ const useEventListing = () => {
     const now = new Date();
     return events.filter((event) => {
       const eventDate = new Date(event.date || event.startDate);
+      
+      // Filter by status/time (upcoming/past) or type
       if (filterType === "upcoming") {
-        return eventDate >= now;
+        if (eventDate < now) return false;
+      } else if (filterType === "past") {
+        if (eventDate >= now) return false;
+      } else if (filterType && filterType !== "all") {
+        const eventCategory = (event.type || event.category || "").toLowerCase();
+        if (eventCategory !== filterType.toLowerCase()) return false;
       }
-      if (filterType === "past") {
-        return eventDate < now;
+
+      // Filter by advanced category
+      if (advancedFilters?.category) {
+        const cat = advancedFilters.category.toLowerCase();
+        const eventCategory = (event.type || event.category || "").toLowerCase();
+        if (eventCategory !== cat) return false;
       }
-      return true; // "all"
+
+      // Filter by advanced location
+      if (advancedFilters?.location) {
+        const loc = advancedFilters.location.toLowerCase();
+        const eventLoc = (event.location || "").toLowerCase();
+        if (!eventLoc.includes(loc)) return false;
+      }
+
+      return true;
     });
-  }, [events, filterType]);
+  }, [events, filterType, advancedFilters]);
 
   const paginatedEvents = useMemo(() => filteredEvents, [filteredEvents]);
 

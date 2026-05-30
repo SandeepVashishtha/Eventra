@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2 } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
@@ -22,6 +22,7 @@ import ShareMenu from "../../components/common/ShareMenu";
 import ShareModal from "../../components/common/ShareModal";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
+import { getUserTimezone } from "../../utils/timezoneUtils";
 import { safeParseJson } from "../../utils/jsonUtils";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
@@ -29,6 +30,7 @@ import mockEvents from "./eventsMockData.json";
 const EventDetails = () => {
   const { eventId } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
 
@@ -36,14 +38,32 @@ const EventDetails = () => {
   const [exportingRegistrants, setExportingRegistrants] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [event, setEvent] = useState(null);
-  const [fetchLoading, setFetchLoading] = useState(true);
+  
+  const [event, setEvent] = useState(() => {
+    try {
+      const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
+      const cached = viewedEvents.find((item) => String(item.id) === String(eventId));
+      return cached || null;
+    } catch {
+      return null;
+    }
+  });
+  
+  const [fetchLoading, setFetchLoading] = useState(() => {
+    try {
+      const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
+      const cached = viewedEvents.find((item) => String(item.id) === String(eventId));
+      return !cached;
+    } catch {
+      return true;
+    }
+  });
+  
   const [fetchError, setFetchError] = useState(null);
 
   const { isRegistered } = useMyEvents();
 
   const loadEvent = useCallback(async () => {
-    setFetchLoading(true);
     setFetchError(null);
     try {
       const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
@@ -59,7 +79,10 @@ const EventDetails = () => {
       if (fallback) {
         setEvent({ ...fallback, status: getEventStatus(fallback) });
       } else {
-        setFetchError("Event not found.");
+        setEvent(prev => {
+          if (!prev) setFetchError("Event not found.");
+          return prev;
+        });
       }
     } finally {
       setFetchLoading(false);
@@ -67,8 +90,22 @@ const EventDetails = () => {
   }, [eventId]);
 
   useEffect(() => {
+    try {
+      const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
+      const cached = viewedEvents.find((item) => String(item.id) === String(eventId));
+      if (cached) {
+        setEvent(cached);
+        setFetchLoading(false);
+      } else {
+        setEvent(null);
+        setFetchLoading(true);
+      }
+    } catch {
+      setEvent(null);
+      setFetchLoading(true);
+    }
     loadEvent();
-  }, [loadEvent]);
+  }, [eventId, loadEvent]);
 
   // Safely handle localStorage with try-catch
   useEffect(() => {
@@ -274,9 +311,18 @@ const EventDetails = () => {
                 </div>
               )}
 
-              <Link to="/events" className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800">
+              <button
+                onClick={() => {
+                  if (window.history.length > 1) {
+                    navigate(-1);
+                  } else {
+                    navigate("/events");
+                  }
+                }}
+                className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+              >
                 Back to Events
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -299,14 +345,14 @@ const EventDetails = () => {
                   <Calendar className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
-                    <p className="font-semibold">{new Date(event.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
+                    <p className="font-semibold">{new Date(event.date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <Clock className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Time</p>
-                    <p className="font-semibold">{event.time}</p>
+                    <p className="font-semibold">{event.time} ({getUserTimezone()})</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">

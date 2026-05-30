@@ -5,22 +5,40 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import CountdownTimer from "../../components/common/CountdownTimer";
-import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff, CalendarPlus } from "lucide-react";
 import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
 import { toast } from "react-toastify";
 import { getEventStatus } from "../../utils/eventUtils";
 import { logError } from "../../utils/errorLogger";
-// Note: eventsMockData.json is NOT statically imported here.
-// It is loaded dynamically (and only in development/fallback mode) so that
-// the mock JSON is not bundled into the production build.
+import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
+import { getUserTimezone } from "../../utils/timezoneUtils";
 
 const EventDetailsPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { addRecentlyViewed } = useRecentlyViewed();
   const latestRequestIdRef = useRef(0);
-  const [loading, setLoading] = useState(true);
-  const [event, setEvent] = useState(null);
+  
+  const [event, setEvent] = useState(() => {
+    try {
+      const viewedEvents = JSON.parse(localStorage.getItem("recentlyViewedEvents") || "[]");
+      const cached = viewedEvents.find((item) => String(item.id) === String(eventId));
+      return cached || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [loading, setLoading] = useState(() => {
+    try {
+      const viewedEvents = JSON.parse(localStorage.getItem("recentlyViewedEvents") || "[]");
+      const cached = viewedEvents.find((item) => String(item.id) === String(eventId));
+      return !cached;
+    } catch {
+      return true;
+    }
+  });
+
   const [, setError] = useState(null);
   const [cacheInfo, setCacheInfo] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -64,6 +82,21 @@ const EventDetailsPage = () => {
   };
 
   useEffect(() => {
+    try {
+      const viewedEvents = JSON.parse(localStorage.getItem("recentlyViewedEvents") || "[]");
+      const cached = viewedEvents.find((item) => String(item.id) === String(eventId));
+      if (cached) {
+        setEvent(cached);
+        setLoading(false);
+      } else {
+        setEvent(null);
+        setLoading(true);
+      }
+    } catch {
+      setEvent(null);
+      setLoading(true);
+    }
+
     const requestId = latestRequestIdRef.current + 1;
     latestRequestIdRef.current = requestId;
     const controller = new AbortController();
@@ -71,7 +104,6 @@ const EventDetailsPage = () => {
       latestRequestIdRef.current === requestId && !controller.signal.aborted;
 
     const fetchEvent = async () => {
-      setLoading(true);
       setCacheInfo(null);
       setError(null);
 
@@ -94,8 +126,10 @@ const EventDetailsPage = () => {
           const { default: mockData } = await import("./eventsMockData.json");
           const foundEvent = mockData.find((item) => String(item.id) === String(eventId));
           if (isLatestRequest()) {
-            setEvent(foundEvent || null);
-            setError(foundEvent ? null : responseError);
+            setEvent(prev => foundEvent || prev);
+            if (!foundEvent) {
+              setError(responseError);
+            }
             if (foundEvent) setCacheInfo({ cachedAt: null, label: "mock fallback" });
           }
         }
@@ -109,8 +143,10 @@ const EventDetailsPage = () => {
           const { default: mockData } = await import("./eventsMockData.json");
           const foundEvent = mockData.find((item) => String(item.id) === String(eventId));
           if (isLatestRequest()) {
-            setEvent(foundEvent || null);
-            setError(foundEvent ? null : err);
+            setEvent(prev => foundEvent || prev);
+            if (!foundEvent) {
+              setError(err);
+            }
             if (foundEvent) setCacheInfo({ cachedAt: null, label: "offline fallback" });
           }
         } catch (fallbackErr) {
@@ -120,7 +156,6 @@ const EventDetailsPage = () => {
               eventId,
               source: "EventDetailsPage",
             });
-            setEvent(null);
             setError(fallbackErr);
           }
         }
@@ -178,7 +213,13 @@ const EventDetailsPage = () => {
           </p>
           <button
             type="button"
-            onClick={() => navigate("/events")}
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate("/events");
+              }
+            }}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white transition-colors hover:bg-indigo-700"
           >
             <ArrowLeft size={18} aria-hidden="true" />
@@ -199,7 +240,13 @@ const EventDetailsPage = () => {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <button
               type="button"
-              onClick={() => navigate("/events")}
+              onClick={() => {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate("/events");
+                }
+              }}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-lg pr-2 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 sm:text-base"
             >
               <ArrowLeft size={20} aria-hidden="true" />
@@ -282,7 +329,7 @@ const EventDetailsPage = () => {
                   <div className="flex min-w-0 items-start gap-3">
                     <Calendar size={16} className="shrink-0 text-indigo-500" />
                     <span>
-                      {new Date(event.date).toLocaleDateString("en-US", {
+                      {new Date(event.date).toLocaleDateString(undefined, {
                         weekday: "long",
                         year: "numeric",
                         month: "long",
@@ -292,7 +339,7 @@ const EventDetailsPage = () => {
                   </div>
                   <div className="flex min-w-0 items-center gap-3">
                     <Clock size={16} className="shrink-0 text-blue-500" />
-                    <span>{event.time}</span>
+                    <span>{event.time} ({getUserTimezone()})</span>
                   </div>
                   <div className="flex min-w-0 items-start gap-3">
                     <MapPin size={16} className="shrink-0 text-pink-500" />
@@ -398,6 +445,54 @@ const EventDetailsPage = () => {
                     Share via Device
                   </button>
                 )}
+              </div>
+
+              {/* Add to Calendar Section */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <CalendarPlus size={16} className="text-green-500" />
+                  Add to Calendar
+                </h3>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => {
+                      downloadICSFile(event);
+                      toast.success("Calendar invite downloaded!");
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 px-4 py-2.5 text-xs font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200"
+                    aria-label="Download .ics calendar invite"
+                  >
+                    <CalendarPlus size={14} className="text-green-500" /> Download .ics Invite
+                  </button>
+                  {generateGoogleCalendarLink(event) && (
+                    <a
+                      href={generateGoogleCalendarLink(event)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 px-4 py-2.5 text-xs font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200"
+                      aria-label="Add to Google Calendar"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                        <path fill="#4285F4" d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10z"/>
+                        <path fill="#fff" d="M13 7h-2v6l5.25 3.15.75-1.23-4-2.37z"/>
+                      </svg> Add to Google Calendar
+                    </a>
+                  )}
+                  {generateOutlookLink(event) && (
+                    <a
+                      href={generateOutlookLink(event)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 px-4 py-2.5 text-xs font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200"
+                      aria-label="Add to Outlook Calendar"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                        <path fill="#0078D4" d="M2 6l10-4 10 4v12l-10 4L2 18z"/>
+                        <path fill="#fff" d="M12 4L4 7v10l8 3 8-3V7z"/>
+                      </svg> Add to Outlook
+                    </a>
+                  )}
+                </div>
               </div>
 
               <button
