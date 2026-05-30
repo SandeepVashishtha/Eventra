@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useInView } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { Award, Calendar, Clock, Code2, Sparkles, TrendingUp, Trash2, Users } from "lucide-react";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
@@ -30,12 +30,12 @@ const TRENDING_SEARCHES = [
   "Web Development",
 ];
 
-export default function EventHero({
+const EventHero = ({
   searchQuery,
   handleSearch,
   filteredEvents,
   scrollToCard,
-}) {
+}) => {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
 
@@ -316,4 +316,6 @@ export default function EventHero({
       </div>
     </section>
   );
-}
+};
+
+export default memo(EventHero);

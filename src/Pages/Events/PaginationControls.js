@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import {
   EVENTS_PER_PAGE_OPTIONS,
@@ -179,4 +180,4 @@ const PaginationControls = ({
   );
 };
 
-export default PaginationControls;
+export default memo(PaginationControls);

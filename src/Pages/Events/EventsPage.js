@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useSearchParams, useLocation } from "react-router-dom"; // ✅ useLocation added here
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
@@ -152,12 +152,12 @@ const EventsPage = () => {
     }
   }, [routeSearchQuery, listing.searchQuery, listing.setSearchQuery]);
 
-  const handleSearch = (query = "") => {
+  const handleSearch = useCallback((query = "") => {
     const safeQuery = prepareSafeSearchQuery(query);
     setLocalSearchInput(safeQuery);
     listing.setSearchQuery(safeQuery);
     return listing.filteredEvents;
-  };
+  }, [listing, setLocalSearchInput]);
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
@@ -171,16 +171,16 @@ const EventsPage = () => {
     }
   }, [listing.isLoading, routeSearchQuery]);
 
-  const scrollToCard = () => {
+  const scrollToCard = useCallback(() => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
-  const clearSearchAndFilters = () => {
+  const clearSearchAndFilters = useCallback(() => {
     listing.setSearchQuery("");
     listing.setFilterType("all");
     listing.setSortType("Newest");
     setLocalSearchInput("");
-  };
+  }, [listing, setLocalSearchInput]);
 
   const hasActiveFilters =
     listing.filterType !== "all" ||
