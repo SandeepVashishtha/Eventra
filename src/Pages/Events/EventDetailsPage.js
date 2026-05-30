@@ -62,6 +62,7 @@ const EventDetailsPage = () => {
 
   useEffect(() => {
     let isCancelled = false;
+    const controller = new AbortController();
 
     const fetchEvent = async () => {
       setLoading(true);
@@ -70,7 +71,7 @@ const EventDetailsPage = () => {
       try {
         // Try the live API first
         const apiUrl = `/api/events/${encodeURIComponent(eventId)}`;
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, { signal: controller.signal });
 
         if (response.ok) {
           const data = await response.json();
@@ -143,6 +144,7 @@ const EventDetailsPage = () => {
 
     return () => {
       isCancelled = true;
+      controller.abort();
     };
   }, [eventId]);
 
