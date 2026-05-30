@@ -79,6 +79,20 @@ function RankMovementIndicator({ username }) {
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
 // Token is managed securely by the backend proxy
 const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
+const FALLBACK_AVATAR_SRC =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Avatar placeholder">
+      <rect width="128" height="128" rx="64" fill="#e2e8f0" />
+      <circle cx="64" cy="52" r="24" fill="#94a3b8" />
+      <path d="M28 108c6-22 24-34 36-34s30 12 36 34" fill="#94a3b8" />
+    </svg>
+  `);
+
+const handleAvatarError = (event) => {
+  event.currentTarget.onerror = null;
+  event.currentTarget.src = FALLBACK_AVATAR_SRC;
+};
 
 // Points mapping for PR labels (keeps scoring logic centralized)
 const POINTS = {
@@ -517,6 +531,7 @@ export default function LeaderBoard() {
                     <img
                       src={top3[1].avatar}
                       alt={top3[1].username}
+                      onError={handleAvatarError}
                       className="relative h-18 w-18 rounded-full border-4 border-slate-300 shadow-md object-cover"
                     />
                     <div className="absolute -bottom-2 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-slate-800 text-[10px] font-black uppercase tracking-tight shadow">
@@ -572,6 +587,7 @@ export default function LeaderBoard() {
                     <img
                       src={top3[0].avatar}
                       alt={top3[0].username}
+                      onError={handleAvatarError}
                       className="relative h-22 w-22 rounded-full border-4 border-yellow-400 dark:border-yellow-500 shadow-lg object-cover"
                     />
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl">
@@ -627,6 +643,7 @@ export default function LeaderBoard() {
                     <img
                       src={top3[2].avatar}
                       alt={top3[2].username}
+                      onError={handleAvatarError}
                       className="relative h-18 w-18 rounded-full border-4 border-amber-600 dark:border-orange-700 shadow-md object-cover"
                     />
                     <div className="absolute -bottom-2 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-amber-600 text-white text-[10px] font-black uppercase tracking-tight shadow">
@@ -866,6 +883,7 @@ export default function LeaderBoard() {
                                   }`}
                                   src={c.avatar}
                                   alt={c.username}
+                                  onError={handleAvatarError}
                                 />
                               </div>
                               <div>

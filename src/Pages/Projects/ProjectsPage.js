@@ -130,7 +130,6 @@ const ProjectGallery = () => {
           publicRequestConfig
         );
         const projectsData = response.data;
-
         // only use API data if it is non-empty; otherwise fall back to mock
         if (projectsData && projectsData.length > 0) {
           setProjects(projectsData);
