@@ -25,6 +25,7 @@ export const LABEL_POINTS = {
   gssoclevel1: 3,
   gssoclevel2: 7,
   gssoclevel3: 10,
+  gssoclevel4: 15,
 };
 
 /** Fallback points for merged PRs with no recognised level label. */
@@ -108,6 +109,18 @@ export function filterContributors(contributors, search, activeCategory) {
     if (!matchSearch) return false;
 
     if (activeCategory === "monthly") {
+      const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const lastActive = c.lastActiveDate
+        ? new Date(c.lastActiveDate).getTime()
+        : c.latestPrDate
+        ? new Date(c.latestPrDate).getTime()
+        : 0;
+
+      if (lastActive > 0) {
+        return lastActive >= thirtyDaysAgo;
+      }
+
+      // Backwards-compatible fallback: top 40% threshold if no dates exist
       const threshold =
         contributors.length > 0
           ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
