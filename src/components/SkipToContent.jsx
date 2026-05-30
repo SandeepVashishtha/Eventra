@@ -16,7 +16,7 @@ export default function SkipToContent({ targetId = "main-content" }) {
     const target = document.getElementById(targetId);
     if (target) {
       target.setAttribute("tabindex", "-1");
-      target.focus();
+      target.focus({ preventScroll: true });
       target.removeAttribute("tabindex");
     }
   };
