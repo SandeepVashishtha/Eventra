@@ -173,7 +173,7 @@ export default function ModernAbout() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="text-base sm:text-lg text-black dark:text-gray-300 mb-16"
+          className="text-base sm:text-lg text-gray-700 dark:text-gray-300 mb-16"
           data-aos="fade-up"
           data-aos-delay="200"
         >
@@ -198,8 +198,8 @@ export default function ModernAbout() {
             data-aos-delay="300"
           >
             {/* UPDATED: Card text */}
-            <h3 className="text-black text-2xl font-bold mb-2">100+</h3>
-            <p className="text-black text-sm">Events Managed</p>
+            <h3 className="text-black dark:text-white text-2xl font-bold mb-2">100+</h3>
+            <p className="text-black dark:text-gray-300 text-sm">Events Managed</p>
           </motion.div>
           {stats.map((s) => (
             <motion.div key={s.label} variants={scaleIn} whileHover={prefersReducedMotion ? {} : { scale: 1.05, y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-4 sm:p-5 cursor-default">
