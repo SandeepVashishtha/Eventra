@@ -1,5 +1,5 @@
-import { STORAGE_KEYS } from "./storageKeys";
-import { validators } from "./storageValidators";
+import { STORAGE_KEYS } from "./storageKeys.js";
+import { validators } from "./storageValidators.js";
 
 const DEFAULT_EXPIRY = 1000 * 60 * 60; // 1 hour
 
