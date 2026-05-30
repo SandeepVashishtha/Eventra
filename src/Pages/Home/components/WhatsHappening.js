@@ -41,22 +41,22 @@ const WhatsHappening = () => {
       .filter((event) => new Date(event.date) >= new Date())
       .map((event) => ({
         id: `event-${event.id}`,
-        title: event.title,
-        description: event.description,
+        title: String(event.title || ""),
+        description: String(event.description || ""),
         date: new Date(event.date).toLocaleDateString("en-US", {
           month: "long",
           day: "numeric",
           year: "numeric",
         }),
         rawDate: event.date,
-        type: event.type.charAt(0).toUpperCase() + event.type.slice(1),
+        type: event.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : "Event",
         status:
           event.status === "upcoming" ? "Registration Open" : "Live Event",
         link: `/events/${event.id}`,
-        featured: event.attendees > 200,
+        featured: Number(event.attendees || 0) > 200,
 
-        location: event.location,
-        attendees: event.attendees,
+        location: String(event.location || ""),
+        attendees: Number(event.attendees || 0),
         timeLeft: `${Math.ceil(
        (new Date(event.rawDate || event.date) - new Date()) /(1000 * 60 * 60 * 24))} days`,
       }));

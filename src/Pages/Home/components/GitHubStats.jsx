@@ -249,10 +249,10 @@ export default function GitHubStats() {
                     </div>
                     {/* UPDATED: Text colors with responsive sizing */}
                     <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center break-words px-1">
-                      {value}
+                      {String(value).substring(0, 100)}
                     </p>
                     <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 text-center px-1">
-                      {label}
+                      {String(label).substring(0, 50)}
                     </p>
                   </div>
 

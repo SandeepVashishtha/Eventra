@@ -511,8 +511,8 @@ export default function CollaborationNetworkMap() {
 
                 {/* Categories */}
                 <div className="popup-categories">
-                  {(activeHub || pinnedHub).categories.map(cat => (
-                    <span key={cat} className="category-tag">{cat}</span>
+                  {Array.isArray((activeHub || pinnedHub).categories) && (activeHub || pinnedHub).categories.map(cat => (
+                    <span key={cat} className="category-tag">{String(cat)}</span>
                   ))}
                 </div>
 

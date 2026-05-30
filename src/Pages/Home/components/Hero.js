@@ -22,9 +22,9 @@ const MotionLink = motion(Link);
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
   id: item.id,
-  title: item.title,
-  description: item.description,
-  location: item.location,
+  title: String(item.title || ""),
+  description: String(item.description || ""),
+  location: String(item.location || ""),
   tags: item.tags,
   techStack: item.techStack,
   type,
