@@ -3,8 +3,11 @@ import { Award, Calendar, Code2, Sparkles, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { useAuth } from "../../context/AuthContext";
-import CountUp from "react-countup";
+import CountUpLib from "react-countup";
+import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 
+const CountUp = CountUpLib.default;
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
   <motion.div
@@ -24,7 +27,6 @@ const Tag = ({ tag, onRemove }) => (
 );
 
 export default function HackathonHero({
-  hackathons = [],
   searchQuery,
   setSearchQuery,
   scrollToCards,
@@ -36,6 +38,7 @@ export default function HackathonHero({
   availableTags = [],
   onTagSelect
 }) {
+  const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -46,17 +49,17 @@ export default function HackathonHero({
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div
           animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: prefersReducedMotion ? 0 : 10, repeat: Infinity, ease: "easeInOut" }}
           className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-blue-400/20 dark:bg-blue-600/20 blur-[100px] dark:blur-[120px]"
         />
         <motion.div
           animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 13, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 13, repeat: Infinity, ease: "easeInOut", delay: 2 }}
           className="absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full bg-violet-400/20 dark:bg-violet-600/20 blur-[100px] dark:blur-[120px]"
         />
         <motion.div
           animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.35, 0.2] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 8, repeat: Infinity, ease: "easeInOut", delay: 4 }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-cyan-400/20 dark:bg-cyan-500/10 blur-[80px] dark:blur-[100px]"
         />
         {/* Subtle grid overlay */}
@@ -77,7 +80,7 @@ export default function HackathonHero({
         <motion.div
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
           className="mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-indigo-700 shadow-sm dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-300 dark:shadow-[0_0_20px_rgba(99,102,241,0.25)] backdrop-blur-md"
         >
           <Sparkles className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
@@ -88,7 +91,7 @@ export default function HackathonHero({
         <motion.h1
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.1 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.7, delay: 0.1 }}
           className="text-5xl sm:text-7xl font-extrabold leading-tight tracking-tight"
           style={{ fontFamily: '"Big Shoulders Display", sans-serif' }}
         >
@@ -107,7 +110,7 @@ export default function HackathonHero({
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25, duration: 0.7 }}
+          transition={{ delay: 0.25, duration: prefersReducedMotion ? 0 : 0.7 }}
           className="mt-4 text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-6 leading-relaxed"
         >
           Find and join the most exciting hackathons, compete with the best,
@@ -118,7 +121,7 @@ export default function HackathonHero({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35, duration: 0.6 }}
+          transition={{ delay: 0.35, duration: prefersReducedMotion ? 0 : 0.6 }}
           className="w-full max-w-3xl mx-auto mt-10"
         >
           <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 p-1 shadow-lg dark:shadow-[0_8px_40px_rgba(99,102,241,0.15)] backdrop-blur-xl ring-1 ring-inset ring-slate-200/50 dark:ring-white/5">
@@ -172,7 +175,7 @@ export default function HackathonHero({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.7 }}
+          transition={{ delay: 0.5, duration: prefersReducedMotion ? 0 : 0.7 }}
           className="mt-10 flex justify-center gap-4 flex-wrap"
         >
           <motion.button
@@ -204,6 +207,7 @@ export default function HackathonHero({
 
       {/* STATS SECTION */}
       {searchQuery.trim() === "" && selectedTags.length === 0 && (
+        <SectionErrorBoundary label="Hackathon Statistics">
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-14 sm:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {[
             { label: "Hackathons Hosted", value: 120, suffix: "+", icon: Calendar, color: "from-blue-500 to-indigo-500" },
@@ -216,7 +220,7 @@ export default function HackathonHero({
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.15 + idx * 0.12, duration: 0.6 }}
+              transition={{ delay: 0.15 + idx * 0.12, duration: prefersReducedMotion ? 0 : 0.6 }}
               whileHover={{ scale: 1.04, y: -4 }}
               className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 p-6 flex flex-col items-center text-center backdrop-blur-md shadow-sm hover:shadow-md dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] transition-all duration-300 group"
             >
@@ -235,9 +239,7 @@ export default function HackathonHero({
                   duration={2.5}
                   prefix={stat.prefix}
                   suffix={stat.suffix}
-                  enableScrollSpy
-                  scrollSpyOnce
-                />
+                  />
               </p>
               <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
                 {stat.label}
@@ -245,7 +247,9 @@ export default function HackathonHero({
             </motion.div>
           ))}
         </div>
+        </SectionErrorBoundary>
       )}
     </div>
   );
 }
+

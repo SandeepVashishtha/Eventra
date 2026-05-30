@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { safeJsonParse } from "../../utils/safeJsonParse";
+import { syncSecureStorage } from "../../utils/secureStorage";
 
 import {
   User as UserIcon,
@@ -28,15 +30,50 @@ const initialFormState = {
 };
 
 const allSkillSuggestions = [
-  "JavaScript", "TypeScript", "React", "Angular", "Vue.js",
-  "Node.js", "Express.js", "Python", "Django", "Flask",
-  "Java", "Spring Boot", "C#", ".NET", "HTML5", "CSS3",
-  "Sass", "Tailwind CSS", "Bootstrap", "SQL", "MySQL",
-  "PostgreSQL", "MongoDB", "Firebase", "Git", "Docker",
-  "Kubernetes", "AWS", "Azure", "Google Cloud", "CI/CD",
-  "Jenkins", "GitHub Actions", "UI/UX Design", "Figma",
-  "Adobe XD", "Sketch", "Agile", "Scrum", "JIRA",
-  "Machine Learning", "Data Science", "Pandas", "NumPy",
+  "JavaScript",
+  "TypeScript",
+  "React",
+  "Angular",
+  "Vue.js",
+  "Node.js",
+  "Express.js",
+  "Python",
+  "Django",
+  "Flask",
+  "Java",
+  "Spring Boot",
+  "C#",
+  ".NET",
+  "HTML5",
+  "CSS3",
+  "Sass",
+  "Tailwind CSS",
+  "Bootstrap",
+  "SQL",
+  "MySQL",
+  "PostgreSQL",
+  "MongoDB",
+  "Firebase",
+  "Git",
+  "Docker",
+  "Kubernetes",
+  "AWS",
+  "Azure",
+  "Google Cloud",
+  "CI/CD",
+  "Jenkins",
+  "GitHub Actions",
+  "UI/UX Design",
+  "Figma",
+  "Adobe XD",
+  "Sketch",
+  "Agile",
+  "Scrum",
+  "JIRA",
+  "Machine Learning",
+  "Data Science",
+  "Pandas",
+  "NumPy",
 ];
 
 const urlRegex = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
@@ -44,11 +81,14 @@ const urlRegex = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-._~:/?#[\]@!$&'()*+,;=]
 const EditProfile = () => {
   const navigate = useNavigate();
   const { user, setUser } = useAuth();
-  
+
   // Initialize with fallback progression to prevent undefined fields
   const [form, setForm] = useState(() => {
-    const saved = localStorage.getItem("user");
-    if (saved) return JSON.parse(saved);
+    const saved = syncSecureStorage.getItem("user");
+    const parsed = safeJsonParse(saved, null);
+    if (parsed) {
+      return parsed;
+    }
     return user ? { ...initialFormState, ...user } : initialFormState;
   });
 
@@ -59,9 +99,17 @@ const EditProfile = () => {
   const [currentSkillInput, setCurrentSkillInput] = useState("");
   const fileInputRef = useRef(null);
 
+  // 🔥 FIX 1: Track mount state to prevent ghost navigations
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   // Keep state synchronized if the auth context updates lazily
   useEffect(() => {
-    const saved = localStorage.getItem("user");
+    const saved = syncSecureStorage.getItem("user");
     if (!saved && user) {
       setForm((prev) => ({ ...prev, ...user }));
     }
@@ -91,15 +139,25 @@ const EditProfile = () => {
   };
 
   const calculateCompletion = () => {
-    const fields = ['username', 'email', 'phone', 'bio', 'github', 'linkedin', 'portfolio', 'avatarBase64'];
+    const fields = [
+      "username",
+      "email",
+      "phone",
+      "bio",
+      "github",
+      "linkedin",
+      "portfolio",
+      "avatarBase64",
+    ];
     let filled = 0;
 
-    fields.forEach(f => {
-      if (form[f] && typeof form[f] === 'string' && form[f].trim() !== '') filled++;
+    fields.forEach((f) => {
+      if (form[f] && typeof form[f] === "string" && form[f].trim() !== "") filled++;
     });
 
-    const resolvedFullName = form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
-    if (resolvedFullName !== '') filled++;
+    const resolvedFullName =
+      form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+    if (resolvedFullName !== "") filled++;
 
     if (form.skills && form.skills.length > 0) filled++;
 
@@ -110,7 +168,7 @@ const EditProfile = () => {
 
   const addSkill = (skill) => {
     const trimmedSkill = skill.trim();
-    if (trimmedSkill && !form.skills.some(s => s.toLowerCase() === trimmedSkill.toLowerCase())) {
+    if (trimmedSkill && !form.skills.some((s) => s.toLowerCase() === trimmedSkill.toLowerCase())) {
       setForm((prev) => ({ ...prev, skills: [...prev.skills, trimmedSkill] }));
     }
     setCurrentSkillInput("");
@@ -142,7 +200,7 @@ const EditProfile = () => {
       fullName: form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim(),
       profilePicture: form.avatarBase64 || form.profilePicture || "",
     };
-    
+
     const validation = validate(resolvedForm);
     setErrors(validation);
 
@@ -154,14 +212,27 @@ const EditProfile = () => {
     setLoading(true);
 
     setTimeout(() => {
+      // 🔥 FIX 1: If user navigated away, stop executing!
+      if (!isMounted.current) return;
+
       setLoading(false);
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(resolvedForm);
-      localStorage.setItem("user", JSON.stringify(resolvedForm));
+      
+      // 🔥 FIX 2: Strip massive Base64 strings before saving to storage to prevent QuotaExceededError crashes
+      const safeStorageUser = { ...resolvedForm };
+      delete safeStorageUser.avatarBase64;
+      
+      try {
+        syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
+      } catch (e) {
+        console.warn("Could not save to secure storage, quota exceeded.");
+      }
 
       setTimeout(() => {
-        navigate("/dashboard");
+        if (!isMounted.current) return;
+        navigate("/dashboard/profile");
       }, 1000);
     }, 1500);
   };
@@ -188,9 +259,7 @@ const EditProfile = () => {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            <span className="text-black dark:text-white">
-              Edit Profile
-            </span>
+            <span className="text-black dark:text-white">Edit Profile</span>
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage your personal information and how others see you on Eventra.
@@ -200,12 +269,16 @@ const EditProfile = () => {
         {/* Profile Completion Progress Bar */}
         <div className="mb-8 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Profile Completion</span>
-            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{completionPercentage}%</span>
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Profile Completion
+            </span>
+            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+              {completionPercentage}%
+            </span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
-            <div 
-              className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-out" 
+            <div
+              className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${completionPercentage}%` }}
             ></div>
           </div>
@@ -217,7 +290,8 @@ const EditProfile = () => {
             <div className="relative">
               <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center ring-2 ring-indigo-200/60 dark:ring-indigo-900/40">
                 {form.avatarBase64 ? (
-                  <img loading="lazy"
+                  <img
+                    loading="lazy"
                     src={form.avatarBase64}
                     alt="Avatar preview"
                     className="h-full w-full object-cover"
@@ -277,8 +351,10 @@ const EditProfile = () => {
                     <input
                       type="text"
                       name="fullName"
-                      value={form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim()}
-                      readOnly 
+                      value={
+                        form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim()
+                      }
+                      readOnly
                       placeholder="Jane Doe"
                       className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 pl-9 pr-3 py-2 text-gray-500 cursor-not-allowed"
                     />
@@ -348,18 +424,14 @@ const EditProfile = () => {
                       className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 pl-9 pr-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
-                  {errors.phone && (
-                    <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
-                  )}
+                  {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
                 </div>
               </div>
             </section>
 
             {/* About */}
             <section>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                About
-              </h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">About</h3>
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -457,9 +529,7 @@ const EditProfile = () => {
                       className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 pl-9 pr-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
-                  {errors.github && (
-                    <p className="mt-1 text-sm text-red-600">{errors.github}</p>
-                  )}
+                  {errors.github && <p className="mt-1 text-sm text-red-600">{errors.github}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -550,9 +620,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
       <div className="relative w-full max-w-md mx-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-6 z-10">
-        <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Save changes?
-        </h4>
+        <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Save changes?</h4>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Do you want to save your profile updates?
         </p>
@@ -561,7 +629,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
             type="button"
             onClick={onCancel}
             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
+           aria-label="button">
             Cancel
           </button>
           <button
@@ -569,7 +637,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
             onClick={onConfirm}
             disabled={loading}
             className="px-4 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
-          >
+           aria-label="button">
             {loading ? "Saving..." : "Save"}
           </button>
         </div>

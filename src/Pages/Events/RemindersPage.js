@@ -8,14 +8,20 @@ import {
   subscribeToReminderChanges,
 } from "../../utils/reminderUtils";
 
-const formatEventDate = (event) =>
-  new Date(`${event.date} ${event.time || "12:00 AM"}`).toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+import { parseEventDateTimeLocal } from "../../utils/timezoneUtils";
+
+const formatEventDate = (event) => {
+  const parsed = parseEventDateTimeLocal(event.date, event.time);
+  return parsed
+    ? parsed.toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : "";
+};
 
 const formatTriggerDate = (triggerAt) =>
   new Date(triggerAt).toLocaleString("en-US", {
@@ -64,14 +70,14 @@ const RemindersPage = () => {
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/80 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/80 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-600">
               <Bell size={16} />
               {reminders.length} active
             </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-950 dark:text-white sm:text-4xl">
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-950 dark:text-slate-100 sm:text-4xl">
               Event Reminders
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-400 sm:text-base">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-slate-400 sm:text-base">
               Manage upcoming reminder alerts for events you have bookmarked or registered for.
             </p>
           </div>
@@ -117,8 +123,7 @@ const RemindersPage = () => {
                     <img
                       src={event.image}
                       alt={event.title}
-                      className="h-44 w-full object-cover sm:h-full"
-                    />
+                      className="h-44 w-full object-cover sm:h-full" loading="lazy"/>
 
                     <div className="p-5">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

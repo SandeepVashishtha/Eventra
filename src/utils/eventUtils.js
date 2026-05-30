@@ -45,19 +45,25 @@ export const computeDateStatus = (event) => {
 
 export const getEventStatus = (event) => {
   if (!event) return "upcoming";
-
   const explicitStatus = mapStatusKey(event.status);
   const dateStatus = computeDateStatus(event);
 
   if (explicitStatus === "ended") {
     return "ended";
   }
-
-  if (dateStatus) {
-    return dateStatus;
+  if (explicitStatus && explicitStatus !== dateStatus) {
+    return explicitStatus;
   }
+  return dateStatus || "upcoming";
+};
 
-  return explicitStatus || "upcoming";
+export const isEventRegistrationClosed = (eventOrStatus) => {
+  const status =
+    typeof eventOrStatus === "string"
+      ? mapStatusKey(eventOrStatus)
+      : getEventStatus(eventOrStatus);
+
+  return status === "past" || status === "ended";
 };
 
 export const normalizeEvent = (event) => ({

@@ -4,6 +4,7 @@ import { Calendar, MapPin, Award, Users, Trophy, Tag, ArrowLeft } from "lucide-r
 
 import hackathonsData from "./hackathonMockData.json";
 
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 const getHackathonStatus = (hackathon) => {
   const now = new Date();
   const startDate = new Date(hackathon.startDate);
@@ -15,6 +16,7 @@ const getHackathonStatus = (hackathon) => {
 };
 
 const HackathonDetailsPage = () => {
+  const prefersReducedMotion = useReducedMotion();
   const { hackathonId } = useParams();
   const foundHackathon = hackathonsData.find((item) => String(item.id) === hackathonId);
 
@@ -67,13 +69,15 @@ const HackathonDetailsPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
           className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]"
         >
           <section className="space-y-6">
             <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl p-6 sm:p-8">
               <div className="flex flex-wrap items-center gap-3">
-                <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] ${statusStyles[status]}`}>
+                <span
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] ${statusStyles[status]}`}
+                >
                   {status}
                 </span>
                 <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
@@ -96,8 +100,7 @@ const HackathonDetailsPage = () => {
               <div className="mt-8 flex flex-wrap gap-3">
                 <a
                   href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(foundHackathon.title)}&dates=${foundHackathon.startDate.replaceAll("-", "")}/${foundHackathon.endDate.replaceAll("-", "")}&details=${encodeURIComponent(foundHackathon.description)}&location=${encodeURIComponent(foundHackathon.location)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
                 >
                   Add Reminder
@@ -117,9 +120,17 @@ const HackathonDetailsPage = () => {
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Dates</p>
                   <p className="font-semibold">
-                    {new Date(foundHackathon.startDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    {new Date(foundHackathon.startDate).toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
                     {" - "}
-                    {new Date(foundHackathon.endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    {new Date(foundHackathon.endDate).toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
                   </p>
                 </div>
               </div>
@@ -163,7 +174,9 @@ const HackathonDetailsPage = () => {
                   {foundHackathon.teams}
                 </p>
                 <p>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Submissions:</span>{" "}
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">
+                    Submissions:
+                  </span>{" "}
                   {foundHackathon.submissions}
                 </p>
                 <p>

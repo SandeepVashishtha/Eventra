@@ -1,170 +1,307 @@
 /**
  * Conflict Detection Utilities
- * 
- * Provides functions to detect scheduling conflicts between events
- * and suggest alternative events when conflicts are found.
+ *
+ * Detects scheduling conflicts between events in a timezone-aware manner.
+ *
+ * Key improvements over the previous implementation:
+ *  1. All event date+time fields are parsed to UTC epoch ms via parseEventToUTC()
+ *     from timezoneUtils.js — no more "minutes from local midnight" arithmetic.
+ *  2. Each event's durationMinutes field is honoured; falls back to 60 min only
+ *     when the field is absent or falsy.
+ *  3. Date comparison uses real timestamp overlap: !(end1 <= start2 || end2 <= start1)
+ *     instead of fragile raw-string equality (event1.date !== event2.date).
+ *  4. formatTimeRange() now accepts a timezone argument and renders the time in
+ *     the user's local timezone via Intl.DateTimeFormat.
+ *
+ * Affected issue: #2014
+ * See also: src/utils/timezoneUtils.js, src/components/EventConflictModal.jsx
  */
 
+import {
+  getUserTimezone,
+  parseEventToUTC,
+  parseTimeString,
+} from './timezoneUtils.js';
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
 /**
- * Parse event time string (e.g., "10:00 AM") to minutes from midnight
- * @param {string} timeStr - Time string in format "HH:MM AM/PM"
- * @returns {number} Minutes from midnight
+ * Return the effective duration (in minutes) for an event.
+ * Reads event.durationMinutes first; falls back to the provided default.
+ *
+ * @param {object} event
+ * @param {number} fallbackMinutes
+ * @returns {number}
  */
-export const parseTimeToMinutes = (timeStr) => {
-  if (!timeStr) return 0;
-  
-  const [time, period] = timeStr.split(' ');
-  let [hours, minutes] = time.split(':').map(Number);
-  
-  if (period?.toUpperCase() === 'PM' && hours !== 12) {
-    hours += 12;
-  } else if (period?.toUpperCase() === 'AM' && hours === 12) {
-    hours = 0;
-  }
-  
-  return hours * 60 + minutes;
+const getEffectiveDuration = (event, fallbackMinutes = 60) => {
+  const d = event?.durationMinutes;
+  return typeof d === 'number' && d > 0 ? d : fallbackMinutes;
 };
 
 /**
- * Get event start and end times in minutes from midnight
- * Assumes events have a default duration of 1 hour if not specified
- * @param {object} event - Event object with date and time
- * @param {number} durationMinutes - Duration of event in minutes (default: 60)
- * @returns {object} Object with startMinutes and endMinutes
+ * Convert an event to a UTC time-range { startMs, endMs }.
+ * Returns null when the event lacks enough date/time data to parse.
+ *
+ * @param {object} event  - Event object with .date and .time fields
+ * @param {number} fallbackDuration  - Minutes to use when event.durationMinutes is absent
+ * @param {string} [timezone]  - IANA tz string; defaults to browser's tz
+ * @returns {{ startMs: number, endMs: number }|null}
+ */
+export const getEventUTCRange = (event, fallbackDuration = 60, timezone) => {
+  if (!event) return null;
+
+  const tz = event.timezone || event.timeZone || timezone || getUserTimezone();
+  const startMs = parseEventToUTC(event.date, event.time, tz);
+
+  if (startMs === null) return null;
+
+  const durationMs = getEffectiveDuration(event, fallbackDuration) * 60 * 1000;
+  return { startMs, endMs: startMs + durationMs };
+};
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * @deprecated Use getEventUTCRange() instead.
+ *
+ * Legacy helper preserved for backward-compatibility with callers that still
+ * use parseTimeToMinutes(). Does NOT account for timezone or event duration.
+ *
+ * @param {string} timeStr - "HH:MM AM/PM" or "HH:MM"
+ * @returns {number} Minutes from midnight (local, timezone-blind)
+ */
+export const parseTimeToMinutes = (timeStr) => {
+  if (!timeStr) return 0;
+  const parsed = parseTimeString(timeStr);
+  if (!parsed) return 0;
+  return parsed.hours * 60 + parsed.minutes;
+};
+
+/**
+ * @deprecated Use getEventUTCRange() instead.
+ *
+ * Legacy range helper — timezone-blind, always uses fallback duration.
+ *
+ * @param {object} event
+ * @param {number} durationMinutes
+ * @returns {{ startMinutes: number, endMinutes: number }}
  */
 export const getEventTimeRange = (event, durationMinutes = 60) => {
-  const startMinutes = parseTimeToMinutes(event.time);
-  const endMinutes = startMinutes + durationMinutes;
-  
+  const startMinutes = parseTimeToMinutes(event?.time);
+  const endMinutes = startMinutes + getEffectiveDuration(event, durationMinutes);
   return { startMinutes, endMinutes };
 };
 
 /**
- * Check if two events have overlapping time ranges
- * @param {object} event1 - First event
- * @param {object} event2 - Second event
- * @param {number} durationMinutes - Default event duration in minutes
- * @returns {boolean} True if events overlap
+ * Check whether two events have overlapping time ranges.
+ *
+ * Uses UTC epoch timestamps so cross-timezone and cross-midnight overlaps are
+ * detected correctly. Falls back to the legacy minutes-from-midnight approach
+ * only when the date/time fields cannot be parsed.
+ *
+ * @param {object} event1
+ * @param {object} event2
+ * @param {number} fallbackDuration - Minutes used when durationMinutes is absent
+ * @param {string} [timezone]       - IANA tz; defaults to browser tz
+ * @returns {boolean}
  */
-export const doEventsOverlap = (event1, event2, durationMinutes = 60) => {
-  // Check if events are on the same date
-  if (event1.date !== event2.date) {
-    return false;
+export const doEventsOverlap = (
+  event1,
+  event2,
+  fallbackDuration = 60,
+  timezone
+) => {
+  const tz = timezone || getUserTimezone();
+  const range1 = getEventUTCRange(event1, fallbackDuration, tz);
+  const range2 = getEventUTCRange(event2, fallbackDuration, tz);
+
+  // If UTC parsing succeeded for both events use real overlap check
+  if (range1 && range2) {
+    // Overlap iff NOT (one ends before the other starts)
+    return !(range1.endMs <= range2.startMs || range2.endMs <= range1.startMs);
   }
-  
-  const range1 = getEventTimeRange(event1, durationMinutes);
-  const range2 = getEventTimeRange(event2, durationMinutes);
-  
-  // Overlap condition: (start1 < end2) && (end1 > start2)
-  return (range1.startMinutes < range2.endMinutes) && (range1.endMinutes > range2.startMinutes);
+
+  // --- Fallback: legacy minutes-from-midnight approach (timezone-blind) ---
+  // Only reached when date/time fields are unparseable (e.g. undefined).
+  // The legacy code compared raw date strings; we still do that but via
+  // normalizeDateString for format-tolerance.
+  try {
+    const { normalizeDateString } = require('./timezoneUtils');
+    const d1 = normalizeDateString(event1?.date);
+    const d2 = normalizeDateString(event2?.date);
+    if (d1 && d2 && d1 !== d2) return false;
+  } catch {
+    if (event1?.date !== event2?.date) return false;
+  }
+
+  const r1 = getEventTimeRange(event1, fallbackDuration);
+  const r2 = getEventTimeRange(event2, fallbackDuration);
+  return r1.startMinutes < r2.endMinutes && r1.endMinutes > r2.startMinutes;
 };
 
 /**
- * Find all conflicting events for a given event
- * @param {object} newEvent - Event to check for conflicts
- * @param {Array} registeredEvents - Array of user's registered events
- * @param {number} durationMinutes - Default event duration in minutes
- * @returns {Array} Array of conflicting events
+ * Find all events in registeredEvents that conflict with newEvent.
+ *
+ * @param {object} newEvent
+ * @param {Array}  registeredEvents
+ * @param {number} fallbackDuration
+ * @param {string} [timezone]
+ * @returns {Array}
  */
-export const findConflictingEvents = (newEvent, registeredEvents, durationMinutes = 60) => {
-  if (!registeredEvents || registeredEvents.length === 0) {
-    return [];
-  }
-  
+export const findConflictingEvents = (
+  newEvent,
+  registeredEvents,
+  fallbackDuration = 60,
+  timezone
+) => {
+  if (!registeredEvents || registeredEvents.length === 0) return [];
+
+  const tz = timezone || getUserTimezone();
+
   return registeredEvents
-    .map(reg => reg.event || reg)
-    .filter(event => doEventsOverlap(newEvent, event, durationMinutes));
+    .map((reg) => reg.event || reg)
+    .filter((event) => doEventsOverlap(newEvent, event, fallbackDuration, tz));
 };
 
 /**
- * Check if registering for an event would cause a conflict
- * @param {object} newEvent - Event to register for
- * @param {Array} registeredEvents - User's registered events
- * @param {number} durationMinutes - Default event duration in minutes
- * @returns {object} Object with hasConflict (boolean) and conflicts (array)
+ * Check whether registering for newEvent would cause a scheduling conflict.
+ *
+ * @param {object} newEvent
+ * @param {Array}  registeredEvents
+ * @param {number} fallbackDuration
+ * @param {string} [timezone]
+ * @returns {{ hasConflict: boolean, conflicts: Array }}
  */
-export const checkRegistrationConflict = (newEvent, registeredEvents, durationMinutes = 60) => {
-  const conflicts = findConflictingEvents(newEvent, registeredEvents, durationMinutes);
-  
-  return {
-    hasConflict: conflicts.length > 0,
-    conflicts,
-  };
+export const checkRegistrationConflict = (
+  newEvent,
+  registeredEvents,
+  fallbackDuration = 60,
+  timezone
+) => {
+  const conflicts = findConflictingEvents(
+    newEvent,
+    registeredEvents,
+    fallbackDuration,
+    timezone
+  );
+  return { hasConflict: conflicts.length > 0, conflicts };
 };
 
 /**
- * Suggest alternative events that don't conflict with registered events
- * @param {object} targetEvent - The event user wants to register for
- * @param {Array} allEvents - All available events
- * @param {Array} registeredEvents - User's registered events
- * @param {number} durationMinutes - Default event duration in minutes
- * @param {number} maxSuggestions - Maximum number of suggestions to return
- * @returns {Array} Array of suggested events
+ * Suggest alternative events that don't conflict with the user's registered events.
+ *
+ * @param {object} targetEvent
+ * @param {Array}  allEvents
+ * @param {Array}  registeredEvents
+ * @param {number} fallbackDuration
+ * @param {number} maxSuggestions
+ * @param {string} [timezone]
+ * @returns {Array}
  */
 export const suggestAlternativeEvents = (
   targetEvent,
   allEvents,
   registeredEvents,
-  durationMinutes = 60,
-  maxSuggestions = 3
+  fallbackDuration = 60,
+  maxSuggestions = 3,
+  timezone
 ) => {
-  if (!allEvents || allEvents.length === 0) {
-    return [];
-  }
-  
-  // Filter out the target event and already registered events
-  const availableEvents = allEvents.filter(event => {
+  if (!allEvents || allEvents.length === 0) return [];
+
+  const tz = timezone || getUserTimezone();
+
+  // Exclude the target event and already-registered events
+  const availableEvents = allEvents.filter((event) => {
     const isTargetEvent = event.id === targetEvent.id;
-    const isRegistered = registeredEvents.some(reg => 
-      (reg.event?.id || reg.id) === event.id
+    const isRegistered = registeredEvents.some(
+      (reg) => (reg.event?.id || reg.id) === event.id
     );
     return !isTargetEvent && !isRegistered;
   });
-  
-  // Find events that don't conflict with registered events
-  const nonConflictingEvents = availableEvents.filter(event => {
-    const conflictCheck = checkRegistrationConflict(event, registeredEvents, durationMinutes);
-    return !conflictCheck.hasConflict;
+
+  // Keep only events that don't conflict with existing registrations
+  const nonConflictingEvents = availableEvents.filter((event) => {
+    const { hasConflict } = checkRegistrationConflict(
+      event,
+      registeredEvents,
+      fallbackDuration,
+      tz
+    );
+    return !hasConflict;
   });
-  
-  // Prioritize events with same category/type as target event
-  const sameCategoryEvents = nonConflictingEvents.filter(event => 
-    event.category === targetEvent.category || 
-    event.type === targetEvent.type ||
-    event.tags?.some(tag => targetEvent.tags?.includes(tag))
+
+  // Prioritise events of the same category / type / tags as the target
+  const sameCategoryEvents = nonConflictingEvents.filter(
+    (event) =>
+      event.category === targetEvent.category ||
+      event.type === targetEvent.type ||
+      event.tags?.some((tag) => targetEvent.tags?.includes(tag))
   );
-  
-  // If we have enough same-category events, return those
+
   if (sameCategoryEvents.length >= maxSuggestions) {
     return sameCategoryEvents.slice(0, maxSuggestions);
   }
-  
-  // Otherwise, mix same-category and other non-conflicting events
-  const otherEvents = nonConflictingEvents.filter(event => 
-    !sameCategoryEvents.includes(event)
+
+  const otherEvents = nonConflictingEvents.filter(
+    (event) => !sameCategoryEvents.includes(event)
   );
-  
-  const suggestions = [...sameCategoryEvents, ...otherEvents];
-  return suggestions.slice(0, maxSuggestions);
+
+  return [...sameCategoryEvents, ...otherEvents].slice(0, maxSuggestions);
 };
 
 /**
- * Format time range for display
- * @param {string} timeStr - Time string in format "HH:MM AM/PM"
- * @param {number} durationMinutes - Duration in minutes
- * @returns {string} Formatted time range (e.g., "10:00 AM - 11:00 AM")
+ * Format a time range for display.
+ *
+ * When a timezone is provided (or can be detected) the times are rendered in
+ * that timezone via Intl.DateTimeFormat. Falls back to the legacy AM/PM string
+ * formatter when date context is unavailable.
+ *
+ * @param {string} timeStr       - "HH:MM AM/PM" or "HH:MM"
+ * @param {number} durationMinutes
+ * @param {string} [dateStr]     - Optional date string for timezone-aware rendering
+ * @param {string} [timezone]    - IANA tz; defaults to browser tz
+ * @returns {string}  e.g. "10:00 AM – 11:30 AM"
  */
-export const formatTimeRange = (timeStr, durationMinutes = 60) => {
+export const formatTimeRange = (
+  timeStr,
+  durationMinutes = 60,
+  dateStr,
+  timezone
+) => {
+  const tz = timezone || getUserTimezone();
+
+  // Timezone-aware path: requires a date string
+  if (dateStr) {
+    const startMs = parseEventToUTC(dateStr, timeStr, tz);
+    if (startMs !== null) {
+      const endMs = startMs + durationMinutes * 60 * 1000;
+
+      const fmt = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+
+      return `${fmt.format(new Date(startMs))} – ${fmt.format(new Date(endMs))}`;
+    }
+  }
+
+  // Legacy fallback: minutes-from-midnight arithmetic (no tz context)
   const startMinutes = parseTimeToMinutes(timeStr);
   const endMinutes = startMinutes + durationMinutes;
-  
+
   const formatMinutes = (mins) => {
-    const hours = Math.floor(mins / 60);
-    const minutes = mins % 60;
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    const h = Math.floor(mins / 60) % 24;
+    const m = mins % 60;
+    const period = h >= 12 ? 'PM' : 'AM';
+    const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
+    return `${displayH}:${String(m).padStart(2, '0')} ${period}`;
   };
-  
-  return `${formatMinutes(startMinutes)} - ${formatMinutes(endMinutes)}`;
+
+  return `${formatMinutes(startMinutes)} – ${formatMinutes(endMinutes)}`;
 };

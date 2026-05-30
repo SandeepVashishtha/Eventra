@@ -1,18 +1,22 @@
-import React, { useState, useEffect, useRef } from "react";
+import TeamMatchmaking from "./components/TeamMatchmaking";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import mockHackathons from "./hackathonMockData.json";
+import { fetchHackathons } from "../../services/hackathonService";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
-import FeedbackButton from "../../components/FeedbackButton";
 import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
-import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import BackToTopButton from "../../components/common/BackToTopButton";
-import PageLoader from "../../components/common/PageLoader";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { filterHackathons } from "./hackathonFilterUtils.mjs";
+import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
+
+import useReducedMotion from "../../hooks/useReducedMotion.js";
+import useDebounce from "../../hooks/useDebounce";
+import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -32,10 +36,128 @@ const Tag = ({ tag, onRemove }) => (
   </motion.div>
 );
 
+// 🔥 FIX: Extracted CustomDropdown OUTSIDE of HackathonHub. 
+// This prevents React from unmounting and destroying the dropdown's local state 
+// on every parent re-render (e.g., when scrolling or typing).
+const CustomDropdown = ({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = "Select",
+}) => {
+  const [open, setOpen] = useState(false);
+  const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  const buttonRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  const toggleOpen = () => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+    setOpen((prev) => !prev);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        !buttonRef.current.contains(event.target)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const displayText = value || placeholder;
+
+  return (
+    <div className="relative">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        {label}
+      </label>
+
+      <button
+        type="button"
+        ref={buttonRef}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 cursor-pointer hover:ring-2 hover:ring-indigo-500/30 dark:hover:ring-indigo-500/50 hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-all text-slate-700 dark:text-slate-300"
+        onClick={toggleOpen}
+      >
+        <span
+          className={`flex-1 text-left text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis ${!value ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-slate-200"}`}
+        >
+          {displayText}
+        </span>
+
+        <FiChevronDown className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
+      </button>
+
+      {open &&
+        createPortal(
+          <ul
+            ref={dropdownRef}
+            className="
+              z-[10000]
+              bg-white dark:bg-slate-900
+              border border-slate-200 dark:border-white/10
+              rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]
+              overflow-hidden
+              min-w-[180px]
+            "
+            style={{
+              position: "absolute",
+              top: menuCoords.top,
+              left: menuCoords.left,
+              width: menuCoords.width,
+            }}
+          >
+            <li
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+              }}
+              className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-indigo-500/10 text-slate-500 dark:text-slate-400 text-sm transition-colors"
+            >
+              {placeholder}
+            </li>
+
+            {options.map((opt) => (
+              <li
+                key={opt}
+                className={`px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-indigo-500/10 text-slate-700 dark:text-slate-300 text-sm transition-colors ${opt === value
+                  ? "font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
+                  : ""
+                  }`}
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+              >
+                {opt}
+              </li>
+            ))}
+          </ul>,
+          document.body,
+        )}
+    </div>
+  );
+};
+
 const HackathonHub = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [hackathons, setHackathons] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
@@ -59,18 +181,26 @@ const HackathonHub = () => {
     cardsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // Simulate API call and wire page listeners
+  // Fetch hackathons and wire page listeners
   useEffect(() => {
-    setIsLoading(true);
-    setHackathons(mockHackathons);
-    setIsLoading(false);
-
-    const tags = [
-      ...new Set(
-        mockHackathons.flatMap((hackathon) => hackathon.techStack || []),
-      ),
-    ];
-    setAvailableTags(tags);
+    let isMounted = true;
+    
+    const loadHackathons = async () => {
+      setIsLoading(true);
+      const data = await fetchHackathons();
+      if (isMounted) {
+        setHackathons(data);
+        const tags = [
+          ...new Set(
+            data.flatMap((hackathon) => hackathon.techStack || []),
+          ),
+        ];
+        setAvailableTags(tags);
+        setIsLoading(false);
+      }
+    };
+    
+    loadHackathons();
 
     const handleScroll = () => {
       setIsScrollVisible(window.scrollY > 300);
@@ -87,6 +217,7 @@ const HackathonHub = () => {
     observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
+      isMounted = false;
       window.removeEventListener("scroll", handleScroll);
       observer.disconnect();
     };
@@ -114,7 +245,7 @@ const HackathonHub = () => {
       y: 0,
       opacity: 1,
       transition: {
-        duration: 0.6,
+        duration: prefersReducedMotion ? 0 : 0.6,
         ease: [0.16, 1, 0.3, 1],
       },
     },
@@ -145,48 +276,20 @@ const HackathonHub = () => {
     }
   };
 
-  const fuse = new Fuse(hackathons, {
+  const fuse = useMemo(() => new Fuse(hackathons, {
     keys: ["title", "description", "location", "techStack"],
     threshold: 0.4,
-  });
+  }), [hackathons]);
 
-  const searchedHackathons = searchQuery
-    ? fuse.search(searchQuery).map((result) => result.item)
+  const searchedHackathons = debouncedSearchQuery
+    ? fuse.search(debouncedSearchQuery).map((result) => result.item)
     : hackathons;
 
-  // UPDATED: Filter hackathons based on selected tags
-  const filteredHackathons = searchedHackathons
-    .filter((hackathon) => {
-      if (activeTab === "all") return true;
-      return hackathon.status === activeTab;
-    })
-    .filter((hackathon) => {
-      if (filters.difficulty && hackathon.difficulty !== filters.difficulty) {
-        return false;
-      }
-      if (
-        filters.prize &&
-        !hackathon.prize.toLowerCase().includes(filters.prize.toLowerCase())
-      ) {
-        return false;
-      }
-      if (
-        filters.location &&
-        !hackathon.location
-          .toLowerCase()
-          .includes(filters.location.toLowerCase())
-      ) {
-        return false;
-      }
-
-      // NEW: Filter by selected tags
-      if (selectedTags.length > 0) {
-        const hackathonTags = hackathon.techStack || [];
-        return selectedTags.some((tag) => hackathonTags.includes(tag));
-      }
-
-      return true;
-    });
+  const filteredHackathons = filterHackathons(searchedHackathons, {
+    activeTab,
+    filters,
+    selectedTags,
+  });
 
   const featuredHackathons = [...hackathons]
     .filter((h) => h.featured)
@@ -213,121 +316,7 @@ const HackathonHub = () => {
       behavior: "smooth",
     });
   }, []);
-
-  const CustomDropdown = ({
-    label,
-    value,
-    options,
-    onChange,
-    placeholder = "Select",
-  }) => {
-    const [open, setOpen] = useState(false);
-    const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0 });
-
-    const buttonRef = useRef(null);
-    const dropdownRef = useRef(null);
-
-    const toggleOpen = () => {
-      if (!open && buttonRef.current) {
-        const rect = buttonRef.current.getBoundingClientRect();
-        setMenuCoords({
-          top: rect.bottom + window.scrollY,
-          left: rect.left + window.scrollX,
-          width: rect.width,
-        });
-      }
-      setOpen((prev) => !prev);
-    };
-
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        if (
-          dropdownRef.current &&
-          !dropdownRef.current.contains(event.target) &&
-          !buttonRef.current.contains(event.target)
-        ) {
-          setOpen(false);
-        }
-      };
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const displayText = value || placeholder;
-
-    return (
-      <div className="relative">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          {label}
-        </label>
-
-        <button
-          type="button"
-          ref={buttonRef}
-          className="flex w-full items-center justify-between gap-3 px-4 py-3 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 cursor-pointer hover:ring-2 hover:ring-indigo-500/30 dark:hover:ring-indigo-500/50 hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-all text-slate-700 dark:text-slate-300"
-          onClick={toggleOpen}
-        >
-          <span
-            className={`flex-1 text-left text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis ${!value ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-slate-200"}`}
-          >
-            {displayText}
-          </span>
-
-          <FiChevronDown className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
-        </button>
-
-        {open &&
-          createPortal(
-            <ul
-              ref={dropdownRef}
-              className="
-                z-[10000]
-                bg-white dark:bg-slate-900
-                border border-slate-200 dark:border-white/10
-                rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]
-                overflow-hidden
-                min-w-[180px]
-              "
-              style={{
-                position: "absolute",
-                top: menuCoords.top,
-                left: menuCoords.left,
-                width: menuCoords.width,
-              }}
-            >
-              <li
-                onClick={() => {
-                  onChange("");
-                  setOpen(false);
-                }}
-                className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-indigo-500/10 text-slate-500 dark:text-slate-400 text-sm transition-colors"
-              >
-                {placeholder}
-              </li>
-
-              {options.map((opt) => (
-                <li
-                  key={opt}
-                  className={`px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-indigo-500/10 text-slate-700 dark:text-slate-300 text-sm transition-colors ${opt === value
-                    ? "font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
-                    : ""
-                    }`}
-                  onClick={() => {
-                    onChange(opt);
-                    setOpen(false);
-                  }}
-                >
-                  {opt}
-                </li>
-              ))}
-            </ul>,
-            document.body,
-          )}
-
-      </div>
-    );
-  };
-
+  
   return (
     <div className="overflow-x-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-6 transition-colors duration-300">
       {/* Floating Action Button */}
@@ -396,6 +385,9 @@ const HackathonHub = () => {
           </div>
         ))}
       </motion.div>
+
+{/* TEAM MATCHMAKING SECTION */}
+<TeamMatchmaking />
 
       {/* Featured Hackathons */}
       {!isLoading && featuredHackathons.length > 0 && (
@@ -468,7 +460,7 @@ const HackathonHub = () => {
                   <button
                     onClick={resetFilters}
                     className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold border border-indigo-200 dark:border-indigo-500/30 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all"
-                  >
+                   aria-label="button">
                     ✕ Clear filters
                   </button>
                 )}
@@ -500,7 +492,7 @@ const HackathonHub = () => {
                 initial={{ opacity: 0, y: -12, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -12, scale: 0.98 }}
-                transition={{ duration: 0.35, ease: "easeOut" }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.35, ease: "easeOut" }}
                 className="
                 relative overflow-hidden mb-6
                 rounded-2xl
@@ -599,10 +591,15 @@ const HackathonHub = () => {
         </motion.div>
 
         {/* Hackathons Grid */}
+        <SectionErrorBoundary label="Hackathons">
         <AnimatePresence mode="wait">
-          {isLoading ? (
-            <PageLoader text="Loading hackathons..." />
-          ) : filteredHackathons.length > 0 ? (
+         {isLoading ? (
+  <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+    {[...Array(6)].map((_, i) => (
+      <HackathonCardSkeleton key={`skeleton-${i}`} />
+    ))}
+  </div>
+) : filteredHackathons.length > 0 ? (
             <motion.div
               key={activeTab}
               className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
@@ -625,7 +622,7 @@ const HackathonHub = () => {
               className="relative overflow-hidden rounded-3xl p-10 text-center shadow-md dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-800"
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
             >
               <motion.div
                 className="absolute inset-0 -z-10 bg-indigo-50/50 dark:bg-black/30 blur-3xl"
@@ -635,7 +632,7 @@ const HackathonHub = () => {
                   rotate: [0, 10, -10, 0],
                 }}
                 transition={{
-                  duration: 8,
+                  duration: prefersReducedMotion ? 0 : 8,
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
@@ -670,7 +667,7 @@ const HackathonHub = () => {
                         scale: [1, 1.2, 1],
                       }}
                       transition={{
-                        duration: 6 + i,
+                        duration: prefersReducedMotion ? 0 : 6 + i,
                         repeat: Infinity,
                         ease: "easeInOut",
                         delay: i * 0.5,
@@ -684,7 +681,7 @@ const HackathonHub = () => {
                 <motion.div
                   animate={{ y: [0, -8, 0] }}
                   transition={{
-                    duration: 3,
+                    duration: prefersReducedMotion ? 0 : 3,
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
@@ -698,13 +695,13 @@ const HackathonHub = () => {
                 </h3>
 
                 <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {searchQuery ||
-                  filters.difficulty ||
-                  filters.prize ||
-                  filters.location ||
-                  selectedTags.length > 0
-                    ? "No hackathons match your current filters. Try adjusting your search or filters."
-                    : "Check back later for exciting new hackathons!"}
+                 {debouncedSearchQuery ||
+  filters.difficulty ||
+  filters.prize ||
+  filters.location ||
+  selectedTags.length > 0
+    ? "No hackathons match your current filters. Try adjusting your search or filters."
+    : "Check back later for exciting new hackathons!"}
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
@@ -732,11 +729,9 @@ const HackathonHub = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        </SectionErrorBoundary>
       </div>
       <HackathonCTA></HackathonCTA>
-
-      {/* Feedback Button */}
-      <FeedbackButton />
       <BackToTopButton />
     </div>
   );

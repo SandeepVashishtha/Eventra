@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import QuestCenter from '../components/gamification/QuestCenter';
+import EventBadgeGenerator from '../components/user/EventBadgeGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
 import {
   Award,
   Zap,
@@ -14,16 +16,32 @@ import {
   ChevronDown,
   Sparkles,
   Trophy,
+  Linkedin,
+  Twitter,
+  Share2,
+  X,
 } from 'lucide-react';
 
 export default function UserAchievements() {
   useDocumentTitle("Eventra | Achievements");
   const { achievements, fetchAchievements } = useNotification();
   const [expandedBadgeId, setExpandedBadgeId] = useState(null);
+  const [activeShareBadge, setActiveShareBadge] = useState(null);
+  const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
+  const [shareStory, setShareStory] = useState("");
+  const [sharePlatform, setSharePlatform] = useState("twitter");
 
   useEffect(() => {
     fetchAchievements();
   }, [fetchAchievements]);
+
+  useEffect(() => {
+    if (activeShareBadge) {
+      setShareStory(`I just unlocked the '${activeShareBadge.name}' milestone badge on Eventra! 🏆 ${activeShareBadge.description} Check it out: https://eventra.dev #GSSoC2026 #OpenSource #Developer`);
+    } else {
+      setShareStory("");
+    }
+  }, [activeShareBadge]);
 
   // Fallback / Normalized list of milestone achievements with progress metrics
   const fallbackBadges = [
@@ -111,7 +129,7 @@ export default function UserAchievements() {
 
   // Derived calculations: 100 XP per event, 150 XP per streak day, 250 XP per badge
   const derivedXP = (totalEvents * 100) + (currentStreak * 150) + (unlockedCount * 250) + 75;
-  
+
   // Level system: 500 XP per Level
   const currentLevel = Math.floor(derivedXP / 500) + 1;
   const xpInCurrentLevel = derivedXP % 500;
@@ -126,6 +144,47 @@ export default function UserAchievements() {
   const toggleExpand = (badgeId) => {
     setExpandedBadgeId(expandedBadgeId === badgeId ? null : badgeId);
   };
+
+  const handleShareTwitter = () => {
+    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareStory)}`;
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+    toast.success("Opening Twitter/X share dialog!");
+  };
+
+  const handleShareLinkedIn = () => {
+    const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://eventra.dev")}&summary=${encodeURIComponent(shareStory)}`;
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+    toast.success("Opening LinkedIn share dialog!");
+  };
+
+  
+  // Mock download badge certificate SVG
+  const handleDownloadSVG = (badge) => {
+    const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250">
+      <rect width="100%" height="100%" fill="#0f172a" rx="20"/>
+      <circle cx="200" cy="80" r="40" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
+      <text x="200" y="88" font-family="Arial" font-size="36" text-anchor="middle" fill="#fff">${badge.icon}</text>
+      <text x="200" y="150" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle" fill="#e2e8f0">${badge.name}</text>
+      <text x="200" y="175" font-family="Arial" font-size="12" text-anchor="middle" fill="#94a3b8">EVENTRA ACHIEVER TOKEN</text>
+      <text x="200" y="205" font-family="Arial" font-size="10" text-anchor="middle" fill="#6366f1">Level ${currentLevel} Developer</text>
+    </svg>`;
+    const blob = new Blob([svgContent], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${badge.id}-certificate.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Certificate Badge graphic downloaded!");
+  };
+
+  // Onboarding Checklist configuration
+  const onboardingQuests = [
+    { id: 'step1', title: 'Register for your first event', description: 'Unlock your first registration milestone', done: totalEvents >= 1 },
+    { id: 'step2', title: 'Start a streak', description: 'Participate in multiple events consecutively', done: currentStreak >= 1 },
+    { id: 'step3', title: 'Unlock a milestone token', description: 'Complete requirements to claim a badge', done: unlockedCount >= 1 },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-20 px-4 md:px-8 transition-colors duration-300">
@@ -144,6 +203,15 @@ export default function UserAchievements() {
             <p className="text-slate-550 dark:text-slate-400 mt-2 text-xs sm:text-sm max-w-2xl leading-relaxed">
               Track your open-source growth milestones, streak multipliers, and XP progression. Claim developer tokens as you host, contribute, and engage in events.
             </p>
+          </div>
+          <div className="shrink-0">
+            <button
+              onClick={() => setIsBadgeModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98] cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300 animate-spin-slow" />
+              <span>Attendee Badge Center</span>
+            </button>
           </div>
         </div>
 
@@ -308,6 +376,48 @@ export default function UserAchievements() {
           </div>
         </div>
 
+        {/* ONBOARDING CHECKLIST FOR USERS WITH ZERO ACHIEVEMENTS */}
+        {unlockedCount === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-indigo-900/40 via-purple-900/35 to-slate-900/60 border border-indigo-500/20 backdrop-blur-xl rounded-3xl p-6 shadow-lg space-y-4"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-yellow-450 animate-bounce" />
+              <h2 className="text-md font-black tracking-tight text-white uppercase">
+                Gamified Onboarding Checklist
+              </h2>
+            </div>
+            <p className="text-xs text-slate-350 max-w-xl leading-relaxed">
+              You haven't unlocked any milestone tokens yet. Complete the steps below to claim your first developer badge:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              {onboardingQuests.map((quest) => (
+                <div
+                  key={quest.id}
+                  className={`p-4 rounded-2xl border transition ${
+                    quest.done
+                      ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-350"
+                      : "bg-slate-950/40 border-slate-900 text-slate-400"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Quest</span>
+                    {quest.done ? (
+                      <span className="bg-emerald-500/20 text-emerald-450 px-2 py-0.5 rounded text-[8px] font-black uppercase">COMPLETED</span>
+                    ) : (
+                      <span className="bg-slate-800/80 text-slate-500 px-2 py-0.5 rounded text-[8px] font-black uppercase">PENDING</span>
+                    )}
+                  </div>
+                  <h4 className="text-xs font-extrabold text-white">{quest.title}</h4>
+                  <p className="text-[10px] text-slate-400 mt-1">{quest.description}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {/* MILESTONE BADGES SECTION */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-850 pb-3">
@@ -417,6 +527,24 @@ export default function UserAchievements() {
                           </div>
                         </div>
 
+                        {/* Share section */}
+                        {badge.earned && (
+                          <div className="pt-4 border-t border-dashed border-slate-200 dark:border-slate-850/50 space-y-2.5" onClick={(e) => e.stopPropagation()}>
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none">
+                              Share Achievement
+                            </span>
+                            <div className="flex flex-wrap gap-2 pt-0.5">
+                              <button
+                                onClick={() => setActiveShareBadge(badge)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white transition-all cursor-pointer shadow-xs hover:scale-[1.03]"
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                                <span>Share Certificate</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Lock Warning if locked */}
                         {!badge.earned && (
                           <div className="flex items-center gap-1.5 p-2 px-3 rounded-xl bg-rose-50/50 dark:bg-rose-950/15 border border-rose-100/20 dark:border-rose-900/10 text-[9px] font-bold text-rose-600 dark:text-rose-400 leading-tight">
@@ -440,6 +568,234 @@ export default function UserAchievements() {
         />
 
       </div>
+
+      {/* SHARE CARD GENERATOR OVERLAY MODAL */}
+      <AnimatePresence>
+        {activeShareBadge && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-3xl w-full shadow-2xl relative space-y-5 text-left"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setActiveShareBadge(null)}
+                className="absolute right-5 top-5 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer transition-colors"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="space-y-1">
+                <h3 className="text-md font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                  <Share2 className="w-4 h-4 animate-pulse" /> Social Achievement Builder
+                </h3>
+                <p className="text-xs text-slate-400">Customize your milestone story and preview how it appears on social feeds before posting.</p>
+              </div>
+
+              {/* Dual-Pane Grid Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-1">
+                
+                {/* Column 1: Message Customizer & Controls */}
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      Customize Your Story
+                    </label>
+                    <textarea
+                      value={shareStory}
+                      onChange={(e) => setShareStory(e.target.value)}
+                      rows={4}
+                      className="w-full p-3.5 rounded-2xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-xs text-slate-200 resize-none outline-none transition-all leading-relaxed"
+                      placeholder="Share your open-source journey..."
+                    />
+                    <div className="flex justify-between text-[9px] font-bold text-slate-500">
+                      <span>Interactive Composer</span>
+                      <span className={shareStory.length > 280 ? "text-rose-500 font-extrabold" : ""}>
+                        {shareStory.length} characters
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Quick Emojis & Hashtags Helpers */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Quick Tags</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {["#GSSoC2026", "#OpenSource", "#DevLife", "#LearnToCode"].map(tag => (
+                        <button
+                          key={tag}
+                          onClick={() => {
+                            if (!shareStory.includes(tag)) {
+                              setShareStory(prev => `${prev.trim()} ${tag}`);
+                            }
+                          }}
+                          className="px-2.5 py-1 text-[9px] font-extrabold rounded-lg bg-slate-850 hover:bg-slate-800 text-slate-300 border border-slate-800/60 transition cursor-pointer"
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Actions buttons */}
+                  <div className="space-y-2 pt-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={handleShareTwitter}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-850 text-xs font-bold text-slate-300 transition cursor-pointer"
+                      >
+                        <Twitter size={13} className="text-sky-400" />
+                        <span>Post on X</span>
+                      </button>
+                      <button
+                        onClick={handleShareLinkedIn}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-850 text-xs font-bold text-slate-330 transition cursor-pointer"
+                      >
+                        <Linkedin size={13} className="text-blue-500" />
+                        <span>Share LinkedIn</span>
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(shareStory);
+                          toast.success("Social story copied to clipboard! 📋");
+                        } catch {
+                          toast.error("Failed to copy story.");
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-800/80 text-xs font-bold text-slate-200 transition cursor-pointer"
+                    >
+                      <CheckCircle size={13} className="text-emerald-500" />
+                      <span>Copy Story to Clipboard</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleDownloadSVG(activeShareBadge)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-xs font-black uppercase tracking-wider text-white transition cursor-pointer shadow-md shadow-indigo-500/10"
+                    >
+                      <Award size={13} className="text-yellow-350" />
+                      <span>Download Certificate</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Column 2: Live Feed Preview */}
+                <div className="space-y-3.5 bg-slate-950/40 border border-slate-850 rounded-2xl p-4 flex flex-col justify-between">
+                  <div className="flex items-center justify-between border-b border-slate-850/80 pb-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-450">
+                      Live Feed Mockup
+                    </span>
+                    {/* Switch layout platform selector */}
+                    <div className="flex gap-1.5">
+                      {["twitter", "linkedin"].map(plat => (
+                        <button
+                          key={plat}
+                          onClick={() => setSharePlatform(plat)}
+                          className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest transition cursor-pointer ${
+                            sharePlatform === plat
+                              ? "bg-indigo-600 text-white"
+                              : "bg-slate-850 text-slate-500 hover:text-slate-300"
+                          }`}
+                        >
+                          {plat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Render Twitter/X Post Mockup */}
+                  {sharePlatform === "twitter" ? (
+                    <div className="p-4 bg-black rounded-xl border border-slate-850/85 text-left text-white space-y-3 shadow-inner select-none">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-black text-indigo-400">
+                          EV
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-bold hover:underline">Developer Achievement</span>
+                            <span className="w-3 h-3 text-sky-400">✔️</span>
+                          </div>
+                          <p className="text-[10px] text-slate-500">@eventra_developer</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-200 leading-relaxed break-words whitespace-pre-wrap">
+                        {shareStory || "Write something in the composer..."}
+                      </p>
+                      
+                      {/* Attached Card Mockup */}
+                      <div className="border border-slate-850 rounded-2xl overflow-hidden bg-slate-950/70">
+                        <div className="p-5 bg-gradient-to-br from-indigo-950/50 to-slate-950 text-center border-b border-slate-850">
+                          <span className="inline-block p-3 rounded-2xl bg-indigo-900/30 border border-indigo-500/25 text-3xl mx-auto shadow-inner">
+                            {activeShareBadge.icon}
+                          </span>
+                          <h4 className="text-sm font-extrabold text-white mt-3 tracking-tight">{activeShareBadge.name}</h4>
+                          <p className="text-[9px] text-slate-400 uppercase tracking-widest font-black mt-1">Verified Achieve Token</p>
+                        </div>
+                        <div className="p-3">
+                          <p className="text-[10px] text-slate-400 uppercase tracking-widest font-extrabold">eventra.dev</p>
+                          <h5 className="text-[11px] font-extrabold text-slate-200 mt-0.5">Claimed Level {currentLevel} Attendee Badge!</h5>
+                          <p className="text-[10px] text-slate-500 leading-tight mt-1 line-clamp-1">Register for meetups, unlock streak multipliers, and grow your XP.</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Render LinkedIn Article Mockup */
+                    <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-850 text-left text-slate-800 dark:text-slate-200 space-y-3 shadow-inner select-none">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-black text-indigo-650 dark:text-indigo-400">
+                          EV
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black hover:underline hover:text-blue-600">Eventra Developer</h4>
+                          <p className="text-[9px] text-slate-500 leading-none mt-1">GSSoC Achiever • Event Progression Engine</p>
+                        </div>
+                      </div>
+                      <p className="text-xs leading-relaxed break-words whitespace-pre-wrap">
+                        {shareStory || "Write something in the composer..."}
+                      </p>
+                      
+                      {/* Attached Article Mockup */}
+                      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-950/80">
+                        <div className="p-5 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-slate-950 text-center border-b border-slate-200 dark:border-slate-800">
+                          <span className="inline-block p-3 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300/30 dark:border-indigo-500/25 text-3xl mx-auto shadow-inner">
+                            {activeShareBadge.icon}
+                          </span>
+                          <h4 className="text-sm font-extrabold text-slate-900 dark:text-white mt-3 tracking-tight">{activeShareBadge.name}</h4>
+                          <p className="text-[9px] text-slate-500 uppercase tracking-widest font-black mt-1">Achiever Token Certification</p>
+                        </div>
+                        <div className="p-3">
+                          <p className="text-[9px] text-slate-400 uppercase tracking-widest font-extrabold">EVENTRA.DEV</p>
+                          <h5 className="text-[11px] font-extrabold text-slate-800 dark:text-slate-200 mt-0.5">Unlocked Badge Milestone on Eventra</h5>
+                          <p className="text-[10px] text-slate-500 leading-tight mt-1 line-clamp-1">Developer successfully completed the '{activeShareBadge.name}' challenges.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bottom helper info */}
+                  <div className="text-[9px] text-center text-slate-550 leading-snug">
+                    ℹ️ Select Twitter or LinkedIn tab to preview the card layout. Make sure to complete your developer challenges to boost your XP level!
+                  </div>
+                </div>
+
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ATTENDEE EVENT BADGE GENERATOR OVERLAY MODAL */}
+      <AnimatePresence>
+        {isBadgeModalOpen && (
+          <EventBadgeGenerator
+            onClose={() => setIsBadgeModalOpen(false)}
+            userStats={{ totalEvents, currentStreak, unlockedCount }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

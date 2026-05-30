@@ -1,6 +1,6 @@
 // src/components/auth/PasswordStrengthIndicator.js
-import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import useReducedMotion from '../../hooks/useReducedMotion';
 
 const assessStrength = (password) => {
   const criteria = [
@@ -31,6 +31,7 @@ const assessStrength = (password) => {
 };
 
 const PasswordStrengthIndicator = ({ password }) => {
+  const prefersReducedMotion = useReducedMotion();
   const { score, feedback, criteriaMet, criteria } = assessStrength(password);
 
   const getBarColorClass = (currentScore) => {
@@ -73,7 +74,7 @@ const PasswordStrengthIndicator = ({ password }) => {
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
         >
           {/* Header Progress text */}
           <div className="flex items-center justify-between text-xs">
@@ -93,7 +94,7 @@ const PasswordStrengthIndicator = ({ password }) => {
               animate={{
                 width: `${(criteriaMet / 5) * 100}%`,
               }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: "easeOut" }}
             />
           </div>
 
@@ -137,4 +138,4 @@ const PasswordStrengthIndicator = ({ password }) => {
   );
 };
 
-export default PasswordStrengthIndicator;
+export default PasswordStrengthIndicator;

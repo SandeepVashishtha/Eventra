@@ -1,15 +1,24 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
-import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
-import { syncSecureStorage } from '../utils/secureStorage';
-import { toast } from 'react-toastify';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  useState,
+} from "react";
+import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from "../config/api";
+import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
+import { syncSecureStorage } from "../utils/secureStorage";
+import { toast } from "react-toastify";
+import { ROLES, ROLE_PERMISSIONS } from "../config/roles";
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -18,99 +27,186 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authRequest, setAuthRequest] = useState({
+    loading: false,
+    error: null,
+  });
 
-  // Ref-based flag so isAuthenticated() can request cleanup without
-  // mutating state during a render (React rule).
+  const isMountedRef = useRef(false);
   const needsExpiryCleanupRef = useRef(false);
   const expiryToastShownRef = useRef(false);
 
-  // Centralized session cleanup — clears both React state and secure storage.
-  const clearSession = useCallback(() => {
-    setUser(null);
-    setToken(null);
-    syncSecureStorage.removeItem('token');
-    syncSecureStorage.removeItem('user');
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
-  /**
-   * Clear the session AND notify the user via toast.
-   * Guards against duplicate toasts with a ref flag.
-   */
+  const clearSession = useCallback(() => {
+    if (!isMountedRef.current) return false;
+
+    setUser(null);
+    setToken(null);
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
+    sessionStorage.removeItem("token");
+    syncSecureStorage.removeItem("user");
+    return true;
+  }, []);
+
   const clearExpiredSession = useCallback(() => {
-    if (expiryToastShownRef.current) return;
-    expiryToastShownRef.current = true;
+    // 🔥 FIX: Check if a user was actually logged in before blasting them with an "Expired" toast.
+    // Anonymous users (who trigger a 401 on mount) shouldn't see this.
+    const hadPreviousSession = !!localStorage.getItem("user") || !!sessionStorage.getItem("token");
+
+    console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
     clearSession();
-    toast.info('Session expired. Please log in again.', {
-      toastId: 'session-expired',
+
+    // If they were never logged in, this is just a guest pinging the API. Silent exit.
+    if (!hadPreviousSession) return;
+
+    if (expiryToastShownRef.current) {
+      return;
+    }
+
+    expiryToastShownRef.current = true;
+    toast.info("Session expired. Please log in again.", {
+      toastId: "session-expired",
       autoClose: 5000,
     });
   }, [clearSession]);
 
-  useEffect(() => {
-    // Check for existing authentication on app start
-    const storedToken = syncSecureStorage.getItem('token');
-    const storedUser = syncSecureStorage.getItem('user');
+  const setAuthRequestState = useCallback((nextState) => {
+    if (!isMountedRef.current) return false;
 
-    if (storedToken && storedUser) {
-      // --- Security fix: validate token before restoring session ---
-      if (isTokenValid(storedToken)) {
-        setToken(storedToken);
-        try {
-          setUser(JSON.parse(storedUser));
-        } catch {
-          // Corrupted user data in localStorage — clear everything.
+    setAuthRequest(nextState);
+    return true;
+  }, []);
+
+  const normalizeRoles = useCallback((roles = []) => {
+    return roles.map((role) => {
+      const normalized = String(role).toUpperCase();
+      return normalized === "EVENT_MANAGER" ? ROLES.ORGANIZER : normalized;
+    });
+  }, []);
+
+  const extractSession = useCallback(
+    (res, data, fallbackEmail) => {
+      let sessionToken = data?.token ?? data?.accessToken ?? null;
+
+      if (!sessionToken) {
+        const authHeader = res.headers?.authorization || res.headers?.Authorization || null;
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+          sessionToken = authHeader.substring(7);
+        }
+      }
+
+      const rawUser = data?.user ?? data?.data ?? data ?? null;
+      const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
+      const resolvedRoles = normalizeRoles(rawRoles);
+      const tokenPermissions = Array.isArray(rawUser?.permissions)
+        ? rawUser.permissions.map((permission) => String(permission))
+        : [];
+      const rolePermissions = resolvedRoles.flatMap((role) => ROLE_PERMISSIONS[role] || []);
+      const permissions = Array.from(new Set([...tokenPermissions, ...rolePermissions]));
+
+      const scopes =
+        rawUser?.scopes ??
+        (resolvedRoles.includes(ROLES.SUPER_ADMIN) || resolvedRoles.includes(ROLES.ADMIN)
+          ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
+          : resolvedRoles.includes(ROLES.ORGANIZER)
+            ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
+            : ["event:read", "hackathon:read"]);
+
+      const sessionUser = {
+        ...(rawUser || {}),
+        firstName: rawUser?.firstName ?? "",
+        lastName: rawUser?.lastName ?? "",
+        email: rawUser?.email ?? fallbackEmail ?? "",
+        username: rawUser?.username ?? fallbackEmail ?? "",
+        role: rawUser?.role ?? resolvedRoles[0] ?? "",
+        roles: resolvedRoles,
+        permissions,
+        scopes,
+      };
+
+      return { sessionToken, sessionUser };
+    },
+    [normalizeRoles]
+  );
+
+  useEffect(() => {
+    const validateSession = async () => {
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.USERS.PROFILE);
+        if (!isMountedRef.current) return;
+
+        if (res.ok && res.data) {
+          const { sessionToken, sessionUser } = extractSession(res, res.data, null);
+          if (!isMountedRef.current) return;
+          setToken(sessionToken || "cookie-managed");
+          setUser(sessionUser);
+        } else {
           clearSession();
         }
-      } else {
-        // Token is expired or invalid — clean up stale session data.
+      } catch {
+        if (!isMountedRef.current) return;
         clearSession();
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
-    }
+    };
 
-    setLoading(false);
-  }, [clearSession]);
+    // 🔥 THE FIX: We removed the `if (localStorage.getItem("user"))` check! 🔥
+    // The app will now ALWAYS ping the backend to verify HttpOnly cookies on load.
+    validateSession();
+  }, [clearSession, extractSession]);
 
-  // --- Global 401 handler ---
+  // --- FIX: Stable Global 401 handler ---
+  const clearExpiredSessionRef = useRef(clearExpiredSession);
+
+  // Keep the ref updated whenever the function changes
   useEffect(() => {
-    setOnUnauthorizedHandler(() => {
-      clearExpiredSession();
-    });
-
-    // Cleanup on unmount
-    return () => setOnUnauthorizedHandler(null);
+    clearExpiredSessionRef.current = clearExpiredSession;
   }, [clearExpiredSession]);
 
-  // --- Deferred expiry cleanup ---
-  // When isAuthenticated() detects an expired token during a render, it
-  // sets needsExpiryCleanupRef. This effect runs AFTER render finishes
-  // and performs the actual state cleanup + toast.
+  // Register handler once on mount, referencing the latest logic via the ref
+  useEffect(() => {
+    setOnUnauthorizedHandler(() => {
+      clearExpiredSessionRef.current();
+    });
+
+    // Cleanup only on unmount
+    return () => setOnUnauthorizedHandler(null);
+  }, []); // <--- Empty array here ensures it only runs once!
+
   useEffect(() => {
     if (needsExpiryCleanupRef.current) {
       needsExpiryCleanupRef.current = false;
       clearExpiredSession();
     }
-  });
+  }, [clearExpiredSession]);
 
   // --- Smart Token Expiry Timeout ---
-  // Instead of polling every 15 s, compute the exact remaining TTL from the
-  // token's `exp` claim and schedule a single timeout.  Falls back to a 60 s
-  // interval if `exp` is missing or unparseable.
-  // --- Periodic Token Expiry Check ---
   useEffect(() => {
     if (!token) return;
 
-    // Reset the toast guard when a new token is set (fresh login).
     expiryToastShownRef.current = false;
+
+    if (token === "cookie-managed") {
+      return;
+    }
 
     const payload = decodeTokenPayload(token);
     const expSeconds = payload?.exp;
 
     let timeoutId;
 
-    if (typeof expSeconds === 'number') {
+    if (typeof expSeconds === "number") {
       const nowMs = Date.now();
       const expiresAtMs = expSeconds * 1000;
-      // Fire 1 second after actual expiry to avoid edge-case races.
       const delayMs = Math.max(expiresAtMs - nowMs + 1000, 0);
 
       timeoutId = setTimeout(() => {
@@ -119,201 +215,197 @@ export const AuthProvider = ({ children }) => {
         }
       }, delayMs);
     } else {
-      // No `exp` claim — fall back to a 60 s polling interval.
       timeoutId = setInterval(() => {
         if (!isTokenValid(token)) {
           clearExpiredSession();
         }
       }, 60_000);
 
-      // Also check once immediately.
       if (!isTokenValid(token)) {
         clearExpiredSession();
       }
     }
 
     return () => {
-      clearTimeout(timeoutId);
-      clearInterval(timeoutId);
+      if (typeof expSeconds === "number") {
+        clearTimeout(timeoutId);
+      } else {
+        clearInterval(timeoutId);
+      }
     };
   }, [token, clearExpiredSession]);
 
-  const persistSession = (sessionToken, sessionUser) => {
+  const persistSession = useCallback((sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
-    syncSecureStorage.setItem('token', sessionToken);
-    syncSecureStorage.setItem('user', JSON.stringify(sessionUser));
-  };
 
-  const extractSession = (res, data, fallbackEmail) => {
-    let sessionToken = data?.token ?? data?.accessToken ?? null;
+    // The auth token is set exclusively by the server via a Set-Cookie response
+    // header with HttpOnly; Secure; SameSite=Strict. Writing the token through
+    // document.cookie here would create a second, JS-readable copy of the same
+    // credential, exposing it to XSS-based theft. The client-side code only
+    // needs to store the non-sensitive display profile (see below).
 
-    if (!sessionToken) {
-      const authHeader = res.headers.get('Authorization') || res.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7);
-      }
-    }
-
-    const rawUser = data?.user ?? data?.data ?? data ?? null;
-    const resolvedRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
-    const sessionUser = {
-      ...(rawUser || {}),
-      firstName: rawUser?.firstName ?? '',
-      lastName: rawUser?.lastName ?? '',
-      email: rawUser?.email ?? fallbackEmail ?? '',
-      username: rawUser?.username ?? fallbackEmail ?? '',
-      role: rawUser?.role ?? resolvedRoles[0] ?? '',
-      roles: resolvedRoles,
-      permissions: rawUser?.permissions ?? [],
-      scopes: rawUser?.scopes ?? (
-        resolvedRoles.includes('ADMIN') ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"] :
-        resolvedRoles.includes('EVENT_MANAGER') ? ["event:write", "event:read", "hackathon:write", "hackathon:read"] :
-        ["event:read", "hackathon:read"]
-      ),
-    };
-
-    return { sessionToken, sessionUser };
-  };
-
-  const setAuthSession = (sessionToken, sessionUser) => {
-    persistSession(sessionToken, sessionUser);
-    return true;
-  };
-
-  const login = async (usernameOrEmail, password) => {
-    const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
-      usernameOrEmail,
-      password,
-    });
-
-    const data = await res.json().catch((error) => {
-      console.error('Failed to parse login response JSON:', error);
-      return null;
-    });
-
-    if (!res.ok) {
-      throw new Error(data?.message || data?.error || 'Invalid credentials');
-    }
-
-    const { sessionToken, sessionUser } = extractSession(res, data || {}, usernameOrEmail);
-
-    if (!sessionToken) {
-      throw new Error('Login failed: token missing from response');
-    }
-
-    persistSession(sessionToken, sessionUser);
-    return true;
-  };
-
-  // Decode a JWT payload (base64url) without external libraries
-  const decodeJwtPayload = (jwt) => {
+    // Strip authorization fields before persisting to storage. Roles, scopes,
+    // and permissions are always re-derived from the backend on page load via
+    // validateSession, so storing them client-side only widens the XSS attack
+    // surface with no functional benefit.
     try {
-      const base64Url = jwt.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const json = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      return JSON.parse(json);
-    } catch (err) {
-      console.error('Failed to decode Google credential:', err);
-      return null;
+      // eslint-disable-next-line no-unused-vars
+      const { roles, permissions, scopes, ...displayProfile } = sessionUser;
+      syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
+    } catch (error) {
+      console.error("[AuthContext] Error persisting user profile:", error);
     }
-  };
-
-  const signInWithGoogle = async (credential) => {
-    if (!credential) {
-      throw new Error('Google Sign-In failed: missing credential');
-    }
-
-    const payload = decodeJwtPayload(credential);
-    if (!payload || !payload.email) {
-      throw new Error('Google Sign-In failed: invalid credential');
-    }
-
-    const sessionUser = {
-      firstName: payload.given_name || '',
-      lastName: payload.family_name || '',
-      email: payload.email,
-      username: payload.email,
-      picture: payload.picture || '',
-      role: '',
-      roles: [],
-      permissions: [],
-      provider: 'google',
-    };
-
-    persistSession(credential, sessionUser);
     return true;
+  }, []);
+
+  const setAuthSession = useCallback(
+    (sessionToken, sessionUser) => {
+      return persistSession(sessionToken, sessionUser);
+    },
+    [persistSession]
+  );
+
+  const getAuthErrorMessage = (error, fallbackMessage) => {
+    return (
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      fallbackMessage
+    );
   };
 
-  const logout = () => {
+  const login = useCallback(
+    async (usernameOrEmail, password) => {
+      if (!setAuthRequestState({ loading: true, error: null })) {
+        return false;
+      }
+
+      try {
+        const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
+          usernameOrEmail,
+          password,
+        });
+
+        const data = res.data;
+
+        if (res.status !== 200) {
+          throw new Error(data?.message || data?.error || "Invalid credentials");
+        }
+
+        const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
+
+        if (!sessionToken) {
+          throw new Error("Login failed: token missing from response");
+        }
+
+        const persisted = persistSession(sessionToken, sessionUser);
+        if (!persisted) return false;
+
+        setAuthRequestState({ loading: false, error: null });
+        return true;
+      } catch (error) {
+        if (!isMountedRef.current) return false;
+        setAuthRequestState({ loading: false, error: getAuthErrorMessage(error, "Login failed. Please try again.") });
+        throw error;
+      }
+    },
+    [extractSession, persistSession, setAuthRequestState]
+  );
+
+
+
+  const logout = useCallback(() => {
     clearSession();
-  };
+    setAuthRequestState({ loading: false, error: null });
+  }, [clearSession, setAuthRequestState]);
 
   const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
-    if (!isTokenValid(token)) {
-      // Token expired mid-session — flag for deferred cleanup.
-      // Cannot call clearSession() here because this runs during render.
+    if (token !== "cookie-managed" && !isTokenValid(token)) {
       needsExpiryCleanupRef.current = true;
       return false;
     }
     return true;
   }, [user, token]);
 
-  const hasRole = (roleName) => {
-    return user?.roles?.includes(roleName) || false;
-  };
-
-  const hasPermission = (permissionName) => {
-    return user?.permissions?.includes(permissionName) || false;
-  };
-
-  const hasAnyRole = (...roleNames) => {
-    return roleNames.some(role => hasRole(role));
-  };
-
-  const hasAnyPermission = (...permissionNames) => {
-    return permissionNames.some(permission => hasPermission(permission));
-  };
-
-  const isAdmin = () => hasRole('ADMIN');
-  const isEventManager = () => hasRole('EVENT_MANAGER');
-  const isSuperAdmin = () => hasRole('SUPER_ADMIN');
-  const isOrganizer = () => hasRole('ORGANIZER');
-  const isVolunteer = () => hasRole('VOLUNTEER');
-  const isAttendee = () => hasRole('ATTENDEE');
-
-  const value = {
-    user,
-    token,
-    loading,
-    login,
-    logout,
-    signInWithGoogle,
-    setAuthSession,
-    setUser,
-    isAuthenticated,
-    hasRole,
-    hasPermission,
-    hasAnyRole,
-    hasAnyPermission,
-    isAdmin,
-    isEventManager,
-    isSuperAdmin,
-    isOrganizer,
-    isVolunteer,
-    isAttendee,
-  };
-
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  const hasRole = useCallback(
+    (roleName) => {
+      if (!user?.roles) return false;
+      const targetRole = String(roleName).toUpperCase();
+      return normalizeRoles(user.roles).includes(targetRole);
+    },
+    [normalizeRoles, user]
   );
-};
+
+  const hasPermission = useCallback(
+    (permissionName) => {
+      if (!user?.permissions) return false;
+      return user.permissions.includes(permissionName);
+    },
+    [user]
+  );
+
+  const hasAnyRole = useCallback(
+    (...roleNames) => roleNames.some((role) => hasRole(role)),
+    [hasRole]
+  );
+
+  const hasAnyPermission = useCallback(
+    (...permissionNames) => permissionNames.some((permission) => hasPermission(permission)),
+    [hasPermission]
+  );
+
+  const isAdmin = useCallback(() => hasRole(ROLES.ADMIN), [hasRole]);
+  const isEventManager = useCallback(() => hasRole(ROLES.ORGANIZER), [hasRole]);
+  const isSuperAdmin = useCallback(() => hasRole(ROLES.SUPER_ADMIN), [hasRole]);
+  const isOrganizer = useCallback(() => hasRole(ROLES.ORGANIZER), [hasRole]);
+  const isVolunteer = useCallback(() => hasRole(ROLES.VOLUNTEER), [hasRole]);
+  const isAttendee = useCallback(() => hasRole(ROLES.ATTENDEE), [hasRole]);
+
+  const value = useMemo(
+    () => ({
+      user,
+      token,
+      loading,
+      authRequest,
+      login,
+      logout,
+      setAuthSession,
+      setUser,
+      isAuthenticated,
+      hasRole,
+      hasPermission,
+      hasAnyRole,
+      hasAnyPermission,
+      isAdmin,
+      isEventManager,
+      isSuperAdmin,
+      isOrganizer,
+      isVolunteer,
+      isAttendee,
+    }),
+    [
+      user,
+      token,
+      loading,
+      authRequest,
+      login,
+      logout,
+      setAuthSession,
+      isAuthenticated,
+      hasRole,
+      hasPermission,
+      hasAnyRole,
+      hasAnyPermission,
+      isAdmin,
+      isEventManager,
+      isSuperAdmin,
+      isOrganizer,
+      isVolunteer,
+      isAttendee,
+    ]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

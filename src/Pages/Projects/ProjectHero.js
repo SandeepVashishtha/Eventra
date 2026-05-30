@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   FaGithub,
   FaTwitter,
@@ -29,9 +30,9 @@ const iconList = [
 const repeatedIcons = [...iconList, ...iconList, ...iconList];
 
 export default function ProjectHero({
-  setShowSubmissionModal,
   scrollToCard,
 }) {
+  const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -53,7 +54,7 @@ export default function ProjectHero({
       <div className="absolute right-5 top-0 h-full flex-col items-center justify-start overflow-hidden z-0 hidden lg:flex">
         <motion.div
           animate={{ y: ["0%", "-100%"] }}
-          transition={{ repeat: Infinity, duration: 18, ease: "linear" }}
+          transition={{ repeat: Infinity, duration: prefersReducedMotion ? 0 : 18, ease: "linear" }}
           className="flex flex-col gap-4"
         >
           {repeatedIcons.map((item, idx) => (
@@ -67,7 +68,7 @@ export default function ProjectHero({
               "
               animate={{ x: [0, 7, -7, 0], rotate: [0, 15, -15, 0] }}
               transition={{
-                duration: 4,
+                duration: prefersReducedMotion ? 0 : 4,
                 repeat: Infinity,
                 repeatType: "loop",
                 ease: "easeInOut",
@@ -98,7 +99,7 @@ export default function ProjectHero({
             <motion.div
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
               className="
                 inline-flex items-center gap-2
                 px-3 py-1 rounded-full text-xs font-semibold
@@ -117,7 +118,7 @@ export default function ProjectHero({
             <motion.h1
               initial={{ opacity: 0, y: -30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.8 }}
               className={`
                 text-4xl sm:text-5xl lg:text-[3.4rem] xl:text-[4rem]
                 font-extrabold mb-3
@@ -138,7 +139,7 @@ export default function ProjectHero({
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.8, delay: 0.2 }}
               className={`
                 text-sm sm:text-base
                 text-gray-600 ${darkTheme.textSecondary}
@@ -154,7 +155,7 @@ export default function ProjectHero({
             <motion.div
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.35 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.6, delay: 0.35 }}
               className="flex flex-wrap justify-center lg:justify-start gap-3"
               data-aos="zoom-in"
               data-aos-delay="400"
@@ -214,7 +215,7 @@ export default function ProjectHero({
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.75, delay: 0.45 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.75, delay: 0.45 }}
             className="w-full mt-8 lg:mt-0 lg:flex-1 lg:max-w-[38%]"
           >
             <div className="grid grid-cols-3 gap-3 lg:grid-cols-1 lg:gap-3">
@@ -246,7 +247,7 @@ export default function ProjectHero({
                   initial={{ opacity: 0, y: 18, scale: 0.94 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{
-                    duration: 0.5,
+                    duration: prefersReducedMotion ? 0 : 0.5,
                     delay: 0.55 + idx * 0.12,
                     type: "spring",
                     stiffness: 140,

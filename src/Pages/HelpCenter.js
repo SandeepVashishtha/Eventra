@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, useAnimation } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
+import useReducedMotion from "../hooks/useReducedMotion.js";
 import {
   Search,
   Award,
@@ -24,14 +25,7 @@ import {
   CalendarDays,
   GitMerge,
 } from "lucide-react";
-import {
-  FaDiscord,
-  FaGithub,
-  FaTwitter,
-  FaYoutube,
-  FaLinkedin,
-  FaTelegram,
-} from "react-icons/fa"; // ✅ Community icons
+import { FaDiscord, FaGithub, FaTwitter, FaYoutube, FaLinkedin, FaTelegram } from "react-icons/fa"; // ✅ Community icons
 import { Link } from "react-router-dom"; // ✅ Import for navigation
 
 const categories = [
@@ -153,6 +147,7 @@ const faqs = [
 ];
 
 const HelpCenter = () => {
+  const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | Help Center");
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const controls = useAnimation();
@@ -175,7 +170,7 @@ const HelpCenter = () => {
           className="text-4xl md:text-5xl font-bold mb-4"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
         >
           Need Help with Hackathons, Projects, or Contributions?
         </motion.h1>
@@ -183,18 +178,15 @@ const HelpCenter = () => {
           className="text-gray-600 dark:text-gray-300 max-w-xl mx-auto mt-10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.9 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.9 }}
         >
-          Find step-by-step guides, FAQs, and tips to make the most of our
-          platform.
+          Find step-by-step guides, FAQs, and tips to make the most of our platform.
         </motion.p>
       </section>
 
       {/* Categories Section */}
       <section className="py-16 px-4 max-w-6xl mx-auto">
-        <h2 className="text-3xl font-semibold mb-8 text-center">
-          Browse by Category
-        </h2>
+        <h2 className="text-3xl font-semibold mb-8 text-center">Browse by Category</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {categories.map((cat, idx) => (
             <motion.div key={idx} whileHover={{ scale: 1.05 }}>
@@ -204,9 +196,7 @@ const HelpCenter = () => {
               >
                 <div className="mb-4">{cat.icon}</div>
                 <h3 className="text-xl font-semibold mb-2">{cat.title}</h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  {cat.description}
-                </p>
+                <p className="text-gray-600 dark:text-gray-300">{cat.description}</p>
               </Link>
             </motion.div>
           ))}
@@ -215,12 +205,9 @@ const HelpCenter = () => {
 
       {/* Community Links Section */}
       <section className="py-12 px-4 max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold mb-8 text-center">
-          Connect with the Community
-        </h2>
+        <h2 className="text-3xl font-bold mb-8 text-center">Connect with the Community</h2>
         <p className="text-center text-gray-600 dark:text-gray-300 mb-12">
-          Join discussions, meet contributors, and stay updated through our
-          community platforms.
+          Join discussions, meet contributors, and stay updated through our community platforms.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
@@ -265,8 +252,7 @@ const HelpCenter = () => {
             <a
               key={idx}
               href={item.link}
-              target="_blank"
-              rel="noopener noreferrer"
+              target="_blank" rel="noopener noreferrer"
               className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 flex flex-col items-center text-center transition-transform transform hover:scale-105 hover:shadow-2xl"
             >
               <div
@@ -278,8 +264,7 @@ const HelpCenter = () => {
                 {item.title}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                Click to visit and connect with other contributors and
-                enthusiasts.
+                Click to visit and connect with other contributors and enthusiasts.
               </p>
             </a>
           ))}
@@ -293,7 +278,7 @@ const HelpCenter = () => {
             className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
           >
             Step-by-Step Tutorials
           </motion.h2>
@@ -301,10 +286,10 @@ const HelpCenter = () => {
             className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.8 }}
           >
-            Master every aspect of the platform with our comprehensive guides.
-            From hosting events to contributing code.
+            Master every aspect of the platform with our comprehensive guides. From hosting events
+            to contributing code.
           </motion.p>
         </div>
 
@@ -359,7 +344,7 @@ const HelpCenter = () => {
               key={idx}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: idx * 0.1 }}
               whileHover={{ y: -8, scale: 1.02 }}
               className="group relative"
             >
@@ -444,8 +429,8 @@ const HelpCenter = () => {
             Platform Guidelines
           </h2>
           <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Follow these best practices to make the most of your experience and
-            contribute effectively to the community.
+            Follow these best practices to make the most of your experience and contribute
+            effectively to the community.
           </p>
         </div>
 
@@ -509,7 +494,7 @@ const HelpCenter = () => {
               key={idx}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: idx * 0.1 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.4, delay: idx * 0.1 }}
               whileHover={{ y: -5 }}
               className="group relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
             >
@@ -545,9 +530,7 @@ const HelpCenter = () => {
               </div>
 
               <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <span
-                  className="text-xs font-bold text-black"
-                >
+                <span className="text-xs font-bold text-black">
                   {String(idx + 1).padStart(2, "0")}
                 </span>
               </div>
@@ -563,8 +546,8 @@ const HelpCenter = () => {
             Frequently Asked Questions
           </h2>
           <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">
-            Everything you need to know about using our platform. Can't find
-            what you're looking for? Reach out to our community!
+            Everything you need to know about using our platform. Can&apos;t find what you&apos;re looking
+            for? Reach out to our community!
           </p>
 
           <div className="space-y-6">
@@ -573,7 +556,7 @@ const HelpCenter = () => {
                 key={faq.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
                 className={`rounded-2xl shadow-lg transition-shadow duration-300 border 
                 ${
                   expandedFAQ === faq.id
@@ -589,9 +572,7 @@ const HelpCenter = () => {
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">
                         <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center">
-                          <span className="text-indigo-600 dark:text-indigo-400">
-                            {faq.icon}
-                          </span>
+                          <span className="text-indigo-600 dark:text-indigo-400">{faq.icon}</span>
                         </div>
                       </div>
                       <div>
@@ -618,7 +599,7 @@ const HelpCenter = () => {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: "easeInOut" }}
                     className="px-6 pb-6"
                   >
                     <div className="ml-16 pt-4 border-t border-gray-300 dark:border-gray-700">
@@ -645,7 +626,7 @@ const HelpCenter = () => {
           initial={{ x: "-100%" }}
           animate={{ x: "100%" }}
           transition={{
-            duration: 2.5,
+            duration: prefersReducedMotion ? 0 : 2.5,
             repeat: Infinity,
             ease: "easeInOut",
           }}
@@ -657,7 +638,7 @@ const HelpCenter = () => {
             className="text-4xl md:text-5xl font-bold mb-4"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
           >
             Need Help or Have Feedback?
           </motion.h2>
@@ -666,10 +647,9 @@ const HelpCenter = () => {
             className="text-base md:text-lg mb-10 text-gray-200"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.8 }}
           >
-            Reach out to our support team or share your thoughts to improve the
-            platform.
+            Reach out to our support team or share your thoughts to improve the platform.
           </motion.p>
 
           {/* Buttons */}

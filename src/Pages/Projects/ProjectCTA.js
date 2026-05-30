@@ -1,10 +1,11 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { FolderOpen, UploadCloud, Bug } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 const ProjectCTA = () => {
+  const prefersReducedMotion = useReducedMotion();
 
     const { user } = useAuth();
   
@@ -24,7 +25,7 @@ const ProjectCTA = () => {
         }}
         animate={{ x: ["-100%", "100%"], y: ["-100%", "100%"] }}
         transition={{
-          duration: 6,
+          duration: prefersReducedMotion ? 0 : 6,
           repeat: Infinity,
           ease: "linear",
         }}
@@ -36,7 +37,7 @@ const ProjectCTA = () => {
           className="text-4xl md:text-5xl font-bold mb-4"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         >
           Showcase Your Projects
         </motion.h2>
@@ -45,7 +46,7 @@ const ProjectCTA = () => {
           className="text-base md:text-lg mb-10 text-gray-600 dark:text-gray-300"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.8 }}
         >
           "Share your innovative projects, collaborate with peers, and get
           recognized."
@@ -77,7 +78,7 @@ const ProjectCTA = () => {
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
               to="https://github.com/SandeepVashishtha/Eventra/issues"
-              target="_blank"
+              target="_blank" rel="noopener noreferrer"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300 dark:hover:bg-slate-800 font-semibold px-8 py-4 rounded-lg shadow-lg transition-all duration-300"
               data-aos="zoom-in"

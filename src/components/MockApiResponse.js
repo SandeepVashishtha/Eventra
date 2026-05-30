@@ -1,8 +1,7 @@
-import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const mockResponses = {
-  "/api/hackathons": {
+  "/mock-api/hackathons": {
     status: 200,
     source: "mock",
     data: [
@@ -15,7 +14,7 @@ const mockResponses = {
       },
     ],
   },
-  "/api/projects": {
+  "/mock-api/projects": {
     status: 200,
     source: "mock",
     data: [
@@ -27,7 +26,7 @@ const mockResponses = {
       },
     ],
   },
-  "/api/contributors": {
+  "/mock-api/contributors": {
     status: 200,
     source: "mock",
     data: [
@@ -39,7 +38,7 @@ const mockResponses = {
       },
     ],
   },
-  "/api/leaderboard": {
+  "/mock-api/leaderboard": {
     status: 200,
     source: "mock",
     data: [
