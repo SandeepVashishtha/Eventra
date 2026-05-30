@@ -26,6 +26,7 @@ import {
   totalLeaderboardPages,
   buildRanksMap,
   computeLeaderboardStats,
+  
   applyAchievementBonus,
 } from "../../utils/leaderboardUtils";
 import { getAchievementBadge } from "../../utils/leaderboardUtils";
@@ -79,6 +80,9 @@ function RankMovementIndicator({ liveDifference }) {
 }
 
 // Repository constant — update if the leaderboard should point to another repo
+ 
+// Token is managed securely by the backend proxy
+ 
 // Token is managed securely by the backend proxy
 
 // AnimatedCounter uses requestAnimationFrame instead of setInterval to keep
@@ -164,6 +168,7 @@ export default function LeaderBoard() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
   const [search, setSearch] = useState("");
+
   const [, setDebouncedSearch] = useState(search);
   const [recentSearches, setRecentSearches] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -331,6 +336,7 @@ export default function LeaderBoard() {
   [contributors, search, activeCategory]
 );
 
+ 
 useMemo(
   () => sortContributors(filteredContributors, sortBy),
   [filteredContributors, sortBy]
@@ -350,6 +356,9 @@ useMemo(
 
     storageManager.set(STORAGE_KEYS.RECENT_SEARCHES, updatedSearches);
   };
+  
+
+ 
 
 
   const totalPages = useMemo(
