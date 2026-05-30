@@ -2,7 +2,7 @@ import "./EventDetails.print.css";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
@@ -21,6 +21,7 @@ const EventDetailsPage = () => {
   const [event, setEvent] = useState(null);
   const [cacheInfo, setCacheInfo] = useState(null);
   const [copied, setCopied] = useState(false);
+  const latestRequestIdRef = useRef(0);
 
   const shareUrl = event ? `${window.location.origin}/events/${event.id}` : "";
   const shareText = event ? `Check out this event: ${event.title}` : "";
@@ -62,7 +63,12 @@ const EventDetailsPage = () => {
 
   useEffect(() => {
     let isCancelled = false;
+    const requestId = latestRequestIdRef.current + 1;
+    latestRequestIdRef.current = requestId;
     const controller = new AbortController();
+    
+    const isLatestRequest = () =>
+      latestRequestIdRef.current === requestId && !controller.signal.aborted;
 
     const fetchEvent = async () => {
       setLoading(true);
@@ -76,7 +82,7 @@ const EventDetailsPage = () => {
         if (response.ok) {
           const data = await response.json();
           const evt = data.event || data || null;
-          if (!isCancelled) {
+          if (!isCancelled && isLatestRequest()) {
             setEvent(evt);
             setCacheInfo({ cachedAt: null, label: "live" });
             if (evt) {
@@ -96,7 +102,7 @@ const EventDetailsPage = () => {
           const foundEvent = mockData.find(
             (item) => String(item.id) === String(eventId)
           );
-          if (!isCancelled) {
+          if (!isCancelled && isLatestRequest()) {
             setEvent(foundEvent || null);
             if (foundEvent) setCacheInfo({ cachedAt: null, label: "mock fallback" });
             if (foundEvent) {
@@ -118,7 +124,7 @@ const EventDetailsPage = () => {
           const foundEvent = mockData.find(
             (item) => String(item.id) === String(eventId)
           );
-          if (!isCancelled) {
+          if (!isCancelled && isLatestRequest()) {
             setEvent(foundEvent || null);
             if (foundEvent) setCacheInfo({ cachedAt: null, label: "offline fallback" });
             if (foundEvent) {
@@ -133,10 +139,10 @@ const EventDetailsPage = () => {
             }
           }
         } catch (_) {
-          if (!isCancelled) setEvent(null);
+          if (!isCancelled && isLatestRequest()) setEvent(null);
         }
       } finally {
-        if (!isCancelled) setLoading(false);
+        if (!isCancelled && isLatestRequest()) setLoading(false);
       }
     };
 
