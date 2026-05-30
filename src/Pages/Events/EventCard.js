@@ -1,7 +1,7 @@
-import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
@@ -33,9 +33,8 @@ import {
   removeBookmarkedEvent,
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
-import { getBookmarkedEvents } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
-// savedEvents state is component-scoped to avoid calling hooks at module level
+
 const getCapacityStyles = (ratio, isFull) => {
   if (isFull || ratio >= 0.85) {
     return {
@@ -56,18 +55,17 @@ const getCapacityStyles = (ratio, isFull) => {
 };
 
 const EventCard = ({ event }) => {
-  const [savedEvents, setSavedEvents] = useState([]);
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
   const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
   const [randomIcon] = useState(() => {
     const icons = [
-      <Star size={16} className="text-yellow-500" />,
-      <Heart size={16} className="text-red-500" />,
-      <Zap size={16} className="text-pink-500" />,
-      <BookOpen size={16} className="text-indigo-500" />,
-      <Gift size={16} className="text-pink-500" />,
+      <Star key="star" size={16} className="text-yellow-500" />,
+      <Heart key="heart" size={16} className="text-red-500" />,
+      <Zap key="zap" size={16} className="text-pink-500" />,
+      <BookOpen key="book-open" size={16} className="text-indigo-500" />,
+      <Gift key="gift" size={16} className="text-pink-500" />,
     ];
 
     return icons[Math.floor(Math.random() * icons.length)];
@@ -79,12 +77,6 @@ const EventCard = ({ event }) => {
   const isUserRegistered = isRegistered(event.id);
 
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
-useEffect(() => {
-  const saved =
-    getBookmarkedEvents();
-
-  setSavedEvents(saved);
-}, []);
   const eventSharingData = generateEventSharingData({
     ...event,
     title: event.title,
@@ -146,7 +138,7 @@ useEffect(() => {
       autoClose: 1800,
       className: "custom-toast",
     });
-  };
+  }, [computedStatus, event, isBookmarked]);
 
   return (
     <article
