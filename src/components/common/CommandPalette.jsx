@@ -6,7 +6,6 @@ import {
   Search,
   Sparkles,
   Command,
-
   Sun,
   Moon,
   MousePointer,
@@ -32,10 +31,22 @@ export default function CommandPalette({
   handleLogoutClick
 }) {
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
+  const [inputValue, setInputValue] = useState(""); // Tracks instant typing for smooth UX
+  const [query, setQuery] = useState("");           // Tracks delayed query for heavy fuzzy filtering
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
+
+  // Debounce Effect: Updates query state 300ms after user stops typing
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setQuery(inputValue);
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [inputValue]);
 
   // Search Catalog containing navigations, quick system actions, events, and hackathons
   const searchCatalog = useMemo(() => [
@@ -67,12 +78,12 @@ export default function CommandPalette({
       icon: MousePointer
     },
     ...(isAuthenticated ? [{
-  name: "Sign Out / Logout of Account",
-  action: "logout",
-  category: "System Actions",
-  type: "action",
-  icon: LogOut
-}] : []),
+      name: "Sign Out / Logout of Account",
+      action: "logout",
+      category: "System Actions",
+      type: "action",
+      icon: LogOut
+    }] : []),
 
     // ── Sample Events ────────────────────────────────────────────────────────
     { name: "Web3 Buildathon 2026", href: "/hackathons", category: "Hackathons", type: "nav", icon: Sparkles },
@@ -102,7 +113,7 @@ export default function CommandPalette({
     return qIdx === q.length ? score : 0;
   };
 
-  // Compute matched filter results
+  // Compute matched filter results based on debounced query
   const filteredItems = useMemo(() => {
     if (!query.trim()) return searchCatalog;
 
@@ -118,14 +129,16 @@ export default function CommandPalette({
       .sort((a, b) => b.score - a.score);
   }, [query, searchCatalog]);
 
-  // Reset active index when query filter changes
+  // Reset active index when debounced query filter changes
   useEffect(() => {
     setActiveIndex(0);
   }, [query]);
 
-  // Auto focus input on open
+  // Auto focus input on open and reset fields cleanly
   useEffect(() => {
     if (isOpen) {
+      setInputValue("");
+      setQuery("");
       setTimeout(() => inputRef.current?.focus(), 150);
       document.body.style.overflow = "hidden";
     } else {
@@ -218,8 +231,8 @@ export default function CommandPalette({
             <input
               ref={inputRef}
               type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
               placeholder="Search platform, pages, events, or actions..."
               className="flex-1 bg-transparent border-none outline-none text-slate-800 dark:text-white placeholder-slate-400 text-base"
             />
@@ -232,42 +245,42 @@ export default function CommandPalette({
           {/* Quick filter tags */}
           <div
             className="
-    px-4 py-2
-    border-b border-slate-200/30 dark:border-slate-800/20
-    bg-slate-50/50 dark:bg-slate-950/20
-    overflow-x-auto whitespace-nowrap
-    scrollbar-none
-    flex gap-2
-    scroll-smooth
-    snap-x snap-mandatory
-    touch-pan-x
-    overscroll-x-contain
-    [-webkit-overflow-scrolling:touch]
-  "
+              px-4 py-2
+              border-b border-slate-200/30 dark:border-slate-800/20
+              bg-slate-50/50 dark:bg-slate-950/20
+              overflow-x-auto whitespace-nowrap
+              scrollbar-none
+              flex gap-2
+              scroll-smooth
+              snap-x snap-mandatory
+              touch-pan-x
+              overscroll-x-contain
+              [-webkit-overflow-scrolling:touch]
+            "
           >
             {trendTags.map(tag => (
               <button
                 key={tag}
                 type="button"
                 onClick={() => {
-                  setQuery(tag);
+                  setInputValue(tag);
+                  setQuery(tag); // For tag clicks, bypass debounce and show results instantly
                   inputRef.current?.focus();
                 }}
                 className="
-        snap-start shrink-0
-        px-3 py-1 rounded-full text-xs font-bold
-        bg-white dark:bg-slate-900
-        border border-slate-200 dark:border-slate-800
-        text-slate-600 dark:text-slate-400
-        hover:border-indigo-500 dark:hover:border-indigo-400
-        transition-colors
-      "
+                  snap-start shrink-0
+                  px-3 py-1 rounded-full text-xs font-bold
+                  bg-white dark:bg-slate-900
+                  border border-slate-200 dark:border-slate-800
+                  text-slate-600 dark:text-slate-400
+                  hover:border-indigo-500 dark:hover:border-indigo-400
+                  transition-colors
+                "
               >
                 #{tag}
               </button>
             ))}
           </div>
-
 
           {/* Results container */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4" data-lenis-prevent>
