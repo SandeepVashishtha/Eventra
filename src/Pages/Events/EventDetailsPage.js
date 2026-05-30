@@ -19,8 +19,26 @@ const EventDetailsPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const latestRequestIdRef = useRef(0);
-  const [loading, setLoading] = useState(true);
-  const [event, setEvent] = useState(null);
+  const [event, setEvent] = useState(() => {
+    try {
+      const viewedEvents = JSON.parse(localStorage.getItem("recentlyViewedEvents") || "[]");
+      const cached = viewedEvents.find((item) => String(item.id) === String(eventId));
+      return cached || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [loading, setLoading] = useState(() => {
+    try {
+      const viewedEvents = JSON.parse(localStorage.getItem("recentlyViewedEvents") || "[]");
+      const cached = viewedEvents.find((item) => String(item.id) === String(eventId));
+      return !cached;
+    } catch {
+      return true;
+    }
+  });
+
   const [, setError] = useState(null);
   const [cacheInfo, setCacheInfo] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -101,6 +119,20 @@ const EventDetailsPage = () => {
 
   useEffect(() => {
     let isCancelled = false;
+    try {
+      const viewedEvents = JSON.parse(localStorage.getItem("recentlyViewedEvents") || "[]");
+      const cached = viewedEvents.find((item) => String(item.id) === String(eventId));
+      if (cached) {
+        setEvent(cached);
+        setLoading(false);
+      } else {
+        setEvent(null);
+        setLoading(true);
+      }
+    } catch {
+      setEvent(null);
+      setLoading(true);
+    }
     const requestId = latestRequestIdRef.current + 1;
     latestRequestIdRef.current = requestId;
     const controller = new AbortController();
@@ -108,7 +140,6 @@ const EventDetailsPage = () => {
       latestRequestIdRef.current === requestId && !controller.signal.aborted;
 
     const fetchEvent = async () => {
-      setLoading(true);
       setCacheInfo(null);
       setError(null);
 
@@ -131,8 +162,10 @@ const EventDetailsPage = () => {
           const { default: mockData } = await import("./eventsMockData.json");
           const foundEvent = mockData.find((item) => String(item.id) === String(eventId));
           if (!isCancelled && isLatestRequest()) {
-            setEvent(foundEvent || null);
-            setError(foundEvent ? null : responseError);
+            setEvent(prev => foundEvent || prev);
+            if (!foundEvent) {
+              setError(responseError);
+            }
             if (foundEvent) setCacheInfo({ cachedAt: null, label: "mock fallback" });
           }
         }
@@ -146,8 +179,10 @@ const EventDetailsPage = () => {
           const { default: mockData } = await import("./eventsMockData.json");
           const foundEvent = mockData.find((item) => String(item.id) === String(eventId));
           if (!isCancelled && isLatestRequest()) {
-            setEvent(foundEvent || null);
-            setError(foundEvent ? null : err);
+            setEvent(prev => foundEvent || prev);
+            if (!foundEvent) {
+              setError(err);
+            }
             if (foundEvent) setCacheInfo({ cachedAt: null, label: "offline fallback" });
           }
         } catch (fallbackErr) {
@@ -157,7 +192,6 @@ const EventDetailsPage = () => {
               eventId,
               source: "EventDetailsPage",
             });
-            setEvent(null);
             setError(fallbackErr);
           }
         }
@@ -203,7 +237,13 @@ const EventDetailsPage = () => {
           </p>
           <button
             type="button"
-            onClick={() => navigate("/events")}
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate("/events");
+              }
+            }}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white transition-colors hover:bg-indigo-700"
           >
             <ArrowLeft size={18} aria-hidden="true" />
@@ -224,7 +264,13 @@ const EventDetailsPage = () => {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <button
               type="button"
-              onClick={() => navigate("/events")}
+              onClick={() => {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate("/events");
+                }
+              }}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-lg pr-2 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 sm:text-base"
             >
               <ArrowLeft size={20} aria-hidden="true" />
