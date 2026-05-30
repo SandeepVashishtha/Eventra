@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { Link } from "react-router-dom";
 
-const AuthButtons = () => {
+const AuthButtons = memo(function AuthButtons() {
   return (
     <div className="flex items-center justify-center gap-3">
       <Link
@@ -18,6 +19,6 @@ const AuthButtons = () => {
       </Link>
     </div>
   );
-};
+});
 
 export default AuthButtons;

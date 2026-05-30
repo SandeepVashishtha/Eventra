@@ -1,9 +1,10 @@
+import { memo } from "react";
 
-const SectionHeader = ({
+const SectionHeader = memo(function SectionHeader({
   title,
   subtitle,
   center = true,
-}) => {
+}) {
   return (
     <div
       className={`
@@ -41,6 +42,6 @@ const SectionHeader = ({
       )}
     </div>
   );
-};
+});
 
 export default SectionHeader;

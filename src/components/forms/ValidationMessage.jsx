@@ -1,3 +1,4 @@
+import { memo } from "react";
 
 const stateClasses = {
   error: "text-red-600 dark:text-red-400",
@@ -32,13 +33,13 @@ const getRole = (state) =>
  * @example
  * <ValidationMessage id="email-message" state="error" message="Email is required" />
  */
-const ValidationMessage = ({
+const ValidationMessage = memo(function ValidationMessage({
   message,
   state = "info",
   id,
   className = "",
   ...props
-}) => {
+}) {
   // 🔥 FIX 1: Added check for false to prevent empty tags
   if (!message) {
     return null;
@@ -64,6 +65,6 @@ const ValidationMessage = ({
       {message}
     </p>
   );
-};
+});
 
 export default ValidationMessage;

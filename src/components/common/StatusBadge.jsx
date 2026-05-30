@@ -1,3 +1,4 @@
+import { memo } from "react";
 import "./StatusBadge.css";
 
 const STATUS_CONFIG = {
@@ -65,7 +66,7 @@ const STATUS_CONFIG = {
   },
 };
 
-export default function StatusBadge({ status }) {
+const StatusBadge = memo(function StatusBadge({ status }) {
   if (!status) return null;
 
   const key = status.toLowerCase();
@@ -81,4 +82,6 @@ export default function StatusBadge({ status }) {
       {config.label}
     </span>
   );
-}
+});
+
+export default StatusBadge;

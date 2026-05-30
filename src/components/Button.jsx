@@ -1,6 +1,7 @@
+import { memo } from 'react';
 import './Button.css';
 
-export const Button = ({
+export const Button = memo(function Button({
   children,
   variant = 'primary',
   size = 'medium',
@@ -9,7 +10,7 @@ export const Button = ({
   disabled = false,
   ariaLabel,
   ...props
-}) => {
+}) {
 
   // Allowed variants and sizes
   const validVariants = ['primary', 'secondary', 'danger'];
@@ -45,4 +46,4 @@ export const Button = ({
       {children}
     </button>
   );
-};
+});

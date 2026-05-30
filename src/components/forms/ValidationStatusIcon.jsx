@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -84,13 +85,13 @@ const joinClasses = (...classes) => classes.filter(Boolean).join(" ");
  * @example
  * <ValidationStatusIcon state="validating" label="Checking email availability" />
  */
-const ValidationStatusIcon = ({
+const ValidationStatusIcon = memo(function ValidationStatusIcon({
   state = "idle",
   className = "",
   label,
   ariaHidden = false,
   ...props
-}) => {
+}) {
   const config = stateConfig[state] || stateConfig.idle;
   const Icon = config.Icon;
   const accessibleLabel = label || config.label;
@@ -112,6 +113,6 @@ const ValidationStatusIcon = ({
       <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={2.25} />
     </span>
   );
-};
+});
 
 export default ValidationStatusIcon;

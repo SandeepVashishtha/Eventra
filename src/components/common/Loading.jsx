@@ -1,3 +1,5 @@
+import { memo } from "react";
+
  /**
  * A theme-aware loading spinner component.
  * @param {{
@@ -9,11 +11,11 @@
  * @param {string} [props.size] - Custom spinner size classes.
  * @param {string} [props.className] - Additional wrapper classes.
  */
-const Loading = ({
+const Loading = memo(function Loading({
   text,
   size = "h-8 w-8",
   className = "",
-}) => {
+}) {
   return (
     <div
       className={`flex flex-col items-center justify-center gap-4 py-8 ${className}`}
@@ -35,6 +37,6 @@ const Loading = ({
       <span className="sr-only">Loading...</span>
     </div>
   );
-};
+});
 
 export default Loading;
