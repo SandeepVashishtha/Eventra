@@ -10,6 +10,9 @@ try {
     return {
       ok: true,
       status: 200,
+      headers: {
+        get: (name) => name === "content-type" ? "application/json" : null
+      },
       clone: () => ({
         json: async () => ({ success: true })
       }),
@@ -26,6 +29,9 @@ try {
     return {
       ok: true,
       status: 200,
+      headers: {
+        get: (name) => name === "content-type" ? "text/plain" : null
+      },
       clone: () => ({
         json: async () => { throw new Error("Not JSON"); }
       }),
@@ -41,9 +47,13 @@ try {
     return {
       ok: false,
       status: 404,
+      headers: {
+        get: (name) => name === "content-type" ? "application/json" : null
+      },
       clone: () => ({
         json: async () => ({ message: "Not Found" })
-      })
+      }),
+      json: async () => ({ message: "Not Found" })
     };
   };
   
