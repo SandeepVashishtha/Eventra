@@ -1,4 +1,3 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { BookOpen, Mail, Users, Star, Globe } from "lucide-react";

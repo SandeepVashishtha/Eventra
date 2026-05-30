@@ -3,7 +3,6 @@ import { apiUtils } from "../config/api";
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRIES = 1;
 const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
-const defaultFetch = typeof fetch === "function" ? fetch : undefined;
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -98,7 +97,6 @@ export const normalizeValidationApiResponse = (
  * @param {number} [options.timeoutMs=8000] - Abort timeout in milliseconds.
  * @param {number} [options.retries=1] - Number of retry attempts for retryable failures.
  * @param {number} [options.retryDelayMs=300] - Base retry delay in milliseconds.
- * @param {Function} [options.fetchImpl=fetch] - Fetch implementation, useful for tests.
  * @param {string} [options.invalidMessage="Validation failed"] - Fallback invalid message.
  * @param {string} [options.networkMessage] - Fallback network error message.
  * @param {string} [options.validMessage=""] - Message used for valid responses.
@@ -113,7 +111,6 @@ export const requestValidation = async (endpoint, options = {}) => {
     timeoutMs = DEFAULT_TIMEOUT_MS,
     retries = DEFAULT_RETRIES,
     retryDelayMs = 300,
-    fetchImpl = defaultFetch || ((typeof window !== "undefined" && window.fetch) ? window.fetch : undefined),
     invalidMessage = "Validation failed",
     networkMessage = "Unable to validate right now. Please try again.",
     validMessage = "",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   FaGithub,
   FaExternalLinkAlt,
@@ -338,7 +338,7 @@ const Contributors = () => {
                       width="80"
                       height="80"
                       src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || "Anon")}&background=random`}
-                      alt={`${c.name || c.login || "Contributor"}'s GitHub profile picture`}
+                      alt={`${c.name || c.login || "Contributor"}'s GitHub profile`}
                       className="w-20 h-20 rounded-full border-4 border-black dark:border-gray-300 shadow-xl"
                     />
                     <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 dark:bg-white/10 blur-md"></div>

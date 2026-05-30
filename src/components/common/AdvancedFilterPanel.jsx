@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import CategoryFilter from "./CategoryFilter";
 import ModeFilter from "./ModeFilter";

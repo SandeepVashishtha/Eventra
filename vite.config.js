@@ -85,12 +85,6 @@ export default defineConfig(({ mode }) => {
         "idb-keyval",
         "aos",
       ],
-      // The dep scanner uses esbuild under the hood and needs to know .js files
-      // may contain JSX. esbuildOptions is deprecated in Vite 8 but rolldownOptions
-      // has no equivalent `loader` key yet — this suppresses the scan PARSE_ERROR.
-      esbuildOptions: {
-        loader: { ".js": "jsx" },
-      },
     },
 
     build: {
