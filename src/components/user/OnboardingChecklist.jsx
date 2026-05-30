@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -8,7 +8,6 @@ import {
   Circle, 
   Trophy, 
   ArrowRight, 
-  X, 
   Sparkles, 
   Award,
   ChevronUp,
@@ -71,7 +70,7 @@ export default function OnboardingChecklist() {
     return localStorage.getItem("eventra_onboarding_dismissed") === "true";
   });
   const [showCelebration, setShowCelebration] = useState(false);
-  
+
   // Checklist task states
   const [tasks, setTasks] = useState([
     {
@@ -210,16 +209,7 @@ export default function OnboardingChecklist() {
     setIsOpen(false);
   };
 
-  const handleReset = () => {
-    localStorage.removeItem("eventra_onboarding_dismissed");
-    localStorage.removeItem("eventra_onboarding_completed_fired");
-    localStorage.removeItem("eventra_sandbox_executed");
-    localStorage.removeItem("eventra_ai_recommendation_generated");
-    setIsDismissed(false);
-    setIsOpen(true);
-    checkTaskStatus();
-  };
-
+  
   // Render check
   if (!user || isDismissed) {
     // Hidden except if they want to reset it on settings page (can trigger reset)

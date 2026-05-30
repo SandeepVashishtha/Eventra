@@ -64,7 +64,7 @@ const ToggleEyeIcon = ({ visible, className = "" }) =>
   visible ? <EyeOff className={className} /> : <Eye className={className} />;
 
 // ============ CUSTOM HOOK: useSignupForm ============
-const useSignupForm = (onSuccess) => {
+const useSignupForm = () => {
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", email: "", password: "", confirmPassword: ""
   });

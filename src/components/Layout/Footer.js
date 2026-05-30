@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaBook,
@@ -193,13 +193,14 @@ const Footer = () => {
   return (
     <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
       
-      <div className="mt-10 max-w-full mx-auto px-6 py-20 grid lg:grid-cols-3 gap-x-12 gap-y-12 bg-linear-to-t from-slate-50 dark:from-slate-900">
+      <div className="mt-10 max-w-full mx-auto px-6 py-20 grid lg:grid-cols-3 gap-x-12 gap-y-12 bg-gradient-to-t from-slate-50 dark:from-slate-900"> 
+      {/* //<div className="mt-10 max-w-full mx-auto px-6 py-20 grid lg:grid-cols-3 gap-x-12 gap-y-12 bg-gradient-to-t from-slate-50 dark:from-slate-900"> */}
         
         {/* BRAND */}
-        <div className="lg:col-span-5 flex flex-col gap-6 items-center">
+        <div className="lg:col-span-1 flex flex-col gap-6 items-center">
           
           <div className="flex items-center gap-3">
-            <img src="/favicon.png" className="w-10 h-10" />
+            <img src="/favicon.png" alt="Eventra logo" className="w-10 h-10" />
             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
               Eventra
             </h2>
@@ -214,7 +215,7 @@ const Footer = () => {
         </div>
 
         {/* LINKS */}
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-2">
           <FooterLinks />
         </div>
       </div>

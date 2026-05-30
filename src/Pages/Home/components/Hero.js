@@ -12,6 +12,8 @@ import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
+import RespawningText from "../../../components/visual/RespawningText";
+import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
 
 const CountUp = CountUpLib.default || CountUpLib;
 
@@ -195,7 +197,7 @@ const Hero = () => {
   const secondaryBtn = `${primaryBtn} border border-transparent`;
 
   return (
-    <section 
+    <section
       ref={containerRef}
       aria-label="Hero section"
       className="relative overflow-hidden bg-gradient-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950 dark:via-slate-900/80 dark:to-black text-slate-900 dark:text-gray-100 pb-16 sm:pb-20 md:pb-24 border-b border-gray-100/60 dark:border-slate-800/60"

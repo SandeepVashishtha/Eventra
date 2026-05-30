@@ -1,5 +1,5 @@
 import { getPublicErrorMessage, FORM_ERRORS } from "../../utils/errorMessages";
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { FiGithub, FiExternalLink, FiPlus, FiX } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
@@ -105,8 +105,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
         onClose && onClose();
       }, 2000);
     } catch (err) {
-      const backendMessage = err.response?.data?.message;
-      setError(getPublicErrorMessage(err, FORM_ERRORS.submitFailed));
+            setError(getPublicErrorMessage(err, FORM_ERRORS.submitFailed));
     } finally {
       setIsSubmitting(false);
     }

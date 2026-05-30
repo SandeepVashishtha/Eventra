@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {

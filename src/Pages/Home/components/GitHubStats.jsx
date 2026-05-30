@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { GitHubStatCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import {
@@ -227,7 +227,7 @@ export default function GitHubStats() {
         >
           {isLoading
             ? [...Array(10)].map((_, i) => <GitHubStatCardSkeleton key={`skeleton-${i}`} />)
-            : statCards.map(({ label, value, icon, link }, index) => (
+            : statCards.map(({ label, value, icon, link }) => (
                 <motion.a
                   key={label}
                   href={link}

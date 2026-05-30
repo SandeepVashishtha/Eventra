@@ -1,238 +1,259 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Lock, LogIn, Mail } from "lucide-react";
-import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
-import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
+import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
-
-const LOCKOUT_DURATION_MS = 30_000;
-const MAX_ATTEMPTS = 5;
+import { ValidationMessage } from "../forms";
+import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { validate as fieldValidators } from "../../validation";
 
 const LoginForm = () => {
+  const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
+  const [error, setError] = useState({});
+  const [, setValidationState] = useState({
+    usernameOrEmail: "idle",
+    password: "idle",
+  });
+  const [showPassword, setShowPassword] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
-
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [loginAttempts, setLoginAttempts] = useState(0);
-  const [isThrottled, setIsThrottled] = useState(false);
-  const [lockoutSecondsLeft, setLockoutSecondsLeft] = useState(0);
-
-  const redirectPath = location.state?.from?.pathname || "/dashboard";
+  const { login, authRequest } = useAuth();
+  const from = location.state?.from;
+  const redirectPath =
+    typeof from === "string"
+      ? from
+      : from?.pathname
+        ? `${from.pathname}${from.search || ""}${from.hash || ""}`
+        : "/dashboard";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    setError((prev) => ({ ...prev, [name]: "" }));
+    setValidationState((prev) => ({ ...prev, [name]: "idle" }));
   };
 
-  const validateForm = () => {
+  const validateLoginForm = () => {
     const newErrors = {};
-    if (!formData.email.trim()) newErrors.email = "Email or username is required.";
-    if (!formData.password) newErrors.password = "Password is required.";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
-  const startLockoutTimer = () => {
-    setIsThrottled(true);
-    let remaining = LOCKOUT_DURATION_MS / 1000;
-    setLockoutSecondsLeft(remaining);
-    const interval = setInterval(() => {
-      remaining -= 1;
-      setLockoutSecondsLeft(remaining);
-      if (remaining <= 0) {
-        clearInterval(interval);
-        setIsThrottled(false);
-        setLoginAttempts(0);
-        setLockoutSecondsLeft(0);
-      }
-    }, 1000);
+    if (!formData.usernameOrEmail.trim()) {
+      newErrors.usernameOrEmail = fieldValidators.usernameOrEmail(formData.usernameOrEmail);
+    } else if (
+      formData.usernameOrEmail.includes("@") &&
+      fieldValidators.email(formData.usernameOrEmail) !== true
+    ) {
+      newErrors.usernameOrEmail = fieldValidators.email(formData.usernameOrEmail);
+    }
+
+    if (!formData.password.trim()) {
+      newErrors.password = "Password is required";
+    } else if (fieldValidators.password(formData.password) !== true) {
+      newErrors.password = fieldValidators.password(formData.password);
+    }
+
+    setError(newErrors);
+    setValidationState({
+      usernameOrEmail: newErrors.usernameOrEmail ? "error" : "success",
+      password: newErrors.password ? "error" : "success",
+    });
+
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (isThrottled) {
-      toast.error(`Too many attempts. Please wait ${lockoutSecondsLeft}s before trying again.`);
-      return;
-    }
-
-    if (!validateForm()) return;
-
-    setLoading(true);
-    setErrors({});
+    
+    // Validate form before submitting
+    if (!validateLoginForm()) return;
 
     try {
-      const ok = await login(formData.email, formData.password);
+      const ok = await login(formData.usernameOrEmail, formData.password);
       if (ok) {
-        setLoginAttempts(0);
         showAuthToast("Login successful! Redirecting...", () =>
-          navigate(redirectPath, { replace: true }),
+          navigate(redirectPath, { replace: true })
         );
       }
     } catch (err) {
-      const newCount = loginAttempts + 1;
-      setLoginAttempts(newCount);
-
-      if (newCount >= MAX_ATTEMPTS) {
-        startLockoutTimer();
-        toast.warn(`Too many failed attempts. Locked for ${LOCKOUT_DURATION_MS / 1000} seconds.`);
-      }
-
-      const errorMsg = getPublicErrorMessage(err, AUTH_ERRORS.loginFailed);
-      setErrors({ general: errorMsg });
+      console.error("Login error:", err);
+      const errorMsg = err.message || "Invalid email or password";
+      setError({ general: errorMsg });
       toast.error(errorMsg);
-    } finally {
-      setTimeout(() => {
-        setLoading(false);
-      }, 300);
     }
+    // Note: loading state is now handled by authRequest.loading from context
   };
 
   return (
-    <motion.div
-      className="w-full max-w-md mx-auto"
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Sign in</h2>
+    <div className="w-full">
+      <div className="text-center space-y-4 mb-8">
+        <motion.div
+          whileHover={{ scale: 1.1, rotate: 8 }}
+          whileTap={{ scale: 0.92 }}
+          className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-500/20 to-indigo-500/10 shadow-[0_0_25px_rgba(59,130,246,0.35)] border border-blue-500/30 hover:shadow-[0_0_35px_rgba(59,130,246,0.6)] transition-all duration-300"
+        >
+          <LogIn className="w-8 h-8 text-blue-400" />
+        </motion.div>
 
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        {/* General error */}
-        {errors.general && (
-          <div
-            role="alert"
-            aria-live="polite"
-            className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300"
-          >
-            {errors.general}
-          </div>
-        )}
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-200 to-indigo-300 hover:from-blue-200 hover:via-purple-200 hover:to-pink-200 transition-all duration-500 cursor-default"
+          style={{ fontFamily: '"Anton", sans-serif', letterSpacing: "1px" }}
+        >
+          Welcome Back
+        </motion.h1>
 
-        {/* Lockout warning */}
-        {isThrottled && (
-          <div
-            role="alert"
-            aria-live="polite"
-            className="rounded-md bg-yellow-50 border border-yellow-200 px-4 py-3 text-sm text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-700 dark:text-yellow-300"
-          >
-            Account temporarily locked. Try again in{" "}
-            <strong>{lockoutSecondsLeft}s</strong>.
-          </div>
-        )}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-sm text-slate-400 hover:text-slate-200 transition-colors duration-300"
+        >
+          Sign in to your <span className="text-blue-400 font-semibold">Eventra</span> account
+        </motion.p>
+      </div>
 
-        {/* Remaining attempts warning */}
-        {!isThrottled && loginAttempts > 0 && loginAttempts < MAX_ATTEMPTS && (
-          <div
-            role="status"
-            aria-live="polite"
-            className="rounded-md bg-orange-50 border border-orange-200 px-4 py-3 text-sm text-orange-700 dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-300"
-          >
-            {MAX_ATTEMPTS - loginAttempts} attempt
-            {MAX_ATTEMPTS - loginAttempts !== 1 ? "s" : ""} remaining before lockout.
-          </div>
-        )}
-
-        {/* Email / username */}
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Email or username
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        {/* Username/Email Field */}
+        <div className="space-y-1.5">
+          <label htmlFor="usernameOrEmail" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            Email or username <span className='ml-1 text-red-400'>*</span>
           </label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="relative group">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-400 transition-all duration-300 pointer-events-none" />
             <input
-              id="email"
-              name="email"
+              id="usernameOrEmail"
+              name="usernameOrEmail"
               type="text"
-              autoComplete="username"
-              value={formData.email}
+              value={formData.usernameOrEmail}
               onChange={handleChange}
-              aria-invalid={!!errors.email}
-              aria-describedby={errors.email ? "email-error" : undefined}
-              className={`w-full rounded-lg border pl-10 pr-3 py-2.5 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${
-                errors.email
-                  ? "border-red-400 dark:border-red-500"
-                  : "border-gray-300 dark:border-gray-600"
-              }`}
               required
+              disabled={authRequest.loading}
+              placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
+              aria-invalid={!!error.usernameOrEmail}
+              aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
+              className={`w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border ${
+                error.usernameOrEmail ? "border-red-500" : "border-slate-700/50"
+              } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
             />
           </div>
-          {errors.email && (
-            <p id="email-error" role="alert" aria-live="polite" className="mt-1 text-xs text-red-600 dark:text-red-400">
-              {errors.email}
-            </p>
+          {error.usernameOrEmail && (
+            <motion.p id="usernameOrEmail-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
+              <span>⚠</span> {error.usernameOrEmail}
+            </motion.p>
           )}
         </div>
 
-        {/* Password */}
-        <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Password
+        {/* Password Field */}
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            Password <span className='ml-1 text-red-400'>*</span>
           </label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="relative group">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-400 transition-all duration-300 pointer-events-none" />
             <input
               id="password"
               name="password"
               type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
               value={formData.password}
               onChange={handleChange}
-              aria-invalid={!!errors.password}
-              aria-describedby={errors.password ? "password-error" : undefined}
-              className={`w-full rounded-lg border pl-10 pr-10 py-2.5 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${
-                errors.password
-                  ? "border-red-400 dark:border-red-500"
-                  : "border-gray-300 dark:border-gray-600"
-              }`}
               required
+              disabled={authRequest.loading}
+              placeholder="••••••••"
+              aria-invalid={!!error.password}
+              aria-describedby={error.password ? "password-error" : undefined}
+              className={`w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border ${
+                error.password ? "border-red-500" : "border-slate-700/50"
+              } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
             />
             <button
               type="button"
-              onClick={() => setShowPassword((p) => !p)}
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400 transition-all duration-200"
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              tabIndex={-1}
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
-          {errors.password && (
-            <p id="password-error" role="alert" aria-live="polite" className="mt-1 text-xs text-red-600 dark:text-red-400">
-              {errors.password}
-            </p>
+          {error.password && (
+            <motion.p id="password-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
+              <span>⚠</span> {error.password}
+            </motion.p>
           )}
+          <div className="flex justify-end pt-1">
+            <Link
+              to="/password-reset"
+              className="text-xs text-slate-400 hover:text-blue-400 transition-colors duration-200 hover:underline"
+            >
+              Forgot Password?
+            </Link>
+          </div>
         </div>
 
-        <button
+        {/* General Error Message */}
+        <ValidationMessage
+          message={error.general}
+          state="error"
+          className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm"
+        />
+        {authRequest.error && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm">
+            {authRequest.error}
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <motion.button
+          whileHover={{ scale: 1.03, boxShadow: "0 0 30px rgba(59,130,246,0.6)" }}
+          whileTap={{ scale: 0.97 }}
           type="submit"
-          disabled={loading || isThrottled}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          disabled={authRequest.loading}
+          className="relative w-full overflow-hidden flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400 hover:from-blue-300 hover:to-indigo-300 shadow-[0_0_20px_rgba(59,130,246,0.4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0f172a] focus:ring-blue-500 transition-all duration-300 group"
         >
-          <LogIn className="w-4 h-4" />
-          {loading ? "Signing in…" : "Sign In"}
-        </button>
+          <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
+          {authRequest.loading ? (
+            <div className="flex items-center gap-2 relative z-10">
+              <div className="w-4 h-4 border-2 border-[#0f172a] border-t-transparent rounded-full animate-spin"></div>
+              <span>Signing In...</span>
+            </div>
+          ) : (
+            <span className="relative z-10 flex items-center gap-2">
+              <LogIn className="w-4 h-4" />
+              Sign In
+            </span>
+          )}
+        </motion.button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+      {/* Divider */}
+      <div className="flex items-center gap-3 my-5">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent to-slate-700"></div>
+        <span className="text-xs text-slate-600 uppercase tracking-widest">or</span>
+        <div className="flex-1 h-px bg-gradient-to-l from-transparent to-slate-700"></div>
+      </div>
+
+      {/* Signup Link */}
+      <p className="text-center text-sm text-slate-400">
         Don&apos;t have an account?{" "}
-        <Link to="/signup" className="text-blue-600 hover:underline dark:text-blue-400">
-          Create one
+        <Link
+          to="/signup"
+          className="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400 hover:from-blue-300 hover:to-purple-300 transition-all duration-300 hover:underline"
+        >
+          Create one here -&gt;
         </Link>
       </p>
-    </motion.div>
+
+      {/* Terms & Privacy */}
+      <p className="text-[11px] text-center text-slate-600 mt-4 leading-relaxed">
+        By signing in, you agree to our{" "}
+        <Link to="/terms" className="text-slate-500 hover:text-blue-400 underline transition-colors duration-200">Terms of Service</Link>{" "}
+        and{" "}
+        <Link to="/privacy" className="text-slate-500 hover:text-blue-400 underline transition-colors duration-200">Privacy Policy</Link>
+      </p>
+    </div>
   );
 };
 

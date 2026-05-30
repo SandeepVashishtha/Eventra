@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 
 // ─── Section data ────────────────────────────────────────────────────────────

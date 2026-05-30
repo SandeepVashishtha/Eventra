@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Globe, Users, Code, Activity, MapPin, Search, Filter, 
-  Moon, Sun, ZoomIn, ZoomOut, X, ChevronDown, Clock, 
+  Moon, Sun, ZoomIn, ZoomOut, X, Clock,
   TrendingUp, GitBranch, ExternalLink 
 } from "lucide-react";
 import "./CollaborationNetworkMap.css";
@@ -141,8 +141,7 @@ export default function CollaborationNetworkMap() {
   const getCoordinates = useCallback((id) => hubCoordinates[id] || { x: 0, y: 0 }, [hubCoordinates]);
 
   const getPopupStyle = useCallback((hub) => {
-    const padding = 20;
-    let leftPercent = (hub.x / 1000) * 100;
+        let leftPercent = (hub.x / 1000) * 100;
     let topPercent = (hub.y / 550) * 100;
     if (leftPercent > 72) leftPercent = 72;
     if (leftPercent < 28) leftPercent = 28;

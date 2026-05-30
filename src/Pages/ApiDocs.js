@@ -1,19 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import useReducedMotion from "../hooks/useReducedMotion.js";
-import {
-  Server,
-  AlertCircle,
-  BookOpen,
-  Users,
-  Trophy,
-  Play,
-  RefreshCw,
-  Terminal,
-  Settings,
-  ShieldAlert,
-} from "lucide-react";
+import { Server, AlertCircle, BookOpen, Users, Trophy, Play, RefreshCw, Terminal, Settings } from "lucide-react";
 
 const endpoints = [
   {

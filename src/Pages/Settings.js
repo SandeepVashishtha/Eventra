@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { Sun, Moon, MousePointer, Bell, ShieldCheck, ArrowRight, Palette, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
