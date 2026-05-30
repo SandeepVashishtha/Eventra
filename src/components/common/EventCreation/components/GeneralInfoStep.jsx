@@ -1,4 +1,3 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { FileText, Image, Upload, ClipboardList, Layers } from "lucide-react";
 
@@ -6,7 +5,6 @@ const GeneralInfoStep = ({
   formData,
   setFormData,
   errors,
-  setErrors,
   handleInputChange,
   handleImageUpload,
   prefersReducedMotion,

@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
+import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb, Code2, GitBranch, BookOpen, Users, CheckCircle,
   Trophy, Clock, Star, ArrowRight, Search, Filter, ExternalLink,
-  Calendar, TrendingUp, Award, MessageCircle, Zap, Target, Globe,
-  Copy, Bell, WifiOff, Loader2
+  Calendar, Award, MessageCircle, Zap, Target, Globe,
+  Copy, Bell, WifiOff
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -329,20 +329,6 @@ const Skeleton = ({ className }) => (
   <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className}`} aria-hidden="true" />
 );
 
-const MentorCardSkeleton = () => (
-  <div className="p-4 bg-white dark:bg-gray-700/50 rounded-xl border dark:border-gray-600 flex items-center gap-3">
-    <Skeleton className="w-12 h-12 rounded-full" />
-    <div className="flex-1 space-y-2">
-      <Skeleton className="h-4 w-24" />
-      <Skeleton className="h-3 w-16" />
-      <div className="flex gap-1">
-        <Skeleton className="h-4 w-12 rounded-full" />
-        <Skeleton className="h-4 w-16 rounded-full" />
-      </div>
-    </div>
-    <Skeleton className="h-8 w-16 rounded-lg" />
-  </div>
-);
 
 // Toast Component
 const ToastContainer = ({ toasts, onClose }) => (
@@ -388,7 +374,7 @@ const GSSoCContribution = () => {
   // State with localStorage persistence
   const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
-  const [userStats, setUserStats] = useState(() => {
+  const [userStats] = useState(() => {
     const saved = localStorage.getItem("gssoc.userStats");
     return saved ? JSON.parse(saved) : {
       issuesClaimed: 3,
@@ -486,7 +472,8 @@ const GSSoCContribution = () => {
   
   // Stats section visibility
   const statsRef = useRef(null);
-  const areStatsInView = useInView(statsRef, { once: true, margin: "-100px" });
+   
+  useInView(statsRef, { once: true, margin: "-100px" });
   
   if (isLoading) {
     return (
@@ -720,7 +707,7 @@ const GSSoCContribution = () => {
             {/* Resource List */}
             <div className="space-y-2 max-h-48 overflow-y-auto pr-2" role="list" aria-label="Resource list">
               <AnimatePresence mode="popLayout">
-                {filteredResources.map((resource, idx) => (
+                {filteredResources.map((resource) => (
                   <ResourceItem 
                     key={resource.title} 
                     resource={resource} 

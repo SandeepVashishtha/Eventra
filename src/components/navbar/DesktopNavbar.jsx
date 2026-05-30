@@ -1,4 +1,3 @@
-import React from "react";
 import NavbarLinks from "./NavbarLinks";
 import AuthButtons from "./AuthButtons";
 import ProfileMenu from "./ProfileMenu";

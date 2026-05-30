@@ -208,7 +208,7 @@ export function computeLeaderboardStats(contributors) {
     flooredTotalPoints: totalPoints,
   };
 }
-export const getAchievementBadge = (rank, prs, points) => {
+export const getAchievementBadge = (rank) => {
   if (rank === 1) {
     return {
       label: "Diamond Tier",

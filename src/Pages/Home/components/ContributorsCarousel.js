@@ -232,12 +232,12 @@ const Contributors = () => {
       setContributors(enhanced);
       cacheContributors(enhanced);
     } catch (error) {
-      console.error("Failed to fetch contributors:", error);
+      //console.error("Failed to fetch contributors:", error);
 
       if (!backgroundRefresh) setContributors([]);
 
       if (error.name === "AbortError") {
-        console.error("Contributor request timed out");
+        //console.error("Contributor request timed out");
       }
     } finally {
       if (!backgroundRefresh) setLoading(false);
@@ -245,6 +245,7 @@ const Contributors = () => {
   }, [fetchGitHubProfile]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchContributors();
   }, [fetchContributors]);
 
@@ -369,7 +370,7 @@ const Contributors = () => {
                     <div className="relative">
                       <img loading="lazy" decoding="async" width="65" height="65"
   src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || c.login || "Anon")}&background=random`}
-  alt={`${c.name || c.login || "Contributor"}'s GitHub profile picture`}
+  alt={`${c.name || c.login || "Contributor"}'s GitHub profile`}
   className="w-[65px] h-[65px] rounded-full border-4 border-gray-900 dark:border-gray-300 shadow-md relative z-10"
 />
                       <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>
@@ -456,7 +457,6 @@ const Contributors = () => {
                     <a
                       href={c.html_url}
                       target="_blank" rel="noopener noreferrer"
-                      rel="noopener noreferrer"
                       className="group inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out transform relative overflow-hidden"
                     >
                       {/* GitHub Icon with animation */}

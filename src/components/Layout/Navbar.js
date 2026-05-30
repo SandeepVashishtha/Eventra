@@ -7,7 +7,6 @@ import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import ConfirmationModal from "../common/ConfirmationModal";
-import NotificationBell from "../common/NotificationBell.jsx";
 import CommandPalette from "../common/CommandPalette";
 
 import {
@@ -37,7 +36,6 @@ import {
   Search,
   Palette
 } from "lucide-react";
-import { FaBell } from "react-icons/fa";
 
 
 // --- Helpers to reduce complexity ---

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, memo } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { fetchGitHubRepo, getGitHubRepoDetails } from "../../utils/githubApiClient.js";
@@ -158,7 +158,7 @@ const ConcentricTechRings = ({ techStack }) => {
 };
 
 const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
-  const prefersReducedMotion = useReducedMotion();
+  useReducedMotion();
   const [isLoaded, setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -352,7 +352,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           }`} loading="lazy"/>
         <img
           src={project.image}
-          alt={project.title}
+          alt={project.title || "Project preview"}
           loading="lazy"
           decoding="async"
           onLoad={() => setIsLoaded(true)}

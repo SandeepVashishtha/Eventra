@@ -1,10 +1,9 @@
-import React, { lazy } from "react";
+import { lazy } from "react";
 import { Route } from "react-router-dom";
 
-import { lazyWithRetry } from "../../utils/lazyWithRetry";
 import ProtectedRoute from "../auth/ProtectedRoute";
 import { ROLES, PERMISSIONS } from "../../config/roles";
-import NotificationSettings from "../../Pages/NotificationSettings";
+const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
 
 const EventCreation = lazy(() => import("../common/EventCreation/EventCreation"));
 const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
@@ -14,7 +13,6 @@ const Settings = lazy(() => import("../../Pages/Settings"));
 const AuthPage = lazy(() => import("../auth/AuthPage"));
 const Unauthorized = lazy(() => import("../auth/Unauthorized"));
 const PasswordReset = lazy(() => import("../auth/PasswordReset"));
-const NotFound = lazy(() => import("../NotFound"));
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));

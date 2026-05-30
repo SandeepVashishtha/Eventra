@@ -7,7 +7,12 @@ import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 // Google OAuth Configuration
 // ---------------------------------------------------------------------------
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "your-google-client-id.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+
+if (!GOOGLE_CLIENT_ID) {
+  console.error("[google.js] GOOGLE_CLIENT_ID environment variable is not set. Google OAuth will reject all tokens.");
+}
+
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // ---------------------------------------------------------------------------
@@ -24,17 +29,20 @@ const corsHeaders = (req) => {
   const allowedOrigin = process.env.ALLOWED_ORIGIN;
   const requestOrigin = req.headers?.origin;
 
-  let corsOrigin = allowedOrigin || "*";
+  const corsOrigin = allowedOrigin || "*";
   if (allowedOrigin && requestOrigin !== allowedOrigin) {
     console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
   }
-  if (allowedOrigin && allowedOrigin !== "*") {
-    corsOrigin = allowedOrigin;
-  }
+
+  // Access-Control-Allow-Credentials must not be paired with a wildcard origin.
+  // Per the CORS specification, browsers reject credentialed responses when the
+  // reflected origin is "*". Only set the header when a specific origin is
+  // configured — matching the pattern already used in login.js and signup.js.
+  const isSpecificOrigin = corsOrigin !== "*";
 
   return {
     "Access-Control-Allow-Origin": corsOrigin,
-    "Access-Control-Allow-Credentials": "true",
+    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
@@ -171,9 +179,22 @@ const getPermissionsForRoles = (roles) => {
 // ---------------------------------------------------------------------------
 // Generate User ID
 // ---------------------------------------------------------------------------
-
-let userIdCounter = 1;
-const generateUserId = () => `google_user_${Date.now()}_${userIdCounter++}`;
+//
+// The previous implementation combined Date.now() with a module-level
+// sequential counter. Both components reset or diverge in a serverless
+// environment:
+//  - Date.now(): two concurrent cold-start instances can share the same
+//    millisecond, producing identical timestamps.
+//  - The counter: resets to 1 on every cold start, so instance A and
+//    instance B both produce `google_user_<timestamp>_1` for their first
+//    new user.
+//
+// crypto.randomUUID() generates a v4 UUID using the OS CSPRNG. The
+// collision probability across the entire UUID space is negligible
+// (2^-122 per pair) and is unaffected by cold-start timing.
+//
+// Node.js 14.17+ and all current Vercel runtimes include crypto.randomUUID().
+const generateUserId = () => crypto.randomUUID();
 
 // ---------------------------------------------------------------------------
 // Find user by email
@@ -194,6 +215,9 @@ const findUserByEmail = (email) => {
 // ---------------------------------------------------------------------------
 
 const verifyGoogleToken = async (credential) => {
+  if (!GOOGLE_CLIENT_ID) {
+    return { valid: false, error: "Google OAuth is not configured on this server." };
+  }
   try {
     const ticket = await client.verifyIdToken({
       idToken: credential,
@@ -262,6 +286,17 @@ export default async function handler(req, res) {
     return corsResponse(res, 405, { error: "Method not allowed" }, req);
   }
 
+  // Fail fast with a clear 503 when GOOGLE_CLIENT_ID is not configured.
+  // Without this guard the verifyGoogleToken helper returns a generic 401
+  // "Invalid or expired Google token" for every request, making the
+  // misconfiguration invisible to operators and confusing to users.
+  // Returning 503 here distinguishes a configuration error from a bad token.
+  if (!GOOGLE_CLIENT_ID) {
+    return corsResponse(res, 503, {
+      error: "Google Sign-In is not available. Please contact the site administrator.",
+    }, req);
+  }
+
   try {
     const { credential } = req.body;
 
@@ -296,22 +331,20 @@ export default async function handler(req, res) {
     const user = createOrUpdateUserFromGoogle(googlePayload);
 
     // -----------------------------------------------------------------------
-    // Get permissions based on roles
-    // -----------------------------------------------------------------------
-
-    const roles = user.roles || ["USER"];
-    const permissions = getPermissionsForRoles(roles);
-
-    // -----------------------------------------------------------------------
     // Generate JWT token
     // -----------------------------------------------------------------------
+    // Only identity claims are embedded. Permissions are excluded so that any
+    // server-side role change takes effect on the next sign-in rather than
+    // persisting in the token for up to JWT_EXPIRES_IN (7 days by default).
+    // This mirrors the fix applied to login.js in issue #4199.
+
+    const roles = user.roles || ["USER"];
 
     const jwtPayload = {
       id: user.id,
       email: user.email,
       username: user.username,
       roles: roles,
-      permissions: permissions,
       provider: user.provider || "google",
     };
 
@@ -323,6 +356,10 @@ export default async function handler(req, res) {
 
     const primaryRole = roles[0] || "ATTENDEE";
     const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
+
+    // Derive permissions fresh from the current roles for the response body.
+    // They are intentionally omitted from the JWT above.
+    const permissions = getPermissionsForRoles(roles);
 
     const userResponse = {
       id: user.id,

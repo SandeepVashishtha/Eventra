@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import "./styles/reduced-motion.css";
@@ -57,9 +57,13 @@ function App() {
       Loading page...
     </div>
   );
-  const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off",
-  );
+  const [cursorEnabled, setCursorEnabled] = useState(() => {
+    try {
+      return localStorage.getItem("cursor") !== "off";
+    } catch {
+      return true; // fallback safe default
+    }
+  });
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
   useLenis();
@@ -157,7 +161,7 @@ function App() {
                   >
                     <Suspense fallback={pageLoader}>
                       <PageTransition>
-                        <SectionErrorBoundary label="Page Content">
+                        <ErrorBoundary>
                           <Routes>
                             <Route
                               path="/register/:id"
@@ -171,7 +175,7 @@ function App() {
                             <Route path="/saved-events" element={<SavedEventsPage />} />
                             <Route path="*" element={<AppRoutes />} />
                           </Routes>
-                        </SectionErrorBoundary>
+                        </ErrorBoundary>
                       </PageTransition>
                     </Suspense>
                   </main>

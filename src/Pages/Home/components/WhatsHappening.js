@@ -23,6 +23,7 @@ const WhatsHappening = () => {
 
   useEffect(() => {
     if (prefersReducedMotion) {
+      // eslint-disable-next-line
       setIsAutoPlaying(false);
     }
   }, [prefersReducedMotion]);
@@ -62,8 +63,13 @@ const WhatsHappening = () => {
   };
 
   const formatHackathonsData = (hackathons) => {
+    const now = new Date();
     return hackathons
-      .filter((hackathon) => hackathon.status !== "ended")
+      .filter(
+        (hackathon) =>
+          hackathon.status !== "ended" &&
+          new Date(hackathon.endDate) >= now
+      )
       .map((hackathon) => ({
         id: `hackathon-${hackathon.id}`,
         title: hackathon.title,
@@ -103,17 +109,6 @@ const WhatsHappening = () => {
     ...formatHackathonsData(hackathonsData),
   ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
 
-  const statusColors = {
-    "Registration Open":
-      "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
-    "Coming Soon":
-      "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
-    "Live Now": "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
-    "Live Event":
-      "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
-    Planning:
-      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300",
-  };
 
   const [cardsPerView, setCardsPerView] = useState(1);
 
@@ -193,7 +188,7 @@ const WhatsHappening = () => {
           transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         >
           <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            What's Happening Now
+            What&apos;s Happening Now
           </h2>
           <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg text-slate-600 dark:text-slate-400">
             Stay updated with {upcomingEvents.length} upcoming events, community

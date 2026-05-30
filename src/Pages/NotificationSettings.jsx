@@ -1,19 +1,8 @@
-import React, { useMemo, useState } from "react";
-import {
-  Bell,
-  BellOff,
-  Check,
-  Mail,
-  Monitor,
-  Save,
-  Volume2,
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { Bell, BellOff, Check, Mail, Monitor, Save, Volume2 } from "lucide-react";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { useNotification } from "../context/NotificationContext";
-import {
-  NOTIFICATION_CATEGORIES,
-  NOTIFICATION_SOUNDS,
-} from "../utils/notificationPreferences";
+import { NOTIFICATION_CATEGORIES, NOTIFICATION_SOUNDS } from "../utils/notificationPreferences";
 
 const digestOptions = [
   { value: "instant", label: "Instant" },
