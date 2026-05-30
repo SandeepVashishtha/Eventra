@@ -1,5 +1,28 @@
+/**
+ * @fileoverview useBookmarks - Event bookmarks management hook
+ * @module hooks/useBookmarks
+ */
 import { useState, useEffect, useCallback } from 'react';
 
+/**
+ * A custom React hook that manages bookmarked events for a user,
+ * persisting them to localStorage keyed by userId.
+ *
+ * @param {string} [userId='guest'] - The user ID used as localStorage key
+ *
+ * @returns {{
+ *   bookmarks: Object[],
+ *   toggleBookmark: (event: Object) => void,
+ *   isBookmarked: (id: string|number) => boolean
+ * }}
+ *
+ * @example
+ * const { bookmarks, toggleBookmark, isBookmarked } = useBookmarks(user.id);
+ * // Check if bookmarked
+ * if (isBookmarked(event.id)) { ... }
+ * // Toggle bookmark
+ * toggleBookmark(event);
+ */
 const useBookmarks = (userId = 'guest') => {
   const storageKey = `bookmarks_${userId}`;
 

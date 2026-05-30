@@ -1,9 +1,32 @@
+/**
+ * @fileoverview useNotifications - Notification management hook
+ * @module hooks/useNotifications
+ */
 import { useEffect, useState, useCallback, useRef } from "react";
 import { get as idbGet, set as idbSet } from "idb-keyval";
 import { logger } from "../utils/logger";
 
 const STORAGE_KEY = "eventra_notifications";
 
+/**
+ * A custom React hook that manages in-app notifications with
+ * IndexedDB persistence using idb-keyval.
+ *
+ * @returns {{
+ *   notifications: Object[],
+ *   unreadCount: number,
+ *   addNotification: (notification: Object) => void,
+ *   markAllAsRead: () => void,
+ *   requestPermission: () => Promise<boolean>
+ * }}
+ *
+ * @example
+ * const { notifications, unreadCount, addNotification, markAllAsRead } = useNotifications();
+ * // Add a notification
+ * addNotification({ title: 'New Event', message: 'Check it out!' });
+ * // Mark all as read
+ * markAllAsRead();
+ */
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState([]);
 
