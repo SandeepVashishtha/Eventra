@@ -1,5 +1,9 @@
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "./jwt-config.js";
+import {
+  tokenRevocationService,
+  TokenRevocationStoreError,
+} from "./token-revocation.js";
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
@@ -8,71 +12,6 @@ import { getJwtSecret } from "./jwt-config.js";
 // Use the same centralised helper as login.js and signup.js so that all three
 // handlers share a consistent signing secret.
 const JWT_SECRET = getJwtSecret();
-
-// ---------------------------------------------------------------------------
-// Token Blacklist
-// ---------------------------------------------------------------------------
-//
-// ARCHITECTURAL LIMITATION: the Set below is process-local. In a serverless
-// deployment (Vercel, AWS Lambda, etc.) each cold-start creates a fresh process
-// with an empty Set, so a blacklisted token becomes valid again the moment a
-// new function instance spins up.
-//
-// To make logout durable at scale, replace the Set with a shared persistent
-// store. The interface is intentionally kept minimal so it can be swapped:
-//
-//   import { createClient } from "redis";
-//   const redis = createClient({ url: process.env.REDIS_URL });
-//   await redis.connect();
-//
-//   const blacklistToken  = (token, ttlSec) => redis.set(`bl:${token}`, 1, { EX: ttlSec });
-//   const isTokenBlacklisted = (token) => redis.exists(`bl:${token}`).then(Boolean);
-//
-// Until a persistent store is wired up, defence-in-depth is provided by:
-//  1. Short JWT_EXPIRES_IN (default 7d — set to a smaller value in production).
-//  2. The Set-Cookie header sent by the logout response (see handler below),
-//     which clears the cookie in the browser regardless of blacklist state.
-//  3. The in-process blacklist, which is effective within a single long-running
-//     server process (e.g. local development or a non-serverless deployment).
-
-const tokenBlacklist = new Set();
-
-// Optional: Token blacklist cleanup interval (cleanup expired tokens periodically)
-const BLACKLIST_CLEANUP_INTERVAL = parseInt(process.env.BLACKLIST_CLEANUP_INTERVAL) || 3600000; // 1 hour
-
-// Cleanup expired tokens from blacklist
-const cleanupExpiredTokens = () => {
-  const now = Math.floor(Date.now() / 1000);
-  for (const entry of tokenBlacklist) {
-    try {
-      const token = entry;
-      const tokenParts = token.split(".");
-      if (tokenParts.length === 3) {
-        const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
-        if (payload.exp && payload.exp < now) {
-          tokenBlacklist.delete(token);
-        }
-      }
-    } catch (e) {
-      // If parsing fails, keep the entry
-    }
-  }
-};
-
-// Start periodic cleanup
-let cleanupInterval = null;
-const startCleanupInterval = () => {
-  if (!cleanupInterval) {
-    cleanupInterval = setInterval(cleanupExpiredTokens, BLACKLIST_CLEANUP_INTERVAL);
-    // Don't let this prevent the process from exiting
-    if (cleanupInterval.unref) {
-      cleanupInterval.unref();
-    }
-  }
-};
-
-// Start the cleanup interval
-startCleanupInterval();
 
 // ---------------------------------------------------------------------------
 // CORS Headers
@@ -122,40 +61,29 @@ const extractToken = (authHeader) => {
 };
 
 // ---------------------------------------------------------------------------
-// Check if token is blacklisted
-// ---------------------------------------------------------------------------
-
-const isTokenBlacklisted = (token) => {
-  return tokenBlacklist.has(token);
-};
-
-// ---------------------------------------------------------------------------
-// Add token to blacklist
-// ---------------------------------------------------------------------------
-
-const blacklistToken = (token) => {
-  tokenBlacklist.add(token);
-};
-
-// ---------------------------------------------------------------------------
 // Middleware: Authenticate JWT token
 // ---------------------------------------------------------------------------
 
-const authenticateToken = (token) => {
+const authenticateToken = async (token) => {
   if (!token) {
     return { valid: false, error: "No token provided" };
   }
   
-  if (isTokenBlacklisted(token)) {
-    return { valid: false, error: "Token has been invalidated" };
-  }
-  
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    const isRevoked = await tokenRevocationService.isTokenRevoked(token, decoded);
+
+    if (isRevoked) {
+      return { valid: false, error: "Token has been invalidated" };
+    }
+
     return { valid: true, decoded };
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       return { valid: false, error: "Token has expired" };
+    }
+    if (error instanceof TokenRevocationStoreError) {
+      return { valid: false, error: "Token revocation store unavailable" };
     }
     return { valid: false, error: "Invalid token" };
   }
@@ -194,9 +122,15 @@ export default async function handler(req, res) {
     // Verify token is valid
     // -----------------------------------------------------------------------
 
-    const authResult = authenticateToken(token);
+    const authResult = await authenticateToken(token);
     
     if (!authResult.valid) {
+      if (authResult.error === "Token revocation store unavailable") {
+        return corsResponse(res, 503, {
+          error: "Authentication service unavailable. Please try again later.",
+        }, req);
+      }
+
       return corsResponse(res, 401, { 
         error: authResult.error 
       }, req);
@@ -206,7 +140,17 @@ export default async function handler(req, res) {
     // Blacklist the token (invalidate it)
     // -----------------------------------------------------------------------
 
-    blacklistToken(token);
+    try {
+      await tokenRevocationService.revokeToken(token, authResult.decoded);
+    } catch (error) {
+      if (error instanceof TokenRevocationStoreError) {
+        return corsResponse(res, 503, {
+          error: "Authentication service unavailable. Logout could not be completed.",
+        }, req);
+      }
+
+      throw error;
+    }
 
     // -----------------------------------------------------------------------
     // Clear the session cookie (defence-in-depth for serverless environments
@@ -239,11 +183,7 @@ export default async function handler(req, res) {
 // Export utility functions for testing
 // ---------------------------------------------------------------------------
 
-export { 
-  tokenBlacklist, 
-  isTokenBlacklisted, 
-  blacklistToken, 
-  authenticateToken, 
+export {
+  authenticateToken,
   extractToken,
-  cleanupExpiredTokens,
 };

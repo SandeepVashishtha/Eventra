@@ -1,6 +1,10 @@
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../auth/jwt-config.js";
 import { users } from "../auth/signup.js";
+import {
+  tokenRevocationService,
+  TokenRevocationStoreError,
+} from "../auth/token-revocation.js";
 
 // ---------------------------------------------------------------------------
 // JWT Middleware
@@ -39,6 +43,25 @@ export const verifyAuth = (handler) => {
         return res.status(401).json({ error: "Unauthorized: Token expired", expired: true });
       }
       return res.status(401).json({ error: "Unauthorized: Invalid token" });
+    }
+
+    try {
+      const isRevoked = await tokenRevocationService.isTokenRevoked(token, decoded);
+      if (isRevoked) {
+        return res.status(401).json({
+          error: "Unauthorized: Token has been invalidated",
+          revoked: true,
+        });
+      }
+    } catch (error) {
+      if (error instanceof TokenRevocationStoreError) {
+        return res.status(503).json({
+          error: "Authentication service unavailable",
+          serviceUnavailable: true,
+        });
+      }
+
+      throw error;
     }
 
     // 3. Verify the user referenced by the JWT still exists in the user store.
