@@ -2,31 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
-import { applyAdvancedFilters, getDateRange, getPriceStats } from "../../utils/advancedFilterUtils";
-import {
-  DEFAULT_EVENTS_PER_PAGE,
-  clampPage,
-  filterEventsByType,
-  getPaginatedEvents,
-  getTotalPages,
-  sortEventsByDate,
-} from "./eventPaginationUtils.mjs";
-import {
-  getCacheAgeLabel,
-  getCachedEvents,
-  saveAllCachedEventDetails,
-  saveCachedEvents,
-} from "../../utils/offlineEventCache";
-
-const normalizeEvent = (event) => ({
-  ...event,
-  status: event.status || getEventStatus(event),
-});
-
-const FUSE_OPTIONS = {
-  keys: ['title', 'description', 'location', 'category', 'type', 'tags'],
-  threshold: 0.4,
-  includeScore: true,
 import useDebounce from "../../hooks/useDebounce";
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
@@ -39,6 +14,11 @@ const SORT_MAPPING = {
   "Price Low to High": "price,asc",
   "Price High to Low": "price,desc",
 };
+
+const normalizeEvent = (event) => ({
+  ...event,
+  status: event.status || getEventStatus(event),
+});
 
 const useEventListing = () => {
   const [events, setEvents] = useState([]);
@@ -91,7 +71,6 @@ const useEventListing = () => {
     }
 
     const sortValue = SORT_MAPPING[sortType];
-
     if (sortValue) {
       params.append("sort", sortValue);
     }
@@ -125,22 +104,7 @@ const useEventListing = () => {
           ? responseData
           : [];
 
-      const nextEvents = (apiEvents.length > 0 ? apiEvents : fallbackEvents).map(normalizeEvent);
-      setEvents(nextEvents);
-      setCacheInfo(null);
-      saveCachedEvents(nextEvents);
-      // Batch-write all detail entries in a single read+write cycle.
-      // Replaces nextEvents.forEach(saveCachedEventDetail) which triggered
-      // N independent localStorage read+write pairs — O(n) synchronous
-      // main-thread I/O that blocked the UI for each event in the list.
-      saveAllCachedEventDetails(nextEvents);
-        : [];
-
-      const normalizedEvents = apiEvents.map((event) => ({
-        ...event,
-        status: event.status || getEventStatus(event),
-      }));
-
+      const normalizedEvents = apiEvents.map(normalizeEvent);
       setEvents(normalizedEvents);
 
       setPagination({
@@ -153,13 +117,8 @@ const useEventListing = () => {
       console.error("Failed to fetch events:", error);
 
       if (process.env.NODE_ENV === "development") {
-        const normalizedMockEvents = mockEvents.map((event) => ({
-          ...event,
-          status: getEventStatus(event),
-        }));
-
+        const normalizedMockEvents = mockEvents.map(normalizeEvent);
         setEvents(normalizedMockEvents);
-
         setPagination({
           totalPages: 1,
           totalElements: normalizedMockEvents.length,
@@ -176,14 +135,14 @@ const useEventListing = () => {
         });
 
         if (error?.response?.status === 403) {
-  setLoadError(
-    "Access to events is currently restricted. Please try again later.",
-  );
-} else {
-  setLoadError(
-    "Failed to load events. Please try again later.",
-  );
-}
+          setLoadError(
+            "Access to events is currently restricted. Please try again later.",
+          );
+        } else {
+          setLoadError(
+            "Failed to load events. Please try again later.",
+          );
+        }
       }
     } finally {
       setIsLoading(false);
@@ -193,16 +152,6 @@ const useEventListing = () => {
   // RACE CONDITION FIX: Call fetchEvents immediately on mount, without scheduling
   // mock data concurrently. This prevents race conditions where mock data could
   // overwrite real API responses based on timing.
-  //
-  // Previous implementation:
-  // - useEffect 1: Scheduled mock data to load after 800ms
-  // - useEffect 2: Called fetchEvents() for API request
-  // - Result: If API took >800ms, mock data would overwrite real results
-  //
-  // New implementation:
-  // - Single fetchEvents() call that uses mock data only as a failure fallback
-  // - No concurrent timers that could race with network requests
-  // - Mock data is development-only fallback logic, not a production path
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
@@ -220,18 +169,30 @@ const useEventListing = () => {
       setCurrentPage(1);
       return;
     }
-
     if (page > pagination.totalPages) {
       setCurrentPage(pagination.totalPages);
       return;
     }
-
     setCurrentPage(page);
   };
 
-  const filteredEvents = useMemo(() => events, [events]);
+  // fix: filter past events from Upcoming Events section (fixes #3343)
+  // Previously this returned all events with no date filtering applied.
+  const filteredEvents = useMemo(() => {
+    const now = new Date();
+    return events.filter((event) => {
+      const eventDate = new Date(event.date || event.startDate);
+      if (filterType === "upcoming") {
+        return eventDate >= now;
+      }
+      if (filterType === "past") {
+        return eventDate < now;
+      }
+      return true; // "all"
+    });
+  }, [events, filterType]);
 
-  const paginatedEvents = useMemo(() => events, [events]);
+  const paginatedEvents = useMemo(() => filteredEvents, [filteredEvents]);
 
   return {
     currentPage,

@@ -62,7 +62,7 @@ const Hero = () => {
 
   const [isTouch, setIsTouch] = useState(false);
   const [isDark, setIsDark] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
+  const [/*isMobileView*/, setIsMobileView] = useState(false);
   const [statsReady, setStatsReady] = useState(false);
   const [index, setIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
