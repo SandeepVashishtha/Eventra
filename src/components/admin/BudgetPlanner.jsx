@@ -93,7 +93,7 @@ const BudgetPlanner = () => {
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={Object.entries(budget.costs).map(([name, value], i) => ({ name, value, fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length }))}
+              data={Object.entries(budget.costs).map(([name, value], i) => ({ name, value, fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))}
               dataKey="value"
               nameKey="name"
               cx="50%"
