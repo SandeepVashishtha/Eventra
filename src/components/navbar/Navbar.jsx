@@ -94,19 +94,22 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </div>
           </Link>
 
-          <div className="flex items-center gap-4">
+          {/* Right side actions aligned perfectly on the same midline axis */}
+          <div className="flex items-center justify-center gap-4 h-full">
             <DesktopNavbar isAuthenticated={authenticated} user={user} logout={logout} />
+            
             <button
               type="button"
               onClick={toggleTheme}
               aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
               aria-pressed={isDarkMode}
-              className="theme-toggle relative flex items-center justify-center w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-800 text-black dark:text-white shadow-md hover:scale-110 hover:shadow-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="theme-toggle relative flex items-center justify-center self-center w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-800 text-black dark:text-white shadow-md hover:scale-110 hover:shadow-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
-              <div className="transition-transform duration-500">
+              <div className="flex items-center justify-center transition-transform duration-500">
                 {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
               </div>
             </button>
+            
             <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
           </div>
