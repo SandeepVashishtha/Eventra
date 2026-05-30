@@ -186,7 +186,6 @@ const simulateGoogleOAuth = async (credential) => {
     email: user.email,
     username: user.username,
     roles: roles,
-    permissions: permissions,
     provider: user.provider || "google",
   };
   const token = jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -298,7 +297,7 @@ console.log("Running Google OAuth endpoint tests...");
   assert.ok(payload.id, "JWT should contain user id");
   assert.ok(payload.email, "JWT should contain email");
   assert.ok(payload.roles, "JWT should contain roles");
-  assert.ok(payload.permissions, "JWT should contain permissions");
+  assert.equal(payload.permissions, undefined, "JWT should NOT contain permissions");
   assert.ok(payload.exp, "JWT should contain expiration");
   assert.equal(payload.provider, "google", "JWT should contain provider info");
   console.log("✓ Test 6: JWT token contains required claims");
