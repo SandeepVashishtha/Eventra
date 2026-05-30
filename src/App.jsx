@@ -10,7 +10,7 @@ import Navbar from "./components/navbar/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
-import ErrorBoundary from "./components/common/ErrorBoundary";
+import GlobalErrorBoundary from "./components/common/ErrorBoundary";
 import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
@@ -120,10 +120,10 @@ function App() {
   }, []);
 
   return (
-    <ErrorBoundary>
-      <ThemeProvider>
-        <AuthProvider>
-          <NotificationProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <GlobalErrorBoundary>
             <MyEventsProvider>
               <SessionRecoveryProvider>
                 <NotificationToastContainer />
@@ -215,10 +215,10 @@ function App() {
                 </div>
               </SessionRecoveryProvider>
             </MyEventsProvider>
-          </NotificationProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
+          </GlobalErrorBoundary>
+        </NotificationProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
