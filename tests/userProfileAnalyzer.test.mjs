@@ -1,51 +1,75 @@
 import assert from "node:assert/strict";
 
-// Mock localStorage
-const storage = {};
+const store = {};
 global.localStorage = {
-  getItem: (key) => storage[key] || null,
-  setItem: (key, val) => { storage[key] = String(val); },
-  removeItem: (key) => { delete storage[key]; },
-  clear: () => { for (const k in storage) delete storage[k]; }
+  getItem: (key) => store[key] || null,
+  setItem: (key, val) => {
+    store[key] = String(val);
+  },
+  removeItem: (key) => {
+    delete store[key];
+  },
+  clear: () => {
+    for (const key of Object.keys(store)) {
+      delete store[key];
+    }
+  }
 };
 
-// Import after mocking localStorage
-import { getUserProfile } from "../src/utils/userProfileAnalyzer.js";
+const { getUserProfile } = await import("../src/utils/userProfileAnalyzer.js");
 
-// Test 1: Fallback when localStorage is completely empty
-global.localStorage.clear();
-const resultEmpty = getUserProfile();
-assert.deepEqual(resultEmpty.interests, [], "empty interests array fallback");
-assert.deepEqual(resultEmpty.techStack, [], "empty techStack array fallback");
-assert.deepEqual(resultEmpty.eventTypes, [], "empty eventTypes array fallback");
-assert.equal(resultEmpty.level, "Beginner", "default level is Beginner");
+try {
+  // Test Case 1: Empty localStorage returns default user profile structure
+  localStorage.clear();
+  const profile1 = getUserProfile();
+  assert.deepEqual(profile1, {
+    interests: [],
+    techStack: [],
+    eventTypes: [],
+    level: "Beginner"
+  }, "Should return default beginner profile when localStorage is empty");
 
-// Test 2: Valid localStorage retrieval
-const validProfile = {
-  interests: ["Hackathons", "AI/ML"],
-  techStack: ["React", "Python"],
-  eventTypes: ["Conference", "Workshop"],
-  level: "Advanced"
-};
-global.localStorage.setItem("eventra_user_profile", JSON.stringify(validProfile));
+  // Test Case 2: Correctly parsed profile when populated with partial values
+  localStorage.setItem("eventra_user_profile", JSON.stringify({
+    interests: ["Web3"],
+    level: "Intermediate"
+  }));
+  
+  const profile2 = getUserProfile();
+  assert.deepEqual(profile2, {
+    interests: ["Web3"],
+    techStack: [],
+    eventTypes: [],
+    level: "Intermediate"
+  }, "Should merge and fallback correctly for partial stored profile");
 
-const resultValid = getUserProfile();
-assert.deepEqual(resultValid.interests, ["Hackathons", "AI/ML"], "correctly loads interests");
-assert.deepEqual(resultValid.techStack, ["React", "Python"], "correctly loads techStack");
-assert.deepEqual(resultValid.eventTypes, ["Conference", "Workshop"], "correctly loads eventTypes");
-assert.equal(resultValid.level, "Advanced", "correctly loads level");
+  // Test Case 3: Correctly parsed profile when fully populated
+  localStorage.setItem("eventra_user_profile", JSON.stringify({
+    interests: ["React", "AI"],
+    techStack: ["JavaScript", "Python"],
+    eventTypes: ["Hackathon", "Conference"],
+    level: "Advanced"
+  }));
 
-// Test 3: Partial object in localStorage (e.g. only interests and level)
-const partialProfile = {
-  interests: ["Design"],
-  level: "Intermediate"
-};
-global.localStorage.setItem("eventra_user_profile", JSON.stringify(partialProfile));
+  const profile3 = getUserProfile();
+  assert.deepEqual(profile3, {
+    interests: ["React", "AI"],
+    techStack: ["JavaScript", "Python"],
+    eventTypes: ["Hackathon", "Conference"],
+    level: "Advanced"
+  }, "Should parse fully populated profile accurately");
 
-const resultPartial = getUserProfile();
-assert.deepEqual(resultPartial.interests, ["Design"], "loads interests");
-assert.deepEqual(resultPartial.techStack, [], "techStack falls back to empty array");
-assert.deepEqual(resultPartial.eventTypes, [], "eventTypes falls back to empty array");
-assert.equal(resultPartial.level, "Intermediate", "loads level");
+  // Test Case 4: Invalid JSON string in localStorage returns default profile gracefully
+  localStorage.setItem("eventra_user_profile", "invalid-json-string");
+  const profile4 = getUserProfile();
+  assert.deepEqual(profile4, {
+    interests: [],
+    techStack: [],
+    eventTypes: [],
+    level: "Beginner"
+  }, "Should return default beginner profile if JSON is corrupted");
 
-console.log("userProfileAnalyzer tests passed ✓");
+  console.log("userProfileAnalyzer tests passed ✓");
+} finally {
+  delete global.localStorage;
+}
