@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 export const useFormValidation = (initialState, validationRules, options = {}) => {
   const { debounceMs = 300, validateOnBlur = false } = options;
   const timeoutRef = useRef(null);
+  const isMountedRef = useRef(false);
+  const validationRunRef = useRef(0);
   const validationRulesRef = useRef(validationRules);
   const initialStateRef = useRef(initialState);
 
@@ -19,7 +21,29 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const [touched, setTouched] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
 
-  const debounceTimerRef = useRef(null);
+  const clearValidationTimer = useCallback(() => {
+    validationRunRef.current += 1;
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      clearValidationTimer();
+    };
+  }, [clearValidationTimer]);
+
+  useEffect(() => {
+    return () => {
+      clearValidationTimer();
+    };
+  }, [clearValidationTimer, debounceMs, validateOnBlur]);
 
   // Validate a single field
   const validateField = useCallback((name, value, allValues) => {
@@ -65,23 +89,21 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     setErrors(prev => ({ ...prev, [name]: null }));
 
     if (validationRulesRef.current[name] && !validateOnBlur) {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      clearValidationTimer();
+      const validationRun = validationRunRef.current + 1;
+      validationRunRef.current = validationRun;
 
       timeoutRef.current = setTimeout(() => {
+        timeoutRef.current = null;
+        if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
+
         const error = validateField(name, value, { ...values, [name]: value });
+        if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
+
         setErrors(prev => ({ ...prev, [name]: error }));
       }, debounceMs);
     }
-  }, [validateOnBlur, debounceMs, validateField, values]);
-
-  // Clean up timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
+  }, [validateOnBlur, debounceMs, validateField, values, clearValidationTimer]);
 
   // Handle blur for validation
   const handleBlur = useCallback((e) => {
@@ -106,20 +128,12 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
 
   // Reset form
   const resetForm = useCallback(() => {
+    clearValidationTimer();
     setValues(initialStateRef.current);
     setErrors({});
     setTouched({});
     setIsFormValid(false);
-  }, []);
-
-  // Cleanup debounce timer on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
+  }, [clearValidationTimer]);
 
   return {
     values,
