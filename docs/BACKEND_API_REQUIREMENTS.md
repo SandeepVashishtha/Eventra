@@ -860,7 +860,31 @@ PUT /api/users/profile
 }
 ```
 
-**Success Response `200`:** Updated user profile object
+### Validation Rules
+
+| Field | Validation |
+|---------|---------|
+| firstName | Required |
+| lastName | Required |
+
+### Error Responses
+
+- `400` Validation error
+- `401` Unauthorized
+- `404` User not found
+
+### Success Response `200`
+
+```json
+{
+  "id": 42,
+  "firstName": "John",
+  "lastName": "Doe",
+  "username": "johndoe",
+  "email": "john@example.com",
+  "role": "ATTENDEE"
+}
+```
 
 ---
 
