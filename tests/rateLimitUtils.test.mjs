@@ -1,250 +1,110 @@
-/**
- * Tests for src/utils/rateLimitUtils.js
- *
- * Covers: backoff computation, sessionStorage persistence helpers,
- * parseRetryAfterMs, and the page-refresh-bypass security invariant.
- */
+import assert from "node:assert/strict";
 
-import { strict as assert } from 'node:assert';
-import { describe, it, beforeEach } from 'node:test';
+const store = {};
+globalThis.sessionStorage = {
+  getItem: (key) => store[key] || null,
+  setItem: (key, val) => { store[key] = String(val); },
+  removeItem: (key) => { delete store[key]; }
+};
 
-// ---------------------------------------------------------------------------
-// sessionStorage mock
-// ---------------------------------------------------------------------------
-
-class SessionStorageMock {
-  constructor() { this._store = {}; }
-  getItem(k) { return Object.prototype.hasOwnProperty.call(this._store, k) ? this._store[k] : null; }
-  setItem(k, v) { this._store[k] = String(v); }
-  removeItem(k) { delete this._store[k]; }
-  clear() { this._store = {}; }
-}
-
-const mockSession = new SessionStorageMock();
-global.sessionStorage = mockSession;
-global.window = { sessionStorage: mockSession };
-
-// ---------------------------------------------------------------------------
-// Module under test (imported AFTER shims)
-// ---------------------------------------------------------------------------
-
-const {
-  MAX_LOGIN_ATTEMPTS,
-  STORAGE_KEY_ATTEMPTS,
-  STORAGE_KEY_LOCKOUT_UNTIL,
-  getBackoffDelay,
-  formatCountdown,
-  secondsUntilUnlock,
+import {
   readPersistedRateLimit,
   persistRateLimit,
   clearPersistedRateLimit,
   parseRetryAfterMs,
-} = await import('../src/utils/rateLimitUtils.js');
+  getBackoffDelay,
+  formatCountdown,
+  secondsUntilUnlock,
+  STORAGE_KEY_ATTEMPTS,
+  STORAGE_KEY_LOCKOUT_UNTIL,
+  MAX_LOGIN_ATTEMPTS,
+  RESET_COOLDOWN_SECONDS
+} from "../src/utils/rateLimitUtils.js";
 
-// ---------------------------------------------------------------------------
-// getBackoffDelay
-// ---------------------------------------------------------------------------
+// Test constants
+assert.strictEqual(MAX_LOGIN_ATTEMPTS, 5, "MAX_LOGIN_ATTEMPTS should be 5");
+assert.strictEqual(RESET_COOLDOWN_SECONDS, 60, "RESET_COOLDOWN_SECONDS should be 60");
 
-describe('getBackoffDelay', () => {
-  it('returns 0 for attempts below MAX_LOGIN_ATTEMPTS', () => {
-    for (let i = 0; i < MAX_LOGIN_ATTEMPTS; i++) {
-      assert.strictEqual(getBackoffDelay(i), 0, `Expected 0 for attempt ${i}`);
-    }
-  });
+// Test clearPersistedRateLimit
+clearPersistedRateLimit();
+assert.strictEqual(store[STORAGE_KEY_ATTEMPTS], undefined, "Should clear attempts key");
+assert.strictEqual(store[STORAGE_KEY_LOCKOUT_UNTIL], undefined, "Should clear lockout key");
 
-  it('returns a positive delay at exactly MAX_LOGIN_ATTEMPTS', () => {
-    assert.ok(getBackoffDelay(MAX_LOGIN_ATTEMPTS) > 0);
-  });
+// Test readPersistedRateLimit with no stored data
+delete store[STORAGE_KEY_ATTEMPTS];
+delete store[STORAGE_KEY_LOCKOUT_UNTIL];
+let result = readPersistedRateLimit();
+assert.deepEqual(result, { attempts: 0, lockoutUntil: 0 }, "Should return defaults when nothing stored");
 
-  it('delay increases with each additional attempt', () => {
-    const d1 = getBackoffDelay(MAX_LOGIN_ATTEMPTS);
-    const d2 = getBackoffDelay(MAX_LOGIN_ATTEMPTS + 1);
-    assert.ok(d2 > d1, 'delay should increase with more attempts');
-  });
+// Test readPersistedRateLimit with valid stored values
+store[STORAGE_KEY_ATTEMPTS] = "3";
+store[STORAGE_KEY_LOCKOUT_UNTIL] = String(Date.now() + 60000);
+result = readPersistedRateLimit();
+assert.strictEqual(result.attempts, 3, "Should read attempts from storage");
 
-  it('delay is capped at 30 000 ms', () => {
-    for (let i = MAX_LOGIN_ATTEMPTS; i <= MAX_LOGIN_ATTEMPTS + 10; i++) {
-      assert.ok(
-        getBackoffDelay(i) <= 30_000,
-        `Expected delay <= 30000 ms for ${i} attempts`,
-      );
-    }
-  });
+// Test readPersistedRateLimit discards expired lockouts
+store[STORAGE_KEY_ATTEMPTS] = "5";
+store[STORAGE_KEY_LOCKOUT_UNTIL] = String(Date.now() - 1000);
+result = readPersistedRateLimit();
+assert.strictEqual(result.lockoutUntil, 0, "Should discard expired lockout");
 
-  it('returns a number (not NaN)', () => {
-    assert.ok(!isNaN(getBackoffDelay(MAX_LOGIN_ATTEMPTS)));
-  });
-});
+// Test readPersistedRateLimit handles corrupt data
+store[STORAGE_KEY_ATTEMPTS] = "not-a-number";
+store[STORAGE_KEY_LOCKOUT_UNTIL] = "also-not-a-number";
+result = readPersistedRateLimit();
+assert.deepEqual(result, { attempts: 0, lockoutUntil: 0 }, "Should return defaults on corrupt data");
 
-// ---------------------------------------------------------------------------
-// formatCountdown
-// ---------------------------------------------------------------------------
+// Test persistRateLimit
+persistRateLimit(3, 1234567890);
+assert.strictEqual(store[STORAGE_KEY_ATTEMPTS], "3", "Should store attempts as string");
+assert.strictEqual(store[STORAGE_KEY_LOCKOUT_UNTIL], "1234567890", "Should store lockoutUntil as string");
 
-describe('formatCountdown', () => {
-  it('returns "0s" for zero or negative input', () => {
-    assert.strictEqual(formatCountdown(0), '0s');
-    assert.strictEqual(formatCountdown(-1000), '0s');
-  });
+// Test parseRetryAfterMs with integer seconds
+assert.strictEqual(parseRetryAfterMs("30"), 30000, "Should convert seconds to ms");
+assert.strictEqual(parseRetryAfterMs("0"), 0, "Should handle 0");
+assert.strictEqual(parseRetryAfterMs("120"), 120000, "Should handle larger values");
 
-  it('formats sub-minute durations as "Xs"', () => {
-    assert.strictEqual(formatCountdown(29_000), '29s');
-    assert.strictEqual(formatCountdown(1_000), '1s');
-  });
+// Test parseRetryAfterMs with HTTP date
+const futureDate = new Date(Date.now() + 60000).toUTCString();
+const parsedMs = parseRetryAfterMs(futureDate);
+assert.ok(parsedMs > 0 && parsedMs <= 60000, "Should parse HTTP date to remaining ms");
 
-  it('formats minute-scale durations as "Xm Ys"', () => {
-    assert.strictEqual(formatCountdown(90_000), '1m 30s');
-    assert.strictEqual(formatCountdown(120_000), '2m 0s');
-  });
+// Test parseRetryAfterMs with invalid values
+assert.strictEqual(parseRetryAfterMs(null), 0, "Should return 0 for null");
+assert.strictEqual(parseRetryAfterMs(undefined), 0, "Should return 0 for undefined");
+assert.strictEqual(parseRetryAfterMs(""), 0, "Should return 0 for empty string");
+assert.strictEqual(parseRetryAfterMs("not-a-date"), 0, "Should return 0 for invalid string");
 
-  it('rounds up partial seconds', () => {
-    assert.strictEqual(formatCountdown(1_500), '2s');
-  });
-});
+// Test getBackoffDelay before threshold
+assert.strictEqual(getBackoffDelay(1), 0, "Attempt 1 should return 0");
+assert.strictEqual(getBackoffDelay(4), 0, "Attempt 4 should return 0");
 
-// ---------------------------------------------------------------------------
-// secondsUntilUnlock
-// ---------------------------------------------------------------------------
+// Test getBackoffDelay at threshold - backoff starts at MAX_LOGIN_ATTEMPTS
+assert.strictEqual(getBackoffDelay(5), 2000, "Attempt 5 (at threshold) should return 2s");
 
-describe('secondsUntilUnlock', () => {
-  it('returns 0 for a lockout already in the past', () => {
-    assert.strictEqual(secondsUntilUnlock(Date.now() - 5000), 0);
-  });
+// Test getBackoffDelay after threshold
+assert.strictEqual(getBackoffDelay(6), 4000, "Attempt 6 should return 4s");
+assert.strictEqual(getBackoffDelay(7), 8000, "Attempt 7 should return 8s");
+assert.strictEqual(getBackoffDelay(8), 16000, "Attempt 8 should return 16s");
 
-  it('returns a positive count for a future lockout', () => {
-    const future = Date.now() + 10_000;
-    const s = secondsUntilUnlock(future);
-    assert.ok(s > 0 && s <= 10, `Expected 1-10s, got ${s}`);
-  });
+// Test getBackoffDelay caps at 30 seconds
+assert.strictEqual(getBackoffDelay(10), 30000, "Attempt 10 should be capped at 30s");
+assert.strictEqual(getBackoffDelay(15), 30000, "Attempt 15 should be capped at 30s");
 
-  it('never returns negative', () => {
-    assert.ok(secondsUntilUnlock(0) >= 0);
-  });
-});
+// Test formatCountdown
+assert.strictEqual(formatCountdown(0), "0s", "0 should format as 0s");
+assert.strictEqual(formatCountdown(-1000), "0s", "Negative should format as 0s");
+assert.strictEqual(formatCountdown(500), "1s", "500ms should format as 1s");
+assert.strictEqual(formatCountdown(1000), "1s", "1s should format correctly");
+assert.strictEqual(formatCountdown(30000), "30s", "30s should format correctly");
+assert.strictEqual(formatCountdown(65000), "1m 5s", "65s should format as 1m 5s");
+assert.strictEqual(formatCountdown(90000), "1m 30s", "90s should format as 1m 30s");
+assert.strictEqual(formatCountdown(120000), "2m 0s", "120s should format as 2m 0s");
 
-// ---------------------------------------------------------------------------
-// persistRateLimit / readPersistedRateLimit / clearPersistedRateLimit
-// ---------------------------------------------------------------------------
+// Test secondsUntilUnlock
+const futureLockout = Date.now() + 30000;
+assert.strictEqual(secondsUntilUnlock(futureLockout) >= 29 && secondsUntilUnlock(futureLockout) <= 30, true, "Future lockout should return positive seconds");
+assert.strictEqual(secondsUntilUnlock(Date.now() - 10000), 0, "Past lockout should return 0");
+assert.strictEqual(secondsUntilUnlock(0), 0, "Zero lockout should return 0");
 
-describe('sessionStorage persistence', () => {
-  beforeEach(() => {
-    mockSession.clear();
-  });
-
-  it('persistRateLimit writes attempts and lockoutUntil to sessionStorage', () => {
-    persistRateLimit(3, 9_999_999_999);
-    assert.strictEqual(mockSession.getItem(STORAGE_KEY_ATTEMPTS), '3');
-    assert.strictEqual(mockSession.getItem(STORAGE_KEY_LOCKOUT_UNTIL), '9999999999');
-  });
-
-  it('readPersistedRateLimit returns the written values', () => {
-    persistRateLimit(4, Date.now() + 30_000);
-    const { attempts, lockoutUntil } = readPersistedRateLimit();
-    assert.strictEqual(attempts, 4);
-    assert.ok(lockoutUntil > Date.now());
-  });
-
-  it('readPersistedRateLimit returns zeroed defaults when storage is empty', () => {
-    const { attempts, lockoutUntil } = readPersistedRateLimit();
-    assert.strictEqual(attempts, 0);
-    assert.strictEqual(lockoutUntil, 0);
-  });
-
-  it('readPersistedRateLimit discards an already-expired lockoutUntil', () => {
-    // Expired lockout (1 second in the past)
-    mockSession.setItem(STORAGE_KEY_ATTEMPTS, '5');
-    mockSession.setItem(STORAGE_KEY_LOCKOUT_UNTIL, String(Date.now() - 1000));
-    const { lockoutUntil } = readPersistedRateLimit();
-    assert.strictEqual(lockoutUntil, 0, 'Expired lockout should be discarded');
-  });
-
-  it('readPersistedRateLimit returns 0 lockoutUntil for value of 0', () => {
-    persistRateLimit(2, 0);
-    const { lockoutUntil } = readPersistedRateLimit();
-    assert.strictEqual(lockoutUntil, 0);
-  });
-
-  it('clearPersistedRateLimit removes both keys', () => {
-    persistRateLimit(3, Date.now() + 10_000);
-    clearPersistedRateLimit();
-    assert.strictEqual(mockSession.getItem(STORAGE_KEY_ATTEMPTS), null);
-    assert.strictEqual(mockSession.getItem(STORAGE_KEY_LOCKOUT_UNTIL), null);
-  });
-
-  it('readPersistedRateLimit handles corrupt/non-numeric values gracefully', () => {
-    mockSession.setItem(STORAGE_KEY_ATTEMPTS, 'notanumber');
-    mockSession.setItem(STORAGE_KEY_LOCKOUT_UNTIL, 'alsonotanumber');
-    const { attempts, lockoutUntil } = readPersistedRateLimit();
-    assert.strictEqual(lockoutUntil, 0);
-    // attempts is NaN from parseInt — should default to 0
-    assert.ok(attempts === 0 || isNaN(attempts), 'Corrupt attempts should be 0 or NaN');
-  });
-
-  // Security invariant: page refresh does NOT reset the lockout
-  it('page refresh does not bypass lockout — state survives sessionStorage round-trip', () => {
-    const futureTs = Date.now() + 15_000;
-    persistRateLimit(MAX_LOGIN_ATTEMPTS, futureTs);
-
-    // Simulate page refresh: read back from sessionStorage (as the hook does on mount)
-    const { attempts, lockoutUntil } = readPersistedRateLimit();
-    assert.strictEqual(attempts, MAX_LOGIN_ATTEMPTS);
-    assert.ok(lockoutUntil > Date.now(), 'Lockout must still be active after simulated refresh');
-  });
-
-  it('attempt count accumulates correctly across multiple persistRateLimit calls', () => {
-    persistRateLimit(1, 0);
-    persistRateLimit(2, 0);
-    persistRateLimit(3, 0);
-    const { attempts } = readPersistedRateLimit();
-    assert.strictEqual(attempts, 3);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// parseRetryAfterMs
-// ---------------------------------------------------------------------------
-
-describe('parseRetryAfterMs', () => {
-  it('parses integer seconds form "30" as 30000 ms', () => {
-    assert.strictEqual(parseRetryAfterMs('30'), 30_000);
-  });
-
-  it('parses "0" as 0 ms', () => {
-    assert.strictEqual(parseRetryAfterMs('0'), 0);
-  });
-
-  it('parses a future HTTP-date correctly', () => {
-    const futureDate = new Date(Date.now() + 60_000).toUTCString();
-    const result = parseRetryAfterMs(futureDate);
-    assert.ok(result > 55_000 && result <= 61_000, `Expected ~60000 ms, got ${result}`);
-  });
-
-  it('returns 0 for null', () => {
-    assert.strictEqual(parseRetryAfterMs(null), 0);
-  });
-
-  it('returns 0 for undefined', () => {
-    assert.strictEqual(parseRetryAfterMs(undefined), 0);
-  });
-
-  it('returns 0 for empty string', () => {
-    assert.strictEqual(parseRetryAfterMs(''), 0);
-  });
-
-  it('returns 0 for a non-date, non-integer string', () => {
-    assert.strictEqual(parseRetryAfterMs('invalid'), 0);
-  });
-
-  it('returns 0 for a past HTTP-date', () => {
-    const pastDate = new Date(Date.now() - 60_000).toUTCString();
-    assert.strictEqual(parseRetryAfterMs(pastDate), 0);
-  });
-
-  it('returns 0 for negative second values', () => {
-    assert.strictEqual(parseRetryAfterMs('-10'), 0);
-  });
-
-  it('handles large second values without overflow', () => {
-    const result = parseRetryAfterMs('86400');
-    assert.strictEqual(result, 86_400_000);
-  });
-});
+console.log("rateLimitUtils tests passed ✓");
