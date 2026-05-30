@@ -12,11 +12,11 @@ import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
-import CountUp from "react-countup";
-import RespawningText from "../../../components/visual/RespawningText.js";
-import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary.jsx";
+import RespawningText from "../../../components/visual/RespawningText";
+import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
 
 const MotionLink = motion(Link);
+const CountUp = CountUpLib.default;
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
