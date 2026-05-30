@@ -12,6 +12,9 @@ import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
+import CountUp from "react-countup";
+import RespawningText from "../../../components/visual/RespawningText.js";
+import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary.jsx";
 
 const MotionLink = motion(Link);
 
@@ -59,7 +62,7 @@ const Hero = () => {
 
   const [isTouch, setIsTouch] = useState(false);
   const [isDark, setIsDark] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
+  const [/*isMobileView*/, setIsMobileView] = useState(false);
   const [statsReady, setStatsReady] = useState(false);
   const [index, setIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
