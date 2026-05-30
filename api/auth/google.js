@@ -286,6 +286,17 @@ export default async function handler(req, res) {
     return corsResponse(res, 405, { error: "Method not allowed" }, req);
   }
 
+  // Fail fast with a clear 503 when GOOGLE_CLIENT_ID is not configured.
+  // Without this guard the verifyGoogleToken helper returns a generic 401
+  // "Invalid or expired Google token" for every request, making the
+  // misconfiguration invisible to operators and confusing to users.
+  // Returning 503 here distinguishes a configuration error from a bad token.
+  if (!GOOGLE_CLIENT_ID) {
+    return corsResponse(res, 503, {
+      error: "Google Sign-In is not available. Please contact the site administrator.",
+    }, req);
+  }
+
   try {
     const { credential } = req.body;
 
@@ -320,22 +331,20 @@ export default async function handler(req, res) {
     const user = createOrUpdateUserFromGoogle(googlePayload);
 
     // -----------------------------------------------------------------------
-    // Get permissions based on roles
-    // -----------------------------------------------------------------------
-
-    const roles = user.roles || ["USER"];
-    const permissions = getPermissionsForRoles(roles);
-
-    // -----------------------------------------------------------------------
     // Generate JWT token
     // -----------------------------------------------------------------------
+    // Only identity claims are embedded. Permissions are excluded so that any
+    // server-side role change takes effect on the next sign-in rather than
+    // persisting in the token for up to JWT_EXPIRES_IN (7 days by default).
+    // This mirrors the fix applied to login.js in issue #4199.
+
+    const roles = user.roles || ["USER"];
 
     const jwtPayload = {
       id: user.id,
       email: user.email,
       username: user.username,
       roles: roles,
-      permissions: permissions,
       provider: user.provider || "google",
     };
 
@@ -347,6 +356,10 @@ export default async function handler(req, res) {
 
     const primaryRole = roles[0] || "ATTENDEE";
     const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
+
+    // Derive permissions fresh from the current roles for the response body.
+    // They are intentionally omitted from the JWT above.
+    const permissions = getPermissionsForRoles(roles);
 
     const userResponse = {
       id: user.id,

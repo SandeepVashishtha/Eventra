@@ -1,93 +1,111 @@
 import assert from "node:assert/strict";
-
-// Mock fetch
-let mockFetchResult = null;
-let mockFetchError = null;
-let lastFetchArgs = null;
-
-global.fetch = async (url, options) => {
-  lastFetchArgs = { url, options };
-  if (mockFetchError) {
-    throw mockFetchError;
-  }
-  return mockFetchResult;
-};
-
-// Import fetchWithTimeout and FetchError
 import { fetchWithTimeout, FetchError } from "../src/utils/fetchWithTimeout.js";
 
-// Helper to construct mock headers
-const mockHeaders = (contentType) => ({
-  get: (name) => {
-    if (name.toLowerCase() === "content-type") {
-      return contentType;
-    }
-    return null;
-  }
-});
-
-// Test JSON success response
-mockFetchError = null;
-mockFetchResult = {
-  ok: true,
-  status: 200,
-  headers: mockHeaders("application/json"),
-  json: async () => ({ status: "success" })
-};
-
-let res = await fetchWithTimeout("https://api.example.com/data");
-assert.equal(res.response.status, 200, "JSON success status is 200");
-assert.deepEqual(res.data, { status: "success" }, "JSON body parses correctly");
-
-// Test plain text success response
-mockFetchResult = {
-  ok: true,
-  status: 200,
-  headers: mockHeaders("text/plain"),
-  text: async () => "plain text"
-};
-res = await fetchWithTimeout("https://api.example.com/text");
-assert.equal(res.data, "plain text", "plain text body parses correctly");
-
-// Test failed response throws FetchError
-mockFetchResult = {
-  ok: false,
-  status: 400,
-  headers: mockHeaders("application/json"),
-  json: async () => ({ message: "Bad Request" })
-};
+// Mock implementation of global.fetch
+const originalFetch = global.fetch;
 
 try {
-  await fetchWithTimeout("https://api.example.com/error");
-  assert.fail("Should have thrown FetchError");
-} catch (err) {
-  assert.ok(err instanceof FetchError, "Throws FetchError instance");
-  assert.equal(err.status, 400, "FetchError has status 400");
-  assert.equal(err.message, "Bad Request", "FetchError message matches response JSON message");
-}
-
-// Test timeout rejection
-global.fetch = async (url, options) => {
-  return new Promise((resolve, reject) => {
-    const handleAbort = () => {
-      const err = new Error("The operation was aborted.");
-      err.name = "AbortError";
-      reject(err);
+  // Test Case 1: Successful JSON Response
+  global.fetch = async (url, options) => {
+    return {
+      ok: true,
+      status: 200,
+      clone: () => ({
+        json: async () => ({ success: true })
+      }),
+      json: async () => ({ success: true })
     };
-    if (options.signal.aborted) {
-      handleAbort();
-    } else {
-      options.signal.addEventListener("abort", handleAbort);
-    }
-  });
-};
+  };
+  
+  const res1 = await fetchWithTimeout("https://api.example.com/json");
+  assert.deepEqual(res1.data, { success: true }, "Should parse successful JSON data");
+  assert.equal(res1.response.status, 200, "Should contain the raw response object");
+  
+  // Test Case 2: Successful Text Response (non-JSON)
+  global.fetch = async (url, options) => {
+    return {
+      ok: true,
+      status: 200,
+      clone: () => ({
+        json: async () => { throw new Error("Not JSON"); }
+      }),
+      text: async () => "plain text content"
+    };
+  };
+  
+  const res2 = await fetchWithTimeout("https://api.example.com/text");
+  assert.equal(res2.data, "plain text content", "Should fallback to plain text parsing");
 
-try {
-  await fetchWithTimeout("https://api.example.com/timeout", {}, 50);
-  assert.fail("Should have aborted");
-} catch (err) {
-  assert.ok(err instanceof FetchError, "Throws FetchError on abort/timeout");
-  assert.ok(err.message.includes("timed out"), "Message mentions timeout");
+  // Test Case 3: Failed request (non-ok response)
+  global.fetch = async (url, options) => {
+    return {
+      ok: false,
+      status: 404,
+      clone: () => ({
+        json: async () => ({ message: "Not Found" })
+      })
+    };
+  };
+  
+  await assert.rejects(
+    async () => {
+      await fetchWithTimeout("https://api.example.com/notfound");
+    },
+    (err) => {
+      assert(err instanceof FetchError, "Should throw FetchError");
+      assert.equal(err.status, 404);
+      assert.deepEqual(err.data, { message: "Not Found" });
+      return true;
+    },
+    "Should reject with FetchError on non-ok response"
+  );
+
+  // Test Case 4: Aborted request via timeout (throws AbortError which translates to FetchError)
+  global.fetch = async (url, options) => {
+    const signal = options.signal;
+    return new Promise((resolve, reject) => {
+      const onAbort = () => {
+        const error = new Error("The operation was aborted.");
+        error.name = "AbortError";
+        reject(error);
+      };
+      if (signal.aborted) {
+        onAbort();
+      } else {
+        signal.addEventListener("abort", onAbort);
+      }
+    });
+  };
+
+  await assert.rejects(
+    async () => {
+      await fetchWithTimeout("https://api.example.com/delay", {}, 10);
+    },
+    (err) => {
+      assert(err instanceof FetchError);
+      assert(err.message.includes("timed out"));
+      return true;
+    },
+    "Should throw FetchError on timeout"
+  );
+
+  // Test Case 5: Manual abort signal
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), 10);
+
+  await assert.rejects(
+    async () => {
+      await fetchWithTimeout("https://api.example.com/delay", { signal: controller.signal }, 100);
+    },
+    (err) => {
+      assert(err instanceof FetchError);
+      assert(err.message.includes("manually aborted"));
+      return true;
+    },
+    "Should throw FetchError on manual abort"
+  );
+
+  console.log("fetchWithTimeout tests passed ✓");
+} finally {
+  global.fetch = originalFetch;
 }
-
-console.log("fetchWithTimeout tests passed ✓");

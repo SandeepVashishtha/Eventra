@@ -350,7 +350,13 @@ export default function FAQSection() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 32px 20px 0;
+          padding: 32px max(20px, env(safe-area-inset-right) + 88px) 0 20px;
+        }
+
+        @media (max-width: 640px) {
+          .faq-cards-container {
+            padding-right: 20px;
+          }
         }
 
         .card-pin-wrapper {

@@ -1,0 +1,25 @@
+name: Pull Request Size Labeler
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  label-size:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Size Labeler
+        uses: pascalgn/size-label-action@v0.5.5
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          SIZES: >
+            {
+              "0": "size/XS",
+              "20": "size/S",
+              "100": "size/M",
+              "500": "size/L",
+              "1000": "size/XL"
+            }
