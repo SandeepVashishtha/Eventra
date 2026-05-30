@@ -4,7 +4,6 @@ import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb, Code2, GitBranch, BookOpen, Users, CheckCircle,
   Trophy, Clock, Star, ArrowRight, Search, Filter, ExternalLink,
-  Trophy, Clock, Star, ArrowRight, Search, ExternalLink,
   Calendar, Award, MessageCircle, Zap, Target, Globe,
   Copy, Bell, WifiOff
 } from "lucide-react";
@@ -330,7 +329,6 @@ const Skeleton = ({ className }) => (
   <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className}`} aria-hidden="true" />
 );
 
-
 // Toast Component
 const ToastContainer = ({ toasts, onClose }) => (
   <div className="fixed bottom-4 right-4 z-50 space-y-2" role="region" aria-live="polite" aria-label="Notifications">
@@ -466,14 +464,13 @@ const GSSoCContribution = () => {
       opacity: 1, 
       transition: { 
         duration: prefersReducedMotion ? 0 : 0.4,
-        ease: [0.22, 1, 0.36, 1] // smooth cubic-bezier
+        ease: [0.22, 1, 0.36, 1]
       } 
     }
   }), [prefersReducedMotion]);
   
   // Stats section visibility
   const statsRef = useRef(null);
-   
   useInView(statsRef, { once: true, margin: "-100px" });
   
   if (isLoading) {

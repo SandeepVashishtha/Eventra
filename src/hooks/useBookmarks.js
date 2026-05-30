@@ -42,8 +42,6 @@ const useBookmarks = (userId = "guest") => {
 
   const [bookmarks, setBookmarks] = useState(() => {
     try {
-      const raw = localStorage.getItem(storageKey);
-      const parsed = JSON.parse(raw);
       const stored = localStorage.getItem(storageKey);
       if (!stored) return [];
       const parsed = JSON.parse(stored);
