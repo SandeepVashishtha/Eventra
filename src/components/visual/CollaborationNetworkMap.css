@@ -290,8 +290,14 @@
 @media (max-width: 768px) {
   .cnm-filters {
     flex-direction: column;
+    box-sizing: border-box;
   }
   .filter-group {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .filter-input, .filter-select {
+    min-width: 0;
     width: 100%;
   }
   .cnm-stats-bar {

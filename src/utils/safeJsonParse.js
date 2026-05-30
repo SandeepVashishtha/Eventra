@@ -9,11 +9,6 @@ export const safeJsonParse = (
 
     return JSON.parse(value);
   } catch (error) {
-    console.error(
-      "Failed to parse JSON:",
-      error,
-    );
-
     return fallback;
   }
 };

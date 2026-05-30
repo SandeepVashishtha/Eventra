@@ -48,6 +48,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES = {
 };
 
 export const getNotificationCategory = (notification = {}) => {
+  if (!notification) return "system";
   const rawCategory =
     notification.category ||
     notification.type ||

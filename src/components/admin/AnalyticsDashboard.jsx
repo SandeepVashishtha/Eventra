@@ -16,6 +16,8 @@ import {
   ArrowUpRight,
   TrendingDown
 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Users, Clock, TrendingUp, Activity, CheckCircle2, Play, Zap } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -29,6 +31,7 @@ import {
 } from "recharts";
 import { toast } from "react-toastify";
 import { useAnalyticsStream, SSE_STATUS } from "../../context/RealTimeContext";
+import BudgetPlanner from "./BudgetPlanner";
 
 // =========================================================================
 // CONSTANTS & CORE MOCK DATASOURCES
@@ -239,6 +242,7 @@ const AnalyticsDashboard = () => {
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
   const [isRefreshing, setIsRefreshing] = useState(false);
+const [activeTab, setActiveTab] = useState('analytics');
 
   // Real-time Context Hooks with high security checks to catch undefined structures
   const streamContext = useAnalyticsStream();
@@ -373,6 +377,30 @@ const AnalyticsDashboard = () => {
       
       {/* ADMINISTRATIVE TOP TITLE BAR */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-slate-100 dark:border-slate-800/60 pb-5">
+
+    <div className="space-y-8 text-slate-800 dark:text-slate-100">
+  {/* Tab Navigation */}
+  <div className="flex gap-2 mb-4">
+    <button
+      onClick={() => setActiveTab('analytics')}
+      className={`px-4 py-2 rounded ${activeTab === 'analytics' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+    >
+      Analytics
+    </button>
+    <button
+      onClick={() => setActiveTab('budget')}
+      className={`px-4 py-2 rounded ${activeTab === 'budget' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+    >
+      Budget
+    </button>
+  </div>
+  {activeTab === 'budget' ? (
+    <BudgetPlanner />
+  ) : (
+    // Original analytics UI starts here
+    <>
+      {/* CONTROL BANNER */}
+      <div className="flex flex-col gap-4 p-5 bg-white border shadow-sm sm:flex-row sm:items-center sm:justify-between dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl">
         <div>
           <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
             <ShieldCheck className="w-6 h-6 text-indigo-500" />
@@ -619,3 +647,10 @@ const AnalyticsDashboard = () => {
 };
 
 export default memo(AnalyticsDashboard);
+      </>
+  )}
+</div>
+  );
+};
+
+export default AnalyticsDashboard;

@@ -4,6 +4,7 @@
   min-height: 100vh;
   padding: 32px 24px;
   color: #1e1b4b;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 .dark .ead-root {
   background: #0f172a;
@@ -69,8 +70,9 @@
   box-shadow: 0 1px 4px #6366f110;
 }
 .dark .ead-kpi {
-  background: #1e293b;
-  border-color: #334155;
+  background: #111827;
+  border-color: #475569;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
 }
 
 .ead-kpi-val {
@@ -82,10 +84,13 @@
 
 .ead-kpi-label {
   font-size: 11px;
-  color: #9ca3af;
+  color: #64748b;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+.dark .ead-kpi-label {
+  color: #cbd5e1;
 }
 
 /* ── Tabs ── */
@@ -109,20 +114,30 @@
   font-family: inherit;
 }
 .dark .ead-tab {
-  background: #1e293b;
+  background: #111827;
   color: #e2e8f0;
-  border-color: #334155;
+  border-color: #475569;
 }
 
 .ead-tab:hover {
   border-color: #6366f1;
   color: #6366f1;
 }
+.dark .ead-tab:hover {
+  border-color: #818cf8;
+  color: #c7d2fe;
+  background: #1e293b;
+}
 
 .ead-tab--active {
   background: #6366f1;
   border-color: #6366f1;
   color: #fff;
+}
+.dark .ead-tab--active {
+  background: #818cf8;
+  border-color: #818cf8;
+  color: #111827;
 }
 
 /* ── Grid ── */
@@ -141,8 +156,9 @@
   box-shadow: 0 2px 12px #6366f108;
 }
 .dark .ead-card {
-  background: #1e293b;
-  border-color: #334155;
+  background: #111827;
+  border-color: #475569;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
 }
 
 .ead-card--wide {
@@ -161,6 +177,19 @@
 }
 .dark .ead-card-title {
   color: #f8fafc;
+}
+
+.dark .ead-card .recharts-cartesian-axis-tick-value,
+.dark .ead-card .recharts-legend-item-text,
+.dark .ead-card .recharts-text {
+  fill: #cbd5e1;
+  color: #e2e8f0 !important;
+}
+
+.dark .ead-card .recharts-default-tooltip {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
 }
 
 /* ── Feedback ── */
@@ -195,6 +224,9 @@
   height: 10px;
   overflow: hidden;
 }
+.dark .ead-feedback-bar-wrap {
+  background: #334155;
+}
 
 .ead-feedback-bar {
   height: 100%;
@@ -209,6 +241,9 @@
   color: #6366f1;
   width: 52px;
   text-align: right;
+}
+.dark .ead-feedback-rating {
+  color: #c7d2fe;
 }
 
 .ead-feedback-responses {
@@ -243,15 +278,30 @@
   background: #f0fdf4;
   color: #16a34a;
 }
+.dark .ead-sentiment--positive {
+  background: #052e16;
+  color: #bbf7d0;
+  border: 1px solid #166534;
+}
 
 .ead-sentiment--neutral {
   background: #fefce8;
   color: #ca8a04;
 }
+.dark .ead-sentiment--neutral {
+  background: #422006;
+  color: #fde68a;
+  border: 1px solid #92400e;
+}
 
 .ead-sentiment--negative {
   background: #fef2f2;
   color: #dc2626;
+}
+.dark .ead-sentiment--negative {
+  background: #450a0a;
+  color: #fecaca;
+  border: 1px solid #991b1b;
 }
 
 /* ── Responsive ── */

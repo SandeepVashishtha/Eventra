@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useContext,
   useEffect,
@@ -238,13 +238,12 @@ export const AuthProvider = ({ children }) => {
   const persistSession = useCallback((sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
-    try {
-      if (sessionToken && sessionToken !== 'cookie-managed') {
-        document.cookie = `token=${sessionToken}; path=/; Secure; SameSite=Strict`;
-      }
-    } catch {
-      // Ignore cookie write failures in strict environments
-    }
+
+    // The auth token is set exclusively by the server via a Set-Cookie response
+    // header with HttpOnly; Secure; SameSite=Strict. Writing the token through
+    // document.cookie here would create a second, JS-readable copy of the same
+    // credential, exposing it to XSS-based theft. The client-side code only
+    // needs to store the non-sensitive display profile (see below).
 
     // Strip authorization fields before persisting to storage. Roles, scopes,
     // and permissions are always re-derived from the backend on page load via
