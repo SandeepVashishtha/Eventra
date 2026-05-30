@@ -84,7 +84,7 @@ const formatLastUpdated = (timestamp) => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-  
+
   if (diffMinutes < 1) return "Just now";
   if (diffMinutes < 60) return `${diffMinutes}m ago`;
   if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
@@ -129,7 +129,7 @@ const useLocalStorage = (key, initialValue) => {
 
 const RankMovementIndicator = React.memo(({ liveDifference }) => {
   const diff = liveDifference ?? 0;
-  
+
   if (diff > 0) {
     return (
       <motion.span
@@ -310,7 +310,7 @@ const PodiumCard = React.memo(({ contributor, position, orderClass, styling, isF
 // ─── Main Component ───────────────────────────────────────────────
 export default function LeaderBoard() {
   useDocumentTitle("Eventra | Leaderboard");
-  
+
   // State
   const [contributors, setContributors] = useState([]);
   const [streaks, setStreaks] = useState({});
@@ -395,7 +395,7 @@ export default function LeaderBoard() {
   // Real-time stream updates
   useEffect(() => {
     if (streamContributors.length === 0 || lastSynced === lastAppliedSyncRef.current) return;
-    
+
     lastAppliedSyncRef.current = lastSynced;
 
     setContributors((prev) => {
@@ -426,14 +426,13 @@ export default function LeaderBoard() {
     });
 
     setLastUpdated(`Live: ${formatLastUpdated(lastSynced)}`);
-    
+
     // Update cache
     try {
-      const cacheData = {
+      storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
         data: streamContributors,
         timestamp: lastSynced,
-      };
-      storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, cacheData);
+      });
     } catch (err) {
       logger.warn("Failed to update leaderboard cache:", err);
     }
@@ -480,7 +479,7 @@ export default function LeaderBoard() {
           const sorted = [...data].sort((a, b) => b.points - a.points);
           setContributors(sorted);
           setLastUpdated(`Updated: ${formatLastUpdated(Date.now())}`);
-          
+
           // Cache the fresh data
           storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
             data,
@@ -491,7 +490,6 @@ export default function LeaderBoard() {
         logger.error("Failed to load leaderboard:", err);
         if (isMounted) {
           setError("Unable to load leaderboard. Please try again.");
-          // Fallback to empty state
           setContributors([]);
         }
       } finally {
@@ -523,7 +521,7 @@ export default function LeaderBoard() {
 
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
-    
+
     setIsRefreshing(true);
     try {
       const { data } = await fetchWithTimeout("/api/leaderboard", {}, 10000);
@@ -532,25 +530,23 @@ export default function LeaderBoard() {
         const sorted = [...data].sort((a, b) => b.points - a.points);
         setContributors(sorted);
         setLastUpdated(`Refreshed: ${formatLastUpdated(Date.now())}`);
-        
+
         storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
           data,
           timestamp: Date.now(),
         });
-        
-        // Subtle success feedback
+
         confetti({ ...CONFETTI_CONFIG, particleCount: 50, spread: 50 });
       }
     } catch (err) {
       logger.error("Refresh failed:", err);
-      // Visual feedback for error could be added here
     } finally {
       setIsRefreshing(false);
     }
   }, [isRefreshing]);
 
   const handleExport = useCallback(() => {
-    const exportData = sortedContributors.map((c, idx) => ({
+    const exportData = sortedContributors.map((c) => ({
       rank: ranksMap[c.username],
       username: c.username,
       name: c.name || "",
@@ -582,7 +578,6 @@ export default function LeaderBoard() {
   }, [sortedContributors, ranksMap]);
 
   const handleKeyDown = useCallback((e) => {
-    // Keyboard shortcuts
     if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
       e.preventDefault();
       searchInputRef.current?.focus();
@@ -651,7 +646,7 @@ export default function LeaderBoard() {
   // ─── Render ───────────────────────────────────────────────
   return (
     <FeatureErrorBoundary>
-      <div 
+      <div
         className="bg-slate-50 dark:bg-slate-950 pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300"
         role="main"
         aria-labelledby="leaderboard-heading"
@@ -685,7 +680,7 @@ export default function LeaderBoard() {
             <section className="mb-14" aria-labelledby="podium-heading">
               <h2 id="podium-heading" className="sr-only">Top 3 Contributors</h2>
               <div className="flex flex-col md:flex-row items-end justify-center gap-6 max-w-4xl mx-auto" role="list">
-                {podiumConfig.map((podium, index) => (
+                {podiumConfig.map((podium) => (
                   <PodiumCard
                     key={podium.position}
                     contributor={podium.contributor}
@@ -839,7 +834,7 @@ export default function LeaderBoard() {
             aria-labelledby="leaderboard-table-title"
           >
             <h2 id="leaderboard-table-title" className="sr-only">Contributor Rankings</h2>
-            
+
             {error ? (
               <div className="p-8 text-center">
                 <p className="text-rose-500 font-medium">{error}</p>
