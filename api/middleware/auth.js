@@ -30,6 +30,14 @@ export const verifyAuth = (handler) => {
       return res.status(401).json({ error: "Unauthorized: Missing authentication token" });
     }
 
+    // Check environment configurations
+    try {
+      getJwtSecret();
+    } catch (configError) {
+      console.error("[verifyAuth] Configuration Error:", configError.message);
+      return res.status(500).json({ error: "Internal Server Error: Authentication configuration issue." });
+    }
+
     // 2. Verify token signature and expiry
     let decoded;
     try {
