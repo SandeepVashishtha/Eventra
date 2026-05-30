@@ -91,9 +91,9 @@ const ALLOWED_EXCEPTIONS = new Set([
   'REACT_APP_EMAILJS_TEMPLATE_ID',
 ]);
 
-// Required VITE_ variables that MUST be present for the app to function.
-const REQUIRED_VARS = [
-  'VITE_API_URL',
+// Required API URL variables that MUST be present for the app to function.
+const REQUIRED_ENV_GROUPS = [
+  ['VITE_API_URL', 'REACT_APP_API_URL'],
 ];
 
 // Variables that require proper format validation
@@ -131,12 +131,14 @@ console.log('\n🔍 [validate-env] Scanning environment variables for security i
 
 // Check required variables
 console.log('📋 Required variables:');
-for (const varName of REQUIRED_VARS) {
-  if (!process.env[varName]) {
-    console.warn(`  ⚠  MISSING: ${varName} (app may fail to connect to backend)`);
-    warnings.push(`Required variable ${varName} is not set`);
+for (const group of REQUIRED_ENV_GROUPS) {
+  const setVar = group.find((varName) => process.env[varName]);
+
+  if (!setVar) {
+    console.warn(`  ⚠  MISSING: ${group.join(' or ')} (app may fail to connect to backend)`);
+    warnings.push(`Required variable ${group.join(' or ')} is not set`);
   } else {
-    console.log(`  ✓  ${varName} = [set]`);
+    console.log(`  ✓  ${setVar} = [set]`);
   }
 }
 
@@ -168,6 +170,18 @@ for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
       console.error(`  ✗  ${msg}`);
     } else {
       console.log(`  ✓  ${varName} format is valid`);
+    }
+    continue;
+  }
+
+  if (varName === 'VITE_API_URL' && process.env.REACT_APP_API_URL) {
+    if (!FORMAT_VALIDATED_VARS.VITE_API_URL.pattern.test(process.env.REACT_APP_API_URL)) {
+      const msg = `[FORMAT ERROR] REACT_APP_API_URL: ${FORMAT_VALIDATED_VARS.VITE_API_URL.message}`;
+      errors.push(msg);
+      hasErrors = true;
+      console.error(`  ✗  ${msg}`);
+    } else {
+      console.log('  ✓  REACT_APP_API_URL format is valid');
     }
   }
 }
