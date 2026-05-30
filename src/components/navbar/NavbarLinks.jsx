@@ -1,22 +1,8 @@
-import {
-  lazy,
-  Suspense,
-  useRef,
-  useState,
-  useEffect,
-} from "react";
+import { lazy, Suspense, useRef, useState, useEffect } from "react";
 
 import { NavLink, useLocation } from "react-router-dom";
 
-import {
-  Moon,
-  Sun,
-  Search,
-  ChevronDown,
-  Plus,
-  HelpCircle,
-  X,
-} from "lucide-react";
+import { Moon, Sun, Search, ChevronDown, Plus, HelpCircle, X } from "lucide-react";
 
 import { useTheme } from "../../context/ThemeContext";
 import { NAV_ITEMS } from "./constants/navItems";

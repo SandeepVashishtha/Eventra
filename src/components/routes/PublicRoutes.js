@@ -3,6 +3,7 @@ import { Route } from "react-router-dom";
 import PageLayout from "../Layout/PageLayout";
 import ProtectedRoute from "../auth/ProtectedRoute";
 const HealthCheckPage = lazy(() => import("../../Pages/HealthCheckPage"));
+const CertificateVerifier = lazy(() => import("../../Pages/CertificateVerification/CertificateVerifier"));
 
 // ─── Lazy-loaded page components ─────────────────────────────────────────────
 // All components are loaded on-demand to keep the initial bundle small.
@@ -80,6 +81,7 @@ export const getPublicRoutes = () => [
     <Route key="/helpcenter" path="/helpcenter" element={<HelpCenter />} />
     <Route key="/contact" path="/contact" element={<ContactUs />} />
     <Route key="/feedback" path="/feedback" element={<FeedbackPage />} />
+    <Route key="/verify-certificate" path="/verify-certificate" element={<CertificateVerifier />} />,
     <Route key="/analytics" path="/analytics" element={<EventAnalyticsDashboard />} />
     <Route key="/events/:eventId/floor-plan" path="/events/:eventId/floor-plan" element={<FloorPlanDesignerPage />} />
     <Route key="/events/:eventId/virtual-venue-walkthrough" path="/events/:eventId/virtual-venue-walkthrough" element={<VirtualVenueWalkthrough />} />
