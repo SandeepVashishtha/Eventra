@@ -46,7 +46,7 @@ const fuse = new Fuse(allData, {
 const Hero = () => {
   const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | Home");
-  
+
   const phrases = [
     "Amazing Tech Events",
     "Exciting Hackathons Today",
@@ -68,7 +68,7 @@ const Hero = () => {
   const [index, setIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
-  
+
   const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
   const controls = useAnimation();
 
@@ -82,11 +82,11 @@ const Hero = () => {
       setIsDark(document.documentElement.classList.contains("dark"));
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    
+
     const onResize = () => {
       setIsMobileView(window.innerWidth <= 420);
     };
-    
+
     window.addEventListener("resize", onResize);
     return () => {
       observer.disconnect();
@@ -199,7 +199,7 @@ const Hero = () => {
   const secondaryBtn = `${primaryBtn} border border-transparent`;
 
   return (
-    <section 
+    <section
       ref={containerRef}
       aria-label="Hero section"
       className="relative overflow-hidden bg-gradient-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950 dark:via-slate-900/80 dark:to-black text-slate-900 dark:text-gray-100 pb-16 sm:pb-20 md:pb-24 border-b border-gray-100/60 dark:border-slate-800/60"
