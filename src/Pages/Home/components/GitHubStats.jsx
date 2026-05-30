@@ -127,7 +127,7 @@ export default function GitHubStats() {
           writeCache(next);
           setIsLoading(false);
         }
-      } catch (err) {
+      } catch {
         //console.warn("GitHub stats fetch failed", err);
         if (!cached && mounted) {
           setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
