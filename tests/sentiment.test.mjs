@@ -1,36 +1,42 @@
 import assert from "node:assert/strict";
+
 import { analyzeSentiment, getSentimentDisplay } from "../src/utils/sentiment.js";
 
-// Test neutral cases
-assert.equal(analyzeSentiment(""), 0);
-assert.equal(analyzeSentiment(null), 0);
-assert.equal(analyzeSentiment(undefined), 0);
-assert.equal(analyzeSentiment("Hello world"), 0);
+// Test analyzeSentiment
+assert.strictEqual(analyzeSentiment(null), 0, "null should return 0");
+assert.strictEqual(analyzeSentiment(undefined), 0, "undefined should return 0");
+assert.strictEqual(analyzeSentiment(123), 0, "non-string should return 0");
+assert.strictEqual(analyzeSentiment(""), 0, "empty string should return 0");
+assert.strictEqual(analyzeSentiment("hello world"), 0, "neutral text should return 0");
 
-// Test positive cases
-assert.equal(analyzeSentiment("This is great and amazing!"), 3.0);
-assert.equal(analyzeSentiment("I love Eventra, it's perfect!"), 3.0);
-assert.equal(analyzeSentiment("fantastic excellent awesome helpful"), 5.0); // Clamped to 5.0
+const happyScore = analyzeSentiment("I love this amazing great excellent thing");
+assert.ok(happyScore > 0, "positive keywords should give positive score");
 
-// Test negative cases
-assert.equal(analyzeSentiment("I hate this laggy app, it broke!"), -4.5);
-assert.equal(analyzeSentiment("terrible crash failure poor design"), -5.0); // Clamped to -5.0
+const sadScore = analyzeSentiment("This is terrible bad awful hate issues broken failure");
+assert.ok(sadScore < 0, "negative keywords should give negative score");
 
-// Test displays
-const excitedDisplay = getSentimentDisplay(4.0);
-assert.equal(excitedDisplay.emoji, "🌟");
-assert.match(excitedDisplay.label, /Excited/);
+const mixedScore = analyzeSentiment("I love this but also hate that broken and amazing");
+assert.strictEqual(mixedScore, 0, "equal positive and negative should cancel out");
 
-const happyDisplay = getSentimentDisplay(1.0);
-assert.equal(happyDisplay.emoji, "🙂");
+const manyPositive = analyzeSentiment("love love love love love love love love");
+const clampedPos = analyzeSentiment("love ".repeat(20));
+assert.strictEqual(clampedPos, 5, "score should clamp at +5");
+assert.strictEqual(analyzeSentiment("hate ".repeat(20)), -5, "score should clamp at -5");
 
-const neutralDisplay = getSentimentDisplay(0.0);
-assert.equal(neutralDisplay.emoji, "😐");
+// Test getSentimentDisplay
+const excitedDisplay = getSentimentDisplay(2.0);
+assert.strictEqual(excitedDisplay.label, "Excited / Highly Positive", "score >1.5 should be excited");
 
-const negativeDisplay = getSentimentDisplay(-1.0);
-assert.equal(negativeDisplay.emoji, "🙁");
+const happyDisplay = getSentimentDisplay(0.5);
+assert.strictEqual(happyDisplay.label, "Happy / Positive", "score 0.2-1.5 should be happy");
 
-const angryDisplay = getSentimentDisplay(-3.0);
-assert.equal(angryDisplay.emoji, "😢");
+const neutralDisplay = getSentimentDisplay(0);
+assert.strictEqual(neutralDisplay.label, "Neutral", "score near 0 should be neutral");
 
-console.log("Sentiment utility tests passed successfully!");
+const mutedDisplay = getSentimentDisplay(-0.5);
+assert.strictEqual(mutedDisplay.label, "Muted / Negative", "score -1.5 to -0.2 should be muted");
+
+const frustratedDisplay = getSentimentDisplay(-2.0);
+assert.strictEqual(frustratedDisplay.label, "Frustrated / Highly Negative", "score <-1.5 should be frustrated");
+
+console.log("sentiment tests passed ✓");

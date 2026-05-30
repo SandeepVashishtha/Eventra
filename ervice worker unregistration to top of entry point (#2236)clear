@@ -1,0 +1,20 @@
+[1mdiff --git a/src/index.js b/src/index.js[m
+[1mindex e7df321b..cf65cf16 100644[m
+[1m--- a/src/index.js[m
+[1m+++ b/src/index.js[m
+[36m@@ -11,6 +11,9 @@[m [mimport * as serviceWorkerRegistration from "./serviceWorkerRegistration";[m
+ // Initialize Global Runtime Monitoring[m
+ initializeGlobalErrorHandling();[m
+ [m
+[32m+[m[32m// Unregister service worker early to avoid caching conflicts[m
+[32m+[m[32mserviceWorkerRegistration.unregister();[m
+[32m+[m
+ const root = ReactDOM.createRoot(document.getElementById("root"));[m
+ [m
+ root.render([m
+[36m@@ -23,4 +26,4 @@[m [mroot.render([m
+   </React.StrictMode>[m
+ );[m
+ [m
+[31m-serviceWorkerRegistration.unregister();[m
+[41m+[m
