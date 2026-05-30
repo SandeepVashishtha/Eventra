@@ -11,6 +11,7 @@ import { getEventStatus } from "../../utils/eventUtils";
 import { logError } from "../../utils/errorLogger";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
+import { getUserTimezone } from "../../utils/timezoneUtils";
 // Note: eventsMockData.json is NOT statically imported here.
 // It is loaded dynamically (and only in development/fallback mode) so that
 // the mock JSON is not bundled into the production build.
@@ -307,7 +308,7 @@ const EventDetailsPage = () => {
                   <div className="flex min-w-0 items-start gap-3">
                     <Calendar size={16} className="shrink-0 text-indigo-500" />
                     <span>
-                      {new Date(event.date).toLocaleDateString("en-US", {
+                      {new Date(event.date).toLocaleDateString(undefined, {
                         weekday: "long",
                         year: "numeric",
                         month: "long",
@@ -317,7 +318,7 @@ const EventDetailsPage = () => {
                   </div>
                   <div className="flex min-w-0 items-center gap-3">
                     <Clock size={16} className="shrink-0 text-blue-500" />
-                    <span>{event.time}</span>
+                    <span>{event.time} ({getUserTimezone()})</span>
                   </div>
                   <div className="flex min-w-0 items-start gap-3">
                     <MapPin size={16} className="shrink-0 text-pink-500" />

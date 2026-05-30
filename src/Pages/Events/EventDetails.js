@@ -28,6 +28,8 @@ import ShareModal from "../../components/common/ShareModal";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
+import { getUserTimezone } from "../../utils/timezoneUtils";
+import { safeParseJson } from "../../utils/jsonUtils";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 
@@ -464,14 +466,7 @@ const EventDetails = () => {
                   <Calendar className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
-                    <p className="font-semibold">
-                      {new Date(event.date).toLocaleDateString("en-US", {
-                        weekday: "long",
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </p>
+                    <p className="font-semibold">{new Date(event.date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
                   </div>
                 </div>
 
@@ -479,7 +474,7 @@ const EventDetails = () => {
                   <Clock className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Time</p>
-                    <p className="font-semibold">{event.time}</p>
+                    <p className="font-semibold">{event.time} ({getUserTimezone()})</p>
                   </div>
                 </div>
 
