@@ -15,8 +15,9 @@ import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 import RespawningText from "../../../components/visual/RespawningText";
 import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
 
+const CountUp = CountUpLib.default || CountUpLib;
+
 const MotionLink = motion(Link);
-const CountUp = CountUpLib.default;
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
