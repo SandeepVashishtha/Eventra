@@ -184,7 +184,8 @@ function App() {
 
                   <SectionErrorBoundary label="Chatbot Assist" silent>
                     <Suspense fallback={null}>
-                      <Chatbot />
+                      {/* Passing an empty array safely avoids initialization crashes */}
+                      <Chatbot liveEvents={[]} />
                     </Suspense>
                   </SectionErrorBoundary>
 
@@ -197,7 +198,7 @@ function App() {
                   <Suspense fallback={null}>
                     <ScrollToTopButton />
                   </Suspense>
-                  {/* Enhanced back-to-top with progress ring - appears at 400px */}
+                  
                   <Suspense fallback={null}>
                     <BackToTop />
                   </Suspense>
