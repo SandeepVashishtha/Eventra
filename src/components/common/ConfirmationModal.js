@@ -1,5 +1,4 @@
 import React, { useEffect, useId, useRef } from "react";
-import { useEffect, useId, useRef } from "react";
 import "./ConfirmationModal.css";
 
 const FOCUSABLE_SELECTOR = [
@@ -31,30 +30,24 @@ const ConfirmationModal = ({
 
     const prevOverflow = document.body.style.overflow;
     previouslyFocusedElementRef.current = document.activeElement;
-    if (!isOpen) return undefined;
-
-    const previouslyFocusedElement = document.activeElement;
-
     document.body.style.overflow = "hidden";
 
     cancelButtonRef.current?.focus();
 
-    const onKey = (e) => {
-      if (e.key === "Escape") {
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
         onClose();
         return;
       }
 
-      if (e.key !== "Tab") return;
+      if (event.key !== "Tab") return;
 
       const focusableElements = Array.from(
         modalRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) || [],
       ).filter((element) => !element.hasAttribute("disabled"));
 
       if (focusableElements.length === 0) {
-        e.preventDefault();
+        event.preventDefault();
         modalRef.current?.focus();
         return;
       }
@@ -63,70 +56,32 @@ const ConfirmationModal = ({
       const lastFocusableElement = focusableElements[focusableElements.length - 1];
       const activeElement = document.activeElement;
 
-      if (e.shiftKey && activeElement === firstFocusableElement) {
-        e.preventDefault();
+      if (event.shiftKey && activeElement === firstFocusableElement) {
+        event.preventDefault();
         lastFocusableElement.focus();
         return;
       }
 
-      if (!e.shiftKey && activeElement === lastFocusableElement) {
-        e.preventDefault();
+      if (!event.shiftKey && activeElement === lastFocusableElement) {
+        event.preventDefault();
         firstFocusableElement.focus();
         return;
       }
 
       if (!modalRef.current?.contains(activeElement)) {
-        e.preventDefault();
+        event.preventDefault();
         firstFocusableElement.focus();
       }
     };
 
-    document.addEventListener("keydown", onKey);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = prevOverflow;
       if (previouslyFocusedElementRef.current?.isConnected) {
         previouslyFocusedElementRef.current.focus();
       }
       previouslyFocusedElementRef.current = null;
-      if (event.key !== "Tab" || !modalRef.current) return;
-
-      const focusableElements = modalRef.current.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-
-      if (!focusableElements.length) return;
-
-      const firstElement = focusableElements[0];
-      const lastElement =
-        focusableElements[focusableElements.length - 1];
-
-      if (
-        event.shiftKey &&
-        document.activeElement === firstElement
-      ) {
-        event.preventDefault();
-        lastElement?.focus();
-      } else if (
-        !event.shiftKey &&
-        document.activeElement === lastElement
-      ) {
-        event.preventDefault();
-        firstElement?.focus();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = "auto";
-
-      document.removeEventListener(
-        "keydown",
-        handleKeyDown
-      );
-
-      previouslyFocusedElement?.focus?.();
     };
   }, [isOpen, onClose]);
 
@@ -140,7 +95,6 @@ const ConfirmationModal = ({
   };
 
   return (
-    <div className="confirmation-modal-overlay" onClick={handleOverlayClick} role="presentation">
     <div
       className="confirmation-modal-overlay"
       onClick={handleOverlayClick}

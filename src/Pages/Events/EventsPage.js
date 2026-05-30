@@ -2,11 +2,9 @@ import { useRef, useEffect, useState } from "react";
 import { useSearchParams, useLocation } from "react-router-dom"; // ✅ useLocation added here
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
-import { Grid, List } from "lucide-react";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
-import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -16,14 +14,6 @@ import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
-
-const FILTERS = [
-  { key: "all", label: "All" },
-  { key: "upcoming", label: "Upcoming" },
-  { key: "past", label: "Past" },
-  { key: "conference", label: "Conferences" },
-  { key: "workshop", label: "Workshops" },
-];
 
 const renderCardSection = (
   isLoading,
@@ -211,32 +201,7 @@ const EventsPage = () => {
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
-        <div className="mb-5 sm:mb-6 flex flex-col gap-3">
-          <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
-            {FILTERS.map((filter) => (
-              <button
-                key={filter.key}
-                onClick={() => listing.setFilterType(filter.key)}
-                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition ${
-                  listing.filterType === filter.key
-                    ? "bg-blue-600 text-white dark:bg-blue-600 dark:text-white"
-                    : "border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:text-gray-300 dark:border-slate-700 dark:hover:bg-slate-800"
-                }`}
-                aria-pressed={listing.filterType === filter.key}
-              >
-                {filter.label}
-              </button>
-            ))}
-
-            {hasActiveFilters && (
-              <button
-                onClick={clearSearchAndFilters}
-                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/50 font-semibold"
-              >
-                Clear Filters
-              </button>
-            )}
-          </div>
+        <div className="mb-5 sm:mb-6">
 
           <EventFiltersToolbar
             filterType={listing.filterType}
@@ -254,48 +219,6 @@ const EventsPage = () => {
             priceStats={listing.priceStats}
             dateRangeStats={listing.dateRangeStats}
           />
-
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-            <div className="w-full sm:w-48">
-              <label htmlFor="sort-events" className="sr-only">
-                Sort events
-              </label>
-              <StyledDropdown
-                label=""
-                value={listing.sortType}
-                onChange={listing.setSortType}
-                options={["Newest", "Upcoming", "Popular"]}
-                placeholder="Sort by Date"
-              />
-            </div>
-
-            <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
-              <button
-                onClick={() => listing.setViewMode("grid")}
-                className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                  listing.viewMode === "grid"
-                    ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
-                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
-                aria-label="Grid view"
-                aria-pressed={listing.viewMode === "grid"}
-              >
-                <Grid size={16} />
-              </button>
-              <button
-                onClick={() => listing.setViewMode("list")}
-                className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                  listing.viewMode === "list"
-                    ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
-                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
-                aria-label="List view"
-                aria-pressed={listing.viewMode === "list"}
-              >
-                <List size={16} />
-              </button>
-            </div>
-          </div>
         </div>
 
         <ActiveFilters

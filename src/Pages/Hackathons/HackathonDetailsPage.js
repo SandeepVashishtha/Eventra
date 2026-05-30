@@ -102,7 +102,6 @@ const HackathonDetailsPage = () => {
                   href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(foundHackathon.title)}&dates=${foundHackathon.startDate.replaceAll("-", "")}/${foundHackathon.endDate.replaceAll("-", "")}&details=${encodeURIComponent(foundHackathon.description)}&location=${encodeURIComponent(foundHackathon.location)}`}
                   target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
-                  rel="noopener noreferrer"
                 >
                   Add Reminder
                 </a>
