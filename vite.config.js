@@ -42,16 +42,19 @@ export default defineConfig(({ mode }) => {
       },
     },
 
-    envPrefix: ["VITE_", "REACT_APP_"],
     define: {
       "process.env.NODE_ENV": JSON.stringify(mode),
       "process.env.PUBLIC_URL": JSON.stringify(""),
-      ...Object.keys(env)
-        .filter((key) => key.startsWith("REACT_APP_") || key.startsWith("VITE_"))
-        .reduce((prev, key) => {
-          prev[`process.env.${key}`] = JSON.stringify(env[key]);
-          return prev;
-        }, {}),
+      "process.env.REACT_APP_API_URL": JSON.stringify(env.REACT_APP_API_URL || env.VITE_API_URL || "/api"),
+      "process.env.REACT_APP_SENTRY_DSN": JSON.stringify(env.REACT_APP_SENTRY_DSN || ""),
+      "process.env.REACT_APP_GITHUB_REPO": JSON.stringify(env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra"),
+      "process.env.REACT_APP_PUBLIC_URL": JSON.stringify(env.REACT_APP_PUBLIC_URL || "https://eventra.sandeepvashishtha.tech"),
+      "process.env.REACT_APP_VAPID_PUBLIC_KEY": JSON.stringify(env.REACT_APP_VAPID_PUBLIC_KEY || ""),
+      "process.env.REACT_APP_CSP_REPORT_URI": JSON.stringify(env.REACT_APP_CSP_REPORT_URI || ""),
+      "process.env.REACT_APP_FACEBOOK_APP_ID": JSON.stringify(env.REACT_APP_FACEBOOK_APP_ID || ""),
+      "process.env.REACT_APP_EMAILJS_PUBLIC_KEY": JSON.stringify(env.REACT_APP_EMAILJS_PUBLIC_KEY || ""),
+      "process.env.REACT_APP_EMAILJS_SERVICE_ID": JSON.stringify(env.REACT_APP_EMAILJS_SERVICE_ID || ""),
+      "process.env.REACT_APP_EMAILJS_TEMPLATE_ID": JSON.stringify(env.REACT_APP_EMAILJS_TEMPLATE_ID || ""),
     },
 
     server: {

@@ -1,5 +1,5 @@
 const requiredEnvVars = [
-  "REACT_APP_API_URL",
+  "VITE_API_URL",
 ];
 
 const optionalEnvVars = {
@@ -45,7 +45,7 @@ export const validateEnvironment = () => {
 validateEnvironment();
 
 export const ENV = {
-  API_URL: getEnvVar("REACT_APP_API_URL"),
+  API_URL: getEnvVar("VITE_API_URL"),
   SENTRY_DSN: getEnvVar(
     "REACT_APP_SENTRY_DSN",
     optionalEnvVars.REACT_APP_SENTRY_DSN
