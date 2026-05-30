@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import QuestCenter from '../components/gamification/QuestCenter';
@@ -119,7 +119,7 @@ export default function UserAchievements() {
 
   // Derived calculations: 100 XP per event, 150 XP per streak day, 250 XP per badge
   const derivedXP = (totalEvents * 100) + (currentStreak * 150) + (unlockedCount * 250) + 75;
-  
+
   // Level system: 500 XP per Level
   const currentLevel = Math.floor(derivedXP / 500) + 1;
   const xpInCurrentLevel = derivedXP % 500;
@@ -147,27 +147,7 @@ export default function UserAchievements() {
     window.open(shareUrl, "_blank", "noopener,noreferrer");
   };
 
-  const handleNativeShare = async (badge) => {
-    const title = `Unlocked '${badge.name}' Badge on Eventra!`;
-    const text = `I just unlocked the '${badge.name}' milestone badge on Eventra! 🏆 ${badge.description}`;
-    const url = "https://eventra.dev";
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({ title, text, url });
-      } catch (error) {
-        console.error("Native share failed:", error);
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(`${text} Check it out: ${url}`);
-        toast.info("Milestone details copied to clipboard!");
-      } catch (err) {
-        toast.error("Failed to copy milestone details.");
-      }
-    }
-  };
-
+  
   // Mock download badge certificate SVG
   const handleDownloadSVG = (badge) => {
     const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250">

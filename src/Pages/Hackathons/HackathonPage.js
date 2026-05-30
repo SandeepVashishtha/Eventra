@@ -1,5 +1,5 @@
 import TeamMatchmaking from "./components/TeamMatchmaking";
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { fetchHackathons } from "../../services/hackathonService";

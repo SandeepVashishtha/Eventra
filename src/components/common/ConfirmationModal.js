@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import "./ConfirmationModal.css";
 
 const FOCUSABLE_SELECTOR = [
@@ -30,11 +31,18 @@ const ConfirmationModal = ({
 
     const prevOverflow = document.body.style.overflow;
     previouslyFocusedElementRef.current = document.activeElement;
+    if (!isOpen) return undefined;
+
+    const previouslyFocusedElement = document.activeElement;
+
     document.body.style.overflow = "hidden";
+
     cancelButtonRef.current?.focus();
 
     const onKey = (e) => {
       if (e.key === "Escape") {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
         onClose();
         return;
       }
@@ -81,17 +89,63 @@ const ConfirmationModal = ({
         previouslyFocusedElementRef.current.focus();
       }
       previouslyFocusedElementRef.current = null;
+      if (event.key !== "Tab" || !modalRef.current) return;
+
+      const focusableElements = modalRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+
+      if (!focusableElements.length) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement =
+        focusableElements[focusableElements.length - 1];
+
+      if (
+        event.shiftKey &&
+        document.activeElement === firstElement
+      ) {
+        event.preventDefault();
+        lastElement?.focus();
+      } else if (
+        !event.shiftKey &&
+        document.activeElement === lastElement
+      ) {
+        event.preventDefault();
+        firstElement?.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = "auto";
+
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+
+      previouslyFocusedElement?.focus?.();
     };
   }, [isOpen, onClose]);
+
 
   if (!isOpen) return null;
 
   const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) onClose();
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
   };
 
   return (
     <div className="confirmation-modal-overlay" onClick={handleOverlayClick} role="presentation">
+    <div
+      className="confirmation-modal-overlay"
+      onClick={handleOverlayClick}
+      role="presentation"
+    >
       <div
         ref={modalRef}
         className="confirmation-modal-content"
@@ -104,14 +158,26 @@ const ConfirmationModal = ({
         <div className="confirmation-modal-header">
           <h3 id={titleId}>{title}</h3>
         </div>
+
         <div className="confirmation-modal-body">
           <p id={descriptionId}>{message}</p>
         </div>
+
         <div className="confirmation-modal-actions">
-          <button ref={cancelButtonRef} type="button" className="confirmation-modal-btn confirmation-modal-btn-cancel" onClick={onClose} aria-label="Cancel">
+          <button
+            ref={cancelButtonRef}
+            type="button"
+            className="confirmation-modal-btn confirmation-modal-btn-cancel"
+            onClick={onClose}
+          >
             {cancelText}
           </button>
-          <button type="button" className="confirmation-modal-btn confirmation-modal-btn-confirm" onClick={onConfirm} aria-label="Confirm">
+
+          <button
+            type="button"
+            className="confirmation-modal-btn confirmation-modal-btn-confirm"
+            onClick={onConfirm}
+          >
             {confirmText}
           </button>
         </div>
