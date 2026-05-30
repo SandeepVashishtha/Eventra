@@ -2,7 +2,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Search, Calendar, Trophy, Code, ArrowRight, Sparkles } from "lucide-react";
+import { Search, Calendar, Trophy, Code, ArrowRight, Sparkles, Users, Handshake } from "lucide-react";
 
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import eventsData from "../../Events/eventsMockData.json";
@@ -86,14 +86,15 @@ const Hero = () => {
     return <Search className="w-4 h-4" />;
   };
 
+  // Hero statistics with icons for better visual representation
   const stats = [
-    { value: 1500, label: "Developers", suffix: "+" },
-    { value: 75, label: "Events", suffix: "+" },
-    { value: 30, label: "Partners", suffix: "+" },
+    { value: 1500, label: "Developers", suffix: "+", icon: Users },
+    { value: 75, label: "Events", suffix: "+", icon: Calendar },
+    { value: 30, label: "Partners", suffix: "+", icon: Handshake },
   ];
 
   return (
-    <section 
+    <section
       ref={containerRef}
       className="relative min-h-[100dvh] flex flex-col justify-center overflow-hidden bg-white dark:bg-slate-950 transition-colors duration-500 pt-20 pb-16"
     >
@@ -104,7 +105,7 @@ const Hero = () => {
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-[40rem] h-[40rem] bg-indigo-300/30 dark:bg-indigo-900/20 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      <motion.div 
+      <motion.div
         style={{ opacity: opacityHero, y: prefersReducedMotion ? 0 : yHero }}
         className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center text-center"
       >
@@ -112,9 +113,9 @@ const Hero = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-medium text-sm mb-8 shadow-sm"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-medium text-sm mb-8 shadow-sm group hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(99,102,241,0.35)] transition-all duration-300"
         >
-          <Sparkles className="w-4 h-4" />
+          <Sparkles className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12" />
           <span>The Ultimate Platform for Builders</span>
         </motion.div>
 
@@ -130,15 +131,15 @@ const Hero = () => {
         </p>
 
         {/* Search Bar */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="w-full max-w-2xl mx-auto mb-12 relative"
         >
           <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-pink-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-            <div className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl">
+            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-pink-500 rounded-2xl blur opacity-10 group-hover:opacity-40 transition duration-500"></div>
+            <div className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl focus-within:shadow-[0_0_12px_rgba(99,102,241,0.18)]">
               <ModernSearchInput
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
@@ -191,22 +192,40 @@ const Hero = () => {
           </div>
         </motion.div>
 
+
         {/* Stats */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="grid grid-cols-3 gap-4 sm:gap-8 border-t border-slate-200 dark:border-slate-800 pt-8 mt-8 w-full max-w-3xl"
+      
+          className="grid grid-cols-3 gap-6 sm:gap-10  border-t border-slate-200 dark:border-slate-800 pt-8 mt-8 w-full max-w-3xl "
         >
           {stats.map((stat, idx) => (
-            <div key={idx} className="flex flex-col items-center">
+            <motion.div
+              key={idx}
+              whileHover={{ y: -8 ,scale: 1.03}}
+              transition={{ duration: 0.2 }}
+             
+              className="group w-full flex flex-col items-center bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-md hover:shadow-[0_10px_30px_rgba(148,163,184,0.35)] transition-all duration-300"
+
+            >
+
+              {/* Stat icon */}
+              <div className="mb-2">
+                <stat.icon
+                  size={24}
+                 
+                  className="text-slate-500 dark:text-slate-400 group-hover:text-indigo-500 group-hover:scale-100 transition-all duration-300"
+                />
+              </div>
               <span className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
                 <CountUp start={0} end={stat.value} duration={2.5} separator="," />{stat.suffix}
               </span>
               <span className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">
                 {stat.label}
               </span>
-            </div>
+            </motion.div>
           ))}
         </motion.div>
       </motion.div>
