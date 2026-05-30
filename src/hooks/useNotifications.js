@@ -4,20 +4,6 @@ import { logger } from "../utils/logger";
 
 const STORAGE_KEY = "eventra_notifications";
 
-/**
- * Manages in-app notifications with IndexedDB persistence and browser permission helpers.
- *
- * Loads stored notifications on mount, persists updates after the initial load completes,
- * and exposes helpers to add notifications, mark all as read, and request push permission.
- *
- * @returns {{
- *   notifications: Array,
- *   unreadCount: number,
- *   addNotification: function,
- *   markAllAsRead: function,
- *   requestPermission: function,
- * }}
- */
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState([]);
 

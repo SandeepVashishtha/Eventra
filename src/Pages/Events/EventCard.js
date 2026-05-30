@@ -20,8 +20,8 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
-import ShareMenu from "../../components/common/ShareMenu";
 import LazyImage from "../../components/common/LazyImage";
+import ShareModal from "../../components/common/ShareModal";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
@@ -59,6 +59,7 @@ const EventCard = ({ event }) => {
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
   const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [randomIcon] = useState(() => {
     const icons = [
       <Star key="star" size={16} className="text-yellow-500" />,
@@ -195,16 +196,28 @@ const EventCard = ({ event }) => {
           </AnimatePresence>
         </div>
 
-        <ShareMenu
-          shareData={eventSharingData}
-          position="above"
-          menuClassName="!z-[999] shadow-2xl"
-          buttonClassName=""
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsShareModalOpen(true);
+          }}
+          className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200 group/share transition-all duration-200"
+          aria-label={`Share ${event.title}`}
         >
-          <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200 group/share">
-            <Share2 size={14} className="text-gray-600" aria-hidden="true" />
-          </div>
-        </ShareMenu>
+          <Share2 size={14} className="text-gray-600" aria-hidden="true" />
+        </button>
+
+        <AnimatePresence>
+          {isShareModalOpen && (
+            <ShareModal
+              isOpen={isShareModalOpen}
+              onClose={() => setIsShareModalOpen(false)}
+              event={event}
+            />
+          )}
+        </AnimatePresence>
 
         <button
           type="button"

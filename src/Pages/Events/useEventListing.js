@@ -8,6 +8,7 @@ const DEFAULT_EVENTS_PER_PAGE = 12;
 
 const SORT_MAPPING = {
   Newest: "date,desc",
+  Upcoming: "date,asc",
   Oldest: "date,asc",
   "Title A-Z": "title,asc",
   "Title Z-A": "title,desc",
@@ -176,11 +177,19 @@ const useEventListing = () => {
     setCurrentPage(page);
   };
 
-  // fix: filter past events from Upcoming Events section (fixes #3343)
-  // Previously this returned all events with no date filtering applied.
   const filteredEvents = useMemo(() => {
     const now = new Date();
     return events.filter((event) => {
+      // Filter by Search Query
+      const query = debouncedSearchQuery.trim().toLowerCase();
+      if (query) {
+        const inTitle = event.title?.toLowerCase().includes(query);
+        const inDesc = event.description?.toLowerCase().includes(query);
+        const inLocation = event.location?.toLowerCase().includes(query);
+        if (!inTitle && !inDesc && !inLocation) return false;
+      }
+
+      // Filter by Type/Status
       const eventDate = new Date(event.date || event.startDate);
       if (filterType === "upcoming") {
         return eventDate >= now;
@@ -188,11 +197,38 @@ const useEventListing = () => {
       if (filterType === "past") {
         return eventDate < now;
       }
+      if (filterType === "conference") {
+        return event.type?.toLowerCase() === "conference" || event.category?.toLowerCase() === "conference";
+      }
+      if (filterType === "workshop") {
+        return event.type?.toLowerCase() === "workshop" || event.category?.toLowerCase() === "workshop";
+      }
+
       return true; // "all"
     });
-  }, [events, filterType]);
+  }, [events, filterType, debouncedSearchQuery]);
 
-  const paginatedEvents = useMemo(() => filteredEvents, [filteredEvents]);
+  const sortedEvents = useMemo(() => {
+    return [...filteredEvents].sort((a, b) => {
+      const dateA = new Date(a.date || a.startDate);
+      const dateB = new Date(b.date || b.startDate);
+
+      if (sortType === "Upcoming") {
+        return dateA - dateB; // Earliest first
+      }
+      // Default: Newest (Latest first)
+      return dateB - dateA;
+    });
+  }, [filteredEvents, sortType]);
+
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * eventsPerPage;
+    return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
+  }, [sortedEvents, currentPage, eventsPerPage]);
+
+  // Derive pagination totals based on the filtered dataset
+  const totalElements = pagination.totalPages > 1 ? pagination.totalElements : sortedEvents.length;
+  const totalPages = pagination.totalPages > 1 ? pagination.totalPages : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
 
   return {
     currentPage,
@@ -205,8 +241,8 @@ const useEventListing = () => {
     paginatedEvents,
     searchQuery,
     sortType,
-    totalPages: pagination.totalPages,
-    totalElements: pagination.totalElements,
+    totalPages,
+    totalElements,
     viewMode,
     advancedFilters,
     isAdvancedFiltersOpen,
