@@ -1,18 +1,20 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import {
+  corsHeaders,
+  corsResponse,
+  DEFAULT_ROLES,
+  DEFAULT_PERMISSIONS,
+  buildAuthPayload,
+  signToken,
+  setAuthCookie,
+  generateUserId,
+} from "./_shared.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage (replace with database in production)
 // ---------------------------------------------------------------------------
 
 const users = new Map();
-
-// ---------------------------------------------------------------------------
-// JWT Configuration
-// ---------------------------------------------------------------------------
-
-const JWT_SECRET = getJwtSecret();
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
@@ -54,63 +56,6 @@ const validatePassword = (password) => {
   
   return { valid: true };
 };
-
-// ---------------------------------------------------------------------------
-// CORS Headers
-// ---------------------------------------------------------------------------
-
-const corsHeaders = (req) => {
-  const allowedOrigin = process.env.ALLOWED_ORIGIN;
-  const requestOrigin = req.headers?.origin;
-
-  const corsOrigin = allowedOrigin || "*";
-  if (allowedOrigin && requestOrigin !== allowedOrigin) {
-    console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
-  }
-
-  // Access-Control-Allow-Credentials must not be sent with a wildcard origin.
-  // Per the CORS spec, browsers reject credentialed responses when the reflected
-  // origin is "*". Only set the header when a specific origin is configured.
-  const isSpecificOrigin = corsOrigin !== "*";
-
-  return {
-    "Access-Control-Allow-Origin": corsOrigin,
-    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
-};
-
-const corsResponse = (res, status, data, req) => {
-  return res.status(status).set(corsHeaders(req)).json(data);
-};
-
-// ---------------------------------------------------------------------------
-// Generate User ID
-// ---------------------------------------------------------------------------
-//
-// Replaced Date.now() + sequential counter with crypto.randomUUID().
-// The counter-based approach was not collision-safe: two concurrent
-// serverless instances cold-starting within the same millisecond both
-// produced `user_<timestamp>_1`. See google.js for the full rationale.
-const generateUserId = () => crypto.randomUUID();
-
-// ---------------------------------------------------------------------------
-// Default Roles and Permissions
-// ---------------------------------------------------------------------------
-
-const DEFAULT_ROLES = ["USER"];
-
-const DEFAULT_PERMISSIONS = [
-  "events:view",
-  "events:register",
-  "projects:view",
-  "projects:submit",
-  "hackathons:view",
-  "hackathons:participate",
-  "profile:edit",
-  "profile:view",
-];
 
 // ---------------------------------------------------------------------------
 // Signup Handler
@@ -213,14 +158,9 @@ export default async function handler(req, res) {
     // Generate JWT token
     // -----------------------------------------------------------------------
 
-    const jwtPayload = {
-      id: newUser.id,
-      email: newUser.email,
-      roles: newUser.roles,
-      permissions: newUser.permissions,
-    };
+    const jwtPayload = buildAuthPayload(newUser);
 
-    const token = jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const token = signToken(jwtPayload);
 
     // -----------------------------------------------------------------------
     // Prepare response (exclude sensitive data)
@@ -237,20 +177,7 @@ export default async function handler(req, res) {
       createdAt: newUser.createdAt,
     };
 
-    const isProd = process.env.NODE_ENV === "production";
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`;
-    // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
-    try {
-      if (typeof res.setHeader === 'function') {
-        res.setHeader('Set-Cookie', cookieValue);
-      } else if (typeof res.set === 'function') {
-        res.set({ 'Set-Cookie': cookieValue });
-      } else if (res.headers && typeof res.headers === 'object') {
-        res.headers['Set-Cookie'] = cookieValue;
-      }
-    } catch (e) {
-      // Ignore write errors on test response objects
-    }
+    setAuthCookie(res, token);
 
     return corsResponse(res, 201, {
       message: "Account created successfully",
