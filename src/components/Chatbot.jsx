@@ -404,7 +404,7 @@ export default function Chatbot() {
                   </motion.div>
                 </div>
               )}
-
+               <div ref={messagesEndRef} />
             </div>
 
             {/* Footer controls */}
