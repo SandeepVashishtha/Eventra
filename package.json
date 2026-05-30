@@ -15,6 +15,7 @@
     "@sentry/react": "10.54.0",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/postcss": "4.3.0",
+    "@upstash/redis": "1.38.0",
     "@vitejs/plugin-react": "6.0.2",
     "aos": "^2.3.4",
     "axios": "^1.16.1",
