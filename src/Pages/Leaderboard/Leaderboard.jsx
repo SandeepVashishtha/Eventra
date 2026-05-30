@@ -26,7 +26,7 @@ import {
   totalLeaderboardPages,
   buildRanksMap,
   computeLeaderboardStats,
-  calculatePrPoints,
+  
   applyAchievementBonus,
 } from "../../utils/leaderboardUtils";
 import { getAchievementBadge } from "../../utils/leaderboardUtils";
@@ -34,7 +34,6 @@ import { logger } from "../../utils/logger";
 import { storageManager } from "../../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
 import { validators } from "../../utils/storage/storageValidators";
-import { ENV } from "../../config/env";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
@@ -81,9 +80,10 @@ function RankMovementIndicator({ liveDifference }) {
 }
 
 // Repository constant — update if the leaderboard should point to another repo
-const GITHUB_REPO = ENV.GITHUB_REPO;
+ 
 // Token is managed securely by the backend proxy
-const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
+ 
+// Token is managed securely by the backend proxy
 
 // AnimatedCounter uses requestAnimationFrame instead of setInterval to keep
 // count-up animations aligned with the browser's paint cycle, avoiding
@@ -168,7 +168,8 @@ export default function LeaderBoard() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  const [, setDebouncedSearch] = useState(search);
   const [recentSearches, setRecentSearches] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
@@ -335,7 +336,8 @@ export default function LeaderBoard() {
   [contributors, search, activeCategory]
 );
 
-const sortedContributors = useMemo(
+ 
+useMemo(
   () => sortContributors(filteredContributors, sortBy),
   [filteredContributors, sortBy]
 );
@@ -354,12 +356,10 @@ const sortedContributors = useMemo(
 
     storageManager.set(STORAGE_KEYS.RECENT_SEARCHES, updatedSearches);
   };
-  const performanceData = [
-  { name: "Participated", value: 80 },
-  { name: "Won", value: 20 },
-];
+  
 
-const COLORS = ["#6366F1", "#22C55E"];
+ 
+
 
   const totalPages = useMemo(
     () => totalLeaderboardPages(filteredContributors.length, CONTRIBUTORS_PER_PAGE),

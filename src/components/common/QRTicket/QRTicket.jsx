@@ -20,7 +20,7 @@
  * }
  */
 
-import React, { forwardRef } from "react";
+import { forwardRef } from "react";
 import QRCode from "react-qr-code";
 
 // Ticket type visual config

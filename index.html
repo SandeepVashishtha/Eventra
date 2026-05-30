@@ -116,25 +116,8 @@
       />
     </noscript>
 
-    <!-- Prevent Theme Flickering (inlined to avoid Vite module bundling warning) -->
-    <script>
-      (function () {
-        try {
-          var savedTheme = localStorage.getItem("theme");
-          var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-          var theme = savedTheme || (systemDark ? "dark" : "light");
-          document.documentElement.classList.add("no-transition");
-          document.documentElement.classList.remove("light", "dark");
-          document.documentElement.classList.add(theme);
-          document.documentElement.style.colorScheme = theme;
-          window.addEventListener("load", function () {
-            document.documentElement.classList.remove("no-transition");
-          });
-        } catch (e) {
-          console.error("Theme initialization failed:", e);
-        }
-      })();
-    </script>
+    <!-- Prevent Theme Flickering -->
+    <script src="/theme-init.js"></script>
 
     <!-- Title -->
     <title>
@@ -145,6 +128,12 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://eventra.vercel.app/" />
     <meta property="og:image" content="/Eventra.png" />
+
+    <!-- Google Sign In -->
+    <meta
+      name="google-signin-client_id"
+      content="%VITE_GOOGLE_CLIENT_ID%"
+    />
 
     <script
       src="https://accounts.google.com/gsi/client"

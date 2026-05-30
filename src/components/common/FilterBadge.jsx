@@ -1,4 +1,3 @@
-import React from "react";
 import { X } from "lucide-react";
 
 /**
@@ -8,7 +7,6 @@ import { X } from "lucide-react";
 const FilterBadge = ({
   label,
   onRemove,
-  type = "default",
   variant = "default",
 }) => {
   // Color variants for different filter types

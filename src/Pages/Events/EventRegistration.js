@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
@@ -41,20 +41,23 @@ import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 
 const MAX_NOTES_CHARS = 500;
 
-const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
-const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
-
-function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
-  const finalName = userName || "Participant";
-  if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
-    window.emailjs.init(EMAILJS_PUBLIC_KEY);
-    window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email: userEmail,
-      to_name: finalName,
-      event_name: eventName,
-      event_date: eventDate,
-    }).catch(() => { });
+// EmailJS credentials are no longer read from REACT_APP_* environment
+// variables here. They were previously bundled into the frontend JavaScript,
+// allowing any visitor to extract them and abuse the EmailJS quota.
+//
+// Confirmation emails are now sent via the /api/send-email serverless handler
+// which reads EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, and EMAILJS_PUBLIC_KEY
+// as server-only environment variables (no REACT_APP_ prefix).
+async function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  try {
+    await apiUtils.post("/api/send-email", {
+      toEmail: userEmail,
+      toName: userName || "Participant",
+      eventName: eventName || "",
+      eventDate: eventDate || "",
+    });
+  } catch {
+    // Confirmation email failure is non-fatal — registration already succeeded
   }
 }
 
@@ -106,7 +109,7 @@ const EventRegistration = () => {
   const eventId = routeEventId || routeId;
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, token, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
   const isHackathonPath = location.pathname.startsWith("/register");
@@ -352,17 +355,25 @@ const EventRegistration = () => {
       : (API_ENDPOINTS.EVENTS?.REGISTER ? API_ENDPOINTS.EVENTS.REGISTER(eventId) : `/api/events/${eventId}/register`);
 
     try {
+      // userId is intentionally omitted from the request body.
+      // The backend must derive the caller's identity exclusively from the
+      // verified JWT (via the HttpOnly cookie or Authorization header set
+      // by the Axios instance). Including userId here would allow any
+      // authenticated user to register under a different account by
+      // manipulating the field — a classic mass-assignment / IDOR vector.
+      //
+      // The third argument (token) has also been removed: apiUtils.post's
+      // normalizeRequestConfig silently converts a string argument to {}
+      // so it was never sent as an Authorization header — dead code.
+      // Authentication is handled automatically by withCredentials: true
+      // on the Axios instance, which attaches the HttpOnly session cookie.
       await apiUtils.post(
         endpoint,
-          {
-            ...formData,
-            priority: formData.priority,
-            eventId: parseInt(eventId),
-            userId: user.id,
-          },
-        // Registration is authenticated server-side; send the active token
-        // explicitly instead of relying only on global storage lookup.
-        token
+        {
+          ...formData,
+          priority: formData.priority,
+          eventId: parseInt(eventId),
+        },
       );
 
       // Axios resolves for 2xx — treat as success
@@ -378,12 +389,13 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        // Offline sync fallback keeps the full registration intent intact so
-        // it can be replayed without asking the user to submit the form again.
+        // Offline sync fallback — userId is also excluded from the queued
+        // payload for the same reason it is excluded from the live POST.
+        // When the queue is replayed, the backend will re-derive the caller's
+        // identity from the session token attached to the replayed request.
         const payload = {
           ...formData,
           eventId: parseInt(eventId),
-          userId: user.id,
         };
 
         const success = await pushToQueue(

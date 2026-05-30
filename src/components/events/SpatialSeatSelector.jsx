@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ZoomIn, ZoomOut, RotateCcw, MapPin, CheckCircle, ShieldAlert, Sparkles, HelpCircle } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, CheckCircle, ShieldAlert, Sparkles, HelpCircle } from "lucide-react";
 import "./SpatialSeatSelector.css";
 
 // Fallback presets if no venue layout is stored yet

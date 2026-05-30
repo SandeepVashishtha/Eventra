@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Pencil, 
@@ -9,8 +9,7 @@ import {
   Trash2, 
   Download, 
   Users, 
-  Sparkles, 
-  Share2 
+  Sparkles
 } from "lucide-react";
 import { toast } from "react-toastify";
 

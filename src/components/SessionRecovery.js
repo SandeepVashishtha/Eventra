@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useSessionRecovery } from '../context/SessionRecoveryContext';
 import { WifiOff, RefreshCw, X, CheckCircle, AlertCircle } from 'lucide-react';
 
