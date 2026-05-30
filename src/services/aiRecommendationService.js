@@ -2,31 +2,27 @@ import { apiUtils } from "../config/api";
 
 export const generateAIInsights = async (event, profile) => {
   try {
+    // 🔥 FIX 1: Added logical OR fallbacks to prevent "undefined" from polluting the AI prompt
     const prompt = `
 You are an AI event recommendation assistant.
 
 User Profile:
-- Interests: ${profile.interests?.join(", ")}
-- Tech Stack: ${profile.techStack?.join(", ")}
-- Preferred Event Type: ${profile.eventTypes?.join(", ")}
-- Skill Level: ${profile.level}
+- Interests: ${profile.interests?.join(", ") || "None specified"}
+- Tech Stack: ${profile.techStack?.join(", ") || "None specified"}
+- Preferred Event Type: ${profile.eventTypes?.join(", ") || "Any"}
+- Skill Level: ${profile.level || "Not specified"}
 
 Event:
-- Title: ${event.title}
-- Category: ${event.category}
-- Description: ${event.description}
+- Title: ${event.title || "Unknown"}
+- Category: ${event.category || "General"}
+- Description: ${event.description || "No description available"}
 
 Explain in 3 concise bullet points why this event matches the user.
 `;
 
     // Make request to our secure backend proxy instead of exposing the API key to the frontend
-    const response = await fetch("/api/ai-recommendations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prompt }),
-    });
+    // 🔥 FIX 2: Replaced raw fetch with apiUtils to ensure JWT Auth tokens and interceptors are applied
+    const response = await apiUtils.post("/api/ai-recommendations", { prompt });
 
     const data = await response.json();
 

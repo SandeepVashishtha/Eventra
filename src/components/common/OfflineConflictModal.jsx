@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { AlertTriangle, Server, ArrowRight, Save, X, Edit3 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { AlertTriangle, Server, X, Edit3 } from "lucide-react";
 import "./OfflineConflictModal.css";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 

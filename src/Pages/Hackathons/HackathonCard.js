@@ -17,7 +17,7 @@ import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";
 import { generateEventSharingData } from "../../utils/shareUtils";
 
 const useCountdown = (targetDate) => {
-  const prefersReducedMotion = useReducedMotion();
+  useReducedMotion();
   const calculateTimeLeft = useCallback(() => {
     const difference = new Date(targetDate) - new Date();
 
@@ -52,9 +52,7 @@ const CountdownTimer = ({ targetDate, label }) => {
 
   if (!timeLeft) {
     return (
-      <span className="text-xs font-semibold text-red-500 dark:text-red-400">
-        Deadline passed
-      </span>
+      <span className="text-xs font-semibold text-red-500 dark:text-red-400">Deadline passed</span>
     );
   }
 
@@ -72,8 +70,7 @@ const CountdownTimer = ({ targetDate, label }) => {
       <span>{label}</span>
       <span className="font-mono">
         {timeLeft.days > 0 ? `${timeLeft.days}d ` : ""}
-        {String(timeLeft.hours).padStart(2, "0")}h{" "}
-        {String(timeLeft.minutes).padStart(2, "0")}m
+        {String(timeLeft.hours).padStart(2, "0")}h {String(timeLeft.minutes).padStart(2, "0")}m
       </span>
     </div>
   );
@@ -252,10 +249,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             <CalendarIcon className="h-4 w-4 flex-shrink-0 text-sky-500 dark:text-sky-400" />
             <span>
               {normalizedHackathon.startDate && normalizedHackathon.endDate
-                ? formatDateRange(
-                    normalizedHackathon.startDate,
-                    normalizedHackathon.endDate,
-                  )
+                ? formatDateRange(normalizedHackathon.startDate, normalizedHackathon.endDate)
                 : "Dates TBA"}
             </span>
           </div>
@@ -307,9 +301,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         {status === "completed" && (
           <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs dark:border-amber-500/20 dark:bg-amber-500/10">
             <TrophyIcon className="h-4 w-4 flex-shrink-0 text-amber-500" />
-            <span className="font-semibold text-slate-600 dark:text-slate-400">
-              Winner:
-            </span>
+            <span className="font-semibold text-slate-600 dark:text-slate-400">Winner:</span>
             <span className="truncate text-slate-700 dark:text-slate-300">
               {normalizedHackathon.winner || "Announced soon"}
             </span>
@@ -328,8 +320,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
               </button>
               <a
                 href={addHackathonToGoogleCalendar(normalizedHackathon)}
-                target="_blank"
-                rel="noopener noreferrer"
+                target="_blank" rel="noopener noreferrer"
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-slate-50 hover:text-indigo-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 Reminder

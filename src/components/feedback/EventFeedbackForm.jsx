@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiStar,
@@ -21,6 +21,12 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
     const key = `feedback-submitted-${eventId}`;
     if (localStorage.getItem(key)) {
       setSubmitted(true);
+    } else {
+      // 🔥 FIX: Reset the form state when navigating to a new, unreviewed event
+      setSubmitted(false);
+      setRating(0);
+      setHoveredRating(0);
+      setComment("");
     }
   }, [eventId]);
 

@@ -286,7 +286,7 @@ const HostHackathon = () => {
           Host Your Hackathon
         </h1>
         <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
-          "Fill in the details below and let's get your hackathon live!"
+         &quot;Fill in the details below and let&apos;s get your hackathon live!&quot;
         </p>
       </motion.div>
 

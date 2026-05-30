@@ -64,7 +64,7 @@ const ToggleEyeIcon = ({ visible, className = "" }) =>
   visible ? <EyeOff className={className} /> : <Eye className={className} />;
 
 // ============ CUSTOM HOOK: useSignupForm ============
-const useSignupForm = (onSuccess) => {
+const useSignupForm = () => {
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", email: "", password: "", confirmPassword: ""
   });
@@ -216,9 +216,18 @@ const Signup = () => {
     } catch (err) {
       console.error("Signup error:", { message: err.message, email: formData.email });
       setSubmitStatus('error');
+      
+      let errorMessage = getPublicErrorMessage(err, AUTH_ERRORS.registrationFailed);
+      
+      if (err.name === "RateLimitError") {
+        errorMessage = "Too many attempts. Please try again in a minute.";
+      } else if (err.isTimeout || err.isNetworkError) {
+        errorMessage = "Network timeout or connection error. Please check your connection and try again.";
+      }
+      
       setErrors(prev => ({ 
         ...prev, 
-        submit: getPublicErrorMessage(err, AUTH_ERRORS.registrationFailed) 
+        submit: errorMessage
       }));
     } finally {
       setLoading(false);

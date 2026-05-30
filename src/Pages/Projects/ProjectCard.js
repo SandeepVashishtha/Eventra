@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, memo } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { fetchGitHubRepo, getGitHubRepoDetails } from "../../utils/githubApiClient.js";
@@ -158,7 +158,7 @@ const ConcentricTechRings = ({ techStack }) => {
 };
 
 const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
-  const prefersReducedMotion = useReducedMotion();
+  useReducedMotion();
   const [isLoaded, setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -352,7 +352,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           }`} loading="lazy"/>
         <img
           src={project.image}
-          alt={project.title}
+          alt={project.title || "Project preview"}
           loading="lazy"
           decoding="async"
           onLoad={() => setIsLoaded(true)}
@@ -418,7 +418,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                   onClick={handleIncrementStar}
                   className="flex flex-col items-center justify-center bg-amber-50/50 hover:bg-amber-100/80 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border border-amber-100/20 dark:border-amber-900/10 rounded-xl py-1 text-amber-600 dark:text-amber-400 font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95"
                   title="Click to Star repository!"
-                 aria-label="button">
+                 aria-label="Star repository">
                   <FiStar className="mb-0.5" />
                   <span>{metrics?.stars || 0}</span>
                 </button>
@@ -427,7 +427,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                   onClick={handleIncrementFork}
                   className="flex flex-col items-center justify-center bg-teal-50/50 hover:bg-teal-100/80 dark:bg-teal-950/20 dark:hover:bg-teal-950/40 border border-teal-100/20 dark:border-teal-900/10 rounded-xl py-1 text-teal-600 dark:text-teal-400 font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95"
                   title="Click to Fork repository!"
-                 aria-label="button">
+                 aria-label="Fork repository">
                   <FiGithub className="mb-0.5" />
                   <span>{metrics?.forks || 0}</span>
                 </button>
@@ -460,7 +460,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             href={project.githubUrl}
-            target="_blank"
+            target="_blank" rel="noopener noreferrer"
             rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80 text-white text-xs font-black shadow-md hover:shadow-lg transition-all duration-300 border-none cursor-pointer"
           >
@@ -478,7 +478,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             href={project.liveDemo}
-            target="_blank"
+            target="_blank" rel="noopener noreferrer"
             rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-200 hover:border-indigo-300 dark:border-indigo-800/50 dark:hover:border-indigo-700 bg-white/40 dark:bg-slate-900/20 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 text-xs font-black shadow-xs hover:shadow-sm transition-all duration-300 cursor-pointer"
           >

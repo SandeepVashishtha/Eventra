@@ -1,5 +1,5 @@
 import StatusBadge from "./common/StatusBadge";
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { toast } from 'react-toastify';
@@ -141,8 +141,7 @@ const CollaborationHub = () => {
     }
     
     // Sanitize user proposal pitch text
-    const sanitizedPitch = sanitizeInputText(applicationText);
-    toast.success('Your partnership proposal has been submitted successfully!');
+        toast.success('Your partnership proposal has been submitted successfully!');
     setApplicationText('');
     setProposalFile(null);
     setSelectedOpportunity(null);
