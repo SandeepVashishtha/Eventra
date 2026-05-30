@@ -254,7 +254,6 @@ const HelpCenter = () => {
               href={item.link}
               target="_blank" rel="noopener noreferrer"
               className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 flex flex-col items-center text-center transition-transform transform hover:scale-105 hover:shadow-2xl"
-              rel="noopener noreferrer"
             >
               <div
                 className={`w-16 h-16 mb-4 flex items-center justify-center text-white rounded-full bg-gradient-to-br ${item.color} shadow-lg group-hover:rotate-12 transition-transform`}
@@ -547,7 +546,7 @@ const HelpCenter = () => {
             Frequently Asked Questions
           </h2>
           <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">
-            Everything you need to know about using our platform. Can't find what you're looking
+            Everything you need to know about using our platform. Can&apos;t find what you&apos;re looking
             for? Reach out to our community!
           </p>
 
