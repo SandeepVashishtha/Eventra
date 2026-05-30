@@ -1,4 +1,4 @@
-import { apiUtils } from "../config/api";
+import { apiUtils, isRetryableMethod } from "../config/api";
 
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRIES = 1;
@@ -172,11 +172,13 @@ export const requestValidation = async (endpoint, options = {}) => {
         );
       }
 
-      // Retry on network errors, timeouts, or 5xx server errors
-      if (attempt < retries) {
+      // Retry only safe/idempotent validation requests by default.
+      if (attempt < retries && isRetryableMethod(method)) {
         await wait(retryDelayMs * (attempt + 1));
         continue;
       }
+
+      break;
     }
   }
 
