@@ -1,7 +1,8 @@
 ## 🚀 Description
 Please include a summary of the changes and the related issue. Please also include relevant motivation and context.
 
-Fixes # (issue)
+## 🔗 Related Issue
+Closes #ISSUE_NUMBER
 
 ## 🛠️ Type of change
 Please delete options that are not relevant.
@@ -10,7 +11,21 @@ Please delete options that are not relevant.
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] This change requires a documentation update
 
+## 🧩 Summary
+Short explanation of the contribution.
+
+## 🔧 Changes Made
+- change 1
+- change 2
+- change 3
+
+## 🧪 Testing
+Describe the local checks you ran and what they covered.
+
 ## 📸 Screenshots / Video (if applicable)
+
+## 🎯 Impact
+Explain why this improves the project.
 
 ## ✅ Checklist
 - [ ] My code follows the style guidelines of this project
