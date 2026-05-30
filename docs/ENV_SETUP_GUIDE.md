@@ -104,7 +104,7 @@ Eventra/
 
 3. **Restart dev server** for changes to take effect:
    ```bash
-   npm start
+   npm run dev
    ```
 
 ### File Priority (Highest to Lowest)
@@ -124,7 +124,7 @@ Eventra/
 - Warning: **Never commit secrets** to `.env` (it's gitignored)
 - **Keep `.env.example` updated** when adding new variables
 - **Dev server must restart** when `.env` changes
-- **REACT_APP prefix is required** for variables accessible in browser
+- **Prefer `VITE_API_URL` for new setups**; `REACT_APP_API_URL` remains supported for compatibility
 
 ### Example `.env` File
 
@@ -132,7 +132,7 @@ Eventra/
 # ============================================
 # API Configuration (REQUIRED)
 # ============================================
-REACT_APP_API_URL=http://localhost:8080/api
+VITE_API_URL=http://localhost:8080/api
 REACT_APP_USE_REAL_API=true
 
 # ============================================
@@ -166,7 +166,7 @@ REACT_APP_SSE_URL=http://localhost:4001
 
 | Variable Name | Required | Purpose | Example Value | Safe for Client* | Notes |
 |---------------|----------|---------|----------------|------------------|-------|
-| **REACT_APP_API_URL** | ✅ Yes | Backend API endpoint | `http://localhost:8080/api` | ✅ Yes | Exposed in build; configure per environment |
+| **VITE_API_URL** / **REACT_APP_API_URL** | ✅ Yes | Backend API endpoint | `http://localhost:8080/api` | ✅ Yes | Either name can be used; the app accepts both for compatibility |
 | **REACT_APP_USE_REAL_API** | ❌ Optional | Use real backend vs mock data | `true` or `false` | ✅ Yes | Useful for testing without backend |
 | **REACT_APP_GOOGLE_CLIENT_ID** | ❌ Optional | Google OAuth authentication | `123456789.apps.googleusercontent.com` | ✅ Yes | Public ID; enables Google Sign-In |
 | **REACT_APP_EMAILJS_SERVICE_ID** | ❌ Optional | EmailJS service identifier | `service_abc123xyz` | ✅ Yes | Enables contact form emails |
