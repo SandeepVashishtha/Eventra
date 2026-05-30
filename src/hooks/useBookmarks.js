@@ -1,6 +1,46 @@
-import { useState, useEffect, useCallback } from 'react';
+/**
+ * @fileoverview useBookmarks - Event bookmarks management hook
+ * @module hooks/useBookmarks
+ */
+import { useState, useEffect, useCallback } from "react";
 
-const useBookmarks = (userId = 'guest') => {
+/**
+ * A custom React hook that manages bookmarked events for a user,
+ * persisting them to localStorage keyed by userId.
+ *
+ * @param {string} [userId='guest'] - The user ID used as localStorage key
+ *
+ * @returns {{
+ *   bookmarks: Object[],
+ *   toggleBookmark: (event: Object) => void,
+ *   isBookmarked: (id: string|number) => boolean
+ * }}
+ *
+ * @example
+ * const { bookmarks, toggleBookmark, isBookmarked } = useBookmarks(user.id);
+ * // Check if bookmarked
+ * if (isBookmarked(event.id)) { ... }
+ * // Toggle bookmark
+ * toggleBookmark(event);
+ */
+
+// ---------------------------------------------------------------------------
+// Limits
+// ---------------------------------------------------------------------------
+export const MAX_BOOKMARKS = 200;
+
+const toBookmarkEntry = (event) => ({
+  id: event?.id,
+  title: event?.title ?? "",
+  date: event?.date ?? "",
+  location: event?.location ?? "",
+  type: event?.type ?? event?.category ?? "",
+  image: event?.image ?? event?.imageUrl ?? "",
+  status: event?.status ?? "",
+  savedAt: Date.now(),
+});
+
+const useBookmarks = (userId = "guest") => {
   const storageKey = `bookmarks_${userId}`;
 
   const [bookmarks, setBookmarks] = useState(() => {
@@ -15,34 +55,63 @@ const useBookmarks = (userId = 'guest') => {
   });
 
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(bookmarks));
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(bookmarks));
+    } catch {
+      // localStorage full — fail silently; in-memory state remains correct
+    }
   }, [bookmarks, storageKey]);
 
   /**
    * Toggles bookmark state for an event.
-   * Wrapped in useCallback so the reference is stable across renders —
-   * callers can safely add it to useEffect / useMemo dependency arrays
-   * without triggering infinite loops.
+   *
+   * - If already bookmarked, removes the entry.
+   * - If not, adds a minimal (non-full-object) entry.
+   * - If adding would exceed MAX_BOOKMARKS, the oldest entry is dropped.
+   *
+   * Wrapped in useCallback so the reference is stable across renders.
    */
   const toggleBookmark = useCallback((event) => {
-    setBookmarks((prev) =>
-      prev.find((e) => e.id === event.id)
-        ? prev.filter((e) => e.id !== event.id)
-        : [...prev, { ...event, savedAt: Date.now() }]
-    );
+    if (!event?.id) return;
+
+    setBookmarks((prev) => {
+      const exists = prev.find((e) => e.id === event.id);
+
+      if (exists) {
+        return prev.filter((e) => e.id !== event.id);
+      }
+
+      const newEntry = toBookmarkEntry(event);
+      const withNew = [...prev, newEntry];
+
+      if (withNew.length <= MAX_BOOKMARKS) {
+        return withNew;
+      }
+
+      // Cap exceeded: drop oldest entry (smallest savedAt) to stay within limit
+      const sorted = [...withNew].sort((a, b) => (a.savedAt ?? 0) - (b.savedAt ?? 0));
+      sorted.shift();
+      return sorted;
+    });
   }, []);
 
   /**
    * Returns true if an event with the given id is currently bookmarked.
-   * Wrapped in useCallback so the reference stays stable for consumers
-   * that memoize derived state or pass it as a prop.
    */
   const isBookmarked = useCallback(
     (id) => bookmarks.some((e) => e.id === id),
-    [bookmarks]
+    [bookmarks],
   );
 
-  return { bookmarks, toggleBookmark, isBookmarked };
+  /**
+   * Removes all bookmarks for the current user from state and localStorage.
+   */
+  const clearBookmarks = useCallback(() => {
+    setBookmarks([]);
+    try { localStorage.removeItem(storageKey); } catch { /* non-fatal */ }
+  }, [storageKey]);
+
+  return { bookmarks, toggleBookmark, isBookmarked, clearBookmarks };
 };
 
 export default useBookmarks;

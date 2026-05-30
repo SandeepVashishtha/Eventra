@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download, X } from "lucide-react";
@@ -364,7 +364,9 @@ const EventCreation = () => {
 
     saveDraftTimeoutRef.current = setTimeout(() => {
       try {
-        const { banner, bannerPreview, ...saveable } = formDataRef.current;
+        const saveable = { ...formDataRef.current };
+        delete saveable.banner;
+        delete saveable.bannerPreview;
         localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
       } catch (error) {
         logger.error("Failed to save draft:", error);
@@ -725,7 +727,7 @@ const EventCreation = () => {
       const saved = localStorage.getItem(DRAFT_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        setFormData(prev => ({
+        setFormData(() => ({
           ...initialFormData, // Start fresh, then merge saved data
           ...parsed,
           banner: null, // Don't restore file objects

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, FileText, MessageSquare, AlertCircle } from "lucide-react";
 import { FiStar, FiMessageSquare } from "react-icons/fi";

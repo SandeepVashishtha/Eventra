@@ -44,6 +44,7 @@ export const PRICE_RANGES = [
  * Get category label from mapping
  */
 export const getCategoryLabel = (categoryKey) => {
+  if (!categoryKey) return categoryKey;
   const category = EVENT_CATEGORIES.find(
     (cat) =>
       cat.label.toLowerCase().replace(/\s+/g, "-") ===

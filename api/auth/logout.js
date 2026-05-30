@@ -6,11 +6,7 @@ import { getJwtSecret } from "./jwt-config.js";
 // ---------------------------------------------------------------------------
 
 // Use the same centralised helper as login.js and signup.js so that all three
-// handlers share a consistent signing secret. The previous inline fallback
-// ("your-super-secret-jwt-key-change-in-production") differed from the
-// development fallback in jwt-config.js ("eventra-local-development-jwt-secret"),
-// causing jwt.verify() here to reject every token issued by login.js in local
-// development (the keys never matched).
+// handlers share a consistent signing secret.
 const JWT_SECRET = getJwtSecret();
 
 // ---------------------------------------------------------------------------
