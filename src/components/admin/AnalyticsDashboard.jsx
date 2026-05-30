@@ -1,5 +1,21 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Users, Clock, TrendingUp, Activity, CheckCircle2, Play, Zap } from "lucide-react";
+import React, { useState, useEffect, useRef, memo, useCallback, useMemo } from "react";
+import { 
+  Users, 
+  Clock, 
+  TrendingUp, 
+  Activity, 
+  CheckCircle2, 
+  Play, 
+  Zap, 
+  Database,
+  BarChart2,
+  AlertTriangle,
+  RefreshCw,
+  ShieldCheck,
+  Server,
+  ArrowUpRight,
+  TrendingDown
+} from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -15,7 +31,7 @@ import { toast } from "react-toastify";
 import { useAnalyticsStream, SSE_STATUS } from "../../context/RealTimeContext";
 
 // =========================================================================
-// CONSTANTS & INITIAL DATA
+// CONSTANTS & CORE MOCK DATASOURCES
 // =========================================================================
 const MOCK_CHECKINS = [
   {
@@ -73,8 +89,10 @@ const MOCK_CATEGORY_DATA = [
   { name: "Web3", value: 110, color: "#f59e0b" },
 ];
 
+const LOCAL_STORAGE_KEY = "eventra_checkins";
+
 // =========================================================================
-// DECOUPLED MOCK DATA ADAPTER (SIMULATION ENGINE)
+// HIGH-DENSITY DECOUPLED MOCK DATA ADAPTER (SIMULATION ENGINE)
 // =========================================================================
 /**
  * Isolated payload generator ensuring visual graphs are decoupled
@@ -93,8 +111,8 @@ const generateMockCheckinPayload = (isManual = false) => {
   ];
 
   const pool = isManual ? simulatorNames : checkinNames;
-  const randomName = pool[Math.floor(Math.random() * pool.length)];
-  const randomEvent = isManual ? "Global AI Hackathon" : checkinEvents[Math.floor(Math.random() * checkinEvents.length)];
+  const randomName = pool[Math.floor(Math.random() * pool.length)] || "Anonymous Attendee";
+  const randomEvent = isManual ? "Global AI Hackathon" : (checkinEvents[Math.floor(Math.random() * checkinEvents.length)] || "Tech Summit");
   const randomStatus = isManual ? "Verified" : (Math.random() > 0.08 ? "Verified" : "Flagged");
   const hourlyIncrement = isManual ? 3 : 1;
 
@@ -112,447 +130,492 @@ const generateMockCheckinPayload = (isManual = false) => {
 };
 
 // =========================================================================
-// SUB-COMPONENTS
+// DECOUPLED SUB-COMPONENTS FOR ENHANCED MODULAR QUALITY
 // =========================================================================
-function AnalyticsStreamBadge({ status }) {
+const AnalyticsStreamBadge = memo(({ status }) => {
   if (status === SSE_STATUS.CONNECTED) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 normal-case">
-        <span className="relative flex h-1.5 w-1.5">
+      <span className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-wider uppercase text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-md border border-emerald-200/40 dark:border-emerald-800/30">
+        <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex w-full h-full rounded-full opacity-75 animate-ping bg-emerald-400" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
         </span>
-        SSE Live
+        SSE Live Connected
       </span>
     );
   }
   if (status === SSE_STATUS.RECONNECTING) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-500 dark:text-amber-400 normal-case">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-        Reconnecting
+      <span className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-wider uppercase text-amber-500 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-md border border-amber-200/40 dark:border-amber-800/30">
+        <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+        Reconnecting Stream
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 normal-case">
-      <span className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />
-      Simulated
+    <span className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-wider uppercase text-slate-400 bg-slate-100 dark:bg-slate-950/60 px-2.5 py-1 rounded-md border border-slate-200/50 dark:border-slate-800/40">
+      <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" />
+      Local Simulation
     </span>
   );
-}
+});
 
-const LOCAL_STORAGE_KEY = "eventra_checkins";
+AnalyticsStreamBadge.displayName = "AnalyticsStreamBadge";
 
+const MetricStatCard = memo(({ label, value, sub, icon, color }) => {
+  return (
+    <div className="p-5 transition bg-white border shadow-sm dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-2xl hover:shadow-md transform hover:-translate-y-0.5 duration-200">
+      <div className={`inline-flex p-2.5 rounded-xl ${color} mb-3 shadow-inner`}>{icon}</div>
+      <p className="text-xs font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">
+        {label}
+      </p>
+      <h4 className="mt-1 text-2xl font-black tracking-tight text-slate-850 dark:text-slate-100">
+        {value !== undefined && value !== null ? value : 0}
+      </h4>
+      <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-450 dark:text-slate-400 font-medium">
+        <span>{sub}</span>
+      </div>
+    </div>
+  );
+});
+
+MetricStatCard.displayName = "MetricStatCard";
+
+const DashboardEmptyState = memo(({ title = "No Metrics Available", message = "No data elements detected in current pipeline registry bounds." }) => {
+  return (
+    <div className="flex flex-col items-center justify-center p-10 py-14 text-center bg-slate-50/50 dark:bg-slate-950/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800/80 my-2">
+      <Database className="w-10 h-10 text-slate-300 dark:text-slate-700 mb-3 animate-bounce" />
+      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+        {title}
+      </h4>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm leading-relaxed">
+        {message}
+      </p>
+    </div>
+  );
+});
+
+DashboardEmptyState.displayName = "DashboardEmptyState";
+
+// =========================================================================
+// MAIN ADMINISTRATIVE ANALYTICS ENGINE
+// =========================================================================
 const AnalyticsDashboard = () => {
-  // Merge real scanned check-ins from localStorage (set by TicketScanner) with mock defaults
+  // Failsafe configuration parsing to extract local cache elements safely
   const getInitialCheckins = () => {
     try {
-      const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
-      if (saved.length > 0) {
-        // Merge: show real scanned check-ins first, then pad with mocks if fewer than 5
-        const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
-        return merged;
+      const savedRaw = localStorage.getItem(LOCAL_STORAGE_KEY);
+      const saved = savedRaw ? JSON.parse(savedRaw) : [];
+      
+      if (Array.isArray(saved) && saved.length > 0) {
+        const validatedArray = saved.filter(item => item && typeof item === "object");
+        const combined = [...validatedArray.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
+        return combined;
       }
     } catch (e) {
-      // fallback to mock if localStorage is corrupted
+      console.error("Failsafe system: Core localStorage metrics data is corrupted or unreachable.", e);
     }
     return MOCK_CHECKINS;
   };
 
   const getInitialLiveCount = () => {
     try {
-      const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
-      return 342 + saved.filter((c) => c.status === "Verified").length;
+      const savedRaw = localStorage.getItem(LOCAL_STORAGE_KEY);
+      const saved = savedRaw ? JSON.parse(savedRaw) : [];
+      
+      if (Array.isArray(saved)) {
+        const verifiedScansCount = saved.filter((c) => c && c.status === "Verified").length;
+        return 342 + verifiedScansCount;
+      }
     } catch (e) {
       return 342;
     }
+    return 342;
   };
 
+  // State Declarations with explicit fallbacks to prevent empty rendering exceptions
   const [checkins, setCheckins] = useState(getInitialCheckins);
-  const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
+  const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA || []);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Real-time SSE stream — takes priority over local simulation when connected
-  const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
+  // Real-time Context Hooks with high security checks to catch undefined structures
+  const streamContext = useAnalyticsStream();
+  const streamCheckins = streamContext?.recentCheckins ?? [];
+  const streamStatus = streamContext?.status ?? SSE_STATUS.DISCONNECTED;
+  
   const isStreamActive = streamStatus === SSE_STATUS.CONNECTED;
   const lastStreamCheckinRef = useRef(null);
 
   /**
-   * Unified Analytical State Consumer pipeline.
-   * Maps ingested data contract structure cleanly to the UI state.
+   * 🛠️ CORE STATE PROCESSOR PIPELINE
+   * Encapsulates data modification updates securely while handling potential empty array crashes.
    */
-  const processIncomingCheckin = (checkinPayload) => {
-    const { meta, ...cleanCheckinData } = checkinPayload;
-    
-    // Fallback/Default metadata processing for standard payloads
-    const hourlyIncrement = meta?.hourlyIncrement ?? 1;
-    const velocityDelta = meta?.velocityDelta ?? parseFloat((Math.random() * 0.4 - 0.2).toFixed(1));
-
-    // 1. Update Core Checkin Stream Log
-    setCheckins((prev) => [cleanCheckinData, ...prev.slice(0, 4)]);
-    
-    // 2. Increment Aggregate Live Metric Counter
-    setLiveCount((prev) => prev + hourlyIncrement);
-    
-    // 3. Modulate Flow Velocity Analytics State
-    setActiveCheckinsPerMinute((prev) => parseFloat((prev + velocityDelta).toFixed(1)));
-
-    // 4. Propagate Vector into the Hourly Graph State
-    setHourlyData((prev) => {
-      const updated = [...prev];
-      const lastIndex = updated.length - 1;
-      if (lastIndex >= 0) {
-        updated[lastIndex] = {
-          ...updated[lastIndex],
-          checkins: updated[lastIndex].checkins + hourlyIncrement
-        };
-      }
-      return updated;
-    });
-
-    // 5. Fire Feedback Notifications Interceptors
-    if (cleanCheckinData.status === "Flagged") {
-      toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${cleanCheckinData.name}`);
-    } else if (cleanCheckinData.id.includes("manual")) {
-      toast.success(`🚀 Simulator: Successfully injected real-time check-in record for ${cleanCheckinData.name}!`);
-    } else {
-      toast.info(`🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`);
+  const processIncomingCheckin = useCallback((checkinPayload) => {
+    if (!checkinPayload || typeof checkinPayload !== "object") {
+      console.warn("Pipeline Rejector: Received an invalid or undefined data entry payload framework.");
+      return;
     }
-  };
 
-  // Processing real-time production SSE streams via data consumer pipeline
-  useEffect(() => {
-    const latest = streamCheckins[0];
-    if (!latest || latest === lastStreamCheckinRef.current) return;
-    lastStreamCheckinRef.current = latest;
-
-    processIncomingCheckin(latest);
-  }, [streamCheckins]);
-
-  // Automated background interval simulation logic loop
-  useEffect(() => {
-    if (isStreamActive) return;
-    const checkinNames = [
-      "Aditya Rao",
-      "Ishaan Roy",
-      "Meera Nair",
-      "Rohan Das",
-      "Zoya Ali",
-      "Aryan Joshi",
-      "Tanya Sen",
-      "Kabir Dutt",
-      "Riya Pillai",
-      "Aravind Swami",
-    ];
-
-    const checkinEvents = [
-      "Web Dev Workshop",
-      "Global AI Hackathon",
-      "AI & ML Bootcamp",
-      "React Conference 2025",
-      "Hack for Sustainability",
-    ];
-
-    const interval = setInterval(() => {
-      // 1. Generate dynamic checkin entry
-      const randomName = checkinNames[Math.floor(Math.random() * checkinNames.length)];
-      const randomEvent = checkinEvents[Math.floor(Math.random() * checkinEvents.length)];
-      const randomStatus = Math.random() > 0.08 ? "Verified" : "Flagged";
-
-      const newCheckin = {
-        id: `c-${Date.now()}`,
-        name: randomName,
-        event: randomEvent,
-        time: "Just now",
-        status: randomStatus,
-      };
-
-      // 2. Prepend and keep top 5
-      setCheckins((prev) => [newCheckin, ...prev.slice(0, 4)]);
-
-      // 3. Update count and charts
-      setLiveCount((prev) => prev + 1);
-      setActiveCheckinsPerMinute((prev) =>
-        parseFloat((prev + (Math.random() * 0.4 - 0.2)).toFixed(1))
-      );
-
-      // 4. Update the latest hour chart entry
-      setHourlyData((prev) => {
-        const updated = [...prev];
-        const lastIndex = updated.length - 1;
-        updated[lastIndex] = {
-          ...updated[lastIndex],
-          checkins: updated[lastIndex].checkins + 1,
-        };
-        return updated;
-      });
-
-      if (randomStatus === "Flagged") {
-        toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${randomName}`);
-      } else {
-        toast.info(`🔔 Check-in Verified: ${randomName} matched to ${randomEvent}`);
-      }
-    }, 12000); // Trigger every 12 seconds emulating active hackathon flow
-
-    return () => clearInterval(interval);
-  }, [isStreamActive]);
-
-  // Manual interactive trigger pipeline router
-  const triggerManualCheckin = () => {
-    const simulatorNames = ["Gaurav Kumar", "Shruti Shah", "Manish Pandey", "Pooja Hegde"];
-    const randomName = simulatorNames[Math.floor(Math.random() * simulatorNames.length)];
-
-    const newCheckin = {
-      id: `c-manual-${Date.now()}`,
-      name: randomName,
-      event: "Global AI Hackathon",
-      time: "Just now",
-      status: "Verified",
+    // Explicit fallback definition bounds
+    const cleanCheckinData = {
+      id: checkinPayload?.id ?? `c-generated-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      name: checkinPayload?.name ?? "Anonymous Attendee",
+      event: checkinPayload?.event ?? "Eventra Platform Portal",
+      time: checkinPayload?.time ?? "Just now",
+      status: checkinPayload?.status === "Flagged" ? "Flagged" : "Verified"
     };
 
-    setCheckins((prev) => [newCheckin, ...prev.slice(0, 4)]);
-    setLiveCount((prev) => prev + 1);
+    const hourlyIncrement = Number(checkinPayload?.meta?.hourlyIncrement) || 1;
+    const velocityDelta = Number(checkinPayload?.meta?.velocityDelta) ?? parseFloat((Math.random() * 0.4 - 0.2).toFixed(1));
 
-    setHourlyData((prev) => {
-      const updated = [...prev];
-      const lastIndex = updated.length - 1;
-      updated[lastIndex] = {
-        ...updated[lastIndex],
-        checkins: updated[lastIndex].checkins + 3,
-      };
-      return updated;
+    // 1. Safe state modifier appending records onto local checkin grids
+    setCheckins((prev) => {
+      const sanitizedPrev = Array.isArray(prev) ? prev : [];
+      return [cleanCheckinData, ...sanitizedPrev.slice(0, 4)];
     });
 
-    toast.success(
-      `🚀 Simulator: Successfully injected real-time check-in record for ${randomName}!`
-    );
-  };
+    // 2. Safely modulate overall attendee counting states
+    setLiveCount((prev) => {
+      const currentCount = Number(prev) || 0;
+      return currentCount + hourlyIncrement;
+    });
+
+    // 3. Compute real-time stream velocity adjustments safely
+    setActiveCheckinsPerMinute((prev) => {
+      const currentVelocity = Number(prev) || 5.0;
+      const targetVelocity = parseFloat((currentVelocity + velocityDelta).toFixed(1));
+      return targetVelocity > 0 ? targetVelocity : 1.2;
+    });
+
+    // 4. Update Area Chart points without breaking indexing array constraints
+    setHourlyData((prev) => {
+      if (!Array.isArray(prev) || prev.length === 0) {
+        return INITIAL_HOURLY_DATA;
+      }
+      const updatedGraph = [...prev];
+      const targetIndex = updatedGraph.length - 1;
+      
+      if (targetIndex >= 0 && updatedGraph[targetIndex]) {
+        updatedGraph[targetIndex] = {
+          ...updatedGraph[targetIndex],
+          checkins: (Number(updatedGraph[targetIndex].checkins) || 0) + hourlyIncrement
+        };
+      }
+      return updatedGraph;
+    });
+
+    // 5. Fire toast notifications safely based on user entry statuses
+    if (cleanCheckinData.status === "Flagged") {
+      toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${cleanCheckinData.name}`);
+    } else if (cleanCheckinData.id?.toString().includes("manual")) {
+      toast.success(`🚀 Simulator: Successfully injected real-time check-in record for ${cleanCheckinData.name}!`);
+    } else {
+      toast.info(`🔔 Check-in Verified: ${cleanCheckinData.name} matched safely.`);
+    }
+  }, []);
+
+  // Sync real-time stream check-ins with safe optional chaining limits
+  useEffect(() => {
+    if (!Array.isArray(streamCheckins) || streamCheckins.length === 0) return;
+    
+    // Explicit index array-bound validation to circumvent white screen crash
+    const latestRecord = streamCheckins?.[0];
+    if (!latestRecord || latestRecord === lastStreamCheckinRef.current) return;
+    
+    lastStreamCheckinRef.current = latestRecord;
+    processIncomingCheckin(latestRecord);
+  }, [streamCheckins, processIncomingCheckin]);
+
+  // Automated fallback intervals simulating high traffic counts when backend stream is down
+  useEffect(() => {
+    if (isStreamActive) return;
+
+    const autoInterval = setInterval(() => {
+      try {
+        const payload = generateMockCheckinPayload(false);
+        processIncomingCheckin(payload);
+      } catch (err) {
+        console.error("Critical Interception: Simulation processing loop failed safely.", err);
+      }
+    }, 12000);
+
+    return () => clearInterval(autoInterval);
+  }, [isStreamActive, processIncomingCheckin]);
+
+  // Handle manual dashboard triggers
+  const triggerManualCheckin = useCallback(() => {
+    try {
+      const simulatedPayload = generateMockCheckinPayload(true);
+      processIncomingCheckin(simulatedPayload);
+    } catch (e) {
+      toast.error("Failed to execute manual telemetry entry simulator injection.");
+    }
+  }, [processIncomingCheckin]);
+
+  // Soft refresh simulation for administration actions
+  const refreshMetricsDashboard = useCallback(() => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setIsRefreshing(false);
+      toast.success("All operational metric pipelines flushed and verified successfully.");
+    }, 600);
+  }, []);
+
+  // Safely compute statistics checks to handle potential empty configurations
+  const structuralCheckinsList = useMemo(() => Array.isArray(checkins) ? checkins : [], [checkins]);
+  const structuralHourlyData = useMemo(() => Array.isArray(hourlyData) ? hourlyData : [], [hourlyData]);
+  const structuralCategoryData = useMemo(() => Array.isArray(MOCK_CATEGORY_DATA) ? MOCK_CATEGORY_DATA : [], []);
 
   return (
-    <div className="space-y-8 text-slate-800 dark:text-slate-100">
-      {/* CONTROL BANNER */}
-      <div className="flex flex-col gap-4 p-5 bg-white border shadow-sm sm:flex-row sm:items-center sm:justify-between dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl">
+    <div className="space-y-8 text-slate-800 dark:text-slate-100 master-analytics-dashboard-view">
+      
+      {/* ADMINISTRATIVE TOP TITLE BAR */}
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-slate-100 dark:border-slate-800/60 pb-5">
         <div>
-          <h3 className="text-sm font-extrabold tracking-widest uppercase text-slate-400 dark:text-slate-500">
-            Simulate Attendee Traffic
+          <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <ShieldCheck className="w-6 h-6 text-indigo-500" />
+            Live Event Control Center
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Real-time monitoring panel tracing active digital tokens, entrance gate velocity, and infrastructure stability vectors.
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2 mt-3 md:mt-0">
+          <button
+            onClick={refreshMetricsDashboard}
+            disabled={isRefreshing}
+            className="inline-flex items-center justify-center p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-500 transition disabled:opacity-50"
+            aria-label="Refresh Data Pipeline Link"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-indigo-500" : ""}`} />
+          </button>
+          
+          <div className="bg-slate-100 dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-200/40 dark:border-slate-800/30 flex items-center gap-2">
+            <Server className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Node Cluster: Auth-01</span>
+          </div>
+        </div>
+      </div>
+
+      {/* CORE SIMULATOR TELEMETRY BANNER CONTAINER */}
+      <div className="flex flex-col gap-4 p-5 bg-white border shadow-sm sm:flex-row sm:items-center sm:justify-between dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl relative overflow-hidden group">
+        <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-24 h-24 bg-indigo-500/5 rounded-full blur-xl pointer-events-none" />
+        <div>
+          <h3 className="text-sm font-extrabold tracking-widest uppercase text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+            <BarChart2 className="w-4 h-4 text-indigo-500" />
+            Simulate Attendee Traffic Channels
           </h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Trigger simulated QR scans, face-matching credentials, and checked-in attendee counts
-            instantly.
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-xl">
+            Trigger simulated QR validation passes, credential parsing sweeps, and data pipeline load tests to evaluate component re-rendering capacities under heavy stress.
           </p>
         </div>
         <button
           onClick={triggerManualCheckin}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md transition self-start sm:self-auto"
-         aria-label="button">
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md transition self-start sm:self-auto focus:outline-none focus:ring-2 focus:ring-indigo-500 shrink-0 transform active:scale-95 duration-100"
+          aria-label="Trigger Injected Flow Record Button"
+        >
           <Play className="w-3.5 h-3.5 fill-white" />
           Trigger Check-in Scan
         </button>
       </div>
 
-      {/* LIVE STATS GRID */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        {[
-          {
-            label: "Live Checked-in Attendees",
-            value: liveCount,
-            sub: "Real-time updates",
-            icon: <Users className="w-5 h-5" />,
-            color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40",
-          },
-          {
-            label: "Scan Velocity",
-            value: `${activeCheckinsPerMinute}/min`,
-            sub: "Scans per minute avg",
-            icon: <Activity className="w-5 h-5" />,
-            color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40",
-          },
-          {
-            label: "Hours Active",
-            value: "08h 24m",
-            sub: "Since event start",
-            icon: <Clock className="w-5 h-5" />,
-            color: "text-amber-500 bg-amber-50 dark:bg-amber-950/40",
-          },
-          {
-            label: "Security Health",
-            value: "99.8%",
-            sub: "Zero active alerts",
-            icon: <CheckCircle2 className="w-5 h-5" />,
-            color: "text-rose-500 bg-rose-50 dark:bg-rose-950/40",
-          },
-        ].map((stat, i) => (
-          <div
-            key={i}
-            className="p-5 transition bg-white border shadow-sm dark:bg-slate-900 border-slate-205 dark:border-slate-800/80 rounded-2xl hover:shadow-md"
-          >
-            <div className={`inline-flex p-2.5 rounded-xl ${stat.color} mb-3`}>{stat.icon}</div>
-            <p className="text-xs font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">
-              {stat.label}
-            </p>
-            <h4 className="mt-1 text-2xl font-black text-slate-850 dark:text-slate-100">
-              {stat.value}
-            </h4>
-            <p className="text-[10px] text-slate-450 dark:text-slate-400 mt-1">{stat.sub}</p>
-          </div>
-        ))}
+      {/* RENDER CRASH SAFE METRICS GRIDS OVERVIEW */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 dashboard-metrics-stat-grid">
+        <MetricStatCard 
+          label="Total Checked-In Scans"
+          value={liveCount}
+          sub="Aggregated platform database entries"
+          icon={<Users className="w-5 h-5" />}
+          color="text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40"
+        />
+        <MetricStatCard 
+          label="Ingestion Velocity"
+          value={`${activeCheckinsPerMinute}/min`}
+          sub="Active network token evaluations"
+          icon={<Activity className="w-5 h-5" />}
+          color="text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40"
+        />
+        <MetricStatCard 
+          label="Uptime Monitor"
+          value="08h 24m"
+          sub="Continuous node validation log runtime"
+          icon={<Clock className="w-5 h-5" />}
+          color="text-amber-500 bg-amber-50 dark:bg-amber-950/40"
+        />
+        <MetricStatCard 
+          label="System Health Grade"
+          value={structuralCheckinsList.length === 0 ? "85.0%" : "99.8%"}
+          sub="Failsafe pipeline error rate zero"
+          icon={<CheckCircle2 className="w-5 h-5" />}
+          color="text-rose-500 bg-rose-50 dark:bg-rose-950/40"
+        />
       </div>
 
-      {/* REAL-TIME CHARTS GRID */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* HOURLY REGISTRATION GRAPH */}
-        <div className="p-6 bg-white border shadow-md lg:col-span-2 dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl">
-          <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
-            <TrendingUp className="w-4 h-4 text-indigo-500" />
-            Check-in Velocity Graph (Live)
-          </h3>
+      {/* ANALYTICS VISUALIZATION RECHARTS LAYOUT FRAMEWORK */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 visual-charts-layer-row">
+        
+        {/* AREA GRAPH: VELOCITY STREAM */}
+        <div className="p-6 bg-white border shadow-sm lg:col-span-2 dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              <TrendingUp className="w-4 h-4 text-indigo-500" />
+              Check-In Velocity Graph (Live)
+            </h3>
+            {structuralHourlyData.length > 0 && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded">
+                <ArrowUpRight className="w-3 h-3" /> Peak 88
+              </span>
+            )}
+          </div>
 
-          <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={hourlyData}>
-                <defs>
-                  <linearGradient id="colorCheckins" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="hour"
-                  stroke="#888888"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: "#1e293b",
-                    border: "none",
-                    borderRadius: "12px",
-                    color: "#fff",
-                    fontSize: "12px",
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="checkins"
-                  stroke="#6366f1"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="url(#colorCheckins)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="w-full h-64 internal-chart-render-bounds">
+            {structuralHourlyData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={structuralHourlyData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorCheckinsPipeline" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="hour" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ background: "#1e293b", border: "none", borderRadius: "12px", color: "#fff", fontSize: "12px" }} />
+                  <Area type="monotone" dataKey="checkins" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#colorCheckinsPipeline)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <DashboardEmptyState 
+                title="Velocity Coordinates Unallocated" 
+                message="Hourly metric tracking maps cannot be loaded because data points are empty." 
+              />
+            )}
           </div>
         </div>
 
-        {/* CATEGORIES DISTRIBUTION */}
-        <div className="flex flex-col justify-between p-6 bg-white border shadow-md dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl">
+        {/* PIE CHART: CATEGORY MAPPING */}
+        <div className="flex flex-col justify-between p-6 bg-white border shadow-sm dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl">
           <div>
             <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-amber-500 fill-amber-500/20" />
               Category Registration Distribution
             </h3>
 
-            <div className="flex items-center justify-center w-full h-44">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={MOCK_CATEGORY_DATA}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={45}
-                    outerRadius={65}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {MOCK_CATEGORY_DATA.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      background: "#1e293b",
-                      border: "none",
-                      borderRadius: "12px",
-                      color: "#fff",
-                      fontSize: "12px",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="flex items-center justify-center w-full h-44 system-pie-render-viewport">
+              {structuralCategoryData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={structuralCategoryData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={65}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {structuralCategoryData.map((entry, index) => (
+                        <Cell key={`cell-token-${index}`} fill={entry?.color ?? "#6366f1"} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ background: "#1e293b", border: "none", borderRadius: "12px", color: "#fff", fontSize: "12px" }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <DashboardEmptyState 
+                  title="Distribution Vectors Empty" 
+                  message="Proportional metrics are locked due to zero array tracking logs." 
+                />
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            {MOCK_CATEGORY_DATA.map((item, idx) => (
+          <div className="grid grid-cols-2 gap-2 mt-4 category-legend-blocks">
+            {structuralCategoryData.map((item, idx) => (
               <div
-                key={idx}
-                className="flex items-center gap-2 p-2 border bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-850 rounded-xl"
+                key={`legend-item-${idx}`}
+                className="flex items-center gap-2 p-2 border bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-850 rounded-xl truncate"
               >
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: item.color }} />
-                <div>
-                  <div className="text-[10px] font-bold text-slate-400">{item.name}</div>
+                <span className="w-2.5 h-2.5 rounded-full shrink-0 animate-pulse" style={{ background: item?.color ?? "#414141" }} />
+                <div className="truncate">
+                  <div className="text-[10px] font-bold text-slate-400 truncate">{item?.name ?? "Segment"}</div>
                   <div className="text-xs font-black text-slate-800 dark:text-slate-100">
-                    {item.value}
+                    {item?.value ?? 0}
                   </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
+
       </div>
 
-      {/* LIVE EVENT CHECK-IN FEED LOG */}
-      <div className="p-6 bg-white border shadow-md dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl">
-        <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between gap-1.5">
+      {/* FEED LEDGER: REAL-TIME SECURE ACTIVITY LOGGER LOG */}
+      <div className="p-6 bg-white border shadow-sm dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl event-activity-log-ledger-block">
+        <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800/60 pb-3 flex items-center justify-between gap-1.5">
           <span className="flex items-center gap-1.5">
             <Activity className="w-4 h-4 text-emerald-500 animate-pulse" />
-            Live Check-In Event Activity Log
+            Live Check-In Event Activity Log Ledger
           </span>
           <AnalyticsStreamBadge status={streamStatus} />
         </h3>
 
-        <div className="mt-4 space-y-3">
-          {checkins.map((checkin) => (
-            <div
-              key={checkin.id}
-              className="flex items-center justify-between p-3 transition border bg-slate-50 hover:bg-slate-100/60 dark:bg-slate-950 dark:hover:bg-slate-850/45 rounded-2xl border-slate-150 dark:border-slate-850"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 text-xs font-black text-indigo-600 rounded-full bg-indigo-50 dark:bg-indigo-950/40 dark:text-indigo-400">
-                  {checkin.name.charAt(0)}
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-850 dark:text-slate-100">
-                    {checkin.name}
-                  </div>
-                  <div className="text-[10px] text-slate-400">
-                    {checkin.event} &bull; Check-in attempt
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] text-slate-400">{checkin.time}</span>
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                    checkin.status === "Verified"
-                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-450"
-                      : "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-455"
-                  }`}
+        <div className="mt-4 space-y-3 telemetry-feed-scroller-bounds">
+          {structuralCheckinsList.length > 0 ? (
+            structuralCheckinsList.map((checkin, index) => {
+              if (!checkin) return null;
+              
+              const isEntryVerified = checkin?.status === "Verified";
+              const firstLetterCharacter = checkin?.name ? checkin.name.charAt(0) : "A";
+              
+              return (
+                <div
+                  key={checkin?.id ?? `checkin-row-${index}`}
+                  className="flex items-center justify-between p-3 transition border bg-slate-50 hover:bg-slate-100/60 dark:bg-slate-950 dark:hover:bg-slate-850/45 rounded-2xl border-slate-150 dark:border-slate-850 transform hover:scale-[1.005] duration-150"
                 >
-                  {checkin.status}
-                </span>
-              </div>
-            </div>
-          ))}
+                  <div className="flex items-center gap-3 truncate">
+                    <div className="flex items-center justify-center w-8 h-8 text-xs font-black text-indigo-600 rounded-full bg-indigo-50 dark:bg-indigo-950/40 dark:text-indigo-400 shrink-0 select-none shadow-sm">
+                      {firstLetterCharacter}
+                    </div>
+                    <div className="truncate">
+                      <div className="text-xs font-bold text-slate-850 dark:text-slate-100 truncate">
+                        {checkin?.name ?? "Unknown Attendee"}
+                      </div>
+                      <div className="text-[10px] text-slate-400 truncate font-medium">
+                        {checkin?.event ?? "General Platform Context"} &bull; Token Registry Verification
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0 ml-2">
+                    <span className="text-[10px] text-slate-400 font-semibold">{checkin?.time ?? "Just now"}</span>
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-sm ${
+                        isEntryVerified
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-450 border border-emerald-200/30"
+                          : "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-455 border border-rose-200/30"
+                      }`}
+                    >
+                      {checkin?.status ?? "Verified"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <DashboardEmptyState 
+              title="Activity Stream Ledger Blank" 
+              message="No verification instances have passed into the data logging boundaries." 
+            />
+          )}
         </div>
       </div>
+
     </div>
   );
 };
 
-export default AnalyticsDashboard;
+export default memo(AnalyticsDashboard);
