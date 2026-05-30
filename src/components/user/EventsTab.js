@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
@@ -10,9 +10,7 @@ import {
   X,
   Ticket,
   Trash2,
-  Filter,
-  ArrowUpDown,
-} from "lucide-react";
+  } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
 import StatusBadge from "../common/StatusBadge";
@@ -230,7 +228,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [sortBy, setSortBy] = useState("soonest");
   const [cancelTarget, setCancelTarget] = useState(null);
 
-  const [recentSearches,
+  const [,
     setRecentSearches] = useState([]);
   const registeredEvents = useMemo(
     () =>

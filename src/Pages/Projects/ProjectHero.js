@@ -30,7 +30,6 @@ const iconList = [
 const repeatedIcons = [...iconList, ...iconList, ...iconList];
 
 export default function ProjectHero({
-  setShowSubmissionModal,
   scrollToCard,
 }) {
   const prefersReducedMotion = useReducedMotion();

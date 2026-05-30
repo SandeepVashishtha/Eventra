@@ -21,7 +21,7 @@ import {
   getUserTimezone,
   parseEventToUTC,
   parseTimeString,
-} from './timezoneUtils';
+} from './timezoneUtils.js';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
