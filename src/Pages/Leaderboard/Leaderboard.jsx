@@ -570,33 +570,39 @@ useMemo(
                     </div>
                   </div>
 
-                        <div className={`mt-2.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase border ${ptBadgeClass}`}>
-                          {isStreak ? "🔥 Streak Master" : title}
-                        </div>
+                  <a
+                    href={top3[2].profile}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-base font-black text-slate-900 dark:text-white hover:text-indigo-500 transition-colors truncate max-w-[200px]"
+                  >
+                    {top3[2].username}
+                  </a>
 
-                        <div className="mt-4 flex items-center justify-around w-full border-t border-slate-200/50 dark:border-slate-800/40 pt-4">
-                          <div className="text-center">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                              Points
-                            </span>
-                            <p className={`text-lg font-black mt-0.5 ${pointsClass}`}>
-                              <AnimatedCounter value={item.points} />
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                              PRs
-                            </span>
-                            <p className="text-lg font-black text-indigo-500 mt-0.5">
-                              <AnimatedCounter value={item.prs} />
-                            </p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
+                  <div className="mt-2.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-orange-100 dark:bg-orange-950/30 text-orange-600 dark:text-orange-300 border border-orange-200/40">
+                    Platinum Contributor
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-around w-full border-t border-slate-200/50 dark:border-slate-800/40 pt-4">
+                    <div className="text-center">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Points
+                      </span>
+                      <p className="text-lg font-black text-slate-800 dark:text-slate-100 mt-0.5">
+                        <AnimatedCounter value={top3[2].points} />
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        PRs
+                      </span>
+                      <p className="text-lg font-black text-indigo-500 mt-0.5">
+                        <AnimatedCounter value={top3[2].prs} />
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </div>
           )}
 
