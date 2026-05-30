@@ -1,13 +1,9 @@
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "./jwt-config.js";
-
-// ---------------------------------------------------------------------------
-// JWT Configuration
-// ---------------------------------------------------------------------------
-
-// Use the same centralised helper as login.js and signup.js so that all three
-// handlers share a consistent signing secret.
-const JWT_SECRET = getJwtSecret();
+import {
+  corsHeaders,
+  corsResponse,
+} from "./_shared.js";
 
 // ---------------------------------------------------------------------------
 // Token Blacklist
@@ -74,35 +70,7 @@ const startCleanupInterval = () => {
 // Start the cleanup interval
 startCleanupInterval();
 
-// ---------------------------------------------------------------------------
-// CORS Headers
-// ---------------------------------------------------------------------------
 
-const corsHeaders = (req) => {
-  const allowedOrigin = process.env.ALLOWED_ORIGIN;
-  const requestOrigin = req.headers?.origin;
-
-  const corsOrigin = allowedOrigin || "*";
-  if (allowedOrigin && requestOrigin !== allowedOrigin) {
-    console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
-  }
-
-  // Access-Control-Allow-Credentials must not be sent with a wildcard origin.
-  // Per the CORS spec, browsers reject credentialed responses when the reflected
-  // origin is "*". Only set the header when a specific origin is configured.
-  const isSpecificOrigin = corsOrigin !== "*";
-
-  return {
-    "Access-Control-Allow-Origin": corsOrigin,
-    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
-};
-
-const corsResponse = (res, status, data, req) => {
-  return res.status(status).set(corsHeaders(req)).json(data);
-};
 
 // ---------------------------------------------------------------------------
 // Extract token from Authorization header
