@@ -232,6 +232,13 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchQuery("");
+      setPressedKeys(new Set());
+    }
+  }, [isOpen]);
+
   const isKeyPressed = (keyId) => {
     return pressedKeys.has(keyId.toLowerCase());
   };

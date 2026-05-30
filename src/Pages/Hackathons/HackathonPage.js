@@ -1,5 +1,5 @@
 import TeamMatchmaking from "./components/TeamMatchmaking";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { fetchHackathons } from "../../services/hackathonService";
@@ -276,10 +276,10 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
     }
   };
 
-  const fuse = new Fuse(hackathons, {
+  const fuse = useMemo(() => new Fuse(hackathons, {
     keys: ["title", "description", "location", "techStack"],
     threshold: 0.4,
-  });
+  }), [hackathons]);
 
   const searchedHackathons = debouncedSearchQuery
     ? fuse.search(debouncedSearchQuery).map((result) => result.item)

@@ -17,6 +17,8 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   // Use a ref for the debounce timer so clearTimeout can reach it from
   // the cleanup effect regardless of which render created the timer.
   const timeoutRef = useRef(null);
+  const isMountedRef = useRef(false);
+  const validationRunRef = useRef(0);
 
   // Keep the latest rule set and initial state in refs so callbacks that
   // close over them do not need to list them as dependencies — which would
@@ -45,6 +47,31 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const [touched, setTouched] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
 
+  const clearValidationTimer = useCallback(() => {
+    validationRunRef.current += 1;
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      clearValidationTimer();
+    };
+  }, [clearValidationTimer]);
+
+  useEffect(() => {
+    return () => {
+      clearValidationTimer();
+    };
+  }, [clearValidationTimer, debounceMs, validateOnBlur]);
+
+  // Validate a single field
   // Validate a single field against its rule. Returns the error string or null.
   const validateField = useCallback((name, value, allValues) => {
     if (!validationRulesRef.current[name]) return null;
@@ -80,6 +107,22 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
 
+    if (validationRulesRef.current[name] && !validateOnBlur) {
+      clearValidationTimer();
+      const validationRun = validationRunRef.current + 1;
+      validationRunRef.current = validationRun;
+
+      timeoutRef.current = setTimeout(() => {
+        timeoutRef.current = null;
+        if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
+
+        const error = validateField(name, value, { ...values, [name]: value });
+        if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
+
+        setErrors(prev => ({ ...prev, [name]: error }));
+      }, debounceMs);
+    }
+  }, [validateOnBlur, debounceMs, validateField, values, clearValidationTimer]);
     setValues((prev) => ({ ...prev, [name]: value }));
     setTouched((prev) => ({ ...prev, [name]: true }));
     setErrors((prev) => ({ ...prev, [name]: null }));
@@ -132,10 +175,12 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
 
   // Reset form to initial state and clear all validation state.
   const resetForm = useCallback(() => {
+    clearValidationTimer();
     setValues(initialStateRef.current);
     setErrors({});
     setTouched({});
     setIsFormValid(false);
+  }, [clearValidationTimer]);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
