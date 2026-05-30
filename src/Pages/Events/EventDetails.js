@@ -235,7 +235,7 @@ const EventDetails = () => {
                             try {
                               setExportingRegistrants(true);
                               const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-                              const registrants = await response.json();
+                              const registrants = response.data?.data || response.data || [];
                               exportToCSV(registrants, `${event.title}_registrants`);
                             } catch (error) {
                               toast.error("Failed to fetch registrants");
@@ -254,7 +254,7 @@ const EventDetails = () => {
                             try {
                               setExportingRegistrants(true);
                               const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-                              const registrants = await response.json();
+                              const registrants = response.data?.data || response.data || [];
                               exportToJSON(registrants, `${event.title}_registrants`);
                             } catch (error) {
                               toast.error("Failed to fetch registrants");

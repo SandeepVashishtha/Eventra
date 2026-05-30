@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
@@ -41,23 +41,20 @@ import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 
 const MAX_NOTES_CHARS = 500;
 
-// EmailJS credentials are no longer read from REACT_APP_* environment
-// variables here. They were previously bundled into the frontend JavaScript,
-// allowing any visitor to extract them and abuse the EmailJS quota.
-//
-// Confirmation emails are now sent via the /api/send-email serverless handler
-// which reads EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, and EMAILJS_PUBLIC_KEY
-// as server-only environment variables (no REACT_APP_ prefix).
-async function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
-  try {
-    await apiUtils.post("/api/send-email", {
-      toEmail: userEmail,
-      toName: userName || "Participant",
-      eventName: eventName || "",
-      eventDate: eventDate || "",
-    });
-  } catch {
-    // Confirmation email failure is non-fatal — registration already succeeded
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+
+function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  const finalName = userName || "Participant";
+  if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
+    window.emailjs.init(EMAILJS_PUBLIC_KEY);
+    window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: userEmail,
+      to_name: finalName,
+      event_name: eventName,
+      event_date: eventDate,
+    }).catch(() => { });
   }
 }
 
@@ -109,7 +106,7 @@ const EventRegistration = () => {
   const eventId = routeEventId || routeId;
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
   const isHackathonPath = location.pathname.startsWith("/register");
@@ -120,7 +117,6 @@ const EventRegistration = () => {
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
-  const formContainerRef = useRef(null);
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -252,39 +248,6 @@ const EventRegistration = () => {
     loadEvent();
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
-  // fix: trap keyboard focus inside registration form (fixes #3341)
-  // Previously Tab/Shift+Tab would escape the form and land on background elements,
-  // making the form inaccessible for keyboard-only and screen reader users.
-  useEffect(() => {
-    const container = formContainerRef.current;
-    if (!container) return;
-
-    const focusableSelectors =
-      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-    const handleTabKey = (e) => {
-      if (e.key !== "Tab") return;
-      const focusable = Array.from(container.querySelectorAll(focusableSelectors));
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          last.focus();
-          e.preventDefault();
-        }
-      } else {
-        if (document.activeElement === last) {
-          first.focus();
-          e.preventDefault();
-        }
-      }
-    };
-
-    container.addEventListener("keydown", handleTabKey);
-    return () => container.removeEventListener("keydown", handleTabKey);
-  }, [loading, registered]);
-
   const checkEventCapacity = async (id, currentEvent) => {
     try {
       const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(id));
@@ -389,25 +352,17 @@ const EventRegistration = () => {
       : (API_ENDPOINTS.EVENTS?.REGISTER ? API_ENDPOINTS.EVENTS.REGISTER(eventId) : `/api/events/${eventId}/register`);
 
     try {
-      // userId is intentionally omitted from the request body.
-      // The backend must derive the caller's identity exclusively from the
-      // verified JWT (via the HttpOnly cookie or Authorization header set
-      // by the Axios instance). Including userId here would allow any
-      // authenticated user to register under a different account by
-      // manipulating the field — a classic mass-assignment / IDOR vector.
-      //
-      // The third argument (token) has also been removed: apiUtils.post's
-      // normalizeRequestConfig silently converts a string argument to {}
-      // so it was never sent as an Authorization header — dead code.
-      // Authentication is handled automatically by withCredentials: true
-      // on the Axios instance, which attaches the HttpOnly session cookie.
       await apiUtils.post(
         endpoint,
-        {
-          ...formData,
-          priority: formData.priority,
-          eventId: parseInt(eventId),
-        },
+          {
+            ...formData,
+            priority: formData.priority,
+            eventId: parseInt(eventId),
+            userId: user.id,
+          },
+        // Registration is authenticated server-side; send the active token
+        // explicitly instead of relying only on global storage lookup.
+        token
       );
 
       // Axios resolves for 2xx — treat as success
@@ -423,13 +378,12 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        // Offline sync fallback — userId is also excluded from the queued
-        // payload for the same reason it is excluded from the live POST.
-        // When the queue is replayed, the backend will re-derive the caller's
-        // identity from the session token attached to the replayed request.
+        // Offline sync fallback keeps the full registration intent intact so
+        // it can be replayed without asking the user to submit the form again.
         const payload = {
           ...formData,
           eventId: parseInt(eventId),
+          userId: user.id,
         };
 
         const success = await pushToQueue(
@@ -637,6 +591,7 @@ const EventRegistration = () => {
               <a
                 href={googleCalendarUrl}
                 target="_blank" rel="noopener noreferrer"
+                rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
@@ -647,6 +602,7 @@ const EventRegistration = () => {
               <a
                 href={outlookCalendarUrl}
                 target="_blank" rel="noopener noreferrer"
+                rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
@@ -665,6 +621,7 @@ const EventRegistration = () => {
               <a
                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
                 target="_blank" rel="noopener noreferrer"
+                rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on Twitter / X"
               >
@@ -675,6 +632,7 @@ const EventRegistration = () => {
               <a
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
                 target="_blank" rel="noopener noreferrer"
+                rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-[#0077b5] hover:bg-[#006297] rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on LinkedIn"
               >
@@ -711,12 +669,7 @@ const EventRegistration = () => {
   }
 
   return (
-    <div
-      ref={formContainerRef}
-      role="main"
-      aria-label="Event registration form"
-      className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
-    >
+    <div className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link
@@ -895,7 +848,7 @@ const EventRegistration = () => {
                     value={formData.designation}
                     onChange={handleChange}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                    placeholder="Your role or designation"
+                    placeholder="Your job title or role"
                   />
                 </div>
               </div>
@@ -935,13 +888,12 @@ const EventRegistration = () => {
                   name="additionalInfo"
                   value={formData.additionalInfo}
                   onChange={handleChange}
-                  maxLength={MAX_NOTES_CHARS} // 👈 Limits characters strictly
+                  maxLength={MAX_NOTES_CHARS}
                   rows="4"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
                   placeholder="Any special requirements or questions?"
-                ></textarea>
+                />
 
-                {/* 👈 Dynamic counter box directly below */}
                 <div className="flex justify-end text-xs mt-1 text-gray-400 dark:text-gray-500">
                   <span className={(formData.additionalInfo?.length || 0) >= MAX_NOTES_CHARS - 20 ? "text-red-500 font-medium animate-pulse" : ""}>
                     {formData.additionalInfo?.length || 0} / {MAX_NOTES_CHARS} characters

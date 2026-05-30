@@ -102,10 +102,8 @@ const MobileDrawer = ({
 
         <div className="flex h-[calc(100%-73px)] flex-col overflow-y-auto px-4 py-5">
           <NavbarLinks
-            mobile
-            onLinkClick={closeMenu}
-            isAuthenticated={isAuthenticated}
-            user={user}
+            vertical
+            onClick={closeMenu}
           />
 
           <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-800">
