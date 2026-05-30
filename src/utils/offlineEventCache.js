@@ -1,4 +1,4 @@
-import { safeJsonParse } from "./safeJsonParse";
+import { safeJsonParse } from "./safeJsonParse.js";
 
 const EVENTS_CACHE_KEY = "eventra_cached_events";
 const EVENT_DETAILS_CACHE_KEY = "eventra_cached_event_details";
@@ -126,6 +126,7 @@ export const saveAllCachedEventDetails = (events = []) => {
   return writeJson(EVENT_DETAILS_CACHE_KEY, cached);
 };
 
+/**
  * Returns the cached detail for a single event, or null if absent or older
  * than DETAIL_CACHE_TTL_MS. Prunes the expired entry and any other stale
  * sibling entries from the detail cache on access.
