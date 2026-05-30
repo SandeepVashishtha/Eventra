@@ -135,7 +135,7 @@ export default function Chatbot() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, handleClose]);
 
   const wasOpenRef = useRef(false);
   const wasMinimizedRef = useRef(false);
@@ -198,12 +198,12 @@ export default function Chatbot() {
     setIsMinimized(false);
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     clearReplyTimer();
     setIsTyping(false);
     setIsOpen(false);
     setIsMinimized(false);
-  };
+  }, [clearReplyTimer]);
 
   const handleMinimize = () => setIsMinimized((v) => !v);
 
