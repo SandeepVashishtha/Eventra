@@ -381,7 +381,7 @@ const Hero = () => {
                               exit={{ opacity: 0, y: 8 }}
                               className="text-center text-gray-500 dark:text-gray-400 py-8 text-sm"
                             >
-                              No results for <span className="font-medium text-gray-700 dark:text-gray-200">"{searchTerm}"</span>
+                              No results for <span className="font-medium text-gray-700 dark:text-gray-200">&quot;{searchTerm}&quot;</span>
                             </motion.div>
                           )}
                         </div>

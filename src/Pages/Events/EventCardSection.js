@@ -51,7 +51,7 @@ const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilt
           No events found
         </h3>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Try a different keyword or adjust your filters to find what you're
+          Try a different keyword or adjust your filters to find what you&apos;re
           looking for.
         </p>
         {onClearFilters && (

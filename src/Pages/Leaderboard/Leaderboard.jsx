@@ -15,7 +15,7 @@ import {
   FaSearch,
   FaFilter,
   FaDownload,
-  FaRefresh,
+  FaSyncAlt,
   FaTrophy,
   FaMedal,
   FaAward,
@@ -165,6 +165,7 @@ const RankMovementIndicator = React.memo(({ liveDifference }) => {
     </span>
   );
 });
+RankMovementIndicator.displayName = "RankMovementIndicator";
 
 const AnimatedCounter = React.memo(
   ({ value, duration = 1200 }) => {
@@ -205,6 +206,7 @@ const AnimatedCounter = React.memo(
     return <span aria-live="polite">{count.toLocaleString()}</span>;
   }
 );
+AnimatedCounter.displayName = "AnimatedCounter";
 
 const LiveStatusBadge = ({ status }) => {
   const statusConfig = {
@@ -306,6 +308,7 @@ const PodiumCard = React.memo(({ contributor, position, orderClass, styling, isF
     </motion.div>
   );
 });
+PodiumCard.displayName = "PodiumCard";
 
 // ─── Main Component ───────────────────────────────────────────────
 export default function LeaderBoard() {
@@ -660,7 +663,7 @@ export default function LeaderBoard() {
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest"
             >
               <FaTrophy className="w-3 h-3" aria-hidden="true" />
-              GSSoC'26 Contribution Arena
+              GSSoC&apos;26 Contribution Arena
             </motion.div>
 
             <h1 id="leaderboard-heading" className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-950 dark:text-white">
@@ -671,7 +674,7 @@ export default function LeaderBoard() {
             </h1>
 
             <p className="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-              Celebrating our elite open-source creators driving Eventra's core features with exceptional code and design contributions.
+              Celebrating our elite open-source creators driving Eventra&apos;s core features with exceptional code and design contributions.
             </p>
           </header>
 
@@ -758,7 +761,7 @@ export default function LeaderBoard() {
                 aria-label="Refresh leaderboard data"
                 title="Refresh data"
               >
-                <FaRefresh className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
+                <FaSyncAlt className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
               </motion.button>
 
               <motion.button

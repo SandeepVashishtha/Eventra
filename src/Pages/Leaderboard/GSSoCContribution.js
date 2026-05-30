@@ -505,7 +505,7 @@ const GSSoCContribution = () => {
           >
             <div className="w-[95%] mx-auto py-2 px-4 flex items-center gap-2 text-yellow-800 dark:text-yellow-300 text-sm">
               <WifiOff className="w-4 h-4" aria-hidden="true" />
-              <span>You're offline. Changes will sync when you're back online.</span>
+              <span>You&apos;re offline. Changes will sync when you&apos;re back online.</span>
             </div>
           </motion.div>
         )}
@@ -815,7 +815,7 @@ const GSSoCContribution = () => {
             className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-gray-900 hover:bg-gray-800 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-black"
           >
             <BookOpen className="w-4 h-4" aria-hidden="true" />
-            Contributor's Guide
+            Contributor&apos;s Guide
           </motion.button>
 
           <motion.button
