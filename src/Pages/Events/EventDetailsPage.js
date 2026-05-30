@@ -140,22 +140,13 @@ const EventDetailsPage = () => {
     };
 
     fetchEvent();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [eventId]);
 
-  useEffect(() => {
-    if (!event) {
-      return;
-    }
 
-    addRecentlyViewed({
-      id: event.id,
-      title: event.title,
-      date: event.date,
-      location: event.location,
-      image: event.image,
-      category: event.type,
-    });
-  }, [addRecentlyViewed, event]);
 
   if (loading) {
     return (
