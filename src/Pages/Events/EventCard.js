@@ -146,7 +146,7 @@ useEffect(() => {
       autoClose: 1800,
       className: "custom-toast",
     });
-  };
+  }, [dependencies]);
 
   return (
     <article

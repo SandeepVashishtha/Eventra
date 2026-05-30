@@ -23,11 +23,13 @@ const normalizeEvent = (event) => ({
   status: event.status || getEventStatus(event),
 });
 
+import useDebounce from "../../hooks/useDebounce";
+
 const FUSE_OPTIONS = {
-  keys: ['title', 'description', 'location', 'category', 'type', 'tags'],
+  keys: ["title", "description", "location", "category", "type", "tags"],
   threshold: 0.4,
   includeScore: true,
-import useDebounce from "../../hooks/useDebounce";
+};
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
@@ -125,16 +127,6 @@ const useEventListing = () => {
           ? responseData
           : [];
 
-      const nextEvents = (apiEvents.length > 0 ? apiEvents : fallbackEvents).map(normalizeEvent);
-      setEvents(nextEvents);
-      setCacheInfo(null);
-      saveCachedEvents(nextEvents);
-      // Batch-write all detail entries in a single read+write cycle.
-      // Replaces nextEvents.forEach(saveCachedEventDetail) which triggered
-      // N independent localStorage read+write pairs — O(n) synchronous
-      // main-thread I/O that blocked the UI for each event in the list.
-      saveAllCachedEventDetails(nextEvents);
-        : [];
 
       const normalizedEvents = apiEvents.map((event) => ({
         ...event,
