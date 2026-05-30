@@ -477,6 +477,20 @@ GET /api/events/{id}/availability
 The availability response schema is fully documented in Swagger/OpenAPI and includes:
 
 * Event capacity
+### Capacity Validation
+
+The backend enforces a minimum event capacity of `1`.
+
+Valid values:
+- 1
+- 10
+- 100
+
+Invalid values:
+- 0
+- Negative numbers
+
+Requests with capacity less than `1` will fail validation and return a `400 Bad Request` response.
 * Current registered count
 * Remaining spots
 * Full/available status
