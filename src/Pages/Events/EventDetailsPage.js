@@ -163,7 +163,7 @@ const EventDetailsPage = () => {
             Event Not Found
           </h1>
           <p className="mb-6 text-gray-600 dark:text-gray-400">
-            The event you're looking for doesn't exist.
+            The event you&apos;re looking for doesn&apos;t exist.
           </p>
           <button
             type="button"

@@ -190,7 +190,7 @@ const Settings = () => {
                 <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
               </button>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                We'll keep you updated about new events, hackathons, and important account alerts.
+                We&apos;ll keep you updated about new events, hackathons, and important account alerts.
               </p>
               <Link
                 to="/settings/notifications"

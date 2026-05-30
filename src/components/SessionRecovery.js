@@ -54,7 +54,7 @@ const SessionRecovery = () => {
         <div className="bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
           <WifiOff size={20} className="animate-pulse" />
           <div>
-            <p className="font-semibold text-sm">You're offline</p>
+            <p className="font-semibold text-sm">You&apos;re offline</p>
             <p className="text-xs opacity-90">Changes will be saved locally</p>
           </div>
         </div>
@@ -82,7 +82,7 @@ const SessionRecovery = () => {
         <div className="bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
           <Wifi size={20} />
           <div>
-            <p className="font-semibold text-sm">You're back online</p>
+            <p className="font-semibold text-sm">You&apos;re back online</p>
             <p className="text-xs opacity-90">Connection restored</p>
           </div>
         </div>
