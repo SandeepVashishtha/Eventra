@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PasswordField } from '../components/auth/Signup';
 
 export default {
@@ -6,18 +6,32 @@ export default {
   component: PasswordField,
   argTypes: {
     error: { control: 'text' },
+    value: { control: 'text' },
   },
 };
 
 const Template = (args) => {
   const [value, setValue] = useState(args.value || '');
   
+  // 🔥 FIX 1: Synchronize Storybook Controls with local state
+  // This ensures that when developers use the Storybook UI panel to edit the 'value',
+  // the component actually responds and updates instead of ignoring the prop change.
+  useEffect(() => {
+    setValue(args.value || '');
+  }, [args.value]);
+
   // Dummy strength logic to mimic actual behavior
   const calcStrength = (val) => {
+    // 🔥 FIX 2: Added null-safety and a proper 'empty' state
+    const safeVal = val || '';
+    if (safeVal.length === 0) {
+      return { score: 0, color: 'text-gray-400', label: 'None' };
+    }
+
     let score = 0;
-    if (val.length > 5) score += 40;
-    if (/[A-Z]/.test(val)) score += 30;
-    if (/[!@#]/.test(val)) score += 30;
+    if (safeVal.length > 5) score += 40;
+    if (/[A-Z]/.test(safeVal)) score += 30;
+    if (/[!@#]/.test(safeVal)) score += 30;
     
     let label = 'Weak';
     let color = 'text-red-500';
