@@ -23,7 +23,6 @@
     "dompurify": "3.4.6",
     "framer-motion": "11.18.2",
     "fuse.js": "^7.1.0",
-    "google-auth-library": "10.6.2",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "2.3.8",
     "idb-keyval": "6.2.4",
@@ -122,10 +121,10 @@
     "@tootallnate/once": "^2.0.1"
   },
   "optionalDependencies": {
-    "lightningcss-linux-x64-gnu": "1.32.0",
-    "lightningcss-linux-x64-musl": "1.32.0",
     "@rolldown/binding-linux-x64-gnu": "1.0.2",
-    "@rolldown/binding-linux-x64-musl": "1.0.2"
+    "@rolldown/binding-linux-x64-musl": "1.0.2",
+    "lightningcss-linux-x64-gnu": "1.32.0",
+    "lightningcss-linux-x64-musl": "1.32.0"
   },
   "_gssoc_comment_dx": "// DEVELOPER EXPERIENCE: Integrated pre-commit validations to prevent broken or unformatted scripts from being pushed upstream."
 }
