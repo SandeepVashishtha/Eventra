@@ -18,3 +18,6 @@ Please delete options that are not relevant.
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
 - [ ] My changes generate no new warnings
+- [ ] I ran `npm test` (or targeted tests for the changed area) locally
+- [ ] I ran `npm run lint` and resolved any new issues introduced by this PR
+- [ ] I verified responsive layout on mobile and desktop viewports where UI changed
