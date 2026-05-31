@@ -18,15 +18,22 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
+import { useFormValidation } from "../../hooks/useFormValidation";
 import { getEventStatus } from "../../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { useFormValidation } from "../../hooks/useFormValidation";
+import CalendarView from "../../components/CalendarView";
+
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
+import {
+  getCacheAgeLabel,
+  getCachedEventDetail,
+  saveCachedEventDetail,
+} from "../../utils/offlineEventCache";
 
 import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
@@ -39,11 +46,12 @@ const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
 
 function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  const finalName = userName || "Participant";
   if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
     window.emailjs.init(EMAILJS_PUBLIC_KEY);
     window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_email: userEmail,
-      to_name: userName,
+      to_name: finalName,
       event_name: eventName,
       event_date: eventDate,
     }).catch(() => { });
@@ -140,6 +148,8 @@ const EventRegistration = () => {
       organization: "",
       designation: "",
       additionalInfo: "",
+      priority: "Medium",
+
     },
     validationRules,
     { debounceMs: 300 }
@@ -189,6 +199,7 @@ const EventRegistration = () => {
             status: getEventStatus(response.data),
           };
           setEvent(fetchedEvent);
+          saveCachedEventDetail(fetchedEvent);
 
           // Pre-fill form if user is authenticated
           if (isAuthenticated() && user) {
@@ -201,6 +212,21 @@ const EventRegistration = () => {
         }
       } catch (error) {
         console.error("Failed to load event details:", error);
+        const cached = getCachedEventDetail(eventId);
+        if (cached?.event) {
+          setEvent({
+            ...cached.event,
+            status: getEventStatus(cached.event),
+            cacheInfo: {
+              cachedAt: cached.cachedAt,
+              label: getCacheAgeLabel(cached.cachedAt),
+            },
+          });
+
+          toast.warning(`Showing ${getCacheAgeLabel(cached.cachedAt)} event details.`);
+          return;
+        }
+
         // Try fallback to hackathonsData as a last resort
         const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
         if (foundMock) {
@@ -328,11 +354,12 @@ const EventRegistration = () => {
     try {
       await apiUtils.post(
         endpoint,
-        {
-          ...formData,
-          eventId: parseInt(eventId),
-          userId: user.id,
-        },
+          {
+            ...formData,
+            priority: formData.priority,
+            eventId: parseInt(eventId),
+            userId: user.id,
+          },
         // Registration is authenticated server-side; send the active token
         // explicitly instead of relying only on global storage lookup.
         token
@@ -351,14 +378,23 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        // Offline sync fallback keeps registration intent intact without
-        // storing PII in localStorage.
+        // Offline sync fallback keeps the full registration intent intact so
+        // it can be replayed without asking the user to submit the form again.
         const payload = {
+          ...formData,
           eventId: parseInt(eventId),
           userId: user.id,
         };
 
-        const success = await pushToQueue({ eventId: parseInt(eventId), payload });
+        const success = await pushToQueue(
+          {
+            actionType: isEventFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            endpoint,
+            eventId: parseInt(eventId),
+            payload,
+          },
+          user.id
+        );
 
         if (success) {
           setRegistered(true);
@@ -514,7 +550,7 @@ const EventRegistration = () => {
             Registration Confirmed!
           </h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-            You're all set! A confirmation email has been sent to <span className="font-bold text-gray-700 dark:text-gray-300">{formData.email}</span>.
+            You&apos;re all set! A confirmation email has been sent to <span className="font-bold text-gray-700 dark:text-gray-300">{formData.email}</span>.
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
@@ -554,8 +590,7 @@ const EventRegistration = () => {
             <div className="flex gap-3 justify-center">
               <a
                 href={googleCalendarUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                target="_blank" rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
@@ -565,8 +600,7 @@ const EventRegistration = () => {
               </a>
               <a
                 href={outlookCalendarUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                target="_blank" rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
@@ -584,8 +618,7 @@ const EventRegistration = () => {
             <div className="flex gap-3 justify-center">
               <a
                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                target="_blank" rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on Twitter / X"
               >
@@ -595,8 +628,7 @@ const EventRegistration = () => {
               </a>
               <a
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                target="_blank" rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-[#0077b5] hover:bg-[#006297] rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on LinkedIn"
               >
@@ -677,8 +709,9 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          {isEventFull ? "Waitlist Joined!" : "Registration Confirmed!"}
           <div className="p-8">
+            <CalendarView events={myEvents} />
+          
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               Register for this Event
             </h2>
@@ -801,15 +834,41 @@ const EventRegistration = () => {
                 >
                   Designation (Optional)
                 </label>
-                <input
-                  type="text"
-                  id="designation"
-                  name="designation"
-                  value={formData.designation}
+
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="designation"
+                    name="designation"
+                    value={formData.designation}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    placeholder="Your job title or role"
+                  />
+                </div>
+              </div>
+
+              {/* Priority */}
+              <div>
+                <label
+                  htmlFor="priority"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Priority (Optional)
+                </label>
+
+                <select
+                  id="priority"
+                  name="priority"
+                  value={formData.priority}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                  placeholder="Your job title or role"
-                />
+                  className="w-full pl-3 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                >
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
               </div>
 
               {/* Additional Info */}
@@ -825,13 +884,12 @@ const EventRegistration = () => {
                   name="additionalInfo"
                   value={formData.additionalInfo}
                   onChange={handleChange}
-                  maxLength={MAX_NOTES_CHARS} // 👈 Limits characters strictly
+                  maxLength={MAX_NOTES_CHARS}
                   rows="4"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
                   placeholder="Any special requirements or questions?"
-                ></textarea>
+                />
 
-                {/* 👈 Dynamic counter box directly below */}
                 <div className="flex justify-end text-xs mt-1 text-gray-400 dark:text-gray-500">
                   <span className={(formData.additionalInfo?.length || 0) >= MAX_NOTES_CHARS - 20 ? "text-red-500 font-medium animate-pulse" : ""}>
                     {formData.additionalInfo?.length || 0} / {MAX_NOTES_CHARS} characters
@@ -853,7 +911,7 @@ const EventRegistration = () => {
                   type="submit"
                   disabled={submitting || !isFormValid}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
+                  aria-label="Submit registration">
                   {submitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />

@@ -1,5 +1,10 @@
+import "./helpers/authTestEnv.mjs";
+process.env.ALLOWED_ORIGIN = "http://localhost:3000";
 import assert from "node:assert/strict";
-import handler, { users } from "../api/auth/login.js";
+const { default: handler, users } = await import("../api/auth/login.js");
+
+// Mock allowed origin to test specific CORS headers correctly
+process.env.ALLOWED_ORIGIN = "http://localhost:3000";
 
 // ---------------------------------------------------------------------------
 // Mock Response Helper
@@ -48,7 +53,7 @@ const createRequest = (method, body) => ({
 // Helper: Create a test user by calling signup first
 // ---------------------------------------------------------------------------
 
-import signupHandler from "../api/auth/signup.js";
+const { default: signupHandler } = await import("../api/auth/signup.js");
 
 const createTestUser = async (userData) => {
   const req = createRequest("POST", userData);
@@ -238,7 +243,7 @@ console.log("Running login endpoint tests...");
   assert.ok(payload.id, "JWT should contain user id");
   assert.ok(payload.email, "JWT should contain email");
   assert.ok(payload.roles, "JWT should contain roles");
-  assert.ok(payload.permissions, "JWT should contain permissions");
+  assert.equal(payload.permissions, undefined, "JWT should NOT contain permissions");
   assert.ok(payload.exp, "JWT should contain expiration");
   console.log("✓ Test 11: JWT token contains required claims");
 }

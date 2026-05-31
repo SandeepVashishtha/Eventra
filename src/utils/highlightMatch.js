@@ -1,4 +1,3 @@
-import React from "react";
 
 /**
  * Escapes all special RegExp metacharacters in a string so it can be used

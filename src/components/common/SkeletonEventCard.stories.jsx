@@ -1,4 +1,3 @@
-import React from "react";
 import { SkeletonEventCard } from "./SkeletonLoaders";
 
 export default {
