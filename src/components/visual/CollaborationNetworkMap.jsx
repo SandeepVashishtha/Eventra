@@ -63,18 +63,18 @@ const formatTimeInZone = (timezone) => {
 // ============ PARTICLE ANIMATION COMPONENT ============
 const ConnectionParticle = ({ path, color, delay }) => (
   <motion.circle
-    r="3"
+    r="2"
     fill={color}
-    initial={{ offsetDistance: "0%" }}
-    animate={{ offsetDistance: "100%" }}
+    initial={{ offsetDistance: "0%", opacity: 0.7 }}
+    animate={{ offsetDistance: "100%", opacity: 0.45 }}
     transition={{ 
-      duration: 3 + Math.random() * 2, 
+      duration: 5 + Math.random() * 3, 
       repeat: Infinity, 
       ease: "linear",
       delay 
     }}
     style={{ offsetPath: `path("${path}")` }}
-    opacity="0.8"
+    opacity="0.65"
   />
 );
 
@@ -87,7 +87,7 @@ export default function CollaborationNetworkMap() {
   const [selectedActivity, setSelectedActivity] = useState("All");
   const [zoom, setZoom] = useState(1);
   const [showConnections, setShowConnections] = useState(true);
-  const [particlesEnabled, setParticlesEnabled] = useState(true);
+  const [particlesEnabled, setParticlesEnabled] = useState(false);
 
   // Memoized computations
   const hubCoordinates = useMemo(() => {
@@ -329,23 +329,23 @@ export default function CollaborationNetworkMap() {
               return (
                 <g key={`connection-${idx}`} className="connection-group">
                   <path 
-                    d={pathD} 
-                    fill="none" 
-                    stroke="rgba(99, 102, 241, 0.1)" 
-                    strokeWidth={getConnectionWidth(conn.intensity)} 
-                    strokeLinecap="round"
-                  />
-                  <path 
-                    d={pathD} 
-                    fill="none" 
-                    stroke={`url(#connection-gradient)`} 
-                    strokeWidth={getConnectionWidth(conn.intensity) - 0.5}
-                    strokeDasharray="8, 120"
-                    strokeLinecap="round"
-                    opacity="0.7"
-                    className="connection-animated-path"
-                    style={{ animationDelay: `${idx * 0.25}s` }}
-                  />
+                        d={pathD} 
+                        fill="none" 
+                        stroke="rgba(14,165,255,0.06)" 
+                        strokeWidth={getConnectionWidth(conn.intensity)} 
+                        strokeLinecap="round"
+                      />
+                      <path 
+                        d={pathD} 
+                        fill="none" 
+                        stroke={`url(#connection-gradient)`} 
+                        strokeWidth={Math.max(0.8, getConnectionWidth(conn.intensity) - 0.6)}
+                        strokeDasharray="6, 200"
+                        strokeLinecap="round"
+                        opacity="0.45"
+                        className="connection-animated-path"
+                        style={{ animationDelay: `${idx * 0.5}s` }}
+                      />
                   {particlesEnabled && (
                     <ConnectionParticle 
                       path={pathD} 
