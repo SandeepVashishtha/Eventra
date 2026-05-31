@@ -1,4 +1,7 @@
-const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
+const GITHUB_REPO =
+  process.env.GITHUB_REPO ||
+  process.env.REACT_APP_GITHUB_REPO ||
+  "SandeepVashishtha/Eventra";
 
 const POINTS = {
   gssoclevel1: 3,
