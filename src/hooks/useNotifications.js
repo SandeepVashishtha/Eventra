@@ -38,7 +38,9 @@ export const useNotifications = () => {
     if (!didLoadRef.current) return;
     // Persist on every change — including when the list is cleared to []
     // so that markAllAsRead and future "clear all" features are durable.
-    idbSet(STORAGE_KEY, JSON.stringify(notifications)).catch(console.error);
+    idbSet(STORAGE_KEY, JSON.stringify(notifications)).catch((error) => {
+      logger.error("Failed to persist notifications to indexedDB", error);
+    });
   }, [notifications]);
 
   const requestPermission = async () => {
