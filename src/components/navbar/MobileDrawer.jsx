@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, UserPlus, Info, HelpCircle } from "lucide-react";
 import NavbarLinks from "./NavbarLinks";
 
 const MobileDrawer = ({
@@ -131,6 +131,30 @@ const MobileDrawer = ({
                 >
                   View Profile
                 </Link>
+                <Link
+                  to="/about"
+                  onClick={closeMenu}
+                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                    isActive("/about")
+                      ? "border-black bg-gray-100 text-black dark:border-white dark:bg-gray-800 dark:text-white"
+                      : "border-transparent text-gray-600 hover:bg-gray-50 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white"
+                  }`}
+                >
+                  <Info className="w-5 h-5" />
+                  About
+                </Link>
+                <Link
+                  to="/faq"
+                  onClick={closeMenu}
+                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                    isActive("/faq")
+                      ? "border-black bg-gray-100 text-black dark:border-white dark:bg-gray-800 dark:text-white"
+                      : "border-transparent text-gray-600 hover:bg-gray-50 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white"
+                  }`}
+                >
+                  <HelpCircle className="w-5 h-5" />
+                  Frequently Asked Questions
+                </Link>
                 <button
                   type="button"
                   onClick={() => {
@@ -139,11 +163,36 @@ const MobileDrawer = ({
                   }}
                   className="mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 border-transparent px-3 py-2 text-left text-sm font-medium text-gray-600 transition-all duration-200 hover:bg-gray-50 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white"
                 >
+                  <LogIn className="w-5 h-5" />
                   Logout
                 </button>
               </div>
             ) : (
               <div className="flex flex-col gap-4 mt-4">
+                <Link
+                  to="/about"
+                  onClick={closeMenu}
+                  className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
+                    isActive("/about")
+                      ? "text-black dark:text-white border-black dark:border-white font-semibold"
+                      : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
+                  }`}
+                >
+                  <Info className="w-5 h-5" />
+                  About
+                </Link>
+                <Link
+                  to="/faq"
+                  onClick={closeMenu}
+                  className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
+                    isActive("/faq")
+                      ? "text-black dark:text-white border-black dark:border-white font-semibold"
+                      : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
+                  }`}
+                >
+                  <HelpCircle className="w-5 h-5" />
+                  Frequently Asked Questions
+                </Link>
                 <Link
                   to="/login"
                   onClick={closeMenu}
@@ -154,7 +203,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   <LogIn className="w-5 h-5" />
-                  Login
+                  Sign In
                 </Link>
                 <Link
                   to="/signup"

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { Link } from "react-router-dom";
-import { LayoutDashboard, LogOut, User, ChevronDown } from "lucide-react";
+import { LayoutDashboard, LogOut, User, ChevronDown, Info, HelpCircle } from "lucide-react";
 
 const menuItems = [
   {
@@ -12,6 +12,16 @@ const menuItems = [
     label: "View Profile",
     path: "/dashboard/profile",
     icon: User,
+  },
+  {
+    label: "About",
+    path: "/about",
+    icon: Info,
+  },
+  {
+    label: "Frequently Asked Questions",
+    path: "/faq",
+    icon: HelpCircle,
   },
 ];
 

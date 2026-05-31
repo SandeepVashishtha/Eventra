@@ -64,16 +64,7 @@ export const NAV_ITEMS = [
       },
     ],
   },
-  {
-    name: "About",
-    href: "/about",
-    icon: <Info className="w-5 h-5" />,
-  },
-  {
-    name: "FAQ",
-    href: "/faq",
-    icon: <HelpCircle className="w-5 h-5" />,
-  },
+
   {
     name: "Contact",
     href: "/contact",
