@@ -1,12 +1,41 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * @fileoverview RespawningText - Animated typewriter text component for Eventra
+ * @module components/visual/RespawningText
+ */
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
+/**
+ * A React component that displays an animated typewriter effect,
+ * cycling through an array of text strings by typing and deleting
+ * them sequentially with configurable speeds.
+ *
+ * Automatically respects the user's `prefers-reduced-motion`
+ * accessibility setting.
+ *
+ * @component
+ * @param {Object} props - Component props
+ * @param {string[]} [props.texts=["Discover & Join"]] - Array of text strings to cycle through
+ * @param {number} [props.typingSpeed=150] - Delay in milliseconds between each character typed
+ * @param {number} [props.deletingSpeed=100] - Delay in milliseconds between each character deleted
+ * @param {number} [props.pauseTime=2000] - Delay in milliseconds before deleting starts
+ *
+ * @returns {JSX.Element} An animated span element with typewriter cursor effect
+ *
+ * @example
+ * <RespawningText
+ *   texts={["Build Events", "Connect Communities", "Track Analytics"]}
+ *   typingSpeed={100}
+ *   deletingSpeed={80}
+ *   pauseTime={3000}
+ * />
+ */
 const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deletingSpeed = 100, pauseTime = 2000 }) => {
   const [currentText, setCurrentText] = useState("");
   const [textIndex, setTextIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
-  const prefersReducedMotion = useReducedMotion();
+  useReducedMotion();
 
   useEffect(() => {
     let timeout;

@@ -34,7 +34,7 @@ export const NAV_ITEMS = [
   },
   {
     name: "Saved",
-    href: "/saved",
+    href: "/saved-events",
     icon: <Bookmark className="w-5 h-5" />,
   },
   {

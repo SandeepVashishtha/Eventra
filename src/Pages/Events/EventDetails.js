@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useMemo } from "react";
+import "./EventDetails.print.css";
+import { useEffect, useState, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
-import DOMPurify from "dompurify";
+import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams } from "react-router-dom";
 import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2 } from "lucide-react";
@@ -8,10 +9,10 @@ import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtil
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
-import mockEvents from "./eventsMockData.json";
 import CertificateDownload from "../../components/CertificateDownload";
 import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
+import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
 import { useAuth } from "../../context/AuthContext";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
@@ -23,8 +24,7 @@ import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import { safeParseJson } from "../../utils/jsonUtils";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
-
-// Removed mockRegistrants
+import mockEvents from "./eventsMockData.json";
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -35,17 +35,42 @@ const EventDetails = () => {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [exportingRegistrants, setExportingRegistrants] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false); // FIX: Print UX State
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [event, setEvent] = useState(null);
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
   const { isRegistered } = useMyEvents();
 
-  const event = useMemo(() => {
-    const foundEvent = mockEvents.find((item) => String(item.id) === eventId);
-    return foundEvent ? { ...foundEvent, status: getEventStatus(foundEvent) } : null;
+  const loadEvent = useCallback(async () => {
+    setFetchLoading(true);
+    setFetchError(null);
+    try {
+      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+      if (res.ok && res.data) {
+        const raw = res.data?.data ?? res.data;
+        setEvent({ ...raw, status: getEventStatus(raw) });
+      } else {
+        throw new Error(res.data?.message || `Event not found (${res.status})`);
+      }
+    } catch {
+      // Fall back to bundled mock data when the API is unreachable
+      const fallback = mockEvents.find((item) => String(item.id) === eventId);
+      if (fallback) {
+        setEvent({ ...fallback, status: getEventStatus(fallback) });
+      } else {
+        setFetchError("Event not found.");
+      }
+    } finally {
+      setFetchLoading(false);
+    }
   }, [eventId]);
 
-  // FIX: Safely handle localStorage with try-catch
+  useEffect(() => {
+    loadEvent();
+  }, [loadEvent]);
+
+  // Safely handle localStorage with try-catch
   useEffect(() => {
     if (!event) return;
 
@@ -57,12 +82,11 @@ const EventDetails = () => {
       ].slice(0, 6);
 
       localStorage.setItem("recentlyViewedEvents", JSON.stringify(updatedEvents));
-    } catch (error) {
-      console.warn("[EventDetails] Failed to access or save recently viewed events in localStorage:", error);
+    } catch {
+      // localStorage unavailable — not critical
     }
   }, [event]);
 
-  // FIX: Print stability handler
   const handlePrint = () => {
     setIsPrinting(true);
     setTimeout(() => {
@@ -89,25 +113,33 @@ const EventDetails = () => {
           textArea.remove();
         }
       }
-      setCopied(true);
       toast.success("Link copied!");
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
     } catch (err) {
       toast.error("Failed to copy link");
     }
   };
 
-  if (!event) {
+  if (fetchLoading) return <EventDetailSkeleton />;
+
+  if (fetchError || !event) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100">
         <div className="text-center">
           <h1 className="text-4xl font-bold">Event Not Found</h1>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">We could not find the event you were looking for.</p>
-          <Link to="/events" className="mt-6 inline-flex rounded-full bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-700 transition">
-            Browse Events
-          </Link>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">
+            {fetchError || "We could not find the event you were looking for."}
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <button
+              onClick={loadEvent}
+              className="inline-flex rounded-full bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-700 transition"
+            >
+              Try Again
+            </button>
+            <Link to="/events" className="inline-flex rounded-full border border-gray-300 px-6 py-3 font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 transition">
+              Browse Events
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -129,7 +161,7 @@ const EventDetails = () => {
 
       <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl space-y-8">
-          
+
           {/* Header */}
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -149,7 +181,7 @@ const EventDetails = () => {
               </div>
               <div
                 className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
+                dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
               />
             </div>
 
@@ -180,6 +212,7 @@ const EventDetails = () => {
                 onClick={handlePrint}
                 disabled={isPrinting}
                 className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                aria-label="Print or save as PDF"
               >
                 {isPrinting ? "Preparing..." : "🖨️ Print / Save as PDF"}
               </button>
@@ -202,7 +235,7 @@ const EventDetails = () => {
                             try {
                               setExportingRegistrants(true);
                               const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-                              const registrants = await response.json();
+                              const registrants = response.data?.data || response.data || [];
                               exportToCSV(registrants, `${event.title}_registrants`);
                             } catch (error) {
                               toast.error("Failed to fetch registrants");
@@ -221,7 +254,7 @@ const EventDetails = () => {
                             try {
                               setExportingRegistrants(true);
                               const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-                              const registrants = await response.json();
+                              const registrants = response.data?.data || response.data || [];
                               exportToJSON(registrants, `${event.title}_registrants`);
                             } catch (error) {
                               toast.error("Failed to fetch registrants");
@@ -346,7 +379,7 @@ const EventDetails = () => {
                 <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
                 <div
                   className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
                 />
               </div>
             </aside>

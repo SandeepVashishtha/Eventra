@@ -1,4 +1,4 @@
-import React, { act } from "react";
+import { act } from "react";
 import { createRoot } from "react-dom/client";
 import ConfirmationModal from "./ConfirmationModal";
 
@@ -7,7 +7,9 @@ let root;
 let onClose;
 let onConfirm;
 
+/* eslint-disable no-undef */
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+/* eslint-enable no-undef */
 
 const renderModal = (props = {}) => {
   container = document.createElement("div");
@@ -16,6 +18,7 @@ const renderModal = (props = {}) => {
   onClose = jest.fn();
   onConfirm = jest.fn();
 
+  // eslint-disable-next-line testing-library/no-unnecessary-act
   act(() => {
     root.render(
       <ConfirmationModal
@@ -47,6 +50,7 @@ const pressKey = (key, shiftKey = false) => {
 
 afterEach(() => {
   if (root) {
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     act(() => {
       root.unmount();
     });
@@ -102,6 +106,7 @@ describe("ConfirmationModal accessibility", () => {
 
     renderModal();
 
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     act(() => {
       root.render(
         <ConfirmationModal

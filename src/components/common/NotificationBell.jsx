@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Bell } from "lucide-react";
 import { useNotifications } from "../../hooks/useNotifications";
 import "./NotificationBell.css";
@@ -32,7 +32,7 @@ const NotificationBell = () => {
           <div className="notification-header">
             <h4>Notifications</h4>
 
-            <button onClick={markAllAsRead}>
+            <button onClick={markAllAsRead} aria-label="button">
               Mark all read
             </button>
           </div>
