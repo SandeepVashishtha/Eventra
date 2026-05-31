@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { users } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { buildCorsHeaders, corsResponse } from "./cors.js";
 
 // ---------------------------------------------------------------------------
 // Google OAuth Configuration
@@ -22,35 +23,8 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 const JWT_SECRET = getJwtSecret();
 
 // ---------------------------------------------------------------------------
-// CORS Headers
+// CORS Headers (delegated to shared cors.js)
 // ---------------------------------------------------------------------------
-
-const corsHeaders = (req) => {
-  const allowedOrigin = process.env.ALLOWED_ORIGIN;
-  const requestOrigin = req.headers?.origin;
-
-  const corsOrigin = allowedOrigin || "*";
-  if (allowedOrigin && requestOrigin !== allowedOrigin) {
-    console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
-  }
-
-  // Access-Control-Allow-Credentials must not be paired with a wildcard origin.
-  // Per the CORS specification, browsers reject credentialed responses when the
-  // reflected origin is "*". Only set the header when a specific origin is
-  // configured — matching the pattern already used in login.js and signup.js.
-  const isSpecificOrigin = corsOrigin !== "*";
-
-  return {
-    "Access-Control-Allow-Origin": corsOrigin,
-    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
-};
-
-const corsResponse = (res, status, data, req) => {
-  return res.status(status).set(corsHeaders(req)).json(data);
-};
 
 // ---------------------------------------------------------------------------
 // Default Roles and Permissions
@@ -278,12 +252,12 @@ const createOrUpdateUserFromGoogle = (googlePayload) => {
 export default async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return res.status(200).set(corsHeaders(req)).end();
+    return res.status(200).set(buildCorsHeaders(req)).end();
   }
 
   // Only allow POST requests
   if (req.method !== "POST") {
-    return corsResponse(res, 405, { error: "Method not allowed" }, req);
+    return corsResponse(req, res, 405, { error: "Method not allowed" });
   }
 
   // Fail fast with a clear 503 when GOOGLE_CLIENT_ID is not configured.
@@ -292,9 +266,9 @@ export default async function handler(req, res) {
   // misconfiguration invisible to operators and confusing to users.
   // Returning 503 here distinguishes a configuration error from a bad token.
   if (!GOOGLE_CLIENT_ID) {
-    return corsResponse(res, 503, {
+    return corsResponse(req, res, 503, {
       error: "Google Sign-In is not available. Please contact the site administrator.",
-    }, req);
+    });
   }
 
   try {
@@ -305,9 +279,9 @@ export default async function handler(req, res) {
     // -----------------------------------------------------------------------
 
     if (!credential) {
-      return corsResponse(res, 400, { 
+      return corsResponse(req, res, 400, { 
         error: "Google credential is required" 
-      }, req);
+      });
     }
 
     // -----------------------------------------------------------------------
@@ -317,9 +291,9 @@ export default async function handler(req, res) {
     const verificationResult = await verifyGoogleToken(credential);
     
     if (!verificationResult.valid) {
-      return corsResponse(res, 401, { 
+      return corsResponse(req, res, 401, { 
         error: "Invalid or expired Google token" 
-      }, req);
+      });
     }
 
     const googlePayload = verificationResult.payload;
@@ -378,15 +352,15 @@ export default async function handler(req, res) {
     const isProd = process.env.NODE_ENV === "production";
     res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`);
 
-    return corsResponse(res, 200, {
+    return corsResponse(req, res, 200, {
       message: "Login successful via Google",
       ...userResponse,
-    }, req);
+    });
 
   } catch (error) {
     console.error("Google OAuth Error:", error);
-    return corsResponse(res, 500, { 
+    return corsResponse(req, res, 500, { 
       error: "Internal server error. Please try again later." 
-    }, req);
+    });
   }
 }
