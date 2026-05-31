@@ -187,7 +187,7 @@ export default function UserAchievements() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-20 px-4 md:px-8 transition-colors duration-300">
+    <div className="min-h-screen bg-bg text-text py-20 px-4 md:px-8 transition-colors duration-300">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* HEADER SECTION */}
@@ -222,7 +222,7 @@ export default function UserAchievements() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-premium-md flex flex-col items-center justify-center space-y-5 text-center relative overflow-hidden"
+            className="bg-card-bg/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-premium-md flex flex-col items-center justify-center space-y-5 text-center relative overflow-hidden"
           >
             {/* Background absolute decorations */}
             <div className="absolute -right-16 -top-16 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl" />
@@ -307,7 +307,7 @@ export default function UserAchievements() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-premium-sm hover:shadow-premium-md hover:-translate-y-0.5 transition-all group"
+              className="bg-card-bg/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-premium-sm hover:shadow-premium-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="flex items-center justify-between">
                 <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-premium-sm shrink-0">
@@ -330,7 +330,7 @@ export default function UserAchievements() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.18 }}
-              className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-premium-sm hover:shadow-premium-md hover:-translate-y-0.5 transition-all group"
+              className="bg-card-bg/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-premium-sm hover:shadow-premium-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="flex items-center justify-between">
                 <div className="p-3 rounded-2xl bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 shadow-premium-sm shrink-0">
@@ -355,7 +355,7 @@ export default function UserAchievements() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
-              className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-premium-sm hover:shadow-premium-md hover:-translate-y-0.5 transition-all group"
+              className="bg-card-bg/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-premium-sm hover:shadow-premium-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="flex items-center justify-between">
                 <div className="p-3 rounded-2xl bg-yellow-50 dark:bg-yellow-950/20 text-yellow-600 dark:text-yellow-405 shadow-premium-sm shrink-0">
@@ -436,8 +436,8 @@ export default function UserAchievements() {
                   layout
                   className={`p-5 rounded-3xl border flex flex-col transition-all cursor-pointer ${
                     badge.earned
-                      ? 'bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-slate-200/50 dark:border-slate-800/40 shadow-premium-sm hover:shadow-premium-md hover:shadow-glow-sm'
-                      : 'bg-slate-100/55 dark:bg-slate-900/15 border-slate-200/30 dark:border-slate-850/20 opacity-70 hover:opacity-100 shadow-none'
+                      ? 'bg-card-bg/60 backdrop-blur-xl border-slate-200/50 dark:border-slate-800/40 shadow-premium-sm hover:shadow-premium-md hover:shadow-glow-sm'
+                      : 'bg-card-bg/15 border-slate-200/30 dark:border-slate-850/20 opacity-70 hover:opacity-100 shadow-none'
                   }`}
                   onClick={() => toggleExpand(badge.id)}
                   whileHover={{ y: -4 }}
@@ -577,7 +577,7 @@ export default function UserAchievements() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-3xl w-full shadow-premium-lg relative space-y-5 text-left"
+              className="bg-card-bg border border-slate-800 rounded-3xl p-6 max-w-3xl w-full shadow-premium-lg relative space-y-5 text-left"
             >
               {/* Close Button */}
               <button
@@ -743,7 +743,7 @@ export default function UserAchievements() {
                     </div>
                   ) : (
                     /* Render LinkedIn Article Mockup */
-                    <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-850 text-left text-slate-800 dark:text-slate-200 space-y-3 shadow-none select-none">
+                    <div className="p-4 bg-card-bg rounded-xl border border-slate-200 dark:border-slate-850 text-left text-slate-800 dark:text-slate-200 space-y-3 shadow-none select-none">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-black text-indigo-650 dark:text-indigo-400">
                           EV
@@ -758,7 +758,7 @@ export default function UserAchievements() {
                       </p>
                       
                       {/* Attached Article Mockup */}
-                      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-950/80">
+                      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-bg/80">
                         <div className="p-5 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-slate-950 text-center border-b border-slate-200 dark:border-slate-800">
                           <span className="inline-block p-3 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300/30 dark:border-indigo-500/25 text-3xl mx-auto shadow-none">
                             {activeShareBadge.icon}

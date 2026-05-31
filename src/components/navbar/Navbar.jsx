@@ -78,7 +78,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className="sticky top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
+        className="sticky top-0 left-0 w-full h-20 bg-navbar border-b border-border z-[200] transition-all duration-300"
       >
         <div className="h-full px-4 flex items-center justify-between gap-4">
           <Link to="/" aria-label="Eventra home logo template" className="flex items-center shrink-0 min-w-0">
