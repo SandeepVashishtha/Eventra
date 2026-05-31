@@ -428,3 +428,7 @@ Update `.env.local` to point to the mock server. You have two options:
 ---
 
 Built with care by the Eventra Team
+
+
+### GSSoC WCAG Contrast Tokens Guide
+- Maintain HSL tailored colors for maximum accessibility contrast.
