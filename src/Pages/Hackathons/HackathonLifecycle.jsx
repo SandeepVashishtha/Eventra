@@ -1,14 +1,14 @@
-import React, { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  Calendar,
+  
   Users,
   Award,
   Terminal,
   FileText,
   Settings,
   Lock,
-  Unlock,
+  
   CheckCircle2,
   Clock,
   ArrowRight,
@@ -17,6 +17,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import TeamWorkspace from "../../components/hackathons/TeamWorkspace";
 
 const PHASES = [
   {
@@ -111,16 +112,40 @@ const PHASES = [
 ];
 
 const HackathonLifecycle = () => {
-  const { id } = useParams();
-  const hackathonId = id || "global-gs-hackathon";
 
   // Mock Active Phase Management
   const [activePhaseIndex, setActivePhaseIndex] = useState(1); // Defaults to registration
   const [selectedPhaseId, setSelectedPhaseId] = useState(2); // Selected phase to view
   const [phasesList, setPhasesList] = useState(PHASES);
   const [isOrganizerMode, setIsOrganizerMode] = useState(false);
+  const [newTaskText, setNewTaskText] = useState("");
 
   const selectedPhase = phasesList.find((p) => p.id === selectedPhaseId);
+
+  const handleAddTask = (e) => {
+    e.preventDefault();
+    if (!newTaskText.trim()) return;
+
+    const newTask = {
+      id: `custom-${Date.now()}`,
+      text: newTaskText.trim(),
+      done: false,
+    };
+
+    setPhasesList(
+      phasesList.map((phase) => {
+        if (phase.id === selectedPhaseId) {
+          return {
+            ...phase,
+            tasks: [...phase.tasks, newTask],
+          };
+        }
+        return phase;
+      })
+    );
+
+    setNewTaskText("");
+  };
 
   // Toggle dynamic checklist tasks
   const toggleTask = (phaseId, taskId) => {
@@ -245,7 +270,6 @@ const HackathonLifecycle = () => {
                     : "bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 shadow-sm"
                 }`}
                 aria-current={isActive ? "step" : undefined}
-                aria-selected={isSelected}
               >
                 {/* Active/Completed Indicators */}
                 <div className="absolute top-4 right-4">
@@ -337,6 +361,12 @@ const HackathonLifecycle = () => {
                 </div>
               </div>
 
+              {selectedPhase.id === 3 && (
+                <div className="mt-8">
+                  <TeamWorkspace />
+                </div>
+              )}
+
               {/* RESOURCES & STARTER DOWNLOADS */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -365,7 +395,7 @@ const HackathonLifecycle = () => {
                         <button
                           type="button"
                           className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-indigo-600 dark:text-indigo-400 shadow-sm"
-                        >
+                         aria-label="button">
                           Fetch File
                         </button>
                       </div>
@@ -390,6 +420,29 @@ const HackathonLifecycle = () => {
                 <p className="text-xs text-slate-400 mt-2 mb-4">
                   Check off finished milestones to maintain operational track records.
                 </p>
+
+                {isOrganizerMode && (
+                  <form
+                    onSubmit={handleAddTask}
+                    className="flex gap-2 mb-5"
+                  >
+                    <input
+                      type="text"
+                      value={newTaskText}
+                      onChange={(e) => setNewTaskText(e.target.value)}
+                      placeholder="Add custom phase task..."
+                      className="flex-1 min-w-0 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-colors"
+                      maxLength={100}
+                    />
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-sm font-bold text-white shadow-sm transition shrink-0"
+                     aria-label="button">
+                      Add Task
+                    </button>
+                  </form>
+                )}
+
                 <div className="space-y-3.5">
                   {selectedPhase.tasks.map((task) => (
                     <button

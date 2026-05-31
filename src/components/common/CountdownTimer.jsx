@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Clock } from "lucide-react";
 
 const calculateTimeLeft = (deadline) => {
   const diff = new Date(deadline) - new Date();
-  if (diff <= 0) return null;
+  if (isNaN(diff) || diff <= 0) return null;
   return {
     days: Math.floor(diff / (1000 * 60 * 60 * 24)),
     hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
@@ -16,15 +16,17 @@ const pad = (n) => String(n).padStart(2, "0");
 
 // Compact version for EventCard
 export const CountdownBadge = ({ date, time }) => {
-  const deadline = new Date(`${date} ${time}`);
+  const deadline = useMemo(() => new Date(`${date}T${time}`), [date, time]);
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft(deadline));
+      const remaining = calculateTimeLeft(deadline);
+      setTimeLeft(remaining);
+      if (!remaining) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [date, time]);
+  }, [deadline]);
 
   if (!timeLeft) {
     return (
@@ -44,15 +46,17 @@ export const CountdownBadge = ({ date, time }) => {
 
 // Large version for EventDetailsPage
 const CountdownTimer = ({ date, time }) => {
-  const deadline = new Date(`${date} ${time}`);
+  const deadline = useMemo(() => new Date(`${date}T${time}`), [date, time]);
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft(deadline));
+      const remaining = calculateTimeLeft(deadline);
+      setTimeLeft(remaining);
+      if (!remaining) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [date, time]);
+  }, [deadline]);
 
   if (!timeLeft) {
     return (

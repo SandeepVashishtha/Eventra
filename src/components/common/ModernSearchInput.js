@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, X } from "lucide-react";
 
@@ -53,7 +53,7 @@ const ModernSearchInput = ({
         </div>
 
         <div
-          className={`flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-3.5 sm:py-4 text-base text-gray-900 dark:text-gray-100 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl transition-all duration-300 shadow-lg ${inputClassName}`}
+          className={`flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-3.5 sm:py-4 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 border  rounded-2xl transition-all duration-300 shadow-lg ${inputClassName}`}
           style={{
             borderColor: isFocused ? "#6366f1" : "",
             borderWidth: isFocused ? "2px" : "1px",
@@ -68,6 +68,12 @@ const ModernSearchInput = ({
             type="text"
             placeholder={tags && tags.length > 0 ? "" : placeholder}
             className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 min-w-[120px] placeholder-gray-400 dark:placeholder-gray-500"
+            style={{
+              backgroundColor: "transparent",
+              border: "none",
+              outline: "none",
+              boxShadow: "none",
+            }}
             value={value}
             onChange={onChange}
             onFocus={handleFocus}

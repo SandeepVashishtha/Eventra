@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useRecentlyViewed from '../../hooks/useRecentlyViewed';
 import './RecentlyViewedEvents.css';
@@ -81,7 +81,7 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
             className={`rv-btn ${confirmClear ? 'rv-btn--danger' : 'rv-btn--ghost'}`}
             onClick={handleClear}
             title="Clear viewing history"
-          >
+           aria-label="button">
             {confirmClear ? '✕ Confirm Clear' : 'Clear History'}
           </button>
         </div>
@@ -119,6 +119,9 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
                   src={event.image}
                   alt={event.title}
                   loading="lazy"
+                  decoding="async"
+                  width={300}
+                  height={200}
                   onError={(e) => {
                     e.target.style.display = 'none';
                     e.target.nextSibling.style.display = 'flex';

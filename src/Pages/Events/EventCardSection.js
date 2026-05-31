@@ -1,18 +1,34 @@
+import { memo, useMemo } from "react";
 import EventCard from "./EventCard";
-import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+import SkeletonEventCard from "../../components/common/SkeletonEventCard";
 
-const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilters }) => {
+const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilters, cacheInfo }) => {
+  const skeletonItems = useMemo(
+    () => Array.from({ length: 6 }, (_, index) => `skeleton-${index + 1}`),
+    [],
+  );
+  const visibleEvents = useMemo(() => events, [events]);
+  const gridClassName = useMemo(
+    () =>
+      `grid gap-6 ${
+        viewMode === "grid"
+          ? "grid-cols-1 md:grid-cols-3"
+          : "grid-cols-1 max-w-4xl mx-auto"
+      }`,
+    [viewMode],
+  );
+
   if (isLoading) {
     return (
       <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <EventCardSkeleton key={`skeleton-${i}`} />
+        {skeletonItems.map((key) => (
+          <SkeletonEventCard key={key} />
         ))}
       </div>
     );
   }
 
-  if (events.length === 0) {
+  if (visibleEvents.length === 0) {
     return (
       <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
         <div className="flex justify-center mb-4">
@@ -35,14 +51,15 @@ const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilt
           No events found
         </h3>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Try a different keyword or adjust your filters to find what you're
+          Try a different keyword or adjust your filters to find what you&apos;re
           looking for.
         </p>
         {onClearFilters && (
           <button
+            type="button"
             onClick={onClearFilters}
             className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-          >
+           aria-label="button">
             Clear Filters
           </button>
         )}
@@ -51,19 +68,28 @@ const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilt
   }
 
   return (
-    <div
-      key={filterType + viewMode}
-      className={`grid gap-6 ${
-        viewMode === "grid"
-          ? "grid-cols-1 md:grid-cols-3"
-          : "grid-cols-1 max-w-4xl mx-auto"
-      }`}
-    >
-      {events.map((event) => (
-        <EventCard key={event.id} event={event} />
-      ))}
-    </div>
+    <>
+      {cacheInfo && (
+        <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+          Showing {cacheInfo.label} cached events. New changes will appear when your connection returns.
+        </div>
+      )}
+
+      <div
+        key={filterType + viewMode}
+        className={gridClassName}
+        data-list-size={visibleEvents.length}
+      >
+        {visibleEvents.map((event, index) => (
+          <EventCard
+            key={event.id || `${event.title}-${event.date}-${index}`}
+            event={event}
+            cacheInfo={cacheInfo}
+          />
+        ))}
+      </div>
+    </>
   );
 };
 
-export default EventCardSection;
+export default memo(EventCardSection);

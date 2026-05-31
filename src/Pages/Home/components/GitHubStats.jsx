@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { GitHubStatCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import {
@@ -14,11 +14,15 @@ import {
   Eye,
   Languages,
 } from "lucide-react";
+import {
+  fetchRepository,
+  fetchContributors,
+  fetchPullRequests,
+} from "../../../utils/githubApiClient";
 
-const GITHUB_USER = "SandeepVashishtha";
-const GITHUB_REPO = "Eventra";
+const repoPath = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
+const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
 
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || ""; // optional
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
 
@@ -64,44 +68,42 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        const headers = {
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-          ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
-        };
+        // Fire all three requests in parallel — none depends on the others,
+        // so sequential awaits would triple the load time unnecessarily.
+        const [repoResult, contributorsResult, pullRequestsResult] =
+          await Promise.allSettled([
+            fetchRepository(GITHUB_USER, GITHUB_REPO),
+            fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1),
+            fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+          ]);
 
-        const repoRes = await fetch(
-          `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`,
-          { headers },
-        );
-        if (!repoRes.ok) throw new Error(`Repo ${repoRes.status}`);
-        const repoData = await repoRes.json();
+        // Repository data is required; bail out if it failed
+        if (repoResult.status === "rejected") {
+          throw repoResult.reason;
+        }
+        const repoData = repoResult.value;
 
-        // contributors
+        // Contributor count — graceful fallback on failure
         let contribCount = "—";
-        try {
-          const cRes = await fetch(
-            `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contributors?per_page=100`,
-            { headers },
-          );
-          if (cRes.ok) {
-            const cData = await cRes.json();
-            if (Array.isArray(cData)) contribCount = cData.length;
+        if (contributorsResult.status === "fulfilled") {
+          const contributors = contributorsResult.value;
+          if (Array.isArray(contributors) && contributors.length > 0) {
+            contribCount = contributors.length;
           }
-        } catch {}
+        } else {
+          //console.warn("Failed to fetch contributor count:", contributorsResult.reason);
+        }
 
-        // pull requests
+        // Pull request count — graceful fallback on failure
         let prCount = "—";
-        try {
-          const pRes = await fetch(
-            `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/pulls?state=open`,
-            { headers },
-          );
-          if (pRes.ok) {
-            const pData = await pRes.json();
-            if (Array.isArray(pData)) prCount = pData.length;
+        if (pullRequestsResult.status === "fulfilled") {
+          const pullRequests = pullRequestsResult.value;
+          if (Array.isArray(pullRequests) && pullRequests.length > 0) {
+            prCount = pullRequests.length;
           }
-        } catch {}
+        } else {
+         //console.warn("Failed to fetch pull request count:", pullRequestsResult.reason);
+        }
 
         const next = {
           stars: repoData.stargazers_count || 0,
@@ -124,10 +126,10 @@ export default function GitHubStats() {
           writeCache(next);
           setIsLoading(false);
         }
-      } catch (err) {
-        console.warn("GitHub stats fetch failed", err);
+      } catch {
+        //console.warn("GitHub stats fetch failed", err);
         if (!cached && mounted) {
-          setStats({ ...stats, stars: "—", forks: "—", issues: "—" });
+          setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
           setIsLoading(false);
         }
       }
@@ -138,7 +140,7 @@ export default function GitHubStats() {
     };
   }, []);
 
-  const statCards = [
+  const statCards = useMemo(() => [
     {
       label: "Stars",
       value: stats.stars,
@@ -202,7 +204,7 @@ export default function GitHubStats() {
       icon: <Languages className="text-amber-600" size={40} />,
       link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
     },
-  ];
+  ], [stats]);
 
   return (
     // UPDATED: Section background
@@ -224,15 +226,12 @@ export default function GitHubStats() {
           className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 max-w-6xl mx-auto"
         >
           {isLoading
-            ? [...Array(10)].map((_, i) => (
-                <GitHubStatCardSkeleton key={`skeleton-${i}`} />
-              ))
-            : statCards.map(({ label, value, icon, link }, index) => (
+            ? [...Array(10)].map((_, i) => <GitHubStatCardSkeleton key={`skeleton-${i}`} />)
+            : statCards.map(({ label, value, icon, link }) => (
                 <motion.a
                   key={label}
                   href={link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, rotate: 1 }}
                   whileTap={{ scale: 0.95 }}
                   // UPDATED: Card background, border, and responsive sizing

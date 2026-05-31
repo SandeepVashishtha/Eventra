@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Keyboard, Sparkles, X } from "lucide-react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 const shortcutData = [
   {
@@ -18,11 +19,81 @@ const shortcutData = [
     workflow: "Navigation"
   },
   {
+    action: "Open Command Palette",
+    shortcut: "Ctrl + K / ⌘ + K",
+    keys: ["control", "k"],
+    category: "General",
+    workflow: "Quick Search"
+  },
+  {
     action: "Navigate to Home",
     shortcut: "g + h",
     keys: ["g", "h"],
     category: "Navigation",
     workflow: "Dashboard"
+  },
+  {
+    action: "Navigate to Events",
+    shortcut: "g + e",
+    keys: ["g", "e"],
+    category: "Navigation",
+    workflow: "Events"
+  },
+  {
+    action: "Navigate to Calendar",
+    shortcut: "g + c",
+    keys: ["g", "c"],
+    category: "Navigation",
+    workflow: "Events"
+  },
+  {
+    action: "Navigate to Bookmarks",
+    shortcut: "g + b",
+    keys: ["g", "b"],
+    category: "Navigation",
+    workflow: "User"
+  },
+  {
+    action: "Navigate to Reminders",
+    shortcut: "g + r",
+    keys: ["g", "r"],
+    category: "Navigation",
+    workflow: "User"
+  },
+  {
+    action: "Navigate to Hackathons",
+    shortcut: "g + k",
+    keys: ["g", "k"],
+    category: "Navigation",
+    workflow: "Events"
+  },
+  {
+    action: "Navigate to Projects",
+    shortcut: "g + p",
+    keys: ["g", "p"],
+    category: "Navigation",
+    workflow: "Developer"
+  },
+  {
+    action: "Navigate to Leaderboard",
+    shortcut: "g + a",
+    keys: ["g", "a"],
+    category: "Navigation",
+    workflow: "Community"
+  },
+  {
+    action: "Navigate to FAQ",
+    shortcut: "g + f",
+    keys: ["g", "f"],
+    category: "Navigation",
+    workflow: "Help & Guidance"
+  },
+  {
+    action: "Navigate to Dashboard",
+    shortcut: "g + d",
+    keys: ["g", "d"],
+    category: "Navigation",
+    workflow: "User"
   },
   {
     action: "Navigate to Login",
@@ -46,15 +117,24 @@ const virtualKeys = [
   { label: "Ctrl", id: "control" },
   { label: "Alt", id: "alt" },
   { label: "Cmd / Win", id: "meta" },
+  { label: "a", id: "a" },
+  { label: "b", id: "b" },
+  { label: "c", id: "c" },
+  { label: "d", id: "d" },
+  { label: "e", id: "e" },
+  { label: "f", id: "f" },
   { label: "g", id: "g" },
   { label: "h", id: "h" },
+  { label: "k", id: "k" },
   { label: "l", id: "l" },
+  { label: "p", id: "p" },
+  { label: "r", id: "r" },
   { label: "s", id: "s" },
   { label: "? / /", id: "/" },
   { label: "Spacebar", id: " " }
 ];
 
-const ShortcutRow = ({ action, shortcut, keys, isPressed }) => (
+const ShortcutRow = ({ action, keys, isPressed }) => (
   <motion.div
     layout
     initial={{ opacity: 0, y: 10 }}
@@ -94,6 +174,7 @@ const ShortcutRow = ({ action, shortcut, keys, isPressed }) => (
 );
 
 const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
+  const trapRef = useFocusTrap(isOpen);
   const [pressedKeys, setPressedKeys] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -106,7 +187,9 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
         return;
       }
       
-      const key = e.key.toLowerCase();
+      let key = e.key.toLowerCase();
+      if (key === "?") key = "/";
+
       setPressedKeys((prev) => {
         const next = new Set(prev);
         next.add(key);
@@ -120,7 +203,9 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
     };
 
     const handleKeyUp = (e) => {
-      const key = e.key.toLowerCase();
+      let key = e.key.toLowerCase();
+      if (key === "?") key = "/";
+
       setPressedKeys((prev) => {
         const next = new Set(prev);
         next.delete(key);
@@ -147,6 +232,13 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchQuery("");
+      setPressedKeys(new Set());
+    }
+  }, [isOpen]);
+
   const isKeyPressed = (keyId) => {
     return pressedKeys.has(keyId.toLowerCase());
   };
@@ -171,11 +263,18 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
+            aria-hidden="true"
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
           />
 
           {/* Interactive Modal Sheet */}
           <motion.div
+            ref={trapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="keyboard-shortcuts-title"
+            tabIndex={-1}
+            onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
             initial={{ opacity: 0, scale: 0.9, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
@@ -192,7 +291,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 dark:text-white">
+                  <h2 id="keyboard-shortcuts-title" className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 dark:text-white">
                     Keyboard Shortcuts
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -203,9 +302,10 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
 
               <button
                 onClick={onClose}
+                aria-label="Close keyboard shortcuts"
                 className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors shadow-sm"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
 

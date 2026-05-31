@@ -1,5 +1,4 @@
 // src/Pages/Documentation/DocumentationPage.jsx
-import React from "react";
 import {
   FiBookOpen,
   FiLayers,
@@ -274,7 +273,8 @@ export default function DocumentationPage() {
 │   │   ├── Contributors.js           # Contributors display
 │   │   ├── Dashboard.js              # Main dashboard
 │   │   ├── NotFound.js               # 404 page
-│   │   ├── ScrollToTop.js            # Scroll to top button
+│   │   ├── ScrollToTop.jsx           # Route scroll restorer utility
+│   │   ├── ScrollToTopButton.jsx     # Floating scroll to top button
 │   │   └── SearchFilter.js           # Search and filter
 │   ├── config/                # Configuration files
 │   │   └── api.js                    # API endpoints and utilities
@@ -420,7 +420,7 @@ npm start`}
           <li>
             Commit changes:{" "}
             <code className="bg-gray-100 px-2 py-1 rounded">
-              git commit -m "Add feature"
+              git commit -m &quot;Add feature&quot;
             </code>
           </li>
           <li>Push branch and open a Pull Request</li>

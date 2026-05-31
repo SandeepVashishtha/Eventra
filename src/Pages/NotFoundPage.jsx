@@ -1,69 +1,120 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Home, Calendar, Code2, HelpCircle } from "lucide-react";
+import { Helmet } from "react-helmet-async";
+
+const btnStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "10px",
+  padding: "12px 20px",
+  borderRadius: "12px",
+  backgroundColor: "rgba(255, 255, 255, 0.15)",
+  color: "white",
+  fontWeight: "600",
+  textDecoration: "none",
+  fontSize: "1rem",
+  backdropFilter: "blur(10px)",
+  border: "1px solid rgba(255, 255, 255, 0.2)"
+};
 
 const NotFoundPage = () => {
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      textAlign: "center",
-      padding: "24px"
-    }}>
-      <motion.h1
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6 }}
-        style={{ fontSize: "8rem", fontWeight: "bold", color: "white", margin: "0" }}
-      >
-        404
-      </motion.h1>
-
-      <motion.h2
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.6 }}
-        style={{ fontSize: "2rem", color: "white", marginTop: "10px" }}
-      >
-        Page Not Found
-      </motion.h2>
-
-      <motion.p
+    <>
+      <Helmet>
+        <title>Page Not Found – Eventra</title>
+        <meta
+          name="description"
+          content="The requested page could not be found. Return to the homepage or explore events on Eventra."
+        />
+      </Helmet>
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.4, duration: 0.6 }}
-        style={{ color: "rgba(255,255,255,0.85)", marginTop: "16px", maxWidth: "400px" }}
+        transition={{ duration: 0.6 }}
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+          textAlign: "center",
+          padding: "24px"
+        }}
       >
-        Sorry, the page you are looking for does not exist or has been moved.
-      </motion.p>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.6 }}
-      >
-        <Link
-          to="/"
+        <motion.h1
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
           style={{
-            display: "inline-block",
-            marginTop: "32px",
-            padding: "12px 30px",
-            borderRadius: "8px",
-            backgroundColor: "white",
-            color: "#764ba2",
-            fontWeight: "600",
-            textDecoration: "none",
-            fontSize: "1rem"
+            fontSize: "8rem",
+            fontWeight: "bold",
+            color: "white",
+            margin: 0,
+            lineHeight: 1
           }}
         >
-          Go Back Home
-        </Link>
+          404
+        </motion.h1>
+
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          style={{
+            fontSize: "2rem",
+            color: "white",
+            marginTop: "10px",
+            fontWeight: "600"
+          }}
+        >
+          Lost in the Cloud?
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          style={{
+            color: "rgba(255,255,255,0.85)",
+            marginTop: "16px",
+            maxWidth: "450px",
+            fontSize: "1.1rem"
+          }}
+        >
+          We can’t seem to find the page you’re looking for. It might have been removed, renamed, or temporarily unavailable.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.6 }}
+          style={{
+            marginTop: "40px",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "16px",
+            width: "100%",
+            maxWidth: "600px"
+          }}
+        >
+          <Link to="/" style={btnStyle} className="hover:scale-105 transition-transform">
+            <Home size={20} /> Home Page
+          </Link>
+          <Link to="/events" style={btnStyle} className="hover:scale-105 transition-transform">
+            <Calendar size={20} /> Browse Events
+          </Link>
+          <Link to="/hackathons" style={btnStyle} className="hover:scale-105 transition-transform">
+            <Code2 size={20} /> Hackathons
+          </Link>
+          <Link to="/help" style={btnStyle} className="hover:scale-105 transition-transform">
+            <HelpCircle size={20} /> Help Center
+          </Link>
+        </motion.div>
       </motion.div>
-    </div>
+    </>
   );
 };
 

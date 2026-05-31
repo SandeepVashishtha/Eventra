@@ -1,7 +1,7 @@
 # 🤝 Contributing to Eventra 🎉
 
 Thank you for your interest in contributing to **Eventra** — a modern event management platform built for **builders**, **communities**, and **creators**.  
-We’re thrilled to have you on board! 🚀  
+We’re thrilled to have you on board! 🚀
 
 This guide will help you understand how to contribute effectively, maintain high-quality standards, and collaborate seamlessly with our community.
 
@@ -21,7 +21,7 @@ This guide will help you understand how to contribute effectively, maintain high
 
 ---
 
-## 📜 Code of Conduct  
+## 📜 Code of Conduct
 
 At **Eventra**, we believe that collaboration thrives in a respectful, inclusive, and supportive community.  
 Our goal is to ensure that every contributor feels valued and safe while participating in this project.
@@ -29,12 +29,13 @@ Our goal is to ensure that every contributor feels valued and safe while partici
 Before contributing, please take a moment to read our full [**Code of Conduct**](CODE_OF_CONDUCT.md).  
 By participating, you agree to uphold these principles and help us maintain a positive environment for everyone.
 
-**Key principles:**  
-- 💬 **Be respectful:** Treat everyone with kindness and empathy.  
-- 🤝 **Be inclusive:** Embrace diversity and welcome new voices.  
-- 🌱 **Be constructive:** Offer helpful feedback and focus on solutions.  
-- 🛡️ **Be professional:** Avoid harassment, personal attacks, or discriminatory behavior.  
- 
+**Key principles:**
+
+- 💬 **Be respectful:** Treat everyone with kindness and empathy.
+- 🤝 **Be inclusive:** Embrace diversity and welcome new voices.
+- 🌱 **Be constructive:** Offer helpful feedback and focus on solutions.
+- 🛡️ **Be professional:** Avoid harassment, personal attacks, or discriminatory behavior.
+
 Together, we can make **Eventra** a safe and inspiring space for all contributors. ✨
 
 ---
@@ -51,112 +52,157 @@ You can help improve Eventra in several ways:
 
 ---
 
+## 🏗️ Understanding Eventra Architecture
+
+**Before you start coding**, take a few minutes to understand how Eventra works:
+
+📖 **[Architecture & Roles Guide](docs/ARCHITECTURE_AND_ROLES.md)** provides:
+- 🧬 Complete system architecture overview
+- 👥 Role-Based Access Control (RBAC) with 5 roles
+- 🎟️ Event lifecycle stages
+- 🔐 Authentication & route protection
+- 📍 Contributor code map showing where to implement features
+- 💡 Common tasks and where to find relevant code
+
+**Key Topics for Contributors:**
+- **Adding a new permission?** → See [RBAC Section](docs/ARCHITECTURE_AND_ROLES.md#-role-based-access-control-rbac)
+- **Changing event workflow?** → See [Event Lifecycle](docs/ARCHITECTURE_AND_ROLES.md#-event-lifecycle-system)
+- **Implementing hackathon features?** → See [Hackathon Hub](docs/ARCHITECTURE_AND_ROLES.md#-hackathon-hub-workflow)
+- **Confused about auth?** → See [Authentication Flow](docs/ARCHITECTURE_AND_ROLES.md#-route-protection--authentication-flow)
+- **Want to contribute to a specific area?** → See [Contributor Code Map](docs/ARCHITECTURE_AND_ROLES.md#-contributor-notes--code-map)
+
+---
+
 ## 🛠️ Development Workflow
+
+### Prerequisites
+
+Before you start, make sure to set up your development environment:
+
+📖 **[⚙️ Environment Setup Guide](docs/ENV_SETUP_GUIDE.md)** – Complete setup instructions including:
+- Local frontend + backend architecture
+- Environment variable configuration
+- Running the project locally
+- Troubleshooting common issues
+- Security best practices
+
+### Contributing Steps
 
 1. **Fork the Repository**
    ```bash
    git fork https://github.com/SandeepVashishtha/Eventra.git
    cd Eventra
+   ```
 2. Create a Feature Branch
+
 ```bash
 git checkout -b feature/amazing-feature
 ```
+
 3. Make Your Changes
-Follow the code standards and test your changes locally.
+   Follow the code standards and test your changes locally.
 4. Commit Your Changes
+
 ```bash
 git commit -m "feat: add amazing feature"
 ```
+
 5. Push to Your Branch
+
 ```bash
 git push origin feature/amazing-feature
 ```
-6. Open a Pull Request
-Submit a PR with a clear description of your changes.
 
-## 🧩 Code Standards  
+6. Open a Pull Request
+   Submit a PR with a clear description of your changes.
+
+## ⚙️ Local Setup (Quick Start)
+
+Follow these commands to get the project running locally:
+
+1. Install dependencies
+
+```bash
+npm install
+```
+
+2. Start the development server
+
+```bash
+npm run dev
+```
+
+3. Run tests
+
+```bash
+npm test
+# or run Playwright e2e tests
+npm run test:e2e
+```
+
+If you are on Windows and encounter environment-related issues, run the `dev` script directly with `npm run dev` which sets the environment flag automatically.
+
+## 🧩 Code Standards
 
 Maintaining consistent coding standards ensures readability, maintainability, and collaboration across **Eventra**.
 
 ---
 
-### ⚙️ Backend Standards  
+### 🎨 Frontend Standards
 
-- Follow **Java 17** conventions and coding guidelines.  
-- Use **Spring Boot** best practices for project structure, dependency injection, and service layers.  
-- Design and maintain **RESTful APIs** with clear endpoints, proper HTTP methods, and status codes.  
-- Keep methods and classes **concise and focused**; avoid large, monolithic services.  
-- Document all new endpoints using **OpenAPI/Swagger** to keep API docs up to date.  
-- Handle exceptions gracefully and log errors appropriately.  
-- Ensure **secure database interactions** and follow best practices for authentication and authorization.  
+- Use **functional components** with **React Hooks** for state and lifecycle management.
+- Follow modern **React best practices**, including component composition and context usage.
+- Keep components **small, reusable, and modular**.
+- Maintain a consistent **UI/UX design**, ensuring accessibility and responsiveness across devices.
+- Store configuration and constants separately (e.g., `src/config`) to maintain clean code.
+- Use **ESLint + Prettier** to enforce consistent code style and formatting.
 
----
-
-### 🎨 Frontend Standards  
-
-- Use **functional components** with **React Hooks** for state and lifecycle management.  
-- Follow modern **React best practices**, including component composition and context usage.  
-- Keep components **small, reusable, and modular**.  
-- Maintain a consistent **UI/UX design**, ensuring accessibility and responsiveness across devices.  
-- Store configuration and constants separately (e.g., `src/config`) to maintain clean code.  
-- Use **ESLint + Prettier** to enforce consistent code style and formatting.  
-
-
-## 🧪 Testing  
+## 🧪 Testing
 
 Proper testing ensures that our features are reliable and maintainable. Please follow these guidelines:
 
-- Write **unit** and **integration tests** for all new features and critical fixes.  
-- Test thoroughly before submitting your PR to ensure everything works as expected.  
-- Use descriptive test names and cover edge cases whenever possible.  
-- Ensure tests pass consistently in both local and CI environments.  
+- Write **unit** and **integration tests** for all new features and critical fixes.
+- Test thoroughly before submitting your PR to ensure everything works as expected.
+- Use descriptive test names and cover edge cases whenever possible.
+- Ensure tests pass consistently in both local and CI environments.
 
 ---
 
-## 📖 Documentation  
+## 📖 Documentation
 
-Good documentation helps other contributors understand and use your code effectively:  
+Good documentation helps other contributors understand and use your code effectively:
 
-- Update the **README** or project documentation for any new features or changes.  
-- Add **inline comments** where necessary to clarify complex logic.  
-- Keep documentation concise, clear, and up to date with code changes.  
+- Update the **README** or project documentation for any new features or changes.
+- Add **inline comments** where necessary to clarify complex logic.
+- Keep documentation concise, clear, and up to date with code changes.
 
 ---
 
-## 🎨 Frontend Guidelines  
+## 🎨 Frontend Guidelines
 
 ### 🛠 Tech Stack
-- **React** 18.2.0  
-- **React Router DOM** for routing  
-- **Framer Motion** for animations  
+
+- **React** 18.2.0
+- **React Router DOM** for routing
+- **Framer Motion** for animations
 
 ### 💻 Code Style
-- Use **ESLint** + **Prettier** for consistent formatting.  
-- Store API configurations in `src/config/api.js`.  
-- Write modular, reusable components with proper naming conventions.  
+
+- Use **ESLint** + **Prettier** for consistent formatting.
+- Store API configurations in `src/config/api.js`.
+- Write modular, reusable components with proper naming conventions.
 
 ### 🌐 Environment
-- Configure environment variables using a `.env` file.  
-- Refer to `.env.example` for required variables and structure.  
+
+- Configure environment variables using a `.env` file.
+- Refer to `.env.example` for required variables and structure.
 
 ---
 
-## ⚙️ Backend Guidelines  
-
-### 🛠 Tech Stack
-- **Java** 17  
-- **Spring Boot** 3.3.1  
-- **Databases:** MySQL for production, H2 for development/testing  
-
-### 💻 Best Practices
-- Follow standard Spring Boot conventions for project structure.  
-- Use proper exception handling and logging.  
-- Ensure secure database connections and avoid exposing sensitive credentials.  
-- Write clean, maintainable code with proper separation of concerns.  
-
-
 ## Commit Message Guidelines
+
 We follow conventional commits:
+
 - feat: – New feature
 - fix: – Bug fix
 - docs: – Documentation only changes
@@ -165,65 +211,64 @@ We follow conventional commits:
 - test: – Adding or updating tests
 - chore: – Maintenance tasks
 
-### 💡 Examples of Commit Messages  
+### 💡 Examples of Commit Messages
 
 Here are some practical examples following our **Conventional Commits** guidelines:
 
-- `feat: add leaderboard component` – Introduces a new feature.  
-- `fix: resolve API CORS issue` – Fixes a bug in the API handling.  
-- `docs: update contributing guidelines` – Updates documentation without affecting code.  
-- `style: format dashboard layout using Prettier` – Adjusts code style or formatting.  
-- `refactor: simplify event creation logic` – Refactors code without adding features or fixing bugs.  
-- `test: add integration tests for event routes` – Adds or updates tests.  
-- `chore: update dependencies and clean up scripts` – Routine maintenance tasks.  
+- `feat: add leaderboard component` – Introduces a new feature.
+- `fix: resolve API CORS issue` – Fixes a bug in the API handling.
+- `docs: update contributing guidelines` – Updates documentation without affecting code.
+- `style: format dashboard layout using Prettier` – Adjusts code style or formatting.
+- `refactor: simplify event creation logic` – Refactors code without adding features or fixing bugs.
+- `test: add integration tests for event routes` – Adds or updates tests.
+- `chore: update dependencies and clean up scripts` – Routine maintenance tasks.
 
 > ✅ Using these clear and descriptive messages keeps the git history readable and makes collaboration easier.
 
-
-## 🚀 Pull Request Process  
+## 🚀 Pull Request Process
 
 Submitting a pull request (PR) is how you share your awesome work with the **Eventra** community!  
 To make the review process smooth and efficient, please follow these steps:
 
-1. **Sync your branch**  
-   - Ensure your feature or fix branch is up to date with the latest `main` branch.  
+1. **Sync your branch**
+   - Ensure your feature or fix branch is up to date with the latest `main` branch.
    - Resolve any merge conflicts before opening your PR.
 
 2. **Describe your changes clearly**  
-   In your PR description, please include:  
-   - 🧩 **Problem Solved:** What issue or feature does this address?  
-   - 💡 **Approach:** How did you solve it? Mention tools, libraries, or patterns used.  
-   - 🔗 **Related Issues:** Reference any related issues (e.g., `Closes #123`).  
+   In your PR description, please include:
+   - 🧩 **Problem Solved:** What issue or feature does this address?
+   - 💡 **Approach:** How did you solve it? Mention tools, libraries, or patterns used.
+   - 🔗 **Related Issues:** Reference any related issues (e.g., `Closes #123`).
    - 🧪 **Testing:** Describe how you tested your changes and include screenshots if applicable.
 
-3. **Run all tests and checks**  
-   - Ensure that all unit, integration, and lint tests pass.  
+3. **Run all tests and checks**
+   - Ensure that all unit, integration, and lint tests pass.
    - If new functionality is added, write appropriate tests.
 
-4. **Follow coding conventions**  
+4. **Follow coding conventions**
    - Use consistent formatting, naming, and structure as defined in our [Code Standards](#-code-standards).
 
-5. **Request a review**  
-   - Assign at least one maintainer or tag a reviewer in your PR.  
-   - Be open to feedback and make revisions as needed.  
+5. **Request a review**
+   - Assign at least one maintainer or tag a reviewer in your PR.
+   - Be open to feedback and make revisions as needed.
 
-6. **Wait for approval & merge**  
-   - Once approved, your PR will be merged by a maintainer. 🎉  
+6. **Wait for approval & merge**
+   - Once approved, your PR will be merged by a maintainer. 🎉
 
 ---
 
-## 💬 Getting Help  
+## 💬 Getting Help
 
-Need assistance or want to discuss ideas? We’re here to help!  
+Need assistance or want to discuss ideas? We’re here to help!
 
-- 🐞 **Issues:** Report bugs or request features.  
+- 🐞 **Issues:** Report bugs or request features.
 - 💭 **Discussions:** Share ideas, ask questions, or connect with contributors.
 - 📧 **Contact Maintainers:** For sensitive matters, reach out privately through the contact listed in the repository.
 
 ---
 
-## 🎉 Final Note  
+## 🎉 Final Note
 
 Thank you for contributing to **Eventra**!  
 Your time, ideas, and code make this project better for everyone.  
-Together, we’re building a **modern, open, and collaborative event management platform** for the community. 🚀💙  
+Together, we’re building a **modern, open, and collaborative event management platform** for the community. 🚀💙

@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
+import useDebounce from "../hooks/useDebounce";
 import "./styles/components.css";
 
 const SearchFilter = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
@@ -103,19 +105,19 @@ const SearchFilter = () => {
     },
   ];
 
-  const filteredEvents = mockEvents.filter((event) => {
-    const matchesSearch =
-      (event.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.description?.toLowerCase().includes(searchTerm.toLowerCase())) ??
-      false;
-    const matchesCategory =
-      selectedCategory === "all" || event.category === selectedCategory;
-    const matchesLocation =
-      selectedLocation === "all" ||
-      (event.location?.toLowerCase().replace(" ", "-") === selectedLocation ??
-        false);
-    const matchesPrice = priceFilter === "all" || event.price === priceFilter;
+  const filteredEvents = mockEvents.filter(event => {
+    const matchesSearch = event.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                         event.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
+      const normalizedLocation = event.location
+        ?.toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-');
 
+      const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
+    const matchesPrice = priceFilter === 'all' || event.price === priceFilter;
+    
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
   });
 
@@ -146,7 +148,9 @@ const SearchFilter = () => {
         <div className="search-input-wrapper">
           <span className="search-icon">🔍</span>
           <input
+            id="search-events"
             type="text"
+            aria-label="Search events"
             placeholder="Search events, topics, or keywords..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -163,8 +167,9 @@ const SearchFilter = () => {
         className="filters-container"
       >
         <div className="filter-group">
-          <label>Category</label>
+          <label htmlFor="filter-category">Category</label>
           <select
+            id="filter-category"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="filter-select"
@@ -178,8 +183,9 @@ const SearchFilter = () => {
         </div>
 
         <div className="filter-group">
-          <label>Location</label>
+          <label htmlFor="filter-location">Location</label>
           <select
+            id="filter-location"
             value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value)}
             className="filter-select"
@@ -193,8 +199,9 @@ const SearchFilter = () => {
         </div>
 
         <div className="filter-group">
-          <label>Price</label>
+          <label htmlFor="filter-price">Price</label>
           <select
+            id="filter-price"
             value={priceFilter}
             onChange={(e) => setPriceFilter(e.target.value)}
             className="filter-select"
@@ -237,15 +244,19 @@ const SearchFilter = () => {
             <div className="event-content">
               <h3 className="event-title">{event.title}</h3>
               <p className="event-description">{event.description}</p>
-              <div className="event-meta">
+              <div className="event-meta" aria-label="Event details">
                 <span className="event-date">
-                  📅 {new Date(event.date).toLocaleDateString()}
+                  <span role="img" aria-label="Date" className="mr-1">📅</span> {new Date(event.date).toLocaleDateString()}
                 </span>
-                <span className="event-location">📍 {event.location}</span>
-                <span className="event-attendees">👥 {event.attendees}</span>
+                <span className="event-location">
+                  <span role="img" aria-label="Location" className="mr-1">📍</span> {event.location}
+                </span>
+                <span className="event-attendees">
+                  <span role="img" aria-label="Attendees" className="mr-1">👥</span> {event.attendees}
+                </span>
               </div>
-              <div className="event-rating">
-                <span className="stars">⭐⭐⭐⭐⭐</span>
+              <div className="event-rating" aria-label={`Rating: ${event.rating} out of 5 stars`}>
+                <span className="stars" aria-hidden="true">⭐⭐⭐⭐⭐</span>
                 <span className="rating-value">{event.rating}</span>
               </div>
               <div className="event-actions">
