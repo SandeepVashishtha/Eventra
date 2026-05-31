@@ -15,6 +15,7 @@ const FilterButton = ({ filter, filterType, onFilterChange }) => {
   const isActive = filterType === filter.key;
   return (
     <button
+      type="button"
       onClick={() => onFilterChange(filter.key)}
       className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition ${
         isActive
@@ -32,6 +33,7 @@ const ViewModeButton = ({ mode, activeMode, onViewModeChange, icon: Icon }) => {
   const isActive = activeMode === mode;
   return (
     <button
+      type="button"
       onClick={() => onViewModeChange(mode)}
       className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
         isActive
@@ -67,6 +69,12 @@ const EventFiltersToolbar = ({
 
   useEffect(() => {
     setLocalQuery(searchQuery || "");
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
   }, [searchQuery]);
 
   const handleInput = (e) => {
@@ -80,6 +88,11 @@ const EventFiltersToolbar = ({
 
   const handleClear = () => {
     setLocalQuery("");
+
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
     onSearchChange?.("");
   };
 
@@ -92,7 +105,7 @@ const EventFiltersToolbar = ({
         priceStats={priceStats}
         dateRange={dateRangeStats}
         isOpen={isAdvancedFiltersOpen}
-        onToggleOpen={onToggleAdvancedFilters}
+        onToggleOpen={() => onToggleAdvancedFilters?.((isOpen) => !isOpen)}
       />
 
       {/* Basic Filters */}
@@ -113,6 +126,7 @@ const EventFiltersToolbar = ({
         />
         {localQuery && (
           <button
+            type="button"
             onClick={handleClear}
             aria-label="Clear search"
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"

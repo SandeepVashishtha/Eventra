@@ -1,11 +1,36 @@
-/* Blur-up placeholder transition for LazyImage component.
-   Applied automatically by LazyImage.jsx — do not use these classes manually. */
+.lazy-img {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
 .lazy-img--loading {
-  filter: blur(8px);
-  transition: filter 0.3s ease;
+  opacity: 0;
+  filter: blur(10px);
+  transform: scale(1.05);
 }
 
 .lazy-img--loaded {
-  filter: none;
-  transition: filter 0.3s ease;
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
+/* Skeleton placeholder while loading */
+.lazy-img--loading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 50%,
+    #f0f0f0 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
