@@ -74,7 +74,7 @@ const calculateTimeLeft = (endDate) => {
   };
 };
 
-const useKeyboardShortcut = (key, callback, deps = []) => {
+const useKeyboardShortcut = (key, callback) => {
   useEffect(() => {
     const handler = (e) => {
       if (e.key === key && !e.target.matches("input, textarea")) {
@@ -84,7 +84,7 @@ const useKeyboardShortcut = (key, callback, deps = []) => {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, deps); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, callback]);
 };
 
 const useToast = () => {
@@ -415,10 +415,12 @@ const GSSoCContribution = () => {
   }, []);
   
   // Keyboard shortcut: "/" to focus search
-  useKeyboardShortcut("/", () => {
+  const handleSearchFocus = useCallback(() => {
     searchInputRef.current?.focus();
     addToast("🔍 Search focused. Start typing...", "info", 1500);
   }, [addToast]);
+
+  useKeyboardShortcut("/", handleSearchFocus);
   
   // Filtered resources with difficulty filter
   const filteredResources = useMemo(() => {
