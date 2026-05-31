@@ -105,7 +105,7 @@ const EventFiltersToolbar = ({
         priceStats={priceStats}
         dateRange={dateRangeStats}
         isOpen={isAdvancedFiltersOpen}
-        onToggleOpen={onToggleAdvancedFilters}
+        onToggleOpen={() => onToggleAdvancedFilters?.((isOpen) => !isOpen)}
       />
 
       {/* Basic Filters */}
