@@ -50,15 +50,15 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
 
   const getNavLinkClasses = (active) => {
     return vertical
-      ? `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-all duration-200 w-full py-2 px-3 border-l-2 rounded-lg focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
+      ? `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-colors duration-200 w-full py-2 px-3 border-l-2 rounded-lg focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-indigo-400 dark:focus-visible:ring-offset-slate-900 ${
           active
-            ? "text-black dark:text-white border-black dark:border-white font-semibold bg-gray-100 dark:bg-gray-800"
-            : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50"
+            ? "bg-indigo-50 text-indigo-700 border-indigo-600 font-semibold dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-400"
+            : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white border-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50"
         }`
-      : `flex gap-1 items-center text-xs xl:text-sm font-medium transition-all duration-200 px-1.5 xl:px-2 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 focus-visible:rounded-lg ${
+      : `flex gap-1 items-center text-xs xl:text-sm font-medium transition-colors duration-200 px-1.5 xl:px-2 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-indigo-400 dark:focus-visible:ring-offset-slate-900 focus-visible:rounded-lg ${
           active
-            ? "text-black dark:text-white border-black dark:border-white font-semibold"
-            : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent hover:border-gray-300 dark:hover:border-gray-600"
+            ? "bg-indigo-50 text-indigo-700 border-indigo-600 font-semibold dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-400"
+            : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white border-transparent hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50/60 dark:hover:bg-white/5"
         }`;
   };
 
@@ -175,10 +175,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     onClick={onClick}
                     role={!vertical ? "menuitem" : undefined}
                     className={({ isActive }) =>
-                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-md p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 focus-visible:rounded-lg ${
+                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-md p-2 text-sm font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-indigo-400 dark:focus-visible:ring-offset-slate-900 focus-visible:rounded-lg ${
                         isActive
-                          ? "bg-gray-100 dark:bg-gray-700 text-black dark:text-white font-semibold"
-                          : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                          ? "bg-indigo-50 text-indigo-700 font-semibold dark:bg-indigo-500/10 dark:text-indigo-300"
+                          : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50"
                       }`
                     }
                   >

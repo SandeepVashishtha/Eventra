@@ -202,7 +202,7 @@ const MobileNavLink = ({ item, isActive, onClick }) => (
     onClick={onClick}
     className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium border ${
       isActive
-        ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+        ? "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-600 dark:border-indigo-400 text-indigo-700 dark:text-indigo-300 font-semibold shadow-sm"
         : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border-transparent"
     }`}
   >
@@ -220,7 +220,7 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
       aria-controls={`mobile-nav-group-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
       className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium border ${
         isActive
-          ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+          ? "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-600 dark:border-indigo-400 text-indigo-700 dark:text-indigo-300 font-semibold shadow-sm"
           : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border-transparent"
       }`}
     >
@@ -243,7 +243,7 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
               onClick={closeAllMenus}
               className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium border ${
                 isSubActive
-                  ? "bg-indigo-100/40 dark:bg-indigo-500/15 border-indigo-200/50 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+                  ? "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-600/40 dark:border-indigo-400/40 text-indigo-700 dark:text-indigo-300 font-semibold shadow-sm"
                   : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white border-transparent"
               }`}
             >
@@ -318,7 +318,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
         aria-controls={menuId}
         className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
           isActive || isOpen
-            ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+            ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300 font-semibold"
             : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
         }`}
       >
@@ -374,14 +374,14 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
                 role="menuitem"
                 className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border ${
                   location.pathname.startsWith(sub.href)
-                    ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+                    ? "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-600/40 dark:border-indigo-400/40 text-indigo-700 dark:text-indigo-300 font-semibold shadow-sm"
                     : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
                 }`}
               >
                 {React.cloneElement(sub.icon, {
                   className: `w-5 h-5 transition-colors ${
                     location.pathname.startsWith(sub.href)
-                      ? "text-indigo-600 dark:text-indigo-400"
+                      ? "text-indigo-700 dark:text-indigo-300"
                       : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
                   }`,
                 })}
