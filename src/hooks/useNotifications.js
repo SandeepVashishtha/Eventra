@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { get as idbGet, set as idbSet } from "idb-keyval";
 import { logger } from "../utils/logger";
-
+import { safeJsonParse } from "../utils/safeJsonParse";
 const STORAGE_KEY = "eventra_notifications";
 
 export const useNotifications = () => {
@@ -11,12 +11,8 @@ export const useNotifications = () => {
     idbGet(STORAGE_KEY)
       .then((stored) => {
         if (stored) {
-          try {
-            setNotifications(JSON.parse(stored));
-          } catch (error) {
-            logger.error("Failed to parse notifications from local storage", error);
-            setNotifications([]);
-          }
+          const parsed = safeJsonParse(stored, []);
+          setNotifications(parsed);
         }
       })
       .catch((error) => {
