@@ -229,7 +229,7 @@ const AccordionSection = ({ section, isOpen, onToggle, animateIn }) => {
         transform: animateIn ? "translateY(0)" : "translateY(20px)",
         transition: `opacity 0.5s ease ${section.id * 0.07}s, transform 0.5s ease ${section.id * 0.07}s`,
       }}
-      className={`group relative rounded-2xl border bg-white dark:bg-slate-900/60 backdrop-blur-sm
+      className={`group relative rounded-2xl border bg-card-bg/60 backdrop-blur-sm
         shadow-sm dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)]
         hover:shadow-lg dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${c.glow}
         ${isOpen ? c.border : "border-slate-200 dark:border-white/10"}
@@ -315,7 +315,7 @@ export const Terms = () => {
   const toggle = (id) => setOpenSection((prev) => (prev === id ? null : id));
 
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 overflow-x-hidden">
+    <div className="relative min-h-screen bg-bg text-text overflow-x-hidden">
 
       {/* ── Scroll progress bar ── */}
       <div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-transparent">
@@ -433,7 +433,7 @@ export const Terms = () => {
             }}
           >
             <div className="rounded-2xl border border-slate-200 dark:border-white/10
-              bg-white dark:bg-slate-900/60 backdrop-blur-sm shadow-sm
+              bg-card-bg/60 backdrop-blur-sm shadow-sm
               dark:shadow-[0_4px_20px_rgba(0,0,0,0.2)] p-5">
               <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4">
                 Table of Contents
@@ -495,7 +495,7 @@ export const Terms = () => {
         <footer
           className="mt-16 rounded-2xl p-6 sm:p-8 text-center
             border border-slate-200 dark:border-white/10
-            bg-white dark:bg-slate-900/60 backdrop-blur-sm shadow-sm
+            bg-card-bg/60 backdrop-blur-sm shadow-sm
             dark:shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
           style={{
             opacity: animateIn ? 1 : 0,

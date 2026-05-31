@@ -198,7 +198,7 @@ const EventRecommendation = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black py-10 px-4">
+    <div className="min-h-screen bg-bg text-text py-10 px-4">
 
       <div className="max-w-7xl mx-auto">
 
@@ -219,7 +219,7 @@ const EventRecommendation = () => {
         <div className="grid lg:grid-cols-[380px_1fr] gap-6">
 
           {/* LEFT PANEL */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm h-fit">
+          <div className="bg-card-bg rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm h-fit">
 
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-5">
               Your Preferences
@@ -401,7 +401,7 @@ const EventRecommendation = () => {
           </div>
 
           {/* RIGHT PANEL */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="bg-card-bg rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
 
             <div className="flex items-center justify-between mb-6">
 
@@ -438,7 +438,7 @@ const EventRecommendation = () => {
 
                     <div
                       key={index}
-                      className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-all bg-slate-50 dark:bg-slate-800/50"
+                      className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-all bg-bg"
                     >
 
                       <div className="flex items-center justify-between mb-4">
@@ -505,7 +505,7 @@ const EventRecommendation = () => {
 
                         <div
                           key={index}
-                          className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-800"
+                          className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 bg-bg"
                         >
 
                           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -571,7 +571,7 @@ const EventRecommendation = () => {
 
                       <div
                         key={index}
-                        className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-800 text-left"
+                        className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 bg-bg text-left"
                       >
 
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -603,7 +603,7 @@ const EventRecommendation = () => {
       {/* Detailed Recommendation Insights Modal */}
       {selectedEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity">
-          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-lg bg-card-bg border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden">
             {/* Background Glow */}
             <div className="absolute top-0 right-0 w-36 h-36 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -629,7 +629,7 @@ const EventRecommendation = () => {
             {/* Content Details */}
             <div className="space-y-4">
               {/* Overall Score */}
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950/45 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+              <div className="flex items-center justify-between p-4 bg-bg rounded-2xl border border-slate-100 dark:border-slate-800/50">
                 <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Match Percentage</span>
                 <div className="text-right">
                   <span className="text-3xl font-black text-blue-600 dark:text-blue-400">{selectedEvent.calculatedMatch}%</span>

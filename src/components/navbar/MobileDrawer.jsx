@@ -71,7 +71,7 @@ const MobileDrawer = ({
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`mobile-drawer-panel absolute right-0 top-0 flex w-[min(92vw,24rem)] max-w-drawer flex-col bg-white shadow-2xl transition-transform duration-200 ease-out dark:bg-gray-900 ${
+        className={`mobile-drawer-panel absolute right-0 top-0 flex w-[min(92vw,24rem)] max-w-drawer flex-col bg-white shadow-premium-lg transition-transform duration-200 ease-out dark:bg-gray-900 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
