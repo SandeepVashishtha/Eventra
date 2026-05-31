@@ -51,7 +51,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             ? "text-text border-primary font-semibold bg-bg-secondary"
             : "text-text-light hover:text-text border-transparent hover:bg-bg"
         }`
-      : `flex gap-2 items-center text-[13px] xl:text-[14px] font-semibold uppercase tracking-[0.04em] transition-all duration-200 px-2 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
+      : `flex gap-1.5 items-center text-[12px] xl:text-[13px] font-medium uppercase tracking-[0.03em] transition-all duration-200 px-1.5 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
           active
             ? "text-text border-primary"
             : "text-text-light hover:text-text border-transparent hover:border-border"
@@ -64,7 +64,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
-          : "items-center gap-1 xl:gap-2 mx-1 xl:mx-2 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
+          : "items-center gap-0.5 xl:gap-1 mx-0.5 xl:mx-1 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
       }`}
       aria-label={vertical ? "Mobile primary links" : "Primary links"}
     >

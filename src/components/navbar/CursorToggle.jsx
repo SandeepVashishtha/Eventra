@@ -12,13 +12,13 @@ const CursorToggle = ({ cursorEnabled, toggleCursor }) => {
           ? "Turn off background cursor effects"
           : "Turn on background cursor effects"
       }
-      className={`rounded-lg border px-1 py-1 transition-colors flex items-center justify-center ${
+      className={`h-9 w-9 rounded-full border transition-colors flex items-center justify-center shadow-none ${
         cursorEnabled
-          ? "border-primary bg-primary text-white shadow-premium-sm"
-          : "border-border bg-card-bg text-text-light"
+          ? "border-primary/40 bg-primary/10 text-primary"
+          : "border-border bg-card-bg text-text-light hover:bg-bg-secondary"
       }`}
     >
-      <MousePointer aria-hidden="true" />
+      <MousePointer className="h-4 w-4" aria-hidden="true" />
     </button>
   );
 };

@@ -190,11 +190,12 @@ const Hero = () => {
       aria-label="Hero section"
       className="relative overflow-hidden text-slate-900 pb-16 sm:pb-20 md:pb-24 border-b border-gray-100"
       style={{
-        background: 'linear-gradient(180deg,#F4F8FB 0%, #dae3ed 65%)',
+        background: 'linear-gradient(180deg,#F8FBFD 0%, #F3F7FA 10%, #EAF1F7 42%, #dae3ed 100%)',
       }}
     >
       {/* Subtle decorative blurred accents for professional depth */}
       <div aria-hidden className="absolute inset-0 pointer-events-none -z-10">
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 150, background: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.2) 100%)' }} />
         <div style={{ position: 'absolute', top: 12, left: 28, width: 260, height: 160, borderRadius: '50%', background: '#E6F0F7', filter: 'blur(36px)', opacity: 0.8 }} />
         <div style={{ position: 'absolute', top: 36, right: 80, width: 180, height: 120, borderRadius: '50%', background: '#EFF6FB', filter: 'blur(28px)', opacity: 0.7 }} />
         <div style={{ position: 'absolute', bottom: 20, left: '12%', width: 220, height: 90, borderRadius: '50%', background: '#F7FAFC', filter: 'blur(20px)', opacity: 0.85 }} />

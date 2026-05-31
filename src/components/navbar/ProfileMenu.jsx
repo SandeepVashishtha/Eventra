@@ -84,18 +84,18 @@ const ProfileMenu = ({ user, logout }) => {
         }
         aria-expanded={isOpen}
         aria-haspopup="true"
-        className="flex items-center gap-2 rounded-full transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        className="flex items-center gap-2 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
         {user?.profilePicture ? (
           <img
             loading="lazy"
             src={user.profilePicture}
             alt={`${user?.name || user?.username || "User"} profile`}
-            className="w-10 h-10 rounded-full object-cover border-2 border-transparent hover:border-blue-500 transition-colors"
+            className="w-9 h-9 rounded-full object-cover border border-border transition-colors"
           />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-card-bg border-2 border-border flex items-center justify-center hover:border-primary transition-colors">
-            <User className="text-text-light w-5 h-5" />
+          <div className="w-9 h-9 rounded-full bg-card-bg border border-border flex items-center justify-center transition-colors">
+            <User className="text-text-light w-4.5 h-4.5" />
           </div>
         )}
 
@@ -111,7 +111,7 @@ const ProfileMenu = ({ user, logout }) => {
         <div
           role="menu"
           aria-orientation="vertical"
-          className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-border bg-navbar shadow-premium-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+          className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
         >
           {/* User Info */}
           <div className="px-3 py-2 mb-2 border-b border-border">

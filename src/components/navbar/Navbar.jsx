@@ -4,6 +4,8 @@ import { useAuth } from "../../context/AuthContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
+import AuthButtons from "./AuthButtons";
+import ProfileMenu from "./ProfileMenu";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 
@@ -77,12 +79,15 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 left-0 w-full h-20 z-[200] transition-all duration-300 ${scrolled ? 'bg-navbar/95 backdrop-blur-md border-b border-border' : 'bg-transparent border-b border-transparent'}`}
+        className={`sticky top-0 left-0 w-full h-16 sm:h-[4.25rem] z-[200] transition-all duration-300 ${scrolled ? 'backdrop-blur-md border-b border-transparent shadow-[0_1px_0_rgba(15,23,42,0.04)]' : 'bg-transparent border-b border-transparent'}`}
+        style={scrolled ? {
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(245,248,251,0.96) 100%)',
+        } : undefined}
       >
-        <div className="h-full px-4 flex items-center justify-between gap-4">
-          <Link to="/" aria-label="Eventra home logo template" className="flex items-center shrink-0 min-w-0">
-            <div className="flex min-w-0 items-center gap-2 xl:gap-3">
-              <div className="flex h-10 w-10 xl:h-11 xl:w-11 flex-none items-center justify-center overflow-hidden rounded-xl bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
+        <div className="relative h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 sm:gap-4">
+          <Link to="/" aria-label="Eventra home logo template" className="relative z-10 flex items-center shrink-0 min-w-0">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 flex-none items-center justify-center overflow-hidden rounded-lg bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
                 <img
                   src="/favicon.png"
                   alt="Eventra Brand Logo"
@@ -90,20 +95,31 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                   loading="lazy"
                 />
               </div>
-              <h1 className="truncate text-lg sm:text-xl xl:text-2xl font-heading font-bold text-text">Eventra</h1>
+              <h1 className="truncate text-base sm:text-lg lg:text-xl font-heading font-semibold text-text tracking-tight">Eventra</h1>
             </div>
           </Link>
 
           {/* Desktop Links should be in the middle of the navbar */}
-          <DesktopNavbar isAuthenticated={authenticated} user={user} logout={logout} />
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 hidden xl:flex justify-center">
+            <div className="pointer-events-auto">
+              <DesktopNavbar />
+            </div>
+          </div>
 
           {/* Right Controls Container */}
-          <div className="flex items-center gap-2 xl:gap-4 shrink-0">
-          {/* Hide these on mobile */}
-          <div className="hidden sm:flex items-center gap-2 xl:gap-4">
-            <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+          <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0 ml-auto">
+            <div className="hidden xl:flex items-center gap-2.5">
+              {authenticated ? (
+                <ProfileMenu user={user} logout={logout} />
+              ) : (
+                <AuthButtons />
+              )}
+              <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             </div>
-            <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
+
+            <div className="xl:hidden">
+              <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
+            </div>
           </div>
         </div>
         <div className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
