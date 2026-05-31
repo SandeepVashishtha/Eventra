@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
+import { resolveSignupRoles } from "../../utils/signupRoleUtils.js";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { User, AtSign, Lock, Eye, EyeOff, Zap } from "lucide-react";
@@ -251,14 +252,15 @@ const SignupForm = () => {
         return;
       }
 
+      const roles = resolveSignupRoles(data);
       const sessionUser = {
         id: data?.id,
         firstName: data?.firstName ?? formData.firstName.trim(),
         lastName: data?.lastName ?? formData.lastName.trim(),
         email: data?.email ?? formData.email.trim(),
         username: data?.username ?? formData.email.trim(),
-        role: data?.role ?? "USER",
-        roles: data?.role ? [data.role] : ["USER"],
+        role: roles[0],
+        roles,
         permissions: data?.permissions ?? [],
       };
 
