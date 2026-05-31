@@ -319,3 +319,7 @@ All components support dark mode automatically:
 ---
 
 **Version 1.0 - MVP Ready 🚀**
+
+
+### ARIA Labels Standards
+- Every text input form field must have descriptive aria-label attributes.
