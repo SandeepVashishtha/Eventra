@@ -23,9 +23,15 @@ export const fetchWithTimeout = async (
   }, timeout);
 
   try {
+    // 🔥 FIX: Combine the user's signal (if provided) with our internal timeout signal.
+    // This ensures component unmounts can still cancel the request!
+    const combinedSignal = options.signal
+      ? AbortSignal.any([options.signal, controller.signal])
+      : controller.signal;
+
     const response = await fetch(url, {
       ...options,
-      signal: controller.signal,
+      signal: combinedSignal,
     });
 
     let data = null;
@@ -50,15 +56,17 @@ export const fetchWithTimeout = async (
     };
   } catch (error) {
     if (error.name === "AbortError") {
-      logger.error("[fetchWithTimeout] Request timeout:", url);
-
-      throw new FetchError(
-        `Request timed out after ${timeout}ms`
-      );
+      // Check if it was our timeout that caused the abort, or the user's custom signal
+      if (controller.signal.aborted) {
+        logger.error("[fetchWithTimeout] Request timeout:", url);
+        throw new FetchError(`Request timed out after ${timeout}ms`);
+      } else {
+        logger.log("[fetchWithTimeout] Request aborted by user/component:", url);
+        throw error;
+      }
     }
 
     logger.error("[fetchWithTimeout] Request failed:", error);
-
     throw error;
   } finally {
     clearTimeout(timeoutId);
