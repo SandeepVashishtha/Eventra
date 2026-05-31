@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 
 // ─── Section data ────────────────────────────────────────────────────────────
@@ -132,7 +132,7 @@ const SECTIONS = [
     content: (
       <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
         We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision
-        is material, we will provide at least <span className="font-semibold text-emerald-600 dark:text-emerald-400">30 days' notice</span> prior
+        is material, we will provide at least <span className="font-semibold text-emerald-600 dark:text-emerald-400">30 days&apos; notice</span> prior
         to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.
         By continuing to access or use our Service after those revisions become effective, you agree to be bound
         by the revised terms. If you do not agree to the new terms, please stop using the Service.
@@ -242,7 +242,7 @@ const AccordionSection = ({ section, isOpen, onToggle, animateIn }) => {
         onClick={onToggle}
         className="w-full flex items-center justify-between gap-4 p-5 text-left"
         aria-expanded={isOpen}
-      >
+       aria-label="button">
         <div className="flex items-center gap-4">
           {/* Numbered badge */}
           <div className={`flex-shrink-0 w-8 h-8 rounded-xl ${c.badge} flex items-center justify-center font-bold text-sm transition-all duration-300`}>

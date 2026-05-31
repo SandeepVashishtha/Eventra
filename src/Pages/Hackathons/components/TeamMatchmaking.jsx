@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Check, AlertTriangle, User, Briefcase, Award, Zap, Code, Plus, X, ExternalLink, Settings } from "lucide-react";
+import { useState } from "react";
+import { Check, AlertTriangle, User, Briefcase, Zap, Code, Plus, ExternalLink, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const TeamMatchmaking = () => {
@@ -376,7 +376,7 @@ const TeamMatchmaking = () => {
                 <button
                   type="submit"
                   className="md:col-span-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md shadow-blue-500/10"
-                >
+                 aria-label="button">
                   Submit Team Request
                 </button>
               </form>

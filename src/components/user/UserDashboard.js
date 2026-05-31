@@ -3,7 +3,7 @@ import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
-  Clock, MapPin, Zap, Activity, Bell, ChevronRight,
+  Clock, Zap, Activity, Bell, ChevronRight,
   LogOut, User, Plus, Search, X
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -15,14 +15,12 @@ import HackathonsTab from "./HackathonsTab";
 import ProjectsTab from "./ProjectsTab";
 import RegistrationsTab from "./RegistrationsTab";
 import {
-  DashboardItemCardSkeleton,
   DashboardListCardSkeleton,
   DashboardProfileSkeleton,
   DashboardQuickActionSkeleton,
   DashboardSectionTitleSkeleton,
   DashboardStatCardSkeleton,
-  DashboardTableSkeleton,
-} from "../common/SkeletonLoaders";
+  } from "../common/SkeletonLoaders";
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
@@ -136,7 +134,7 @@ export default function UserDashboard() {
   const activeProjects = safeData.filter(d => d && d.type === "Project" && d.projectStatus !== "Done");
 
   const filteredData = MOCK_DATA.filter(item => {
-    const matchSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchSearch = (item.title || "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchType = filterType === "All" || item.type === filterType;
     const matchStatus = filterStatus === "All"
       || item.status === filterStatus
@@ -189,7 +187,7 @@ export default function UserDashboard() {
             <Trophy size={18} />
             <span>Achievements</span>
           </Link>
-          <Link to="/dashboard/achievements" className="ud-nav-item">
+          <Link to="/dashboard/quests" className="ud-nav-item">
             <Zap size={18} />
             <span>Quest Center</span>
           </Link>
