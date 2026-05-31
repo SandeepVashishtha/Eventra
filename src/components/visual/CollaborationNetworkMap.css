@@ -5,8 +5,8 @@
   --cnm-text: #0f172a;
   --cnm-text-muted: #6b7280;
   --cnm-border: rgba(15,23,42,0.06);
-  --cnm-primary: #0ea5ff;
-  --cnm-glow: rgba(14,165,255,0.14);
+  --cnm-primary: #E0E9F2;
+  --cnm-glow: rgba(224,233,242,0.22);
   --cnm-accent: rgba(224,233,242,0.6);
 }
 
@@ -16,8 +16,8 @@
   --cnm-text: #0f172a;
   --cnm-text-muted: #475569;
   --cnm-border: rgba(2,6,23,0.06);
-  --cnm-primary: #0ea5ff;
-  --cnm-glow: rgba(14,165,255,0.12);
+  --cnm-primary: #E0E9F2;
+  --cnm-glow: rgba(224,233,242,0.16);
 }
 
 /* Header Controls */
@@ -295,7 +295,6 @@
 
 /* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
-  .connection-animated-path,
   .node-pulse {
     animation: none !important;
   }

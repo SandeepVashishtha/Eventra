@@ -33,10 +33,10 @@ const CONNECTIONS = [
 ];
 
 const ACTIVITY_LEVELS = {
-  Critical: { color: "#ec4899", pulse: "rgba(236, 72, 153, 0.4)", label: "Critical" },
-  High: { color: "#6366f1", pulse: "rgba(99, 102, 241, 0.4)", label: "High" },
-  Medium: { color: "#22c55e", pulse: "rgba(34, 197, 94, 0.4)", label: "Medium" },
-  Low: { color: "#94a3b8", pulse: "rgba(148, 163, 184, 0.4)", label: "Low" }
+  Critical: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.36)", label: "Critical" },
+  High: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.32)", label: "High" },
+  Medium: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.28)", label: "Medium" },
+  Low: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.18)", label: "Low" }
 };
 
 const REGIONS = ["All", "North America", "Europe", "Asia", "Oceania"];
@@ -186,9 +186,9 @@ export default function CollaborationNetworkMap() {
             </div>
           </div>
           
-          <h2 className="cnm-title">Real-Time Global Collaboration Network</h2>
+          <h2 className="cnm-title">Global Collaboration Network</h2>
           <p className="cnm-subtitle">
-            Connecting {stats.totalDevs.toLocaleString()} developers across {stats.regions} regions in a unified ecosystem.
+            Real-time collaboration across {stats.totalDevs.toLocaleString()} developers in {stats.regions} regions.
           </p>
 
           {/* Filters */}
@@ -207,19 +207,7 @@ export default function CollaborationNetworkMap() {
             
             <div className="filter-group">
               <Filter size={14} className="filter-icon" />
-              <select 
-                value={selectedRegion}
-                onChange={(e) => setSelectedRegion(e.target.value)}
-                className="filter-select"
-                aria-label="Filter by region"
-              >
-                {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <Activity size={14} className="filter-icon" />
-              <select 
+              <select
                 value={selectedActivity}
                 onChange={(e) => setSelectedActivity(e.target.value)}
                 className="filter-select"
@@ -292,7 +280,7 @@ export default function CollaborationNetworkMap() {
             role="img"
             aria-label="Global collaboration network map"
           >
-            <defs>
+              <defs>
               <filter id="hub-glow" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur stdDeviation="6" result="blur" />
                 <feMerge>
@@ -301,14 +289,14 @@ export default function CollaborationNetworkMap() {
                 </feMerge>
               </filter>
               <pattern id="cnm-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <circle cx="2" cy="2" r="1.5" fill="rgba(99, 102, 241, 0.06)" />
+                <circle cx="2" cy="2" r="1.5" fill="rgba(224,233,242,0.06)" />
               </pattern>
               <linearGradient id="connection-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="rgba(99, 102, 241, 0.6)" />
-                <stop offset="100%" stopColor="rgba(168, 85, 247, 0.6)" />
+                <stop offset="0%" stopColor="rgba(224,233,242,0.6)" />
+                <stop offset="100%" stopColor="rgba(224,233,242,0.9)" />
               </linearGradient>
               <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="rgba(99, 102, 241, 0.5)" />
+                <polygon points="0 0, 10 3.5, 0 7" fill="rgba(224,233,242,0.5)" />
               </marker>
             </defs>
 
@@ -328,24 +316,13 @@ export default function CollaborationNetworkMap() {
 
               return (
                 <g key={`connection-${idx}`} className="connection-group">
-                  <path 
-                        d={pathD} 
-                        fill="none" 
-                        stroke="rgba(14,165,255,0.06)" 
-                        strokeWidth={getConnectionWidth(conn.intensity)} 
-                        strokeLinecap="round"
-                      />
-                      <path 
-                        d={pathD} 
-                        fill="none" 
-                        stroke={`url(#connection-gradient)`} 
-                        strokeWidth={Math.max(0.8, getConnectionWidth(conn.intensity) - 0.6)}
-                        strokeDasharray="6, 200"
-                        strokeLinecap="round"
-                        opacity="0.45"
-                        className="connection-animated-path"
-                        style={{ animationDelay: `${idx * 0.5}s` }}
-                      />
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke="rgba(224,233,242,0.5)"
+                    strokeWidth={Math.max(0.8, getConnectionWidth(conn.intensity))}
+                    strokeLinecap="round"
+                  />
                   {particlesEnabled && (
                     <ConnectionParticle 
                       path={pathD} 
@@ -506,7 +483,7 @@ export default function CollaborationNetworkMap() {
                 {/* Status & Region */}
                 <div className="popup-footer">
                   <div className="popup-status">
-                    <span className="status-label">Status:</span>
+                    <span className="status-label">Activity:</span>
                     <div className={`status-badge ${(activeHub || pinnedHub).activity.toLowerCase()}`}>
                       <Activity className="status-icon" size={12} />
                       <span>{ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].label} Activity</span>
