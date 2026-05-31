@@ -187,7 +187,7 @@ export default function UserAchievements() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-20 px-4 md:px-8 transition-colors duration-300">
+    <div className="min-h-screen bg-bg text-text py-20 px-4 md:px-8 transition-colors duration-300">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* HEADER SECTION */}
@@ -207,7 +207,7 @@ export default function UserAchievements() {
           <div className="shrink-0">
             <button
               onClick={() => setIsBadgeModalOpen(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98] cursor-pointer"
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-premium-md hover:shadow-glow-sm active:scale-[0.98] cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-amber-300 animate-spin-slow" />
               <span>Attendee Badge Center</span>
@@ -222,7 +222,7 @@ export default function UserAchievements() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-md flex flex-col items-center justify-center space-y-5 text-center relative overflow-hidden"
+            className="bg-card-bg/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-premium-md flex flex-col items-center justify-center space-y-5 text-center relative overflow-hidden"
           >
             {/* Background absolute decorations */}
             <div className="absolute -right-16 -top-16 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl" />
@@ -307,10 +307,10 @@ export default function UserAchievements() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-[156px] hover:border-indigo-300 dark:hover:border-slate-700 transition-all group"
+              className="bg-card-bg/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-premium-sm hover:shadow-premium-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="flex items-center justify-between">
-                <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-sm shrink-0">
+                <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-premium-sm shrink-0">
                   <Calendar className="w-5 h-5" />
                 </div>
                 <TrendingUp className="w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -330,10 +330,10 @@ export default function UserAchievements() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.18 }}
-              className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-[156px] hover:border-pink-300 dark:hover:border-slate-700 transition-all group"
+              className="bg-card-bg/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-premium-sm hover:shadow-premium-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="flex items-center justify-between">
-                <div className="p-3 rounded-2xl bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 shadow-sm shrink-0">
+                <div className="p-3 rounded-2xl bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 shadow-premium-sm shrink-0">
                   <Zap className="w-5 h-5" />
                 </div>
                 <span className="text-[10px] font-black text-pink-600 dark:text-pink-400 animate-pulse">
@@ -355,10 +355,10 @@ export default function UserAchievements() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
-              className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-[156px] hover:border-yellow-300 dark:hover:border-slate-700 transition-all group"
+              className="bg-card-bg/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-premium-sm hover:shadow-premium-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="flex items-center justify-between">
-                <div className="p-3 rounded-2xl bg-yellow-50 dark:bg-yellow-950/20 text-yellow-600 dark:text-yellow-405 shadow-sm shrink-0">
+                <div className="p-3 rounded-2xl bg-yellow-50 dark:bg-yellow-950/20 text-yellow-600 dark:text-yellow-405 shadow-premium-sm shrink-0">
                   <Award className="w-5 h-5" />
                 </div>
                 <CheckCircle className="w-4 h-4 text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -381,7 +381,7 @@ export default function UserAchievements() {
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-indigo-900/40 via-purple-900/35 to-slate-900/60 border border-indigo-500/20 backdrop-blur-xl rounded-3xl p-6 shadow-lg space-y-4"
+            className="bg-gradient-to-br from-indigo-900/40 via-purple-900/35 to-slate-900/60 border border-indigo-500/20 backdrop-blur-xl rounded-3xl p-6 shadow-premium-lg space-y-4"
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-yellow-450 animate-bounce" />
@@ -390,7 +390,7 @@ export default function UserAchievements() {
               </h2>
             </div>
             <p className="text-xs text-slate-350 max-w-xl leading-relaxed">
-              You haven't unlocked any milestone tokens yet. Complete the steps below to claim your first developer badge:
+              You haven&apos;t unlocked any milestone tokens yet. Complete the steps below to claim your first developer badge:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
               {onboardingQuests.map((quest) => (
@@ -436,19 +436,19 @@ export default function UserAchievements() {
                   layout
                   className={`p-5 rounded-3xl border flex flex-col transition-all cursor-pointer ${
                     badge.earned
-                      ? 'bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-slate-200/50 dark:border-slate-800/40 shadow-sm hover:shadow-[0_12px_24px_rgba(99,102,241,0.06)]'
-                      : 'bg-slate-100/55 dark:bg-slate-900/15 border-slate-200/30 dark:border-slate-850/20 opacity-70 hover:opacity-100'
+                      ? 'bg-card-bg/60 backdrop-blur-xl border-slate-200/50 dark:border-slate-800/40 shadow-premium-sm hover:shadow-premium-md hover:shadow-glow-sm'
+                      : 'bg-card-bg/15 border-slate-200/30 dark:border-slate-850/20 opacity-70 hover:opacity-100 shadow-none'
                   }`}
                   onClick={() => toggleExpand(badge.id)}
                   whileHover={{ y: -4 }}
                   transition={{ type: "spring", stiffness: 250, damping: 20 }}
                 >
                   <div className="flex items-start justify-between">
-                    <span className={`text-3xl p-2.5 rounded-2xl shrink-0 shadow-xs ${badge.earned ? 'bg-indigo-50 dark:bg-indigo-950/40' : 'bg-slate-200/50 dark:bg-slate-850 filter grayscale'}`}>
+                    <span className={`text-3xl p-2.5 rounded-2xl shrink-0 shadow-premium-sm ${badge.earned ? 'bg-indigo-50 dark:bg-indigo-950/40' : 'bg-slate-200/50 dark:bg-slate-850 filter grayscale'}`}>
                       {badge.icon}
                     </span>
                     {badge.earned ? (
-                      <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-350 px-2.5 py-0.5 rounded-full shadow-xs border border-emerald-100/35">
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-350 px-2.5 py-0.5 rounded-full shadow-premium-sm border border-emerald-100/35">
                         Unlocked
                       </span>
                     ) : (
@@ -507,7 +507,7 @@ export default function UserAchievements() {
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${Math.min(100, (badge.currentProgress / badge.targetProgress) * 100)}%` }}
-                              className={`h-full rounded-full bg-gradient-to-r ${badge.earned ? 'from-emerald-500 to-teal-500 shadow-xs' : 'from-indigo-500 to-indigo-650'}`}
+                              className={`h-full rounded-full bg-gradient-to-r ${badge.earned ? 'from-emerald-500 to-teal-500' : 'from-indigo-500 to-indigo-650'}`}
                             />
                           </div>
                         </div>
@@ -536,7 +536,7 @@ export default function UserAchievements() {
                             <div className="flex flex-wrap gap-2 pt-0.5">
                               <button
                                 onClick={() => setActiveShareBadge(badge)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white transition-all cursor-pointer shadow-xs hover:scale-[1.03]"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white transition-all cursor-pointer shadow-premium-sm hover:shadow-glow-sm hover:scale-[1.03]"
                               >
                                 <Share2 className="w-3.5 h-3.5" />
                                 <span>Share Certificate</span>
@@ -577,7 +577,7 @@ export default function UserAchievements() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-3xl w-full shadow-2xl relative space-y-5 text-left"
+              className="bg-card-bg border border-slate-800 rounded-3xl p-6 max-w-3xl w-full shadow-premium-lg relative space-y-5 text-left"
             >
               {/* Close Button */}
               <button
@@ -674,7 +674,7 @@ export default function UserAchievements() {
 
                     <button
                       onClick={() => handleDownloadSVG(activeShareBadge)}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-xs font-black uppercase tracking-wider text-white transition cursor-pointer shadow-md shadow-indigo-500/10"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-xs font-black uppercase tracking-wider text-white transition cursor-pointer shadow-premium-md hover:shadow-glow-sm"
                     >
                       <Award size={13} className="text-yellow-350" />
                       <span>Download Certificate</span>
@@ -708,7 +708,7 @@ export default function UserAchievements() {
 
                   {/* Render Twitter/X Post Mockup */}
                   {sharePlatform === "twitter" ? (
-                    <div className="p-4 bg-black rounded-xl border border-slate-850/85 text-left text-white space-y-3 shadow-inner select-none">
+                    <div className="p-4 bg-black rounded-xl border border-slate-850/85 text-left text-white space-y-3 shadow-none select-none">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-black text-indigo-400">
                           EV
@@ -728,7 +728,7 @@ export default function UserAchievements() {
                       {/* Attached Card Mockup */}
                       <div className="border border-slate-850 rounded-2xl overflow-hidden bg-slate-950/70">
                         <div className="p-5 bg-gradient-to-br from-indigo-950/50 to-slate-950 text-center border-b border-slate-850">
-                          <span className="inline-block p-3 rounded-2xl bg-indigo-900/30 border border-indigo-500/25 text-3xl mx-auto shadow-inner">
+                          <span className="inline-block p-3 rounded-2xl bg-indigo-900/30 border border-indigo-500/25 text-3xl mx-auto shadow-none">
                             {activeShareBadge.icon}
                           </span>
                           <h4 className="text-sm font-extrabold text-white mt-3 tracking-tight">{activeShareBadge.name}</h4>
@@ -743,7 +743,7 @@ export default function UserAchievements() {
                     </div>
                   ) : (
                     /* Render LinkedIn Article Mockup */
-                    <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-850 text-left text-slate-800 dark:text-slate-200 space-y-3 shadow-inner select-none">
+                    <div className="p-4 bg-card-bg rounded-xl border border-slate-200 dark:border-slate-850 text-left text-slate-800 dark:text-slate-200 space-y-3 shadow-none select-none">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-black text-indigo-650 dark:text-indigo-400">
                           EV
@@ -758,9 +758,9 @@ export default function UserAchievements() {
                       </p>
                       
                       {/* Attached Article Mockup */}
-                      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-950/80">
+                      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-bg/80">
                         <div className="p-5 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-slate-950 text-center border-b border-slate-200 dark:border-slate-800">
-                          <span className="inline-block p-3 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300/30 dark:border-indigo-500/25 text-3xl mx-auto shadow-inner">
+                          <span className="inline-block p-3 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300/30 dark:border-indigo-500/25 text-3xl mx-auto shadow-none">
                             {activeShareBadge.icon}
                           </span>
                           <h4 className="text-sm font-extrabold text-slate-900 dark:text-white mt-3 tracking-tight">{activeShareBadge.name}</h4>
@@ -769,7 +769,7 @@ export default function UserAchievements() {
                         <div className="p-3">
                           <p className="text-[9px] text-slate-400 uppercase tracking-widest font-extrabold">EVENTRA.DEV</p>
                           <h5 className="text-[11px] font-extrabold text-slate-800 dark:text-slate-200 mt-0.5">Unlocked Badge Milestone on Eventra</h5>
-                          <p className="text-[10px] text-slate-500 leading-tight mt-1 line-clamp-1">Developer successfully completed the '{activeShareBadge.name}' challenges.</p>
+                          <p className="text-[10px] text-slate-500 leading-tight mt-1 line-clamp-1">Developer successfully completed the &apos;{activeShareBadge.name}&apos; challenges.</p>
                         </div>
                       </div>
                     </div>

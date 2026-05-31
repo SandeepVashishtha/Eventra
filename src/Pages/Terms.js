@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 
 // ─── Section data ────────────────────────────────────────────────────────────
@@ -132,7 +133,7 @@ const SECTIONS = [
     content: (
       <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
         We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision
-        is material, we will provide at least <span className="font-semibold text-emerald-600 dark:text-emerald-400">30 days' notice</span> prior
+        is material, we will provide at least <span className="font-semibold text-emerald-600 dark:text-emerald-400">30 days&apos; notice</span> prior
         to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.
         By continuing to access or use our Service after those revisions become effective, you agree to be bound
         by the revised terms. If you do not agree to the new terms, please stop using the Service.
@@ -154,8 +155,8 @@ const SECTIONS = [
         <p className="text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
           If you have any questions about these Terms of Service, please contact us:
         </p>
-        <a
-          href="/contact"
+        <Link
+          to="/contact"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 font-semibold text-sm hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-all duration-200"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,7 +164,7 @@ const SECTIONS = [
               d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
           Visit Contact Page
-        </a>
+        </Link>
       </>
     ),
   },
@@ -228,7 +229,7 @@ const AccordionSection = ({ section, isOpen, onToggle, animateIn }) => {
         transform: animateIn ? "translateY(0)" : "translateY(20px)",
         transition: `opacity 0.5s ease ${section.id * 0.07}s, transform 0.5s ease ${section.id * 0.07}s`,
       }}
-      className={`group relative rounded-2xl border bg-white dark:bg-slate-900/60 backdrop-blur-sm
+      className={`group relative rounded-2xl border bg-card-bg/60 backdrop-blur-sm
         shadow-sm dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)]
         hover:shadow-lg dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${c.glow}
         ${isOpen ? c.border : "border-slate-200 dark:border-white/10"}
@@ -314,7 +315,7 @@ export const Terms = () => {
   const toggle = (id) => setOpenSection((prev) => (prev === id ? null : id));
 
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 overflow-x-hidden">
+    <div className="relative min-h-screen bg-bg text-text overflow-x-hidden">
 
       {/* ── Scroll progress bar ── */}
       <div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-transparent">
@@ -432,7 +433,7 @@ export const Terms = () => {
             }}
           >
             <div className="rounded-2xl border border-slate-200 dark:border-white/10
-              bg-white dark:bg-slate-900/60 backdrop-blur-sm shadow-sm
+              bg-card-bg/60 backdrop-blur-sm shadow-sm
               dark:shadow-[0_4px_20px_rgba(0,0,0,0.2)] p-5">
               <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4">
                 Table of Contents
@@ -494,7 +495,7 @@ export const Terms = () => {
         <footer
           className="mt-16 rounded-2xl p-6 sm:p-8 text-center
             border border-slate-200 dark:border-white/10
-            bg-white dark:bg-slate-900/60 backdrop-blur-sm shadow-sm
+            bg-card-bg/60 backdrop-blur-sm shadow-sm
             dark:shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
           style={{
             opacity: animateIn ? 1 : 0,
@@ -514,9 +515,9 @@ export const Terms = () => {
           </p>
           <p className="text-slate-500 dark:text-slate-500 text-sm">
             If you have questions, visit our{" "}
-            <a href="/contact" className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+            <Link to="/contact" className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
               Contact Page
-            </a>
+            </Link>
             .
           </p>
         </footer>

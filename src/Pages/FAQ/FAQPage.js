@@ -110,19 +110,21 @@ export default function FAQSection() {
   // Search Suggestions State
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const filteredFaqs = faqs.filter((faq) => {
-    const matchesCategory =
-      selectedCategory === "All" || faq.tab?.toLowerCase() === selectedCategory.toLowerCase();
+  const filteredFaqs = useMemo(() => {
+    return faqs.filter((faq) => {
+      const matchesCategory =
+        selectedCategory === "All" || faq.tab?.toLowerCase() === selectedCategory.toLowerCase();
 
-    const query = searchTerm.toLowerCase().trim();
-    const matchesSearch =
-      !query ||
-      faq.question.toLowerCase().includes(query) ||
-      faq.answer.toLowerCase().includes(query) ||
-      faq.category.toLowerCase().includes(query);
+      const query = searchTerm.toLowerCase().trim();
+      const matchesSearch =
+        !query ||
+        faq.question.toLowerCase().includes(query) ||
+        faq.answer.toLowerCase().includes(query) ||
+        faq.category.toLowerCase().includes(query);
 
-    return matchesCategory && matchesSearch;
-  });
+      return matchesCategory && matchesSearch;
+    });
+  }, [searchTerm, selectedCategory]);
 
   const suggestions = faqs
     .filter((faq) => {
@@ -316,7 +318,6 @@ export default function FAQSection() {
           padding: 60px 20px 32px;
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
-          z-index: 90;
           width: 100%;
           box-sizing: border-box;
           transition: transform 0.5s ease, opacity 0.5s ease, padding 0.5s ease, background 0.5s ease;
@@ -326,6 +327,7 @@ export default function FAQSection() {
           position: fixed;
           left: 0;
           right: 0;
+          z-index: 90;
           border-bottom: 1px solid var(--heading-border);
           padding: 10px 20px 16px;
         }
@@ -599,7 +601,7 @@ export default function FAQSection() {
                 No matching FAQs found
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6 leading-relaxed">
-                We couldn't find any questions matching "{searchTerm}" under the {selectedCategory}{" "}
+                We couldn&apos;t find any questions matching &quot;{searchTerm}&quot; under the {selectedCategory}{" "}
                 category. Try broadening your keywords.
               </p>
               <button

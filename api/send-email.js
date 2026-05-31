@@ -61,6 +61,7 @@ async function handler(req, res) {
   }
 
   const userId = req.user?.id || req.user?.email || "unknown";
+  const authenticatedEmail = typeof req.user?.email === "string" ? req.user.email.trim().toLowerCase() : "";
   evictStale();
 
   if (!checkRateLimit(userId)) {
@@ -82,9 +83,21 @@ async function handler(req, res) {
     return res.status(400).json({ error: "A valid recipient email address is required." });
   }
 
+  const normalizedRecipientEmail = toEmail.trim().toLowerCase();
+  if (!authenticatedEmail || normalizedRecipientEmail !== authenticatedEmail) {
+    return res.status(403).json({
+      error: "You can only send confirmation emails to your authenticated email address.",
+    });
+  }
+
   const recipientName = typeof toName === "string" ? toName.slice(0, 100).trim() : "Participant";
   const eventTitle = typeof eventName === "string" ? eventName.slice(0, 200).trim() : "your event";
   const eventDateStr = typeof eventDate === "string" ? eventDate.slice(0, 50).trim() : "";
+
+  console.info("[send-email] confirmation email requested", {
+    userId,
+    recipient: normalizedRecipientEmail,
+  });
 
   try {
     const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
