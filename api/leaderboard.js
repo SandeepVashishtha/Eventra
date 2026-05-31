@@ -135,6 +135,7 @@ const aggregatePrs = (prs, contributorsInfo) => {
   });
 
   return contributorsMap;
+};
 // Resolve the caller's IP from common proxy headers then socket address
 // ---------------------------------------------------------------------------
 const getClientIp = (req) => {
@@ -179,16 +180,13 @@ export default async function handler(req, res) {
   };
 
   try {
-    // 1. Fetch contributors and the first PR page concurrently so the
-    //    contributors round-trip does not add to the PR-fetching latency.
+    // Fetch contributors and the first PR page concurrently so the
+    // contributors round-trip does not add to the PR-fetching latency.
+    const contributorsUrl = `https://api.github.com/repos/${GITHUB_REPO}/contributors`;
     const [contributorsRes, firstPagePrs] = await Promise.all([
-      fetch(`https://api.github.com/repos/${GITHUB_REPO}/contributors`, { headers }),
+      fetch(contributorsUrl, { headers }),
       fetchPrPage(1, headers),
     ]);
-
-    // 1. Fetch contributors to get names and avatars
-    const contributorsUrl = `https://api.github.com/repos/${GITHUB_REPO}/contributors`;
-    const contributorsRes = await fetch(contributorsUrl, { headers });
 
     if (!contributorsRes.ok) {
       throw new Error(`Failed to fetch contributors: ${contributorsRes.status}`);
@@ -231,59 +229,6 @@ export default async function handler(req, res) {
       for (const result of remainingResults) {
         if (result.status === "fulfilled" && result.value.length > 0) {
           allPrs = allPrs.concat(result.value);
-    // 2. Fetch all closed PRs
-    let page = 1;
-    let hasMore = true;
-
-    // Limit to 10 pages (1000 PRs) to avoid hitting Vercel 10s timeout limits
-    // In production, consider Webhooks or a database-backed Cron job if > 1000 PRs
-    const MAX_PAGES = 10;
-
-    while (hasMore && page <= MAX_PAGES) {
-      const pullsUrl = `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`;
-      const prsRes = await fetch(pullsUrl, { headers });
-
-      if (!prsRes.ok) {
-        console.warn(`[Leaderboard API] GitHub API request failed with status: ${prsRes.status}`);
-        hasMore = false;
-        break;
-      }
-
-      const prs = await prsRes.json();
-
-      if (!Array.isArray(prs) || prs.length === 0) {
-        hasMore = false;
-        break;
-      }
-
-      prs.forEach((pr) => {
-        if (!pr.merged_at) return; // Only count merged PRs
-
-        const labels = pr.labels.map((l) => l.name.toLowerCase());
-        const hasGsocLabel = labels.some(
-          (label) => label.includes("gssoc") || label.includes("gsoc")
-        );
-
-        if (!hasGsocLabel) return; // Must have GSOC labels
-
-        const author = pr.user.login;
-        const points = calculatePrPoints(labels);
-
-        if (!contributorsMap[author]) {
-          const contributorInfo = contributorsInfo[author] || {
-            name: author,
-            avatar: pr.user.avatar_url,
-            profile: pr.user.html_url,
-          };
-          contributorsMap[author] = {
-            username: author,
-            name: contributorInfo.name,
-            avatar: contributorInfo.avatar,
-            profile: contributorInfo.profile,
-            points: 0,
-            prs: 0,
-          };
-        }
       }
     }
 
@@ -303,13 +248,6 @@ export default async function handler(req, res) {
     // 5. Sort contributors by points
     const sortedContributors = Object.values(contributorsMap).sort(
       (a, b) => b.points - a.points,
-    );
-
-    // 6. Apply Edge Caching
-    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
-    // 4. Sort contributors by points
-    const sortedContributors = Object.values(contributorsMap).sort(
-      (a, b) => b.points - a.points
     );
 
     // 5. Populate the in-process cache so subsequent warm-instance calls skip

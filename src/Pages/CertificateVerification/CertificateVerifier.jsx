@@ -35,16 +35,19 @@ export const CertificateVerifier = () => {
     <section style={containerStyle} className="glassmorphic">
       <h2 className="text-2xl font-bold mb-4">Certificate Verification</h2>
       <div className="flex gap-2 mb-4">
-        <input
+        <Input
           type="text"
           placeholder="Enter Certificate UID"
           value={uid}
           onChange={(e) => setUid(e.target.value)}
-          className="flex-1 p-2 rounded bg-white/20 text-white"
+          className="flex-1 bg-white/20 text-white placeholder:text-white/70"
+          label="Certificate UID"
         />
         <button
+          type="button"
           onClick={handleSearch}
           className="px-4 py-2 bg-indigo-600 rounded hover:bg-indigo-700 transition"
+          aria-label="Verify certificate"
         >
           Verify
         </button>
