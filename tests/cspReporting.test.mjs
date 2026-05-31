@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 // Save original environment
 const originalNodeEnv = process.env.NODE_ENV;
 const originalReportUri = process.env.REACT_APP_CSP_REPORT_URI;
+const originalNavigator = globalThis.navigator;
+const originalDocument = globalThis.document;
+const originalBlob = globalThis.Blob;
 
 // Set environment variables for testing
 process.env.NODE_ENV = "development";
@@ -10,7 +13,7 @@ process.env.REACT_APP_CSP_REPORT_URI = "https://example.com/csp-report";
 
 // Mock document
 const listeners = {};
-global.document = {
+globalThis.document = {
   addEventListener(event, handler) {
     listeners[event] = handler;
   },
@@ -35,11 +38,11 @@ class MockBlob {
     this.options = options;
   }
 }
-global.Blob = MockBlob;
+globalThis.Blob = MockBlob;
 
-// Mock navigator.sendBeacon
+// Mock navigator.sendBeacon — use defineProperty for Node 22+ compatibility
 let beaconSent = null;
-Object.defineProperty(global, "navigator", {
+Object.defineProperty(globalThis, "navigator", {
   value: {
     sendBeacon(url, blob) {
       beaconSent = { url, blob };
@@ -111,8 +114,27 @@ if (originalReportUri === undefined) {
   process.env.REACT_APP_CSP_REPORT_URI = originalReportUri;
 }
 console.warn = originalConsoleWarn;
-delete global.document;
-delete global.navigator;
-delete global.Blob;
+
+if (originalDocument === undefined) {
+  delete globalThis.document;
+} else {
+  globalThis.document = originalDocument;
+}
+
+if (originalBlob === undefined) {
+  delete globalThis.Blob;
+} else {
+  globalThis.Blob = originalBlob;
+}
+
+if (originalNavigator === undefined) {
+  delete globalThis.navigator;
+} else {
+  Object.defineProperty(globalThis, "navigator", {
+    value: originalNavigator,
+    configurable: true,
+    writable: true
+  });
+}
 
 console.log("cspReporting tests passed ✓");
