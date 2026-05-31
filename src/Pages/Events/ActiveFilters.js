@@ -36,11 +36,11 @@ const ActiveFilters = ({
     hasSearch || hasType || hasSort || hasView || hasAdvancedFilters;
 
   const clearAll = () => {
-    setSearchQuery && setSearchQuery("");
-    setFilterType && setFilterType("all");
-    setSortType && setSortType("Newest");
-    setViewMode && setViewMode("grid");
-    onAdvancedFiltersChange && onAdvancedFiltersChange(getDefaultFilters());
+    if (typeof setSearchQuery === "function") setSearchQuery("");
+    if (typeof setFilterType === "function") setFilterType("all");
+    if (typeof setSortType === "function") setSortType("Newest");
+    if (typeof setViewMode === "function") setViewMode("grid");
+    if (typeof onAdvancedFiltersChange === "function") onAdvancedFiltersChange(getDefaultFilters());
   };
 
   const removeCategory = (category) => {
