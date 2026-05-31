@@ -93,7 +93,7 @@ export const Privacy = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-bg text-text py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-16">
         {" "}
         {/* Increased horizontal width */}
@@ -124,7 +124,7 @@ export const Privacy = () => {
           variants={container}
           initial="hidden"
           animate={controls}
-          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-md"
+          className="bg-card-bg/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-md"
         >
           <p className="text-lg text-gray-800 dark:text-gray-200">
             At{" "}
@@ -152,17 +152,17 @@ export const Privacy = () => {
             <motion.div
               key={index}
               variants={item}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden group hover:border-blue-400 dark:hover:border-blue-500 transition-colors duration-300"
+              className="bg-card-bg/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden group hover:border-blue-400 dark:hover:border-blue-500 transition-colors duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-50 dark:from-gray-900/40 dark:via-gray-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
               <div className="relative z-10">
                 <button
                   onClick={() => toggleSection(index)}
-                  className="w-full flex items-center justify-between p-8 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 rounded-t-2xl"
+                  className="w-full flex items-center justify-between p-8 text-left hover:bg-bg transition-colors duration-200 rounded-t-2xl"
                 >
                   <div className="flex items-center">
-                    <div className="flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-xl text-black dark:text-white text-2xl mr-4">
+                    <div className="flex items-center justify-center w-12 h-12 bg-bg rounded-xl text-black dark:text-white text-2xl mr-4">
                       {section.icon}
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -206,7 +206,7 @@ export const Privacy = () => {
           variants={container}
           initial="hidden"
           animate={controls}
-          className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-md"
+          className="bg-card-bg rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-md"
         >
           <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Policy Updates
@@ -230,7 +230,7 @@ export const Privacy = () => {
           variants={container}
           initial="hidden"
           animate={controls}
-          className="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center relative overflow-hidden shadow-md border border-gray-200 dark:border-gray-700"
+          className="bg-card-bg rounded-2xl p-8 text-center relative overflow-hidden shadow-md border border-gray-200 dark:border-gray-700"
         >
           <div className="relative z-10">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
@@ -242,7 +242,7 @@ export const Privacy = () => {
             </p>
             <Link
               to="/contact"
-              className="inline-flex items-center px-6 py-3 rounded-xl font-medium text-white dark:text-black bg-black dark:bg-white hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors duration-300"
+              className="inline-flex items-center px-6 py-3 rounded-xl font-medium text-white bg-primary hover:opacity-90 transition-colors duration-300"
             >
               Contact Us
             </Link>

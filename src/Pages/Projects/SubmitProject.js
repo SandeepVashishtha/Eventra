@@ -375,7 +375,7 @@ const handleSubmit = async (e) => {
     ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -397,7 +397,7 @@ const handleSubmit = async (e) => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
+        className="w-full max-w-4xl bg-card-bg border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
         data-aos="fade-up"
         data-aos-delay="200"
       >
@@ -459,7 +459,7 @@ const handleSubmit = async (e) => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
+        className="w-full max-w-4xl bg-card-bg shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
         data-aos="fade-up"
         data-aos-delay="400"
       >
@@ -488,7 +488,7 @@ const handleSubmit = async (e) => {
                   className={`w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
                     isDragging
                       ? "border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/20"
-                      : "border-gray-300 hover:border-indigo-500 hover:bg-slate-50/50 dark:border-gray-650 dark:hover:border-indigo-400 dark:hover:bg-slate-800/10"
+                      : "border-gray-300 hover:border-indigo-500 hover:bg-bg/50 dark:border-gray-655 dark:hover:border-indigo-400 dark:hover:bg-bg/10"
                   }`}
                 >
                   <input
@@ -534,7 +534,7 @@ const handleSubmit = async (e) => {
                   onChange={handleChange}
                   placeholder={field.placeholder}
                   ref={inputRefs[field.name]}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-bg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
                 />
               )}
               {errors[field.name] && (
@@ -561,7 +561,7 @@ const handleSubmit = async (e) => {
               ref={inputRefs.description}
               rows="4"
               placeholder="Briefly describe your project, its purpose, and features."
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-bg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
             />
             {errors.description && (
               <p className="text-red-500 text-xs mt-1">{errors.description}</p>
@@ -583,7 +583,7 @@ const handleSubmit = async (e) => {
               onChange={handleChange}
               rows="3"
               placeholder="Any other information for the reviewers"
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-bg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
             />
           </motion.div>
           <motion.button
@@ -591,7 +591,7 @@ const handleSubmit = async (e) => {
             disabled={isSubmitting}
             whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
             whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
-            className="w-full flex items-center justify-center gap-2 text-white font-semibold p-3 rounded-xl shadow-lg transition-all duration-300 bg-black hover:bg-zinc-800 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 text-white font-semibold p-3 rounded-xl shadow-lg transition-all duration-300 bg-primary hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSubmitting ? "Submitting..." : "Submit Project"}
             {!isSubmitting && <ArrowRightIcon className="w-5 h-5" />}
@@ -619,12 +619,12 @@ const handleSubmit = async (e) => {
           <motion.div
             key={index}
             whileHover={{ scale: 1.05 }}
-            className="bg-gradient-to-b from-white via-white to-slate-50  border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800 border  dark:border-gray-700 rounded-2xl  p-6 text-center flex flex-col items-center"
+            className="bg-card-bg border border-border shadow-xl shadow-slate-100/10 dark:shadow-none rounded-2xl p-6 text-center flex flex-col items-center"
             data-aos="zoom-in"
             data-aos-delay={1500 + index * 100}
           >
-            <stat.icon className="w-10 h-10 text-black mb-3" />
-            <h3 className="text-3xl font-bold text-black">
+            <stat.icon className="w-10 h-10 text-primary mb-3" />
+            <h3 className="text-3xl font-bold">
               {stat.number}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
@@ -638,7 +638,7 @@ const handleSubmit = async (e) => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="w-full max-w-5xl mt-10 text-center bg-black border border-black rounded-2xl p-10 shadow-2xl"
+        className="w-full max-w-5xl mt-10 text-center bg-card-bg border border-border rounded-2xl p-10 shadow-2xl"
         data-aos="fade-up"
         data-aos-delay="1900"
       >
@@ -655,9 +655,9 @@ const handleSubmit = async (e) => {
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
           <motion.button
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
+            whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
+            whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
+            className="inline-flex items-center justify-center gap-2 bg-primary text-white px-8 py-3 rounded-xl shadow-lg hover:opacity-90 transition-all duration-300"
           >
             <ArrowUpTrayIcon className="w-5 h-5" /> Submit Another Project
           </motion.button>
@@ -666,7 +666,7 @@ const handleSubmit = async (e) => {
             href="/projects"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
+            className="inline-flex items-center justify-center gap-2 bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
           >
             <ClipboardDocumentCheckIcon className="w-5 h-5" />
             Explore Projects
