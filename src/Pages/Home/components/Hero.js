@@ -2,7 +2,7 @@ import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTran
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Search, Calendar, Trophy, Code, ExternalLink, ArrowRight, Users, Handshake } from "lucide-react";
+import { Search, Calendar, Trophy, Code, ExternalLink, Users, Handshake } from "lucide-react";
 
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import eventsData from "../../Events/eventsMockData.json";
@@ -164,7 +164,7 @@ const Hero = () => {
   const getResultIcon = (type) => {
     const icons = { event: Calendar, hackathon: Trophy, project: Code };
     const Icon = icons[type] || Search;
-    return <Icon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />;
+    return <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />;
   };
 
   // ─── ANIMATION VARIANTS ────────────────────────────────────────────────────
@@ -213,13 +213,12 @@ const Hero = () => {
   ];
 
   const primaryBtn = "relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900";
-  const secondaryBtn = `${primaryBtn} border border-transparent`;
 
   return (
     <section
       ref={containerRef}
       aria-label="Hero section"
-      className="relative overflow-hidden bg-gradient-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950 dark:via-slate-900/80 dark:to-black text-slate-900 dark:text-gray-100 pb-16 sm:pb-20 md:pb-24 border-b border-gray-100/60 dark:border-slate-800/60"
+      className="relative overflow-hidden bg-linear-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950 dark:via-slate-900/80 dark:to-black text-slate-900 dark:text-gray-100 pb-16 sm:pb-20 md:pb-24 border-b border-gray-100/60 dark:border-slate-800/60"
     >
       {/* Decorative Parallax Shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
@@ -282,11 +281,11 @@ const Hero = () => {
                 {phrases[index]}
               </span>
 
-              <div className="relative w-full min-h-[6rem] sm:min-h-[7rem] md:min-h-[8rem] overflow-hidden flex justify-center items-center">
+              <div className="relative w-full min-h-24 sm:min-h-28 md:min-h-32 overflow-hidden flex justify-center items-center">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 font-extrabold text-3xl sm:text-4xl md:text-5xl lg:text-6xl drop-shadow-sm"
+                    className="block text-transparent bg-clip-text bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 font-extrabold text-3xl sm:text-4xl md:text-5xl lg:text-6xl drop-shadow-sm"
                     initial={{ opacity: 0, y: 32, filter: "blur(4px)" }}
                     animate={{ opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: "easeOut" } }}
                     exit={{ opacity: 0, y: -24, filter: "blur(4px)", transition: { duration: prefersReducedMotion ? 0 : 0.4, ease: "easeIn" } }}
@@ -312,7 +311,7 @@ const Hero = () => {
           {/* Global Search Bar */}
           <motion.div variants={fadeUp} className="w-full max-w-2xl mx-auto mb-10">
             <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-500" aria-hidden="true" />
+              <div className="absolute -inset-0.5 bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-500" aria-hidden="true" />
               <div className="relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-gray-200/60 dark:border-slate-700/60 rounded-2xl shadow-lg">
                 <ModernSearchInput
                   value={searchTerm}
@@ -353,7 +352,7 @@ const Hero = () => {
                                     role="option"
                                     aria-label={`Open ${result.item.title}`}
                                   >
-                                    <div className="flex-shrink-0 p-2 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 rounded-lg text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform">
+                                    <div className="shrink-0 p-2 bg-linear-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 rounded-lg text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform">
                                       {getResultIcon(result.item.type)}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -369,7 +368,7 @@ const Hero = () => {
                                         {result.item.description?.substring(0, 70)}...
                                       </p>
                                     </div>
-                                    <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors flex-shrink-0" aria-hidden="true" />
+                                    <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors shrink-0" aria-hidden="true" />
                                   </MotionLink>
                                 ))}
                               </div>
