@@ -1,4 +1,3 @@
-import React from 'react';
 import PasswordStrengthIndicator from '../components/auth/PasswordStrengthIndicator';
 
 export default {

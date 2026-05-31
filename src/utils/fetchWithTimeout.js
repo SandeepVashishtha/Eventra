@@ -22,31 +22,51 @@ export const fetchWithTimeout = async (
     controller.abort();
   }, timeout);
 
-  try {
-    // 🔥 FIX: Combine the user's signal (if provided) with our internal timeout signal.
-    // This ensures component unmounts can still cancel the request!
-    const combinedSignal = options.signal
-      ? AbortSignal.any([options.signal, controller.signal])
-      : controller.signal;
+  // 🔥 FIX: Link the user's custom abort signal to our internal controller.
+  const handleUserAbort = () => controller.abort();
 
+  if (options.signal) {
+    if (options.signal.aborted) {
+      controller.abort();
+    } else {
+      options.signal.addEventListener("abort", handleUserAbort);
+    }
+  }
+
+  try {
     const response = await fetch(url, {
       ...options,
-      signal: combinedSignal,
+      signal: controller.signal, // This now responds to BOTH the timeout and the user's unmount signal
     });
 
+    // Read the body once — directly from the response stream.
+    //
+    // The previous implementation used response.clone().json() which allocates
+    // a duplicate of the entire body in memory before parsing, doubling peak
+    // consumption for every request. Since callers consume the returned `data`
+    // field rather than response.body, there is no need to keep the original
+    // stream open. Read directly and skip the clone.
     let data = null;
+    const contentType = response.headers.get("content-type") || "";
 
     try {
-      data = await response.clone().json();
+      if (contentType.includes("application/json") || contentType.includes("/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text().catch(() => null);
+        if (typeof text === "string") {
+          try { data = JSON.parse(text); } catch { data = text; }
+        }
+      }
     } catch {
-      data = await response.text().catch(() => null);
+      data = null;
     }
 
     if (!response.ok) {
       throw new FetchError(
         data?.message || `Request failed with status ${response.status}`,
         response.status,
-        data
+        data,
       );
     }
 
@@ -57,12 +77,12 @@ export const fetchWithTimeout = async (
   } catch (error) {
     if (error.name === "AbortError") {
       // Check if it was our timeout that caused the abort, or the user's custom signal
-      if (controller.signal.aborted) {
-        logger.error("[fetchWithTimeout] Request timeout:", url);
-        throw new FetchError(`Request timed out after ${timeout}ms`);
-      } else {
+      if (options.signal && options.signal.aborted) {
         logger.log("[fetchWithTimeout] Request aborted by user/component:", url);
         throw error;
+      } else {
+        logger.error("[fetchWithTimeout] Request timeout:", url);
+        throw new FetchError(`Request timed out after ${timeout}ms`);
       }
     }
 
@@ -70,5 +90,9 @@ export const fetchWithTimeout = async (
     throw error;
   } finally {
     clearTimeout(timeoutId);
+    // 🔥 FIX: Always clean up the event listener to prevent memory leaks
+    if (options.signal) {
+      options.signal.removeEventListener("abort", handleUserAbort);
+    }
   }
 };

@@ -43,10 +43,23 @@ export function useFocusTrap(isActive) {
       const focusableElements = Array.from(
         container.querySelectorAll(FOCUSABLE_SELECTORS)
       );
-      if (focusableElements.length === 0) return;
+      
+      if (focusableElements.length === 0) {
+        e.preventDefault();
+        container.focus();
+        return;
+      }
 
       const first = focusableElements[0];
       const last = focusableElements[focusableElements.length - 1];
+
+      // 🔥 FIX: If focus somehow escapes the container (e.g. user clicked the background),
+      // aggressively pull it back into the trap on the next Tab press.
+      if (!container.contains(document.activeElement)) {
+        e.preventDefault();
+        first.focus();
+        return;
+      }
 
       if (e.shiftKey) {
         // Shift+Tab: wrap from first to last
@@ -63,10 +76,12 @@ export function useFocusTrap(isActive) {
       }
     };
 
-    container.addEventListener('keydown', handleKeyDown);
+    // 🔥 FIX: Listen on 'document', not 'container'. If focus drops to the body,
+    // container.addEventListener will never catch the Tab key because it doesn't bubble!
+    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      container.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown);
       // Return focus to trigger element when modal closes
       if (previousFocusRef.current && previousFocusRef.current.focus) {
         previousFocusRef.current.focus();
