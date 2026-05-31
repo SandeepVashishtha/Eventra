@@ -1,5 +1,4 @@
 // src/components/auth/PasswordStrengthIndicator.js
-import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import useReducedMotion from '../../hooks/useReducedMotion';
 

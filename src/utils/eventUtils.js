@@ -45,19 +45,16 @@ export const computeDateStatus = (event) => {
 
 export const getEventStatus = (event) => {
   if (!event) return "upcoming";
-
   const explicitStatus = mapStatusKey(event.status);
   const dateStatus = computeDateStatus(event);
 
   if (explicitStatus === "ended") {
     return "ended";
   }
-
-  if (dateStatus) {
-    return dateStatus;
+  if (explicitStatus && explicitStatus !== dateStatus) {
+    return explicitStatus;
   }
-
-  return explicitStatus || "upcoming";
+  return dateStatus || "upcoming";
 };
 
 export const isEventRegistrationClosed = (eventOrStatus) => {

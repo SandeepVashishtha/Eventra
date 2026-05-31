@@ -4,7 +4,6 @@ import {
   Sliders,
   CheckCircle2,
   AlertCircle,
-  Award,
   Sparkles,
   ChevronRight,
 } from "lucide-react";
@@ -287,7 +286,7 @@ const EventRecommendation = () => {
                   <option>
                     Beginner
                   </option>
-//
+
                   <option>
                     Intermediate
                   </option>
@@ -393,7 +392,7 @@ const EventRecommendation = () => {
               <button
                 onClick={generateRecommendations}
                 className="w-full mt-4 bg-blue-600 hover:bg-blue-700 transition-all text-white rounded-xl py-3 text-sm font-semibold"
-              >
+                aria-label="Generate recommendations">
                 Generate Recommendations
               </button>
 
@@ -679,13 +678,13 @@ const EventRecommendation = () => {
   </span>
 
   Fits best for developers with
-  <strong className="text-slate-755 dark:text-slate-200 font-bold">
+  <strong className="text-slate-700 dark:text-slate-200 font-bold">
     {selectedEvent.level}
   </strong>
 
   level experience, interested in
 
-  <strong className="text-slate-755 dark:text-slate-200 font-bold">
+  <strong className="text-slate-700 dark:text-slate-200 font-bold">
     {selectedEvent.category}
   </strong>.
 

@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   FiUsers,
   FiActivity,
   FiSmile,
   FiPlay,
   FiStar,
-  FiMessageSquare,
-  FiCheckCircle,
   FiDownload,
 } from "react-icons/fi";
 import { exportSurveyToCSV } from "../../utils/exportCsv";
@@ -37,7 +35,7 @@ const FEEDBACK_COMMENTS_POOL = [
 ];
 
 const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
-  const [isActive, setIsActive] = useState(true);
+  const [isActive] = useState(true);
 
   // Hook handles mock data generation - decoupled from UI components
   const {
@@ -175,7 +173,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
           <button
             onClick={handleExportCSV}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 dark:hover:border-indigo-400 text-xs text-slate-700 dark:text-slate-350 hover:text-indigo-650 dark:hover:text-indigo-400 hover:shadow-md transition active:scale-95 cursor-pointer"
-          >
+           aria-label="button">
             <FiDownload className="w-4 h-4 text-indigo-500" />
             Export Results to CSV
           </button>
@@ -183,7 +181,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
           <button
             onClick={handleSimulateSubmission}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-xs font-bold text-white shadow-lg shadow-indigo-600/15 transition self-start sm:self-auto cursor-pointer"
-          >
+           aria-label="button">
             <FiPlay className="w-4 h-4 fill-white" />
             Inject Survey Response
           </button>
@@ -423,7 +421,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                                 </span>
                               </div>
                               <p className="text-xs text-slate-500 dark:text-slate-400 leading-normal">
-                                "{comment.text}"
+                                &quot;{comment.text}&quot;
                               </p>
                             </div>
                           </div>

@@ -1,4 +1,3 @@
-
 import { safeJsonParse } from "./safeJsonParse.js";
 
 /** Grace period (in seconds) to account for clock skew between browser and server. */
@@ -45,5 +44,8 @@ export function isTokenValid(token) {
 export function getTokenTTL(token) {
   const payload = decodeJwtPayload(token);
   if (!payload || typeof payload.exp !== "number") return -1;
-  return payload.exp - Math.floor(Date.now() / 1000);
+  
+  // 🔥 FIX: Apply the CLOCK_SKEW_BUFFER so the TTL matches the expiration logic.
+  // This prevents the background refresh timer from firing too late.
+  return (payload.exp - CLOCK_SKEW_BUFFER) - Math.floor(Date.now() / 1000);
 }
