@@ -18,3 +18,6 @@ Please delete options that are not relevant.
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
 - [ ] My changes generate no new warnings
+- [ ] I have run local unit tests using `npm test` and verified they pass
+- [ ] I have run `npm run lint` and resolved any new errors or warnings
+- [ ] I have verified responsiveness and visual alignment on desktop and mobile viewports
