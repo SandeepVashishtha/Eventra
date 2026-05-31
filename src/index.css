@@ -39,6 +39,12 @@
   --color-sidebar: var(--sidebar-bg);
 
   --shadow-card: var(--card-shadow);
+  --shadow-premium-sm: var(--shadow-premium-sm-val);
+  --shadow-premium-md: var(--shadow-premium-md-val);
+  --shadow-premium-lg: var(--shadow-premium-lg-val);
+  --shadow-glow-sm: var(--shadow-glow-sm-val);
+  --shadow-glow-md: var(--shadow-glow-md-val);
+  --shadow-glow-lg: var(--shadow-glow-lg-val);
   --radius-xl2: 1rem;
 
   --animate-slide-up: slide-up 0.3s ease-out;
@@ -94,6 +100,26 @@ body {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
+}
+
+/* Elevation and Glow utilities */
+.elevation-sm {
+  box-shadow: var(--shadow-premium-sm-val) !important;
+}
+.elevation-md {
+  box-shadow: var(--shadow-premium-md-val) !important;
+}
+.elevation-lg {
+  box-shadow: var(--shadow-premium-lg-val) !important;
+}
+.shadow-glow {
+  box-shadow: var(--shadow-glow-md-val) !important;
+}
+.shadow-glow-sm {
+  box-shadow: var(--shadow-glow-sm-val) !important;
+}
+.shadow-glow-lg {
+  box-shadow: var(--shadow-glow-lg-val) !important;
 }
 
 .sr-only {
@@ -286,6 +312,13 @@ html {
   --warning-bg: var(--evt-warning-soft);
   --warning-border: var(--evt-warning-border);
   --warning-text: var(--evt-warning-text);
+
+  --shadow-premium-sm-val: 0 2px 8px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02);
+  --shadow-premium-md-val: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-premium-lg-val: 0 16px 40px rgba(15, 23, 42, 0.12), 0 4px 16px rgba(15, 23, 42, 0.06);
+  --shadow-glow-sm-val: 0 0 8px var(--glow-color);
+  --shadow-glow-md-val: 0 0 16px var(--glow-color);
+  --shadow-glow-lg-val: 0 0 28px var(--glow-color);
 }
 
 /* Fix #599: Changed from body.dark to .dark
@@ -381,6 +414,13 @@ html {
   --warning-bg: var(--evt-warning-soft);
   --warning-border: var(--evt-warning-border);
   --warning-text: var(--evt-warning-text);
+
+  --shadow-premium-sm-val: 0 2px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15);
+  --shadow-premium-md-val: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-premium-lg-val: 0 16px 40px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-glow-sm-val: 0 0 8px var(--glow-color);
+  --shadow-glow-md-val: 0 0 16px var(--glow-color);
+  --shadow-glow-lg-val: 0 0 28px var(--glow-color);
 }
 
 /* Global styles */

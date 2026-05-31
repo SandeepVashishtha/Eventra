@@ -39,12 +39,16 @@ global.Blob = MockBlob;
 
 // Mock navigator.sendBeacon
 let beaconSent = null;
-global.navigator = {
-  sendBeacon(url, blob) {
-    beaconSent = { url, blob };
-    return true;
-  }
-};
+Object.defineProperty(global, "navigator", {
+  value: {
+    sendBeacon(url, blob) {
+      beaconSent = { url, blob };
+      return true;
+    }
+  },
+  configurable: true,
+  writable: true
+});
 
 // Import functions dynamically so NODE_ENV changes are active during evaluation
 const { initCspReporting, teardownCspReporting } = await import("../src/utils/cspReporting.js");

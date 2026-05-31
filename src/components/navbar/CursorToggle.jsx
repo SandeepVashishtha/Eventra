@@ -14,7 +14,7 @@ const CursorToggle = ({ cursorEnabled, toggleCursor }) => {
       }
       className={`rounded-lg border px-1 py-1 transition-colors flex items-center justify-center ${
         cursorEnabled
-          ? "border-indigo-500 bg-indigo-600 text-white shadow-sm"
+          ? "border-indigo-500 bg-indigo-600 text-white shadow-premium-sm"
           : "border-gray-300 bg-gray-100 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
       }`}
     >

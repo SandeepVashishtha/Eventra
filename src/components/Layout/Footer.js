@@ -92,7 +92,7 @@ const Newsletter = () => {
   };
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 sm:p-5">
+    <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white/80 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 sm:p-4">
       <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
         Stay updated
       </h4>
@@ -132,7 +132,7 @@ const Newsletter = () => {
 };
 
 const Social = () => (
-  <div className="flex items-center gap-3">
+  <div className="flex flex-wrap items-center gap-3">
     {socialLinks.map(({ name, href, icon: Icon }) => (
       <ExternalLink
         key={name}
@@ -154,7 +154,7 @@ const FooterLinks = () => (
           {formatTitle(key)}
         </h4>
 
-        <ul className="mt-3 grid sm:mt-4 sm:gap-2">
+        <ul className="mt-2 grid gap-2">
           {links.map(({ name, href, icon: Icon }) => (
             <li key={name}>
               <Link
@@ -178,8 +178,8 @@ const FooterLinks = () => (
 const Footer = () => {
   return (
     <footer className="site-footer border-t border-slate-200 bg-gradient-to-b from-white to-slate-50 dark:border-slate-800 dark:from-slate-950 dark:to-slate-900">
-      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-12 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-16 lg:px-8">
-        <div className="flex min-w-0 flex-col gap-6">
+      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-12 lg:px-8">
+        <div className="flex min-w-0 flex-col gap-4">
           <div className="flex items-center gap-3">
             <img src="/favicon.png" alt="Eventra logo" className="h-10 w-10 shrink-0" />
             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
@@ -201,19 +201,44 @@ const Footer = () => {
       </div>
 
       <div className="border-t border-slate-200 dark:border-slate-800">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <p>&copy; {new Date().getFullYear()} Eventra. All rights reserved.</p>
+  <div
+    className="
+      mx-auto
+      flex
+      w-full
+      max-w-7xl
+      flex-col
+      items-center
+      justify-between
+      gap-3
+      px-4
+      py-3
+      text-sm
+      text-slate-500
+      sm:flex-row
+      sm:px-6
+      lg:px-8
+    "
+  >
+    <p>&copy; {new Date().getFullYear()} Eventra. All rights reserved.</p>
 
-          <div className="flex flex-wrap gap-x-4 gap-y-2">
-            <Link to="/privacy" className="transition hover:text-slate-900 dark:hover:text-slate-100">
-              Privacy
-            </Link>
-            <Link to="/terms" className="transition hover:text-slate-900 dark:hover:text-slate-100">
-              Terms
-            </Link>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-wrap gap-x-4 gap-y-2">
+      <Link
+        to="/privacy"
+        className="transition hover:text-slate-900 dark:hover:text-slate-100"
+      >
+        Privacy
+      </Link>
+
+      <Link
+        to="/terms"
+        className="transition hover:text-slate-900 dark:hover:text-slate-100"
+      >
+        Terms
+      </Link>
+    </div>
+  </div>
+</div>
     </footer>
   );
 };

@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "22.x",
+    "node": ">=22.x",
     "npm": ">=9.6.4"
   },
   "dependencies": {

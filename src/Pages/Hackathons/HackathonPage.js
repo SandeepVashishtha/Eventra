@@ -107,7 +107,7 @@ const CustomDropdown = ({
             ref={dropdownRef}
             className="
               z-[10000]
-              bg-white dark:bg-slate-900
+              bg-card-bg
               border border-slate-200 dark:border-white/10
               rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]
               overflow-hidden
@@ -318,7 +318,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
   }, []);
   
   return (
-    <div className="overflow-x-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-6 transition-colors duration-300">
+    <div className="overflow-x-hidden bg-bg text-text py-6 transition-colors duration-300">
       {/* Floating Action Button */}
       <motion.div
         className={`fixed z-50  ${positionClass}`}
@@ -497,7 +497,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                 relative overflow-hidden mb-6
                 rounded-2xl
                 border border-slate-200 dark:border-white/10
-                bg-white/90 dark:bg-slate-900/80
+                bg-card-bg/90
                 backdrop-blur-xl
                 shadow-lg dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)]
                 p-6 md:p-8
@@ -619,7 +619,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
             </motion.div>
           ) : (
             <motion.div
-              className="relative overflow-hidden rounded-3xl p-10 text-center shadow-md dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-800"
+              className="relative overflow-hidden rounded-3xl p-10 text-center shadow-md dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-gray-800 bg-card-bg"
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
@@ -709,7 +709,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={resetFilters}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-primary hover:opacity-90 shadow-lg transition-all"
                   >
                     <FiRotateCw className="w-4 h-4" />
                     Reset Filters
@@ -719,7 +719,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => {}}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md transition-all"
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-bg hover:bg-card-bg shadow-md transition-all"
                   >
                     Explore Hackathons
                     <FiCompass className="w-4 h-4" />
