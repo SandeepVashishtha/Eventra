@@ -182,4 +182,21 @@ describe('useDebouncedSearch — behavior contract', () => {
       'Clear function must reset searchTerm and debouncedTerm',
     );
   });
+
+  it('uses delayRef to avoid stale delay without retriggering debounce', () => {
+    assert.ok(
+      src.includes('delayRef'),
+      'Must use delayRef for stable delay access',
+    );
+  });
+
+  it('debounce effect depends only on searchTerm', () => {
+    const debounceEffect = src.match(
+      /useEffect\(\(\) => \{[\s\S]*?setDebouncedTerm\(searchTerm\)[\s\S]*?\}, \[searchTerm\]\)/,
+    );
+    assert.ok(
+      debounceEffect,
+      'Debounce effect must depend only on searchTerm to prevent reset loops',
+    );
+  });
 });
