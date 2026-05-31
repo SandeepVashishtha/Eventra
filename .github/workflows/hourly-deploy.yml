@@ -1,0 +1,41 @@
+name: Hourly Vercel Deploy
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # Runs at the top of every hour (UTC)
+
+  workflow_dispatch:       # Also allows manual trigger from GitHub Actions UI
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Linting
+        run: npm run lint
+
+      - name: Run Tests
+        run: npm test
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Pull Vercel Config
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

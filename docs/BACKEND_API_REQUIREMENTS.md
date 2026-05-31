@@ -477,6 +477,20 @@ GET /api/events/{id}/availability
 The availability response schema is fully documented in Swagger/OpenAPI and includes:
 
 * Event capacity
+### Capacity Validation
+
+The backend enforces a minimum event capacity of `1`.
+
+Valid values:
+- 1
+- 10
+- 100
+
+Invalid values:
+- 0
+- Negative numbers
+
+Requests with capacity less than `1` will fail validation and return a `400 Bad Request` response.
 * Current registered count
 * Remaining spots
 * Full/available status
@@ -860,7 +874,31 @@ PUT /api/users/profile
 }
 ```
 
-**Success Response `200`:** Updated user profile object
+### Validation Rules
+
+| Field | Validation |
+|---------|---------|
+| firstName | Required |
+| lastName | Required |
+
+### Error Responses
+
+- `400` Validation error
+- `401` Unauthorized
+- `404` User not found
+
+### Success Response `200`
+
+```json
+{
+  "id": 42,
+  "firstName": "John",
+  "lastName": "Doe",
+  "username": "johndoe",
+  "email": "john@example.com",
+  "role": "ATTENDEE"
+}
+```
 
 ---
 

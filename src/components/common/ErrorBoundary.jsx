@@ -152,7 +152,7 @@ ${sessionSnapshot}
 Language: ${navigator.language}
 Platform: ${navigator.platform}
 Cookies Enabled: ${navigator.cookieEnabled}
-==================================`;
+--- End of Report ---`;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -186,13 +186,13 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    const { errorId } = this.state;
-    this.setState({ errorInfo });
+    const errorId = this.state.errorId ?? generateErrorId();
+    this.setState({ errorInfo, errorId });
     persistErrorLog(errorId, error, errorInfo);
 
     try {
       logError(error, errorInfo);
-    } catch (_) {}
+    } catch (_) { }
 
     console.error("Captured by ErrorBoundary:", error, errorInfo);
   }
@@ -258,7 +258,7 @@ class ErrorBoundary extends React.Component {
         try {
           const blob = new Blob([report], { type: "text/plain" });
           const url = URL.createObjectURL(blob);
-          window.open(url, "_blank");
+          window.open(url, "_blank", "noopener,noreferrer");
         } catch (_) {}
       });
   };
@@ -475,7 +475,7 @@ class ErrorBoundary extends React.Component {
                 ? "Hide diagnostic information"
                 : "Show diagnostic information"
             }
-          >
+           aria-label="button">
             <svg
               width="14"
               height="14"

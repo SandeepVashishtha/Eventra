@@ -4,6 +4,10 @@ import { safeJsonParse } from "./safeJsonParse.js";
 export const REMINDERS_STORAGE_KEY = "eventra_event_reminders";
 export const REMINDERS_CHANGED_EVENT = "eventraRemindersChanged";
 
+// Maximum number of active reminders stored in localStorage.
+// Prevents unbounded localStorage growth; oldest entry is dropped when exceeded.
+export const MAX_REMINDERS = 100;
+
 export const REMINDER_TIMINGS = [
   { value: "1d", label: "1 day before", minutesBefore: 24 * 60 },
   { value: "1h", label: "1 hour before", minutesBefore: 60 },
@@ -100,6 +104,12 @@ export const addReminder = (event, timing) => {
   }
 
   const timingConfig = REMINDER_TIMINGS.find((item) => item.value === timing);
+
+  // Store only the minimal display fields needed to render the reminder UI
+  // and fire the browser notification. The event description is intentionally
+  // excluded — it can be large, may contain organizer contact details, and is
+  // not needed at notification time. Full event data is fetched on demand when
+  // the user taps the notification.
   const nextReminder = {
     id,
     eventId: normalizeEventId(event.id),
@@ -109,17 +119,23 @@ export const addReminder = (event, timing) => {
     createdAt: new Date().toISOString(),
     event: {
       id: event.id,
-      title: event.title,
-      date: event.date,
-      time: event.time,
-      location: event.location,
-      type: event.type,
-      image: event.image,
-      description: event.description,
+      title: event.title ?? "",
+      date: event.date ?? "",
+      time: event.time ?? "",
+      location: event.location ?? "",
+      type: event.type ?? event.category ?? "",
+      image: event.image ?? event.imageUrl ?? "",
     },
   };
 
-  const nextReminders = [nextReminder, ...reminders];
+  let nextReminders = [nextReminder, ...reminders];
+
+  // Enforce MAX_REMINDERS cap: drop the oldest entry (last in the prepended
+  // list, which is sorted newest-first) when exceeded.
+  if (nextReminders.length > MAX_REMINDERS) {
+    nextReminders = nextReminders.slice(0, MAX_REMINDERS);
+  }
+
   writeReminders(nextReminders);
   return { ok: true, reminder: nextReminder, reminders: nextReminders };
 };

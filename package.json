@@ -3,17 +3,17 @@
   "version": "1.0.0",
   "description": "A modern website for Eventra - platform for builders",
   "private": true,
+  "type": "module",
   "engines": {
-    "node": ">=20.19.0",
+    "node": ">=22.x",
     "npm": ">=9.6.4"
   },
   "dependencies": {
-    "@headlessui/react": "^2.2.8",
+    "@headlessui/react": "2.2.10",
     "@heroicons/react": "^2.0.16",
-    "@react-oauth/google": "^0.13.5",
-    "@sentry/react": "10.54.0",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/postcss": "4.3.0",
+    "@vitejs/plugin-react": "6.0.2",
     "aos": "^2.3.4",
     "axios": "^1.16.1",
     "bcryptjs": "3.0.3",
@@ -26,12 +26,11 @@
     "google-auth-library": "10.6.2",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "2.3.8",
-    "jsdom": "29.1.1",
+    "idb-keyval": "6.2.4",
     "jsonwebtoken": "9.0.3",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.542.0",
     "marked": "18.0.4",
-    "prop-types": "^15.8.1",
     "react": "^19.2.6",
     "react-big-calendar": "^1.19.4",
     "react-countup": "^6.5.3",
@@ -40,35 +39,36 @@
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.6.0",
     "react-intersection-observer": "^10.0.3",
-    "react-is": "^19.2.6",
     "react-qr-code": "^2.0.21",
     "react-router-dom": "^7.15.1",
     "react-toastify": "^11.1.0",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "vite": "8.0.14"
   },
   "scripts": {
     "dev": "vite",
     "start": "vite",
+    "vercel-build": "node scripts/validate-env.js && vite build",
     "prebuild": "node scripts/validate-env.js",
     "build": "vite build",
     "build:fast": "cross-env GENERATE_SOURCEMAP=false vite build",
     "preview": "vite preview",
     "validate-env": "node scripts/validate-env.js",
     "test": "npm run test:unit",
-    "test:unit": "node tests/eventPaginationUtils.test.mjs && node tests/routeSearchUtils.test.mjs && node tests/userNameUtils.test.mjs && node tests/relativeTime.test.mjs && node tests/registerUtils.test.mjs && node tests/bookmarkUtils.test.mjs && node tests/auth.test.mjs && node tests/passwordResetEndpoint.test.mjs && node tests/eventDraftUtils.test.mjs && node tests/exportCsv.test.mjs && node tests/githubProxy.test.mjs && node tests/hackathonFilterUtils.test.mjs && node tests/loginEndpoint.test.mjs && node tests/googleOAuthEndpoint.test.mjs && node tests/logoutEndpoint.test.mjs",
+    "test:unit": "node tests/eventPaginationUtils.test.mjs && node tests/routeSearchUtils.test.mjs && node tests/userNameUtils.test.mjs && node tests/relativeTime.test.mjs && node tests/safeJsonParse.test.mjs && node tests/registerUtils.test.mjs && node tests/bookmarkUtils.test.mjs && node tests/auth.test.mjs && node tests/passwordResetEndpoint.test.mjs && node tests/eventDraftUtils.test.mjs && node tests/exportCsv.test.mjs && node tests/githubProxy.test.mjs && node tests/hackathonFilterUtils.test.mjs && node tests/loginEndpoint.test.mjs && node tests/googleOAuthEndpoint.test.mjs && node tests/logoutEndpoint.test.mjs && node tests/colorTokens.test.mjs && node tests/themeConsistency.test.mjs && node tests/sseMultiplexer.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/cspReporting.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/readTimeUtils.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/secureStorage.test.mjs",
     "test:e2e": "playwright test",
-    "lint": "eslint src --ext .js,.jsx --max-warnings=-1",
-    "lint:fix": "eslint src --ext .js,.jsx --fix",
+    "lint": "eslint src --max-warnings=-1",
+    "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
     "prepare": "node scripts/setup-git-config.js",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "jest": {
+    "moduleNameMapper": {
+      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
+      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js"
+    }
   },
   "browserslist": {
     "production": [
@@ -82,6 +82,15 @@
       "last 1 safari version"
     ]
   },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "*.{css,json,md}": [
+      "prettier --write"
+    ]
+  },
   "devDependencies": {
     "@playwright/test": "1.60.0",
     "@storybook/addon-a11y": "^10.4.1",
@@ -89,19 +98,20 @@
     "@storybook/addon-onboarding": "^10.4.1",
     "@storybook/preset-create-react-app": "10.4.1",
     "@storybook/react-webpack5": "^10.4.1",
-    "@tailwindcss/line-clamp": "^0.4.4",
+    "@testing-library/react": "16.3.2",
     "@vitejs/plugin-react": "6.0.2",
     "autoprefixer": "^10.4.21",
-    "bcryptjs": "3.0.3",
     "cross-env": "^10.1.0",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-storybook": "10.4.1",
-    "jsonwebtoken": "9.0.3",
+    "globals": "17.6.0",
+    "lint-staged": "^15.5.1",
     "postcss": "8.5.15",
     "prettier": "^3.2.5",
     "storybook": "^10.4.1",
     "tailwindcss": "^4.3.0",
     "typescript": "^4.9.5",
-    "vite": "8.0.14",
     "webpack": "^5.107.2"
   },
   "overrides": {
@@ -110,6 +120,12 @@
     "uuid": "^11.1.1",
     "underscore": "^1.13.8",
     "@tootallnate/once": "^2.0.1"
+  },
+  "optionalDependencies": {
+    "lightningcss-linux-x64-gnu": "1.32.0",
+    "lightningcss-linux-x64-musl": "1.32.0",
+    "@rolldown/binding-linux-x64-gnu": "1.0.2",
+    "@rolldown/binding-linux-x64-musl": "1.0.2"
   },
   "_gssoc_comment_dx": "// DEVELOPER EXPERIENCE: Integrated pre-commit validations to prevent broken or unformatted scripts from being pushed upstream."
 }

@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
+import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb, Code2, GitBranch, BookOpen, Users, CheckCircle,
   Trophy, Clock, Star, ArrowRight, Search, Filter, ExternalLink,
-  Calendar, TrendingUp, Award, MessageCircle, Zap, Target, Globe,
-  Copy, Bell, WifiOff, Loader2
+  Calendar, Award, MessageCircle, Zap, Target, Globe,
+  Copy, Bell, WifiOff
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -329,21 +329,6 @@ const Skeleton = ({ className }) => (
   <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className}`} aria-hidden="true" />
 );
 
-const MentorCardSkeleton = () => (
-  <div className="p-4 bg-white dark:bg-gray-700/50 rounded-xl border dark:border-gray-600 flex items-center gap-3">
-    <Skeleton className="w-12 h-12 rounded-full" />
-    <div className="flex-1 space-y-2">
-      <Skeleton className="h-4 w-24" />
-      <Skeleton className="h-3 w-16" />
-      <div className="flex gap-1">
-        <Skeleton className="h-4 w-12 rounded-full" />
-        <Skeleton className="h-4 w-16 rounded-full" />
-      </div>
-    </div>
-    <Skeleton className="h-8 w-16 rounded-lg" />
-  </div>
-);
-
 // Toast Component
 const ToastContainer = ({ toasts, onClose }) => (
   <div className="fixed bottom-4 right-4 z-50 space-y-2" role="region" aria-live="polite" aria-label="Notifications">
@@ -388,7 +373,7 @@ const GSSoCContribution = () => {
   // State with localStorage persistence
   const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
-  const [userStats, setUserStats] = useState(() => {
+  const [userStats] = useState(() => {
     const saved = localStorage.getItem("gssoc.userStats");
     return saved ? JSON.parse(saved) : {
       issuesClaimed: 3,
@@ -479,14 +464,14 @@ const GSSoCContribution = () => {
       opacity: 1, 
       transition: { 
         duration: prefersReducedMotion ? 0 : 0.4,
-        ease: [0.22, 1, 0.36, 1] // smooth cubic-bezier
+        ease: [0.22, 1, 0.36, 1]
       } 
     }
   }), [prefersReducedMotion]);
   
   // Stats section visibility
   const statsRef = useRef(null);
-  const areStatsInView = useInView(statsRef, { once: true, margin: "-100px" });
+  useInView(statsRef, { once: true, margin: "-100px" });
   
   if (isLoading) {
     return (
@@ -520,7 +505,7 @@ const GSSoCContribution = () => {
           >
             <div className="w-[95%] mx-auto py-2 px-4 flex items-center gap-2 text-yellow-800 dark:text-yellow-300 text-sm">
               <WifiOff className="w-4 h-4" aria-hidden="true" />
-              <span>You're offline. Changes will sync when you're back online.</span>
+              <span>You&apos;re offline. Changes will sync when you&apos;re back online.</span>
             </div>
           </motion.div>
         )}
@@ -530,7 +515,7 @@ const GSSoCContribution = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-[95%] mx-auto my-10 bg-white dark:bg-black min-h-screen pb-12"
+        className="w-[95%] mx-auto my-10 bg-bg min-h-screen pb-12"
         role="main"
       >
         {/* 🎯 HERO SECTION */}
@@ -605,7 +590,7 @@ const GSSoCContribution = () => {
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => window.open("https://gssoc.girlscript.tech", "_blank")}
+                onClick={() => window.open("https://gssoc.girlscript.tech", "_blank", "noopener,noreferrer")}
                 className="w-full mt-3 sm:mt-4 py-2.5 bg-white text-indigo-600 font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-50 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-600"
                 aria-label="View GSSoC leaderboard (opens in new tab)"
               >
@@ -654,7 +639,7 @@ const GSSoCContribution = () => {
         {/* 🎮 Achievements & Resources */}
         <motion.section variants={itemVariants} className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Achievements */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2 mb-4">
               <Award className="w-5 h-5 text-yellow-500" aria-hidden="true" />
               <h3 className="font-semibold text-gray-900 dark:text-white">Your Achievements</h3>
@@ -674,7 +659,7 @@ const GSSoCContribution = () => {
           </article>
 
           {/* Resources with Search & Filter */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-blue-500" aria-hidden="true" />
@@ -720,7 +705,7 @@ const GSSoCContribution = () => {
             {/* Resource List */}
             <div className="space-y-2 max-h-48 overflow-y-auto pr-2" role="list" aria-label="Resource list">
               <AnimatePresence mode="popLayout">
-                {filteredResources.map((resource, idx) => (
+                {filteredResources.map((resource) => (
                   <ResourceItem 
                     key={resource.title} 
                     resource={resource} 
@@ -736,13 +721,13 @@ const GSSoCContribution = () => {
         </motion.section>
 
         {/* 👥 Mentors */}
-        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
+        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-indigo-500" aria-hidden="true" />
               <h3 className="font-semibold text-gray-900 dark:text-white">Meet Your Mentors</h3>
             </div>
-            <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded">
+            <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded" aria-label="button">
               View All <ArrowRight className="w-3 h-3" aria-hidden="true" />
             </button>
           </div>
@@ -755,7 +740,7 @@ const GSSoCContribution = () => {
         </motion.section>
 
         {/* 📅 Timeline */}
-        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
+        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
           <div className="flex items-center gap-2 mb-4 sm:mb-6">
             <Calendar className="w-5 h-5 text-purple-500" aria-hidden="true" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Program Timeline</h3>
@@ -797,7 +782,7 @@ const GSSoCContribution = () => {
           </article>
 
           {/* Best Practices */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border dark:border-gray-700">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" aria-hidden="true" />
@@ -830,13 +815,13 @@ const GSSoCContribution = () => {
             className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-gray-900 hover:bg-gray-800 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-black"
           >
             <BookOpen className="w-4 h-4" aria-hidden="true" />
-            Contributor's Guide
+            Contributor&apos;s Guide
           </motion.button>
 
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => window.open("https://github.com/SandeepVashishtha/Eventra", "_blank")}
+            onClick={() => window.open("https://github.com/SandeepVashishtha/Eventra", "_blank", "noopener,noreferrer")}
             className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 dark:focus:ring-offset-black"
           >
             <GitBranch className="w-4 h-4" aria-hidden="true" />
@@ -847,7 +832,7 @@ const GSSoCContribution = () => {
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => window.open("https://discord.gg/eventra", "_blank")}
+            onClick={() => window.open("https://discord.gg/eventra", "_blank", "noopener,noreferrer")}
             className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-[#5865F2] hover:bg-[#4752C4] shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#5865F2] focus:ring-offset-2 dark:focus:ring-offset-black"
           >
             <MessageCircle className="w-4 h-4" aria-hidden="true" />
