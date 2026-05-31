@@ -10,6 +10,7 @@ import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
   const navRef = useRef(null);
 
   const { user, isAuthenticated, logout } = useAuth();
@@ -56,6 +57,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
 
           setScrollProgress(progress);
+          setScrolled(scrollTop > 12);
           ticking = false;
         });
 
@@ -75,7 +77,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className="sticky top-0 left-0 w-full h-20 bg-navbar/95 backdrop-blur-md border-b border-border z-[200] transition-all duration-300"
+        className={`sticky top-0 left-0 w-full h-20 z-[200] transition-all duration-300 ${scrolled ? 'bg-navbar/95 backdrop-blur-md border-b border-border' : 'bg-transparent border-b border-transparent'}`}
       >
         <div className="h-full px-4 flex items-center justify-between gap-4">
           <Link to="/" aria-label="Eventra home logo template" className="flex items-center shrink-0 min-w-0">

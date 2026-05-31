@@ -202,7 +202,7 @@ const Hero = () => {
 
       {/* Hero Content */}
       <motion.div
-        className="relative z-10 pt-16 sm:pt-20 md:pt-24 px-4 sm:px-6 lg:px-8"
+        className="relative z-10 pt-20 sm:pt-24 md:pt-28 px-4 sm:px-6 lg:px-8"
         style={{
           y: isTouch || prefersReducedMotion ? 0 : yText,
           opacity: isTouch ? 1 : opacityHero,
