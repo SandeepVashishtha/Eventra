@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Globe, Users, Code, Activity, MapPin, Search, Filter, 
-  Moon, Sun, ZoomIn, ZoomOut, X, Clock,
+  ZoomIn, ZoomOut, X, Clock,
   TrendingUp, GitBranch, ExternalLink 
 } from "lucide-react";
 import "./CollaborationNetworkMap.css";
@@ -85,7 +85,6 @@ export default function CollaborationNetworkMap() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("All");
   const [selectedActivity, setSelectedActivity] = useState("All");
-  const [darkMode, setDarkMode] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [showConnections, setShowConnections] = useState(true);
   const [particlesEnabled, setParticlesEnabled] = useState(true);
@@ -133,11 +132,6 @@ export default function CollaborationNetworkMap() {
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
-  // Theme toggle
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
-
   const getCoordinates = useCallback((id) => hubCoordinates[id] || { x: 0, y: 0 }, [hubCoordinates]);
 
   const getPopupStyle = useCallback((hub) => {
@@ -164,7 +158,7 @@ export default function CollaborationNetworkMap() {
   }, [pinnedHub]);
 
   return (
-    <section className={`cnm-section ${darkMode ? "dark-theme" : "light-theme"}`}>
+    <section className="cnm-section light-theme">
       <div className="cnm-container">
         
         {/* Header with Controls */}
@@ -175,13 +169,6 @@ export default function CollaborationNetworkMap() {
               <span>Global Connectivity</span>
             </div>
             <div className="cnm-controls">
-              <button 
-                className="cnm-control-btn"
-                onClick={() => setDarkMode(!darkMode)}
-                aria-label="Toggle theme"
-              >
-                {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-              </button>
               <button 
                 className="cnm-control-btn"
                 onClick={() => setZoom(z => Math.min(z + 0.2, 2))}
@@ -419,7 +406,7 @@ export default function CollaborationNetworkMap() {
                     cx={hub.x} 
                     cy={hub.y} 
                     r={hubSize} 
-                    fill={darkMode ? "#ffffff" : "#1e293b"}
+                    fill="#1e293b"
                     stroke={config.color}
                     strokeWidth="2.5"
                     className="node-core"
@@ -442,7 +429,7 @@ export default function CollaborationNetworkMap() {
                     y={hub.y + hubSize + 18} 
                     textAnchor="middle" 
                     className="node-label"
-                    fill={darkMode ? "#e2e8f0" : "#334155"}
+                    fill="#334155"
                     fontSize="11"
                     fontWeight="500"
                   >

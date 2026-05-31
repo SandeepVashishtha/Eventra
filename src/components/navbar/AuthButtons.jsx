@@ -42,9 +42,9 @@ const AuthButtons = () => {
           onClick={toggleMenu}
           aria-expanded={isOpen}
           aria-haspopup="true"
-          className="flex items-center gap-2 rounded-full transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          className="flex items-center gap-2 rounded-full transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold text-text-light hover:bg-bg-secondary hover:text-text transition-colors">
             Profile
             <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
           </div>
@@ -53,14 +53,14 @@ const AuthButtons = () => {
         {isOpen && (
           <div
             role="menu"
-            className="absolute right-0 mt-3 w-64 origin-top-right rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+            className="absolute right-0 mt-3 w-64 origin-top-right rounded-xl border border-border bg-navbar shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
           >
             <div className="space-y-1">
               <Link
                 to="/about"
                 role="menuitem"
                 onClick={closeMenu}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light hover:bg-bg hover:text-text transition-colors"
               >
                 <Info className="w-4 h-4" />
                 About
@@ -69,20 +69,20 @@ const AuthButtons = () => {
                 to="/faq"
                 role="menuitem"
                 onClick={closeMenu}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light hover:bg-bg hover:text-text transition-colors"
               >
                 <HelpCircle className="w-4 h-4" />
                 Frequently Asked Questions
               </Link>
             </div>
             
-            <div className="h-px bg-gray-100 dark:bg-gray-800 my-2" />
+            <div className="h-px bg-border my-2" />
             
             <Link
               to="/login"
               role="menuitem"
               onClick={closeMenu}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:bg-bg transition-colors"
             >
               <LogIn className="w-4 h-4" />
               Sign In
@@ -93,7 +93,7 @@ const AuthButtons = () => {
 
       <Link
         to="/signup"
-        className="px-4 py-2 bg-yellow-200 text-black rounded-lg text-sm font-semibold hover:bg-yellow-300 dark:bg-amber-800 dark:text-white dark:hover:bg-amber-900 transition-colors whitespace-nowrap"
+        className="px-5 py-2 rounded-full text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-colors whitespace-nowrap shadow-premium-sm"
       >
         Get Started
       </Link>

@@ -84,7 +84,7 @@ const ProfileMenu = ({ user, logout }) => {
         }
         aria-expanded={isOpen}
         aria-haspopup="true"
-        className="flex items-center gap-2 rounded-full transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
+        className="flex items-center gap-2 rounded-full transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
         {user?.profilePicture ? (
           <img
@@ -94,13 +94,13 @@ const ProfileMenu = ({ user, logout }) => {
             className="w-10 h-10 rounded-full object-cover border-2 border-transparent hover:border-blue-500 transition-colors"
           />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center hover:border-blue-500 transition-colors">
-            <User className="text-gray-600 dark:text-gray-300 w-5 h-5" />
+          <div className="w-10 h-10 rounded-full bg-card-bg border-2 border-border flex items-center justify-center hover:border-primary transition-colors">
+            <User className="text-text-light w-5 h-5" />
           </div>
         )}
 
         <ChevronDown
-          className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+          className={`w-4 h-4 text-text-light transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
         />
@@ -111,15 +111,15 @@ const ProfileMenu = ({ user, logout }) => {
         <div
           role="menu"
           aria-orientation="vertical"
-          className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-premium-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+          className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-border bg-navbar shadow-premium-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
         >
           {/* User Info */}
-          <div className="px-3 py-2 mb-2 border-b border-gray-100 dark:border-gray-800">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+          <div className="px-3 py-2 mb-2 border-b border-border">
+            <p className="text-sm font-semibold text-text truncate">
               {user?.name || user?.username || "User"}
             </p>
 
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+            <p className="text-xs text-text-light truncate">
               {user?.email || "Logged in"}
             </p>
           </div>
@@ -135,7 +135,7 @@ const ProfileMenu = ({ user, logout }) => {
                   to={item.path}
                   role="menuitem"
                   onClick={closeMenu}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light hover:bg-bg hover:text-text transition-colors"
                 >
                   <Icon className="w-4 h-4" />
                   {item.label}
@@ -145,7 +145,7 @@ const ProfileMenu = ({ user, logout }) => {
           </div>
 
           {/* Divider */}
-          <div className="h-px bg-gray-100 dark:bg-gray-800 my-2" />
+          <div className="h-px bg-border my-2" />
 
           {/* Logout */}
           <button
@@ -155,7 +155,7 @@ const ProfileMenu = ({ user, logout }) => {
               closeMenu();
               logout();
             }}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             Logout

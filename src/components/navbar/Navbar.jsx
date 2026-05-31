@@ -1,8 +1,6 @@
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
@@ -16,7 +14,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
-  const { isDarkMode, toggleTheme } = useTheme();
 
   useBodyScrollLock(isMobileMenuOpen);
   const handleCloseModals = useCallback(() => {
@@ -78,12 +75,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className="sticky top-0 left-0 w-full h-20 bg-navbar border-b border-border z-[200] transition-all duration-300"
+        className="sticky top-0 left-0 w-full h-20 bg-navbar/95 backdrop-blur-md border-b border-border z-[200] transition-all duration-300"
       >
         <div className="h-full px-4 flex items-center justify-between gap-4">
           <Link to="/" aria-label="Eventra home logo template" className="flex items-center shrink-0 min-w-0">
             <div className="flex min-w-0 items-center gap-2 xl:gap-3">
-              <div className="flex h-10 w-10 xl:h-11 xl:w-11 flex-none items-center justify-center overflow-hidden rounded-xl bg-gray-100 p-1 shadow-premium-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+              <div className="flex h-10 w-10 xl:h-11 xl:w-11 flex-none items-center justify-center overflow-hidden rounded-xl bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
                 <img
                   src="/favicon.png"
                   alt="Eventra Brand Logo"
@@ -102,24 +99,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           <div className="flex items-center gap-2 xl:gap-4 shrink-0">
           {/* Hide these on mobile */}
           <div className="hidden sm:flex items-center gap-2 xl:gap-4">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
-              aria-pressed={isDarkMode}
-              className="theme-toggle relative flex items-center justify-center w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-800 text-black dark:text-white shadow-premium-sm hover:scale-105 hover:shadow-premium-md transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-            >
-              <div className="transition-transform duration-500">
-                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </div>
-            </button>
             <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             </div>
             <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
           </div>
         </div>
         <div className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
-          <div className="h-full bg-blue-500 transition-all duration-100 ease-out" style={{ width: `${scrollProgress}%` }} />
+          <div className="h-full bg-primary transition-all duration-100 ease-out" style={{ width: `${scrollProgress}%` }} />
         </div>
       </nav>
     </>

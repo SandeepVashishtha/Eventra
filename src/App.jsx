@@ -32,7 +32,6 @@ const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/Event
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
-const ThemeCustomizerDrawer = lazy(() => import("./components/common/ThemeCustomizerDrawer"));
 const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
 const OnboardingChecklist = lazy(() => import("./components/user/OnboardingChecklist"));
 const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
@@ -155,7 +154,7 @@ function App() {
 
                 <main
                   id="main-content"
-                  className="relative z-10 min-h-[85vh] bg-white dark:bg-slate-950 text-black dark:text-white transition-colors duration-300"
+                  className="relative z-10 min-h-[85vh] bg-bg text-text transition-colors duration-300"
                 >
                   <PageTransition>
                     <ErrorBoundary>
@@ -201,9 +200,6 @@ function App() {
                 </Suspense>
                 <Suspense fallback={null}>
                   <FeedbackButton />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <ThemeCustomizerDrawer />
                 </Suspense>
                 <Suspense fallback={null}>
                   <SessionRecovery />
