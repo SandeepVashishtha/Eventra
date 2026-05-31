@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { toast } from "react-toastify";
 import { useAnalyticsStream, SSE_STATUS } from "../../context/RealTimeContext";
+import BudgetPlanner from "./BudgetPlanner";
 
 // =========================================================================
 // CONSTANTS & INITIAL DATA
@@ -143,6 +144,7 @@ const AnalyticsDashboard = () => {
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
+const [activeTab, setActiveTab] = useState('analytics');
 
   // Real-time SSE stream — takes priority over local simulation when connected
   const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
@@ -302,6 +304,26 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="space-y-8 text-slate-800 dark:text-slate-100">
+  {/* Tab Navigation */}
+  <div className="flex gap-2 mb-4">
+    <button
+      onClick={() => setActiveTab('analytics')}
+      className={`px-4 py-2 rounded ${activeTab === 'analytics' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+    >
+      Analytics
+    </button>
+    <button
+      onClick={() => setActiveTab('budget')}
+      className={`px-4 py-2 rounded ${activeTab === 'budget' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+    >
+      Budget
+    </button>
+  </div>
+  {activeTab === 'budget' ? (
+    <BudgetPlanner />
+  ) : (
+    // Original analytics UI starts here
+    <>
       {/* CONTROL BANNER */}
       <div className="flex flex-col gap-4 p-5 bg-white border shadow-sm sm:flex-row sm:items-center sm:justify-between dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl">
         <div>
@@ -521,7 +543,9 @@ const AnalyticsDashboard = () => {
           ))}
         </div>
       </div>
-    </div>
+      </>
+  )}
+</div>
   );
 };
 

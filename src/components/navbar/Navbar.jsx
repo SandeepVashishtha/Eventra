@@ -1,10 +1,4 @@
-import {
-  memo,
-  useRef,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Moon, Sun } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -89,7 +83,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         <div className="h-full px-4 flex items-center justify-between gap-4">
           <Link to="/" aria-label="Eventra home logo template" className="flex items-center shrink-0 min-w-0">
             <div className="flex min-w-0 items-center gap-2 xl:gap-3">
-              <div className="flex h-10 w-10 xl:h-11 xl:w-11 flex-none items-center justify-center overflow-hidden rounded-xl bg-gray-100 p-1 shadow-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+              <div className="flex h-10 w-10 xl:h-11 xl:w-11 flex-none items-center justify-center overflow-hidden rounded-xl bg-gray-100 p-1 shadow-premium-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
                 <img
                   src="/favicon.png"
                   alt="Eventra Brand Logo"
@@ -113,7 +107,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               onClick={toggleTheme}
               aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
               aria-pressed={isDarkMode}
-              className="theme-toggle relative flex items-center justify-center w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-800 text-black dark:text-white shadow-md hover:scale-110 hover:shadow-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="theme-toggle relative flex items-center justify-center w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-800 text-black dark:text-white shadow-premium-sm hover:scale-105 hover:shadow-premium-md transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <div className="transition-transform duration-500">
                 {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
@@ -124,7 +118,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
           </div>
         </div>
-        <div iv className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
           <div className="h-full bg-blue-500 transition-all duration-100 ease-out" style={{ width: `${scrollProgress}%` }} />
         </div>
       </nav>

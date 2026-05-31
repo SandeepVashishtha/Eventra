@@ -1,22 +1,8 @@
-import {
-  lazy,
-  Suspense,
-  useRef,
-  useState,
-  useEffect,
-} from "react";
+import { lazy, Suspense, useRef, useState, useEffect } from "react";
 
 import { NavLink, useLocation } from "react-router-dom";
 
-import {
-  Moon,
-  Sun,
-  Search,
-  ChevronDown,
-  Plus,
-  HelpCircle,
-  X,
-} from "lucide-react";
+import { Moon, Sun, Search, ChevronDown, Plus, HelpCircle, X } from "lucide-react";
 
 import { useTheme } from "../../context/ThemeContext";
 import { NAV_ITEMS } from "./constants/navItems";
@@ -177,7 +163,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                         isOpen
                           ? "block"
                           : "hidden group-hover/nav:block"
-                      } absolute top-full left-0 bg-white dark:bg-gray-800 shadow-lg rounded-md p-2 min-w-55 z-50 border border-gray-100 dark:border-gray-700 mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
+                      } absolute top-full left-0 bg-white dark:bg-gray-800 shadow-premium-md rounded-md p-2 min-w-55 z-50 border border-gray-100 dark:border-gray-700 mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
                 }
                 role={!vertical ? "menu" : undefined}
                 aria-label={`${item.name} submenu`}

@@ -66,7 +66,7 @@ export default function ThemeCustomizerDrawer() {
             transition={{ type: "spring", stiffness: 220, damping: 24 }}
             onWheel={handleScrollPropagation}
             onTouchMove={handleScrollPropagation}
-            className="w-full sm:w-[420px] h-full bg-white/70 dark:bg-slate-950/75 backdrop-blur-xl border-l border-slate-200/50 dark:border-slate-800/40 p-6 flex flex-col shadow-2xl relative overflow-hidden overscroll-contain"
+            className="w-full sm:w-[420px] h-full bg-white/70 dark:bg-slate-950/75 backdrop-blur-xl border-l border-slate-200/50 dark:border-slate-800/40 p-6 flex flex-col shadow-premium-lg relative overflow-hidden overscroll-contain"
             style={{ overscrollBehavior: "contain" }}
             data-lenis-prevent
           >
@@ -118,7 +118,7 @@ export default function ThemeCustomizerDrawer() {
                         onClick={() => setTheme(mode.id)}
                         className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 cursor-pointer font-bold text-xs transition-all ${
                           theme === mode.id
-                            ? "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-500 text-indigo-600 dark:text-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.25)]"
+                            ? "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-500 text-indigo-600 dark:text-indigo-400 shadow-glow-sm"
                             : "bg-white/40 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800/40 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                         }`}
                       >
@@ -147,7 +147,7 @@ export default function ThemeCustomizerDrawer() {
                           onClick={() => setActiveThemeId(themeOpt.id)}
                           className={`w-full p-4 rounded-2xl border text-left flex items-center justify-between cursor-pointer transition-all ${
                             isActive
-                              ? "bg-indigo-50/40 dark:bg-indigo-950/15 border-indigo-500 shadow-md shadow-indigo-500/5"
+                              ? "bg-indigo-50/40 dark:bg-indigo-950/15 border-indigo-500 shadow-premium-sm shadow-glow-sm"
                               : "bg-white/40 dark:bg-slate-900/30 border-slate-200/50 dark:border-slate-800/30 hover:border-slate-300 dark:hover:border-slate-700"
                           }`}
                         >

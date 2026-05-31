@@ -2,7 +2,7 @@ import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTran
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Search, Calendar, Trophy, Code, ExternalLink, ArrowRight } from "lucide-react";
+import { Search, Calendar, Trophy, Code, ExternalLink, ArrowRight, Users, Handshake } from "lucide-react";
 
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import eventsData from "../../Events/eventsMockData.json";
@@ -12,6 +12,10 @@ import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
+import RespawningText from "../../../components/visual/RespawningText";
+import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
+
+const CountUp = CountUpLib.default || CountUpLib;
 
 const MotionLink = motion(Link);
 
@@ -42,7 +46,7 @@ const fuse = new Fuse(allData, {
 const Hero = () => {
   const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | Home");
-  
+
   const phrases = [
     "Amazing Tech Events",
     "Exciting Hackathons Today",
@@ -59,12 +63,12 @@ const Hero = () => {
 
   const [isTouch, setIsTouch] = useState(false);
   const [isDark, setIsDark] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
+  const [/*isMobileView*/, setIsMobileView] = useState(false);
   const [statsReady, setStatsReady] = useState(false);
   const [index, setIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
-  
+
   const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
   const controls = useAnimation();
 
@@ -78,11 +82,11 @@ const Hero = () => {
       setIsDark(document.documentElement.classList.contains("dark"));
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    
+
     const onResize = () => {
       setIsMobileView(window.innerWidth <= 420);
     };
-    
+
     window.addEventListener("resize", onResize);
     return () => {
       observer.disconnect();
@@ -122,9 +126,27 @@ const Hero = () => {
   const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  const shapeTransforms = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) =>
-    useTransform(scrollYProgress, [0, 1], [0, i % 2 === 0 ? 220 - i * 20 : -150 + i * 15])
-  );
+  const shapeTransform0 = useTransform(scrollYProgress, [0, 1], [0, 220]);
+  const shapeTransform1 = useTransform(scrollYProgress, [0, 1], [0, -135]);
+  const shapeTransform2 = useTransform(scrollYProgress, [0, 1], [0, 180]);
+  const shapeTransform3 = useTransform(scrollYProgress, [0, 1], [0, -105]);
+  const shapeTransform4 = useTransform(scrollYProgress, [0, 1], [0, 140]);
+  const shapeTransform5 = useTransform(scrollYProgress, [0, 1], [0, -75]);
+  const shapeTransform6 = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  const shapeTransform7 = useTransform(scrollYProgress, [0, 1], [0, -45]);
+  const shapeTransform8 = useTransform(scrollYProgress, [0, 1], [0, 60]);
+
+  const shapeTransforms = [
+    shapeTransform0,
+    shapeTransform1,
+    shapeTransform2,
+    shapeTransform3,
+    shapeTransform4,
+    shapeTransform5,
+    shapeTransform6,
+    shapeTransform7,
+    shapeTransform8,
+  ];
 
   // ─── HANDLERS ──────────────────────────────────────────────────────────────
   const handleSearch = useCallback((query) => setSearchTerm(query), [setSearchTerm]);
@@ -184,18 +206,17 @@ const Hero = () => {
     { size: 50, pos: { top: "72%", left: "64%" }, light: "#10b981", dark: "#34d399" },
     { size: 34, pos: { top: "48%", left: "80%" }, light: "#eab308", dark: "#fcd34d" },
   ];
-
   const stats = [
-    { value: 1500, label: "Developers", suffix: "+" },
-    { value: 75, label: "Events", suffix: "+" },
-    { value: 30, label: "Partners", suffix: "+" },
+    { value: 1500, label: "Developers", suffix: "+", icon: Users },
+    { value: 75, label: "Events", suffix: "+", icon: Calendar },
+    { value: 30, label: "Partners", suffix: "+", icon: Handshake },
   ];
 
   const primaryBtn = "relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900";
   const secondaryBtn = `${primaryBtn} border border-transparent`;
 
   return (
-    <section 
+    <section
       ref={containerRef}
       aria-label="Hero section"
       className="relative overflow-hidden bg-gradient-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950 dark:via-slate-900/80 dark:to-black text-slate-900 dark:text-gray-100 pb-16 sm:pb-20 md:pb-24 border-b border-gray-100/60 dark:border-slate-800/60"
@@ -360,8 +381,7 @@ const Hero = () => {
                               exit={{ opacity: 0, y: 8 }}
                               className="text-center text-gray-500 dark:text-gray-400 py-8 text-sm"
                             >
-                              No results for{" "}
-                              <span className="font-medium text-gray-700 dark:text-gray-200">"{searchTerm}"</span>
+                              No results for <span className="font-medium text-gray-700 dark:text-gray-200">&quot;{searchTerm}&quot;</span>
                             </motion.div>
                           )}
                         </div>
@@ -371,27 +391,6 @@ const Hero = () => {
                 </ModernSearchInput>
               </div>
             </div>
-          </motion.div>
-
-          {/* Action Buttons */}
-          <motion.div variants={container} className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-5 mb-14">
-            {[
-              { to: "/events", label: "Explore Events", icon: "/assets/events.svg", color: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500", darkColor: "dark:bg-blue-700 dark:hover:bg-blue-600" },
-              { to: "/hackathons", label: "Join Hackathons", icon: "/assets/hackathons.svg", color: "bg-amber-500 hover:bg-amber-600 focus:ring-amber-400", darkColor: "dark:bg-amber-600 dark:hover:bg-amber-500" },
-              { to: "/about", label: "Learn More", icon: "/assets/learnmore.svg", color: "bg-pink-600 hover:bg-pink-700 focus:ring-pink-500", darkColor: "dark:bg-pink-700 dark:hover:bg-pink-600" },
-            ].map((btn, i) => (
-              <motion.div key={btn.to} variants={fadeUp}>
-                <Link
-                  to={btn.to}
-                  className={`${secondaryBtn} ${btn.color} ${btn.darkColor} text-white shadow-lg shadow-${btn.color.split('-')[1]}-200/40 dark:shadow-none`}
-                  aria-label={btn.label}
-                >
-                  <img src={btn.icon} alt="" className="w-5 h-5" aria-hidden="true" />
-                  <span>{btn.label}</span>
-                  <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-                </Link>
-              </motion.div>
-            ))}
           </motion.div>
 
           {/* Stats Cards */}
@@ -411,6 +410,9 @@ const Hero = () => {
                     whileHover={{ y: -4, transition: { duration: 0.2 } }}
                     className="flex flex-col items-center justify-center p-5 sm:p-6 bg-white/60 dark:bg-slate-900/50 backdrop-blur-md rounded-2xl border border-gray-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-shadow"
                   >
+                    <div className="mb-2 rounded-full bg-indigo-50/80 dark:bg-indigo-500/10 p-2 text-indigo-600 dark:text-indigo-400">
+                      <stat.icon className="h-5 w-5" aria-hidden="true" />
+                    </div>
                     <p className="text-3xl sm:text-4xl font-black mb-1.5 text-gray-900 dark:text-white tabular-nums">
                       {statsReady ? (
                         <CountUp start={0} end={Number.isFinite(stat.value) ? stat.value : 0} duration={2.2} suffix={stat.suffix || ""} />

@@ -251,22 +251,22 @@ export default async function handler(req, res) {
     }
 
     // -----------------------------------------------------------------------
-    // Get permissions based on roles
-    // -----------------------------------------------------------------------
-
-    const roles = user.roles || ["USER"];
-    const permissions = getPermissionsForRoles(roles);
-
-    // -----------------------------------------------------------------------
     // Generate JWT token
     // -----------------------------------------------------------------------
+    // Only identity claims are embedded in the token. Permissions are
+    // intentionally excluded: baking them into a 7-day JWT means a role
+    // change (demotion, suspension, permission revocation) cannot take
+    // effect until the token naturally expires. Callers that need the
+    // current permission set should derive it server-side from the user's
+    // roles on every request using getPermissionsForRoles(roles).
+
+    const roles = user.roles || ["USER"];
 
     const jwtPayload = {
       id: user.id,
       email: user.email,
       username: user.username,
       roles: roles,
-      permissions: permissions,
     };
 
     const token = jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -280,6 +280,10 @@ export default async function handler(req, res) {
     
     // Normalize EVENT_MANAGER to ORGANIZER for frontend compatibility
     const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
+
+    // Derive permissions fresh from the user's current roles so the response
+    // always reflects the latest role assignment, not a stale token snapshot.
+    const permissions = getPermissionsForRoles(roles);
 
     const userResponse = {
       id: user.id,
