@@ -97,15 +97,10 @@ Use `.env.example` as the source of truth.
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `REACT_APP_API_URL` | Yes | Backend API base URL |
-| `REACT_APP_USE_REAL_API` | No | Toggle real API vs local/mock flows |
-| `REACT_APP_SSE_URL` | No | Override SSE endpoint |
-| `DAYS_THRESHOLD` | No | Date threshold used by selected features |
-| `REACT_APP_EMAILJS_PUBLIC_KEY` | No | EmailJS integration |
-| `REACT_APP_EMAILJS_SERVICE_ID` | No | EmailJS integration |
-| `REACT_APP_EMAILJS_TEMPLATE_ID` | No | EmailJS integration |
-| `REACT_APP_FACEBOOK_APP_ID` | No | Facebook integration |
-| `REACT_APP_SENTRY_DSN` | No | Client telemetry/error reporting |
-| `VITE_GOOGLE_CLIENT_ID` | No | Google client ID |
+| `REACT_APP_GITHUB_REPO` | No | Public repo identifier used in metadata |
+| `REACT_APP_PUBLIC_URL` | No | Canonical public app URL |
+| `REACT_APP_VAPID_PUBLIC_KEY` | No | Public web-push key |
+| `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
 
 Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variables because they are exposed to the client bundle.
 
