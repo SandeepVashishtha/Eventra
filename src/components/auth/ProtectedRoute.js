@@ -16,10 +16,12 @@ const ProtectedRoute = ({
   const { isAuthenticated, hasRole, hasPermission, loading, user, token, logout } = useAuth();
   const location = useLocation();
 
-  // SECURITY: Distinguish between "never had a token" and "had a token that expired".
-  // Passing sessionExpired lets the Login page show a contextual banner
-  // instead of silently dropping the user on the login form.
-  const sessionExpired = requireAuth && !loading && !isAuthenticated() && !!token && !isTokenValid(token);
+  // 🔥 SECURITY FIX: Calculate true token expiration independent of stale React context state.
+  // This prevents expired tokens from bypassing the gatekeeper if isAuthenticated() hasn't updated yet.
+  const isTokenExpired = !!token && !isTokenValid(token);
+  
+  // sessionExpired now properly flags if the token died, even if the context still thinks they are logged in.
+  const sessionExpired = requireAuth && !loading && isTokenExpired;
 
   // Clean up stale session data cleanly via useEffect to avoid updating the
   // AuthProvider component's state during the ProtectedRoute render phase.
@@ -38,8 +40,8 @@ const ProtectedRoute = ({
     );
   }
 
-  // Check if authentication is required
-  if (requireAuth && !isAuthenticated()) {
+  // 🔥 SECURITY FIX: Actively block the route if the context says they are logged out OR the token mathematically expired.
+  if (requireAuth && (!isAuthenticated() || sessionExpired)) {
     return (
       <Navigate
         to={redirectTo}
