@@ -188,7 +188,7 @@ const HackathonLifecycle = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-20 px-4 md:px-8 transition-colors duration-300">
+    <div className="min-h-screen bg-bg text-text py-20 px-4 md:px-8 transition-colors duration-300">
       <div className="max-w-6xl mx-auto space-y-10">
         
         {/* HEADER SECTION */}
@@ -212,7 +212,7 @@ const HackathonLifecycle = () => {
               className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-2 border shadow-sm ${
                 isOrganizerMode
                   ? "bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700"
-                  : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  : "bg-card-bg border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-bg"
               }`}
             >
               <Settings className="w-4 h-4" />
@@ -239,7 +239,7 @@ const HackathonLifecycle = () => {
                   className={`p-3 rounded-xl border text-center transition-all ${
                     activePhaseIndex === idx
                       ? "bg-indigo-600 text-white border-indigo-600 shadow-md font-bold"
-                      : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      : "bg-card-bg border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-bg"
                   }`}
                 >
                   <div className="text-xs uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
@@ -266,8 +266,8 @@ const HackathonLifecycle = () => {
                 onClick={() => setSelectedPhaseId(phase.id)}
                 className={`relative p-5 rounded-2xl border text-left transition-all duration-300 ${
                   isSelected
-                    ? "bg-white dark:bg-slate-900 border-indigo-500 shadow-xl ring-2 ring-indigo-500/20"
-                    : "bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 shadow-sm"
+                    ? "bg-card-bg border-indigo-500 shadow-xl ring-2 ring-indigo-500/20"
+                    : "bg-card-bg/60 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 shadow-sm"
                 }`}
                 aria-current={isActive ? "step" : undefined}
               >
@@ -320,7 +320,7 @@ const HackathonLifecycle = () => {
             <div className="lg:col-span-2 space-y-6">
               
               {/* DESCRIPTION BOARD */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-sm">
+              <div className="bg-card-bg border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className={`p-3 rounded-xl bg-gradient-to-br ${selectedPhase.color} text-white`}>
                     <selectedPhase.icon className="w-6 h-6" />
@@ -340,7 +340,7 @@ const HackathonLifecycle = () => {
                 </p>
 
                 {/* Sub status bar */}
-                <div className="mt-6 flex flex-wrap gap-4 items-center p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="mt-6 flex flex-wrap gap-4 items-center p-4 bg-bg/40 rounded-2xl border border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                     <Clock className="w-4 h-4 text-slate-400" />
                     <strong>Timeline Status:</strong>
@@ -368,7 +368,7 @@ const HackathonLifecycle = () => {
               )}
 
               {/* RESOURCES & STARTER DOWNLOADS */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+              <div className="bg-card-bg border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-3">
                   📦 Phase Documents & Starter Kits
                 </h3>
@@ -377,7 +377,7 @@ const HackathonLifecycle = () => {
                     selectedPhase.resources.map((res, i) => (
                       <div
                         key={i}
-                        className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/20 dark:hover:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800/80 transition-colors"
+                        className="flex items-center justify-between p-3.5 bg-bg hover:bg-card-bg rounded-2xl border border-slate-100 dark:border-slate-800/80 transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
@@ -394,7 +394,7 @@ const HackathonLifecycle = () => {
                         </div>
                         <button
                           type="button"
-                          className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-indigo-600 dark:text-indigo-400 shadow-sm"
+                          className="px-3 py-1.5 rounded-xl bg-bg hover:bg-card-bg border border-slate-200 dark:border-slate-800 text-xs font-bold text-indigo-650 dark:text-indigo-400 shadow-sm"
                          aria-label="button">
                           Fetch File
                         </button>
@@ -412,8 +412,8 @@ const HackathonLifecycle = () => {
             {/* RIGHT COLUMN: DYNAMIC COMPONENT ACTIONS / CHECKLIST */}
             <div className="space-y-6">
               
-              {/* OPERATIONAL CHECKLIST */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+              {/* CHECKLIST */}
+              <div className="bg-card-bg border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-3">
                   ✔️ Phase Task Checklist
                 </h3>
@@ -451,7 +451,7 @@ const HackathonLifecycle = () => {
                       className={`flex w-full text-left items-start gap-3 p-3.5 rounded-2xl border transition-all ${
                         task.done
                           ? "bg-emerald-50/40 border-emerald-100 dark:bg-emerald-950/10 dark:border-emerald-900/30 text-emerald-800 dark:text-emerald-300"
-                          : "bg-white border-slate-200 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300"
+                          : "bg-bg border-slate-200 hover:border-slate-300 hover:bg-card-bg text-slate-700 dark:text-slate-300"
                       }`}
                     >
                       <div className="mt-0.5">

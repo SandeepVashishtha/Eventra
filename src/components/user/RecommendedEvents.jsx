@@ -26,7 +26,7 @@ const RecommendedEvents = () => {
 
   return (
 
-    <section className="bg-white dark:bg-black py-12 border-b border-gray-200 dark:border-gray-800">
+    <section className="bg-bg text-text py-12 border-b border-border">
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -103,12 +103,10 @@ const RecommendedEvents = () => {
                     flex
                     flex-wrap
                     gap-2
-                    bg-white
-                    dark:bg-[#050505]
+                    bg-card-bg
                     border-x
                     border-b
-                    border-gray-200
-                    dark:border-gray-800
+                    border-border
                     rounded-b-2xl
                   "
                 >
