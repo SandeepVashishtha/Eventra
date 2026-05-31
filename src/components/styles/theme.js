@@ -39,19 +39,19 @@ export const THEMES = {
         "--glow-color": "rgba(59, 130, 246, 0.2)"
       },
       dark: {
-        "--bg-color": "#0f172a",
+        "--bg-color": "#090e1a",
         "--text-color": "#f8fafc",
         "--text-color-light": "#cbd5e1",
-        "--border-color": "#334155",
-        "--card-bg-color": "#111827",
-        "--navbar-bg": "#111827",
-        "--sidebar-bg": "#0f172a",
-        "--input-bg": "#1e293b",
+        "--border-color": "#1e293b",
+        "--card-bg-color": "#111b2d",
+        "--navbar-bg": "#111b2d",
+        "--sidebar-bg": "#090e1a",
+        "--input-bg": "#152238",
         "--input-text": "#f8fafc",
-        "--table-bg": "#111827",
-        "--modal-bg": "#1e293b",
+        "--table-bg": "#111b2d",
+        "--modal-bg": "#152238",
         "--primary-color": "#3b82f6",
-        "--secondary-color": "#475569",
+        "--secondary-color": "#8f9fae",
         "--accent-gradient": "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
         "--glow-color": "rgba(99, 102, 241, 0.3)"
       }
