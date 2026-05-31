@@ -157,6 +157,24 @@ const EventRegistration = () => {
 
   // Load event data from backend API
   useEffect(() => {
+    let isCancelled = false;
+
+    const applyLoadedEvent = (nextEvent) => {
+      if (!isCancelled) {
+        setEvent(nextEvent);
+      }
+    };
+
+    const prefillAuthenticatedUser = () => {
+      if (!isCancelled && isAuthenticated() && user) {
+        setValues((prev) => ({
+          ...prev,
+          fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
+          email: user.email || "",
+        }));
+      }
+    };
+
     const loadEvent = async () => {
       setLoading(true);
 
@@ -164,7 +182,7 @@ const EventRegistration = () => {
       if (isHackathonPath) {
         const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
         if (foundMock) {
-          setEvent({
+          applyLoadedEvent({
             ...foundMock,
             date: foundMock.startDate,
             time: "10:00 AM",
@@ -173,14 +191,8 @@ const EventRegistration = () => {
             maxAttendees: 1500,
             status: foundMock.status,
           });
-          setLoading(false);
-          if (isAuthenticated() && user) {
-            setValues((prev) => ({
-              ...prev,
-              fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
-              email: user.email || "",
-            }));
-          }
+          if (!isCancelled) setLoading(false);
+          prefillAuthenticatedUser();
           return;
         }
       }
@@ -194,27 +206,24 @@ const EventRegistration = () => {
         const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
 
         if (response.status === 200 && response.data) {
+          if (isCancelled) return;
+
           const fetchedEvent = {
             ...response.data,
             status: getEventStatus(response.data),
           };
-          setEvent(fetchedEvent);
+          applyLoadedEvent(fetchedEvent);
           saveCachedEventDetail(fetchedEvent);
 
           // Pre-fill form if user is authenticated
-          if (isAuthenticated() && user) {
-            setValues((prev) => ({
-              ...prev,
-              fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
-              email: user.email || "",
-            }));
-          }
+          prefillAuthenticatedUser();
         }
       } catch (error) {
+        if (isCancelled) return;
         console.error("Failed to load event details:", error);
         const cached = getCachedEventDetail(eventId);
         if (cached?.event) {
-          setEvent({
+          applyLoadedEvent({
             ...cached.event,
             status: getEventStatus(cached.event),
             cacheInfo: {
@@ -230,7 +239,7 @@ const EventRegistration = () => {
         // Try fallback to hackathonsData as a last resort
         const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
         if (foundMock) {
-          setEvent({
+          applyLoadedEvent({
             ...foundMock,
             date: foundMock.startDate,
             time: "10:00 AM",
@@ -241,11 +250,14 @@ const EventRegistration = () => {
           });
         }
       } finally {
-        setLoading(false);
+        if (!isCancelled) setLoading(false);
       }
     };
 
     loadEvent();
+    return () => {
+      isCancelled = true;
+    };
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
   const checkEventCapacity = async (id, currentEvent) => {
