@@ -34,7 +34,7 @@ const footerLinks = {
     { name: "Documentation", href: "/documentation", icon: FaBook },
     { name: "Contributors", href: "/contributors", icon: FaUsers },
     { name: "Contributors Guide", href: "/contributorguide", icon: FaBook },
-    { name: "LeaderBoard", href: "/leaderBoard", icon: FaTrophy },
+    { name: "Leaderboard", href: "/leaderboard", icon: FaTrophy },
   ],
   support: [
     { name: "Help Center", href: "/helpcenter", icon: FaQuestionCircle },
