@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 const ScrollProgressBar = () => {
   // 🔥 FIX 1: Remove state entirely. Use a ref to directly mutate the DOM.

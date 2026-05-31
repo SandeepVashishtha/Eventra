@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-r
 import {
   EVENTS_PER_PAGE_OPTIONS,
   getVisiblePaginationPages,
-} from "./eventPaginationUtils";
+} from "./eventPaginationUtils.mjs";
 
 const PageButton = ({ children, isActive = false, onClick, ariaLabel }) => {
   return (
