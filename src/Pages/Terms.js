@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 
 // ─── Section data ────────────────────────────────────────────────────────────
@@ -154,8 +155,8 @@ const SECTIONS = [
         <p className="text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
           If you have any questions about these Terms of Service, please contact us:
         </p>
-        <a
-          href="/contact"
+        <Link
+          to="/contact"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 font-semibold text-sm hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-all duration-200"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,7 +164,7 @@ const SECTIONS = [
               d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
           Visit Contact Page
-        </a>
+        </Link>
       </>
     ),
   },
@@ -514,9 +515,9 @@ export const Terms = () => {
           </p>
           <p className="text-slate-500 dark:text-slate-500 text-sm">
             If you have questions, visit our{" "}
-            <a href="/contact" className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+            <Link to="/contact" className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
               Contact Page
-            </a>
+            </Link>
             .
           </p>
         </footer>

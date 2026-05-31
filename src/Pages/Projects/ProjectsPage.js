@@ -131,8 +131,8 @@ const ProjectGallery = () => {
           publicRequestConfig
         );
         const projectsData = response.data;
-        // only use API data if it is non-empty; otherwise fall back to mock
-        if (projectsData && projectsData.length > 0) {
+        // only use API data if it is a valid non-empty array; otherwise fall back to mock
+        if (Array.isArray(projectsData) && projectsData.length > 0) {
           setProjects(projectsData);
 
           // Attempt to fetch categories from API
@@ -142,20 +142,20 @@ const ProjectGallery = () => {
               publicRequestConfig
             );
             const categoriesData = categoriesResponse.data;
-            setCategories(["all", ...categoriesData]);
+            setCategories(["all", ...(Array.isArray(categoriesData) ? categoriesData : [])]);
           } catch {
             // derive categories from API project data if categories endpoint throws
-            const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
+            const uniqueCategories = [...new Set(projectsData.map(p => p?.category).filter(Boolean))];
             setCategories(["all", ...uniqueCategories]);
           }
           return; // exit successfully
         }
 
-        // --- MOCK DATA FALLBACK: API returned empty array ---
-        console.warn("Projects API returned empty array — loading mock data.");
+        // --- MOCK DATA FALLBACK: API returned empty or invalid array ---
+        console.warn("Projects API returned empty or invalid array — loading mock data.");
         setProjects(mockProjects);
         const mockUniqueCategories = [
-          ...new Set(mockProjects.map((p) => p.category)),
+          ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
         ];
         setCategories(["all", ...mockUniqueCategories]);
       } catch (err) {
@@ -167,23 +167,19 @@ const ProjectGallery = () => {
           );
           setProjects(mockProjects);
           const fallbackCategories = [
-            ...new Set(mockProjects.map((p) => p.category)),
+            ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
           ];
           setCategories(["all", ...fallbackCategories]);
           return;
         }
 
-        // Fall back to mock data in development so local work is unaffected
-        if (process.env.NODE_ENV === "development") {
-          console.warn("API unavailable — falling back to mock project data.");
-          setProjects(mockProjects);
-          const devUniqueCategories = [
-            ...new Set(mockProjects.map((p) => p.category)),
-          ];
-          setCategories(["all", ...devUniqueCategories]);
-        } else {
-          setError("Failed to load projects. Please try again later.");
-        }
+        // Always gracefully fall back to mock data when API is unavailable
+        console.warn("API unavailable — falling back to mock project data.");
+        setProjects(mockProjects);
+        const fallbackCategories = [
+          ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
+        ];
+        setCategories(["all", ...fallbackCategories]);
       } finally {
         setIsLoading(false);
       }
@@ -210,13 +206,13 @@ const ProjectGallery = () => {
         const query = searchQuery.toLowerCase();
 
         return (
-          project.title.toLowerCase().includes(query) ||
-          project.description.toLowerCase().includes(query) ||
-          project.category.toLowerCase().includes(query) ||
-          project.author.toLowerCase().includes(query) ||
-          (Array.isArray(project.techStack) &&
+          project?.title?.toLowerCase()?.includes(query) ||
+          project?.description?.toLowerCase()?.includes(query) ||
+          project?.category?.toLowerCase()?.includes(query) ||
+          project?.author?.toLowerCase()?.includes(query) ||
+          (Array.isArray(project?.techStack) &&
             project.techStack.some((tech) =>
-              tech.toLowerCase().includes(query)
+              tech?.toLowerCase()?.includes(query)
             ))
         );
       }
