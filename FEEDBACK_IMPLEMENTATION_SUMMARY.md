@@ -422,3 +422,7 @@ Once merged:
 ---
 
 **Happy coding! 🎊**
+
+
+### CSV Export Escaping Safeguards
+- Prepend single quote ' to cells starting with =, +, -, @ to avoid injection.
