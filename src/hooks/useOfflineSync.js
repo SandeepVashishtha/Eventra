@@ -54,6 +54,12 @@ const useOfflineSync = () => {
    */
   const resolveConflict = (item, serverState, signal) => {
     return new Promise((resolve) => {
+      // 🔥 FIX 1: Immediately resolve if the signal is already aborted. 
+      // addEventListener won't fire retroactively on an aborted signal, causing a 60s hang.
+      if (signal?.aborted) {
+        return resolve({ resolution: "server" });
+      }
+
       const AUTO_DISMISS_MS = 60_000; // 60 s — avoid hanging the sync loop forever
 
       const cleanup = () => {
@@ -94,7 +100,6 @@ const useOfflineSync = () => {
       );
     });
   };
-
 
     const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false) => {
       if (attempt > 0) {
@@ -207,6 +212,13 @@ const useOfflineSync = () => {
         let droppedCount = 0;
 
         for (const item of validatedQueue) {
+          // 🔥 FIX 2: Halt the zombie loop immediately if the session changed or component unmounted.
+          // This prevents making requests with stale tokens and protects IndexedDB from being falsely overwritten below.
+          if (conflictController.signal.aborted) {
+            logger.warn("[useOfflineSync] Sync aborted due to session change. Halting queue processing.");
+            return; 
+          }
+
           const retries = item.retryCount ?? 0;
 
           if (retries >= MAX_RETRIES) {
