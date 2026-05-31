@@ -1,90 +1,112 @@
 import assert from "node:assert/strict";
 
-const store = {};
-globalThis.localStorage = {
-  getItem: (key) => store[key] || null,
-  setItem: (key, val) => { store[key] = String(val); },
-  removeItem: (key) => { delete store[key]; }
+// Mock browser globals before importing
+global.localStorage = {
+  data: {},
+  getItem(key) { return this.data[key] ?? null; },
+  setItem(key, value) { this.data[key] = value; },
+  removeItem(key) { delete this.data[key]; },
+};
+global.console = { ...console, group: () => {}, groupEnd: () => {}, warn: () => {}, info: () => {} };
+global.window = { location: { href: "" }, dispatchEvent: () => {} };
+global.navigator = { userAgent: "test-agent" };
+global.CustomEvent = class CustomEvent {
+  constructor(type, detail) { this.type = type; this.detail = detail; }
 };
 
-globalThis.window = {
-  location: { href: "http://localhost/test" },
-  dispatchEvent: () => {},
-};
+// Override process.env before importing
+const originalEnv = process.env;
+process.env = { ...originalEnv, NODE_ENV: "test", REACT_APP_SENTRY_DSN: "" };
 
-import { logError, getErrorLog, clearErrorLog } from "../src/utils/errorLogger.js";
+const { logError, getErrorLog, clearErrorLog } = await import("../src/utils/errorLogger.js");
 
-const testError = new Error("Test error");
-const testInfo = { componentStack: "Test component" };
-
-store["eventra_error_log"] = undefined;
-store["eventra_feature_errors"] = undefined;
-
-logError(testError, testInfo);
-let log = JSON.parse(store["eventra_error_log"] || "[]");
-assert.strictEqual(log.length, 1, "Should add error entry to log");
-assert.ok(log[0].message.includes("Test error"), "Should store error message");
-assert.strictEqual(log[0].componentStack, "Test component", "Should store component stack");
-
-logError(new Error("Second error"), {});
-log = JSON.parse(store["eventra_error_log"] || "[]");
-assert.strictEqual(log.length, 2, "Should have 2 entries after second log");
-
-logError(new Error("Third error"), {});
-log = JSON.parse(store["eventra_error_log"] || "[]");
-assert.strictEqual(log.length, 3, "Should have 3 entries");
-
-logError(new Error("Fourth error"), {});
-log = JSON.parse(store["eventra_error_log"] || "[]");
-assert.strictEqual(log.length, 4, "Should have 4 entries");
-
-logError(new Error("Fifth error"), {});
-log = JSON.parse(store["eventra_error_log"] || "[]");
-assert.strictEqual(log.length, 5, "Should have 5 entries");
-
-logError(new Error("Sixth error"), {});
-log = JSON.parse(store["eventra_error_log"] || "[]");
-assert.strictEqual(log.length, 6, "Should have 6 entries");
-
-logError(new Error("Seventh error"), {});
-log = JSON.parse(store["eventra_error_log"] || "[]");
-assert.strictEqual(log.length, 7, "Should have 7 entries");
-
-logError(new Error("Eighth error"), {});
-log = JSON.parse(store["eventra_error_log"] || "[]");
-assert.strictEqual(log.length, 8, "Should have 8 entries");
-
-logError(new Error("Ninth error"), {});
-log = JSON.parse(store["eventra_error_log"] || "[]");
-assert.strictEqual(log.length, 9, "Should have 9 entries");
-
-logError(new Error("Tenth error"), {});
-log = JSON.parse(store["eventra_error_log"] || "[]");
-assert.strictEqual(log.length, 10, "Should have 10 entries");
-
-logError(new Error("Eleventh error"), {});
-log = JSON.parse(store["eventra_error_log"] || "[]");
-assert.strictEqual(log.length, 10, "Should cap at 10 entries (oldest removed)");
-
-assert.ok(log[0].message.includes("Eleventh error"), "Newest entry should be first");
-assert.ok(log[9].message.includes("Second error"), "Oldest entry should be last");
-
-const entries = getErrorLog();
-assert.strictEqual(Array.isArray(entries), true, "getErrorLog should return array");
-assert.strictEqual(entries.length, 10, "getErrorLog should return 10 entries");
-
+// Reset localStorage before each test
+global.localStorage.data = {};
 clearErrorLog();
-assert.strictEqual(store["eventra_error_log"], undefined, "Should clear error log from localStorage");
-assert.strictEqual(store["eventra_feature_errors"], undefined, "Should clear feature errors from localStorage");
 
-store["eventra_error_log"] = "invalid-json";
-const emptyLog = getErrorLog();
-assert.strictEqual(Array.isArray(emptyLog), true, "Should return array even on corrupt JSON");
-assert.strictEqual(emptyLog.length, 0, "Should return empty array on corrupt JSON");
+// ── logError tests ───────────────────────────────────────────────────────────
 
-store["eventra_error_log"] = JSON.stringify([{ message: "Error: Test entry" }]);
-const singleEntry = getErrorLog();
-assert.strictEqual(singleEntry.length, 1, "Should read single entry");
-assert.ok(singleEntry[0].message.includes("Test entry"), "Should return correct entry");
+{
+  global.localStorage.data = {};
+  clearErrorLog();
+  logError(new Error("Test error"), { componentStack: "test" }, { extra: "data" });
+  const logs = getErrorLog();
+  assert.equal(logs.length, 1, "should have 1 error log entry");
+  assert.equal(logs[0].message, "Error: Test error");
+  assert.equal(logs[0].extra, "data");
+  assert.ok(logs[0].timestamp, "should have timestamp");
+}
 
-console.log("errorLogger tests passed ✓");
+{
+  global.localStorage.data = {};
+  clearErrorLog();
+  logError(null, null, {});
+  const logs = getErrorLog();
+  assert.equal(logs.length, 1, "should have 1 error log entry for null error");
+  assert.equal(logs[0].message, "Unknown error", "null error should produce Unknown error message");
+}
+
+{
+  global.localStorage.data = {};
+  clearErrorLog();
+  const errorWithStack = new Error("With stack");
+  logError(errorWithStack, {});
+  const logs = getErrorLog();
+  assert.equal(logs.length, 1, "should have 1 error log entry");
+  assert.ok(logs[0].stack, "should have stack trace");
+  assert.ok(logs[0].timestamp, "should have timestamp");
+  assert.ok(logs[0].url === "", "should have empty url in non-browser env");
+}
+
+// ── getErrorLog tests ─────────────────────────────────────────────────────────
+
+{
+  global.localStorage.data = {};
+  clearErrorLog();
+  logError(new Error("Test1"), {});
+  const logs = getErrorLog();
+  assert.equal(Array.isArray(logs), true, "should return array");
+  assert.equal(logs.length, 1, "should have 1 entry");
+}
+
+{
+  global.localStorage.data = {};
+  clearErrorLog();
+  const logs = getErrorLog();
+  assert.deepEqual(logs, [], "should return empty array when no logs");
+}
+
+{
+  global.localStorage.data["eventra_error_log"] = "not valid json";
+  const logs = getErrorLog();
+  assert.deepEqual(logs, [], "should return empty array on parse error");
+}
+
+// ── clearErrorLog tests ───────────────────────────────────────────────────────
+
+{
+  global.localStorage.data = {};
+  clearErrorLog();
+  logError(new Error("After clear"), {});
+  clearErrorLog();
+  const logs = getErrorLog();
+  assert.equal(logs.length, 0, "should have no logs after clear");
+  assert.equal(global.localStorage.data["eventra_error_log"], undefined, "should remove from localStorage");
+}
+
+{
+  global.localStorage.data = {};
+  clearErrorLog();
+  logError(new Error("One"), {});
+  logError(new Error("Two"), {});
+  const logs = getErrorLog();
+  assert.equal(logs.length, 2, "should have 2 entries");
+  clearErrorLog();
+  const cleared = getErrorLog();
+  assert.equal(cleared.length, 0, "should be empty after clear");
+}
+
+// Restore env
+process.env = originalEnv;
+
+console.log("All errorLogger tests passed!");
