@@ -19,22 +19,17 @@ const MAX_ITEMS = 10;
  * Limits: MAX_ITEMS entries; duplicate events are moved to the top.
  */
 const useRecentlyViewed = () => {
-  const [recentlyViewed, setRecentlyViewed] = useState([]);
-
-  // Load from localStorage on mount
-  useEffect(() => {
+  // 🔥 FIX 1: Lazy Initialization
+  // Initialize synchronously from localStorage to prevent double-renders and FOUC.
+  const [recentlyViewed, setRecentlyViewed] = useState(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setRecentlyViewed(
-          safeJsonParse(stored, []),
-        );
-      }
+      return stored ? safeJsonParse(stored, []) : [];
     } catch (err) {
-      console.error('Failed to load recently viewed events:', err);
-      setRecentlyViewed([]);
+      console.error('Failed to load recently viewed events on mount:', err);
+      return [];
     }
-  }, []);
+  });
 
   // Persist to localStorage whenever state changes
   useEffect(() => {
@@ -44,6 +39,23 @@ const useRecentlyViewed = () => {
       console.error('Failed to save recently viewed events:', err);
     }
   }, [recentlyViewed]);
+
+  // 🔥 FIX 2: Cross-Tab Synchronization
+  // Listen for storage events from other tabs to keep the React state perfectly in sync globally.
+  useEffect(() => {
+    const handleStorageChange = (event) => {
+      if (event.key === STORAGE_KEY) {
+        if (event.newValue) {
+          setRecentlyViewed(safeJsonParse(event.newValue, []));
+        } else {
+          setRecentlyViewed([]);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   /**
    * Add or move an event to the front of the recently viewed list.
