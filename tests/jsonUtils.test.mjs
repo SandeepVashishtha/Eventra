@@ -1,28 +1,26 @@
 import assert from "node:assert/strict";
 import { safeParseJson } from "../src/utils/jsonUtils.js";
 
-const obj = { key: "value", num: 42, nested: { arr: [1, 2, 3] } };
-const jsonStr = JSON.stringify(obj);
+assert.strictEqual(safeParseJson(null), null);
+assert.strictEqual(safeParseJson(undefined), null);
+assert.strictEqual(safeParseJson(null, "fallback"), "fallback");
+assert.strictEqual(safeParseJson(undefined, "fallback"), "fallback");
+assert.strictEqual(safeParseJson("", null), null);
+assert.strictEqual(safeParseJson("  ", null), null);
+assert.strictEqual(safeParseJson("not json", null), null);
+assert.strictEqual(safeParseJson('{"a":1}', null).a, 1);
+assert.deepStrictEqual(safeParseJson('[1,2,3]', null), [1, 2, 3]);
+assert.strictEqual(safeParseJson("42", null), 42);
+assert.strictEqual(safeParseJson("true", null), true);
+assert.strictEqual(safeParseJson("false", null), false);
+assert.strictEqual(safeParseJson('"hello"', null), "hello");
+assert.strictEqual(safeParseJson(123, null), 123, "number is not a string so JSON.parse(123) is called");
+assert.strictEqual(safeParseJson(123, "fallback"), 123, "number is not a string so JSON.parse(123) is called");
+assert.deepStrictEqual(safeParseJson({ a: 1 }, null), null, "object is not a string so returns fallback");
+assert.deepStrictEqual(safeParseJson({ a: 1 }, { b: 2 }), { b: 2 }, "object is not a string so returns fallback");
+assert.deepStrictEqual(safeParseJson('{"nested":{"key":"value"}}', null), { nested: { key: "value" } });
+assert.deepStrictEqual(safeParseJson('  {"trimmed":true}  ', null), { trimmed: true });
+assert.strictEqual(safeParseJson("null", null), null);
+assert.strictEqual(safeParseJson("undefined", null), null);
 
-assert.deepEqual(safeParseJson(jsonStr), obj, "valid JSON should parse correctly");
-assert.deepEqual(safeParseJson('{"name":"Ada"}'), { name: "Ada" }, "simple object JSON should parse");
-assert.deepEqual(safeParseJson('["a","b","c"]'), ["a", "b", "c"], "array JSON should parse");
-
-assert.equal(safeParseJson("invalid json"), null, "invalid JSON should return null");
-assert.equal(safeParseJson("{key:value}"), null, "missing quotes should return null");
-assert.equal(safeParseJson("not json at all"), null, "plain text should return null");
-assert.equal(safeParseJson("{ truncated"), null, "truncated JSON should return null");
-
-assert.equal(safeParseJson(null), null, "null input should return null");
-assert.equal(safeParseJson(undefined), null, "undefined input should return null");
-
-assert.equal(safeParseJson(""), null, "empty string should return null");
-
-assert.deepEqual(safeParseJson('{"fallback":true}', { default: "value" }), { fallback: true }, "valid JSON should ignore fallback and return parsed value");
-assert.equal(safeParseJson("bad", "fallbackValue"), "fallbackValue", "invalid JSON should return fallback");
-assert.equal(safeParseJson(null, "fallbackValue"), "fallbackValue", "null input should return fallback");
-assert.equal(safeParseJson(undefined, 42), 42, "undefined input should return fallback");
-
-assert.deepEqual(safeParseJson('  {"trimmed":true}  ', {}), { trimmed: true }, "whitespace-padded JSON should parse");
-
-console.log("All jsonUtils tests passed!");
+console.log("All jsonUtils tests passed");
