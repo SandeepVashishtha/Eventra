@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portals
 import { AlertTriangle, Server, X, Edit3 } from "lucide-react";
 import "./OfflineConflictModal.css";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
@@ -42,7 +43,8 @@ export default function OfflineConflictModal() {
     setConflictData(null);
   };
 
-  return (
+  // 🔥 FIX: Wrap the entire JSX in a Portal to render to document.body
+  return ReactDOM.createPortal(
     <div className="ocm-modal-overlay">
       <div
         ref={trapRef}
@@ -131,6 +133,7 @@ export default function OfflineConflictModal() {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body // Portal target
   );
 }
