@@ -193,6 +193,7 @@ const EventRecommendation = () => {
         <div className="grid lg:grid-cols-[380px_1fr] gap-6">
 
           {/* LEFT PANEL */}
+          <div className="card-theme p-6 h-fit">
           <div className="bg-card-bg rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm h-fit">
 
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-5">
@@ -375,6 +376,7 @@ const EventRecommendation = () => {
           </div>
 
           {/* RIGHT PANEL */}
+          <div className="card-theme p-6">
           <div className="bg-card-bg rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
 
             <div className="flex items-center justify-between mb-6">
