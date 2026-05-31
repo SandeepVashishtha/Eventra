@@ -603,13 +603,18 @@ code {
     .theme-toggle,
     .profile-button,
     .mobile-menu-button,
-    .mobile-drawer-link,
     .ud-search-clear) {
     align-items: center;
     display: inline-flex;
     justify-content: center;
     min-height: var(--touch-target-min);
     min-width: var(--touch-target-min);
+  }
+
+  .mobile-drawer-link {
+    display: flex;
+    justify-content: flex-start;
+    min-width: auto;
   }
 
   :where(.filter-controls,

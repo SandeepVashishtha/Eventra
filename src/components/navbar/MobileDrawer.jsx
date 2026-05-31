@@ -71,7 +71,7 @@ const MobileDrawer = ({
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`mobile-drawer-panel absolute right-0 top-0 flex w-[min(92vw,24rem)] max-w-drawer flex-col bg-white shadow-2xl transition-transform duration-200 ease-out dark:bg-gray-900 ${
+        className={`mobile-drawer-panel absolute right-0 top-0 bottom-0 flex w-[min(92vw,24rem)] max-w-drawer flex-col bg-white shadow-2xl transition-transform duration-200 ease-out dark:bg-gray-900 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -100,38 +100,38 @@ const MobileDrawer = ({
           </button>
         </div>
 
-        <div className="flex h-[calc(100%-73px)] flex-col overflow-y-auto px-4 py-5">
+        <div className="mobile-drawer-scroll flex-1 min-h-0 overflow-y-auto px-4 py-5">
           <NavbarLinks
-            mobile
-            onLinkClick={closeMenu}
+            vertical
+            onClick={closeMenu}
             isAuthenticated={isAuthenticated}
             user={user}
           />
 
           <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-800">
             {isAuthenticated ? (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 <Link
                   to="/dashboard"
                   onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`mobile-drawer-link flex min-h-[48px] w-full justify-start items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-semibold transition-all duration-200 ${
                     isActive("/dashboard")
-                      ? "border-black bg-gray-100 text-black dark:border-white dark:bg-gray-800 dark:text-white"
-                      : "border-transparent text-gray-600 hover:bg-gray-50 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white"
+                      ? "border-indigo-500 bg-indigo-50 text-indigo-900"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                   }`}
                 >
-                  Dashboard
+                  <span>Dashboard</span>
                 </Link>
                 <Link
                   to="/dashboard/profile"
                   onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`mobile-drawer-link flex min-h-[48px] w-full justify-start items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-semibold transition-all duration-200 ${
                     isActive("/dashboard/profile")
-                      ? "border-black bg-gray-100 text-black dark:border-white dark:bg-gray-800 dark:text-white"
-                      : "border-transparent text-gray-600 hover:bg-gray-50 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white"
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-900"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                   }`}
                 >
-                  View Profile
+                  <span>View Profile</span>
                 </Link>
                 <button
                   type="button"
@@ -139,20 +139,18 @@ const MobileDrawer = ({
                     logout();
                     closeMenu();
                   }}
-                  className="mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 border-transparent px-3 py-2 text-left text-sm font-medium text-gray-600 transition-all duration-200 hover:bg-gray-50 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white"
+                  className="mobile-drawer-link flex min-h-[48px] w-full justify-start items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-3 text-left text-sm font-semibold text-rose-900 transition-all duration-200 hover:bg-rose-100 dark:border-rose-500/40 dark:bg-rose-950 dark:text-rose-200 dark:hover:bg-rose-900"
                 >
                   Logout
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col gap-4 mt-4">
+              <div className="flex flex-col gap-3 mt-4">
                 <Link
                   to="/login"
                   onClick={closeMenu}
-                  className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
-                    isActive("/login")
-                      ? "text-black dark:text-white border-black dark:border-white font-semibold"
-                      : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
+                  className={`inline-flex min-h-[50px] w-full justify-start items-center gap-2 rounded-2xl border border-slate-300 bg-slate-100 px-4 text-sm font-semibold text-slate-900 shadow-sm transition-all duration-200 hover:bg-slate-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800 ${
+                    isActive("/login") ? "ring-1 ring-indigo-500" : ""
                   }`}
                 >
                   <LogIn className="w-5 h-5" />
@@ -161,10 +159,8 @@ const MobileDrawer = ({
                 <Link
                   to="/signup"
                   onClick={closeMenu}
-                  className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
-                    isActive("/signup")
-                      ? "text-black dark:text-white border-black dark:border-white font-semibold"
-                      : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
+                  className={`inline-flex min-h-[50px] w-full justify-start items-center gap-2 rounded-2xl border border-indigo-600 bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-indigo-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
+                    isActive("/signup") ? "ring-2 ring-white/80" : ""
                   }`}
                 >
                   <UserPlus className="w-5 h-5" />
