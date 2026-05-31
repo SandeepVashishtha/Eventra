@@ -29,10 +29,14 @@ const BackToTopButton = ({ threshold = 300, positionClass = "bottom-6 right-6" }
   }, [threshold]);
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    if (window.lenis) {
+      window.lenis.scrollTo(0, { immediate: false });
+    } else {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
   };
 
   return (
