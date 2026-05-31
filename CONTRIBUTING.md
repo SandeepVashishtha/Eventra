@@ -272,3 +272,7 @@ Need assistance or want to discuss ideas? We’re here to help!
 Thank you for contributing to **Eventra**!  
 Your time, ideas, and code make this project better for everyone.  
 Together, we’re building a **modern, open, and collaborative event management platform** for the community. 🚀💙
+
+
+### Storybook Component Development Rules
+- Component files must have corresponding .stories file for validation.
