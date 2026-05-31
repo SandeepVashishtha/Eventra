@@ -1,5 +1,9 @@
 import FilterBadge from "../../components/common/FilterBadge";
-import { getCategoryLabel } from "../../utils/advancedFilterUtils";
+import {
+  getCategoryLabel,
+  getDefaultFilters,
+  hasActiveFilters,
+} from "../../utils/advancedFilterUtils";
 
 const FILTER_LABELS = {
   all: "All",
@@ -26,16 +30,7 @@ const ActiveFilters = ({
   const hasType = filterType && filterType !== "all";
   const hasSort = sortType && sortType !== "Newest";
   const hasView = viewMode && viewMode !== "grid";
-  const hasAdvancedFilters =
-    (advancedFilters.categories && advancedFilters.categories.length > 0) ||
-    (advancedFilters.modes && advancedFilters.modes.length > 0) ||
-    (advancedFilters.statuses && advancedFilters.statuses.length > 0) ||
-    (advancedFilters.priceRange &&
-      (advancedFilters.priceRange.min > 0 ||
-        advancedFilters.priceRange.max < Infinity)) ||
-    (advancedFilters.dateRange &&
-      (advancedFilters.dateRange.startDate ||
-        advancedFilters.dateRange.endDate));
+  const hasAdvancedFilters = hasActiveFilters(advancedFilters);
 
   const anyActive =
     hasSearch || hasType || hasSort || hasView || hasAdvancedFilters;
@@ -45,7 +40,7 @@ const ActiveFilters = ({
     setFilterType && setFilterType("all");
     setSortType && setSortType("Newest");
     setViewMode && setViewMode("grid");
-    onAdvancedFiltersChange && onAdvancedFiltersChange({});
+    onAdvancedFiltersChange && onAdvancedFiltersChange(getDefaultFilters());
   };
 
   const removeCategory = (category) => {
@@ -87,6 +82,13 @@ const ActiveFilters = ({
     onAdvancedFiltersChange({
       ...advancedFilters,
       dateRange: null,
+    });
+  };
+
+  const clearLocation = () => {
+    onAdvancedFiltersChange({
+      ...advancedFilters,
+      location: "",
     });
   };
 
@@ -156,6 +158,14 @@ const ActiveFilters = ({
               variant="warning"
             />
           ))}
+
+        {advancedFilters.location && (
+          <FilterBadge
+            label={`Location: ${advancedFilters.location}`}
+            onRemove={clearLocation}
+            variant="success"
+          />
+        )}
 
         {advancedFilters.priceRange && (
           <FilterBadge

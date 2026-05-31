@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { Link } from "react-router-dom";
-import { LayoutDashboard, LogOut, User, ChevronDown } from "lucide-react";
+import { LayoutDashboard, LogOut, User, ChevronDown, Info, HelpCircle } from "lucide-react";
 
 const menuItems = [
   {
@@ -12,6 +12,16 @@ const menuItems = [
     label: "View Profile",
     path: "/dashboard/profile",
     icon: User,
+  },
+  {
+    label: "About",
+    path: "/about",
+    icon: Info,
+  },
+  {
+    label: "Frequently Asked Questions",
+    path: "/faq",
+    icon: HelpCircle,
   },
 ];
 
@@ -101,7 +111,7 @@ const ProfileMenu = ({ user, logout }) => {
         <div
           role="menu"
           aria-orientation="vertical"
-          className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+          className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-premium-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
         >
           {/* User Info */}
           <div className="px-3 py-2 mb-2 border-b border-gray-100 dark:border-gray-800">
