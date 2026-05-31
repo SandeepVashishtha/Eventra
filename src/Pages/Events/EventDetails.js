@@ -22,13 +22,14 @@ import ShareMenu from "../../components/common/ShareMenu";
 import ShareModal from "../../components/common/ShareModal";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
-import { safeParseJson } from "../../utils/jsonUtils";
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 
 const EventDetails = () => {
   const { eventId } = useParams();
   const { user } = useAuth();
+  const { addRecentlyViewed } = useRecentlyViewed();
 
   const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
 
@@ -70,22 +71,11 @@ const EventDetails = () => {
     loadEvent();
   }, [loadEvent]);
 
-  // Safely handle localStorage with try-catch
+  // Safely handle localStorage cache updates via hook
   useEffect(() => {
     if (!event) return;
-
-    try {
-      const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
-      const updatedEvents = [
-        event,
-        ...viewedEvents.filter((item) => item.id !== event.id),
-      ].slice(0, 6);
-
-      localStorage.setItem("recentlyViewedEvents", JSON.stringify(updatedEvents));
-    } catch {
-      // localStorage unavailable — not critical
-    }
-  }, [event]);
+    addRecentlyViewed(event);
+  }, [event, addRecentlyViewed]);
 
   const handlePrint = () => {
     setIsPrinting(true);
