@@ -9,6 +9,7 @@
     "npm": ">=9.6.4"
   },
   "dependencies": {
+    "@headlessui/react": "2.2.10",
     "@heroicons/react": "^2.0.16",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/postcss": "4.3.0",
@@ -119,6 +120,12 @@
     "uuid": "^11.1.1",
     "underscore": "^1.13.8",
     "@tootallnate/once": "^2.0.1"
+  },
+  "optionalDependencies": {
+    "lightningcss-linux-x64-gnu": "1.32.0",
+    "lightningcss-linux-x64-musl": "1.32.0",
+    "@rolldown/binding-linux-x64-gnu": "1.0.2",
+    "@rolldown/binding-linux-x64-musl": "1.0.2"
   },
   "_gssoc_comment_dx": "// DEVELOPER EXPERIENCE: Integrated pre-commit validations to prevent broken or unformatted scripts from being pushed upstream."
 }

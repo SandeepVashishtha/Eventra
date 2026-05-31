@@ -390,7 +390,7 @@ export default function UserAchievements() {
               </h2>
             </div>
             <p className="text-xs text-slate-350 max-w-xl leading-relaxed">
-              You haven't unlocked any milestone tokens yet. Complete the steps below to claim your first developer badge:
+              You haven&apos;t unlocked any milestone tokens yet. Complete the steps below to claim your first developer badge:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
               {onboardingQuests.map((quest) => (
@@ -769,7 +769,7 @@ export default function UserAchievements() {
                         <div className="p-3">
                           <p className="text-[9px] text-slate-400 uppercase tracking-widest font-extrabold">EVENTRA.DEV</p>
                           <h5 className="text-[11px] font-extrabold text-slate-800 dark:text-slate-200 mt-0.5">Unlocked Badge Milestone on Eventra</h5>
-                          <p className="text-[10px] text-slate-500 leading-tight mt-1 line-clamp-1">Developer successfully completed the '{activeShareBadge.name}' challenges.</p>
+                          <p className="text-[10px] text-slate-500 leading-tight mt-1 line-clamp-1">Developer successfully completed the &apos;{activeShareBadge.name}&apos; challenges.</p>
                         </div>
                       </div>
                     </div>

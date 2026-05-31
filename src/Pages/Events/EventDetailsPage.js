@@ -2,7 +2,7 @@ import "./EventDetails.print.css";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
@@ -64,6 +64,7 @@ const EventDetailsPage = () => {
   };
 
   useEffect(() => {
+    let isCancelled = false;
     const requestId = latestRequestIdRef.current + 1;
     latestRequestIdRef.current = requestId;
     const controller = new AbortController();
@@ -83,7 +84,7 @@ const EventDetailsPage = () => {
         if (response.ok) {
           const data = await response.json();
           const evt = data.event || data || null;
-          if (isLatestRequest()) {
+          if (!isCancelled && isLatestRequest()) {
             setEvent(evt);
             setError(null);
             setCacheInfo({ cachedAt: null, label: "live" });
@@ -93,7 +94,7 @@ const EventDetailsPage = () => {
           const responseError = new Error(`Failed to load event details (${response.status})`);
           const { default: mockData } = await import("./eventsMockData.json");
           const foundEvent = mockData.find((item) => String(item.id) === String(eventId));
-          if (isLatestRequest()) {
+          if (!isCancelled && isLatestRequest()) {
             setEvent(foundEvent || null);
             setError(foundEvent ? null : responseError);
             if (foundEvent) setCacheInfo({ cachedAt: null, label: "mock fallback" });
@@ -108,13 +109,13 @@ const EventDetailsPage = () => {
         try {
           const { default: mockData } = await import("./eventsMockData.json");
           const foundEvent = mockData.find((item) => String(item.id) === String(eventId));
-          if (isLatestRequest()) {
+          if (!isCancelled && isLatestRequest()) {
             setEvent(foundEvent || null);
             setError(foundEvent ? null : err);
             if (foundEvent) setCacheInfo({ cachedAt: null, label: "offline fallback" });
           }
         } catch (fallbackErr) {
-          if (isLatestRequest()) {
+          if (!isCancelled && isLatestRequest()) {
             logError(fallbackErr, null, {
               cause: err?.message || String(err),
               eventId,
@@ -125,30 +126,18 @@ const EventDetailsPage = () => {
           }
         }
       } finally {
-        if (isLatestRequest()) setLoading(false);
+        if (!isCancelled && isLatestRequest()) setLoading(false);
       }
     };
 
     fetchEvent();
     return () => {
+      isCancelled = true;
       controller.abort();
     };
   }, [eventId]);
 
-  useEffect(() => {
-    if (!event) {
-      return;
-    }
 
-    addRecentlyViewed({
-      id: event.id,
-      title: event.title,
-      date: event.date,
-      location: event.location,
-      image: event.image,
-      category: event.type,
-    });
-  }, [addRecentlyViewed, event]);
 
   if (loading) {
     return (
@@ -174,7 +163,7 @@ const EventDetailsPage = () => {
             Event Not Found
           </h1>
           <p className="mb-6 text-gray-600 dark:text-gray-400">
-            The event you're looking for doesn't exist.
+            The event you&apos;re looking for doesn&apos;t exist.
           </p>
           <button
             type="button"

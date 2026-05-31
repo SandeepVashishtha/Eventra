@@ -184,7 +184,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                 Thank you for your feedback!
               </h4>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-2.5">
-                We've received your submission. Your rating and comments have been shared with the event organizers.
+                We&apos;ve received your submission. Your rating and comments have been shared with the event organizers.
               </p>
             </div>
 

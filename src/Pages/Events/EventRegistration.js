@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
@@ -41,23 +41,20 @@ import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 
 const MAX_NOTES_CHARS = 500;
 
-// EmailJS credentials are no longer read from REACT_APP_* environment
-// variables here. They were previously bundled into the frontend JavaScript,
-// allowing any visitor to extract them and abuse the EmailJS quota.
-//
-// Confirmation emails are now sent via the /api/send-email serverless handler
-// which reads EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, and EMAILJS_PUBLIC_KEY
-// as server-only environment variables (no REACT_APP_ prefix).
-async function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
-  try {
-    await apiUtils.post("/api/send-email", {
-      toEmail: userEmail,
-      toName: userName || "Participant",
-      eventName: eventName || "",
-      eventDate: eventDate || "",
-    });
-  } catch {
-    // Confirmation email failure is non-fatal — registration already succeeded
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+
+function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  const finalName = userName || "Participant";
+  if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
+    window.emailjs.init(EMAILJS_PUBLIC_KEY);
+    window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: userEmail,
+      to_name: finalName,
+      event_name: eventName,
+      event_date: eventDate,
+    }).catch(() => { });
   }
 }
 
@@ -109,7 +106,7 @@ const EventRegistration = () => {
   const eventId = routeEventId || routeId;
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
   const isHackathonPath = location.pathname.startsWith("/register");
@@ -120,7 +117,6 @@ const EventRegistration = () => {
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
-  const formContainerRef = useRef(null);
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -252,39 +248,6 @@ const EventRegistration = () => {
     loadEvent();
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
-  // fix: trap keyboard focus inside registration form (fixes #3341)
-  // Previously Tab/Shift+Tab would escape the form and land on background elements,
-  // making the form inaccessible for keyboard-only and screen reader users.
-  useEffect(() => {
-    const container = formContainerRef.current;
-    if (!container) return;
-
-    const focusableSelectors =
-      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-    const handleTabKey = (e) => {
-      if (e.key !== "Tab") return;
-      const focusable = Array.from(container.querySelectorAll(focusableSelectors));
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          last.focus();
-          e.preventDefault();
-        }
-      } else {
-        if (document.activeElement === last) {
-          first.focus();
-          e.preventDefault();
-        }
-      }
-    };
-
-    container.addEventListener("keydown", handleTabKey);
-    return () => container.removeEventListener("keydown", handleTabKey);
-  }, [loading, registered]);
-
   const checkEventCapacity = async (id, currentEvent) => {
     try {
       const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(id));
@@ -389,25 +352,17 @@ const EventRegistration = () => {
       : (API_ENDPOINTS.EVENTS?.REGISTER ? API_ENDPOINTS.EVENTS.REGISTER(eventId) : `/api/events/${eventId}/register`);
 
     try {
-      // userId is intentionally omitted from the request body.
-      // The backend must derive the caller's identity exclusively from the
-      // verified JWT (via the HttpOnly cookie or Authorization header set
-      // by the Axios instance). Including userId here would allow any
-      // authenticated user to register under a different account by
-      // manipulating the field — a classic mass-assignment / IDOR vector.
-      //
-      // The third argument (token) has also been removed: apiUtils.post's
-      // normalizeRequestConfig silently converts a string argument to {}
-      // so it was never sent as an Authorization header — dead code.
-      // Authentication is handled automatically by withCredentials: true
-      // on the Axios instance, which attaches the HttpOnly session cookie.
       await apiUtils.post(
         endpoint,
-        {
-          ...formData,
-          priority: formData.priority,
-          eventId: parseInt(eventId),
-        },
+          {
+            ...formData,
+            priority: formData.priority,
+            eventId: parseInt(eventId),
+            userId: user.id,
+          },
+        // Registration is authenticated server-side; send the active token
+        // explicitly instead of relying only on global storage lookup.
+        token
       );
 
       // Axios resolves for 2xx — treat as success
@@ -423,13 +378,12 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        // Offline sync fallback — userId is also excluded from the queued
-        // payload for the same reason it is excluded from the live POST.
-        // When the queue is replayed, the backend will re-derive the caller's
-        // identity from the session token attached to the replayed request.
+        // Offline sync fallback keeps the full registration intent intact so
+        // it can be replayed without asking the user to submit the form again.
         const payload = {
           ...formData,
           eventId: parseInt(eventId),
+          userId: user.id,
         };
 
         const success = await pushToQueue(
@@ -596,7 +550,7 @@ const EventRegistration = () => {
             Registration Confirmed!
           </h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-            You're all set! A confirmation email has been sent to <span className="font-bold text-gray-700 dark:text-gray-300">{formData.email}</span>.
+            You&apos;re all set! A confirmation email has been sent to <span className="font-bold text-gray-700 dark:text-gray-300">{formData.email}</span>.
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
@@ -711,12 +665,7 @@ const EventRegistration = () => {
   }
 
   return (
-    <div
-      ref={formContainerRef}
-      role="main"
-      aria-label="Event registration form"
-      className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
-    >
+    <div className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link
@@ -885,27 +834,41 @@ const EventRegistration = () => {
                 >
                   Designation (Optional)
                 </label>
-                {/* Priority */}
-                <div>
-                  <label
-                    htmlFor="priority"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                  >
-                    Priority (Optional)
-                  </label>
-                  <select
-                    id="priority"
-                    name="priority"
-                    value={formData.priority}
-                    onChange={handleChange}
-                    className="w-full pl-3 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
 
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="designation"
+                    name="designation"
+                    value={formData.designation}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    placeholder="Your job title or role"
+                  />
+                </div>
+              </div>
+
+              {/* Priority */}
+              <div>
+                <label
+                  htmlFor="priority"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Priority (Optional)
+                </label>
+
+                <select
+                  id="priority"
+                  name="priority"
+                  value={formData.priority}
+                  onChange={handleChange}
+                  className="w-full pl-3 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                >
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
               </div>
 
               {/* Additional Info */}
@@ -921,13 +884,12 @@ const EventRegistration = () => {
                   name="additionalInfo"
                   value={formData.additionalInfo}
                   onChange={handleChange}
-                  maxLength={MAX_NOTES_CHARS} // 👈 Limits characters strictly
+                  maxLength={MAX_NOTES_CHARS}
                   rows="4"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
                   placeholder="Any special requirements or questions?"
-                ></textarea>
+                />
 
-                {/* 👈 Dynamic counter box directly below */}
                 <div className="flex justify-end text-xs mt-1 text-gray-400 dark:text-gray-500">
                   <span className={(formData.additionalInfo?.length || 0) >= MAX_NOTES_CHARS - 20 ? "text-red-500 font-medium animate-pulse" : ""}>
                     {formData.additionalInfo?.length || 0} / {MAX_NOTES_CHARS} characters

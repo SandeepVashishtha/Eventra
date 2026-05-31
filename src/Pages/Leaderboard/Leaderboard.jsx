@@ -84,7 +84,7 @@ const formatLastUpdated = (timestamp) => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-  
+
   if (diffMinutes < 1) return "Just now";
   if (diffMinutes < 60) return `${diffMinutes}m ago`;
   if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
@@ -129,7 +129,7 @@ const useLocalStorage = (key, initialValue) => {
 
 const RankMovementIndicator = React.memo(({ liveDifference }) => {
   const diff = liveDifference ?? 0;
-  
+
   if (diff > 0) {
     return (
       <motion.span
@@ -165,6 +165,7 @@ const RankMovementIndicator = React.memo(({ liveDifference }) => {
     </span>
   );
 });
+RankMovementIndicator.displayName = "RankMovementIndicator";
 
 const AnimatedCounter = React.memo(
   ({ value, duration = 1200 }) => {
@@ -205,6 +206,7 @@ const AnimatedCounter = React.memo(
     return <span aria-live="polite">{count.toLocaleString()}</span>;
   }
 );
+AnimatedCounter.displayName = "AnimatedCounter";
 
 const LiveStatusBadge = ({ status }) => {
   const statusConfig = {
@@ -306,11 +308,12 @@ const PodiumCard = React.memo(({ contributor, position, orderClass, styling, isF
     </motion.div>
   );
 });
+PodiumCard.displayName = "PodiumCard";
 
 // ─── Main Component ───────────────────────────────────────────────
 export default function LeaderBoard() {
   useDocumentTitle("Eventra | Leaderboard");
-  
+
   // State
   const [contributors, setContributors] = useState([]);
   const [streaks, setStreaks] = useState({});
@@ -395,7 +398,7 @@ export default function LeaderBoard() {
   // Real-time stream updates
   useEffect(() => {
     if (streamContributors.length === 0 || lastSynced === lastAppliedSyncRef.current) return;
-    
+
     lastAppliedSyncRef.current = lastSynced;
 
     setContributors((prev) => {
@@ -426,14 +429,13 @@ export default function LeaderBoard() {
     });
 
     setLastUpdated(`Live: ${formatLastUpdated(lastSynced)}`);
-    
+
     // Update cache
     try {
-      const cacheData = {
+      storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
         data: streamContributors,
         timestamp: lastSynced,
-      };
-      storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, cacheData);
+      });
     } catch (err) {
       logger.warn("Failed to update leaderboard cache:", err);
     }
@@ -480,7 +482,7 @@ export default function LeaderBoard() {
           const sorted = [...data].sort((a, b) => b.points - a.points);
           setContributors(sorted);
           setLastUpdated(`Updated: ${formatLastUpdated(Date.now())}`);
-          
+
           // Cache the fresh data
           storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
             data,
@@ -491,7 +493,6 @@ export default function LeaderBoard() {
         logger.error("Failed to load leaderboard:", err);
         if (isMounted) {
           setError("Unable to load leaderboard. Please try again.");
-          // Fallback to empty state
           setContributors([]);
         }
       } finally {
@@ -523,7 +524,7 @@ export default function LeaderBoard() {
 
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
-    
+
     setIsRefreshing(true);
     try {
       const { data } = await fetchWithTimeout("/api/leaderboard", {}, 10000);
@@ -532,25 +533,23 @@ export default function LeaderBoard() {
         const sorted = [...data].sort((a, b) => b.points - a.points);
         setContributors(sorted);
         setLastUpdated(`Refreshed: ${formatLastUpdated(Date.now())}`);
-        
+
         storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
           data,
           timestamp: Date.now(),
         });
-        
-        // Subtle success feedback
+
         confetti({ ...CONFETTI_CONFIG, particleCount: 50, spread: 50 });
       }
     } catch (err) {
       logger.error("Refresh failed:", err);
-      // Visual feedback for error could be added here
     } finally {
       setIsRefreshing(false);
     }
   }, [isRefreshing]);
 
   const handleExport = useCallback(() => {
-    const exportData = sortedContributors.map((c, idx) => ({
+    const exportData = sortedContributors.map((c) => ({
       rank: ranksMap[c.username],
       username: c.username,
       name: c.name || "",
@@ -582,7 +581,6 @@ export default function LeaderBoard() {
   }, [sortedContributors, ranksMap]);
 
   const handleKeyDown = useCallback((e) => {
-    // Keyboard shortcuts
     if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
       e.preventDefault();
       searchInputRef.current?.focus();
@@ -651,7 +649,7 @@ export default function LeaderBoard() {
   // ─── Render ───────────────────────────────────────────────
   return (
     <FeatureErrorBoundary>
-      <div 
+      <div
         className="bg-slate-50 dark:bg-slate-950 pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300"
         role="main"
         aria-labelledby="leaderboard-heading"
@@ -665,7 +663,7 @@ export default function LeaderBoard() {
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest"
             >
               <FaTrophy className="w-3 h-3" aria-hidden="true" />
-              GSSoC'26 Contribution Arena
+              GSSoC&apos;26 Contribution Arena
             </motion.div>
 
             <h1 id="leaderboard-heading" className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-950 dark:text-white">
@@ -676,7 +674,7 @@ export default function LeaderBoard() {
             </h1>
 
             <p className="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-              Celebrating our elite open-source creators driving Eventra's core features with exceptional code and design contributions.
+              Celebrating our elite open-source creators driving Eventra&apos;s core features with exceptional code and design contributions.
             </p>
           </header>
 
@@ -685,7 +683,7 @@ export default function LeaderBoard() {
             <section className="mb-14" aria-labelledby="podium-heading">
               <h2 id="podium-heading" className="sr-only">Top 3 Contributors</h2>
               <div className="flex flex-col md:flex-row items-end justify-center gap-6 max-w-4xl mx-auto" role="list">
-                {podiumConfig.map((podium, index) => (
+                {podiumConfig.map((podium) => (
                   <PodiumCard
                     key={podium.position}
                     contributor={podium.contributor}
@@ -839,7 +837,7 @@ export default function LeaderBoard() {
             aria-labelledby="leaderboard-table-title"
           >
             <h2 id="leaderboard-table-title" className="sr-only">Contributor Rankings</h2>
-            
+
             {error ? (
               <div className="p-8 text-center">
                 <p className="text-rose-500 font-medium">{error}</p>

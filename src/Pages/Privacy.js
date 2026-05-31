@@ -237,7 +237,7 @@ export const Privacy = () => {
               Have Questions?
             </h3>
             <p className="text-gray-700 dark:text-gray-300 mb-6">
-              If you have any questions or concerns about this policy, we're
+              If you have any questions or concerns about this policy, we&apos;re
               here to help.
             </p>
             <Link

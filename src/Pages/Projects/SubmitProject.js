@@ -389,7 +389,7 @@ const handleSubmit = async (e) => {
           Submit Your Project
         </h1>
         <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
-          "Fill in the details below to showcase your project."
+          &quot;Fill in the details below to showcase your project.&quot;
         </p>
       </motion.div>
       {/* Guidelines Section */}
