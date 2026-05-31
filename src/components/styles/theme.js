@@ -1,5 +1,5 @@
 export const darkTheme = {
-  section: "bg-white dark:bg-black text-gray-900 dark:text-white",
+  section: "bg-bg text-text",
 
   card: "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700",
 

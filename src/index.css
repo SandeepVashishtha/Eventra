@@ -34,8 +34,8 @@
   --color-card-bg: var(--card-bg-color);
   --color-primary: var(--primary-color);
   --color-secondary: var(--secondary-color);
-  --color-navbar: var(--navbar-color);
-  --color-sidebar: var(--sidebar-color);
+  --color-navbar: var(--navbar-bg);
+  --color-sidebar: var(--sidebar-bg);
 
   --shadow-card: 0 4px 10px rgba(0,0,0,0.08);
   --shadow-premium-sm: var(--shadow-premium-sm-val);
