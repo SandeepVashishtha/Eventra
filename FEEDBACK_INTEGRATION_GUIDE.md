@@ -228,3 +228,7 @@ These features can be added later:
 */
 
 export const FeedbackIntegrationGuide = "See comments above for implementation details";
+
+
+### API Rate Limiting Configuration
+- Enforce a 60-second cooldown window for authentication requests.
