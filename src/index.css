@@ -833,7 +833,11 @@ select,
 
   border: 1px solid var(--border-color);
 
-  box-shadow: 0 4px 16px var(--card-shadow-color);
+  border-radius: 1rem;
+
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 8px 24px rgba(0, 0, 0, 0.04);
 }
 
 .input-theme {
@@ -845,9 +849,10 @@ select,
 }
 
 .section-theme {
-  background-color: var(--bg-color);
-
+  background-color: var(--surface-muted);
   color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
 }
 
 .navbar-theme {

@@ -157,7 +157,7 @@ function App() {
 
                   <main
                     id="main-content"
-                    className="relative z-10 min-h-[85vh] bg-white dark:bg-slate-950 text-black dark:text-white transition-colors duration-300"
+                    className="relative z-10 min-h-[85vh] bg-slate-50 dark:bg-slate-950 text-black dark:text-white transition-colors duration-300"
                   >
                     <Suspense fallback={pageLoader}>
                       <PageTransition>

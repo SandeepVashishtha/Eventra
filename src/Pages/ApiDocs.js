@@ -207,7 +207,7 @@ const ApiDocs = () => {
   };
 
   return (
-    <div className="pastel-grid-bg min-h-screen bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100 px-6 py-16">
+    <div className="pastel-grid-bg min-h-screen bg-slate-50 dark:bg-[#121212] text-gray-900 dark:text-gray-100 px-6 py-16">
       {/* Hero Section */}
       <section className="text-center mb-16">
         <motion.h1
@@ -241,7 +241,7 @@ const ApiDocs = () => {
           Available Endpoints
         </h2>
 
-        <div className="overflow-x-auto rounded-xl shadow border border-gray-200 dark:border-gray-800">
+        <div className="section-theme overflow-x-auto shadow-sm">
           <table className="w-full border-collapse">
             <thead className="bg-gray-50 dark:bg-[#1c1c1c]">
               <tr>
@@ -302,7 +302,7 @@ const ApiDocs = () => {
             <motion.div
               key={idx}
               whileHover={{ scale: 1.02 }}
-              className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-lg"
+              className="card-theme p-6"
             >
               <div className="flex items-center gap-3 mb-4">
                 {ep.icon}
@@ -335,7 +335,7 @@ const ApiDocs = () => {
           Error Codes
         </h2>
 
-        <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl shadow p-6">
+        <div className="card-theme p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <AlertCircle className="w-6 h-6 text-red-500" />
             <h3 className="text-xl font-semibold">Common Errors</h3>
