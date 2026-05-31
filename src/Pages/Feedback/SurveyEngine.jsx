@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiPlus,
   FiTrash2,
-  FiEye,
   FiPlusCircle,
   FiSave,
   FiArrowUp,
@@ -220,12 +219,6 @@ const SurveyEngine = () => {
       return;
     }
 
-    const payload = {
-      title: surveyTitle,
-      description: surveyDescription,
-      questions: questions,
-      createdAt: new Date().toISOString(),
-    };
 
     localStorage.removeItem("eventra_survey_builder_draft");
     toast.success("Survey published and active for attendees!");
@@ -250,7 +243,7 @@ const SurveyEngine = () => {
             <button
               onClick={handleSaveSurvey}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
-            >
+             aria-label="button">
               <FiSave className="w-5 h-5" />
               Publish Survey
             </button>
@@ -301,20 +294,20 @@ const SurveyEngine = () => {
                       📝 Resume where you left off?
                     </h3>
                     <p className="text-xs text-indigo-700/80 dark:text-indigo-400/80 leading-relaxed">
-                      We found an unsaved survey template draft with {cachedDraft.questions?.length || 0} question(s) titled <strong className="font-semibold">"{cachedDraft.title || "Untitled Survey"}"</strong>.
+                      We found an unsaved survey template draft with {cachedDraft.questions?.length || 0} question(s) titled <strong className="font-semibold">&quot;{cachedDraft.title || "Untitled Survey"}&quot;</strong>.
                     </p>
                   </div>
                   <div className="flex gap-2.5 shrink-0 w-full sm:w-auto">
                     <button
                       onClick={handleRestoreDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-sm transition"
-                    >
+                     aria-label="button">
                       Restore Template
                     </button>
                     <button
                       onClick={handleDiscardDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-350 dark:hover:bg-slate-750 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl transition"
-                    >
+                     aria-label="button">
                       Discard
                     </button>
                   </div>
@@ -599,7 +592,7 @@ const SurveyEngine = () => {
                 <button
                   disabled
                   className="px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-semibold cursor-not-allowed text-sm"
-                >
+                 aria-label="button">
                   Submit Survey Feedback
                 </button>
               </div>

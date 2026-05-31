@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
@@ -389,6 +390,22 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
               />
             )}
           </div>
+          
+          {/* 🔥 FIX 2: Relocated Rogue "Clear History" button to its proper logical location */}
+          {recentSearches.length > 0 && (
+            <button
+              onClick={() => {
+                localStorage.removeItem(
+                  "recentSearches"
+                );
+
+                setRecentSearches([]);
+              }}
+              className="text-sm text-red-500 hover:underline mt-2"
+            >
+              Clear History
+            </button>
+          )}
 
           <StyledDropdown
             label=""
@@ -501,8 +518,9 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         </>
       )}
 
+      {/* 🔥 FIX 1: Portaled the modal out of the Framer Motion stacking context trap */}
       <AnimatePresence>
-        {cancelTarget && (
+        {cancelTarget && ReactDOM.createPortal(
           <motion.div
             className="my-events-dialog-backdrop"
             initial={{ opacity: 0 }}
@@ -510,18 +528,6 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             exit={{ opacity: 0 }}
             onClick={handleCancelDismiss}
           >
-            <button
-              onClick={() => {
-                localStorage.removeItem(
-                  "recentSearches"
-                );
-
-                setRecentSearches([]);
-              }}
-              className="text-sm text-red-500 hover:underline mt-2"
-            >
-              Clear History
-            </button>
             <motion.div
               className="my-events-dialog"
               initial={{ scale: 0.95, opacity: 0 }}
@@ -542,7 +548,8 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                 </button>
               </div>
             </motion.div>
-          </motion.div>
+          </motion.div>,
+          document.body
         )}
       </AnimatePresence>
     </motion.div>

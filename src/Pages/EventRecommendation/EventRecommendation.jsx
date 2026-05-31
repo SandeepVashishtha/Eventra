@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   X,
   Sliders,
   CheckCircle2,
   AlertCircle,
-  Award,
   Sparkles,
   ChevronRight,
 } from "lucide-react";
@@ -16,62 +15,43 @@ import {
 import {
   getUserProfile
 } from "../../utils/userProfileAnalyzer";
+import {
+  buildPersonalizedRecommendations,
+  getTrendingEventsForArea,
+} from "../../utils/recommendationEngine";
+import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
+import useBookmarks from "../../hooks/useBookmarks";
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";
+import {
+  getBookmarkedEvents,
+  subscribeToBookmarkChanges,
+} from "../../utils/bookmarkUtils";
+import mockEvents from "../Events/eventsMockData.json";
 
 
 const EventRecommendation = () => {
+  const { user } = useAuth();
+  const { myEvents, addRegistration } = useMyEvents();
+  const { bookmarks } = useBookmarks(user?.id || user?.email || "guest");
+  const { recentlyViewed } = useRecentlyViewed();
+  const [globalBookmarks, setGlobalBookmarks] = useState(() => getBookmarkedEvents());
 
-  const events = [
-    {
-      title: "AI Innovation Challenge",
-      category: "AI / ML",
-      level: "Beginner",
-      type: "Hackathon",
-      match: "95%",
-      tag: "AI/ML",
-      description:
-        "Build intelligent AI solutions and compete with developers worldwide.",
-    },
-    {
-      title: "Frontend UI Battle",
-      category: "Web Development",
-      level: "Intermediate",
-      type: "Hackathon",
-      match: "92%",
-      tag: "React",
-      description:
-        "Design modern responsive interfaces and interactive experiences.",
-    },
-    {
-      title: "Open Source Sprint",
-      category: "Open Source",
-      level: "Beginner",
-      type: "Hackathon",
-      match: "89%",
-      tag: "OSS",
-      description:
-        "Collaborate on impactful open-source projects and communities.",
-    },
-    {
-      title: "Cyber Shield Workshop",
-      category: "Cybersecurity",
-      level: "Advanced",
-      type: "Workshop",
-      match: "91%",
-      tag: "Security",
-      description:
-        "Hands-on cybersecurity challenges and ethical hacking sessions.",
-    },
-    {
-      title: "Cloud Computing Conference",
-      category: "Web Development",
-      level: "Advanced",
-      type: "Conference",
-      match: "88%",
-      tag: "Cloud",
-      description:
-        "Explore scalable cloud infrastructure and DevOps technologies.",
-    },
-  ];
+  const events = useMemo(
+    () =>
+      mockEvents.map((event) => ({
+        ...event,
+        level:
+          event.level ||
+          (event.price === 0
+            ? "Beginner"
+            : event.price > 500
+              ? "Advanced"
+              : "Intermediate"),
+        tag: event.tags?.[0] || event.category,
+      })),
+    [],
+  );
 
   const [interest, setInterest] = useState("");
   const [level, setLevel] = useState("");
@@ -92,6 +72,8 @@ const EventRecommendation = () => {
   const [aiInsights, setAiInsights] = useState("");
 
   const [insightLoading, setInsightLoading] = useState(false);
+
+  useEffect(() => subscribeToBookmarkChanges(setGlobalBookmarks), []);
 
   useEffect(() => {
 
@@ -119,14 +101,23 @@ const EventRecommendation = () => {
   loadInsights();
 
 }, [selectedEvent]);
+
+  const userProfile = useMemo(() => getUserProfile(), []);
+  const preferredLocation = useMemo(() => {
+    const sources = [...myEvents, ...bookmarks, ...globalBookmarks, ...recentlyViewed]
+      .map((entry) => entry?.event?.location || entry?.eventSummary?.location || entry?.location)
+      .filter((locationValue) => locationValue && locationValue !== "Online");
+
+    return sources[0] || user?.location || "";
+  }, [bookmarks, globalBookmarks, myEvents, recentlyViewed, user]);
+
+  const trendingNearby = useMemo(
+    () => getTrendingEventsForArea(events, preferredLocation, 4),
+    [events, preferredLocation],
+  );
+
   const generateRecommendations = () => {
     setHasSearched(true);
-
-    if (!interest && !level && !eventType) {
-      setRecommendedEvents([]);
-      return;
-    }
-
     setLoading(true);
     setShowOtherEvents(false);
     
@@ -134,72 +125,54 @@ const EventRecommendation = () => {
     localStorage.setItem("eventra_ai_recommendation_generated", "true");
 
     setTimeout(() => {
-      const totalWeight = (interest ? interestWeight : 0) + (level ? levelWeight : 0) + (eventType ? typeWeight : 0);
-      
-      if (totalWeight === 0) {
-        setRecommendedEvents([]);
-        setLoading(false);
-        return;
-      }
+      const selectedProfile = {
+        ...userProfile,
+        interests: [...(userProfile.interests || []), interest].filter(Boolean),
+        eventTypes: [...(userProfile.eventTypes || []), eventType].filter(Boolean),
+        level: level || userProfile.level,
+      };
 
-      const scored = events.map(event => {
-        let score = 0;
-        let breakdown = [];
-        
-        if (interest) {
-          const isMatch = event.category === interest;
-          if (isMatch) {
-            score += interestWeight;
-            breakdown.push({ label: "Domain Matches Interest", weight: interestWeight, score: interestWeight, matched: true });
-          } else {
-            breakdown.push({ label: "Domain Mismatch", weight: interestWeight, score: 0, matched: false });
-          }
-        }
-        
-        if (level) {
-          const isMatch = event.level === level;
-          if (isMatch) {
-            score += levelWeight;
-            breakdown.push({ label: "Skill Level Matches", weight: levelWeight, score: levelWeight, matched: true });
-          } else {
-            breakdown.push({ label: "Skill Level Mismatch", weight: levelWeight, score: 0, matched: false });
-          }
-        }
-        
-        if (eventType) {
-          const isMatch = event.type === eventType;
-          if (isMatch) {
-            score += typeWeight;
-            breakdown.push({ label: "Event Type Matches", weight: typeWeight, score: typeWeight, matched: true });
-          } else {
-            breakdown.push({ label: "Event Type Mismatch", weight: typeWeight, score: 0, matched: false });
-          }
-        }
-        
-        const percentage = Math.round((score / totalWeight) * 100);
+      const recommendations = buildPersonalizedRecommendations({
+        events,
+        userProfile: selectedProfile,
+        registeredEvents: myEvents,
+        bookmarkedEvents: [...bookmarks, ...globalBookmarks],
+        viewedEvents: recentlyViewed,
+        location: preferredLocation,
+        limit: events.length,
+      }).map((event) => {
+        const selectedBoost =
+          (interest && event.category === interest ? interestWeight : 0) +
+          (level && event.level === level ? levelWeight : 0) +
+          (eventType && event.type === eventType.toLowerCase() ? typeWeight : 0);
+        const boost = Math.round(selectedBoost / 10);
+        const calculatedMatch = Math.min(100, event.calculatedMatch + boost);
+
         return {
           ...event,
-          calculatedMatch: percentage,
-          breakdown,
+          calculatedMatch,
+          recommendationScore: calculatedMatch,
+          breakdown: [
+            ...(event.breakdown || []),
+            ...(boost > 0
+              ? [{ label: "Selected preference boost", score: boost }]
+              : []),
+          ],
         };
-      });
+      }).sort((a, b) => b.recommendationScore - a.recommendationScore);
 
-      const filtered = scored
-        .filter(event => event.calculatedMatch > 0)
-        .sort((a, b) => b.calculatedMatch - a.calculatedMatch);
-
-      setRecommendedEvents(filtered);
+      setRecommendedEvents(recommendations.length ? recommendations : trendingNearby);
       setLoading(false);
     }, 1200);
   };
 
   const otherEvents = events.filter(
     (event) =>
-      !recommendedEvents.some(r => r.title === event.title)
+      !recommendedEvents.some(r => r.id === event.id)
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black py-10 px-4">
+    <div className="min-h-screen bg-bg text-text py-10 px-4">
 
       <div className="max-w-7xl mx-auto">
 
@@ -220,7 +193,7 @@ const EventRecommendation = () => {
         <div className="grid lg:grid-cols-[380px_1fr] gap-6">
 
           {/* LEFT PANEL */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm h-fit">
+          <div className="bg-card-bg rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm h-fit">
 
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-5">
               Your Preferences
@@ -247,7 +220,7 @@ const EventRecommendation = () => {
                   </option>
 
                   <option>
-                    AI / ML
+                    AI & Machine Learning
                   </option>
 
                   <option>
@@ -259,7 +232,7 @@ const EventRecommendation = () => {
                   </option>
 
                   <option>
-                    Cybersecurity
+                    Security & Privacy
                   </option>
 
                 </select>
@@ -287,7 +260,7 @@ const EventRecommendation = () => {
                   <option>
                     Beginner
                   </option>
-//
+
                   <option>
                     Intermediate
                   </option>
@@ -393,7 +366,7 @@ const EventRecommendation = () => {
               <button
                 onClick={generateRecommendations}
                 className="w-full mt-4 bg-blue-600 hover:bg-blue-700 transition-all text-white rounded-xl py-3 text-sm font-semibold"
-              >
+                aria-label="Generate recommendations">
                 Generate Recommendations
               </button>
 
@@ -402,7 +375,7 @@ const EventRecommendation = () => {
           </div>
 
           {/* RIGHT PANEL */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="bg-card-bg rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
 
             <div className="flex items-center justify-between mb-6">
 
@@ -439,7 +412,7 @@ const EventRecommendation = () => {
 
                     <div
                       key={index}
-                      className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-all bg-slate-50 dark:bg-slate-800/50"
+                      className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-all bg-bg"
                     >
 
                       <div className="flex items-center justify-between mb-4">
@@ -506,7 +479,7 @@ const EventRecommendation = () => {
 
                         <div
                           key={index}
-                          className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-800"
+                          className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 bg-bg"
                         >
 
                           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -572,7 +545,7 @@ const EventRecommendation = () => {
 
                       <div
                         key={index}
-                        className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-800 text-left"
+                        className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 bg-bg text-left"
                       >
 
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -604,7 +577,7 @@ const EventRecommendation = () => {
       {/* Detailed Recommendation Insights Modal */}
       {selectedEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity">
-          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-lg bg-card-bg border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden">
             {/* Background Glow */}
             <div className="absolute top-0 right-0 w-36 h-36 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -630,7 +603,7 @@ const EventRecommendation = () => {
             {/* Content Details */}
             <div className="space-y-4">
               {/* Overall Score */}
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950/45 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+              <div className="flex items-center justify-between p-4 bg-bg rounded-2xl border border-slate-100 dark:border-slate-800/50">
                 <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Match Percentage</span>
                 <div className="text-right">
                   <span className="text-3xl font-black text-blue-600 dark:text-blue-400">{selectedEvent.calculatedMatch}%</span>
@@ -645,24 +618,24 @@ const EventRecommendation = () => {
                   <div key={idx} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
-                        {item.matched ? (
-                          <CheckCircle2 size={14} className="text-green-500 shrink-0" />
-                        ) : (
+                        {item.matched === false ? (
                           <AlertCircle size={14} className="text-slate-400 shrink-0" />
+                        ) : (
+                          <CheckCircle2 size={14} className="text-green-500 shrink-0" />
                         )}
                         {item.label}
                       </span>
                       <span className="text-slate-400 font-medium">
-                        {item.matched ? `+${item.score}%` : `0% / ${item.weight}%`}
+                        +{item.score} pts
                       </span>
                     </div>
                     {/* Visual Progress Bar */}
                     <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-850 overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
-                          item.matched ? "bg-green-500" : "bg-slate-300 dark:bg-slate-700"
+                          item.matched === false ? "bg-slate-300 dark:bg-slate-700" : "bg-green-500"
                         }`}
-                        style={{ width: `${item.matched ? 100 : 0}%` }}
+                        style={{ width: `${Math.min(item.score * 4, 100)}%` }}
                       />
                     </div>
                   </div>
@@ -679,13 +652,13 @@ const EventRecommendation = () => {
   </span>
 
   Fits best for developers with
-  <strong className="text-slate-755 dark:text-slate-200 font-bold">
+  <strong className="text-slate-700 dark:text-slate-200 font-bold">
     {selectedEvent.level}
   </strong>
 
   level experience, interested in
 
-  <strong className="text-slate-755 dark:text-slate-200 font-bold">
+  <strong className="text-slate-700 dark:text-slate-200 font-bold">
     {selectedEvent.category}
   </strong>.
 
@@ -745,6 +718,7 @@ const EventRecommendation = () => {
               </button>
               <button
                 onClick={() => {
+                  addRegistration(selectedEvent, { source: "recommendation" });
                   toast.success(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
                   setSelectedEvent(null);
                 }}

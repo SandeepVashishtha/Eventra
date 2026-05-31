@@ -14,7 +14,8 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 - [Overview](#overview)
 - [Live Demo](#live-demo)
 - [API Reference](#api-reference)
-- [Architecture & Roles](#-architecture--roles)
+<!-- Fix: Corrected broken TOC anchor to match actual heading 'Architecture & Documentation' -->
+- [Architecture & Documentation](#architecture--documentation)
 - [Project Insights](#project-insights)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
@@ -124,7 +125,7 @@ This guide is perfect for:
 | **React Router** for Routing     | **Vercel** for Frontend Hosting      |
 | **Framer Motion** for Animations | **npm** for Package Management       |
 | **Tailwind CSS** for Styling     |                                      |
-| **Create React App**             |                                      |
+| **Vite**                         |                                      |
 
 > **Note:** This repository strictly contains the frontend React application. The backend APIs, databases (MySQL/H2), and Java/Spring Boot services are maintained separately in the [Eventra-Backend](https://github.com/SandeepVashishtha/Eventra-Backend) repository.
 
@@ -160,7 +161,7 @@ Follow these steps to set up and run the frontend application on your local mach
 
 4.  **Run the Development Server:**
     ```bash
-    npm start
+    npm run dev
     ```
     The application will be available at `http://localhost:3000`.
 
@@ -194,7 +195,7 @@ This professional guide covers:
 
 | Variable | Purpose | Required | Example |
 |----------|---------|----------|----------|
-| `REACT_APP_API_URL` | Backend API endpoint | ✅ Yes | `http://localhost:8080/api` |
+| `VITE_API_URL` / `REACT_APP_API_URL` | Backend API endpoint | ✅ Yes | `http://localhost:8080/api` |
 | `REACT_APP_USE_REAL_API` | Toggle real/mock API | ❌ Optional | `true` or `false` |
 | `REACT_APP_GOOGLE_CLIENT_ID` | Google OAuth (optional) | ❌ Optional | `123456789.apps.googleusercontent.com` |
 | `REACT_APP_EMAILJS_*` | Email service (optional) | ❌ Optional | See ENV guide for details |

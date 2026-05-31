@@ -1,4 +1,3 @@
-
 export function getRelativeTime(dateInput) {
   if (!dateInput) return null;
   const now = new Date();
@@ -20,7 +19,12 @@ export function getRelativeTime(dateInput) {
       return `${Math.abs(diffHour)} hour${Math.abs(diffHour) !== 1 ? "s" : ""} ago`;
     if (Math.abs(diffDay) === 1) return "Yesterday";
     if (Math.abs(diffDay) < 30) return `${Math.abs(diffDay)} days ago`;
-    return null;
+    return new Date(dateInput).toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   }
 
   if (diffSec < 60) return "Starting soon";
@@ -35,11 +39,10 @@ export function getRelativeTime(dateInput) {
 }
 
 export function getSmartDateLabel(dateInput, timeInput = "") {
-  if (!dateInput) return "\u2014";
+  if (!dateInput) return "TBD";
 
   const parsed = new Date(dateInput);
-  if (isNaN(parsed.getTime())) return "\u2014";
-
+  if (isNaN(parsed.getTime())) return "TBD";
 
   const relative = getRelativeTime(timeInput ? `${dateInput} ${timeInput}` : dateInput);
 
