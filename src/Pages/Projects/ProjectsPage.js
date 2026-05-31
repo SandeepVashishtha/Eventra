@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiAlertCircle, FiChevronDown, FiSearch, FiX } from "react-icons/fi";
+import SEOHead from "../../components/SEOHead";
 
 import ProjectHero from "./ProjectHero";
 import ProjectCard from "./ProjectCard";
@@ -66,6 +67,19 @@ const ProjectCardSkeleton = () => (
 
 
 const ProjectGallery = () => {
+  return (
+    <>
+      <SEOHead
+        title="Projects"
+        description="Explore community-built projects from hackathons, events, and open-source contributions on Eventra."
+        url={window.location.href}
+      />
+      <InnerGallery />
+    </>
+  );
+};
+
+const InnerGallery = () => {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterCategory, setFilterCategory] = useState("all");

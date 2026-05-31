@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Award, Users, Trophy, Tag, ArrowLeft } from "lucide-react";
 
@@ -52,6 +53,16 @@ const HackathonDetailsPage = () => {
   const isFeatured = Number.isFinite(prizeValue) && prizeValue >= 30000;
 
   return (
+    <>
+      <Helmet>
+        <title>{foundHackathon.title} | Eventra</title>
+        <meta name="description" content={foundHackathon.description.slice(0, 160)} />
+        <meta property="og:title" content={foundHackathon.title} />
+        <meta property="og:description" content={`${foundHackathon.title}${foundHackathon.prize ? ` — Prize: ${foundHackathon.prize}. ` : '. '}${foundHackathon.startDate} - ${foundHackathon.endDate} | ${foundHackathon.location}`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={window.location.href} />
+        <meta name="twitter:card" content="summary_large_image" />
+      </Helmet>
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white dark:from-slate-950 dark:via-slate-950 dark:to-black text-gray-900 dark:text-gray-100">
       <div className="sticky top-0 z-30 border-b border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-4">
@@ -218,6 +229,7 @@ const HackathonDetailsPage = () => {
         </motion.div>
       </main>
     </div>
+    </>
   );
 };
 

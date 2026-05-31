@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
 import FeatureErrorBoundary from "./common/FeatureErrorBoundary";
+import SEOHead from "../components/SEOHead";
 import { storageManager } from "../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../utils/storage/storageKeys";
 import { validators } from "../utils/storage/storageValidators";
@@ -87,7 +88,7 @@ const cacheContributors = (data) => {
   );
 };
 
-const Contributors = () => {
+const ContributorsInner = () => {
   const prefersReducedMotion = useReducedMotion();
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -454,4 +455,16 @@ const Contributors = () => {
     </FeatureErrorBoundary>
   );
 };
+
+const Contributors = () => (
+  <>
+    <SEOHead
+      title="Contributors"
+      description="Meet the amazing contributors building the Eventra open-source community. Join us and make an impact."
+      url={window.location.href}
+    />
+    <ContributorsInner />
+  </>
+);
+
 export default Contributors;
