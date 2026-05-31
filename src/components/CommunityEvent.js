@@ -1,5 +1,5 @@
 // src/pages/CommunityEventsPage.jsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import {

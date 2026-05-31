@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -130,6 +130,8 @@ export default function CommandPalette({
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
+      setQuery("");
+      setActiveIndex(0);
     }
     return () => {
       document.body.style.overflow = "";

@@ -1,5 +1,7 @@
+import "./helpers/authTestEnv.mjs";
+process.env.ALLOWED_ORIGIN = "http://localhost:3000";
 import assert from "node:assert/strict";
-import handler from "../api/auth/signup.js";
+const { default: handler } = await import("../api/auth/signup.js");
 
 // ---------------------------------------------------------------------------
 // Mock Response Helper
