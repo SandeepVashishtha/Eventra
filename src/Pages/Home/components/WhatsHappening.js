@@ -20,6 +20,7 @@ const WhatsHappening = () => {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isAutoPlaying, setIsAutoPlaying] = useState(!prefersReducedMotion);
+  const [isManuallyPaused, setIsManuallyPaused] = useState(false);
 
   useEffect(() => {
     if (prefersReducedMotion) {
@@ -141,6 +142,7 @@ const WhatsHappening = () => {
         ? Math.max(0, upcomingEvents.length - cardsPerView)
         : newIndex;
     });
+    setIsManuallyPaused(true);
     setIsAutoPlaying(false);
   };
 
@@ -155,14 +157,6 @@ const WhatsHappening = () => {
       if (timer) clearInterval(timer);
     };
   }, [isAutoPlaying, nextSlide]);
-
-  useEffect(() => {
-    if (isAutoPlaying) return;
-    const timeout = setTimeout(() => {
-      setIsAutoPlaying(true);
-    }, 10000);
-    return () => clearTimeout(timeout);
-  }, [isAutoPlaying]);
 
   const cardVariants = {
     enter: (dir) => ({ opacity: 0, x: prefersReducedMotion ? 0 : (dir > 0 ? 300 : -300) }),
@@ -201,7 +195,11 @@ const WhatsHappening = () => {
           {/* Play/Pause Button */}
           <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-20">
             <button
-              onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+              onClick={() => {
+                const newPausedState = !isManuallyPaused;
+                setIsManuallyPaused(newPausedState);
+                setIsAutoPlaying(!newPausedState);
+              }}
               className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-800 shadow-md backdrop-blur-md hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
               title={isAutoPlaying ? "Pause auto-play" : "Resume auto-play"}
             >
@@ -248,6 +246,7 @@ const WhatsHappening = () => {
               setCurrent(
                 (prev) => (prev + cardsPerView) % upcomingEvents.length,
               );
+              setIsManuallyPaused(true);
               setIsAutoPlaying(false);
             }}
             className="absolute right-0 sm:-right-4 top-1/2 -translate-y-1/2 p-3 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/50 dark:border-slate-800 shadow-lg hover:bg-white dark:hover:bg-slate-800 z-10 text-slate-700 dark:text-slate-250 transition-all hover:scale-105"
@@ -268,7 +267,11 @@ const WhatsHappening = () => {
           <div
             className="overflow-hidden px-4 sm:px-8 py-5"
             onMouseEnter={() => setIsAutoPlaying(false)}
-            onMouseLeave={() => setIsAutoPlaying(true)}
+            onMouseLeave={() => {
+              if (!isManuallyPaused) {
+                setIsAutoPlaying(true);
+              }
+            }}
           >
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
