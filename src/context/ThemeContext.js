@@ -13,25 +13,51 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 export const ThemeContext = createContext(null);
 
 const getSystemTheme = () =>
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
   window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 
-const getInitialTheme = () =>
-  localStorage.getItem("theme") || "system";
+const safeStorage = {
+  getItem(key, fallback = null) {
+    try {
+      if (typeof window === "undefined" || !window.localStorage) return fallback;
+      return window.localStorage.getItem(key) ?? fallback;
+    } catch {
+      return fallback;
+    }
+  },
+  setItem(key, value) {
+    try {
+      window.localStorage?.setItem(key, value);
+    } catch {
+      // Storage can be blocked in private browsing or embedded contexts.
+    }
+  },
+  removeItem(key) {
+    try {
+      window.localStorage?.removeItem(key);
+    } catch {
+      // Non-fatal: theme state still updates in memory.
+    }
+  },
+};
+
+const getInitialTheme = () => safeStorage.getItem("theme", "system");
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(getInitialTheme);
 
   // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {
-    return localStorage.getItem("activeThemeId") || "default";
+    return safeStorage.getItem("activeThemeId", "default");
   });
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
   // Custom HSL state
   const [customHsl, setCustomHsl] = useState(() => {
-    const saved = localStorage.getItem("customHsl");
+    const saved = safeStorage.getItem("customHsl");
 
     return safeJsonParse(
       saved,
@@ -47,7 +73,7 @@ export const ThemeProvider = ({ children }) => {
   // Reduced motion state
   const prefersReduced = useReducedMotion();
   const [reducedMotion, setReducedMotion] = useState(() => {
-    const saved = localStorage.getItem("reducedMotion");
+    const saved = safeStorage.getItem("reducedMotion");
     return saved !== null ? saved === "true" : prefersReduced;
   });
 
@@ -63,9 +89,9 @@ export const ThemeProvider = ({ children }) => {
     root.classList.add(resolvedTheme);
 
     if (theme === "system") {
-      localStorage.removeItem("theme");
+      safeStorage.removeItem("theme");
     } else {
-      localStorage.setItem("theme", theme);
+      safeStorage.setItem("theme", theme);
     }
 
     // Apply active skin theme colors
@@ -87,8 +113,8 @@ export const ThemeProvider = ({ children }) => {
       root.style.removeProperty("--primary-hover");
     }
 
-    localStorage.setItem("activeThemeId", activeThemeId);
-    localStorage.setItem("customHsl", JSON.stringify(customHsl));
+    safeStorage.setItem("activeThemeId", activeThemeId);
+    safeStorage.setItem("customHsl", JSON.stringify(customHsl));
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
@@ -103,7 +129,7 @@ export const ThemeProvider = ({ children }) => {
 
   // Sync OS-level reduced motion preference changes
   useEffect(() => {
-    const saved = localStorage.getItem("reducedMotion");
+    const saved = safeStorage.getItem("reducedMotion");
     if (saved === null) {
       setReducedMotion(prefersReduced);
     }
@@ -111,7 +137,7 @@ export const ThemeProvider = ({ children }) => {
 
   // Handle global CSS override for transitions and animations
   useEffect(() => {
-    localStorage.setItem("reducedMotion", reducedMotion);
+    safeStorage.setItem("reducedMotion", reducedMotion);
 
     const styleId = "reduced-motion-override";
     let styleEl = document.getElementById(styleId);
@@ -137,9 +163,11 @@ export const ThemeProvider = ({ children }) => {
 
   // Detect system dark theme preference changes
   useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      if (!localStorage.getItem("theme")) {
+      if (!safeStorage.getItem("theme")) {
         setTheme("system");
       }
     };
