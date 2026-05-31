@@ -1,4 +1,4 @@
-import React, { act } from "react";
+import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import SignupForm from "../SignupForm";
@@ -49,13 +49,16 @@ jest.mock("../../../validation", () => ({
 let container;
 let root;
 
+/* eslint-disable no-undef */
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+/* eslint-enable no-undef */
 
 const renderSignup = () => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
+  // eslint-disable-next-line testing-library/no-unnecessary-act
   act(() => {
     root.render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -116,6 +119,7 @@ beforeEach(() => {
 
 afterEach(() => {
   if (root) {
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     act(() => {
       root.unmount();
     });

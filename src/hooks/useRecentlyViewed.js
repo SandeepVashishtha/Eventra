@@ -4,27 +4,56 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 const STORAGE_KEY = 'eventra_recently_viewed';
 const MAX_ITEMS = 10;
 
+// Entries older than RECENTLY_VIEWED_TTL_MS are treated as stale and evicted
+// on load. 7 days balances relevance against storage growth.
+export const RECENTLY_VIEWED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+// ---------------------------------------------------------------------------
+// Minimal entry shape
+//
+// Previously stored the full event object spread:
+//   [event, ...filtered].slice(0, MAX_ITEMS)
+//
+// Full objects can be several kilobytes each. 10 entries = up to ~50 KB for
+// a display-only list of small cards. Store only the fields needed to render
+// the recently-viewed card and navigate to the event detail page.
+// ---------------------------------------------------------------------------
+const toRecentlyViewedEntry = (event) => ({
+  id: event?.id,
+  title: event?.title ?? "",
+  date: event?.date ?? "",
+  location: event?.location ?? "",
+  image: event?.image ?? event?.imageUrl ?? "",
+  category: event?.category ?? event?.type ?? "",
+  viewedAt: Date.now(),
+});
+
+const isEntryFresh = (entry) => {
+  const viewedAt = entry?.viewedAt;
+  if (!viewedAt || typeof viewedAt !== "number") return false;
+  return Date.now() - viewedAt < RECENTLY_VIEWED_TTL_MS;
+};
+
 /**
  * useRecentlyViewed
- * 
- * Custom hook to track and manage recently viewed events using localStorage.
- * 
- * Usage:
- *   const { recentlyViewed, addRecentlyViewed, clearHistory } = useRecentlyViewed();
- * 
- * Call `addRecentlyViewed(event)` when a user opens/views an event.
- * The hook stores the full event object (id, title, date, image, category, etc.)
- * so the section can render without extra API calls.
- * 
- * Limits: MAX_ITEMS entries; duplicate events are moved to the top.
+ *
+ * Tracks and persists the list of recently viewed events.
+ *  - Capped at MAX_ITEMS = 10 entries
+ *  - Entries older than RECENTLY_VIEWED_TTL_MS (7 days) are evicted on mount
+ *  - Stores only minimal display fields, not the full event object
  */
 const useRecentlyViewed = () => {
-  // 🔥 FIX 1: Lazy Initialization
+  // 🔥 FIX 1: Lazy Initialization + Master's TTL logic combined
   // Initialize synchronously from localStorage to prevent double-renders and FOUC.
   const [recentlyViewed, setRecentlyViewed] = useState(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? safeJsonParse(stored, []) : [];
+      if (stored) {
+        const parsed = safeJsonParse(stored, []);
+        const fresh = Array.isArray(parsed) ? parsed.filter(isEntryFresh) : [];
+        return fresh;
+      }
+      return [];
     } catch (err) {
       console.error('Failed to load recently viewed events on mount:', err);
       return [];
@@ -46,7 +75,9 @@ const useRecentlyViewed = () => {
     const handleStorageChange = (event) => {
       if (event.key === STORAGE_KEY) {
         if (event.newValue) {
-          setRecentlyViewed(safeJsonParse(event.newValue, []));
+          const parsed = safeJsonParse(event.newValue, []);
+          const fresh = Array.isArray(parsed) ? parsed.filter(isEntryFresh) : [];
+          setRecentlyViewed(fresh);
         } else {
           setRecentlyViewed([]);
         }
@@ -59,17 +90,17 @@ const useRecentlyViewed = () => {
 
   /**
    * Add or move an event to the front of the recently viewed list.
-   * @param {Object} event - The event object to track.
-   *   Expected shape: { id, title, date, location, image, category, ... }
+   * Stores only the minimal display entry — not the full event object.
+   *
+   * @param {Object} event - Event object to track.
    */
   const addRecentlyViewed = useCallback((event) => {
     if (!event || !event.id) return;
 
     setRecentlyViewed((prev) => {
-      // Remove existing entry for this event (avoid duplicates)
       const filtered = prev.filter((e) => e.id !== event.id);
-      // Prepend and cap at MAX_ITEMS
-      return [event, ...filtered].slice(0, MAX_ITEMS);
+      const entry = toRecentlyViewedEntry(event);
+      return [entry, ...filtered].slice(0, MAX_ITEMS);
     });
   }, []);
 
@@ -82,7 +113,7 @@ const useRecentlyViewed = () => {
   }, []);
 
   /**
-   * Clear the entire recently viewed history.
+   * Clear the entire recently viewed history from state and localStorage.
    */
   const clearHistory = useCallback(() => {
     setRecentlyViewed([]);

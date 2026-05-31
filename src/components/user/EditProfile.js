@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { syncSecureStorage } from "../../utils/secureStorage";
 
 import {
   User as UserIcon,
@@ -83,7 +84,7 @@ const EditProfile = () => {
 
   // Initialize with fallback progression to prevent undefined fields
   const [form, setForm] = useState(() => {
-    const saved = localStorage.getItem("user");
+    const saved = syncSecureStorage.getItem("user");
     const parsed = safeJsonParse(saved, null);
     if (parsed) {
       return parsed;
@@ -98,9 +99,17 @@ const EditProfile = () => {
   const [currentSkillInput, setCurrentSkillInput] = useState("");
   const fileInputRef = useRef(null);
 
+  // 🔥 FIX 1: Track mount state to prevent ghost navigations
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   // Keep state synchronized if the auth context updates lazily
   useEffect(() => {
-    const saved = localStorage.getItem("user");
+    const saved = syncSecureStorage.getItem("user");
     if (!saved && user) {
       setForm((prev) => ({ ...prev, ...user }));
     }
@@ -203,13 +212,26 @@ const EditProfile = () => {
     setLoading(true);
 
     setTimeout(() => {
+      // 🔥 FIX 1: If user navigated away, stop executing!
+      if (!isMounted.current) return;
+
       setLoading(false);
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(resolvedForm);
-      localStorage.setItem("user", JSON.stringify(resolvedForm));
+      
+      // 🔥 FIX 2: Strip massive Base64 strings before saving to storage to prevent QuotaExceededError crashes
+      const safeStorageUser = { ...resolvedForm };
+      delete safeStorageUser.avatarBase64;
+      
+      try {
+        syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
+      } catch (e) {
+        console.warn("Could not save to secure storage, quota exceeded.");
+      }
 
       setTimeout(() => {
+        if (!isMounted.current) return;
         navigate("/dashboard/profile");
       }, 1000);
     }, 1500);
@@ -607,7 +629,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
             type="button"
             onClick={onCancel}
             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
+           aria-label="button">
             Cancel
           </button>
           <button
@@ -615,7 +637,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
             onClick={onConfirm}
             disabled={loading}
             className="px-4 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
-          >
+           aria-label="button">
             {loading ? "Saving..." : "Save"}
           </button>
         </div>

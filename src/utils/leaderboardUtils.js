@@ -208,7 +208,7 @@ export function computeLeaderboardStats(contributors) {
     flooredTotalPoints: totalPoints,
   };
 }
-export const getAchievementBadge = (rank, prs, points) => {
+export const getAchievementBadge = (rank) => {
   if (rank === 1) {
     return {
       label: "Diamond Tier",
@@ -235,4 +235,8 @@ export const getAchievementBadge = (rank, prs, points) => {
     color: "from-slate-100 via-zinc-200 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/50 dark:border-slate-700/20",
     icon: FaCode
   };
+};
+
+export const calculatePointsMultiplier = (points, rate) => {
+  return points * (rate > 0 ? rate : 1.0);
 };
