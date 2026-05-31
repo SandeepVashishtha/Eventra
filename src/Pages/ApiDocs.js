@@ -118,6 +118,11 @@ const ApiDocs = () => {
   };
 
   const executeMockRequest = () => {
+    // 🔥 FIX: Clear any previously queued request to prevent race conditions
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
     setIsLoading(true);
     setTerminalOutput("");
     
@@ -214,12 +219,15 @@ const ApiDocs = () => {
       
       setTerminalOutput(`${headersStr}\n\n${responseStr}`);
       setIsLoading(false);
+      // Reset ref after completion
+      timeoutRef.current = null; 
     }, 700);
   };
 
   return (
     <div className="pastel-grid-bg min-h-screen bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100 px-6 py-16">
-      {/* Hero Section */}
+      {/* ... (rest of your component remains unchanged) */}
+      {/* (Make sure to keep your existing JSX structure) */}
       <section className="text-center mb-16">
         <motion.h1
           className="text-4xl md:text-5xl font-bold mb-4"
@@ -538,7 +546,7 @@ const ApiDocs = () => {
               onClick={executeMockRequest}
               disabled={isLoading}
               className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
-            >
+             aria-label="button">
               {isLoading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
