@@ -26,26 +26,26 @@ const useOfflineSync = () => {
    * The original code created a bare Promise that only resolved when the
    * user clicked a button in the conflict modal. This meant:
    *
-   *  1. If the user never saw or dismissed the modal (tab close, navigation,
-   *     render failure), the sync loop would hang indefinitely because the
-   *     Promise never resolved.
+   * 1. If the user never saw or dismissed the modal (tab close, navigation,
+   * render failure), the sync loop would hang indefinitely because the
+   * Promise never resolved.
    *
-   *  2. isSyncing.current would remain true forever, silently blocking all
-   *     future sync attempts for the rest of the session.
+   * 2. isSyncing.current would remain true forever, silently blocking all
+   * future sync attempts for the rest of the session.
    *
-   *  3. The window event listener was never removed on early exit (component
-   *     unmount, abort), creating a memory leak and potentially handling
-   *     conflict events intended for a different item.
+   * 3. The window event listener was never removed on early exit (component
+   * unmount, abort), creating a memory leak and potentially handling
+   * conflict events intended for a different item.
    *
    * Fix
    * ───
-   *  - Added a 60-second auto-dismiss timeout. If the user does not respond
-   *    in time, the conflict is resolved in favour of the server version so
-   *    the sync loop can continue.
-   *  - Added AbortSignal support so the conflict waiter is cancelled cleanly
-   *    when the enclosing useEffect is torn down (component unmount).
-   *  - The window event listener is always removed before the Promise
-   *    resolves, in all code paths (user response, timeout, abort).
+   * - Added a 60-second auto-dismiss timeout. If the user does not respond
+   * in time, the conflict is resolved in favour of the server version so
+   * the sync loop can continue.
+   * - Added AbortSignal support so the conflict waiter is cancelled cleanly
+   * when the enclosing useEffect is torn down (component unmount).
+   * - The window event listener is always removed before the Promise
+   * resolves, in all code paths (user response, timeout, abort).
    *
    * @param {object} item        - The queued offline action that caused the conflict
    * @param {object} serverState - Current server-side state for the conflicted resource
@@ -154,8 +154,6 @@ const useOfflineSync = () => {
       }
 
       // Refuse to replay queued actions under an expired or missing token.
-      // The queue was saved under a previous session; firing it now could
-      // attach those actions to whichever user happens to be logged in.
       if (!token || !isTokenValid(token)) {
         toast.warning(
           "Offline actions are pending but your session has expired. Please log in again to sync them.",
@@ -165,8 +163,6 @@ const useOfflineSync = () => {
       }
 
       // SECURITY: Validate queue ownership to prevent cross-user action replay.
-      // Only replay actions that were queued by the currently logged-in user.
-      // This prevents User A's queued actions from executing under User B's session.
       const currentUserId = user?.id;
       if (!currentUserId) {
         logger.error('[Security] Cannot sync queue: current user ID is missing');
@@ -180,8 +176,7 @@ const useOfflineSync = () => {
       // Filter queue to only include actions owned by current user
       const validatedQueue = filterQueueByOwnership(queue, currentUserId);
 
-      // If all actions were filtered out due to ownership mismatch,
-      // clear the queue to prevent re-checks on every session
+      // If all actions were filtered out due to ownership mismatch, clear the queue
       if (validatedQueue.length === 0 && queue.length > 0) {
         logger.warn(
           '[Security] Clearing offline queue: all actions belong to different user(s). ' +

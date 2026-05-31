@@ -1,22 +1,21 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
-import { FormFieldWrapper, ValidationMessage } from "../forms";
+import { ValidationMessage } from "../forms";
 import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { validate as fieldValidators } from "../../validation";
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
   const [error, setError] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [validationState, setValidationState] = useState({
+  const [, setValidationState] = useState({
     usernameOrEmail: "idle",
     password: "idle",
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -131,7 +130,7 @@ const LoginForm = () => {
               value={formData.usernameOrEmail}
               onChange={handleChange}
               required
-              disabled={loading}
+              disabled={authRequest.loading}
               placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
               aria-invalid={!!error.usernameOrEmail}
               aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
@@ -161,8 +160,8 @@ const LoginForm = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              disabled={loading}
-              placeholder="Create a secure password"
+              disabled={authRequest.loading}
+              placeholder="••••••••"
               aria-invalid={!!error.password}
               aria-describedby={error.password ? "password-error" : undefined}
               className={`w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border ${
@@ -200,18 +199,22 @@ const LoginForm = () => {
           state="error"
           className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm"
         />
-
+        {authRequest.error && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm">
+            {authRequest.error}
+          </div>
+        )}
 
         {/* Submit Button */}
         <motion.button
           whileHover={{ scale: 1.03, boxShadow: "0 0 30px rgba(59,130,246,0.6)" }}
           whileTap={{ scale: 0.97 }}
           type="submit"
-          disabled={loading}
+          disabled={authRequest.loading}
           className="relative w-full overflow-hidden flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400 hover:from-blue-300 hover:to-indigo-300 shadow-[0_0_20px_rgba(59,130,246,0.4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0f172a] focus:ring-blue-500 transition-all duration-300 group"
         >
           <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-          {loading ? (
+          {authRequest.loading ? (
             <div className="flex items-center gap-2 relative z-10">
               <div className="w-4 h-4 border-2 border-[#0f172a] border-t-transparent rounded-full animate-spin"></div>
               <span>Signing In...</span>

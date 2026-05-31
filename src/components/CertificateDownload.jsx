@@ -1,4 +1,3 @@
-import React from "react";
 import jsPDF from "jspdf";
 import { useAuth } from "../context/AuthContext";
 
@@ -59,7 +58,7 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
   };
 
   return (
-  <button onClick={generateCertificate}>
+  <button onClick={generateCertificate} aria-label="button">
     📜 Download Certificate
   </button>
 );

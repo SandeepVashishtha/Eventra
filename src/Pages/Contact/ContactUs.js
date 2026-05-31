@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, FileText, MessageSquare, AlertCircle } from "lucide-react";
 import { FiStar, FiMessageSquare } from "react-icons/fi";
@@ -236,8 +236,8 @@ const ContactUs = () => {
                   Get in Touch
                 </h2>
                 <p className="mb-8 text-lg opacity-90 leading-relaxed">
-                  Questions about our events platform? We're here to help. Reach
-                  out and we'll respond promptly.
+                  Questions about our events platform? We&apos;re here to help. Reach
+                  out and we&apos;ll respond promptly.
                 </p>
 
                 <div className="space-y-6">

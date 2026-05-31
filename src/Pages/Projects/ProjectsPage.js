@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiAlertCircle, FiChevronDown, FiSearch, FiX } from "react-icons/fi";
 
@@ -40,7 +40,7 @@ const ProjectCardSkeleton = () => (
     <div className="p-6">
       <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
       <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded w-5/6 mb-4"></div>
+      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded mb-4"></div>
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>
@@ -77,10 +77,14 @@ const ProjectGallery = () => {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
-  const [bookmarks, setBookmarks] = useState(() => {
+  const [bookmarks, setBookmarks] = useState([]);
+
+  useEffect(() => {
     const saved = localStorage.getItem("eventra_bookmarked_projects");
-    return safeJsonParse(saved, []);
-  });
+    if (saved) {
+      setBookmarks(safeJsonParse(saved, []));
+    }
+  }, []);
 
   const handleBookmarkToggle = (projectId) => {
     setBookmarks((prev) => {
@@ -127,7 +131,6 @@ const ProjectGallery = () => {
           publicRequestConfig
         );
         const projectsData = response.data;
-
         // only use API data if it is non-empty; otherwise fall back to mock
         if (projectsData && projectsData.length > 0) {
           setProjects(projectsData);
@@ -211,7 +214,7 @@ const ProjectGallery = () => {
           project.description.toLowerCase().includes(query) ||
           project.category.toLowerCase().includes(query) ||
           project.author.toLowerCase().includes(query) ||
-          (project.techStack &&
+          (Array.isArray(project.techStack) &&
             project.techStack.some((tech) =>
               tech.toLowerCase().includes(query)
             ))
@@ -493,7 +496,7 @@ const ProjectGallery = () => {
                 onClick={fetchProjects}
                 disabled={isLoading}
                 className="mt-6 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
-              >
+               aria-label="button">
                 Try Again
               </button>
             </motion.div>

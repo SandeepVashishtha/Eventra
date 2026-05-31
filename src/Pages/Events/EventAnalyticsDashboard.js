@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { useTheme } from '../../context/ThemeContext';
 import eventsData from './eventsMockData.json';
 import './EventAnalyticsDashboard.css';
 
@@ -32,40 +33,78 @@ const feedbackData = [
 const COLORS = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
 const TABS = ['overview', 'registrations', 'demographics', 'feedback'];
 
+const getChartTheme = (isDarkMode) => ({
+  grid: isDarkMode ? '#334155' : '#e5e7eb',
+  axis: isDarkMode ? '#cbd5e1' : '#475569',
+  tooltipBg: isDarkMode ? '#0f172a' : '#ffffff',
+  tooltipText: isDarkMode ? '#f8fafc' : '#1e293b',
+  tooltipBorder: isDarkMode ? '#475569' : '#cbd5e1',
+  legend: isDarkMode ? '#e2e8f0' : '#374151',
+  primary: isDarkMode ? '#818cf8' : '#6366f1',
+  secondary: isDarkMode ? '#38bdf8' : '#c7d2fe',
+});
+
+const chartTooltipProps = (chartTheme) => ({
+  contentStyle: {
+    backgroundColor: chartTheme.tooltipBg,
+    borderColor: chartTheme.tooltipBorder,
+    borderRadius: 12,
+    color: chartTheme.tooltipText,
+    boxShadow: '0 12px 30px rgba(15, 23, 42, 0.18)',
+  },
+  labelStyle: { color: chartTheme.tooltipText, fontWeight: 700 },
+  itemStyle: { color: chartTheme.tooltipText },
+});
+
+const axisTick = (chartTheme, fontSize = 12) => ({
+  fill: chartTheme.axis,
+  fontSize,
+});
+
+const renderPieLabel = (chartTheme) => {
+  const PieLabel = ({ name, percent, x, y, textAnchor }) => (
+    <text x={x} y={y} fill={chartTheme.axis} fontSize={12} fontWeight={600} textAnchor={textAnchor} dominantBaseline="central">
+      {`${name} ${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+  PieLabel.displayName = 'PieLabel';
+  return PieLabel;
+};
+
 // --- Subcomponents (Now accepting props instead of using global scope) ---
 
-const RegistrationLineChart = ({ height = 260, showLegend = false }) => (
+const RegistrationLineChart = ({ chartTheme, height = 260, showLegend = false }) => (
   <ResponsiveContainer width="100%" height={height}>
     <LineChart data={registrationTrends}>
-      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-      <YAxis tick={{ fontSize: 12 }} />
-      <Tooltip />
-      {showLegend && <Legend />}
-      <Line type="monotone" dataKey="registrations" stroke="#6366f1" strokeWidth={3} dot={{ r: showLegend ? 6 : 5, fill: '#6366f1' }} activeDot={{ r: 7 }} name="Registrations" />
+      <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+      <XAxis dataKey="month" tick={axisTick(chartTheme)} axisLine={{ stroke: chartTheme.grid }} tickLine={{ stroke: chartTheme.grid }} />
+      <YAxis tick={axisTick(chartTheme)} axisLine={{ stroke: chartTheme.grid }} tickLine={{ stroke: chartTheme.grid }} />
+      <Tooltip {...chartTooltipProps(chartTheme)} />
+      {showLegend && <Legend wrapperStyle={{ color: chartTheme.legend }} />}
+      <Line type="monotone" dataKey="registrations" stroke={chartTheme.primary} strokeWidth={3} dot={{ r: showLegend ? 6 : 5, fill: chartTheme.primary, stroke: chartTheme.tooltipBg, strokeWidth: 2 }} activeDot={{ r: 7 }} name="Registrations" />
     </LineChart>
   </ResponsiveContainer>
 );
 
-const AttendanceBarChart = ({ data, height = 260, layout = 'horizontal', showLegend = true }) => (
+const AttendanceBarChart = ({ chartTheme, data, height = 260, layout = 'horizontal', showLegend = true }) => (
   <ResponsiveContainer width="100%" height={height}>
     <BarChart data={data} layout={layout}>
-      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+      <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
       {layout === 'vertical' ? (
         <>
-          <XAxis type="number" tick={{ fontSize: 11 }} />
-          <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={110} />
+          <XAxis type="number" tick={axisTick(chartTheme, 11)} axisLine={{ stroke: chartTheme.grid }} tickLine={{ stroke: chartTheme.grid }} />
+          <YAxis dataKey="name" type="category" tick={axisTick(chartTheme, 11)} width={110} axisLine={{ stroke: chartTheme.grid }} tickLine={{ stroke: chartTheme.grid }} />
         </>
       ) : (
         <>
-          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-          <YAxis />
+          <XAxis dataKey="name" tick={axisTick(chartTheme, 11)} axisLine={{ stroke: chartTheme.grid }} tickLine={{ stroke: chartTheme.grid }} />
+          <YAxis tick={axisTick(chartTheme)} axisLine={{ stroke: chartTheme.grid }} tickLine={{ stroke: chartTheme.grid }} />
         </>
       )}
-      <Tooltip />
-      {showLegend && <Legend />}
-      <Bar dataKey="attendees" fill="#6366f1" radius={layout === 'vertical' ? [0, 6, 6, 0] : [6, 6, 0, 0]} name="Attendees" />
-      <Bar dataKey="capacity" fill="#c7d2fe" radius={layout === 'vertical' ? [0, 6, 6, 0] : [6, 6, 0, 0]} name="Capacity" />
+      <Tooltip {...chartTooltipProps(chartTheme)} />
+      {showLegend && <Legend wrapperStyle={{ color: chartTheme.legend }} />}
+      <Bar dataKey="attendees" fill={chartTheme.primary} radius={layout === 'vertical' ? [0, 6, 6, 0] : [6, 6, 0, 0]} name="Attendees" />
+      <Bar dataKey="capacity" fill={chartTheme.secondary} radius={layout === 'vertical' ? [0, 6, 6, 0] : [6, 6, 0, 0]} name="Capacity" />
     </BarChart>
   </ResponsiveContainer>
 );
@@ -98,42 +137,42 @@ const KPIHeader = ({ totalEvents, registrations, fillRate, avgRating }) => (
   </div>
 );
 
-const OverviewTab = ({ topEvents }) => (
+const OverviewTab = ({ chartTheme, topEvents }) => (
   <div className="ead-grid">
     <div className="ead-card ead-card--wide">
       <h2 className="ead-card-title">📈 Registrations Over Time</h2>
-      <RegistrationLineChart height={260} />
+      <RegistrationLineChart chartTheme={chartTheme} height={260} />
     </div>
     <div className="ead-card ead-card--wide">
       <h2 className="ead-card-title">🏆 Top Performing Events</h2>
-      <AttendanceBarChart data={topEvents} height={260} layout="vertical" />
+      <AttendanceBarChart chartTheme={chartTheme} data={topEvents} height={260} layout="vertical" />
     </div>
   </div>
 );
 
-const RegistrationsTab = ({ topEvents }) => (
+const RegistrationsTab = ({ chartTheme, topEvents }) => (
   <div className="ead-grid">
     <div className="ead-card ead-card--full">
       <h2 className="ead-card-title">📅 Monthly Registration Trends</h2>
-      <RegistrationLineChart height={320} showLegend />
+      <RegistrationLineChart chartTheme={chartTheme} height={320} showLegend />
     </div>
     <div className="ead-card ead-card--full">
       <h2 className="ead-card-title">📊 All Events — Attendance vs Capacity</h2>
-      <AttendanceBarChart data={topEvents} height={320} />
+      <AttendanceBarChart chartTheme={chartTheme} data={topEvents} height={320} />
     </div>
   </div>
 );
 
-const DemographicsTab = ({ typeData, locationData }) => (
+const DemographicsTab = ({ chartTheme, typeData, locationData }) => (
   <div className="ead-grid">
     <div className="ead-card">
       <h2 className="ead-card-title">🎯 Attendees by Event Type</h2>
       <ResponsiveContainer width="100%" height={280}>
         <PieChart>
-          <Pie data={typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+          <Pie data={typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={renderPieLabel(chartTheme)} labelLine={{ stroke: chartTheme.axis }}>
             {typeData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
           </Pie>
-          <Tooltip />
+          <Tooltip {...chartTooltipProps(chartTheme)} />
         </PieChart>
       </ResponsiveContainer>
     </div>
@@ -141,28 +180,28 @@ const DemographicsTab = ({ typeData, locationData }) => (
       <h2 className="ead-card-title">📍 Attendees by Region</h2>
       <ResponsiveContainer width="100%" height={280}>
         <PieChart>
-          <Pie data={locationData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+          <Pie data={locationData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} label={renderPieLabel(chartTheme)} labelLine={{ stroke: chartTheme.axis }}>
             {locationData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
           </Pie>
-          <Tooltip />
-          <Legend />
+          <Tooltip {...chartTooltipProps(chartTheme)} />
+          <Legend wrapperStyle={{ color: chartTheme.legend }} />
         </PieChart>
       </ResponsiveContainer>
     </div>
   </div>
 );
 
-const FeedbackTab = () => (
+const FeedbackTab = ({ chartTheme }) => (
   <div className="ead-grid">
     <div className="ead-card ead-card--full">
       <h2 className="ead-card-title">⭐ Average Ratings by Event</h2>
       <ResponsiveContainer width="100%" height={280}>
         <BarChart data={feedbackData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="event" tick={{ fontSize: 12 }} />
-          <YAxis domain={[0, 5]} tick={{ fontSize: 12 }} />
-          <Tooltip />
-          <Bar dataKey="rating" fill="#6366f1" radius={[6, 6, 0, 0]} name="Avg Rating" />
+          <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+          <XAxis dataKey="event" tick={axisTick(chartTheme)} axisLine={{ stroke: chartTheme.grid }} tickLine={{ stroke: chartTheme.grid }} />
+          <YAxis domain={[0, 5]} tick={axisTick(chartTheme)} axisLine={{ stroke: chartTheme.grid }} tickLine={{ stroke: chartTheme.grid }} />
+          <Tooltip {...chartTooltipProps(chartTheme)} />
+          <Bar dataKey="rating" fill={chartTheme.primary} radius={[6, 6, 0, 0]} name="Avg Rating" />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -197,6 +236,8 @@ const FeedbackTab = () => (
 
 const EventAnalyticsDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const { isDarkMode } = useTheme();
+  const chartTheme = useMemo(() => getChartTheme(isDarkMode), [isDarkMode]);
 
   // 🔥 THE ALGO FIX: Single O(N) pass utilizing Hash Maps and useMemo 🔥
   const memoizedEventData = useMemo(() => {
@@ -262,10 +303,10 @@ const EventAnalyticsDashboard = () => {
 
       {/* TAB CONTENT */}
       <div role="tabpanel">
-        {activeTab === 'overview' && <OverviewTab topEvents={topEvents} />}
-        {activeTab === 'registrations' && <RegistrationsTab topEvents={topEvents} />}
-        {activeTab === 'demographics' && <DemographicsTab typeData={typeData} locationData={locationData} />}
-        {activeTab === 'feedback' && <FeedbackTab />}
+        {activeTab === 'overview' && <OverviewTab chartTheme={chartTheme} topEvents={topEvents} />}
+        {activeTab === 'registrations' && <RegistrationsTab chartTheme={chartTheme} topEvents={topEvents} />}
+        {activeTab === 'demographics' && <DemographicsTab chartTheme={chartTheme} typeData={typeData} locationData={locationData} />}
+        {activeTab === 'feedback' && <FeedbackTab chartTheme={chartTheme} />}
       </div>
     </div>
   );
