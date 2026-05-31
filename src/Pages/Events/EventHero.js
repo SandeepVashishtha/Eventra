@@ -7,7 +7,7 @@ import ModernSearchInput from "../../components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
 import { darkTheme } from "../../components/styles/theme";
 
-const CountUp = CountUpLib;
+const CountUp = CountUpLib.default || CountUpLib;
 
 // 🔥 THE FIX: Single, clean declarations placed in the correct order 🔥
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
