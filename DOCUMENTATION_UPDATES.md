@@ -231,3 +231,7 @@ Contributors can now navigate the documentation confidently and understand the s
 **Documentation Completion Date:** May 27, 2026  
 **Status:** ✅ Complete and Cross-Referenced  
 **Maintainer Notes:** All links verified and functional
+
+
+### ESLint Formatting Guidelines
+- Configure Prettier plugin in VSCode to format files on save.
