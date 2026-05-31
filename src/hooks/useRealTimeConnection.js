@@ -31,32 +31,32 @@ export const SSE_STATUS = {
 
 /**
  * Manages an SSE (Server-Sent Events) connection with exponential backoff.
- * 
- * By default, the base URL is derived from:
+ * * By default, the base URL is derived from:
  * 1. REACT_APP_SSE_URL (explicit SSE endpoint)
  * 2. REACT_APP_API_URL (general API base URL, e.g. http://localhost:8080/api/v1)
  * 3. Fallback to "http://localhost:8080/api/v1"
- * 
- * When testing with the local sse-mock-server, set:
- * REACT_APP_SSE_URL=http://localhost:4001
  *
  * Reconnection schedule: 1s → 2s → 4s → … → 30s (capped), plus ±500ms jitter.
- * Retries indefinitely so the client self-heals when the backend adds SSE support.
  *
- * @param {string} path - Endpoint path, e.g. "/stream/leaderboard" or "/stream/analytics"
+ * @param {string} path - Endpoint path, e.g. "/stream/leaderboard"
  * @param {object} [options]
+ * @param {string[]} [options.events=[]] - Array of custom event names to listen for
  * @param {function} [options.onMessage] - Called with (parsedData, eventType) on each event
  * @param {boolean} [options.enabled=true]  - Set false to disable the connection
  */
-export default function useRealTimeConnection(path, { onMessage, enabled = true } = {}) {
+export default function useRealTimeConnection(path, { events = [], onMessage, enabled = true } = {}) {
   const [status, setStatus] = useState(SSE_STATUS.IDLE);
 
   const sourceRef = useRef(null);
   const retryTimer = useRef(null);
   const attemptRef = useRef(0);
+  
   // Keep callback stable across renders without restarting the connection
   const onMessageRef = useRef(onMessage);
   useEffect(() => { onMessageRef.current = onMessage; }, [onMessage]);
+
+  // 🔥 FIX 1: Deep compare events array so inline arrays don't cause infinite reconnect loops
+  const eventsKey = JSON.stringify(events);
 
   const teardown = useCallback(() => {
     clearTimeout(retryTimer.current);
@@ -78,7 +78,7 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
       setStatus(SSE_STATUS.CONNECTED);
     };
 
-    source.onmessage = (evt) => {
+    const handleEvent = (evt) => {
       try {
         const data = JSON.parse(evt.data);
         onMessageRef.current?.(data, evt.type);
@@ -87,6 +87,19 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
         onMessageRef.current?.(evt.data, evt.type);
       }
     };
+
+    // Catch default messages (where event type is missing or exactly "message")
+    source.onmessage = handleEvent;
+
+    // 🔥 FIX 2: Catch custom named events which EventSource completely ignores by default
+    try {
+      const parsedEvents = JSON.parse(eventsKey);
+      parsedEvents.forEach(eventType => {
+        source.addEventListener(eventType, handleEvent);
+      });
+    } catch (e) {
+      console.error("[useRealTimeConnection] Failed to bind custom events", e);
+    }
 
     source.onerror = () => {
       // EventSource fires onerror on any failure (network drop, 4xx, 5xx).
@@ -99,7 +112,7 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
       setStatus(SSE_STATUS.RECONNECTING);
       retryTimer.current = setTimeout(connect, delay);
     };
-  }, [path, teardown]);
+  }, [path, eventsKey, teardown]);
 
   useEffect(() => {
     if (!enabled) {
@@ -110,7 +123,7 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
     attemptRef.current = 0;
     connect();
     return teardown;
-  }, [path, enabled, connect, teardown]);
+  }, [path, enabled, eventsKey, connect, teardown]);
 
   const reconnect = useCallback(() => {
     attemptRef.current = 0;
