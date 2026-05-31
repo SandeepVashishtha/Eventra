@@ -17,6 +17,8 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   // Use a ref for the debounce timer so clearTimeout can reach it from
   // the cleanup effect regardless of which render created the timer.
   const timeoutRef = useRef(null);
+  const isMountedRef = useRef(false);
+  const validationRunRef = useRef(0);
 
   // Keep the latest rule set and initial state in refs so callbacks that
   // close over them do not need to list them as dependencies — which would
@@ -45,6 +47,31 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const [touched, setTouched] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
 
+  const clearValidationTimer = useCallback(() => {
+    validationRunRef.current += 1;
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      clearValidationTimer();
+    };
+  }, [clearValidationTimer]);
+
+  useEffect(() => {
+    return () => {
+      clearValidationTimer();
+    };
+  }, [clearValidationTimer, debounceMs, validateOnBlur]);
+
+  // Validate a single field
   // Validate a single field against its rule. Returns the error string or null.
   const validateField = useCallback((name, value, allValues) => {
     if (!validationRulesRef.current[name]) return null;
@@ -87,20 +114,24 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     if (!validationRulesRef.current[name]) return;
     if (optionsRef.current.validateOnBlur) return;
 
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    clearValidationTimer();
+    const validationRun = validationRunRef.current + 1;
+    validationRunRef.current = validationRun;
 
     timeoutRef.current = setTimeout(() => {
-      // Read the current field value from the functional-update closure to
-      // avoid the stale-closure problem that arose when `values` was in the
-      // dependency array of the callback.
+      timeoutRef.current = null;
+      if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
+
       setValues((prev) => {
         const currentValues = { ...prev, [name]: value };
         const error = validateField(name, value, currentValues);
-        setErrors((errs) => ({ ...errs, [name]: error }));
-        return prev; // no state change — we only needed prev for validation
+        if (isMountedRef.current && validationRunRef.current === validationRun) {
+          setErrors((errs) => ({ ...errs, [name]: error }));
+        }
+        return prev;
       });
     }, optionsRef.current.debounceMs);
-  }, [validateField]);
+  }, [validateField, clearValidationTimer]);
 
   // Cancel the pending debounce timer when the hook unmounts to prevent
   // setState calls on an unmounted component.
@@ -132,15 +163,12 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
 
   // Reset form to initial state and clear all validation state.
   const resetForm = useCallback(() => {
+    clearValidationTimer();
     setValues(initialStateRef.current);
     setErrors({});
     setTouched({});
     setIsFormValid(false);
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, []);
+  }, [clearValidationTimer]);
 
   return {
     values,

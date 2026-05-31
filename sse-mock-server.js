@@ -1,11 +1,12 @@
 /**
  * Local mock SSE server for testing useRealTimeConnection.
  * Run: node sse-mock-server.js
- * Then set REACT_APP_API_URL=http://localhost:4001 in .env.local and restart the dev server.
+ * Then set REACT_APP_API_URL=http://localhost:8080 in .env.local and restart the dev server.
  */
-const http = require("http");
+import http from "http";
 
-const PORT = parseInt(process.env.SSE_MOCK_PORT || process.env.PORT || "4001", 10);
+// Updated default fallback port to 8080 to match your api.js default config
+const PORT = parseInt(process.env.SSE_MOCK_PORT || process.env.PORT || "8080", 10);
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "http://localhost:3000";
 
 // Gated behind SSE_DEBUG env var in development to reduce console noise
@@ -41,17 +42,33 @@ function send(res, data) {
 }
 
 const server = http.createServer((req, res) => {
+  // Handle Preflight OPTIONS requests for regular API calls
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-      "Access-Control-Allow-Methods": "GET",
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Credentials": "true",
     });
     res.end();
     return;
   }
 
-  if (req.url === "/stream/leaderboard") {
+  // Mock Profile Endpoint Handler - Stops AuthProvider context crashes
+  if (req.url === "/api/users/profile" || req.url === "/users/profile") {
+    res.writeHead(200, {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+      "Access-Control-Allow-Credentials": "true",
+    });
+    res.end(JSON.stringify({
+      success: true,
+      user: { id: "mock-dev-123", name: "Sadwika", role: "developer" }
+    }));
+    return;
+  }
+
+  if (req.url === "/stream/leaderboard" || req.url === "/api/stream/leaderboard") {
     sseHeaders(res);
     log("[SSE] leaderboard client connected");
 
@@ -76,7 +93,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.url === "/stream/analytics") {
+  if (req.url === "/stream/analytics" || req.url === "/api/stream/analytics") {
     sseHeaders(res);
     log("[SSE] analytics client connected");
 
@@ -97,18 +114,23 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  res.writeHead(404);
-  res.end();
+  // Fallback 404 with safety CORS headers included to protect browser channel
+  res.writeHead(404, {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+    "Access-Control-Allow-Credentials": "true",
+  });
+  res.end(JSON.stringify({ error: `Route ${req.url} not found on local mock server.` }));
 });
 
 server.listen(PORT, () => {
   console.log(`\n[Dev Only] SSE mock server running on port ${PORT}`);
   console.log(`Allowed Origin: ${ALLOWED_ORIGIN}`);
-  console.log("Streams available:");
-  console.log(`  GET http://localhost:${PORT}/stream/leaderboard`);
-  console.log(`  GET http://localhost:${PORT}/stream/analytics`);
+  console.log("Streams and Endpoints available:");
+  console.log(`  GET http://localhost:${PORT}/api/users/profile`);
+  console.log(`  GET http://localhost:${PORT}/api/stream/leaderboard`);
+  console.log(`  GET http://localhost:${PORT}/api/stream/analytics`);
   console.log("\nNext steps:");
-  console.log(`  1. Create/update .env.local with: REACT_APP_API_URL=http://localhost:${PORT}`);
-  console.log("  2. Restart the React dev server (npm run dev)");
-  console.log(`  3. Run with SSE_DEBUG=true to enable verbose streaming logs\n`);
+  console.log("  1. Restart the React dev server (npm run dev)");
+  console.log(`  2. Run with SSE_DEBUG=true to enable verbose streaming logs\n`);
 });

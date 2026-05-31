@@ -7,7 +7,7 @@ import ModernSearchInput from "../../components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
 import { darkTheme } from "../../components/styles/theme";
 
-const CountUp = CountUpLib.default;
+const CountUp = CountUpLib.default || CountUpLib;
 
 // 🔥 THE FIX: Single, clean declarations placed in the correct order 🔥
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
@@ -88,17 +88,18 @@ export default function EventHero({
   };
 
   useEffect(() => {
-  // Preload hero background image for better LCP
-  const preloadLink = document.createElement('link');
-  preloadLink.rel = 'preload';
-  preloadLink.as = 'image';
-  preloadLink.href = '/assets/eventbg.png';
-  document.head.appendChild(preloadLink);
-  
-  return () => {
-    document.head.removeChild(preloadLink);
-  };
-}, []);
+    // Preload hero background image for better LCP
+    const preloadLink = document.createElement("link");
+    preloadLink.rel = "preload";
+    preloadLink.as = "image";
+    preloadLink.href = "/assets/eventbg.png";
+
+    document.head.appendChild(preloadLink);
+
+    return () => {
+      document.head.removeChild(preloadLink);
+    };
+  }, []);
   const clearSearchHistory = useCallback(() => {
     persistSearchHistory([]);
   }, [persistSearchHistory]);

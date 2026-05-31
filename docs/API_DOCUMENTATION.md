@@ -845,7 +845,7 @@ Authorization: Bearer <token>
 |--------|----------|
 | POST | `/api/projects` |
 
-Submits a new project. Requires JWT authentication.
+Submits a new project. Requires authentication with one of the following roles: `ORGANIZER`, `ADMIN`, `SUPER_ADMIN`.
 
 ### Request Headers
 
@@ -858,37 +858,39 @@ Content-Type: application/json
 
 ```json
 {
-  "title": "Eventra Mobile App",
-  "description": "A cross-platform mobile application for event management",
-  "category": "Mobile Development",
-  "repositoryUrl": "https://github.com/example/eventra-mobile"
+  "title": "Manual Test Project",
+  "description": "Project created during manual backend verification.",
+  "category": "Web Development",
+  "thumbnailUrl": "https://example.com/project-thumbnail.png",
+  "githubUrl": "https://github.com/example/manual-test-project"
 }
 ```
+
+- `title`: required
+- `description`: required
+- `category`: required
+- `thumbnailUrl`: optional
+- `githubUrl`: optional
 
 ### Successful Response (201)
 
 ```json
 {
   "id": 1,
-  "title": "Eventra Mobile App",
-  "description": "A cross-platform mobile application for event management",
-  "category": "Mobile Development",
-  "repositoryUrl": "https://github.com/example/eventra-mobile",
-  "submittedBy": "john@example.com"
+  "title": "Manual Test Project",
+  "description": "Project created during manual backend verification.",
+  "category": "Web Development",
+  "thumbnailUrl": "https://example.com/project-thumbnail.png",
+  "githubUrl": "https://github.com/example/manual-test-project",
+  "upvotes": 0
 }
 ```
 
-### Error Response (401)
+### Error Responses
 
-```json
-{
-  "status": 401,
-  "error": "Unauthorized",
-  "message": "Full authentication is required to access this resource",
-  "path": "/api/projects",
-  "timestamp": "2026-05-19T12:20:31"
-}
-```
+- **400 Bad Request**: Validation failure for required fields.
+- **401 Unauthorized**: No token provided or token is invalid.
+- **403 Forbidden**: Authenticated user does not have the required role (`ORGANIZER`, `ADMIN`, or `SUPER_ADMIN`).
 
 ---
 

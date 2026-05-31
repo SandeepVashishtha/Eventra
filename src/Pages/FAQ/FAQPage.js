@@ -350,7 +350,13 @@ export default function FAQSection() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 32px 20px 0;
+          padding: 32px max(20px, env(safe-area-inset-right) + 88px) 0 20px;
+        }
+
+        @media (max-width: 640px) {
+          .faq-cards-container {
+            padding-right: 20px;
+          }
         }
 
         .card-pin-wrapper {
@@ -593,7 +599,7 @@ export default function FAQSection() {
                 No matching FAQs found
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6 leading-relaxed">
-                We couldn't find any questions matching "{searchTerm}" under the {selectedCategory}{" "}
+                We couldn&apos;t find any questions matching &quot;{searchTerm}&quot; under the {selectedCategory}{" "}
                 category. Try broadening your keywords.
               </p>
               <button

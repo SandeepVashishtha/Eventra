@@ -143,8 +143,9 @@ export default async function handler(req, res) {
   };
 
   try {
+    const contributorsUrl = `https://api.github.com/repos/${GITHUB_REPO}/contributors`;
     const [contributorsRes, firstPagePrs] = await Promise.all([
-      fetch(`https://api.github.com/repos/${GITHUB_REPO}/contributors`, { headers }),
+      fetch(contributorsUrl, { headers }),
       fetchPrPage(1, headers),
     ]);
 
@@ -199,6 +200,8 @@ export default async function handler(req, res) {
       (a, b) => b.points - a.points,
     );
 
+    // 5. Populate the in-process cache so subsequent warm-instance calls skip
+    //    the GitHub round-trips entirely for the next CACHE_TTL_MS window.
     cachedLeaderboard = sortedContributors;
     cacheTimestamp = Date.now();
 

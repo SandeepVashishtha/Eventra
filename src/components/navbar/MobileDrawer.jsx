@@ -71,7 +71,7 @@ const MobileDrawer = ({
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`mobile-drawer-panel absolute right-0 top-0 flex w-[min(92vw,24rem)] max-w-drawer flex-col bg-white shadow-2xl transition-transform duration-200 ease-out dark:bg-gray-900 ${
+        className={`mobile-drawer-panel absolute right-0 top-0 flex w-[min(92vw,24rem)] max-w-drawer flex-col bg-white shadow-premium-lg transition-transform duration-200 ease-out dark:bg-gray-900 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -102,10 +102,8 @@ const MobileDrawer = ({
 
         <div className="flex h-[calc(100%-73px)] flex-col overflow-y-auto px-4 py-5">
           <NavbarLinks
-            mobile
-            onLinkClick={closeMenu}
-            isAuthenticated={isAuthenticated}
-            user={user}
+            vertical
+            onClick={closeMenu}
           />
 
           <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-800">
