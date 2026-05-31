@@ -22,25 +22,26 @@ const LOCAL_STORAGE_KEY = "eventra_checkins";
 export default function TicketScanner() {
   const [devices, setDevices] = useState([]);
   const [selectedCameraId, setSelectedCameraId] = useState("");
-  const [scannerStatus, setScannerStatus] = useState("idle"); // idle, starting, scanning, stopped, error
-  const [scanResult, setScanResult] = useState(null); // { status: 'verified'|'flagged'|'duplicate', data: { ... } }
+  const [scannerStatus, setScannerStatus] = useState("idle");
+  const [scanResult, setScanResult] = useState(null);
   const [manualMode, setManualMode] = useState(false);
 
-  // Manual form state
   const [manualTicketId, setManualTicketId] = useState("");
   const [manualAttendeeName, setManualAttendeeName] = useState("");
   const [manualEventName, setManualEventName] = useState("Global AI Hackathon");
 
   const qrCodeInstanceRef = useRef(null);
+  // 🔥 FIX 1: Track component mount state to prevent orphaned camera streams
+  const isMounted = useRef(true);
   const readerId = "html5-qr-reader";
 
-  // Load cameras
   useEffect(() => {
+    isMounted.current = true;
     Html5Qrcode.getCameras()
       .then((cameras) => {
+        if (!isMounted.current) return;
         if (cameras && cameras.length > 0) {
           setDevices(cameras);
-          // Default to back camera or first device
           const backCam = cameras.find(
             (cam) =>
               cam.label.toLowerCase().includes("back") ||
@@ -54,28 +55,31 @@ export default function TicketScanner() {
       })
       .catch((err) => {
         console.error("Error getting cameras:", err);
-        setScannerStatus("error");
+        if (isMounted.current) setScannerStatus("error");
       });
 
     return () => {
-      // Cleanup scanner on unmount
+      isMounted.current = false;
       stopScanner();
     };
   }, []);
 
-  // Stop the active scanner
   const stopScanner = async () => {
-    if (qrCodeInstanceRef.current && qrCodeInstanceRef.current.isScanning) {
+    if (qrCodeInstanceRef.current) {
       try {
-        await qrCodeInstanceRef.current.stop();
-        setScannerStatus("stopped");
+        // 🔥 FIX 2: Blindly attempt to stop to catch edge cases, and call clear() to destroy the DOM video element
+        if (qrCodeInstanceRef.current.isScanning) {
+          await qrCodeInstanceRef.current.stop();
+        }
+        qrCodeInstanceRef.current.clear();
       } catch (err) {
-        console.error("Failed to stop scanner:", err);
+        console.error("Failed to stop or clear scanner:", err);
+      } finally {
+        if (isMounted.current) setScannerStatus("stopped");
       }
     }
   };
 
-  // Start the scanner with selected camera ID
   const startScanner = async (cameraId) => {
     const targetId = cameraId || selectedCameraId;
     if (!targetId) {
@@ -104,19 +108,27 @@ export default function TicketScanner() {
         (decodedText) => {
           handleScanSuccess(decodedText);
         },
-        (errorMessage) => {
-          // Silent failure during continuous frame scanning to avoid spamming logs
-        }
+        () => {}
       );
+
+      // 🔥 FIX 3: If the user unmounted the component or clicked 'Manual Mode' while the camera was spinning up,
+      // instantly kill the hardware stream to prevent the green light from staying on permanently.
+      if (!isMounted.current || manualMode) {
+        await qrCode.stop();
+        qrCode.clear();
+        return;
+      }
+
       setScannerStatus("scanning");
     } catch (err) {
       console.error("Scanner failed to start:", err);
-      setScannerStatus("error");
-      toast.error("Could not access camera. Please verify permissions.");
+      if (isMounted.current) {
+        setScannerStatus("error");
+        toast.error("Could not access camera. Please verify permissions.");
+      }
     }
   };
 
-  // Switch camera handle
   const handleCameraChange = (e) => {
     const newId = e.target.value;
     setSelectedCameraId(newId);
@@ -125,7 +137,6 @@ export default function TicketScanner() {
     }
   };
 
-  // Process a successfully decoded QR code
   const handleScanSuccess = async (decodedText) => {
     await stopScanner();
 
@@ -133,7 +144,6 @@ export default function TicketScanner() {
     try {
       ticketData = JSON.parse(decodedText);
     } catch (e) {
-      // Fallback: Check if it's a raw string ticket ID instead of JSON
       if (decodedText.trim().length > 3) {
         ticketData = {
           ticketId: decodedText.trim(),
@@ -161,7 +171,6 @@ export default function TicketScanner() {
   const processTicket = (ticketData) => {
     const savedCheckins = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
 
-    // Check if duplicate check-in
     const isDuplicate = savedCheckins.some(
       (c) => c.ticketId === ticketData.ticketId && c.status === "Verified"
     );
@@ -185,7 +194,6 @@ export default function TicketScanner() {
     }
   };
 
-  // Log checkin to localStorage
   const logCheckIn = (name, event, status, ticketId = null) => {
     try {
       const savedCheckins = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
@@ -195,17 +203,16 @@ export default function TicketScanner() {
         name: name || "Unknown Guest",
         event: event || "Official Event",
         time: "Just now",
-        status: status, // "Verified" or "Flagged"
+        status: status,
       };
 
-      const updated = [newCheckin, ...savedCheckins].slice(0, 50); // limit local history to 50
+      const updated = [newCheckin, ...savedCheckins].slice(0, 50);
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
     } catch (err) {
       console.error("Failed to write check-in to localStorage:", err);
     }
   };
 
-  // Handle manual code check-in submit
   const handleManualCheckIn = (e) => {
     e.preventDefault();
     if (!manualTicketId.trim() || !manualAttendeeName.trim()) {
@@ -222,7 +229,6 @@ export default function TicketScanner() {
 
     processTicket(manualData);
 
-    // Clear manual inputs
     setManualTicketId("");
     setManualAttendeeName("");
   };
@@ -234,7 +240,6 @@ export default function TicketScanner() {
 
   return (
     <div className="ts-root bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-md transition-all duration-300">
-      {/* HEADER BANNER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-5 mb-6 gap-4">
         <div>
           <h2 className="text-xl font-black text-slate-850 dark:text-slate-100 tracking-tight flex items-center gap-2">
@@ -242,12 +247,10 @@ export default function TicketScanner() {
             Active Door Pass Scanner
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Access device camera to scan dynamic attendee QR codes instantly or enter ticket codes
-            manually.
+            Access device camera to scan dynamic attendee QR codes instantly or enter ticket codes manually.
           </p>
         </div>
 
-        {/* SCAN MODE TOGGLES */}
         <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl self-start sm:self-auto">
           <button
             onClick={() => {
@@ -264,9 +267,10 @@ export default function TicketScanner() {
             Camera Scanner
           </button>
           <button
-            onClick={() => {
+            onClick={async () => {
               setManualMode(true);
-              stopScanner();
+              // 🔥 FIX 4: Properly await the stopScanner to ensure the camera shuts off when toggling modes
+              await stopScanner();
               setScanResult(null);
             }}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
@@ -280,14 +284,10 @@ export default function TicketScanner() {
         </div>
       </div>
 
-      {/* SCANNING WORKSPACE */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* LEFT / CENTER PANEL: SCANNER CONTAINER or MANUAL VIEW */}
         <div className="lg:col-span-3 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-2xl p-6 min-h-[380px] relative overflow-hidden">
           {!manualMode ? (
-            /* CAMERA MODE */
             <div className="w-full flex flex-col items-center gap-4">
-              {/* Camera selection dropdown */}
               {devices.length > 1 && (
                 <div className="w-full max-w-sm flex items-center gap-2 mb-2">
                   <label
@@ -311,21 +311,17 @@ export default function TicketScanner() {
                 </div>
               )}
 
-              {/* Reader Container Frame */}
               <div className="relative w-full max-w-md aspect-square bg-slate-900 rounded-2xl overflow-hidden border-2 border-dashed border-slate-700/80 dark:border-slate-800/80 flex items-center justify-center">
                 <div id={readerId} className="w-full h-full object-cover" />
 
-                {/* Target overlay guide frame */}
                 {scannerStatus === "scanning" && (
                   <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                     <div className="w-2/3 h-2/3 border-2 border-indigo-500 rounded-2xl relative animate-pulse flex items-center justify-center bg-transparent">
-                      {/* Crop Corners */}
                       <span className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-indigo-500 -mt-1 -ml-1 rounded-tl-lg" />
                       <span className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-indigo-500 -mt-1 -mr-1 rounded-tr-lg" />
                       <span className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-indigo-500 -mb-1 -ml-1 rounded-bl-lg" />
                       <span className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-indigo-500 -mb-1 -mr-1 rounded-br-lg" />
 
-                      {/* Glowing red scanner beam line */}
                       <div
                         className="absolute w-full h-[3px] bg-rose-500/80 shadow-[0_0_10px_#f43f5e] rounded-full animate-bounce"
                         style={{ top: "10%" }}
@@ -334,7 +330,6 @@ export default function TicketScanner() {
                   </div>
                 )}
 
-                {/* Scanner states overlay messages */}
                 {scannerStatus === "idle" && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/80 text-white p-4 text-center">
                     <CameraOff className="w-10 h-10 text-slate-500" />
@@ -376,7 +371,6 @@ export default function TicketScanner() {
                 )}
               </div>
 
-              {/* Status Actions */}
               {scannerStatus === "scanning" && (
                 <button
                   onClick={stopScanner}
@@ -387,7 +381,6 @@ export default function TicketScanner() {
               )}
             </div>
           ) : (
-            /* MANUAL MODE ENTRY FORM */
             <form
               onSubmit={handleManualCheckIn}
               className="w-full max-w-sm flex flex-col gap-5 py-2"
@@ -457,7 +450,6 @@ export default function TicketScanner() {
             </form>
           )}
 
-          {/* SCAN FEEDBACK OVERLAY CARD */}
           {scanResult && (
             <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-fadeIn z-20">
               {scanResult.status === "verified" && (
@@ -542,7 +534,6 @@ export default function TicketScanner() {
           )}
         </div>
 
-        {/* RIGHT PANEL: LIVE ACTIVITY LOG PREVIEW */}
         <div className="lg:col-span-2 flex flex-col h-full min-h-[380px] bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-2xl p-5">
           <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
@@ -554,7 +545,6 @@ export default function TicketScanner() {
             </span>
           </h3>
 
-          {/* History records stack */}
           <div className="flex-1 overflow-y-auto space-y-3 max-h-[320px] pr-1">
             {(() => {
               const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
