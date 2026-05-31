@@ -220,17 +220,17 @@ API.interceptors.response.use(
     
     // Retry non-mutating requests with exponential backoff
     if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
-      config._retryCount = retryCount + 1;
+      const newConfig = { ...config, _retryCount: retryCount + 1 };
       const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
       if (isDev) {
         console.debug(
-          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
+          `[API ${newConfig.method?.toUpperCase()}] ${newConfig.url} returned ${status}, retrying in ${delay}ms (attempt ${newConfig._retryCount})...`
         );
       }
 
       await new Promise((resolve) => setTimeout(resolve, delay));
-      return API(config);
+      return API(newConfig);
     }
     throw normalizeApiError(error);
   }
