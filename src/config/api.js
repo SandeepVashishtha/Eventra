@@ -205,7 +205,21 @@ API.interceptors.request.use((config) => {
 });
 
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Extract server Date header to prevent client clock manipulation
+    try {
+      const dateHeader = response.headers?.get?.("date") || response.headers?.["date"];
+      if (dateHeader) {
+        const serverTime = new Date(dateHeader).getTime();
+        if (!Number.isNaN(serverTime)) {
+          window.__SERVER_TIME_OFFSET__ = serverTime - Date.now();
+        }
+      }
+    } catch (e) {
+      // Ignore header parsing errors
+    }
+    return response;
+  },
   async (error) => {
     const config = error.config || {};
     const status = error?.response?.status;

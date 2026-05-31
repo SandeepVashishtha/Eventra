@@ -32,10 +32,15 @@ const asEndOfDay = (date) => {
   return clone;
 };
 
+export const getCurrentServerTime = () => {
+  const offset = window.__SERVER_TIME_OFFSET__ || 0;
+  return new Date(Date.now() + offset);
+};
+
 export const computeDateStatus = (event) => {
   const startDate = parseEventDate(event.startDate || event.date);
   const endDate = asEndOfDay(parseEventDate(event.endDate || event.date));
-  const now = new Date();
+  const now = getCurrentServerTime();
 
   if (!startDate) return "upcoming";
   if (now < startDate) return "upcoming";
