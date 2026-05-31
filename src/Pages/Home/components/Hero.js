@@ -126,27 +126,7 @@ const Hero = () => {
   const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  const shapeTransform0 = useTransform(scrollYProgress, [0, 1], [0, 220]);
-  const shapeTransform1 = useTransform(scrollYProgress, [0, 1], [0, -135]);
-  const shapeTransform2 = useTransform(scrollYProgress, [0, 1], [0, 180]);
-  const shapeTransform3 = useTransform(scrollYProgress, [0, 1], [0, -105]);
-  const shapeTransform4 = useTransform(scrollYProgress, [0, 1], [0, 140]);
-  const shapeTransform5 = useTransform(scrollYProgress, [0, 1], [0, -75]);
-  const shapeTransform6 = useTransform(scrollYProgress, [0, 1], [0, 100]);
-  const shapeTransform7 = useTransform(scrollYProgress, [0, 1], [0, -45]);
-  const shapeTransform8 = useTransform(scrollYProgress, [0, 1], [0, 60]);
-
-  const shapeTransforms = [
-    shapeTransform0,
-    shapeTransform1,
-    shapeTransform2,
-    shapeTransform3,
-    shapeTransform4,
-    shapeTransform5,
-    shapeTransform6,
-    shapeTransform7,
-    shapeTransform8,
-  ];
+  const shapeTransform0 = useTransform(scrollYProgress, [0, 1], [0, 60]);
 
   // ─── HANDLERS ──────────────────────────────────────────────────────────────
   const handleSearch = useCallback((query) => setSearchTerm(query), [setSearchTerm]);
@@ -195,17 +175,7 @@ const Hero = () => {
   });
 
   // ─── CONFIG ────────────────────────────────────────────────────────────────
-  const shapes = [
-    { size: 42, pos: { top: "10%", left: "5%" }, light: "#3b82f6", dark: "#60a5fa" },
-    { size: 54, pos: { top: "14%", left: "20%" }, light: "#f59e0b", dark: "#fbbf24" },
-    { size: 30, pos: { top: "24%", left: "42%" }, light: "#22c55e", dark: "#4ade80" },
-    { size: 50, pos: { top: "30%", left: "70%" }, light: "#0ea5e9", dark: "#38bdf8" },
-    { size: 40, pos: { top: "52%", left: "10%" }, light: "#ec4899", dark: "#f472b6" },
-    { size: 26, pos: { top: "42%", left: "32%" }, light: "#8b5cf6", dark: "#a78bfa" },
-    { size: 68, pos: { top: "68%", left: "24%" }, light: "#f43f5e", dark: "#fb7185" },
-    { size: 50, pos: { top: "72%", left: "64%" }, light: "#10b981", dark: "#34d399" },
-    { size: 34, pos: { top: "48%", left: "80%" }, light: "#eab308", dark: "#fcd34d" },
-  ];
+  // Decorative shapes removed for a clean, professional look
   const stats = [
     { value: 1500, label: "Developers", suffix: "+", icon: Users },
     { value: 75, label: "Events", suffix: "+", icon: Calendar },
@@ -218,33 +188,16 @@ const Hero = () => {
     <section
       ref={containerRef}
       aria-label="Hero section"
-      className="relative overflow-hidden bg-linear-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950 dark:via-slate-900/80 dark:to-black text-slate-900 dark:text-gray-100 pb-16 sm:pb-20 md:pb-24 border-b border-gray-100/60 dark:border-slate-800/60"
+      className="relative overflow-hidden text-slate-900 pb-16 sm:pb-20 md:pb-24 border-b border-gray-100"
+      style={{
+        background: 'linear-gradient(180deg,#F4F8FB 0%, #dae3ed 65%)',
+      }}
     >
-      {/* Decorative Parallax Shapes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-        {!isTouch &&
-          shapes.map((shape, i) => {
-            const color = isDark ? shape.dark : shape.light;
-            return (
-              <motion.div
-                key={i}
-                style={{
-                  position: "absolute",
-                  top: shape.pos.top,
-                  left: shape.pos.left,
-                  width: shape.size,
-                  height: shape.size,
-                  borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%",
-                  background: `linear-gradient(135deg, ${color}22, ${color}66)`,
-                  filter: "blur(1px)",
-                  boxShadow: `0 8px 32px 0 ${color}15`,
-                  y: prefersReducedMotion ? 0 : shapeTransforms[i],
-                  willChange: "transform",
-                }}
-                animate={prefersReducedMotion ? {} : floatShape(i)}
-              />
-            );
-          })}
+      {/* Subtle decorative blurred accents for professional depth */}
+      <div aria-hidden className="absolute inset-0 pointer-events-none -z-10">
+        <div style={{ position: 'absolute', top: 12, left: 28, width: 260, height: 160, borderRadius: '50%', background: '#E6F0F7', filter: 'blur(36px)', opacity: 0.8 }} />
+        <div style={{ position: 'absolute', top: 36, right: 80, width: 180, height: 120, borderRadius: '50%', background: '#EFF6FB', filter: 'blur(28px)', opacity: 0.7 }} />
+        <div style={{ position: 'absolute', bottom: 20, left: '12%', width: 220, height: 90, borderRadius: '50%', background: '#F7FAFC', filter: 'blur(20px)', opacity: 0.85 }} />
       </div>
 
       {/* Hero Content */}
@@ -262,33 +215,30 @@ const Hero = () => {
           initial="hidden"
           animate={controls}
         >
-          <MotionConfig reducedMotion="never">
-            {/* Headline */}
+            <MotionConfig reducedMotion="never">
+            {/* Headline: simplified for a professional tone */}
             <motion.h1
-              className="flex flex-col items-center gap-4 sm:gap-5 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-tight"
+              className="flex flex-col items-center gap-3 text-3xl sm:text-4xl md:text-4xl lg:text-5xl font-semibold leading-tight tracking-tight"
               style={{ fontFamily: '"Inter", system-ui, sans-serif' }}
             >
               <motion.span
-                className="block text-gray-600 dark:text-gray-400 text-base sm:text-lg md:text-xl font-medium"
-                initial={{ opacity: 0, y: 16 }}
+                className="block text-gray-500 text-sm font-medium"
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
+                transition={{ delay: 0.08 }}
               >
                 <RespawningText texts={["Discover & Join", "Innovate & Create", "Learn & Grow"]} />
               </motion.span>
 
-              <span className="block sm:hidden text-indigo-600 dark:text-indigo-400 font-extrabold text-xl">
-                {phrases[index]}
-              </span>
-
-              <div className="relative w-full min-h-24 sm:min-h-28 md:min-h-32 overflow-hidden flex justify-center items-center">
+              <div className="relative w-full min-h-20 sm:min-h-24 md:min-h-24 overflow-hidden flex justify-center items-center">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block text-transparent bg-clip-text bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 font-extrabold text-3xl sm:text-4xl md:text-5xl lg:text-6xl drop-shadow-sm"
-                    initial={{ opacity: 0, y: 32, filter: "blur(4px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: "easeOut" } }}
-                    exit={{ opacity: 0, y: -24, filter: "blur(4px)", transition: { duration: prefersReducedMotion ? 0 : 0.4, ease: "easeIn" } }}
+                    className="block text-gray-900 font-extrabold text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0, transition: { duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" } }}
+                    exit={{ opacity: 0, y: -16, transition: { duration: prefersReducedMotion ? 0 : 0.3, ease: "easeIn" } }}
+                    whileHover={prefersReducedMotion ? {} : { scale: 1.01 }}
                   >
                     {phrases[index]}
                   </motion.span>
@@ -300,26 +250,22 @@ const Hero = () => {
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mt-4 sm:mt-6 mb-8 sm:mb-10 leading-relaxed"
+            className="text-base sm:text-lg md:text-lg text-gray-600 max-w-3xl mx-auto mt-4 sm:mt-6 mb-8 sm:mb-10 leading-relaxed"
           >
-            Connect with developers, learn new skills, and grow your network at the best{" "}
-            <span className="font-semibold text-indigo-600 dark:text-indigo-400">tech events</span>,{" "}
-            <span className="font-semibold text-purple-600 dark:text-purple-400">hackathons</span>, and{" "}
-            <span className="font-semibold text-pink-600 dark:text-pink-400">workshops</span> in your area.
+            Connect with developers, learn new skills, and grow your network at curated tech events, hackathons, and workshops.
           </motion.p>
 
           {/* Global Search Bar */}
           <motion.div variants={fadeUp} className="w-full max-w-2xl mx-auto mb-10">
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-500" aria-hidden="true" />
-              <div className="relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-gray-200/60 dark:border-slate-700/60 rounded-2xl shadow-lg">
+            <div className="relative">
+              <div className="relative bg-white border border-gray-200 rounded-lg shadow-sm">
                 <ModernSearchInput
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search events, hackathons, projects..."
                   onFocus={() => searchTerm && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
-                  className="bg-transparent border-0 focus:ring-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                  className="bg-transparent border-0 focus:ring-0 text-gray-700 placeholder-gray-400"
                 >
                   {/* Search Results Dropdown */}
                   <AnimatePresence>
@@ -329,7 +275,7 @@ const Hero = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.98 }}
                         transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
-                        className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 max-h-80 overflow-y-auto z-50"
+                        className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-200 max-h-80 overflow-y-auto z-50"
                         role="listbox"
                         aria-label="Search results"
                       >
@@ -352,7 +298,7 @@ const Hero = () => {
                                     role="option"
                                     aria-label={`Open ${result.item.title}`}
                                   >
-                                    <div className="shrink-0 p-2 bg-linear-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 rounded-lg text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform">
+                                      <div className="shrink-0 p-2 bg-gray-100 rounded-lg text-gray-700 group-hover:scale-105 transition-transform">
                                       {getResultIcon(result.item.type)}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -395,39 +341,39 @@ const Hero = () => {
           {/* Stats Cards */}
           {!searchTerm.trim() && (
             <SectionErrorBoundary label="Statistics">
-              <motion.div
-                variants={fadeUp}
-                style={{ y: isTouch || prefersReducedMotion ? 0 : yStats, willChange: "transform" }}
-                className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 max-w-4xl mx-auto"
-                role="region"
-                aria-label="Platform statistics"
-              >
-                {stats.map((stat, i) => (
-                  <motion.div
-                    key={i}
-                    variants={fadeUp}
-                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                    className="flex flex-col items-center justify-center p-5 sm:p-6 bg-white/60 dark:bg-slate-900/50 backdrop-blur-md rounded-2xl border border-gray-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="mb-2 rounded-full bg-indigo-50/80 dark:bg-indigo-500/10 p-2 text-indigo-600 dark:text-indigo-400">
-                      <stat.icon className="h-5 w-5" aria-hidden="true" />
-                    </div>
-                    <p className="text-3xl sm:text-4xl font-black mb-1.5 text-gray-900 dark:text-white tabular-nums">
-                      {statsReady ? (
-                        <CountUp start={0} end={Number.isFinite(stat.value) ? stat.value : 0} duration={2.2} suffix={stat.suffix || ""} />
-                      ) : (
-                        <>
-                          {stat.value}
-                          {stat.suffix || ""}
-                        </>
-                      )}
-                    </p>
-                    <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wider text-center">
-                      {stat.label}
-                    </p>
-                  </motion.div>
-                ))}
-              </motion.div>
+                    <motion.div
+                      variants={fadeUp}
+                      style={{ y: isTouch || prefersReducedMotion ? 0 : yStats, willChange: "transform" }}
+                      className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 max-w-4xl mx-auto"
+                      role="region"
+                      aria-label="Platform statistics"
+                    >
+                      {stats.map((stat, i) => (
+                        <motion.div
+                          key={i}
+                          variants={fadeUp}
+                          whileHover={{ y: -2, transition: { duration: 0.15 } }}
+                          className="flex flex-col items-center justify-center p-4 sm:p-5 bg-white rounded-md border border-gray-100 shadow-sm transition-shadow"
+                        >
+                          <div className="mb-2 rounded-full bg-gray-100 p-2 text-gray-700">
+                            <stat.icon className="h-5 w-5" aria-hidden="true" />
+                          </div>
+                          <p className="text-2xl sm:text-3xl font-semibold mb-1 text-gray-900 tabular-nums">
+                            {statsReady ? (
+                              <CountUp start={0} end={Number.isFinite(stat.value) ? stat.value : 0} duration={2.2} suffix={stat.suffix || ""} />
+                            ) : (
+                              <>
+                                {stat.value}
+                                {stat.suffix || ""}
+                              </>
+                            )}
+                          </p>
+                          <p className="text-gray-600 text-xs sm:text-sm font-medium uppercase tracking-wider text-center">
+                            {stat.label}
+                          </p>
+                        </motion.div>
+                      ))}
+                    </motion.div>
             </SectionErrorBoundary>
           )}
         </motion.div>
