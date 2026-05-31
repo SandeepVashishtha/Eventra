@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FormField } from '../components/auth/Signup';
 import { Mail, User } from 'lucide-react';
 

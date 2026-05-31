@@ -28,7 +28,7 @@ const resolveEnvApiBaseUrl = () => {
     return normalizeApiBaseUrl(envUrl);
   }
   if (process.env.NODE_ENV === "production") {
-    console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
+    console.warn("VITE_API_URL environment variable is missing in production. Defaulting to relative API requests.");
     return "";
   }
   return "http://localhost:8080";
@@ -81,6 +81,13 @@ export class ApiError extends Error {
   }
 }
 
+export class RateLimitError extends ApiError {
+  constructor(message, { status = 429, data = null } = {}) {
+    super(message, { status, data });
+    this.name = "RateLimitError";
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Axios Instance
 // ---------------------------------------------------------------------------
@@ -100,9 +107,22 @@ export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
 
+/**
+ * Normalise the optional config/token argument accepted by apiUtils methods.
+ *
+ * IMPORTANT — do not pass a raw JWT string as the third argument to
+ * apiUtils.post / .put / .patch:
+ *   apiUtils.post(url, data, token)   ← WRONG: token is silently discarded
+ *
+ * Authentication is carried automatically via the HttpOnly session cookie
+ * (withCredentials: true on the Axios instance). Callers must never include
+ * user identity fields (userId, adminId) in the request body either — the
+ * backend must derive identity from the verified JWT, not from client-supplied
+ * body fields.
+ */
 const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-  
+
   if ("skipAuth" in config) {
     delete config.skipAuth;
   }
@@ -157,6 +177,13 @@ const normalizeApiError = (error) => {
     );
   }
 
+  if (status === 429) {
+    return new RateLimitError(
+      error.response?.data?.message || "Too many requests, please try again later.",
+      { status, data: error.response?.data || null }
+    );
+  }
+
   return new ApiError(
     error.response?.data?.message ||
       error.message ||
@@ -188,16 +215,21 @@ API.interceptors.response.use(
     }
 
     const retryCount = config._retryCount || 0;
-    if (RETRYABLE_STATUS_CODES.includes(status) && retryCount < MAX_RETRIES) {
+    const isNonMutating = config.method?.toUpperCase() === 'GET';
+    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status) || (status === 429);
+    
+    // Retry non-mutating requests with exponential backoff
+    if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
       config._retryCount = retryCount + 1;
+      const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
       if (isDev) {
         console.debug(
-          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${RETRY_DELAY_MS}ms (attempt ${config._retryCount})...`
+          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
         );
       }
 
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      await new Promise((resolve) => setTimeout(resolve, delay));
       return API(config);
     }
     throw normalizeApiError(error);
@@ -211,12 +243,10 @@ API.interceptors.response.use(
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: buildApiUrl("/api/auth/login"),
-    GOOGLE: buildApiUrl("/api/auth/google"),
     REGISTER: buildApiUrl("/api/auth/signup"),
     SIGNUP: buildApiUrl("/api/auth/signup"),
     LOGOUT: buildApiUrl("/api/auth/logout"),
     RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
-    OAUTH: buildApiUrl("/api/auth/oauth"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),
@@ -247,6 +277,9 @@ export const API_ENDPOINTS = {
     ALL: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
+    PREFERENCES: buildApiUrl("/api/notifications/preferences"),
+    PUSH_SUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions"),
+    PUSH_UNSUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions/unsubscribe"),
   },
   USERS: {
     PROFILE: buildApiUrl("/api/users/profile"),
@@ -276,3 +309,10 @@ export const apiUtils = {
 export default API;
 
 export { normalizeApiError };
+
+// Centralized configuration cache store for fallback endpoints
+export const apiConfigCache = {
+  store: new Map(),
+  get(key) { return this.store.get(key); },
+  set(key, val) { this.store.set(key, val); }
+};

@@ -2,11 +2,42 @@
 // Self-Healing Offline Queue Utility (IndexedDB backed with LocalStorage Backup)
 // ---------------------------------------------------------------------------
 import { safeJsonParse } from "./safeJsonParse.js";
-import { logger } from "../utils/logger";
+import { logger } from "./logger.js";
 
 const QUEUE_KEY = "eventra_offline_queue";
 const DB_NAME = "eventra_offline_db";
 const STORE_NAME = "actions_queue";
+const BACKGROUND_SYNC_TAG = "eventra-offline-queue-sync";
+
+const requestBackgroundSync = async () => {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+    return false;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    if (registration?.sync && typeof registration.sync.register === "function") {
+      await registration.sync.register(BACKGROUND_SYNC_TAG);
+      return true;
+    }
+  } catch (error) {
+    logger.warn("[OfflineQueue] Background sync registration failed:", error);
+  }
+
+  return false;
+};
+
+const notifyQueueUpdated = (queuedItem) => {
+  if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("eventra-offline-queue-updated", {
+      detail: { item: queuedItem },
+    })
+  );
+};
 
 /**
  * DB_VERSION controls the IndexedDB schema version.
@@ -45,7 +76,7 @@ const _rescueFromLocalStorage = () => {
 // Internal: notify the UI that a schema upgrade occurred
 // ---------------------------------------------------------------------------
 const _dispatchUpgradeEvent = (rescuedCount) => {
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
     window.dispatchEvent(
       new CustomEvent("eventra-offline-queue-upgraded", {
         detail: {
@@ -178,7 +209,7 @@ const openDB = () => {
      * close other tabs.
      */
     request.onblocked = () => {
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
         window.dispatchEvent(
           new CustomEvent("eventra-offline-db-blocked", {
             detail: {
@@ -281,6 +312,11 @@ const generateQueueId = () => {
  * cross-user action replay. If a user logs out and another user logs in,
  * the queued actions are validated for ownership before replay.
  */
+// Maximum serialised byte length for a single queue item's payload field.
+// With the 15-item slot cap, the total localStorage footprint is at most
+// 15 x 50 KB = 750 KB, safely within the 5 MB browser quota.
+const MAX_PAYLOAD_BYTES = 50 * 1024;
+
 export const pushToQueue = async (item, userId = null) => {
   // Add metadata tracking with security context
   const actionItem = {
@@ -293,14 +329,36 @@ export const pushToQueue = async (item, userId = null) => {
     endpoint: item.endpoint || null,
     // SECURITY: Attach user ID to validate ownership on replay
     userId: userId || null,
-    sessionId: typeof window !== "undefined" ? sessionStorage.getItem("session_id") || null : null,
+    sessionId:
+      typeof sessionStorage !== "undefined"
+        ? sessionStorage.getItem("session_id") || null
+        : null,
   };
+
+  // Guard against oversized payloads before they reach localStorage.
+  // An uncapped payload can fill the 5 MB quota in a single write, causing
+  // every subsequent localStorage.setItem call (including auth-state writes
+  // in AuthContext) to throw QuotaExceededError, silently corrupting the app.
+  const serialisedPayload = JSON.stringify(actionItem.payload);
+  if (serialisedPayload.length > MAX_PAYLOAD_BYTES) {
+    logger.warn(
+      `[OfflineQueue] Payload too large (${serialisedPayload.length} bytes). Dropping item to protect localStorage quota.`
+    );
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+      window.dispatchEvent(
+        new CustomEvent("eventra-offline-queue-full", {
+          detail: { reason: "payload-too-large", eventId: item.eventId },
+        })
+      );
+    }
+    return false;
+  }
 
   // 1. Sync mirror updates immediately (Synchronous fallback)
   const queue = getQueue();
   if (queue.length >= 15) {
     logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
       window.dispatchEvent(
         new CustomEvent("eventra-offline-queue-full", {
           detail: { eventId: item.eventId, limit: 15 },
@@ -336,7 +394,14 @@ export const pushToQueue = async (item, userId = null) => {
   }
 
   // Return true if either storage successfully queued the item to prevent data loss
-  return localStorageSuccess || indexedDbSuccess;
+  const queued = localStorageSuccess || indexedDbSuccess;
+
+  if (queued) {
+    notifyQueueUpdated(actionItem);
+    await requestBackgroundSync();
+  }
+
+  return queued;
 };
 
 /**
@@ -383,6 +448,8 @@ export const setQueue = async (newQueue) => {
   } catch (err) {
     logger.error("IndexedDB setQueue failed:", err);
   }
+
+  notifyQueueUpdated(null);
 };
 
 /**
@@ -409,6 +476,8 @@ export const clearQueue = async () => {
   } catch (err) {
     logger.error("IndexedDB clear failed:", err);
   }
+
+  notifyQueueUpdated(null);
 };
 
 /**

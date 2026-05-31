@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { GitHubStatCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import {
@@ -68,33 +68,41 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        // Fetch repository data through the GitHub API proxy
-        const repoData = await fetchRepository(GITHUB_USER, GITHUB_REPO);
+        // Fire all three requests in parallel — none depends on the others,
+        // so sequential awaits would triple the load time unnecessarily.
+        const [repoResult, contributorsResult, pullRequestsResult] =
+          await Promise.allSettled([
+            fetchRepository(GITHUB_USER, GITHUB_REPO),
+            fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1),
+            fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+          ]);
 
-        // Fetch contributors count
+        // Repository data is required; bail out if it failed
+        if (repoResult.status === "rejected") {
+          throw repoResult.reason;
+        }
+        const repoData = repoResult.value;
+
+        // Contributor count — graceful fallback on failure
         let contribCount = "—";
-        try {
-          const contributors = await fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1);
+        if (contributorsResult.status === "fulfilled") {
+          const contributors = contributorsResult.value;
           if (Array.isArray(contributors) && contributors.length > 0) {
-            // GitHub API returns pagination info in headers, but for a quick count
-            // we fetch one item and use the fact that if we get results, there are contributors
-            contribCount = contributors.length > 0 ? contributors.length : "—";
+            contribCount = contributors.length;
           }
-        } catch (err) {
-          console.warn("Failed to fetch contributor count:", err);
+        } else {
+          //console.warn("Failed to fetch contributor count:", contributorsResult.reason);
         }
 
-        // Fetch pull requests count
+        // Pull request count — graceful fallback on failure
         let prCount = "—";
-        try {
-          const pullRequests = await fetchPullRequests(GITHUB_USER, GITHUB_REPO, {
-            per_page: 1,
-          });
-          if (Array.isArray(pullRequests)) {
-            prCount = pullRequests.length > 0 ? pullRequests.length : "—";
+        if (pullRequestsResult.status === "fulfilled") {
+          const pullRequests = pullRequestsResult.value;
+          if (Array.isArray(pullRequests) && pullRequests.length > 0) {
+            prCount = pullRequests.length;
           }
-        } catch (err) {
-          console.warn("Failed to fetch pull request count:", err);
+        } else {
+         //console.warn("Failed to fetch pull request count:", pullRequestsResult.reason);
         }
 
         const next = {
@@ -118,8 +126,8 @@ export default function GitHubStats() {
           writeCache(next);
           setIsLoading(false);
         }
-      } catch (err) {
-        console.warn("GitHub stats fetch failed", err);
+      } catch {
+        //console.warn("GitHub stats fetch failed", err);
         if (!cached && mounted) {
           setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
           setIsLoading(false);
@@ -219,12 +227,11 @@ export default function GitHubStats() {
         >
           {isLoading
             ? [...Array(10)].map((_, i) => <GitHubStatCardSkeleton key={`skeleton-${i}`} />)
-            : statCards.map(({ label, value, icon, link }, index) => (
+            : statCards.map(({ label, value, icon, link }) => (
                 <motion.a
                   key={label}
                   href={link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, rotate: 1 }}
                   whileTap={{ scale: 0.95 }}
                   // UPDATED: Card background, border, and responsive sizing

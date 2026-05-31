@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 const CITIES = [
   { id: "nyc", name: "New York", x: 250, y: 180, contributors: "1,250", projects: "340" },

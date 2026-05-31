@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ConfirmationModal from "../common/ConfirmationModal";
 import {
   Plus, Minus, Trash2, Save, RotateCcw,
@@ -59,7 +59,15 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const [lastSavedElementsStr, setLastSavedElementsStr] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  
+
+  const [announcement, setAnnouncement] = useState("");
+  const announce = (message) => {
+    setAnnouncement("");
+    setTimeout(() => {
+      setAnnouncement(message);
+    }, 50);
+  };
+
   // Canvas Zoom / Pan
   const [zoom, setZoom] = useState(0.8);
   const [panOffset, setPanOffset] = useState({ x: 50, y: 30 });
@@ -85,6 +93,100 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => { snapToGridRef.current = snapToGrid; }, [snapToGrid]);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+
+  // Global keyboard shortcuts listener for shape manipulation (Issue #3265)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't intercept keyboard shortcuts if the user is typing inside input or select elements
+      if (
+        document.activeElement &&
+        (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT")
+      ) {
+        return;
+      }
+
+      if (!selectedIdRef.current) return;
+
+      const activeEl = elements.find((el) => el.id === selectedIdRef.current);
+      if (!activeEl) return;
+
+      const step = snapToGridRef.current ? 20 : 5;
+
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          updateSelectedElement("y", Math.max(0, activeEl.y - step));
+          announce(`${activeEl.label} moved up to Y ${Math.max(0, activeEl.y - step)}.`);
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          updateSelectedElement("y", Math.min(800 - activeEl.height, activeEl.y + step));
+          announce(`${activeEl.label} moved down to Y ${Math.min(800 - activeEl.height, activeEl.y + step)}.`);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          updateSelectedElement("x", Math.max(0, activeEl.x - step));
+          announce(`${activeEl.label} moved left to X ${Math.max(0, activeEl.x - step)}.`);
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          updateSelectedElement("x", Math.min(1000 - activeEl.width, activeEl.x + step));
+          announce(`${activeEl.label} moved right to X ${Math.min(1000 - activeEl.width, activeEl.x + step)}.`);
+          break;
+        case "r":
+        case "R":
+          e.preventDefault();
+          const nextRotation = (activeEl.rotation + 15) % 360;
+          updateSelectedElement("rotation", nextRotation);
+          announce(`${activeEl.label} rotated to ${nextRotation} degrees.`);
+          break;
+        case "Delete":
+        case "Backspace":
+          e.preventDefault();
+          handleDeleteSelected();
+          break;
+        case "+":
+        case "=":
+          e.preventDefault();
+          const newWPlus = Math.min(activeEl.type === "stage" ? 600 : 300, activeEl.width + 10);
+          const newHPlus = activeEl.type.includes("round")
+            ? newWPlus
+            : Math.min(activeEl.type === "stage" ? 400 : 200, activeEl.height + 10);
+          updateSelectedElement({
+            width: newWPlus,
+            height: newHPlus
+          });
+          announce(`${activeEl.label} resized to width ${newWPlus}px, height ${newHPlus}px.`);
+          break;
+        case "-":
+        case "_":
+          e.preventDefault();
+          const minSize = activeEl.type.includes("table") ? 60 : 20;
+          const newWMinus = Math.max(minSize, activeEl.width - 10);
+          const newHMinus = activeEl.type.includes("round")
+            ? newWMinus
+            : Math.max(minSize, activeEl.height - 10);
+          updateSelectedElement({
+            width: newWMinus,
+            height: newHMinus
+          });
+          announce(`${activeEl.label} resized to width ${newWMinus}px, height ${newHMinus}px.`);
+          break;
+        case "Escape":
+          e.preventDefault();
+          setSelectedId(null);
+          announce("Deselected floor plan element.");
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [elements, updateSelectedElement]);
 
   const isDirty = !!(lastSavedElementsStr && JSON.stringify(elements) !== lastSavedElementsStr);
 
@@ -138,13 +240,45 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     localStorage.setItem(`eventra_floorplan_${eventId}`, serialized);
     setLastSavedElementsStr(serialized);
     toast.success("Venue floor plan successfully saved!");
+    announce("Venue floor plan successfully saved!");
   };
 
   const loadPreset = (presetName) => {
-    if (window.confirm(`Are you sure you want to load the ${presetName} layout? Current changes will be overwritten.`)) {
-      setElements(PRESETS[presetName]);
-      setSelectedId(null);
-    }
+    toast(
+      ({ closeToast }) => (
+        <div>
+          <p className="text-sm font-semibold mb-2">Load {presetName} layout?</p>
+          <p className="text-xs text-gray-500 mb-3">Current changes will be overwritten.</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setElements(PRESETS[presetName]);
+                setSelectedId(null);
+                toast.success(`${presetName} layout loaded!`);
+                announce(`${presetName} layout loaded!`);
+                closeToast();
+              }}
+              className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-colors"
+            >
+              Yes, Load
+            </button>
+            <button
+              onClick={closeToast}
+              className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        position: "top-center",
+      }
+    );
   };
 
   // Helper to prepare the SVG for export by cloning and stripping specific attributes/styles
@@ -324,6 +458,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
     setElements([...elements, newElement]);
     setSelectedId(id);
+    announce(`New ${type.replace("-", " ")} added at position X 350, Y 350. Selected.`);
   };
 
   const handleDeleteSelected = () => {
@@ -335,6 +470,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       setElements(elements.filter(el => el.id !== selectedId));
       setSelectedId(null);
       toast.success("Element deleted successfully!");
+      announce("Element deleted successfully.");
     }
 
     setIsDeleteModalOpen(false);
@@ -635,6 +771,23 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
   return (
     <div className="fp-container">
+      <div 
+        style={{
+          position: "absolute",
+          width: "1px",
+          height: "1px",
+          padding: "0",
+          margin: "-1px",
+          overflow: "hidden",
+          clip: "rect(0, 0, 0, 0)",
+          whiteSpace: "nowrap",
+          border: "0"
+        }}
+        aria-live="polite" 
+        role="status"
+      >
+        {announcement}
+      </div>
       {/* Top action controls */}
       <div className="fp-topbar">
         <div className="flex items-center gap-3">
@@ -655,7 +808,10 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             <button onClick={() => loadPreset("conference")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Keynote</button>
           </div>
 
-          <button onClick={saveLayout} className="fp-btn fp-btn-primary">
+          <button onClick={() => navigate(`/events/${eventId}/virtual-venue-walkthrough`)} className="fp-btn fp-btn-primary" aria-label="3D Walkthrough">
+            3D Walkthrough
+          </button>
+          <button onClick={saveLayout} className="fp-btn fp-btn-primary" aria-label="button">
             <Save size={16} />
             Save Layout
           </button>
@@ -730,17 +886,17 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             </p>
 
             <div className="fp-portability-grid mb-4">
-              <button className="fp-portability-btn font-semibold" onClick={handleExportPNG} title="Export as high-res PNG image">
+              <button className="fp-portability-btn font-semibold" onClick={handleExportPNG} title="Export as high-res PNG image" aria-label="button">
                 <Image className="fp-portability-icon" size={16} />
                 <span>Export PNG</span>
               </button>
-              <button className="fp-portability-btn font-semibold" onClick={handleExportSVG} title="Export as vector SVG image">
+              <button className="fp-portability-btn font-semibold" onClick={handleExportSVG} title="Export as vector SVG image" aria-label="button">
                 <Download className="fp-portability-icon" size={16} />
                 <span>Export SVG</span>
               </button>
             </div>
 
-            <button className="fp-btn fp-btn-secondary w-full justify-center mb-3 text-xs" onClick={handleDownloadJSON} title="Download backup config JSON file">
+            <button className="fp-btn fp-btn-secondary w-full justify-center mb-3 text-xs" onClick={handleDownloadJSON} title="Download backup config JSON file" aria-label="button">
               <FileJson size={14} className="text-indigo-400" />
               <span>Backup Layout JSON</span>
             </button>
@@ -890,6 +1046,22 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
                     handleMouseDown(e, el.id);
                   }}
                   className="fp-element-group"
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Floor plan element: ${el.label}, type: ${el.type.replace("-", " ")}, ${el.seatsCount > 0 ? `${Object.keys(el.assignedAttendees).length} of ${el.seatsCount} seats occupied` : "no seating"}, position: X ${Math.round(el.x)}, Y ${Math.round(el.y)}`}
+                  aria-pressed={isSelected}
+                  onFocus={() => {
+                    setSelectedId(el.id);
+                    selectedIdRef.current = el.id;
+                    announce(`${el.label} selected. Keyboard controls active: arrow keys to move, R to rotate, + or - to resize, Delete to delete.`);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedId(el.id);
+                      selectedIdRef.current = el.id;
+                    }
+                  }}
                 >
                   {/* Chairs rendered around tables */}
                   {getSeatPositions(el).map((seat) => {
@@ -1072,6 +1244,71 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
                     maxLength={24}
                   />
                 </div>
+
+                <div className="fp-field border-t border-white/5 pt-3 mt-3">
+                  <div className="fp-toggle-container">
+                    <span className="text-xs font-semibold text-gray-300">Mark as Sponsor Booth</span>
+                    <label className="fp-switch">
+                      <input
+                        type="checkbox"
+                        checked={!!activeElement.isSponsorBooth}
+                        onChange={(e) => updateSelectedElement("isSponsorBooth", e.target.checked)}
+                      />
+                      <span className="fp-slider-round"></span>
+                    </label>
+                  </div>
+                </div>
+
+                {activeElement.isSponsorBooth && (
+                  <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-xl p-3 mb-4 space-y-3">
+                    <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">
+                      Sponsor Settings
+                    </div>
+                    
+                    <div className="fp-field mb-2">
+                      <label className="fp-field-label text-[10px]">Sponsor Logo URL</label>
+                      <input
+                        type="text"
+                        className="fp-input text-xs py-1"
+                        value={activeElement.sponsorLogo || ""}
+                        onChange={(e) => updateSelectedElement("sponsorLogo", e.target.value)}
+                        placeholder="https://example.com/logo.png"
+                      />
+                    </div>
+
+                    <div className="fp-field mb-2">
+                      <label className="fp-field-label text-[10px]">Representative Contact</label>
+                      <input
+                        type="text"
+                        className="fp-input text-xs py-1"
+                        value={activeElement.sponsorContact || ""}
+                        onChange={(e) => updateSelectedElement("sponsorContact", e.target.value)}
+                        placeholder="rep@sponsor.com or Name"
+                      />
+                    </div>
+
+                    <div className="fp-field mb-2">
+                      <label className="fp-field-label text-[10px]">Sponsor Description</label>
+                      <textarea
+                        className="fp-input text-xs py-1 h-16 resize-none"
+                        value={activeElement.sponsorDescription || ""}
+                        onChange={(e) => updateSelectedElement("sponsorDescription", e.target.value)}
+                        placeholder="Brief summary about the sponsor..."
+                      />
+                    </div>
+
+                    <div className="fp-field mb-0">
+                      <label className="fp-field-label text-[10px]">Job Openings (comma sep.)</label>
+                      <input
+                        type="text"
+                        className="fp-input text-xs py-1"
+                        value={activeElement.sponsorJobs || ""}
+                        onChange={(e) => updateSelectedElement("sponsorJobs", e.target.value)}
+                        placeholder="React Dev, Product Designer"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Dimension adjusters */}
                 <div className="fp-field">
