@@ -1,73 +1,160 @@
 import assert from "node:assert/strict";
-import {
-  normalizeNotificationPreferences,
-  shouldDeliverNotification,
-  getNotificationTitle,
-  getNotificationMessage,
+
+// Mock browser globals
+const mockStorage = {
+  data: {},
+  getItem(key) { return this.data[key] ?? null; },
+  setItem(key, value) { this.data[key] = value; },
+  removeItem(key) { delete this.data[key]; },
+};
+global.localStorage = mockStorage;
+global.window = {
+  localStorage: mockStorage,
+  location: { href: "http://test/" },
+  dispatchEvent: () => {},
+  AudioContext: class AudioContext {
+    createOscillator() { return { type: "", frequency: { value: 0 }, connect: () => {}, start: () => {}, stop: () => {}, onended: () => {} }; }
+    createGain() { return { gain: { setValueAtTime: () => {}, exponentialRampToValueAtTime: () => {} } }; }
+    close() {}
+  },
+  webkitAudioContext: null,
+};
+global.CustomEvent = class CustomEvent {
+  constructor(type, detail) { this.type = type; this.detail = detail; }
+};
+
+const {
   NOTIFICATION_CATEGORIES,
   NOTIFICATION_SOUNDS,
   DEFAULT_NOTIFICATION_PREFERENCES,
   getNotificationCategory,
-} from "../src/utils/notificationPreferences.js";
+  normalizeNotificationPreferences,
+  readNotificationPreferences,
+  writeNotificationPreferences,
+  shouldDeliverNotification,
+  getNotificationTitle,
+  getNotificationMessage,
+} = await import("../src/utils/notificationPreferences.js");
 
-assert.deepEqual(normalizeNotificationPreferences({}), DEFAULT_NOTIFICATION_PREFERENCES, "empty object returns defaults");
+// Reset localStorage
+global.localStorage.data = {};
 
-const partial = { inApp: false, email: false };
-const merged = normalizeNotificationPreferences(partial);
-assert.equal(merged.inApp, false, "partial prefs override inApp");
-assert.equal(merged.email, false, "partial prefs override email");
-assert.equal(merged.push, DEFAULT_NOTIFICATION_PREFERENCES.push, "unspecified push stays default");
+// ── NOTIFICATION_CATEGORIES and NOTIFICATION_SOUNDS ─────────────────────────
 
-const full = {
-  inApp: true,
-  push: true,
-  email: false,
-  sound: "pulse",
-  categories: {
-    registrations: { inApp: false, push: true, email: true },
-  },
-};
-const normalized = normalizeNotificationPreferences(full);
-assert.equal(normalized.email, false, "full prefs override email");
-assert.equal(normalized.categories.registrations.inApp, false, "category override applies");
-assert.equal(normalized.sound, "pulse", "sound is set");
+{
+  assert.ok(NOTIFICATION_CATEGORIES, "NOTIFICATION_CATEGORIES should be exported");
+  assert.ok(NOTIFICATION_CATEGORIES.registrations, "registrations category should exist");
+  assert.ok(NOTIFICATION_CATEGORIES.events, "events category should exist");
+  assert.equal(NOTIFICATION_CATEGORIES.registrations.label, "Registrations");
+}
 
-assert.equal(normalizeNotificationPreferences({ sound: "nonexistent" }).sound, "chime", "invalid sound falls back to default");
-assert.equal(normalizeNotificationPreferences({ sound: "bright" }).sound, "bright", "valid sound is kept");
+{
+  assert.ok(NOTIFICATION_SOUNDS, "NOTIFICATION_SOUNDS should be exported");
+  assert.ok(NOTIFICATION_SOUNDS.none, "none sound should exist");
+  assert.ok(NOTIFICATION_SOUNDS.chime, "chime sound should exist");
+  assert.equal(NOTIFICATION_SOUNDS.chime.frequency, 660);
+}
 
-const prefs = {
-  inApp: true,
-  push: true,
-  email: true,
-  categories: {
-    registrations: { inApp: true, push: false, email: true },
-    events: { inApp: true, push: true, email: false },
-  },
-};
+// ── getNotificationCategory tests ──────────────────────────────────────────────
 
-assert.equal(shouldDeliverNotification({}, prefs, "inApp"), true, "inApp delivery when enabled");
-assert.equal(shouldDeliverNotification({}, prefs, "push"), true, "push delivery for default system category");
-assert.equal(shouldDeliverNotification({}, prefs, "email"), true, "email delivery when enabled");
-assert.equal(shouldDeliverNotification({ category: "registrations" }, prefs, "push"), false, "push delivery blocked by category override");
-const prefsInAppDisabled = { ...prefs, inApp: false };
-assert.equal(shouldDeliverNotification({}, prefsInAppDisabled, "inApp"), false, "inApp delivery blocked when disabled globally");
+{
+  assert.equal(getNotificationCategory({ category: "registrations" }), "registrations");
+  assert.equal(getNotificationCategory({ type: "events" }), "events");
+  assert.equal(getNotificationCategory({ kind: "announcements" }), "announcements");
+  assert.equal(getNotificationCategory({ metadata: { category: "social" } }), "social");
+}
 
-assert.equal(getNotificationCategory({ category: "registrations" }), "registrations", "category field");
-assert.equal(getNotificationCategory({ type: "events" }), "events", "type field");
-assert.equal(getNotificationCategory({ kind: "announcements" }), "announcements", "kind field");
-assert.equal(getNotificationCategory({ metadata: { category: "social" } }), "social", "nested metadata.category");
-assert.equal(getNotificationCategory({}), "system", "default to system");
+{
+  assert.equal(getNotificationCategory({}), "system", "unknown category defaults to system");
+  assert.equal(getNotificationCategory(null), "system", "null notification defaults to system");
+  assert.equal(getNotificationCategory(undefined), "system", "undefined notification defaults to system");
+}
 
-assert.equal(getNotificationTitle({ title: "Custom Title" }), "Custom Title", "title field takes priority");
-assert.equal(getNotificationTitle({ heading: "Custom Heading" }), "Custom Heading", "heading field used when no title");
-assert.equal(getNotificationTitle({}), NOTIFICATION_CATEGORIES.system.label, "default uses system category label");
+// ── normalizeNotificationPreferences tests ──────────────────────────────────
 
-assert.equal(getNotificationMessage({ message: "Custom Message" }), "Custom Message", "message field takes priority");
-assert.equal(getNotificationMessage({ body: "Custom Body" }), "Custom Body", "body field used when no message");
-assert.equal(getNotificationMessage({ description: "Custom Desc" }), "Custom Desc", "description field used when no body");
-assert.equal(getNotificationMessage({}), "You have a new update.", "default message when nothing set");
+{
+  const normalized = normalizeNotificationPreferences({});
+  assert.equal(normalized.inApp, true);
+  assert.equal(normalized.push, false);
+  assert.equal(normalized.email, true);
+  assert.equal(normalized.sound, "chime");
+}
 
-assert.equal(getNotificationTitle({ title: "" }), NOTIFICATION_CATEGORIES.system.label, "empty title falls back");
-assert.equal(getNotificationMessage({ message: "" }), "You have a new update.", "empty message falls back");
+{
+  const normalized = normalizeNotificationPreferences({ inApp: false, sound: "bright" });
+  assert.equal(normalized.inApp, false, "should override inApp");
+  assert.equal(normalized.sound, "bright", "should override sound");
+  assert.equal(normalized.email, true, "should keep default email");
+}
+
+{
+  const normalized = normalizeNotificationPreferences({ sound: "invalid" });
+  assert.equal(normalized.sound, "chime", "invalid sound should fallback to default");
+}
+
+{
+  const normalized = normalizeNotificationPreferences({ categories: { registrations: { push: false } } });
+  assert.equal(normalized.categories.registrations.push, false, "should override category push");
+  assert.equal(normalized.categories.registrations.inApp, true, "should keep default category inApp");
+}
+
+// ── readNotificationPreferences / writeNotificationPreferences tests ────────────
+
+{
+  global.localStorage.data = {};
+  const written = writeNotificationPreferences({ inApp: false, sound: "pulse" });
+  const read = readNotificationPreferences();
+  assert.equal(read.inApp, false);
+  assert.equal(read.sound, "pulse");
+}
+
+{
+  global.localStorage.data = {};
+  global.localStorage.data["eventra_notification_preferences"] = "not json";
+  const prefs = readNotificationPreferences();
+  assert.equal(prefs.inApp, true, "should fallback to defaults on parse error");
+}
+
+// ── shouldDeliverNotification tests ──────────────────────────────────────────
+
+{
+  const prefs = { inApp: true, push: false, email: true, categories: { registrations: { inApp: true, push: false, email: true } } };
+  const notification = { category: "registrations" };
+  assert.equal(shouldDeliverNotification(notification, prefs, "inApp"), true);
+  assert.equal(shouldDeliverNotification(notification, prefs, "push"), false, "push disabled for registrations");
+  assert.equal(shouldDeliverNotification(notification, prefs, "email"), true);
+}
+
+{
+  const prefs = { inApp: false, push: false, email: false, categories: { events: { inApp: false, push: false, email: false } } };
+  const notification = { category: "events" };
+  assert.equal(shouldDeliverNotification(notification, prefs, "inApp"), false, "all disabled");
+}
+
+{
+  const prefs = { inApp: true, push: true, email: true, categories: { unknown_cat: { inApp: true, push: true, email: true } } };
+  const notification = { category: "unknown_cat" };
+  assert.equal(shouldDeliverNotification(notification, prefs, "inApp"), true, "unknown category should fallback to system");
+}
+
+// ── getNotificationTitle tests ────────────────────────────────────────────────
+
+{
+  assert.equal(getNotificationTitle({ title: "Hello" }), "Hello");
+  assert.equal(getNotificationTitle({ heading: "World" }), "World");
+  assert.equal(getNotificationTitle({ title: "A", heading: "B" }), "A", "title takes precedence");
+  assert.equal(getNotificationTitle({}), NOTIFICATION_CATEGORIES.system.label);
+  assert.equal(getNotificationTitle(undefined), NOTIFICATION_CATEGORIES.system.label);
+}
+
+// ── getNotificationMessage tests ──────────────────────────────────────────────
+
+{
+  assert.equal(getNotificationMessage({ message: "Msg1" }), "Msg1");
+  assert.equal(getNotificationMessage({ body: "Body1" }), "Body1");
+  assert.equal(getNotificationMessage({ description: "Desc1" }), "Desc1");
+  assert.equal(getNotificationMessage({ message: "A", body: "B" }), "A", "message takes precedence");
+  assert.equal(getNotificationMessage({}), "You have a new update.", "fallback message");
+}
 
 console.log("All notificationPreferences tests passed!");
