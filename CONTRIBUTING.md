@@ -61,6 +61,18 @@ You can help improve Eventra in several ways:
 ```bash
 git checkout -b feature/amazing-feature
 ```
+
+**2.5. Set Up Pre-commit Hooks (Crucial for C++ & Formatting)**
+We enforce strict formatting rules using `pre-commit` and `clang-format`. You must set this up before committing code.
+```bash
+# Install the pre-commit tool (requires Python)
+pip install pre-commit
+
+# Install the git hook scripts in your local repository
+pre-commit install
+```
+Now, clang-format will automatically check and format your C++ files every time you run git commit.
+
 3. Make Your Changes
 Follow the code standards and test your changes locally.
 4. Commit Your Changes
@@ -77,6 +89,13 @@ Submit a PR with a clear description of your changes.
 ## 🧩 Code Standards  
 
 Maintaining consistent coding standards ensures readability, maintainability, and collaboration across **Eventra**.
+
+---
+
+### 🛠️ C++ Standards (Core Engine)
+- Follow **Google C++ Style Guide** for all `.cpp`, `.h`, `.cc`, and `.hpp` files.
+- Ensure strict adherence to our formatting rules using `clang-format`.
+- Use modern C++ features where applicable but maintain performance and memory safety.
 
 ---
 
@@ -176,6 +195,7 @@ Here are some practical examples following our **Conventional Commits** guidelin
 - `refactor: simplify event creation logic` – Refactors code without adding features or fixing bugs.  
 - `test: add integration tests for event routes` – Adds or updates tests.  
 - `chore: update dependencies and clean up scripts` – Routine maintenance tasks.  
+- `ci: setup clang-format pre-commit hook and workflows` – CI/CD or automation changes.  
 
 > ✅ Using these clear and descriptive messages keeps the git history readable and makes collaboration easier.
 

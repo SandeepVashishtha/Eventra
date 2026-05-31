@@ -1,0 +1,26 @@
+name: Clang-Format Check
+
+on:
+  pull_request:
+    paths:
+      - "**.cpp"
+      - "**.hpp"
+      - "**.c"
+      - "**.h"
+      - "**.cc"
+      - "**.cxx"
+
+jobs:
+  formatting-check:
+    name: Check Code Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run clang-format style check
+        uses: jidicula/clang-format-action@v4.13.0
+        with:
+          clang-format-version: "18"
+          check-path: "."
+          fallback-style: "Google"
