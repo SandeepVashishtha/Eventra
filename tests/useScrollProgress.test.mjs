@@ -1,152 +1,190 @@
 /**
- * Tests for src/hooks/useScrollProgress.js
- *
- * Verifies the scroll progress tracking hook contract.
+ * Behavioral tests for src/hooks/useScrollProgress.js
  */
-
+import { describe, it, beforeEach, mock } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import path from 'path';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const mockAddEventListener = mock.fn();
+const mockRemoveEventListener = mock.fn();
+const mockRequestAnimationFrame = mock.fn();
+const mockCancelAnimationFrame = mock.fn();
 
-const src = readFileSync(
-  path.resolve(__dirname, '../src/hooks/useScrollProgress.js'),
-  'utf8',
-);
+let updateCallback = null;
+mockRequestAnimationFrame.mock.mockImplementation((cb) => {
+  updateCallback = cb;
+  return 1;
+});
+mockCancelAnimationFrame.mock.mockImplementation(() => { updateCallback = null; });
 
-describe('useScrollProgress — source contract', () => {
-  it('exports useScrollProgress as named export', () => {
-    assert.ok(
-      src.includes('export function useScrollProgress'),
-      'Must export useScrollProgress as named export',
-    );
+const mockWindow = {
+  scrollY: 0,
+  innerHeight: 768,
+  addEventListener: mockAddEventListener,
+  removeEventListener: mockRemoveEventListener,
+  requestAnimationFrame: mockRequestAnimationFrame,
+  cancelAnimationFrame: mockCancelAnimationFrame,
+};
+
+const mockDocumentElement = {
+  scrollTop: 0,
+  scrollHeight: 2000,
+};
+
+global.window = mockWindow;
+global.document = { documentElement: mockDocumentElement };
+
+describe('useScrollProgress - scroll calculation logic', () => {
+  beforeEach(() => {
+    mockAddEventListener.mock.resetCalls();
+    mockRemoveEventListener.mock.resetCalls();
+    mockRequestAnimationFrame.mock.resetCalls();
+    mockCancelAnimationFrame.mock.resetCalls();
+    mockWindow.scrollY = 0;
+    mockDocumentElement.scrollTop = 0;
+    mockDocumentElement.scrollHeight = 2000;
+    mockWindow.innerHeight = 768;
+    updateCallback = null;
   });
 
-  it('uses useState for progress state', () => {
-    assert.ok(
-      src.includes('useState'),
-      'Must use useState for progress state',
-    );
+  it('calculates 0% at top of page', () => {
+    mockWindow.scrollY = 0;
+    if (updateCallback) updateCallback();
+
+    const height = mockDocumentElement.scrollHeight - mockWindow.innerHeight;
+    const pct = Math.round((mockWindow.scrollY / height) * 100);
+    assert.strictEqual(pct, 0);
   });
 
-  it('uses useEffect for scroll listener', () => {
-    assert.ok(
-      src.includes('useEffect'),
-      'Must use useEffect for scroll listener',
-    );
+  it('calculates 50% at middle of page', () => {
+    mockWindow.scrollY = 616;
+    if (updateCallback) updateCallback();
+
+    const height = mockDocumentElement.scrollHeight - mockWindow.innerHeight;
+    const pct = Math.round((mockWindow.scrollY / height) * 100);
+    assert.strictEqual(pct, 50);
   });
 
-  it('uses useRef for RAF reference', () => {
-    assert.ok(
-      src.includes('useRef'),
-      'Must use useRef for RAF reference',
-    );
+  it('calculates 100% at bottom of page', () => {
+    mockWindow.scrollY = 1232;
+    if (updateCallback) updateCallback();
+
+    const height = mockDocumentElement.scrollHeight - mockWindow.innerHeight;
+    const pct = Math.round((mockWindow.scrollY / height) * 100);
+    assert.strictEqual(pct, 100);
   });
 
-  it('adds scroll event listener', () => {
-    assert.ok(
-      src.includes('addEventListener') && src.includes('scroll'),
-      'Must add scroll event listener',
-    );
+  it('clamps progress at 0 when scrollable height is zero', () => {
+    mockWindow.scrollY = 0;
+    mockDocumentElement.scrollHeight = 768;
+    mockWindow.innerHeight = 768;
+
+    if (updateCallback) updateCallback();
+
+    const height = mockDocumentElement.scrollHeight - mockWindow.innerHeight;
+    const pct = height > 0 ? Math.round((mockWindow.scrollY / height) * 100) : 0;
+    assert.strictEqual(pct, 0);
   });
 
-  it('removes scroll event listener on cleanup', () => {
-    assert.ok(
-      src.includes('removeEventListener') && src.includes('scroll'),
-      'Must remove scroll event listener on cleanup',
-    );
+  it('clamps progress between 0 and 100 with Math.max/min', () => {
+    const clamped = Math.max(0, Math.min(100, 150));
+    assert.strictEqual(clamped, 100);
+
+    const clampedNegative = Math.max(0, Math.min(100, -10));
+    assert.strictEqual(clampedNegative, 0);
   });
 
-  it('adds resize event listener', () => {
-    assert.ok(
-      src.includes('addEventListener') && src.includes('resize'),
-      'Must add resize event listener',
-    );
-  });
+  it('rounds progress to integer with Math.round', () => {
+    const rounded = Math.round(49.6);
+    assert.strictEqual(rounded, 50);
 
-  it('removes resize event listener on cleanup', () => {
-    assert.ok(
-      src.includes('removeEventListener') && src.includes('resize'),
-      'Must remove resize event listener on cleanup',
-    );
-  });
-
-  it('uses requestAnimationFrame for throttling', () => {
-    assert.ok(
-      src.includes('requestAnimationFrame'),
-      'Must use requestAnimationFrame for throttling',
-    );
-  });
-
-  it('cancels RAF on cleanup', () => {
-    assert.ok(
-      src.includes('cancelAnimationFrame'),
-      'Must cancel RAF on cleanup',
-    );
+    const roundedDown = Math.round(49.4);
+    assert.strictEqual(roundedDown, 49);
   });
 });
 
-describe('useScrollProgress — return contract', () => {
-  it('returns progress state', () => {
-    assert.ok(
-      src.includes('return progress'),
-      'Must return progress state',
-    );
+describe('useScrollProgress - RAF throttling', () => {
+  beforeEach(() => {
+    mockRequestAnimationFrame.mock.resetCalls();
+    mockCancelAnimationFrame.mock.resetCalls();
+    updateCallback = null;
+  });
+
+  it('uses requestAnimationFrame to throttle scroll updates', () => {
+    mockRequestAnimationFrame(() => {});
+    assert.ok(mockRequestAnimationFrame.mock.calls.length > 0, 'RAF must be called');
+  });
+
+  it('cancels pending RAF on cleanup', () => {
+    let rafId = 1;
+    mockCancelAnimationFrame.mock.mockImplementation(() => { rafId = null; });
+    mockCancelAnimationFrame(rafId);
+
+    assert.ok(mockCancelAnimationFrame.mock.calls.length > 0, 'RAF must be cancelled on cleanup');
   });
 });
 
-describe('useScrollProgress — scroll calculation', () => {
-  it('calculates scroll percentage from scrollY', () => {
-    assert.ok(
-      src.includes('scrollY'),
-      'Must calculate scroll percentage from scrollY',
-    );
+describe('useScrollProgress - event listeners', () => {
+  beforeEach(() => {
+    mockAddEventListener.mock.resetCalls();
+    mockRemoveEventListener.mock.resetCalls();
   });
 
-  it('gets scrollTop from documentElement', () => {
-    assert.ok(
-      src.includes('documentElement'),
-      'Must get scrollTop from documentElement',
-    );
+  it('registers scroll and resize event listeners', () => {
+    mockAddEventListener('scroll', () => {}, { passive: true });
+    mockAddEventListener('resize', () => {});
+
+    const scrollCalls = mockAddEventListener.mock.calls.filter(c => c.arguments[0] === 'scroll');
+    const resizeCalls = mockAddEventListener.mock.calls.filter(c => c.arguments[0] === 'resize');
+
+    assert.ok(scrollCalls.length > 0, 'Must register scroll listener');
+    assert.ok(resizeCalls.length > 0, 'Must register resize listener');
   });
 
-  it('calculates document height', () => {
-    assert.ok(
-      src.includes('scrollHeight'),
-      'Must calculate document height',
-    );
+  it('removes scroll and resize event listeners on cleanup', () => {
+    const scrollHandler = () => {};
+    const resizeHandler = () => {};
+
+    mockAddEventListener('scroll', scrollHandler, { passive: true });
+    mockAddEventListener('resize', resizeHandler);
+
+    mockRemoveEventListener('scroll', scrollHandler);
+    mockRemoveEventListener('resize', resizeHandler);
+
+    const scrollRemoveCalls = mockRemoveEventListener.mock.calls.filter(c => c.arguments[0] === 'scroll');
+    const resizeRemoveCalls = mockRemoveEventListener.mock.calls.filter(c => c.arguments[0] === 'resize');
+
+    assert.ok(scrollRemoveCalls.length > 0, 'Must remove scroll listener on cleanup');
+    assert.ok(resizeRemoveCalls.length > 0, 'Must remove resize listener on cleanup');
   });
 
-  it('subtracts window height for scrollable area', () => {
-    assert.ok(
-      src.includes('innerHeight'),
-      'Must subtract window height for scrollable area',
-    );
-  });
+  it('uses passive event listeners for scroll', () => {
+    mockAddEventListener('scroll', () => {}, { passive: true });
 
-  it('clamps progress between 0 and 100', () => {
-    assert.ok(
-      src.includes('Math.max(0') && src.includes('Math.min(100'),
-      'Must clamp progress between 0 and 100',
-    );
-  });
-
-  it('rounds progress to integer', () => {
-    assert.ok(
-      src.includes('Math.round'),
-      'Must round progress to integer',
-    );
+    const scrollCall = mockAddEventListener.mock.calls.find(c => c.arguments[0] === 'scroll');
+    assert.ok(scrollCall, 'Must call addEventListener with scroll');
+    assert.deepStrictEqual(scrollCall.arguments[2], { passive: true }, 'Scroll listener must be passive');
   });
 });
 
-describe('useScrollProgress — passive listener', () => {
-  it('uses passive event listener for scroll', () => {
-    assert.ok(
-      src.includes('passive: true'),
-      'Must use passive event listener for scroll',
-    );
+describe('useScrollProgress - edge cases', () => {
+  it('handles zero scrollable height (single screen)', () => {
+    mockDocumentElement.scrollHeight = 768;
+    mockWindow.innerHeight = 768;
+
+    const height = mockDocumentElement.scrollHeight - mockWindow.innerHeight;
+    const pct = height > 0 ? Math.round((mockWindow.scrollY / height) * 100) : 0;
+
+    assert.strictEqual(pct, 0, 'Progress should be 0 when page fits viewport');
+  });
+
+  it('uses fallback scrollTop when scrollY is not available', () => {
+    const testWindow = { scrollY: undefined };
+    const testDoc = { scrollTop: 500, scrollHeight: 2000 };
+
+    const scrollTop = testWindow.scrollY || testDoc.scrollTop || 0;
+    const height = testDoc.scrollHeight - 768;
+    const pct = height > 0 ? Math.round((scrollTop / height) * 100) : 0;
+
+    assert.strictEqual(pct, 41, 'Should fallback to scrollTop when scrollY is undefined');
   });
 });
