@@ -20,7 +20,7 @@ const HomePage = () => {
   useDocumentTitle("Home | Eventra");
 
   return (
-    <main className="min-h-screen bg-white dark:bg-black">
+    <main className="min-h-screen bg-bg">
       {/* ─── SEO & SOCIAL META TAGS ─────────────────────────────────────── */}
       <Helmet>
         {/* Primary Meta Tags */}

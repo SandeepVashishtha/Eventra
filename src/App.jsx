@@ -159,10 +159,10 @@ function App() {
                     id="main-content"
                     className="relative z-10 min-h-[85vh] bg-white dark:bg-slate-950 text-black dark:text-white transition-colors duration-300"
                   >
-                    <Suspense fallback={pageLoader}>
-                      <PageTransition>
-                        <ErrorBoundary>
-                          <Routes>
+                    <PageTransition>
+                      <ErrorBoundary>
+                        <Suspense fallback={pageLoader}>
+                          <Routes location={location} key={location.pathname}>
                             <Route
                               path="/register/:id"
                               element={
@@ -175,9 +175,9 @@ function App() {
                             <Route path="/saved-events" element={<SavedEventsPage />} />
                             <Route path="*" element={<AppRoutes />} />
                           </Routes>
-                        </ErrorBoundary>
-                      </PageTransition>
-                    </Suspense>
+                        </Suspense>
+                      </ErrorBoundary>
+                    </PageTransition>
                   </main>
 
                   <ScrollToTop />

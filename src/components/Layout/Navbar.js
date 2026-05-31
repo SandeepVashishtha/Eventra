@@ -653,12 +653,12 @@ const BrandMark = ({ compact = false }) => (
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
   {
-    name: "Event Tools",
+    name: "Events",
     icon: <Calendar className="w-5 h-5" />,
     subItems: [
       { name: "Explore Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
       { name: "Event Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
-      { name: "Saved Events",   href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
+      { name: "Bookmarks",      href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
       { name: "Reminders",      href: "/reminders", icon: <Bell className="w-5 h-5" /> },
     ],
   },
