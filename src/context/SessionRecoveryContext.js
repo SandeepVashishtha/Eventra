@@ -50,7 +50,12 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const updateActivity = useCallback(() => {
     const now = Date.now();
-    lastActivityRef.current = now;
+    // 🔥 FIX: Throttle to max once per second to prevent CPU thrashing from mousemove/scroll
+    if (now - lastActivityRef.current > 1000) {
+      lastActivityRef.current = now;
+      // 🔥 FIX: Synchronize React state so context consumers get accurate data
+      setLastActivity(now);
+    }
   }, []);
 
   useEffect(() => {
@@ -76,7 +81,7 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   useEffect(() => {
     const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click"];
-    events.forEach((event) => window.addEventListener(event, updateActivity));
+    events.forEach((event) => window.addEventListener(event, updateActivity, { passive: true }));
 
     return () => {
       events.forEach((event) => window.removeEventListener(event, updateActivity));
