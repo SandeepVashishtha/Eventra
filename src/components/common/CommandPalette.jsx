@@ -18,6 +18,7 @@ import {
   ArrowDown,
   CornerDownLeft
 } from "lucide-react";
+import { useModalStack } from "../../hooks/useModalStack";
 
 const trendTags = ["AI", "Web3", "Hackathons", "Workshops", "Community", "Auth"];
 
@@ -36,6 +37,7 @@ export default function CommandPalette({
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
+  const { isTopmost } = useModalStack(isOpen);
 
   // Search Catalog containing navigations, quick system actions, events, and hackathons
   const searchCatalog = useMemo(() => [
@@ -158,6 +160,8 @@ export default function CommandPalette({
     if (!isOpen) return;
 
     const handleKeyDown = (e) => {
+      if (!isTopmost()) return;
+
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setActiveIndex(prev => (prev + 1) % Math.max(1, filteredItems.length));
@@ -177,7 +181,7 @@ export default function CommandPalette({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, filteredItems, activeIndex, handleSelect, onClose]);
+  }, [isOpen, filteredItems, activeIndex, handleSelect, onClose, isTopmost]);
 
   // Categorized index mapper helper
   const categorizedItems = useMemo(() => {
