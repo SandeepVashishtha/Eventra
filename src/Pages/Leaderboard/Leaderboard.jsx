@@ -15,7 +15,7 @@ import {
   FaSearch,
   FaFilter,
   FaDownload,
-  FaSyncAlt,
+  FaSync,
   FaTrophy,
   FaMedal,
   FaAward,
@@ -761,7 +761,7 @@ export default function LeaderBoard() {
                 aria-label="Refresh leaderboard data"
                 title="Refresh data"
               >
-                <FaSyncAlt className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
+                <FaSync className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
               </motion.button>
 
               <motion.button
