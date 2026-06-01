@@ -1,3 +1,4 @@
+/* eslint-disable-next-line no-console */
 /**
  * Input Sanitization Utilities
  *
