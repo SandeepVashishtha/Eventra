@@ -100,7 +100,7 @@ async function handler(req, res) {
   });
 
   try {
-    const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+    const response = await fetchWithTimeout("https://api.emailjs.com/api/v1.0/email/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -114,7 +114,7 @@ async function handler(req, res) {
           event_date: eventDateStr,
         },
       }),
-    });
+    }, 8000);
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
@@ -126,6 +126,11 @@ async function handler(req, res) {
   } catch (error) {
     console.error("[send-email] Request failed:", error);
     return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export default verifyAuth(handler);
+;
   }
 }
 
