@@ -9,9 +9,8 @@
     "npm": ">=9.6.4"
   },
   "dependencies": {
-    "@sentry/browser": "9.12.0",
     "@headlessui/react": "2.2.10",
-    "@heroicons/react": "^2.0.16",
+    "@sentry/browser": "9.12.0",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/postcss": "4.3.0",
     "@vitejs/plugin-react": "6.0.2",
@@ -37,7 +36,6 @@
     "react-dom": "^19.2.6",
     "react-helmet-async": "3.0.0",
     "react-hot-toast": "^2.6.0",
-    "react-icons": "^5.6.0",
     "react-intersection-observer": "^10.0.3",
     "react-qr-code": "^2.0.21",
     "react-router-dom": "^7.15.1",

@@ -1,3 +1,4 @@
+import { ArrowRightIcon, CalendarIcon, UsersIcon, ClipboardDocumentListIcon, TagIcon, CheckCircleIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -16,14 +17,6 @@ import {
   initialFormData,
   todayString,
 } from "../../../constants/eventDefaults";
-import {
-  ArrowRightIcon,
-  CalendarIcon,
-  UsersIcon,
-  ClipboardDocumentListIcon,
-  TagIcon,
-  CheckCircleIcon,
-  } from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import {
   Calendar,

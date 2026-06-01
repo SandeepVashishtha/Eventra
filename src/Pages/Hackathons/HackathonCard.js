@@ -1,16 +1,8 @@
+import { CalendarIcon, MapPinIcon, ClockIcon, UserGroupIcon, TrophyIcon, BuildingLibraryIcon, ShareIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
-import {
-  CalendarIcon,
-  MapPinIcon,
-  ClockIcon,
-  UserGroupIcon,
-  TrophyIcon,
-  BuildingLibraryIcon,
-  ShareIcon,
-} from "@heroicons/react/24/outline";
 
 import ShareMenu from "../../components/common/ShareMenu";
 import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";

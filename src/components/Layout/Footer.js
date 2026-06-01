@@ -1,24 +1,6 @@
+import { Book, BookOpen, CalendarAlt, Comments, Envelope, Folder, Github, Home, InfoCircle, Linkedin, MessageCircle, Plus, Question, QuestionCircle, Star, Trophy, Users } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  FaBook,
-  FaBookOpen,
-  FaCalendarAlt,
-  FaComments,
-  FaEnvelope,
-  FaFolder,
-  FaGithub,
-  FaHome,
-  FaInfoCircle,
-  FaLinkedin,
-  FaDiscord,
-  FaPlus,
-  FaQuestion,
-  FaQuestionCircle,
-  FaStar,
-  FaTrophy,
-  FaUsers,
-} from "react-icons/fa";
 
 const footerLinks = {
   quick_links: [
@@ -111,7 +93,7 @@ const Newsletter = () => {
 
       <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3 xs:flex-row">
         <div className="group relative min-w-0 flex-1">
-          <FaEnvelope
+          <Envelope
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors duration-200 group-hover:text-indigo-500"
             size={14}
             aria-hidden="true"
