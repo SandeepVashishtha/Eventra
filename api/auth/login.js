@@ -23,15 +23,15 @@ const JWT_SECRET = getJwtSecret();
 
 const validateLoginInput = (usernameOrEmail, password) => {
   const errors = [];
-  
+
   if (!usernameOrEmail || !usernameOrEmail.trim()) {
     errors.push("Username or email is required");
   }
-  
+
   if (!password) {
     errors.push("Password is required");
   }
-  
+
   return errors;
 };
 
@@ -178,7 +178,7 @@ const getPermissionsForRoles = (roles) => {
 
 const findUserByUsernameOrEmail = (usernameOrEmail) => {
   const normalizedInput = usernameOrEmail.trim().toLowerCase();
-  
+
   // Search through all users
   for (const [key, user] of users.entries()) {
     if (
@@ -217,9 +217,14 @@ async function handler(req, res) {
 
     const validationErrors = validateLoginInput(usernameOrEmail, password);
     if (validationErrors.length > 0) {
-      return corsResponse(res, 400, { 
-        error: validationErrors.join(", ") 
-      }, req);
+      return corsResponse(
+        res,
+        400,
+        {
+          error: validationErrors.join(", "),
+        },
+        req
+      );
     }
 
     // -----------------------------------------------------------------------
@@ -239,16 +244,26 @@ async function handler(req, res) {
     const isPasswordValid = await bcrypt.compare(password, hashToCompare);
 
     if (!user || !isPasswordValid) {
-      return corsResponse(res, 401, {
-        error: "Invalid credentials"
-      }, req);
+      return corsResponse(
+        res,
+        401,
+        {
+          error: "Invalid credentials",
+        },
+        req
+      );
     }
 
     // Check if user is active after confirming identity to keep timing uniform
     if (user.isActive === false) {
-      return corsResponse(res, 401, {
-        error: "Invalid credentials"
-      }, req);
+      return corsResponse(
+        res,
+        401,
+        {
+          error: "Invalid credentials",
+        },
+        req
+      );
     }
 
     // -----------------------------------------------------------------------
@@ -278,7 +293,7 @@ async function handler(req, res) {
 
     // Normalize role for response (use first role as primary)
     const primaryRole = roles[0] || "ATTENDEE";
-    
+
     // Normalize EVENT_MANAGER to ORGANIZER for frontend compatibility
     const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
 
@@ -298,32 +313,39 @@ async function handler(req, res) {
     };
 
     const isProd = process.env.NODE_ENV === "production";
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`;
+    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? "; Secure" : ""}`;
     // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
     try {
-      if (typeof res.setHeader === 'function') {
-        res.setHeader('Set-Cookie', cookieValue);
-      } else if (typeof res.set === 'function') {
-        res.set({ 'Set-Cookie': cookieValue });
-      } else if (res.headers && typeof res.headers === 'object') {
-        res.headers['Set-Cookie'] = cookieValue;
+      if (typeof res.setHeader === "function") {
+        res.setHeader("Set-Cookie", cookieValue);
+      } else if (typeof res.set === "function") {
+        res.set({ "Set-Cookie": cookieValue });
+      } else if (res.headers && typeof res.headers === "object") {
+        res.headers["Set-Cookie"] = cookieValue;
       }
     } catch (e) {
       // Ignore write errors on test response objects
     }
 
-    return corsResponse(res, 200, {
-      message: "Login successful",
-      token,
-      tokenType: "Bearer",
-      ...userResponse,
-    }, req);
-
+    return corsResponse(
+      res,
+      200,
+      {
+        message: "Login successful",
+        ...userResponse,
+      },
+      req
+    );
   } catch (error) {
     console.error("Login Error:", error);
-    return corsResponse(res, 500, { 
-      error: "Internal server error. Please try again later." 
-    }, req);
+    return corsResponse(
+      res,
+      500,
+      {
+        error: "Internal server error. Please try again later.",
+      },
+      req
+    );
   }
 }
 

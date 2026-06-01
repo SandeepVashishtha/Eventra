@@ -94,14 +94,16 @@ export const AuthProvider = ({ children }) => {
     (res, data, fallbackEmail) => {
       let sessionToken = data?.token ?? data?.accessToken ?? null;
 
+      const rawUser = data?.user ?? data?.data ?? data ?? null;
+
       if (!sessionToken) {
         const authHeader = res.headers?.authorization || res.headers?.Authorization || null;
         if (authHeader && authHeader.startsWith("Bearer ")) {
           sessionToken = authHeader.substring(7);
+        } else if (rawUser) {
+          sessionToken = "cookie-managed";
         }
       }
-
-      const rawUser = data?.user ?? data?.data ?? data ?? null;
       const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
       const resolvedRoles = normalizeRoles(rawRoles);
       const tokenPermissions = Array.isArray(rawUser?.permissions)

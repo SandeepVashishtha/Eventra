@@ -88,8 +88,8 @@ console.log("Running login endpoint tests...");
   await handler(req, res);
 
   assert.equal(res.statusCode, 200, "Should return 200 on successful login");
-  assert.ok(res.body.token, "Should return a JWT token");
-  assert.equal(res.body.tokenType, "Bearer", "Should return tokenType as Bearer");
+  assert.equal(res.body.token, undefined, "Response body should not expose token");
+  assert.equal(res.body.tokenType, undefined, "Response body should not expose tokenType");
   assert.equal(res.body.email, "john.login@example.com", "Should return email");
   assert.equal(res.body.firstName, "John", "Should return firstName");
   assert.equal(res.body.lastName, "Doe", "Should return lastName");
@@ -97,6 +97,7 @@ console.log("Running login endpoint tests...");
   assert.ok(Array.isArray(res.body.roles), "Should return roles array");
   assert.ok(Array.isArray(res.body.permissions), "Should return permissions array");
   assert.equal(res.body.message, "Login successful", "Should return success message");
+  assert.ok(res.headers["Set-Cookie"], "Should set authentication cookie");
   console.log("✓ Test 1: Successful login with email");
 }
 
@@ -119,7 +120,8 @@ console.log("Running login endpoint tests...");
   await handler(req, res);
 
   assert.equal(res.statusCode, 200, "Should return 200 on successful login with email as username");
-  assert.ok(res.body.token, "Should return a JWT token");
+  assert.equal(res.body.token, undefined, "Response body should not expose token");
+  assert.ok(res.headers["Set-Cookie"], "Should set authentication cookie");
   console.log("✓ Test 2: Successful login with username/email");
 }
 
@@ -133,7 +135,10 @@ console.log("Running login endpoint tests...");
 
   assert.equal(res.statusCode, 400, "Should return 400 for missing usernameOrEmail");
   assert.ok(res.body.error, "Should return error message");
-  assert.ok(res.body.error.includes("Username or email is required"), "Error should mention username or email required");
+  assert.ok(
+    res.body.error.includes("Username or email is required"),
+    "Error should mention username or email required"
+  );
   console.log("✓ Test 3: Missing usernameOrEmail returns 400");
 }
 
@@ -147,7 +152,10 @@ console.log("Running login endpoint tests...");
 
   assert.equal(res.statusCode, 400, "Should return 400 for missing password");
   assert.ok(res.body.error, "Should return error message");
-  assert.ok(res.body.error.includes("Password is required"), "Error should mention password required");
+  assert.ok(
+    res.body.error.includes("Password is required"),
+    "Error should mention password required"
+  );
   console.log("✓ Test 4: Missing password returns 400");
 }
 
@@ -172,7 +180,11 @@ console.log("Running login endpoint tests...");
   await handler(req, res);
 
   assert.equal(res.statusCode, 401, "Should return 401 for non-existent user");
-  assert.equal(res.body.error, "Invalid credentials", "Should return generic 'Invalid credentials' message");
+  assert.equal(
+    res.body.error,
+    "Invalid credentials",
+    "Should return generic 'Invalid credentials' message"
+  );
   console.log("✓ Test 6: Non-existent user returns 401");
 }
 
@@ -186,7 +198,11 @@ console.log("Running login endpoint tests...");
   await handler(req, res);
 
   assert.equal(res.statusCode, 401, "Should return 401 for wrong password");
-  assert.equal(res.body.error, "Invalid credentials", "Should return generic 'Invalid credentials' message");
+  assert.equal(
+    res.body.error,
+    "Invalid credentials",
+    "Should return generic 'Invalid credentials' message"
+  );
   console.log("✓ Test 7: Wrong password returns 401");
 }
 
@@ -225,7 +241,7 @@ console.log("Running login endpoint tests...");
   console.log("✓ Test 10: Case insensitive email login");
 }
 
-// Test 11: JWT token contains required claims
+// Test 11: Successful login should not expose token in response body
 {
   const req = createRequest("POST", {
     usernameOrEmail: "john.login@example.com",
@@ -235,18 +251,12 @@ console.log("Running login endpoint tests...");
   await handler(req, res);
 
   assert.equal(res.statusCode, 200, "Should return 200");
-  assert.ok(res.body.token, "Should return a JWT token");
-  
-  // Decode JWT payload (without verification for testing)
-  const tokenParts = res.body.token.split(".");
-  const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
-  
-  assert.ok(payload.id, "JWT should contain user id");
-  assert.ok(payload.email, "JWT should contain email");
-  assert.ok(payload.roles, "JWT should contain roles");
-  assert.equal(payload.permissions, undefined, "JWT should NOT contain permissions");
-  assert.ok(payload.exp, "JWT should contain expiration");
-  console.log("✓ Test 11: JWT token contains required claims");
+  assert.equal(res.body.token, undefined, "Response body should not expose token");
+  assert.equal(res.body.accessToken, undefined, "Response body should not expose accessToken");
+  assert.equal(res.body.jwt, undefined, "Response body should not expose jwt");
+  assert.equal(res.body.authToken, undefined, "Response body should not expose authToken");
+  assert.ok(res.headers["Set-Cookie"], "Should set authentication cookie");
+  console.log("✓ Test 11: Successful login should not expose token in response body");
 }
 
 // Test 12: Response includes role and permissions
@@ -276,7 +286,10 @@ console.log("Running login endpoint tests...");
   await handler(req, res);
 
   assert.ok(res.headers["Access-Control-Allow-Origin"], "Should have CORS Allow-Origin header");
-  assert.ok(res.headers["Access-Control-Allow-Credentials"], "Should have CORS Allow-Credentials header");
+  assert.ok(
+    res.headers["Access-Control-Allow-Credentials"],
+    "Should have CORS Allow-Credentials header"
+  );
   console.log("✓ Test 13: CORS headers are set");
 }
 

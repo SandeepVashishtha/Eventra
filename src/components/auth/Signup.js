@@ -194,10 +194,8 @@ const Signup = () => {
       }
 
       const data = response.data;
-      if (!data?.token) throw new Error("Authentication token missing");
-
-      // Set auth session
-      setAuthSession(data.token, {
+      // Set auth session using cookie-managed authentication
+      setAuthSession("cookie-managed", {
         id: data.id,
         firstName: data.firstName,
         lastName: data.lastName,

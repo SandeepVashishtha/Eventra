@@ -68,7 +68,10 @@ console.log("Running signup endpoint tests...");
   await handler(req, res);
 
   assert.equal(res.statusCode, 201, "Should return 201 on successful signup");
-  assert.ok(res.body.token, "Should return a JWT token");
+  assert.equal(res.body.token, undefined, "Response body should not expose token");
+  assert.equal(res.body.accessToken, undefined, "Response body should not expose accessToken");
+  assert.equal(res.body.jwt, undefined, "Response body should not expose jwt");
+  assert.equal(res.body.authToken, undefined, "Response body should not expose authToken");
   assert.equal(res.body.firstName, "John", "Should return firstName");
   assert.equal(res.body.lastName, "Doe", "Should return lastName");
   assert.equal(res.body.email, "john.doe@example.com", "Should return email (normalized)");
@@ -76,6 +79,7 @@ console.log("Running signup endpoint tests...");
   assert.ok(Array.isArray(res.body.roles), "Should return roles array");
   assert.ok(Array.isArray(res.body.permissions), "Should return permissions array");
   assert.ok(res.body.message, "Should return success message");
+  assert.ok(res.headers["Set-Cookie"], "Should set authentication cookie");
   console.log("✓ Test 1: Successful signup with valid data");
 }
 
@@ -340,7 +344,10 @@ console.log("Running signup endpoint tests...");
   await handler(req, res);
 
   assert.ok(res.headers["Access-Control-Allow-Origin"], "Should have CORS Allow-Origin header");
-  assert.ok(res.headers["Access-Control-Allow-Credentials"], "Should have CORS Allow-Credentials header");
+  assert.ok(
+    res.headers["Access-Control-Allow-Credentials"],
+    "Should have CORS Allow-Credentials header"
+  );
   console.log("✓ Test 16: CORS headers are set");
 }
 

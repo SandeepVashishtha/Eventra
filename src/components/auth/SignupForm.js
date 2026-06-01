@@ -195,13 +195,6 @@ const SignupForm = () => {
         return;
       }
 
-      const sessionToken = data?.token;
-      if (!sessionToken) {
-        setSubmitError("Signup completed but no token was returned.");
-        setLoading(false);
-        return;
-      }
-
       const sessionUser = {
         id: data?.id,
         firstName: data?.firstName ?? formData.firstName.trim(),
@@ -213,7 +206,7 @@ const SignupForm = () => {
         permissions: data?.permissions ?? [],
       };
 
-      setAuthSession(sessionToken, sessionUser);
+      setAuthSession("cookie-managed", sessionUser);
       setLoading(false);
       setSuccess("Account created successfully. Redirecting to dashboard...");
       setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
