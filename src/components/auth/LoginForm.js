@@ -76,7 +76,6 @@ const LoginForm = () => {
         );
       }
     } catch (err) {
-      console.error("Login error:", err);
       const errorMsg = err.message || "Invalid email or password";
       setError({ general: errorMsg });
       toast.error(errorMsg);

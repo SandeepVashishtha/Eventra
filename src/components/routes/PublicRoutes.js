@@ -1,13 +1,11 @@
 import { lazy } from "react";
 import { Route } from "react-router-dom";
-import PageLayout from "../Layout/PageLayout";
 import ProtectedRoute from "../auth/ProtectedRoute";
 import ErrorBoundary from "../common/ErrorBoundary";
 
 // ─── Lazy-loaded page components ─────────────────────────────────────────────
 // 🔥 FIX: Removed duplicate const declarations for all components
 const HealthCheckPage = lazy(() => import("../../Pages/HealthCheckPage"));
-const CertificateVerifier = lazy(() => import("../../Pages/CertificateVerification/CertificateVerifier"));
 const MockApiResponse = lazy(() => import("../MockApiResponse"));
 
 const HomePage = lazy(() => import("../../Pages/Home/HomePage"));
@@ -34,9 +32,6 @@ const ContactUs = lazy(() => import("../../Pages/Contact/ContactUs"));
 const FeedbackPage = lazy(() => import("../../Pages/Feedback/FeedbackPage"));
 const BookmarkedEvents = lazy(() => import("../../Pages/Events/BookmarkedEvents"));
 const RemindersPage = lazy(() => import("../../Pages/Events/RemindersPage"));
-const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
-const FloorPlanDesignerPage = lazy(() => import("../../Pages/Events/FloorPlanDesignerPage"));
-const VirtualVenueWalkthrough = lazy(() => import("../../Pages/Events/VirtualVenueWalkthrough"));
 const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
 
 const withModuleBoundary = (children, boundaryName) => (

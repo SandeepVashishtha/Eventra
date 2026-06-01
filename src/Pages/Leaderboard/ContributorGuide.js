@@ -170,9 +170,7 @@ const ContributorGuide = () => {
     navigator.clipboard.writeText(cmd).then(() => {
       setCopied(id);
       setTimeout(() => setCopied(""), 2000);
-    }).catch((err) => {
-      console.error("Failed to copy command:", err);
-    });
+    }).catch(() => {});
   };
 
   return (

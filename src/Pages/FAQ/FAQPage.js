@@ -153,9 +153,7 @@ function FAQSectionInner() {
     try {
       const saved = safeGetItem("eventra_faq_ratings");
       if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch {}
 
     const initial = {};
     faqs.forEach((faq, idx) => {
@@ -195,6 +193,8 @@ function FAQSectionInner() {
       } catch (err) {
         console.error(err);
       }
+        localStorage.setItem("eventra_faq_ratings", JSON.stringify(updated));
+      } catch {}
       return updated;
     });
   };

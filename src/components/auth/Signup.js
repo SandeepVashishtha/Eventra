@@ -263,6 +263,8 @@ const Signup = () => {
       console.error("Signup error:", { message: err.message, email: formData.email });
       setSubmitStatus("error");
 
+      setSubmitStatus('error');
+      
       let errorMessage = getPublicErrorMessage(err, AUTH_ERRORS.registrationFailed);
 
       if (err.name === "RateLimitError") {
