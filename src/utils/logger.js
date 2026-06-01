@@ -1,3 +1,4 @@
+/* eslint-disable-next-line no-console */
 const isDevelopment =
   typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production";
 
@@ -26,3 +27,4 @@ export const logger = {
     console.error(formatMessage("error", args[0]), ...args.slice(1));
   },
 };
+// ... rest of your code
