@@ -43,7 +43,7 @@ export default function CommandPalette({
     { name: "Explore Events Portal", href: "/events", category: "Pages", type: "nav", icon: Calendar },
     { name: "Live Hackathons", href: "/hackathons", category: "Pages", type: "nav", icon: Sparkles },
     { name: "Platform Projects Hub", href: "/projects", category: "Pages", type: "nav", icon: Layers },
-    { name: "Leaderboard Standings", href: "/leaderBoard", category: "Pages", type: "nav", icon: Sparkles },
+    { name: "Leaderboard Standings", href: "/leaderboard", category: "Pages", type: "nav", icon: Sparkles },
     { name: "Eventra Bookmarks", href: "/bookmarks", category: "Pages", type: "nav", icon: Calendar },
     { name: "Contribute & Open Source Guide", href: "/contributorguide", category: "Pages", type: "nav", icon: Layers },
     { name: "Platform Frequently Asked Questions (FAQ)", href: "/faq", category: "Pages", type: "nav", icon: HelpCircle },

@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useTheme } from "../context/ThemeContext";
-import { Sun, Moon, MousePointer, Bell, ShieldCheck, ArrowRight, Palette, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Sun, MousePointer, Bell, ShieldCheck, ArrowRight, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { toast } from "react-hot-toast";
 
 const Settings = () => {
   useDocumentTitle("Eventra | Settings");
-  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
 
   // Replace scattered localStorage.getItem / setItem calls with the hook
   const [cursorEnabled, setCursorEnabled] = useLocalStorage("cursor", "on");
@@ -110,42 +108,11 @@ const Settings = () => {
               <div>
                 <h2 className="text-lg font-semibold">Appearance</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Switch themes and customize visual behavior.
+                  Customize visual behavior.
                 </p>
               </div>
             </div>
             <div className="space-y-3">
-              <button
-                type="button"
-                onClick={toggleTheme}
-                aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-                aria-pressed={isDarkMode}
-                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-bg px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
-              >
-                <span className="flex items-center gap-3">
-                  {isDarkMode ? (
-                    <Moon className="w-5 h-5 text-indigo-500" aria-hidden="true" />
-                  ) : (
-                    <Sun className="w-5 h-5 text-amber-500" aria-hidden="true" />
-                  )}
-                  {isDarkMode ? "Dark Mode" : "Light Mode"}
-                </span>
-                <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsCustomizerOpen(true)}
-                aria-label="Open theme customizer skins panel"
-                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-bg px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition cursor-pointer"
-              >
-                <span className="flex items-center gap-3">
-                  <Palette className="w-5 h-5 text-indigo-500" aria-hidden="true" />
-                  Theme Customizer
-                </span>
-                <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
-              </button>
-
               <button
                 type="button"
                 onClick={handleCursorToggle}
