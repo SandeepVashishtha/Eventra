@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Input } from '../../components/common/Input';
 import { exportToCSV } from '../../utils/exportUtils';
 import { verifyCertificate } from '../../utils/certificateUtils';

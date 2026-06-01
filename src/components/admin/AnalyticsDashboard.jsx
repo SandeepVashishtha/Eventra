@@ -14,6 +14,7 @@ import {
 import { toast } from "react-toastify";
 import { useAnalyticsStream, SSE_STATUS } from "../../context/RealTimeContext";
 import BudgetPlanner from "./BudgetPlanner";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // =========================================================================
 // CONSTANTS & INITIAL DATA
@@ -118,26 +119,18 @@ const LOCAL_STORAGE_KEY = "eventra_checkins";
 const AnalyticsDashboard = () => {
   // Merge real scanned check-ins from localStorage (set by TicketScanner) with mock defaults
   const getInitialCheckins = () => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
-      if (saved.length > 0) {
-        // Merge: show real scanned check-ins first, then pad with mocks if fewer than 5
-        const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
-        return merged;
-      }
-    } catch (e) {
-      // fallback to mock if localStorage is corrupted
+    const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+    if (saved.length > 0) {
+      // Merge: show real scanned check-ins first, then pad with mocks if fewer than 5
+      const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
+      return merged;
     }
     return MOCK_CHECKINS;
   };
 
   const getInitialLiveCount = () => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
-      return 342 + saved.filter((c) => c.status === "Verified").length;
-    } catch (e) {
-      return 342;
-    }
+    const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+    return 342 + saved.filter((c) => c.status === "Verified").length;
   };
 
   const [checkins, setCheckins] = useState(getInitialCheckins);
