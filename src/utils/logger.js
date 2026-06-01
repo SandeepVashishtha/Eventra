@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* eslint-disable-next-line no-console */
 const isDevelopment =
   typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production";
 
