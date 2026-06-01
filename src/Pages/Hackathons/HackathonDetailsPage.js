@@ -22,8 +22,8 @@ const HackathonDetailsPage = () => {
 
   if (!foundHackathon) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center px-4 py-24">
-        <div className="max-w-xl w-full rounded-3xl bg-white dark:bg-gray-900 shadow-xl border border-gray-200 dark:border-gray-800 p-10 text-center">
+      <div className="min-h-screen bg-bg text-text flex items-center justify-center px-4 py-24">
+        <div className="max-w-xl w-full rounded-3xl bg-card-bg shadow-xl border border-gray-200 dark:border-gray-800 p-10 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900 dark:text-gray-100">
             Hackathon Not Found
           </h1>
@@ -52,8 +52,8 @@ const HackathonDetailsPage = () => {
   const isFeatured = Number.isFinite(prizeValue) && prizeValue >= 30000;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white dark:from-slate-950 dark:via-slate-950 dark:to-black text-gray-900 dark:text-gray-100">
-      <div className="sticky top-0 z-30 border-b border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur">
+    <div className="min-h-screen bg-bg text-text">
+      <div className="sticky top-0 z-30 border-b border-border bg-navbar/80 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-4">
           <Link
             to="/hackathons"
@@ -73,7 +73,7 @@ const HackathonDetailsPage = () => {
           className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]"
         >
           <section className="space-y-6">
-            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl p-6 sm:p-8">
+            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-card-bg shadow-xl p-6 sm:p-8">
               <div className="flex flex-wrap items-center gap-3">
                 <span
                   className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] ${statusStyles[status]}`}
@@ -107,7 +107,7 @@ const HackathonDetailsPage = () => {
                 </a>
                 <Link
                   to="/hackathons"
-                  className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                  className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-bg px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-card-bg transition dark:border-gray-700 dark:text-gray-100"
                 >
                   Browse Hackathons
                 </Link>
@@ -115,7 +115,7 @@ const HackathonDetailsPage = () => {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex items-start gap-3">
+              <div className="rounded-3xl bg-bg border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex items-start gap-3">
                 <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Dates</p>
@@ -135,7 +135,7 @@ const HackathonDetailsPage = () => {
                 </div>
               </div>
 
-              <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex items-start gap-3">
+              <div className="rounded-3xl bg-bg border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-emerald-600 mt-0.5" />
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
@@ -143,7 +143,7 @@ const HackathonDetailsPage = () => {
                 </div>
               </div>
 
-              <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex items-start gap-3">
+              <div className="rounded-3xl bg-bg border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex items-start gap-3">
                 <Award className="h-5 w-5 text-amber-600 mt-0.5" />
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Prize Pool</p>
@@ -151,7 +151,7 @@ const HackathonDetailsPage = () => {
                 </div>
               </div>
 
-              <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex items-start gap-3">
+              <div className="rounded-3xl bg-bg border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex items-start gap-3">
                 <Users className="h-5 w-5 text-indigo-600 mt-0.5" />
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Participants</p>
@@ -162,7 +162,7 @@ const HackathonDetailsPage = () => {
           </section>
 
           <aside className="space-y-6">
-            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl p-6 sm:p-8">
+            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-card-bg shadow-xl p-6 sm:p-8">
               <h2 className="text-xl font-bold">Overview</h2>
               <div className="mt-4 space-y-4 text-sm text-gray-600 dark:text-gray-300 leading-6">
                 <p>
@@ -186,7 +186,7 @@ const HackathonDetailsPage = () => {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl p-6 sm:p-8">
+            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-card-bg shadow-xl p-6 sm:p-8">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <Tag className="h-5 w-5 text-blue-600" />
                 Tech Stack
@@ -203,7 +203,7 @@ const HackathonDetailsPage = () => {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl p-6 sm:p-8">
+            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-card-bg shadow-xl p-6 sm:p-8">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-amber-600" />
                 Rules

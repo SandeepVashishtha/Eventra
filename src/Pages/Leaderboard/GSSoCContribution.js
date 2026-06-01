@@ -329,7 +329,6 @@ const Skeleton = ({ className }) => (
   <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className}`} aria-hidden="true" />
 );
 
-
 // Toast Component
 const ToastContainer = ({ toasts, onClose }) => (
   <div className="fixed bottom-4 right-4 z-50 space-y-2" role="region" aria-live="polite" aria-label="Notifications">
@@ -465,14 +464,13 @@ const GSSoCContribution = () => {
       opacity: 1, 
       transition: { 
         duration: prefersReducedMotion ? 0 : 0.4,
-        ease: [0.22, 1, 0.36, 1] // smooth cubic-bezier
+        ease: [0.22, 1, 0.36, 1]
       } 
     }
   }), [prefersReducedMotion]);
   
   // Stats section visibility
   const statsRef = useRef(null);
-   
   useInView(statsRef, { once: true, margin: "-100px" });
   
   if (isLoading) {
@@ -507,7 +505,7 @@ const GSSoCContribution = () => {
           >
             <div className="w-[95%] mx-auto py-2 px-4 flex items-center gap-2 text-yellow-800 dark:text-yellow-300 text-sm">
               <WifiOff className="w-4 h-4" aria-hidden="true" />
-              <span>You're offline. Changes will sync when you're back online.</span>
+              <span>You&apos;re offline. Changes will sync when you&apos;re back online.</span>
             </div>
           </motion.div>
         )}
@@ -517,7 +515,7 @@ const GSSoCContribution = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-[95%] mx-auto my-10 bg-white dark:bg-black min-h-screen pb-12"
+        className="w-[95%] mx-auto my-10 bg-bg min-h-screen pb-12"
         role="main"
       >
         {/* 🎯 HERO SECTION */}
@@ -641,7 +639,7 @@ const GSSoCContribution = () => {
         {/* 🎮 Achievements & Resources */}
         <motion.section variants={itemVariants} className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Achievements */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2 mb-4">
               <Award className="w-5 h-5 text-yellow-500" aria-hidden="true" />
               <h3 className="font-semibold text-gray-900 dark:text-white">Your Achievements</h3>
@@ -661,7 +659,7 @@ const GSSoCContribution = () => {
           </article>
 
           {/* Resources with Search & Filter */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-blue-500" aria-hidden="true" />
@@ -723,7 +721,7 @@ const GSSoCContribution = () => {
         </motion.section>
 
         {/* 👥 Mentors */}
-        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
+        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-indigo-500" aria-hidden="true" />
@@ -742,7 +740,7 @@ const GSSoCContribution = () => {
         </motion.section>
 
         {/* 📅 Timeline */}
-        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
+        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
           <div className="flex items-center gap-2 mb-4 sm:mb-6">
             <Calendar className="w-5 h-5 text-purple-500" aria-hidden="true" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Program Timeline</h3>
@@ -784,7 +782,7 @@ const GSSoCContribution = () => {
           </article>
 
           {/* Best Practices */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border dark:border-gray-700">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" aria-hidden="true" />
@@ -817,7 +815,7 @@ const GSSoCContribution = () => {
             className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-gray-900 hover:bg-gray-800 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-black"
           >
             <BookOpen className="w-4 h-4" aria-hidden="true" />
-            Contributor's Guide
+            Contributor&apos;s Guide
           </motion.button>
 
           <motion.button

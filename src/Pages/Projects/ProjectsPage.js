@@ -40,7 +40,7 @@ const ProjectCardSkeleton = () => (
     <div className="p-6">
       <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
       <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded w-5/6 mb-4"></div>
+      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded mb-4"></div>
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>
@@ -143,20 +143,20 @@ if (projectsList.length > 0) {
               publicRequestConfig
             );
             const categoriesData = categoriesResponse.data;
-            setCategories(["all", ...categoriesData]);
+            setCategories(["all", ...(Array.isArray(categoriesData) ? categoriesData : [])]);
           } catch {
             // derive categories from API project data if categories endpoint throws
-            const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
+            const uniqueCategories = [...new Set(projectsData.map(p => p?.category).filter(Boolean))];
             setCategories(["all", ...uniqueCategories]);
           }
           return; // exit successfully
         }
 
-        // --- MOCK DATA FALLBACK: API returned empty array ---
-        console.warn("Projects API returned empty array — loading mock data.");
+        // --- MOCK DATA FALLBACK: API returned empty or invalid array ---
+        console.warn("Projects API returned empty or invalid array — loading mock data.");
         setProjects(mockProjects);
         const mockUniqueCategories = [
-          ...new Set(mockProjects.map((p) => p.category)),
+          ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
         ];
         setCategories(["all", ...mockUniqueCategories]);
       } catch (err) {
@@ -168,23 +168,19 @@ if (projectsList.length > 0) {
           );
           setProjects(mockProjects);
           const fallbackCategories = [
-            ...new Set(mockProjects.map((p) => p.category)),
+            ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
           ];
           setCategories(["all", ...fallbackCategories]);
           return;
         }
 
-        // Fall back to mock data in development so local work is unaffected
-        if (process.env.NODE_ENV === "development") {
-          console.warn("API unavailable — falling back to mock project data.");
-          setProjects(mockProjects);
-          const devUniqueCategories = [
-            ...new Set(mockProjects.map((p) => p.category)),
-          ];
-          setCategories(["all", ...devUniqueCategories]);
-        } else {
-          setError("Failed to load projects. Please try again later.");
-        }
+        // Always gracefully fall back to mock data when API is unavailable
+        console.warn("API unavailable — falling back to mock project data.");
+        setProjects(mockProjects);
+        const fallbackCategories = [
+          ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
+        ];
+        setCategories(["all", ...fallbackCategories]);
       } finally {
         setIsLoading(false);
       }
@@ -211,13 +207,13 @@ if (projectsList.length > 0) {
         const query = searchQuery.toLowerCase();
 
         return (
-          project.title.toLowerCase().includes(query) ||
-          project.description.toLowerCase().includes(query) ||
-          project.category.toLowerCase().includes(query) ||
-          project.author.toLowerCase().includes(query) ||
-          (Array.isArray(project.techStack) &&
+          project?.title?.toLowerCase()?.includes(query) ||
+          project?.description?.toLowerCase()?.includes(query) ||
+          project?.category?.toLowerCase()?.includes(query) ||
+          project?.author?.toLowerCase()?.includes(query) ||
+          (Array.isArray(project?.techStack) &&
             project.techStack.some((tech) =>
-              tech.toLowerCase().includes(query)
+              tech?.toLowerCase()?.includes(query)
             ))
         );
       }

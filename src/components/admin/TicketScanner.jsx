@@ -410,7 +410,7 @@ export default function TicketScanner() {
                   Manual Check-In Fallback
                 </h4>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal max-w-xs mx-auto">
-                  Type in the ticket credentials directly. Use this when the guest's device screen
+                  Type in the ticket credentials directly. Use this when the guest&apos;s device screen
                   is cracked or camera access is down.
                 </p>
               </div>
