@@ -95,8 +95,8 @@ const useOfflineSync = () => {
     });
   };
 
-    // 🔥 FIX: Added 'signal' parameter to pass the abort context down to fetchWithTimeout
-    const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false, signal = null) => {
+    // 🔥 FIX: Added 'signal' and 'idempotencyKey' parameters
+    const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false, signal = null, idempotencyKey = null) => {
       if (attempt > 0) {
         const baseDelayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
         const jitterMs = Math.random() * 500;
@@ -108,6 +108,7 @@ const useOfflineSync = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
       if (forceOverride) headers['X-Override-Conflict'] = 'true';
+      if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
 
       const { response, data } = await fetchWithTimeout(
         url,
@@ -231,7 +232,8 @@ const useOfflineSync = () => {
               token,
               0,
               false,
-              conflictController.signal // 🔥 FIX: Pass signal
+              conflictController.signal, // 🔥 FIX: Pass signal
+              item.id // Pass idempotency key
             );
 
             // Handle Conflict loop — pass the abort signal so the waiter
@@ -241,10 +243,10 @@ const useOfflineSync = () => {
 
               if (resolution.resolution === "local") {
                 // Retry with force flag
-                res = await postWithBackoff(url, item.payload, token, 0, true, conflictController.signal);
+                res = await postWithBackoff(url, item.payload, token, 0, true, conflictController.signal, item.id);
               } else if (resolution.resolution === "merge") {
                 // Post merged content
-                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true, conflictController.signal);
+                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true, conflictController.signal, item.id);
               } else {
                 // Discard local (treated as handled success so we proceed)
                 res = { status: "success" };
