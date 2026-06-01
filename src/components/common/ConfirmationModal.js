@@ -1,14 +1,6 @@
-import React, { useEffect, useId, useRef } from "react";
+import React, { useEffect, useId } from "react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 import "./ConfirmationModal.css";
-
-const FOCUSABLE_SELECTOR = [
-  "a[href]",
-  "button:not([disabled])",
-  "textarea:not([disabled])",
-  "input:not([disabled])",
-  "select:not([disabled])",
-  '[tabindex]:not([tabindex="-1"])',
-].join(",");
 
 const ConfirmationModal = ({
   isOpen,
@@ -19,9 +11,7 @@ const ConfirmationModal = ({
   confirmText = "Confirm",
   cancelText = "Cancel",
 }) => {
-  const cancelButtonRef = useRef(null);
-  const modalRef = useRef(null);
-  const previouslyFocusedElementRef = useRef(null);
+  const modalRef = useFocusTrap(isOpen);
   const titleId = useId();
   const descriptionId = useId();
 
@@ -29,48 +19,11 @@ const ConfirmationModal = ({
     if (!isOpen) return;
 
     const prevOverflow = document.body.style.overflow;
-    previouslyFocusedElementRef.current = document.activeElement;
-
     document.body.style.overflow = "hidden";
-    cancelButtonRef.current?.focus();
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
         onClose();
-        return;
-      }
-
-      if (event.key !== "Tab") return;
-
-      const focusableElements = Array.from(
-        modalRef.current.querySelectorAll(FOCUSABLE_SELECTOR)
-      ).filter((el) => !el.hasAttribute("disabled"));
-
-      if (focusableElements.length === 0) {
-        event.preventDefault();
-        modalRef.current?.focus();
-        return;
-      }
-
-      const firstFocusableElement = focusableElements[0];
-      const lastFocusableElement = focusableElements[focusableElements.length - 1];
-      const activeElement = document.activeElement;
-
-      if (event.shiftKey && activeElement === firstFocusableElement) {
-        event.preventDefault();
-        lastFocusableElement.focus();
-        return;
-      }
-
-      if (!event.shiftKey && activeElement === lastFocusableElement) {
-        event.preventDefault();
-        firstFocusableElement.focus();
-        return;
-      }
-
-      if (!modalRef.current?.contains(activeElement)) {
-        event.preventDefault();
-        firstFocusableElement.focus();
       }
     };
 
@@ -79,10 +32,6 @@ const ConfirmationModal = ({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = prevOverflow;
-      if (previouslyFocusedElementRef.current?.isConnected) {
-        previouslyFocusedElementRef.current.focus();
-      }
-      previouslyFocusedElementRef.current = null;
     };
   }, [isOpen, onClose]);
 
@@ -119,7 +68,6 @@ const ConfirmationModal = ({
 
         <div className="confirmation-modal-actions">
           <button
-            ref={cancelButtonRef}
             type="button"
             className="confirmation-modal-btn confirmation-modal-btn-cancel"
             onClick={onClose}
