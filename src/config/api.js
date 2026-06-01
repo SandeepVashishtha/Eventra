@@ -231,13 +231,13 @@ API.interceptors.response.use(
     
     // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
     // because those can duplicate writes or worsen server-side rate limiting.
-    if (isRetryableMethod && isRetryableStatus && retryCount < MAX_RETRIES) {
+    if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
       config._retryCount = retryCount + 1;
       const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
       if (isDev) {
         console.debug(
-          `[API ${method}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
+          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
         );
       }
 
