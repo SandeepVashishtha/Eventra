@@ -143,34 +143,52 @@ const EventCreation = () => {
     }
 
     if (formData.registrationStart || formData.registrationEnd) {
-      const now = new Date();
+  const now = new Date();
 
-      const registrationStart = formData.registrationStart
-        ? new Date(formData.registrationStart)
-        : null;
+  const registrationStart = formData.registrationStart
+    ? new Date(formData.registrationStart)
+    : null;
 
-      const registrationEnd = formData.registrationEnd ? new Date(formData.registrationEnd) : null;
+  const registrationEnd = formData.registrationEnd
+    ? new Date(formData.registrationEnd)
+    : null;
 
-      const eventStart = new Date(
-        `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
-      );
+  const eventStart = new Date(
+    `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
+  );
 
-      if (registrationStart && registrationStart < now) {
-        newErrors.registrationStart = "Registration start cannot be in the past";
-      }
+  if (registrationStart && registrationStart < now) {
+    newErrors.registrationStart =
+      "Registration start cannot be in the past";
+  }
 
-      if (registrationStart && registrationEnd && registrationStart >= registrationEnd) {
-        newErrors.registrationEnd = "Registration end must be after registration start";
-      }
+  if (
+    registrationStart &&
+    registrationEnd &&
+    registrationStart >= registrationEnd
+  ) {
+    newErrors.registrationEnd =
+      "Registration end must be after registration start";
+  }
 
-      if (registrationStart && !isNaN(eventStart.getTime()) && registrationStart >= eventStart) {
-        newErrors.registrationStart = "Registration start must be before the event starts";
-      }
+  if (
+    registrationStart &&
+    !isNaN(eventStart.getTime()) &&
+    registrationStart >= eventStart
+  ) {
+    newErrors.registrationStart =
+      "Registration start must be before the event starts";
+  }
 
-      if (registrationEnd && !isNaN(eventStart.getTime()) && registrationEnd > eventStart) {
-        newErrors.registrationEnd = "Registration must close before the event starts";
-      }
-    }
+  if (
+    registrationEnd &&
+    !isNaN(eventStart.getTime()) &&
+    registrationEnd > eventStart
+  ) {
+    newErrors.registrationEnd =
+      "Registration must close before the event starts";
+  }
+}
 
     // Validate ticket tiers
     if (formData.ticketTiers && formData.ticketTiers.length > 0) {
