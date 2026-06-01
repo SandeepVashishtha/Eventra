@@ -60,6 +60,8 @@ const buildApiUrl = (path = "") => {
 // ---------------------------------------------------------------------------
 
 const REQUEST_TIMEOUT_MS = 15_000;
+const RETRYABLE_STATUS_CODES = [502, 503, 504];
+const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1_000;
 
@@ -197,12 +199,22 @@ const normalizeApiError = (error) => {
   );
 };
 
-// 🔥 HERE IS WHERE WE FIXED THE BUG 🔥
 // We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
 API.interceptors.request.use((config) => {
   if (isDev) {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
+  
+  const method = config.method?.toUpperCase();
+  if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    if (!config.headers['Idempotency-Key'] && !config.headers['X-Idempotency-Key']) {
+      const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+      config.headers['Idempotency-Key'] = generateId();
+    }
+  }
+  
   return config;
 });
 
@@ -227,12 +239,15 @@ API.interceptors.response.use(
         retryCount,
       })
     ) {
+    // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
+    // because those can duplicate writes or worsen server-side rate limiting.
+    if (isRetryableMethod && isRetryableStatus && retryCount < MAX_RETRIES) {
       config._retryCount = retryCount + 1;
       const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
       if (isDev) {
         console.debug(
-          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
+          `[API ${method}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
         );
       }
 

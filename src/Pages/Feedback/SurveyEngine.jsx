@@ -72,9 +72,7 @@ const SurveyEngine = () => {
           setDraftDetected(true);
           return; // Skip setting isInitialized to prevent early overwrite
         }
-      } catch (e) {
-        console.error("Failed to parse cached survey draft:", e);
-      }
+      } catch {}
     }
     setIsInitialized(true);
   }, []);
