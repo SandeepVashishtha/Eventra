@@ -4,9 +4,7 @@ import {
   FolderKanban,
   Users,
   Trophy,
-  Info,
   MessageSquare,
-  HelpCircle,
   Book,
   Bookmark,
 } from "lucide-react";
