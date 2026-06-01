@@ -460,8 +460,9 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                   <button
                     onClick={resetFilters}
                     className="text-xs text-primary hover:opacity-90 font-semibold border border-primary/20 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all"
-                   aria-label="button">
-                    ✕ Clear filters
+                    aria-label="Clear hackathon filters"
+                  >
+                    Clear filters
                   </button>
                 )}
             </div>
