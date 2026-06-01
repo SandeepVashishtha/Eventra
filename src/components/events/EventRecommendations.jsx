@@ -1,5 +1,4 @@
 import React, { useState, useEffect, memo, useCallback, useMemo } from "react";
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Sparkles,
@@ -173,9 +172,6 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
   const nextSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1 >= recommendedEvents.length - 2 ? 0 : prev + 1));
   }, [recommendedEvents.length]);
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1 > recommendedEvents.length - 3 ? 0 : prev + 1));
-  };
 
   const prevSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev === 0 ? Math.max(0, recommendedEvents.length - 3) : prev - 1));
