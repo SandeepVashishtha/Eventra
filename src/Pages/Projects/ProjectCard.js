@@ -192,9 +192,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         cache = saved ? JSON.parse(saved) : {};
         cache[key] = { data: updated, timestamp: Date.now() };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-      } catch (err) {
-        console.error(err);
-      }
+      } catch {}
       return updated;
     });
   };
@@ -214,9 +212,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         cache = saved ? JSON.parse(saved) : {};
         cache[key] = { data: updated, timestamp: Date.now() };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-      } catch (err) {
-        console.error(err);
-      }
+      } catch {}
       return updated;
     });
   };
@@ -274,8 +270,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
 
         setMetrics(freshMetrics);
         setMetricsLoading(false);
-      } catch (err) {
-        console.warn(`GitHub fetch failed for ${cacheKeyString}, falling back to static project metadata.`, err);
+      } catch {
         setMetrics({
           stars: project.stars || 0,
           forks: project.forks || 0,
