@@ -1,4 +1,5 @@
 import {
+  useCallback,
   createContext,
   useContext,
   useEffect,
@@ -47,7 +48,7 @@ const safeStorage = {
 const getInitialTheme = () => safeStorage.getItem("theme", "system");
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(getInitialTheme);
+  const [theme] = useState("light");
 
   // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {
@@ -77,7 +78,9 @@ export const ThemeProvider = ({ children }) => {
     return saved !== null ? saved === "true" : prefersReduced;
   });
 
-  const resolvedTheme = theme === "system" ? getSystemTheme() : theme;
+  const resolvedTheme = "light";
+  const setTheme = useCallback(() => {}, []);
+  const toggleTheme = useCallback(() => {}, []);
 
   // Apply themes, custom HSL variable overrides, and sync storage
   useEffect(() => {
@@ -96,7 +99,7 @@ export const ThemeProvider = ({ children }) => {
 
     // Apply active skin theme colors
     const activeTheme = THEMES[activeThemeId] || THEMES.default;
-    const themeColors = activeTheme.colors[resolvedTheme] || activeTheme.colors.dark;
+    const themeColors = activeTheme.colors.light || activeTheme.colors.dark;
     if (themeColors) {
       Object.entries(themeColors).forEach(([variable, val]) => {
         root.style.setProperty(variable, val);
@@ -122,10 +125,10 @@ export const ThemeProvider = ({ children }) => {
         "content",
         customHsl && customHsl.active
           ? `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l}%)`
-          : resolvedTheme === "dark" ? "#0f172a" : "#ffffff"
+          : "#ffffff"
       );
     }
-  }, [theme, resolvedTheme, activeThemeId, customHsl]);
+  }, [activeThemeId, customHsl]);
 
   // Sync OS-level reduced motion preference changes
   useEffect(() => {
@@ -179,15 +182,12 @@ export const ThemeProvider = ({ children }) => {
     () => ({
       theme,
       resolvedTheme,
-      isDarkMode: resolvedTheme === "dark",
+      isDarkMode: false,
       setTheme,
       isCustomizerOpen,
       setIsCustomizerOpen,
 
-      toggleTheme: () =>
-        setTheme((current) =>
-          current === "dark" || (current === "system" && getSystemTheme() === "dark") ? "light" : "dark"
-        ),
+      toggleTheme,
       activeThemeId,
       setActiveThemeId,
       THEMES,
@@ -196,7 +196,7 @@ export const ThemeProvider = ({ children }) => {
       reducedMotion,
       setReducedMotion,
     }),
-    [theme, resolvedTheme, activeThemeId, isCustomizerOpen, customHsl, reducedMotion]
+    [theme, resolvedTheme, setTheme, toggleTheme, activeThemeId, isCustomizerOpen, customHsl, reducedMotion]
   );
 
   return (
