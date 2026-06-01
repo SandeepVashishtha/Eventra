@@ -1,5 +1,4 @@
 import "./EventDetails.print.css";
-import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
@@ -17,7 +16,6 @@ import { logError } from "../../utils/errorLogger";
 const EventDetailsPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const { addRecentlyViewed } = useRecentlyViewed();
   const latestRequestIdRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [event, setEvent] = useState(null);
