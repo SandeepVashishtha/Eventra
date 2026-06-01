@@ -267,6 +267,7 @@ export default function TicketScanner() {
               setScanResult(null);
               startScanner(selectedCameraId);
             }}
+            aria-pressed={!manualMode}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
               !manualMode
                 ? "bg-white dark:bg-slate-850 text-indigo-600 dark:text-indigo-400 shadow-sm"
@@ -281,6 +282,7 @@ export default function TicketScanner() {
               stopScanner();
               setScanResult(null);
             }}
+            aria-pressed={manualMode}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
               manualMode
                 ? "bg-white dark:bg-slate-850 text-indigo-600 dark:text-indigo-400 shadow-sm"
