@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   HelpCircle,
-  GitBranch,
   GitPullRequest,
   FileText as LucideFileText, 
   Users,

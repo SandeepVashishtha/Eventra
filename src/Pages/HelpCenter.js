@@ -13,7 +13,6 @@ import {
   Settings,
   BookOpen,
   Mail,
-  MessageCircle,
   CheckCircle,
   Clock,
   AlertCircle,
@@ -57,7 +56,7 @@ const categories = [
     icon: <Award className="w-8 h-8 text-red-500" />,
     title: "Leaderboard",
     description: "Understand points, ranks, and top contributors.",
-    link: "/leaderBoard",
+    link: "/leaderboard",
   },
   {
     icon: <Star className="w-8 h-8 text-pink-500" />,
@@ -93,7 +92,7 @@ const categories = [
     icon: <Calendar className="w-8 h-8 text-cyan-500" />,
     title: "Community Events",
     description: "Join upcoming community-driven meetups and activities.",
-    link: "/communityEvent",
+    link: "/community-event",
   },
   {
     icon: <Star className="w-8 h-8 text-rose-500" />,

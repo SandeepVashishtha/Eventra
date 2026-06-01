@@ -1,7 +1,7 @@
 import { Star, MessageSquare } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, FileText, MessageSquare, AlertCircle } from "lucide-react";
+import { User, Mail, FileText, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import SEOHead from "../../components/SEOHead";
 

@@ -1,4 +1,4 @@
-import { CalendarIcon, MapPinIcon, ClockIcon, UserGroupIcon, TrophyIcon, BuildingLibraryIcon, ShareIcon } from "lucide-react";
+import { CalendarIcon, MapPinIcon, ClockIcon, UserGroupIcon, TrophyIcon, BuildingLibraryIcon, ShareIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -323,13 +323,23 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
               <button
                 type="button"
                 className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
-               aria-label="button">
+                aria-label={
+                  status === "live"
+                    ? `Join ${normalizedHackathon.title}`
+                    : `View results for ${normalizedHackathon.title}`
+                }
+              >
                 {status === "live" ? "Join Now" : "View Results"}
               </button>
               <button
                 type="button"
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-slate-50 hover:text-indigo-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-               aria-label="button">
+                aria-label={
+                  status === "live"
+                    ? `Submit project for ${normalizedHackathon.title}`
+                    : `View resources for ${normalizedHackathon.title}`
+                }
+              >
                 {status === "live" ? "Submit" : "Resources"}
               </button>
             </>

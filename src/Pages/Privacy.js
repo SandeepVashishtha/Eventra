@@ -1,4 +1,4 @@
-import { Lock, UserShield, Database, Globe, Envelope, ShieldAlt, ChevronDown, ChevronUp } from "lucide-react";
+import { Lock, ShieldCheck, Database, Globe, Mail, Shield, ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -52,7 +52,7 @@ export const Privacy = () => {
         "We may collect personal details such as your name, email address, organization details, event information, payment details, and any other information you provide through our platform. As part of our event management services, we may also collect attendee information, ticketing data, and event analytics on behalf of event organizers.",
     },
     {
-      icon: <UserShield className="text-emerald-300 text-3xl" />,
+      icon: <ShieldCheck className="text-emerald-300 text-3xl" />,
       title: "How We Use Your Information",
       content:
         "The data we collect is used to provide and manage our event management services, process event registrations and ticket purchases, enable event check-ins with QR code technology, generate analytics and reports for event organizers, improve your experience on the platform, provide support and respond to your queries, and send important updates or notifications about events.",
@@ -64,7 +64,7 @@ export const Privacy = () => {
         "We implement enterprise-grade security measures to protect your data, including end-to-end encryption and SOC 2 compliant practices. However, no digital platform can guarantee 100% security. As an open-source platform, our codebase is transparent and available for security review by the community.",
     },
     {
-      icon: <ShieldAlt className="text-rose-300 text-3xl" />,
+      icon: <Shield className="text-rose-300 text-3xl" />,
       title: "Third-Party Sharing",
       content:
         "We do not share your personal information with third parties without your explicit consent, except as required to provide our services (e.g., payment processors) or as required by law. Event organizers may have access to attendee information for their events, but we require them to comply with applicable privacy laws.",
@@ -76,7 +76,7 @@ export const Privacy = () => {
         "As a global platform serving users in 195+ countries, your information may be processed outside of your country of residence. We ensure appropriate safeguards are in place to protect your data in accordance with this privacy policy.",
     },
     {
-      icon: <Envelope className="text-violet-300 text-3xl" />,
+      icon: <Mail className="text-violet-300 text-3xl" />,
       title: "Your Rights & Consent",
       content:
         "You have the right to access, correct, or delete your personal information. You can also object to processing of your personal data, ask us to restrict processing, or request portability of your personal data. By using our website and services, you consent to our Privacy Policy.",

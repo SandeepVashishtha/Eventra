@@ -1,4 +1,4 @@
-import { Github, Twitter, Linkedin, MessageCircle, Code, LaptopCode, Brain, Code2, Plus, ArrowRight } from "lucide-react";
+import { Github, Twitter, Linkedin, MessageCircle, Code, Laptop, Brain, Code2, Plus, ArrowRight } from "lucide-react";
 import React from "react";
 import { motion } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
@@ -12,7 +12,7 @@ const iconList = [
   { icon: <Linkedin />, color: "#0A66C2" },
   { icon: <MessageCircle />, color: "#5865F2" },
   { icon: <Code />, color: "#10B981" },
-  { icon: <LaptopCode />, color: "#F59E0B" },
+  { icon: <Laptop />, color: "#F59E0B" },
   { icon: <Brain />, color: "#F43F5E" },
   { icon: <Code2 />, color: "#8B5CF6" },
 ];

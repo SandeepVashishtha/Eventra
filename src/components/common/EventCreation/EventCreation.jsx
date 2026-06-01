@@ -1,4 +1,4 @@
-import { ArrowRightIcon, CalendarIcon, UsersIcon, ClipboardDocumentListIcon, TagIcon, CheckCircleIcon } from "lucide-react";
+import { ArrowRightIcon, CalendarIcon, UsersIcon, ClipboardDocumentListIcon, TagIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";

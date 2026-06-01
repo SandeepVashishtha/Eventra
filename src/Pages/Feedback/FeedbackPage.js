@@ -1,4 +1,4 @@
-import { BarChart, Calendar, Check, CheckCircle, ChevronDown, Mail, MessageSquare, Monitor, MoreHorizontal, Plus, Star, User, Bug, RegComment } from "lucide-react";
+import { BarChart, Calendar, Check, CheckCircle, ChevronDown, Mail, MessageSquare, Monitor, MoreHorizontal, Plus, Star, User, Bug } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
@@ -172,7 +172,7 @@ const CustomFloatingSelect = ({
   const hasValue = value && value.length > 0;
   const selectedOption = options.find((opt) => opt.value === value);
   const selectedLabel = selectedOption ? selectedOption.label : "";
-  const selectedIcon = selectedOption ? selectedOption.icon : FiMessageSquare;
+  const selectedIcon = selectedOption ? selectedOption.icon : MessageSquare;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -329,13 +329,13 @@ const FeedbackPage = () => {
 
   const formRef = useRef(null);
   const feedbackTypes = [
-    { value: "general", label: "General Feedback", icon: FaRegComment },
-    { value: "bug", label: "Bug Report", icon: FaBug },
-    { value: "feature", label: "Feature Request", icon: FiPlus },
-    { value: "ui", label: "UI/UX Feedback", icon: FiMonitor },
-    { value: "performance", label: "Performance Issue", icon: FiBarChart },
-    { value: "event", label: "Event Feedback", icon: FiCalendar },
-    { value: "other", label: "Other", icon: FiMoreHorizontal },
+    { value: "general", label: "General Feedback", icon: MessageSquare },
+    { value: "bug", label: "Bug Report", icon: Bug },
+    { value: "feature", label: "Feature Request", icon: Plus },
+    { value: "ui", label: "UI/UX Feedback", icon: Monitor },
+    { value: "performance", label: "Performance Issue", icon: BarChart },
+    { value: "event", label: "Event Feedback", icon: Calendar },
+    { value: "other", label: "Other", icon: MoreHorizontal },
   ];
 
   useEffect(() => {
