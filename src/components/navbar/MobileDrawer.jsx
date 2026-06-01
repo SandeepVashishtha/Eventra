@@ -7,7 +7,6 @@ const MobileDrawer = ({
   isOpen,
   closeMenu,
   isAuthenticated,
-  user,
   logout,
 }) => {
   const location = useLocation();
