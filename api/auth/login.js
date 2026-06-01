@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { users } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
 
 // Pre-compute a dummy bcrypt hash at module load time (same cost factor used in signup.js).
 // When a login attempt references a username or email that does not exist, we still run
@@ -65,111 +66,8 @@ const corsResponse = (res, status, data, req) => {
 };
 
 // ---------------------------------------------------------------------------
-// Default Permissions based on roles
+// Default Permissions based on roles (delegated to shared permissions.js)
 // ---------------------------------------------------------------------------
-
-const ROLE_PERMISSIONS = {
-  SUPER_ADMIN: [
-    "events:view",
-    "events:create",
-    "events:edit",
-    "events:delete",
-    "events:register",
-    "hackathons:view",
-    "hackathons:host",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "users:view",
-    "users:edit",
-    "users:delete",
-    "analytics:view",
-    "content:moderate",
-    "profile:edit",
-    "profile:view",
-    "notifications:manage",
-    "admin:access",
-  ],
-  ADMIN: [
-    "events:view",
-    "events:create",
-    "events:edit",
-    "events:delete",
-    "events:register",
-    "hackathons:view",
-    "hackathons:host",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "users:view",
-    "analytics:view",
-    "content:moderate",
-    "profile:edit",
-    "profile:view",
-    "notifications:manage",
-    "admin:access",
-  ],
-  ORGANIZER: [
-    "events:view",
-    "events:create",
-    "events:edit",
-    "events:register",
-    "hackathons:view",
-    "hackathons:host",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "analytics:view",
-    "profile:edit",
-    "profile:view",
-  ],
-  VOLUNTEER: [
-    "events:view",
-    "events:register",
-    "hackathons:view",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "content:moderate",
-    "profile:edit",
-    "profile:view",
-  ],
-  ATTENDEE: [
-    "events:view",
-    "events:register",
-    "hackathons:view",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "profile:edit",
-    "profile:view",
-  ],
-  USER: [
-    "events:view",
-    "events:register",
-    "projects:view",
-    "projects:submit",
-    "hackathons:view",
-    "hackathons:participate",
-    "profile:edit",
-    "profile:view",
-  ],
-};
-
-const getPermissionsForRoles = (roles) => {
-  const permissionsSet = new Set();
-  roles.forEach((role) => {
-    const normalizedRole = role.toUpperCase();
-    const perms = ROLE_PERMISSIONS[normalizedRole] || ROLE_PERMISSIONS.USER;
-    perms.forEach((perm) => permissionsSet.add(perm));
-  });
-  return Array.from(permissionsSet);
-};
 
 // ---------------------------------------------------------------------------
 // Find user by username or email

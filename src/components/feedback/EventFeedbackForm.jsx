@@ -17,17 +17,24 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // Synchronize and reset form states cleanly whenever switching to a new event context
   useEffect(() => {
     const key = `feedback-submitted-${eventId}`;
     if (localStorage.getItem(key)) {
       setSubmitted(true);
     } else {
+      setSubmitted(false);
       // 🔥 FIX: Reset the form state when navigating to a new, unreviewed event
       setSubmitted(false);
       setRating(0);
       setHoveredRating(0);
       setComment("");
     }
+    
+    // Wipe out state properties from the preceding event
+    setRating(0);
+    setHoveredRating(0);
+    setComment("");
   }, [eventId]);
 
   const handleSubmit = async (e) => {
@@ -150,18 +157,11 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
               className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/15 disabled:opacity-75 transition-all"
             >
               {isSubmitting ? (
-  <>
-    <Loader2
-      className="
-        w-4
-        h-4
-        animate-spin
-      "
-    />
-
-    Submitting...
-  </>
-) : (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
                 <>
                   <FiSend className="w-4 h-4" />
                   Submit Feedback
@@ -187,7 +187,6 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                 We&apos;ve received your submission. Your rating and comments have been shared with the event organizers.
               </p>
             </div>
-
           </motion.div>
         )}
       </AnimatePresence>

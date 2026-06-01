@@ -30,9 +30,18 @@ const useKeyboardShortcuts = ({
         key = "/";
       }
 
+      // Command Palette (Ctrl + K or Cmd + K)
+      if ((e.metaKey || e.ctrlKey) && key === "k") {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("toggleCommandPalette"));
+        onCloseHelp?.(); // Close Shortcuts Modal if open
+        return;
+      }
+
       // Open modal (Shift + ? or Shift + /)
       if (e.shiftKey && key === "/") {
         e.preventDefault();
+        window.dispatchEvent(new CustomEvent("closeCommandPalette"));
         onOpenHelp?.();
         return;
       }
@@ -40,13 +49,15 @@ const useKeyboardShortcuts = ({
       // Close modal
       if (key === "escape") {
         e.preventDefault();
+        window.dispatchEvent(new CustomEvent("closeCommandPalette"));
         onCloseHelp?.();
         keyBuffer.current = [];
         return;
       }
 
-      // Prevent navigation shortcuts if the shortcuts modal is open
-      if (isOpen) return;
+      // Prevent navigation shortcuts if any modal is open
+      const hasModalOpen = isOpen || document.body.style.overflow === "hidden" || document.querySelector('[role="dialog"]');
+      if (hasModalOpen) return;
 
       // Ignore navigation sequences if standard command modifier keys are active
       if (e.ctrlKey || e.altKey || e.metaKey) return;
@@ -97,7 +108,7 @@ const useKeyboardShortcuts = ({
         navigate("/projects");
         keyBuffer.current = [];
       } else if (combo === "ga") {
-        navigate("/leaderBoard");
+        navigate("/leaderboard");
         keyBuffer.current = [];
       } else if (combo === "gf") {
         navigate("/faq");

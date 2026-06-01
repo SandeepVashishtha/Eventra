@@ -1,22 +1,22 @@
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
+import AuthButtons from "./AuthButtons";
+import ProfileMenu from "./ProfileMenu";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
   const navRef = useRef(null);
 
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
-  const { isDarkMode, toggleTheme } = useTheme();
 
   useBodyScrollLock(isMobileMenuOpen);
   const handleCloseModals = useCallback(() => {
@@ -59,6 +59,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
 
           setScrollProgress(progress);
+          setScrolled(scrollTop > 12);
           ticking = false;
         });
 
@@ -78,12 +79,15 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className="sticky top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
+        className={`sticky top-0 left-0 w-full h-16 sm:h-[4.25rem] z-[200] transition-all duration-300 ${scrolled ? 'backdrop-blur-md border-b border-transparent shadow-[0_1px_0_rgba(15,23,42,0.04)]' : 'bg-transparent border-b border-transparent'}`}
+        style={scrolled ? {
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(245,248,251,0.96) 100%)',
+        } : undefined}
       >
-        <div className="h-full px-4 flex items-center justify-between gap-4">
-          <Link to="/" aria-label="Eventra home logo template" className="flex items-center shrink-0 min-w-0">
-            <div className="flex min-w-0 items-center gap-2 xl:gap-3">
-              <div className="flex h-10 w-10 xl:h-11 xl:w-11 flex-none items-center justify-center overflow-hidden rounded-xl bg-gray-100 p-1 shadow-premium-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+        <div className="relative h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 sm:gap-4">
+          <Link to="/" aria-label="Eventra home logo template" className="relative z-10 flex items-center shrink-0 min-w-0">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 flex-none items-center justify-center overflow-hidden rounded-lg bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
                 <img
                   src="/favicon.png"
                   alt="Eventra Brand Logo"
@@ -91,35 +95,35 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                   loading="lazy"
                 />
               </div>
-              <h1 className="truncate text-lg sm:text-xl xl:text-2xl font-heading font-bold text-text">Eventra</h1>
+              <h1 className="truncate text-base sm:text-lg lg:text-xl font-heading font-semibold text-text tracking-tight">Eventra</h1>
             </div>
           </Link>
 
           {/* Desktop Links should be in the middle of the navbar */}
-          <DesktopNavbar isAuthenticated={authenticated} user={user} logout={logout} />
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 hidden xl:flex justify-center">
+            <div className="pointer-events-auto">
+              <DesktopNavbar />
+            </div>
+          </div>
 
           {/* Right Controls Container */}
-          <div className="flex items-center gap-2 xl:gap-4 shrink-0">
-          {/* Hide these on mobile */}
-          <div className="hidden sm:flex items-center gap-2 xl:gap-4">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
-              aria-pressed={isDarkMode}
-              className="theme-toggle relative flex items-center justify-center w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-800 text-black dark:text-white shadow-premium-sm hover:scale-105 hover:shadow-premium-md transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-            >
-              <div className="transition-transform duration-500">
-                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </div>
-            </button>
-            <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+          <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0 ml-auto">
+            <div className="hidden xl:flex items-center gap-2.5">
+              {authenticated ? (
+                <ProfileMenu user={user} logout={logout} />
+              ) : (
+                <AuthButtons />
+              )}
+              <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             </div>
-            <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
+
+            <div className="xl:hidden">
+              <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
+            </div>
           </div>
         </div>
         <div className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
-          <div className="h-full bg-blue-500 transition-all duration-100 ease-out" style={{ width: `${scrollProgress}%` }} />
+          <div className="h-full bg-primary transition-all duration-100 ease-out" style={{ width: `${scrollProgress}%` }} />
         </div>
       </nav>
     </>
