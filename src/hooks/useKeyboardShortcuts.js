@@ -97,7 +97,7 @@ const useKeyboardShortcuts = ({
         navigate("/projects");
         keyBuffer.current = [];
       } else if (combo === "ga") {
-        navigate("/leaderBoard");
+        navigate("/leaderboard");
         keyBuffer.current = [];
       } else if (combo === "gf") {
         navigate("/faq");

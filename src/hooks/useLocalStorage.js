@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
+import { logger } from "../utils/logger";
 
 const useLocalStorage = (key, initialValue) => {
   const initialValueRef = useRef(initialValue);
@@ -17,7 +18,7 @@ const useLocalStorage = (key, initialValue) => {
       const item = window.localStorage.getItem(key);
       return safeJsonParse(item, initialValueRef.current);
     } catch (error) {
-      console.warn(`useLocalStorage: error reading key "${key}":`, error);
+      logger.warn(`useLocalStorage: error reading key "${key}":`, error);
       return initialValueRef.current;
     }
   }, [key]);
@@ -47,7 +48,7 @@ const useLocalStorage = (key, initialValue) => {
           return newValue;
         });
       } catch (error) {
-        console.warn(`useLocalStorage: error setting key "${key}":`, error);
+        logger.warn(`useLocalStorage: error setting key "${key}":`, error);
       }
     },
     [key]
@@ -62,7 +63,7 @@ const useLocalStorage = (key, initialValue) => {
       isInternalWrite.current = true;
       window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
     } catch (error) {
-      console.warn(`useLocalStorage: error removing key "${key}":`, error);
+      logger.warn(`useLocalStorage: error removing key "${key}":`, error);
     }
   }, [key]);
 

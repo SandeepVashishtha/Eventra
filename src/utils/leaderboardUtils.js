@@ -79,10 +79,10 @@ export function calculatePrPoints(labels) {
 export function applyAchievementBonus(contributor) {
   for (const { minPrs, bonus } of ACHIEVEMENT_THRESHOLDS) {
     if (contributor.prs >= minPrs) {
-      contributor.points += bonus;
-      return;
+      return { ...contributor, points: contributor.points + bonus };
     }
   }
+  return contributor;
 }
 
 // ─── Filtering ────────────────────────────────────────────────────────────────

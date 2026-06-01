@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Globe, Users, Code, Activity, MapPin, Search, Filter, 
-  Moon, Sun, ZoomIn, ZoomOut, X, Clock,
+  ZoomIn, ZoomOut, X, Clock,
   TrendingUp, GitBranch, ExternalLink 
 } from "lucide-react";
 import "./CollaborationNetworkMap.css";
@@ -33,10 +33,10 @@ const CONNECTIONS = [
 ];
 
 const ACTIVITY_LEVELS = {
-  Critical: { color: "#ec4899", pulse: "rgba(236, 72, 153, 0.4)", label: "Critical" },
-  High: { color: "#6366f1", pulse: "rgba(99, 102, 241, 0.4)", label: "High" },
-  Medium: { color: "#22c55e", pulse: "rgba(34, 197, 94, 0.4)", label: "Medium" },
-  Low: { color: "#94a3b8", pulse: "rgba(148, 163, 184, 0.4)", label: "Low" }
+  Critical: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.36)", label: "Critical" },
+  High: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.32)", label: "High" },
+  Medium: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.28)", label: "Medium" },
+  Low: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.18)", label: "Low" }
 };
 
 const REGIONS = ["All", "North America", "Europe", "Asia", "Oceania"];
@@ -63,18 +63,18 @@ const formatTimeInZone = (timezone) => {
 // ============ PARTICLE ANIMATION COMPONENT ============
 const ConnectionParticle = ({ path, color, delay }) => (
   <motion.circle
-    r="3"
+    r="2"
     fill={color}
-    initial={{ offsetDistance: "0%" }}
-    animate={{ offsetDistance: "100%" }}
+    initial={{ offsetDistance: "0%", opacity: 0.7 }}
+    animate={{ offsetDistance: "100%", opacity: 0.45 }}
     transition={{ 
-      duration: 3 + Math.random() * 2, 
+      duration: 5 + Math.random() * 3, 
       repeat: Infinity, 
       ease: "linear",
       delay 
     }}
     style={{ offsetPath: `path("${path}")` }}
-    opacity="0.8"
+    opacity="0.65"
   />
 );
 
@@ -85,10 +85,9 @@ export default function CollaborationNetworkMap() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("All");
   const [selectedActivity, setSelectedActivity] = useState("All");
-  const [darkMode, setDarkMode] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [showConnections, setShowConnections] = useState(true);
-  const [particlesEnabled, setParticlesEnabled] = useState(true);
+  const [particlesEnabled, setParticlesEnabled] = useState(false);
 
   // Memoized computations
   const hubCoordinates = useMemo(() => {
@@ -133,11 +132,6 @@ export default function CollaborationNetworkMap() {
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
-  // Theme toggle
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
-
   const getCoordinates = useCallback((id) => hubCoordinates[id] || { x: 0, y: 0 }, [hubCoordinates]);
 
   const getPopupStyle = useCallback((hub) => {
@@ -164,7 +158,7 @@ export default function CollaborationNetworkMap() {
   }, [pinnedHub]);
 
   return (
-    <section className={`cnm-section ${darkMode ? "dark-theme" : "light-theme"}`}>
+    <section className="cnm-section light-theme">
       <div className="cnm-container">
         
         {/* Header with Controls */}
@@ -175,13 +169,6 @@ export default function CollaborationNetworkMap() {
               <span>Global Connectivity</span>
             </div>
             <div className="cnm-controls">
-              <button 
-                className="cnm-control-btn"
-                onClick={() => setDarkMode(!darkMode)}
-                aria-label="Toggle theme"
-              >
-                {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-              </button>
               <button 
                 className="cnm-control-btn"
                 onClick={() => setZoom(z => Math.min(z + 0.2, 2))}
@@ -199,9 +186,9 @@ export default function CollaborationNetworkMap() {
             </div>
           </div>
           
-          <h2 className="cnm-title">Real-Time Global Collaboration Network</h2>
+          <h2 className="cnm-title">Global Collaboration Network</h2>
           <p className="cnm-subtitle">
-            Connecting {stats.totalDevs.toLocaleString()} developers across {stats.regions} regions in a unified ecosystem.
+            Real-time collaboration across {stats.totalDevs.toLocaleString()} developers in {stats.regions} regions.
           </p>
 
           {/* Filters */}
@@ -220,19 +207,7 @@ export default function CollaborationNetworkMap() {
             
             <div className="filter-group">
               <Filter size={14} className="filter-icon" />
-              <select 
-                value={selectedRegion}
-                onChange={(e) => setSelectedRegion(e.target.value)}
-                className="filter-select"
-                aria-label="Filter by region"
-              >
-                {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <Activity size={14} className="filter-icon" />
-              <select 
+              <select
                 value={selectedActivity}
                 onChange={(e) => setSelectedActivity(e.target.value)}
                 className="filter-select"
@@ -305,7 +280,7 @@ export default function CollaborationNetworkMap() {
             role="img"
             aria-label="Global collaboration network map"
           >
-            <defs>
+              <defs>
               <filter id="hub-glow" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur stdDeviation="6" result="blur" />
                 <feMerge>
@@ -314,14 +289,14 @@ export default function CollaborationNetworkMap() {
                 </feMerge>
               </filter>
               <pattern id="cnm-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <circle cx="2" cy="2" r="1.5" fill="rgba(99, 102, 241, 0.06)" />
+                <circle cx="2" cy="2" r="1.5" fill="rgba(224,233,242,0.06)" />
               </pattern>
               <linearGradient id="connection-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="rgba(99, 102, 241, 0.6)" />
-                <stop offset="100%" stopColor="rgba(168, 85, 247, 0.6)" />
+                <stop offset="0%" stopColor="rgba(224,233,242,0.6)" />
+                <stop offset="100%" stopColor="rgba(224,233,242,0.9)" />
               </linearGradient>
               <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="rgba(99, 102, 241, 0.5)" />
+                <polygon points="0 0, 10 3.5, 0 7" fill="rgba(224,233,242,0.5)" />
               </marker>
             </defs>
 
@@ -341,23 +316,12 @@ export default function CollaborationNetworkMap() {
 
               return (
                 <g key={`connection-${idx}`} className="connection-group">
-                  <path 
-                    d={pathD} 
-                    fill="none" 
-                    stroke="rgba(99, 102, 241, 0.1)" 
-                    strokeWidth={getConnectionWidth(conn.intensity)} 
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke="rgba(224,233,242,0.5)"
+                    strokeWidth={Math.max(0.8, getConnectionWidth(conn.intensity))}
                     strokeLinecap="round"
-                  />
-                  <path 
-                    d={pathD} 
-                    fill="none" 
-                    stroke={`url(#connection-gradient)`} 
-                    strokeWidth={getConnectionWidth(conn.intensity) - 0.5}
-                    strokeDasharray="8, 120"
-                    strokeLinecap="round"
-                    opacity="0.7"
-                    className="connection-animated-path"
-                    style={{ animationDelay: `${idx * 0.25}s` }}
                   />
                   {particlesEnabled && (
                     <ConnectionParticle 
@@ -419,7 +383,7 @@ export default function CollaborationNetworkMap() {
                     cx={hub.x} 
                     cy={hub.y} 
                     r={hubSize} 
-                    fill={darkMode ? "#ffffff" : "#1e293b"}
+                    fill="#1e293b"
                     stroke={config.color}
                     strokeWidth="2.5"
                     className="node-core"
@@ -442,7 +406,7 @@ export default function CollaborationNetworkMap() {
                     y={hub.y + hubSize + 18} 
                     textAnchor="middle" 
                     className="node-label"
-                    fill={darkMode ? "#e2e8f0" : "#334155"}
+                    fill="#334155"
                     fontSize="11"
                     fontWeight="500"
                   >
@@ -519,7 +483,7 @@ export default function CollaborationNetworkMap() {
                 {/* Status & Region */}
                 <div className="popup-footer">
                   <div className="popup-status">
-                    <span className="status-label">Status:</span>
+                    <span className="status-label">Activity:</span>
                     <div className={`status-badge ${(activeHub || pinnedHub).activity.toLowerCase()}`}>
                       <Activity className="status-icon" size={12} />
                       <span>{ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].label} Activity</span>
