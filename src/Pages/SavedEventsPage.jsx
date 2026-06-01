@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Download } from "lucide-react";
 import EmptyState from "../components/common/EmptyState";
 import useBookmarks from "../hooks/useBookmarks";
-import { exportEventsToCSV } from "../utils/exportCsv";
+import { exportToCSV } from "../utils/exportUtils";
 
 const SavedEventsPage = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const SavedEventsPage = () => {
     if (sorted.length === 0) return;
     setExporting(true);
     try {
-      exportEventsToCSV(sorted, `eventra-saved-events-${new Date().toISOString().slice(0, 10)}`);
+      exportToCSV(sorted, `eventra-saved-events-${new Date().toISOString().slice(0, 10)}`);
     } finally {
       // Brief visual feedback before resetting
       setTimeout(() => setExporting(false), 800);
