@@ -2,7 +2,7 @@
  * @fileoverview useBookmarks - Event bookmarks management hook
  * @module hooks/useBookmarks
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 /**
  * A custom React hook that manages bookmarked events for a user,
@@ -54,13 +54,27 @@ const useBookmarks = (userId = "guest") => {
     }
   });
 
+  const storageKeyRef = useRef(storageKey);
+  storageKeyRef.current = storageKey;
+
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(bookmarks));
+      localStorage.setItem(storageKeyRef.current, JSON.stringify(bookmarks));
     } catch {
       // localStorage full — fail silently; in-memory state remains correct
     }
-  }, [bookmarks, storageKey]);
+  }, [bookmarks]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) { setBookmarks([]); return; }
+      const parsed = JSON.parse(stored);
+      setBookmarks(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setBookmarks([]);
+    }
+  }, [storageKey]);
 
   /**
    * Toggles bookmark state for an event.
