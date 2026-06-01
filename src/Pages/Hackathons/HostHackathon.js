@@ -471,7 +471,8 @@ const HostHackathon = () => {
             type="submit"
             disabled={isSubmitting}
             className="w-full flex items-center justify-center gap-2 bg-primary text-white font-semibold p-3 rounded-xl shadow-lg hover:opacity-90 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-           aria-label="button">
+            aria-label={isSubmitting ? "Submitting hackathon" : "Submit hackathon"}
+          >
             {isSubmitting ? "Submitting..." : "Submit Hackathon"}
             {!isSubmitting && <ArrowRightIcon className="w-5 h-5" />}
           </button>
