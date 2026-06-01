@@ -66,7 +66,7 @@
 .ud-brand-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   box-shadow: 0 0 0 3px #6366f120;
 }
@@ -85,7 +85,7 @@
   align-items: center;
   gap: var(--ud-space-sm);
   padding: 0.6rem 0.85rem;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-color-light);
@@ -218,7 +218,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--card-bg-color);
   border: 1.5px solid var(--border-color);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -297,7 +297,7 @@
   position: relative;
   background: none;
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 0.45rem;
   cursor: pointer;
   color: var(--text-color-light);
@@ -342,7 +342,7 @@
   font-weight: 700;
   width: 16px;
   height: 16px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -356,7 +356,7 @@
   width: 300px;
   background: var(--card-bg-color);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 20px 40px rgba(0,0,0,0.1);
   z-index: 100;
   overflow: hidden;
@@ -430,7 +430,7 @@
 .ud-avatar {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
   font-size: 0.85rem;
@@ -486,7 +486,7 @@
 .ud-stat-card {
   background: var(--card-bg-color);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 1.25rem;
   display: flex;
   align-items: flex-start;
@@ -522,7 +522,7 @@
 .ud-stat-icon {
   width: 42px;
   height: 42px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -572,7 +572,7 @@
   padding: 1rem 0.5rem;
   background: var(--card-bg-color);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   text-decoration: none;
   transition: all 0.2s ease;
   cursor: pointer;
@@ -617,7 +617,7 @@
 .ud-quick-icon {
   width: 42px;
   height: 42px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -653,7 +653,7 @@
 .ud-card {
   background: var(--card-bg-color);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
@@ -686,7 +686,7 @@
 .ud-card-icon {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -712,7 +712,7 @@
   justify-content: space-between;
   gap: var(--ud-space-sm);
   padding: var(--ud-space-sm);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid #f3f4f6;
   transition: background 0.15s;
 }
@@ -762,7 +762,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.2rem 0.6rem;
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   font-size: 0.7rem;
   font-weight: 600;
   white-space: nowrap;
@@ -803,7 +803,7 @@
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -828,7 +828,7 @@
 .ud-item-card {
   background: var(--card-bg-color);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
@@ -869,7 +869,7 @@
   font-size: 0.72rem;
   font-weight: 600;
   padding: 0.2rem 0.55rem;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
 }
 
 .ud-item-title {
@@ -919,7 +919,7 @@
 .ud-select {
   padding: 0.45rem 0.75rem;
   border: 1px solid var(--border-color);
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   font-size: 0.82rem;
   background: var(--card-bg-color);
   color: var(--text-color);
@@ -941,7 +941,7 @@
 /* ── Table ── */
 .ud-table-wrap {
   overflow-x: auto;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
 }
 
@@ -1121,7 +1121,7 @@
   justify-content: center;
   gap: var(--ud-space-xs);
   padding: 0.65rem 1.25rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -1175,7 +1175,7 @@
   max-width: 380px;
   background: rgba(17, 24, 39, 0.95);
   border: 1.5px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 
               0 0 40px rgba(99, 102, 241, 0.15);
   color: #f8fafc;
@@ -1228,7 +1228,7 @@
 .ud-ticket-logo-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   box-shadow: 0 0 10px #6366f1;
 }
@@ -1251,7 +1251,7 @@
   padding: 0.2rem 0.5rem;
   background: rgba(99, 102, 241, 0.22);
   border: 1px solid rgba(129, 140, 248, 0.4);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   color: #c7d2fe;
   display: flex;
   align-items: center;
@@ -1311,7 +1311,7 @@
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.04);
   padding: 0.85rem 1rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 /* Tear Divider Perforation Line */
@@ -1331,7 +1331,7 @@
   width: 24px;
   height: 24px;
   background: rgba(0, 0, 0, 0.85); /* Blends with modal overlay */
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   z-index: 5;
 }
 
@@ -1373,14 +1373,14 @@
 .ud-ticket-qr-wrap {
   background: #ffffff;
   padding: 0.75rem;
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.12);
   display: inline-flex;
 }
 
 .ud-ticket-qr-border {
   border: 1px solid rgba(99, 102, 241, 0.15);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 4px;
   color: #111827;
 }
@@ -1432,7 +1432,7 @@
   background: rgba(99, 102, 241, 0.12);
   color: #818cf8;
   border: 1.5px solid rgba(129, 140, 248, 0.25);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
@@ -1466,7 +1466,7 @@
   margin-left: auto;
   min-width: 20px;
   height: 20px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
   font-size: 0.7rem;
@@ -1494,7 +1494,7 @@
   gap: 0.15rem;
   background: var(--card-bg-color);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.65rem 1.1rem;
   min-width: 80px;
   transition: box-shadow 0.2s;
@@ -1559,7 +1559,7 @@
 .my-events-empty-icon {
   width: 72px;
   height: 72px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: #6366f110;
   display: flex;
   align-items: center;
@@ -1599,7 +1599,7 @@
   background: #6366f112;
   border: none;
   padding: 5px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background 0.18s;
 }
@@ -1621,7 +1621,7 @@
 .my-events-dialog {
   background: var(--card-bg-color);
   border: 1px solid var(--border-color);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   padding: 1.75rem 2rem;
   max-width: 360px;
   width: 90%;
@@ -1651,7 +1651,7 @@
   flex: 1;
   padding: 0.6rem 1rem;
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-color);
   font-size: 0.875rem;
@@ -1666,7 +1666,7 @@
   flex: 1;
   padding: 0.6rem 1rem;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: #ef4444;
   color: #fff;
   font-size: 0.875rem;

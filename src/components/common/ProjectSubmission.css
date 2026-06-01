@@ -112,7 +112,7 @@
 
 .project-submission-content {
   background: white;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   width: 100%;
   max-width: 800px;
   max-height: 90vh;
@@ -129,7 +129,7 @@
 
 .dark .project-submission-content::-webkit-scrollbar-thumb {
   background: #4b5563;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .submission-header {
@@ -155,7 +155,7 @@
   color: #6b7280;
   cursor: pointer;
   padding: 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   transition: all 0.2s;
 }
 
@@ -198,7 +198,7 @@
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-size: 14px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -232,7 +232,7 @@
   background-color: #3b82f6;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   padding: 10px 12px;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -252,7 +252,7 @@
   background-color: #e5e7eb;
   color: #374151;
   padding: 4px 8px;
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   font-size: 12px;
   display: flex;
   align-items: center;
@@ -267,7 +267,7 @@
   padding: 0;
   width: 16px;
   height: 16px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -312,7 +312,7 @@
 .btn-primary,
 .btn-secondary {
   padding: 10px 20px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -361,7 +361,7 @@
 /* Alerts */
 .alert {
   padding: 12px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   margin-bottom: 20px;
   font-weight: 500;
 }

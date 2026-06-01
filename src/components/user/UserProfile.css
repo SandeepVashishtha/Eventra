@@ -29,7 +29,7 @@
   position: relative;
   background: var(--card-bg-color, #fff);
   border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   overflow: hidden;
   box-shadow: 0 4px 24px rgba(99, 102, 241, 0.07);
 }
@@ -76,7 +76,7 @@
 .upv-avatar-placeholder {
   width: 96px;
   height: 96px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
   border: 4px solid #fff;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
@@ -104,7 +104,7 @@
 .upv-avatar-ring {
   position: absolute;
   inset: -3px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: 2px solid rgba(99, 102, 241, 0.4);
   pointer-events: none;
   animation: upv-pulse-ring 3s ease-in-out infinite;
@@ -167,7 +167,7 @@
   padding: 0.55rem 1.2rem;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
@@ -195,7 +195,7 @@
 .upv-card {
   background: var(--card-bg-color, #fff);
   border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   padding: 1.4rem;
   display: flex;
   flex-direction: column;
@@ -238,7 +238,7 @@
 .upv-card-icon {
   width: 32px;
   height: 32px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -270,7 +270,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.55rem 0.75rem;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: #f9fafb;
   border: 1px solid #f3f4f6;
   transition: background 0.15s;
@@ -348,7 +348,7 @@
   align-items: center;
   gap: 0.6rem;
   padding: 0.6rem 0.9rem;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
   font-weight: 500;
   text-decoration: none;
@@ -398,7 +398,7 @@
   padding: 1rem;
   background: #f9fafb;
   border: 1px solid #f3f4f6;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   transition: all 0.2s ease;
   cursor: default;
 }
@@ -417,7 +417,7 @@
 .upv-stat-icon {
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -469,7 +469,7 @@
   background: #eef2ff;
   color: #4338ca;
   border: 1px solid #c7d2fe;
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   font-size: 0.78rem;
   font-weight: 600;
   transition: all 0.16s;
@@ -513,7 +513,7 @@
   padding: 0.55rem 1.1rem;
   background: linear-gradient(135deg, #ec4899, #8b5cf6);
   color: #fff;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none;
@@ -558,7 +558,7 @@
   height: 120px;
   background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
   background-size: 200% 100%;
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   animation: upv-shimmer 1.5s infinite;
 }
 

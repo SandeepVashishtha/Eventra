@@ -16,7 +16,7 @@
 .auth-card {
   background: var(--card-bg-color);
   border: var(--card-border);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   box-shadow: var(--card-shadow);
   padding: 40px;
   width: 100%;
@@ -98,7 +98,7 @@
 .form-group input {
   padding: 12px 16px;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 1rem;
   transition: all 0.3s ease;
   background-color: var(--input-bg);
@@ -138,7 +138,7 @@
 .role-select {
   padding: 12px 16px;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 1rem;
   transition: all 0.3s ease;
   background-color: var(--input-bg);
@@ -181,7 +181,7 @@
   background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 14px 24px;
   font-size: 1rem;
   font-weight: 600;
@@ -208,7 +208,7 @@
   background-color: #fed7d7;
   color: #c53030;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border-left: 4px solid #c53030;
   font-size: 0.9rem;
   margin: 8px 0;
@@ -218,7 +218,7 @@
   background-color: #c6f6d5;
   color: #2f855a;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border-left: 4px solid #2f855a;
   font-size: 0.9rem;
   margin: 8px 0;
@@ -291,7 +291,7 @@
   margin-left: 8px;
   border: 2px solid transparent;
   border-top: 2px solid currentColor;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 1s linear infinite;
 }
 
@@ -330,7 +330,7 @@
 .loading-spinner {
   background: var(--card-bg-color);
   border: var(--card-border);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   padding: 40px;
   box-shadow: var(--card-shadow);
   font-size: 1.2rem;
@@ -360,7 +360,7 @@
   background: var(--card-bg-color);
   border: var(--card-border);
   padding: 2.5rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   box-shadow: var(--card-shadow);
   text-align: center;
   color: var(--text-color);

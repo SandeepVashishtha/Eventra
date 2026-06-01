@@ -20,7 +20,7 @@
   max-width: 420px;
   max-height: calc(100dvh - 32px);
   overflow-y: auto;
-  border-radius: 16px;
+  border-radius: var(--radius-modal);
   padding: 24px;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
   animation: scaleIn 0.2s ease-in-out;
@@ -64,7 +64,7 @@
   outline: none;
   cursor: pointer;
   padding: 10px 18px;
-  border-radius: 10px;
+  border-radius: var(--radius-button);
   font-size: 0.95rem;
   font-weight: 600;
   transition: all 0.2s ease;
@@ -118,7 +118,7 @@
 
 @media (max-width: 420px) {
   .confirmation-modal-content {
-    border-radius: 14px;
+    border-radius: var(--radius-card);
     padding: 18px;
   }
 

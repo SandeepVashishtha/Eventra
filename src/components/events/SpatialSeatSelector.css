@@ -5,7 +5,7 @@
   flex-direction: column;
   background: rgba(13, 13, 23, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(12px);
@@ -30,7 +30,7 @@
   border: 1px solid rgba(245, 158, 11, 0.15);
   color: #fbbf24;
   padding: 4px 10px;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -114,7 +114,7 @@
   padding: 4px;
   background: rgba(15, 15, 27, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   backdrop-filter: blur(8px);
   z-index: 5;
 }
@@ -125,7 +125,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   border: none;
   background: transparent;
   color: #a1a1aa;
@@ -160,7 +160,7 @@
   background: rgba(18, 18, 28, 0.95);
   border: 1px solid rgba(99, 102, 241, 0.25);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(99, 102, 241, 0.1);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 10px 14px;
   width: 150px;
   pointer-events: none;
@@ -242,7 +242,7 @@
 .ssp-leg-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
 }
 
 .ssp-leg-vip {

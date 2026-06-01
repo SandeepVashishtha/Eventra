@@ -66,7 +66,7 @@ const styles = {
   container: {
     background: 'rgba(255, 255, 255, 0.08)',
     backdropFilter: 'blur(10px)',
-    borderRadius: '12px',
+    borderRadius: 'var(--radius-md)',
     padding: '15px 20px',
     border: '1px solid rgba(255, 255, 255, 0.15)',
     display: 'inline-block',
@@ -102,7 +102,7 @@ const styles = {
     fontWeight: '700',
     background: '#1e293b',
     padding: '6px 10px',
-    borderRadius: '6px',
+    borderRadius: 'var(--radius-xs)',
     minWidth: '40px',
     display: 'inline-block',
     boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)',

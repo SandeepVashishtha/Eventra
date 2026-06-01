@@ -30,7 +30,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 4px 12px;
-  border-radius: 99px;
+  border-radius: var(--radius-full);
   margin-bottom: 8px;
 }
 
@@ -63,7 +63,7 @@
 .ead-kpi {
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   padding: 16px 24px;
   text-align: center;
   min-width: 110px;
@@ -103,7 +103,7 @@
 
 .ead-tab {
   padding: 9px 22px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1.5px solid #e5e7eb;
   background: #fff;
   color: #6b7280;
@@ -150,7 +150,7 @@
 /* ── Cards ── */
 .ead-card {
   background: #fff;
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   padding: 28px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 2px 12px #6366f108;
@@ -220,7 +220,7 @@
 .ead-feedback-bar-wrap {
   flex: 1;
   background: #f3f4f6;
-  border-radius: 99px;
+  border-radius: var(--radius-full);
   height: 10px;
   overflow: hidden;
 }
@@ -231,7 +231,7 @@
 .ead-feedback-bar {
   height: 100%;
   background: linear-gradient(90deg, #6366f1, #8b5cf6);
-  border-radius: 99px;
+  border-radius: var(--radius-full);
   transition: width 0.6s ease;
 }
 
@@ -269,7 +269,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 18px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 600;
 }

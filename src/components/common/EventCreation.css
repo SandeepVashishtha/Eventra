@@ -17,7 +17,7 @@
   text-align: center;
   background: linear-gradient(135deg, #6c5ce7, #a29bfe);
   padding: 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   box-shadow: 0 4px 15px rgba(108, 92, 231, 0.2);
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -43,7 +43,7 @@
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 14px;
   transition: border-color 0.3s ease;
 }
@@ -108,7 +108,7 @@
 .image-preview img {
   max-width: 200px;
   max-height: 120px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1px solid #ddd;
 }
 
@@ -127,7 +127,7 @@
   background-color: #6c5ce7;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.3s ease;
@@ -147,7 +147,7 @@
   background-color: #f8f9fa;
   color: #222; /* Darker for better contrast */
   padding: 4px 8px;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   font-size: 12px;
   display: flex;
   align-items: center;
@@ -178,7 +178,7 @@
   border: 1px solid #ddd;
   padding: 15px;
   margin-bottom: 15px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: #f8f9fa;
 }
 .dark .ticket-tier {
@@ -207,7 +207,7 @@
   color: white;
   border: none;
   padding: 5px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   font-size: 12px;
   transition: background-color 0.3s ease;
@@ -232,7 +232,7 @@
   color: white;
   border: none;
   padding: 10px 15px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.3s ease;
@@ -254,7 +254,7 @@
   align-items: center;
   padding: 10px;
   background-color: white;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   margin-top: 5px;
   border-left: 4px solid #17a2b8;
 }
@@ -292,7 +292,7 @@
   color: white;
   border: none;
   padding: 12px 30px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.3s ease;
@@ -305,7 +305,7 @@
 
 .event-preview {
   background-color: #f8f9fa;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 .dark .event-preview {
@@ -324,7 +324,7 @@
 .preview-banner img {
   max-width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .preview-details h2 {
@@ -360,7 +360,7 @@
 .info-item {
   padding: 10px;
   background-color: white;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border-left: 4px solid #6c5ce7;
 }
 .dark .info-item {
@@ -386,7 +386,7 @@
   background-color: #6c5ce7;
   color: white;
   padding: 3px 8px; 
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   font-size: 12px;
 }
 
@@ -406,7 +406,7 @@
   color: white;
   border: none;
   padding: 10px 20px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.3s ease;
@@ -426,7 +426,7 @@
   color: white;
   border: none;
   padding: 10px 20px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.3s ease;

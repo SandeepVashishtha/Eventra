@@ -63,7 +63,7 @@
 
 .ts-root .overflow-y-auto::-webkit-scrollbar-thumb {
   background: rgba(99, 102, 241, 0.2);
-  border-radius: 99px;
+  border-radius: var(--radius-full);
 }
 
 .ts-root .overflow-y-auto::-webkit-scrollbar-thumb:hover {

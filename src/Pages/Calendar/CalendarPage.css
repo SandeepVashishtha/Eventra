@@ -24,7 +24,7 @@
   background: var(--calendar-bg);
   color: var(--calendar-text);
   border: 1px solid var(--calendar-border);
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   padding: 16px;
 }
 
@@ -32,7 +32,7 @@
 .eventra-calendar .rbc-time-view,
 .eventra-calendar .rbc-agenda-view {
   border: 1px solid var(--calendar-border);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   overflow: hidden;
 }
 
@@ -77,7 +77,7 @@
   position: absolute;
   width: 6px;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--calendar-accent);
   left: 50%;
   bottom: 6px;
@@ -92,7 +92,7 @@
   background: var(--calendar-event-bg);
   color: var(--calendar-event-text);
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 2px 6px;
   font-size: 0.72rem;
   line-height: 1.2;
@@ -125,7 +125,7 @@
   /* Tighten inner calendar padding so the grid isn't cramped */
   .eventra-calendar .rbc-calendar {
     padding: 8px;
-    border-radius: 14px;
+    border-radius: var(--radius-lg);
   }
 
   /* Reduce date-number padding so numbers don't overflow narrow cells */

@@ -4,7 +4,7 @@
 
 :root {
   /* Border Radius */
-  --button-radius: 8px;
+  --button-radius: var(--radius-button, 0.75rem);
 
   /* Typography */
   --button-font-family: system-ui, -apple-system, sans-serif;
