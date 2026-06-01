@@ -834,6 +834,41 @@ Authorization: Bearer <token>
 
 - Related event registrations are automatically cleaned up by the backend before the event is deleted.
 
+---
+
+## Stream Event Updates (SSE)
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/events/stream` |
+
+Opens a Server-Sent Events stream connection for event updates.
+
+### Authentication
+Public. No authentication required.
+
+### Purpose
+- This endpoint currently establishes a basic SSE connection.
+- It sends an initial connected event to confirm the stream is active.
+- It prepares the backend for future real-time event broadcasts.
+- *Note: Full real-time event create/update/register broadcasting is not yet implemented.*
+
+### Response Media Type
+`text/event-stream`
+
+### Manual Test Command
+```bash
+curl -N http://localhost:8080/api/events/stream
+```
+
+### Example Stream Output
+```text
+event:connected
+data:Stream connected successfully
+```
+
+#### Backend Implementation PR
+[SandeepVashishtha/Eventra-Backend#BACKEND_PR_NUMBER](https://github.com/SandeepVashishtha/Eventra-Backend/pull/BACKEND_PR_NUMBER)
 
 ---
 

@@ -36,3 +36,7 @@ export const ENV = {
   GITHUB_REPO: getEnvVar("REACT_APP_GITHUB_REPO", optionalEnvVars.REACT_APP_GITHUB_REPO),
   PUBLIC_URL: getEnvVar("REACT_APP_PUBLIC_URL", optionalEnvVars.REACT_APP_PUBLIC_URL),
 };
+
+export const SENTRY_DSN = getEnvVar("REACT_APP_SENTRY_DSN", "");
+
+export const isSentryEnabled = Boolean(SENTRY_DSN && process.env.NODE_ENV === "production");

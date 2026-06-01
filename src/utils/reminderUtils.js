@@ -1,4 +1,4 @@
-import { parseEventDateTimeLocal } from "./timezoneUtils.js";
+import { parseEventToUTC, getUserTimezone } from "./timezoneUtils.js";
 import { safeJsonParse } from "./safeJsonParse.js";
 import { safeGetItem, safeSetItem } from "./safeStorage.js";
 
@@ -22,7 +22,9 @@ export const getReminderId = (eventId, timing) => `${normalizeEventId(eventId)}:
 
 export const getEventDateTime = (event) => {
   if (!event?.date) return null;
-  return parseEventDateTimeLocal(event.date, event.time);
+  const tz = event.timezone || event.timeZone || getUserTimezone();
+  const startMs = parseEventToUTC(event.date, event.time, tz);
+  return startMs !== null ? new Date(startMs) : null;
 };
 
 export const isPastEvent = (event) => {

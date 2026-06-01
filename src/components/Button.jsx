@@ -12,7 +12,7 @@ export const Button = ({
 }) => {
 
   // Allowed variants and sizes
-  const validVariants = ['primary', 'secondary', 'danger'];
+  const validVariants = ['primary', 'secondary', 'danger', 'outline'];
   const validSizes = ['small', 'medium', 'large'];
 
   // Fallback protection
@@ -25,13 +25,7 @@ export const Button = ({
     : 'medium';
 
   // Combined class names
-  const buttonClass = `
-    btn
-    btn-${safeVariant}
-    btn-${safeSize}
-    ${disabled ? 'btn-disabled' : ''}
-    ${className}
-  `;
+  const buttonClass = `btn btn-${safeVariant} btn-${safeSize} ${disabled ? 'btn-disabled' : ''} ${className}`;
 
   return (
     <button

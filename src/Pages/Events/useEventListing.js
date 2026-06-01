@@ -123,9 +123,7 @@ const useEventListing = () => {
         first: responseData.first ?? true,
         last: responseData.last ?? true,
       });
-    } catch (error) {
-      console.error("Failed to fetch events:", error);
-
+    } catch {
       if (process.env.NODE_ENV === "development") {
         const normalizedMockEvents = mockEvents.map(normalizeEvent);
         setEvents(normalizedMockEvents);
