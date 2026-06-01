@@ -1,22 +1,13 @@
-// 🔥 FIX: In-memory queue and lock to prevent localStorage race conditions
 let isUpdating = false;
 let interestQueue = [];
 
 const processInterestQueue = () => {
+  if (typeof window === "undefined" || !window.localStorage) return;
   if (isUpdating || interestQueue.length === 0) return;
   isUpdating = true;
 
   try {
-    let existing = {};
-    try {
-      const raw = localStorage.getItem("eventra_user_profile");
-      if (raw) {
-        existing = JSON.parse(raw) || {};
-      }
-    } catch (parseError) {
-      console.warn("Failed to parse user profile JSON, resetting it:", parseError);
-    }
-
+    const existing = JSON.parse(localStorage.getItem("eventra_user_profile")) || {};
     let interests = existing.interests || [];
     let modified = false;
 
@@ -36,7 +27,6 @@ const processInterestQueue = () => {
     }
   } catch (error) {
     console.error("Failed to update user interests:", error);
-    interestQueue = []; // Clear the queue on persistent error to avoid infinite recursion
   } finally {
     isUpdating = false;
     if (interestQueue.length > 0) {
