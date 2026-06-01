@@ -750,7 +750,9 @@ const EventRegistration = () => {
                   />
                 </div>
                 {errors.fullName && touched.fullName && (
-                  <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
+                  <p id="registration-fullName-error" role="alert" className="text-red-500 text-sm mt-1">
+                    {errors.fullName}
+                  </p>
                 )}
               </div>
 
@@ -780,7 +782,9 @@ const EventRegistration = () => {
                   />
                 </div>
                 {errors.email && touched.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                  <p id="registration-email-error" role="alert" className="text-red-500 text-sm mt-1">
+                    {errors.email}
+                  </p>
                 )}
               </div>
 
@@ -810,7 +814,9 @@ const EventRegistration = () => {
                   />
                 </div>
                 {errors.phone && touched.phone && (
-                  <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                  <p id="registration-phone-error" role="alert" className="text-red-500 text-sm mt-1">
+                    {errors.phone}
+                  </p>
                 )}
               </div>
 
