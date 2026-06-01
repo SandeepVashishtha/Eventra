@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { STORAGE_KEYS } from "./storageKeys";
 import { validators } from "./storageValidators";
 import { safeGetItem, safeSetItem, safeRemoveItem, safeClear } from "../safeStorage.js";

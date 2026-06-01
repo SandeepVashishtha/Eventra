@@ -420,7 +420,7 @@ npm start`}
           <li>
             Commit changes:{" "}
             <code className="bg-gray-100 px-2 py-1 rounded">
-              git commit -m "Add feature"
+              git commit -m &quot;Add feature&quot;
             </code>
           </li>
           <li>Push branch and open a Pull Request</li>

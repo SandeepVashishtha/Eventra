@@ -49,6 +49,12 @@ const FeedbackSystemDemo = () => {
     setStats(averageStats);
   };
 
+  const generateDemoUserId = () => {
+    const bytes = new Uint32Array(1);
+    window.crypto.getRandomValues(bytes);
+    return `demo-user-${bytes[0].toString(16)}`;
+  };
+
   const handleAddSampleFeedback = () => {
     const samples = [
       {
@@ -56,35 +62,35 @@ const FeedbackSystemDemo = () => {
         comment: 'Excellent workshop! Very practical and well-organized.',
         tags: ['Great Speaker', 'Well Organized'],
         recommend: true,
-        userId: `demo-user-${Math.random()}`,
+        userId: generateDemoUserId(),
       },
       {
         rating: 4,
         comment: 'Good content but could use more hands-on exercises.',
         tags: ['Good Food', 'Needs More Time'],
         recommend: true,
-        userId: `demo-user-${Math.random()}`,
+        userId: generateDemoUserId(),
       },
       {
         rating: 5,
         comment: 'Perfect balance of theory and practice!',
         tags: ['Great Speaker', 'Networking'],
         recommend: true,
-        userId: `demo-user-${Math.random()}`,
+        userId: generateDemoUserId(),
       },
       {
         rating: 3,
         comment: 'Venue was a bit cold, but content was solid.',
         tags: ['Better Venue'],
         recommend: true,
-        userId: `demo-user-${Math.random()}`,
+        userId: generateDemoUserId(),
       },
       {
         rating: 4,
         comment: 'Great networking opportunities!',
         tags: ['Networking', 'Great Speaker'],
         recommend: true,
-        userId: `demo-user-${Math.random()}`,
+        userId: generateDemoUserId(),
       },
     ];
 

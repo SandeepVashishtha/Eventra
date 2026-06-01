@@ -24,7 +24,7 @@ class SseMultiplexer {
       this.channel.onmessage = (e) => this.handleBroadcastMessage(e.data);
 
       this.setupLeaderElection();
-      
+
       // Sync on page close / unload
       window.addEventListener("beforeunload", () => this.teardown());
     }
@@ -34,20 +34,25 @@ class SseMultiplexer {
   setupLeaderElection() {
     if (typeof navigator?.locks?.request === "function") {
       // Modern Browsers: Web Locks API provides automatic, zero-latency coordination
-      navigator.locks.request(LOCK_NAME, async () => {
-        logger.log(`[SSE Multiplexer] Tab ${this.tabId} acquired lock and became LEADER.`);
-        this.isLeader = true;
-        this.queryGlobalSubscribers();
-        this.reconcileConnections();
+      navigator.locks
+        .request(LOCK_NAME, async () => {
+          logger.log(`[SSE Multiplexer] Tab ${this.tabId} acquired lock and became LEADER.`);
+          this.isLeader = true;
+          this.queryGlobalSubscribers();
+          this.reconcileConnections();
 
-        // Keep the lock active until tab unloads/unmounts
-        await new Promise((resolve) => {
-          this.releaseLockPromise = resolve;
+          // Keep the lock active until tab unloads/unmounts
+          await new Promise((resolve) => {
+            this.releaseLockPromise = resolve;
+          });
+        })
+        .catch((err) => {
+          logger.warn(
+            "[SSE Multiplexer] Web Locks election failed, falling back to LocalStorage:",
+            err
+          );
+          this.setupLocalStorageElection();
         });
-      }).catch((err) => {
-        logger.warn("[SSE Multiplexer] Web Locks election failed, falling back to LocalStorage:", err);
-        this.setupLocalStorageElection();
-      });
     } else {
       this.setupLocalStorageElection();
     }
@@ -91,7 +96,7 @@ class SseMultiplexer {
       try {
         safeSetItem(
           HEARTBEAT_KEY,
-          JSON.stringify({ tabId: this.tabId, timestamp: Date.now() }),
+          JSON.stringify({ tabId: this.tabId, timestamp: Date.now() })
         );
       } catch {
         // localStorage unavailable — non-fatal, leadership still held in memory
@@ -113,7 +118,7 @@ class SseMultiplexer {
       this.broadcastMessage({ type: "SUBSCRIBE", tabId: this.tabId, path });
       this.addGlobalSubscriber(path, this.tabId);
     }
-    
+
     this.localSubscriptions.get(path).add(callback);
     if (statusCallback) {
       this.statusListeners.add(statusCallback);
@@ -196,7 +201,7 @@ class SseMultiplexer {
           this.broadcastMessage({
             type: "SUBSCRIBERS_RESPONSE",
             tabId: this.tabId,
-            paths: Array.from(this.localSubscriptions.keys())
+            paths: Array.from(this.localSubscriptions.keys()),
           });
         }
         break;
@@ -255,7 +260,7 @@ class SseMultiplexer {
     // Get all paths that have at least one subscriber across all tabs
     const activePaths = new Set([
       ...Array.from(this.localSubscriptions.keys()),
-      ...Array.from(this.globalSubscribers.keys())
+      ...Array.from(this.globalSubscribers.keys()),
     ]);
 
     // Close EventSources for paths that are no longer active
@@ -277,9 +282,12 @@ class SseMultiplexer {
   }
 
   openEventSource(path) {
-    const sseBaseUrl = typeof window !== "undefined"
-      ? (process.env.VITE_SSE_URL || process.env.VITE_API_URL || process.env.REACT_APP_SSE_URL || process.env.REACT_APP_API_URL || "http://localhost:8080/api/v1")
-      : "http://localhost:8080/api/v1";
+    const sseBaseUrl =
+      typeof window !== "undefined"
+        ? process.env.VITE_API_URL ||
+          process.env.REACT_APP_API_URL ||
+          "http://localhost:8080/api/v1"
+        : "http://localhost:8080/api/v1";
 
     logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
     this.updatePathStatus(path, "connecting");
@@ -305,7 +313,7 @@ class SseMultiplexer {
         type: "SSE_MESSAGE",
         path,
         data: payload,
-        eventType: evt.type
+        eventType: evt.type,
       });
     };
 
@@ -329,7 +337,7 @@ class SseMultiplexer {
 
   updatePathStatus(path, status) {
     this.pathStatuses.set(path, status);
-    
+
     // Broadcast status to other tabs if we are the leader
     if (this.isLeader) {
       this.broadcastMessage({ type: "SSE_STATUS", path, status });

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
 
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Confetti Component for celebration
 const OnboardingConfetti = () => {
@@ -126,9 +127,22 @@ export default function OnboardingChecklist() {
         if (parsedInt.length > 0) {
           interestsDone = true;
         }
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsed = safeJsonParse(storedUser, {});
+      if (parsed.skills && parsed.skills.length > 0) {
+        interestsDone = true;
       }
-    } catch (e) {
-      console.error("Error reading interests for onboarding checklist:", e);
+    } else if (user?.skills && user.skills.length > 0) {
+      interestsDone = true;
+    }
+    
+    const storedInterests = localStorage.getItem("user_interests");
+    if (storedInterests) {
+      const parsedInt = safeJsonParse(storedInterests, []);
+      if (parsedInt.length > 0) {
+        interestsDone = true;
+      }
     }
 
     // 2. Check bookmarked projects
@@ -140,9 +154,12 @@ export default function OnboardingChecklist() {
         if (parsed.length > 0) {
           bookmarkDone = true;
         }
+    const storedBookmarks = localStorage.getItem("eventra_bookmarked_projects");
+    if (storedBookmarks) {
+      const parsed = safeJsonParse(storedBookmarks, []);
+      if (parsed.length > 0) {
+        bookmarkDone = true;
       }
-    } catch (e) {
-      console.error("Error reading bookmarks for onboarding checklist:", e);
     }
 
     // 3. Check sandbox request execution

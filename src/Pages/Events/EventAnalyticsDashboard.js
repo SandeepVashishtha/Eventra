@@ -61,11 +61,15 @@ const axisTick = (chartTheme, fontSize = 12) => ({
   fontSize,
 });
 
-const renderPieLabel = (chartTheme) => ({ name, percent, x, y, textAnchor }) => (
-  <text x={x} y={y} fill={chartTheme.axis} fontSize={12} fontWeight={600} textAnchor={textAnchor} dominantBaseline="central">
-    {`${name} ${(percent * 100).toFixed(0)}%`}
-  </text>
-);
+const renderPieLabel = (chartTheme) => {
+  const PieLabel = ({ name, percent, x, y, textAnchor }) => (
+    <text x={x} y={y} fill={chartTheme.axis} fontSize={12} fontWeight={600} textAnchor={textAnchor} dominantBaseline="central">
+      {`${name} ${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+  PieLabel.displayName = 'PieLabel';
+  return PieLabel;
+};
 
 // --- Subcomponents (Now accepting props instead of using global scope) ---
 

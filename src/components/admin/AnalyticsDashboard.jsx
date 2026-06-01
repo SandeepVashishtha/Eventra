@@ -16,6 +16,7 @@ import { useAnalyticsStream, SSE_STATUS } from "../../context/RealTimeContext";
 import BudgetPlanner from "./BudgetPlanner";
 import { safeGetItem } from "../../utils/safeStorage.js";
 
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // =========================================================================
 // CONSTANTS & INITIAL DATA
@@ -129,6 +130,11 @@ const AnalyticsDashboard = () => {
       }
     } catch (e) {
       // fallback to mock if localStorage is corrupted
+    const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+    if (saved.length > 0) {
+      // Merge: show real scanned check-ins first, then pad with mocks if fewer than 5
+      const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
+      return merged;
     }
     return MOCK_CHECKINS;
   };
@@ -140,6 +146,8 @@ const AnalyticsDashboard = () => {
     } catch (e) {
       return 342;
     }
+    const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+    return 342 + saved.filter((c) => c.status === "Verified").length;
   };
 
   const [checkins, setCheckins] = useState(getInitialCheckins);

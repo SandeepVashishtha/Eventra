@@ -1,4 +1,5 @@
 import { safeGetItem, safeSetItem, safeRemoveItem, safeClear } from "./safeStorage.js";
+/* eslint-disable-next-line no-console */
 // ---------------------------------------------------------------------------
 // AES-GCM Encryption Engine (Web Crypto API)
 // ---------------------------------------------------------------------------

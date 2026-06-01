@@ -176,7 +176,7 @@ const ContributorGuide = () => {
   };
 
   return (
-    <div className="pastel-grid-bg bg-gray-50 dark:bg-black min-h-screen pt-20 md:pt-24 px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16 overflow-x-hidden">
+    <div className="pastel-grid-bg bg-bg min-h-screen pt-20 md:pt-24 px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16 overflow-x-hidden">
       {/* Page Heading */}
       <div className="text-center mb-12">
         <h1
@@ -186,14 +186,14 @@ const ContributorGuide = () => {
           Welcome to Eventra Contributions!
         </h1>
         <p className="text-gray-700 dark:text-gray-300 text-base max-w-3xl mx-auto">
-          We're excited to have you join the Eventra community! This guide
+          We&apos;re excited to have you join the Eventra community! This guide
           provides detailed, actionable instructions, examples, and interactive
           tips to help first-time contributors succeed.
         </p>
       </div>
 
       {/* GAMIFICATION & SCORING SYSTEM CARD */}
-      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-md">
+      <div className="bg-card-bg p-6 md:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-md">
         <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-gray-100 mb-6 text-center">
           🎮 Contribution Gamification & Points Arena
         </h2>
@@ -261,7 +261,7 @@ const ContributorGuide = () => {
       </div>
 
       {/* Step-by-Step Contribution Section */}
-      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md">
+      <div className="bg-card-bg p-6 md:p-8 rounded-xl shadow-md">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 mt-8 text-center">
           Step-by-Step Contribution Journey
         </h2>
@@ -273,7 +273,7 @@ const ContributorGuide = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: index * 0.1 }}
-              className="border-l-4 border-sky-200 dark:border-sky-300 p-4 bg-gray-200 dark:bg-gray-800 rounded shadow-sm"
+              className="border-l-4 border-sky-200 dark:border-sky-300 p-4 bg-card-bg rounded shadow-sm"
             >
               <div className="flex items-center mb-2">
                 <FiInfo className="text-sky-300 dark:text-sky-200 mr-2 flex-shrink-0" />
@@ -293,14 +293,14 @@ const ContributorGuide = () => {
       </div>
 
       {/* Important Files Section */}
-      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md">
+      <div className="bg-card-bg p-6 md:p-8 rounded-xl shadow-md">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center flex items-center justify-center gap-3">
           <FiFile className="text-emerald-300 dark:text-emerald-200" size={32} />
           Important Files in This Project
         </h2>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
-            <thead className="bg-indigo-50 dark:bg-gray-800/50">
+            <thead className="bg-card-bg">
               <tr>
                 <th className="px-4 sm:px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                   File
@@ -394,7 +394,7 @@ const ContributorGuide = () => {
       </div>
 
       {/* Issue & PR Workflow Section */}
-      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md mt-10">
+      <div className="bg-card-bg p-6 md:p-8 rounded-xl shadow-md mt-10">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-10 text-center flex items-center justify-center gap-3">
           <FiGitBranch
             className="text-violet-300 dark:text-violet-200"
@@ -570,7 +570,7 @@ const ContributorGuide = () => {
       </div>
 
       {/* Git Commands Section */}
-      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md">
+      <div className="bg-card-bg p-6 md:p-8 rounded-xl shadow-md">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
           Essential Git Commands
         </h2>
@@ -671,7 +671,6 @@ const ContributorGuide = () => {
         <motion.a
           href="https://github.com/SandeepVashishtha/Eventra"
           target="_blank" rel="noopener noreferrer"
-          rel="noopener noreferrer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-sky-100 to-amber-100 text-black font-semibold px-8 py-3 rounded-full shadow-lg hover:from-sky-200 hover:to-amber-200 transition-all duration-300"

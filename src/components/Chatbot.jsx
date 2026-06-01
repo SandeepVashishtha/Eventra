@@ -126,6 +126,13 @@ export default function Chatbot() {
     }
   }, [messages, isMinimized, isOpen, isTyping]);
 
+  const handleClose = useCallback(() => {
+    clearReplyTimer();
+    setIsTyping(false);
+    setIsOpen(false);
+    setIsMinimized(false);
+  }, [clearReplyTimer]);
+
   // Listen for Escape key to close the chatbot (accessibility)
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -137,7 +144,7 @@ export default function Chatbot() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [handleClose, isOpen]);
 
   const wasOpenRef = useRef(false);
   const wasMinimizedRef = useRef(false);
@@ -197,13 +204,6 @@ export default function Chatbot() {
 
   const handleOpen = () => {
     setIsOpen(true);
-    setIsMinimized(false);
-  };
-
-  const handleClose = () => {
-    clearReplyTimer();
-    setIsTyping(false);
-    setIsOpen(false);
     setIsMinimized(false);
   };
 
