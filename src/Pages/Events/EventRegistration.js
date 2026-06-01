@@ -186,8 +186,7 @@ const EventRegistration = () => {
             }));
           }
         }
-      } catch (error) {
-        console.error("Failed to load event details:", error);
+      } catch {
         const cached = getCachedEventDetail(eventId);
         if (cached?.event) {
           setEvent({
@@ -250,8 +249,7 @@ const EventRegistration = () => {
           conflicts: conflictCheck.conflicts,
           suggestions,
         });
-      } catch (err) {
-        console.error("Failed to fetch alternative events", err);
+      } catch {
         setConflictData({
           conflicts: conflictCheck.conflicts,
           suggestions: [],
@@ -496,8 +494,7 @@ const EventRegistration = () => {
           .then(() => {
             toast.success("Event link copied to clipboard!");
           })
-          .catch((err) => {
-            console.error("Failed to copy link:", err);
+          .catch(() => {
             toast.error("Could not copy link. Please copy manually.");
           });
       }
