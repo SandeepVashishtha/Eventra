@@ -549,3 +549,14 @@ export const EventDetailSkeleton = () => (
     </div>
   </div>
 );
+export const SearchResultsSkeleton = ({ rows = 5 }) => (
+  <div className="p-4 flex flex-col gap-2">
+    <SkeletonBlock className="h-3 w-24 mb-2" />
+    {[...Array(rows)].map((_, i) => (
+      <div key={i} className="flex items-center gap-3 px-2 py-1.5 rounded-xl">
+        <SkeletonBlock className="h-4 w-4 rounded flex-shrink-0" />
+        <SkeletonBlock className={`h-4 rounded ${i % 2 === 0 ? "w-3/4" : "w-1/2"}`} />
+      </div>
+    ))}
+  </div>
+);

@@ -2,10 +2,9 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Globe, Users, Code, Activity, MapPin, Search, Filter, 
-  Moon, Sun, ZoomIn, ZoomOut, X, Clock,
+  ZoomIn, ZoomOut, X, Clock,
   TrendingUp, GitBranch, ExternalLink 
 } from "lucide-react";
-import "./CollaborationNetworkMap.css";
 
 // ============ DATA ============
 const HUBS = [
@@ -33,10 +32,10 @@ const CONNECTIONS = [
 ];
 
 const ACTIVITY_LEVELS = {
-  Critical: { color: "#ec4899", pulse: "rgba(236, 72, 153, 0.4)", label: "Critical" },
-  High: { color: "#6366f1", pulse: "rgba(99, 102, 241, 0.4)", label: "High" },
-  Medium: { color: "#22c55e", pulse: "rgba(34, 197, 94, 0.4)", label: "Medium" },
-  Low: { color: "#94a3b8", pulse: "rgba(148, 163, 184, 0.4)", label: "Low" }
+  Critical: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.36)", label: "Critical" },
+  High: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.32)", label: "High" },
+  Medium: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.28)", label: "Medium" },
+  Low: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.18)", label: "Low" }
 };
 
 const REGIONS = ["All", "North America", "Europe", "Asia", "Oceania"];
@@ -63,18 +62,18 @@ const formatTimeInZone = (timezone) => {
 // ============ PARTICLE ANIMATION COMPONENT ============
 const ConnectionParticle = ({ path, color, delay }) => (
   <motion.circle
-    r="3"
+    r="2"
     fill={color}
-    initial={{ offsetDistance: "0%" }}
-    animate={{ offsetDistance: "100%" }}
+    initial={{ offsetDistance: "0%", opacity: 0.7 }}
+    animate={{ offsetDistance: "100%", opacity: 0.45 }}
     transition={{ 
-      duration: 3 + Math.random() * 2, 
+      duration: 5 + Math.random() * 3, 
       repeat: Infinity, 
       ease: "linear",
       delay 
     }}
     style={{ offsetPath: `path("${path}")` }}
-    opacity="0.8"
+    opacity="0.65"
   />
 );
 
@@ -85,10 +84,9 @@ export default function CollaborationNetworkMap() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("All");
   const [selectedActivity, setSelectedActivity] = useState("All");
-  const [darkMode, setDarkMode] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [showConnections, setShowConnections] = useState(true);
-  const [particlesEnabled, setParticlesEnabled] = useState(true);
+  const [particlesEnabled, setParticlesEnabled] = useState(false);
 
   // Memoized computations
   const hubCoordinates = useMemo(() => {
@@ -133,11 +131,6 @@ export default function CollaborationNetworkMap() {
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
-  // Theme toggle
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
-
   const getCoordinates = useCallback((id) => hubCoordinates[id] || { x: 0, y: 0 }, [hubCoordinates]);
 
   const getPopupStyle = useCallback((hub) => {
@@ -164,33 +157,27 @@ export default function CollaborationNetworkMap() {
   }, [pinnedHub]);
 
   return (
-    <section className={`cnm-section ${darkMode ? "dark-theme" : "light-theme"}`}>
-      <div className="cnm-container">
+    <section className="bg-white py-12 text-slate-900">
+      <div className="mx-auto max-w-7xl px-6">
+      <div className="relative overflow-hidden">
         
         {/* Header with Controls */}
-        <div className="cnm-header">
-          <div className="cnm-header-top">
-            <div className="cnm-badge">
-              <Globe className="cnm-badge-icon" />
+        <div className="mb-8 flex flex-col gap-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium text-blue-400">
+              <Globe className="h-4 w-4" />
               <span>Global Connectivity</span>
             </div>
-            <div className="cnm-controls">
+            <div className="absolute top-6 right-6 flex items-center gap-3 z-10">
               <button 
-                className="cnm-control-btn"
-                onClick={() => setDarkMode(!darkMode)}
-                aria-label="Toggle theme"
-              >
-                {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-              </button>
-              <button 
-                className="cnm-control-btn"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg transition hover:scale-105 hover:bg-violet-500"
                 onClick={() => setZoom(z => Math.min(z + 0.2, 2))}
                 aria-label="Zoom in"
               >
                 <ZoomIn size={16} />
               </button>
               <button 
-                className="cnm-control-btn"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg transition hover:scale-105 hover:bg-violet-500"
                 onClick={() => setZoom(z => Math.max(z - 0.2, 0.5))}
                 aria-label="Zoom out"
               >
@@ -199,43 +186,31 @@ export default function CollaborationNetworkMap() {
             </div>
           </div>
           
-          <h2 className="cnm-title">Real-Time Global Collaboration Network</h2>
-          <p className="cnm-subtitle">
-            Connecting {stats.totalDevs.toLocaleString()} developers across {stats.regions} regions in a unified ecosystem.
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">Global Collaboration Network</h2>
+          <p className="max-w-2xl text-slate-600">
+            Real-time collaboration across {stats.totalDevs.toLocaleString()} developers in {stats.regions} regions.
           </p>
 
           {/* Filters */}
-          <div className="cnm-filters">
-            <div className="filter-group">
-              <Search size={14} className="filter-icon" />
+          <div className="mb-10 flex flex-wrap items-center gap-4">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" />
               <input
                 type="text"
                 placeholder="Search hubs or technologies..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="filter-input"
+                className="w-full md:w-80 rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-700 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                 aria-label="Search hubs"
               />
             </div>
             
-            <div className="filter-group">
-              <Filter size={14} className="filter-icon" />
-              <select 
-                value={selectedRegion}
-                onChange={(e) => setSelectedRegion(e.target.value)}
-                className="filter-select"
-                aria-label="Filter by region"
-              >
-                {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <Activity size={14} className="filter-icon" />
-              <select 
+            <div className="relative">
+              <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" />
+              <select
                 value={selectedActivity}
                 onChange={(e) => setSelectedActivity(e.target.value)}
-                className="filter-select"
+                className="rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-700 focus:outline-none"
                 aria-label="Filter by activity"
               >
                 {["All", "Critical", "High", "Medium", "Low"].map(a => (
@@ -244,7 +219,7 @@ export default function CollaborationNetworkMap() {
               </select>
             </div>
 
-            <label className="filter-toggle">
+            <label className="flex items-center gap-2 text-slate-700">
               <input 
                 type="checkbox" 
                 checked={showConnections}
@@ -252,60 +227,51 @@ export default function CollaborationNetworkMap() {
               />
               <span>Connections</span>
             </label>
-
-            <label className="filter-toggle">
-              <input 
-                type="checkbox" 
-                checked={particlesEnabled}
-                onChange={(e) => setParticlesEnabled(e.target.checked)}
-              />
-              <span>Particles</span>
-            </label>
           </div>
         </div>
 
         {/* Stats Summary */}
-        <div className="cnm-stats-bar">
-          <div className="stat-item">
+        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
             <Users size={18} />
             <div>
-              <span className="stat-number">{stats.totalDevs.toLocaleString()}</span>
-              <span className="stat-label">Developers</span>
+              <span className="block text-2xl font-bold text-emerald-400">{stats.totalDevs.toLocaleString()}</span>
+              <span className="mt-1 block text-sm text-slate-600">Developers</span>
             </div>
           </div>
-          <div className="stat-item">
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
             <Code size={18} />
             <div>
-              <span className="stat-number">{stats.totalProjects}</span>
-              <span className="stat-label">Projects</span>
+              <span className="block text-2xl font-bold text-emerald-400">{stats.totalProjects}</span>
+              <span className="mt-1 block text-sm text-slate-600">Projects</span>
             </div>
           </div>
-          <div className="stat-item">
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
             <GitBranch size={18} />
             <div>
-              <span className="stat-number">{CONNECTIONS.length}</span>
-              <span className="stat-label">Connections</span>
+              <span className="block text-2xl font-bold text-emerald-400">{CONNECTIONS.length}</span>
+              <span className="mt-1 block text-sm text-slate-600">Connections</span>
             </div>
           </div>
-          <div className="stat-item">
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
             <TrendingUp size={18} />
             <div>
-              <span className="stat-number">{stats.activeHubs}/{HUBS.length}</span>
-              <span className="stat-label">Active Hubs</span>
+              <span className="block text-2xl font-bold text-emerald-400">{stats.activeHubs}/{HUBS.length}</span>
+              <span className="mt-1 block text-sm text-slate-600">Active Hubs</span>
             </div>
           </div>
         </div>
 
         {/* Map Frame */}
-        <div className="cnm-map-frame" style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}>
+        <div className="relative mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50" style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}>
           <svg 
-            className="cnm-svg"
+            className="h-[420px] w-full"
             viewBox="0 0 1000 550"
             preserveAspectRatio="xMidYMid meet"
             role="img"
             aria-label="Global collaboration network map"
           >
-            <defs>
+              <defs>
               <filter id="hub-glow" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur stdDeviation="6" result="blur" />
                 <feMerge>
@@ -314,14 +280,14 @@ export default function CollaborationNetworkMap() {
                 </feMerge>
               </filter>
               <pattern id="cnm-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <circle cx="2" cy="2" r="1.5" fill="rgba(99, 102, 241, 0.06)" />
+                <circle cx="2" cy="2" r="1.5" fill="rgba(224,233,242,0.06)" />
               </pattern>
               <linearGradient id="connection-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="rgba(99, 102, 241, 0.6)" />
-                <stop offset="100%" stopColor="rgba(168, 85, 247, 0.6)" />
+                <stop offset="0%" stopColor="rgba(224,233,242,0.6)" />
+                <stop offset="100%" stopColor="rgba(224,233,242,0.9)" />
               </linearGradient>
               <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="rgba(99, 102, 241, 0.5)" />
+                <polygon points="0 0, 10 3.5, 0 7" fill="rgba(224,233,242,0.5)" />
               </marker>
             </defs>
 
@@ -341,23 +307,12 @@ export default function CollaborationNetworkMap() {
 
               return (
                 <g key={`connection-${idx}`} className="connection-group">
-                  <path 
-                    d={pathD} 
-                    fill="none" 
-                    stroke="rgba(99, 102, 241, 0.1)" 
-                    strokeWidth={getConnectionWidth(conn.intensity)} 
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke="rgba(224,233,242,0.5)"
+                    strokeWidth={Math.max(0.8, getConnectionWidth(conn.intensity))}
                     strokeLinecap="round"
-                  />
-                  <path 
-                    d={pathD} 
-                    fill="none" 
-                    stroke={`url(#connection-gradient)`} 
-                    strokeWidth={getConnectionWidth(conn.intensity) - 0.5}
-                    strokeDasharray="8, 120"
-                    strokeLinecap="round"
-                    opacity="0.7"
-                    className="connection-animated-path"
-                    style={{ animationDelay: `${idx * 0.25}s` }}
                   />
                   {particlesEnabled && (
                     <ConnectionParticle 
@@ -419,7 +374,7 @@ export default function CollaborationNetworkMap() {
                     cx={hub.x} 
                     cy={hub.y} 
                     r={hubSize} 
-                    fill={darkMode ? "#ffffff" : "#1e293b"}
+                    fill="#1e293b"
                     stroke={config.color}
                     strokeWidth="2.5"
                     className="node-core"
@@ -442,7 +397,7 @@ export default function CollaborationNetworkMap() {
                     y={hub.y + hubSize + 18} 
                     textAnchor="middle" 
                     className="node-label"
-                    fill={darkMode ? "#e2e8f0" : "#334155"}
+                    fill="#334155"
                     fontSize="11"
                     fontWeight="500"
                   >
@@ -496,15 +451,15 @@ export default function CollaborationNetworkMap() {
                   <div className="popup-stat">
                     <Users className="stat-icon" />
                     <div>
-                      <span className="stat-label">Developers</span>
-                      <span className="stat-value">{(activeHub || pinnedHub).devs.toLocaleString()}</span>
+                      <span className="mt-1 block text-sm text-slate-600">Developers</span>
+                      <span className="block text-2xl font-bold text-emerald-400">{(activeHub || pinnedHub).devs.toLocaleString()}</span>
                     </div>
                   </div>
                   <div className="popup-stat">
                     <Code className="stat-icon" />
                     <div>
-                      <span className="stat-label">Projects</span>
-                      <span className="stat-value">{(activeHub || pinnedHub).projects}</span>
+                      <span className="mt-1 block text-sm text-slate-600">Projects</span>
+                      <span className="block text-2xl font-bold text-emerald-400">{(activeHub || pinnedHub).projects}</span>
                     </div>
                   </div>
                 </div>
@@ -519,7 +474,7 @@ export default function CollaborationNetworkMap() {
                 {/* Status & Region */}
                 <div className="popup-footer">
                   <div className="popup-status">
-                    <span className="status-label">Status:</span>
+                    <span className="status-label">Activity:</span>
                     <div className={`status-badge ${(activeHub || pinnedHub).activity.toLowerCase()}`}>
                       <Activity className="status-icon" size={12} />
                       <span>{ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].label} Activity</span>
@@ -539,12 +494,12 @@ export default function CollaborationNetworkMap() {
         </div>
 
         {/* Legend */}
-        <div className="cnm-legend">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 text-sm text-slate-600">
           <h5>Activity Levels</h5>
-          <div className="legend-items">
+          <div className="flex flex-wrap items-center gap-4">
             {Object.entries(ACTIVITY_LEVELS).map(([key, config]) => (
-              <div key={key} className="legend-item">
-                <span className="legend-dot" style={{ backgroundColor: config.color, boxShadow: `0 0 8px ${config.pulse}` }} />
+              <div key={key} className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: config.color, boxShadow: `0 0 8px ${config.pulse}` }} />
                 <span>{config.label}</span>
               </div>
             ))}
@@ -552,10 +507,11 @@ export default function CollaborationNetworkMap() {
         </div>
 
         {/* Zoom Indicator */}
-        <div className="cnm-zoom-indicator">
+        <div className="absolute bottom-6 right-6 rounded-full bg-white border border-slate-200 px-4 py-2 text-sm text-slate-700 shadow-lg">
           Zoom: {Math.round(zoom * 100)}%
         </div>
 
+      </div>
       </div>
     </section>
   );

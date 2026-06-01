@@ -40,10 +40,12 @@ jobs:
             }
 
             // 1. Extract linked issue numbers using regex
-            // Matching keywords: Fixes, Closes, Resolves, Fixed, Closed, Resolved followed by #<number>
-            const regex = /(?:fixes|closes|resolves|fixed|closed|resolved)\s+#(\d+)/gi;
+            // Matching keywords: Fixes, Closes, Resolves, Fixed, Closed, Resolved followed by one or more issue references.
+            const regex = /(?:fixes|closes|resolves|fixed|closed|resolved)\s*[:\-]?\s*((?:#\d+(?:\s*(?:,|and)\s*)?)+)/gi;
             const matches = [...body.matchAll(regex)];
-            const linkedIssues = [...new Set(matches.map(match => parseInt(match[1])))];
+            const linkedIssues = [...new Set(
+              matches.flatMap(match => [...match[1].matchAll(/#(\d+)/g)].map(issue => parseInt(issue[1], 10)))
+            )];
 
             console.log(`Linked issues found: ${linkedIssues.join(', ') || 'None'}`);
 
