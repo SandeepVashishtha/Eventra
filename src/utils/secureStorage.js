@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* eslint-disable-next-line no-console */
 // ---------------------------------------------------------------------------
 // AES-GCM Encryption Engine (Web Crypto API)
 // ---------------------------------------------------------------------------
