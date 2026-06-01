@@ -114,7 +114,7 @@ async function handler(req, res) {
       });
     }
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const response = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -130,7 +130,7 @@ async function handler(req, res) {
         ],
         temperature: 0.7,
       }),
-    });
+    }, 12000);
 
     const data = await response.json();
 
@@ -143,6 +143,11 @@ async function handler(req, res) {
   } catch (error) {
     console.error("[Groq Proxy API] Request Failed:", error);
     return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export default verifyAuth(handler);
+
   }
 }
 
