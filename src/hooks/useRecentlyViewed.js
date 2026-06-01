@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { logger } from "../utils/logger";
 
 const STORAGE_KEY = 'eventra_recently_viewed';
 const MAX_ITEMS = 10;
@@ -43,31 +44,50 @@ const isEntryFresh = (entry) => {
  *  - Stores only minimal display fields, not the full event object
  */
 const useRecentlyViewed = () => {
-  const [recentlyViewed, setRecentlyViewed] = useState([]);
-
-  // Load from localStorage on mount, filtering out stale entries immediately
-  useEffect(() => {
+  // 🔥 FIX 1: Lazy Initialization + Master's TTL logic combined
+  // Initialize synchronously from localStorage to prevent double-renders and FOUC.
+  const [recentlyViewed, setRecentlyViewed] = useState(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = safeJsonParse(stored, []);
         const fresh = Array.isArray(parsed) ? parsed.filter(isEntryFresh) : [];
-        setRecentlyViewed(fresh);
+        return fresh;
       }
+      return [];
     } catch (err) {
-      console.error('Failed to load recently viewed events:', err);
+      logger.error('Failed to load recently viewed events:', err);
       setRecentlyViewed([]);
     }
-  }, []);
+  });
 
   // Persist to localStorage whenever state changes
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(recentlyViewed));
     } catch (err) {
-      console.error('Failed to save recently viewed events:', err);
+      logger.error('Failed to save recently viewed events:', err);
     }
   }, [recentlyViewed]);
+
+  // 🔥 FIX 2: Cross-Tab Synchronization
+  // Listen for storage events from other tabs to keep the React state perfectly in sync globally.
+  useEffect(() => {
+    const handleStorageChange = (event) => {
+      if (event.key === STORAGE_KEY) {
+        if (event.newValue) {
+          const parsed = safeJsonParse(event.newValue, []);
+          const fresh = Array.isArray(parsed) ? parsed.filter(isEntryFresh) : [];
+          setRecentlyViewed(fresh);
+        } else {
+          setRecentlyViewed([]);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   /**
    * Add or move an event to the front of the recently viewed list.
@@ -101,7 +121,7 @@ const useRecentlyViewed = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (err) {
-      console.error('Failed to clear recently viewed events:', err);
+      logger.error('Failed to clear recently viewed events:', err);
     }
   }, []);
 

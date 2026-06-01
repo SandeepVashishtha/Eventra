@@ -215,7 +215,7 @@ const EventTicket = ({ event, user, onClose }) => {
               />
 
               {/* Header Banner */}
-              <div className={`ud-ticket-header bg-gradient-to-r ${theme.primary}`}>
+              <div className={`ud-ticket-header bg-linear-to-r ${theme.primary}`}>
                 {event.image && (
                   <img
                     src={event.image}
@@ -360,7 +360,7 @@ const EventTicket = ({ event, user, onClose }) => {
 
             {/* Back of Card (Schedule, Guidelines, Interactive Map) */}
             <div className="ud-ticket-card-face ud-ticket-card-back">
-              <div className={`ud-ticket-back-header bg-gradient-to-r ${theme.primary}`}>
+              <div className={`ud-ticket-back-header bg-linear-to-r ${theme.primary}`}>
                 <div className="ud-ticket-logo-overlay">
                   <span className="ud-ticket-logo-dot" />
                   <span className="ud-ticket-logo-text">Eventra Info</span>
