@@ -48,7 +48,7 @@ const safeStorage = {
 const getInitialTheme = () => safeStorage.getItem("theme", "system");
 
 export const ThemeProvider = ({ children }) => {
-  const [theme] = useState("light");
+  const [theme, setThemeState] = useState(() => getInitialTheme());
 
   // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {
@@ -78,9 +78,17 @@ export const ThemeProvider = ({ children }) => {
     return saved !== null ? saved === "true" : prefersReduced;
   });
 
-  const resolvedTheme = "light";
-  const setTheme = useCallback(() => {}, []);
-  const toggleTheme = useCallback(() => {}, []);
+  const resolvedTheme = theme === "system" ? getSystemTheme() : theme;
+  const isDarkMode = resolvedTheme === "dark";
+  const setTheme = useCallback((newTheme) => {
+    setThemeState(newTheme);
+  }, []);
+  const toggleTheme = useCallback(() => {
+    setThemeState((prev) => {
+      const resolved = prev === "system" ? getSystemTheme() : prev;
+      return resolved === "dark" ? "light" : "dark";
+    });
+  }, []);
 
   // Apply themes, custom HSL variable overrides, and sync storage
   useEffect(() => {
@@ -182,7 +190,7 @@ export const ThemeProvider = ({ children }) => {
     () => ({
       theme,
       resolvedTheme,
-      isDarkMode: false,
+      isDarkMode,
       setTheme,
       isCustomizerOpen,
       setIsCustomizerOpen,
