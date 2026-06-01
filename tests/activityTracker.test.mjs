@@ -39,4 +39,12 @@ assert.doesNotThrow(() => {
   trackUserInterest("security");
 }, "Should handle storage write failures gracefully without infinite recursion");
 
+// Test 4: Handle invalid inputs (like empty strings, null, undefined, objects) gracefully
+assert.doesNotThrow(() => {
+  trackUserInterest("");
+  trackUserInterest(null);
+  trackUserInterest(undefined);
+  trackUserInterest({});
+}, "Should ignore invalid interest types without error");
+
 console.log("activityTracker tests passed ✓");

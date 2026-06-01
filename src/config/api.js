@@ -27,8 +27,8 @@ const resolveEnvApiBaseUrl = () => {
   if (envUrl) {
     return normalizeApiBaseUrl(envUrl);
   }
-  if (process.env.NODE_ENV === "production") {
-    console.warn("VITE_API_URL environment variable is missing in production. Defaulting to relative API requests.");
+  if (!isDev) {
+    console.warn(`VITE_API_URL environment variable is missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
     return "";
   }
   return "http://localhost:8080";
@@ -216,8 +216,7 @@ API.interceptors.response.use(
     }
 
     const retryCount = config._retryCount || 0;
-    const method = (config.method || "GET").toUpperCase();
-    const isRetryableMethod = RETRYABLE_METHODS.has(method);
+    const isNonMutating = config.method?.toUpperCase() === 'GET';
     const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
     
     // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
