@@ -797,14 +797,16 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setShowCommandPalette((prev) => !prev);
-      }
+    const handleToggle = () => setShowCommandPalette((prev) => !prev);
+    const handleClose = () => setShowCommandPalette(false);
+
+    window.addEventListener("toggleCommandPalette", handleToggle);
+    window.addEventListener("closeCommandPalette", handleClose);
+
+    return () => {
+      window.removeEventListener("toggleCommandPalette", handleToggle);
+      window.removeEventListener("closeCommandPalette", handleClose);
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const drawerRef = useRef(null);
