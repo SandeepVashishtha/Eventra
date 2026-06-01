@@ -60,6 +60,7 @@ const buildApiUrl = (path = "") => {
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
+const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1_000;
 
@@ -218,14 +219,15 @@ API.interceptors.response.use(
     const isNonMutating = config.method?.toUpperCase() === 'GET';
     const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
     
-    // Retry non-mutating requests with exponential backoff
-    if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
+    // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
+    // because those can duplicate writes or worsen server-side rate limiting.
+    if (isRetryableMethod && isRetryableStatus && retryCount < MAX_RETRIES) {
       config._retryCount = retryCount + 1;
       const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
       if (isDev) {
         console.debug(
-          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
+          `[API ${method}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
         );
       }
 
