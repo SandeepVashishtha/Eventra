@@ -122,10 +122,6 @@ const useBookmarks = (userId = "guest") => {
    */
   const clearBookmarks = useCallback(() => {
     setBookmarks([]);
-    try { localStorage.removeItem(storageKey); } catch { /* non-fatal */ }
-  }, [storageKey]);
-
-  return { bookmarks, toggleBookmark, isBookmarked, clearBookmarks };
-};
+  }, []);
 
 export default useBookmarks;
