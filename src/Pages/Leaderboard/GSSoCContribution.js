@@ -277,9 +277,7 @@ const ResourceItem = memo(({ resource, onCopy }) => {
       setCopied(true);
       onCopy?.(resource.title);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
+    } catch {}
   };
   
   return (
