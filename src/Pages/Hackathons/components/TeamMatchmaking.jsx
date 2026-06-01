@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Check, AlertTriangle, User, Briefcase, Award, Zap, Code, Plus, X, ExternalLink, Settings } from "lucide-react";
+import { useState } from "react";
+import { Check, AlertTriangle, User, Briefcase, Zap, Code, Plus, ExternalLink, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const TeamMatchmaking = () => {
@@ -376,7 +376,8 @@ const TeamMatchmaking = () => {
                 <button
                   type="submit"
                   className="md:col-span-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md shadow-blue-500/10"
-                 aria-label="button">
+                  aria-label="Submit team matchmaking request"
+                >
                   Submit Team Request
                 </button>
               </form>
@@ -492,7 +493,7 @@ const TeamMatchmaking = () => {
                   <div className="border-t border-slate-100 dark:border-slate-850/60 pt-4 flex items-center justify-between gap-3">
                     <a
                       href={team.contact}
-                      target="_blank" rel="noopener noreferrer"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center gap-1 transition"
                     >

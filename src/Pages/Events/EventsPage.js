@@ -2,12 +2,9 @@ import { useRef, useEffect, useState } from "react";
 import { useSearchParams, useLocation } from "react-router-dom"; // ✅ useLocation added here
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
-import { getEventStatus } from "../../utils/eventUtils";
-import { Grid, List } from "lucide-react";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
-import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -17,14 +14,17 @@ import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import { EventTimeline } from "../../components/EventTimeline";
+import {
+  decodeAdvancedFilters,
+  encodeAdvancedFilters,
+  getDefaultFilters,
+  hasActiveFilters as hasActiveAdvancedFilters,
+  normalizeAdvancedFilters,
+  serializeAdvancedFilters,
+} from "../../utils/advancedFilterUtils";
 
-const FILTERS = [
-  { key: "all", label: "All" },
-  { key: "upcoming", label: "Upcoming" },
-  { key: "past", label: "Past" },
-  { key: "conference", label: "Conferences" },
-  { key: "workshop", label: "Workshops" },
-];
+const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
 const renderCardSection = (
   isLoading,
@@ -105,6 +105,8 @@ const EventsPage = () => {
 
   const listing = useEventListing();
   const cardSectionRef = useRef();
+  const hasHydratedFilters = useRef(false);
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
 
   // Local input value updates immediately on each keystroke so the input
   // feels responsive. The debounced value is passed to the listing hook so
@@ -118,24 +120,53 @@ const EventsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchQuery]);
 
-  // Initialize state from URL params
+  // Initialize state from URL params, falling back to persisted filters.
   useEffect(() => {
-    const page = parseInt(searchParams.get("page")) || 1;
-    const perPage = parseInt(searchParams.get("perPage")) || 6;
-    const filter = searchParams.get("filter") || "all";
-    const sort = searchParams.get("sort") || "Newest";
-    const view = searchParams.get("view") || "grid";
+    if (hasHydratedFilters.current) return;
 
-    if (routeSearchQuery) listing.setSearchQuery(routeSearchQuery);
-    if (filter !== "all") listing.setFilterType(filter);
-    if (sort !== "Newest") listing.setSortType(sort);
-    if (view !== "grid") listing.setViewMode(view);
-    if (perPage !== 6) listing.setEventsPerPage(perPage);
+    let savedFilters = {};
+
+    try {
+      savedFilters = JSON.parse(
+        window.localStorage.getItem(FILTER_STORAGE_KEY) || "{}"
+      );
+    } catch {
+      savedFilters = {};
+    }
+
+    const page = parseInt(searchParams.get("page")) || 1;
+    const perPage =
+      parseInt(searchParams.get("perPage")) || savedFilters.perPage || 6;
+    const filter =
+      searchParams.get("filter") || savedFilters.filterType || "all";
+    const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
+    const view = searchParams.get("view") || savedFilters.viewMode || "grid";
+    const urlAdvancedFilters = searchParams.get("filters");
+    const advancedFilters = urlAdvancedFilters
+      ? decodeAdvancedFilters(urlAdvancedFilters)
+      : normalizeAdvancedFilters(
+          savedFilters.advancedFilters || getDefaultFilters()
+        );
+    const initialSearch = routeSearchQuery || savedFilters.searchQuery || "";
+
+    if (initialSearch) {
+      setLocalSearchInput(initialSearch);
+      listing.setSearchQuery(initialSearch);
+    }
+    listing.setFilterType(filter);
+    listing.setSortType(sort);
+    listing.setViewMode(view);
+    listing.setEventsPerPage(perPage);
+    listing.setAdvancedFilters(advancedFilters);
     if (page !== 1) listing.setSafePage(page);
-  }, [searchParams, routeSearchQuery]);
+    hasHydratedFilters.current = true;
+    setFiltersHydrated(true);
+  }, [searchParams, routeSearchQuery, listing]);
 
   // Sync search query when URL param changes (e.g. navigating from navbar search)
   useEffect(() => {
+    if (!filtersHydrated) return;
+
     const params = {};
     if (listing.currentPage > 1) params.page = listing.currentPage;
     if (listing.eventsPerPage !== 6) params.perPage = listing.eventsPerPage;
@@ -143,7 +174,26 @@ const EventsPage = () => {
     if (listing.filterType !== "all") params.filter = listing.filterType;
     if (listing.sortType !== "Newest") params.sort = listing.sortType;
     if (listing.viewMode !== "grid") params.view = listing.viewMode;
+    if (hasActiveAdvancedFilters(listing.advancedFilters)) {
+      params.filters = encodeAdvancedFilters(listing.advancedFilters);
+    }
     setSearchParams(params, { replace: true });
+
+    try {
+      window.localStorage.setItem(
+        FILTER_STORAGE_KEY,
+        JSON.stringify({
+          searchQuery: listing.searchQuery,
+          filterType: listing.filterType,
+          sortType: listing.sortType,
+          viewMode: listing.viewMode,
+          perPage: listing.eventsPerPage,
+          advancedFilters: serializeAdvancedFilters(listing.advancedFilters),
+        })
+      );
+    } catch {
+      // localStorage can be unavailable in private browsing or embedded views.
+    }
   }, [
     listing.currentPage,
     listing.eventsPerPage,
@@ -151,17 +201,26 @@ const EventsPage = () => {
     listing.filterType,
     listing.sortType,
     listing.viewMode,
+    listing.advancedFilters,
+    filtersHydrated,
     setSearchParams,
   ]);
 
-  // Keep local state in sync when route search changes.
+  // Keep local state in sync when an explicit route search changes.
   useEffect(() => {
+    if (!rawSearchParam) return;
+
     const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
     if (safeQuery !== listing.searchQuery) {
       setLocalSearchInput(safeQuery);
       listing.setSearchQuery(safeQuery);
     }
-  }, [routeSearchQuery, listing.searchQuery, listing.setSearchQuery]);
+  }, [
+    rawSearchParam,
+    routeSearchQuery,
+    listing.searchQuery,
+    listing.setSearchQuery,
+  ]);
 
   const handleSearch = (query = "") => {
     const safeQuery = prepareSafeSearchQuery(query);
@@ -190,13 +249,9 @@ const EventsPage = () => {
     listing.setSearchQuery("");
     listing.setFilterType("all");
     listing.setSortType("Newest");
+    listing.setAdvancedFilters(getDefaultFilters());
     setLocalSearchInput("");
   };
-
-  const hasActiveFilters =
-    listing.filterType !== "all" ||
-    listing.sortType !== "Newest" ||
-    listing.searchQuery !== "";
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
@@ -212,32 +267,7 @@ const EventsPage = () => {
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
-        <div className="mb-5 sm:mb-6 flex flex-col gap-3">
-          <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
-            {FILTERS.map((filter) => (
-              <button
-                key={filter.key}
-                onClick={() => listing.setFilterType(filter.key)}
-                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition ${
-                  listing.filterType === filter.key
-                    ? "bg-blue-600 text-white dark:bg-blue-600 dark:text-white"
-                    : "border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:text-gray-300 dark:border-slate-700 dark:hover:bg-slate-800"
-                }`}
-                aria-pressed={listing.filterType === filter.key}
-              >
-                {filter.label}
-              </button>
-            ))}
-
-            {hasActiveFilters && (
-              <button
-                onClick={clearSearchAndFilters}
-                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/50 font-semibold"
-              >
-                Clear Filters
-              </button>
-            )}
-          </div>
+        <div className="mb-5 sm:mb-6">
 
           <EventFiltersToolbar
             filterType={listing.filterType}
@@ -255,48 +285,6 @@ const EventsPage = () => {
             priceStats={listing.priceStats}
             dateRangeStats={listing.dateRangeStats}
           />
-
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-            <div className="w-full sm:w-48">
-              <label htmlFor="sort-events" className="sr-only">
-                Sort events
-              </label>
-              <StyledDropdown
-                label=""
-                value={listing.sortType}
-                onChange={listing.setSortType}
-                options={["Newest", "Upcoming", "Popular"]}
-                placeholder="Sort by Date"
-              />
-            </div>
-
-            <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
-              <button
-                onClick={() => listing.setViewMode("grid")}
-                className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                  listing.viewMode === "grid"
-                    ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
-                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
-                aria-label="Grid view"
-                aria-pressed={listing.viewMode === "grid"}
-              >
-                <Grid size={16} />
-              </button>
-              <button
-                onClick={() => listing.setViewMode("list")}
-                className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                  listing.viewMode === "list"
-                    ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
-                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
-                aria-label="List view"
-                aria-pressed={listing.viewMode === "list"}
-              >
-                <List size={16} />
-              </button>
-            </div>
-          </div>
         </div>
 
         <ActiveFilters
@@ -311,6 +299,8 @@ const EventsPage = () => {
           setSortType={listing.setSortType}
           viewMode={listing.viewMode}
           setViewMode={listing.setViewMode}
+          advancedFilters={listing.advancedFilters}
+          onAdvancedFiltersChange={listing.setAdvancedFilters}
         />
 
         <SectionErrorBoundary label="Events">
@@ -332,6 +322,13 @@ const EventsPage = () => {
             </div>
           )}
         </SectionErrorBoundary>
+
+        {/* Interactive Event Timeline Planner Section */}
+        <div className="mt-12 sm:mt-16">
+          <SectionErrorBoundary label="Event Timeline Planner">
+            <EventTimeline />
+          </SectionErrorBoundary>
+        </div>
       </div>
 
       <EventCTA />

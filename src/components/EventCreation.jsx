@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { ArrowRightIcon, CalendarIcon, MapPinIcon, UsersIcon, ClipboardDocumentListIcon, Ticket, TagIcon, CheckCircleIcon, PencilIcon, AlertCircleIcon, Trash2Icon } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download, X } from "lucide-react";
@@ -6,19 +7,6 @@ import useReducedMotion from "../hooks/useReducedMotion";
 import CharacterCounter from "./common/CharacterCounter";
 import { exportAttendeesToCSV } from "../utils/exportCsv";
 import { logger } from "../utils/logger";
-import {
-  ArrowRightIcon,
-  CalendarIcon,
-  MapPinIcon,
-  UsersIcon,
-  ClipboardDocumentListIcon,
-  TicketIcon,
-  TagIcon,
-  CheckCircleIcon,
-  PencilIcon,
-  AlertCircleIcon,
-  Trash2Icon,
-} from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../config/api";
 import {
   Calendar,
@@ -364,7 +352,9 @@ const EventCreation = () => {
 
     saveDraftTimeoutRef.current = setTimeout(() => {
       try {
-        const { banner, bannerPreview, ...saveable } = formDataRef.current;
+        const saveable = { ...formDataRef.current };
+        delete saveable.banner;
+        delete saveable.bannerPreview;
         localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
       } catch (error) {
         logger.error("Failed to save draft:", error);
@@ -725,7 +715,7 @@ const EventCreation = () => {
       const saved = localStorage.getItem(DRAFT_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        setFormData(prev => ({
+        setFormData(() => ({
           ...initialFormData, // Start fresh, then merge saved data
           ...parsed,
           banner: null, // Don't restore file objects
@@ -1487,7 +1477,7 @@ const EventCreation = () => {
               <motion.div variants={fadeInUp} className="border-t border-gray-200 dark:border-gray-700 pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <TicketIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <Ticket className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       Ticket Tiers
                     </h3>
@@ -1602,30 +1592,31 @@ const EventCreation = () => {
 
                 <div className="p-6 sm:p-8 space-y-6">
                   {/* Title & Category */}
+                  {/* Title & Category */}
                   <div>
-                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                      {formData.title || "Untitled Event"}
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="inline-flex items-center px-3 py-1 rounded-lg 
-                                     bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 
-                                     dark:text-indigo-300 text-sm font-medium">
-                        {categories.find(c => c.value === formData.category)?.label || "Uncategorized"}
-                      </span>
-                      {formData.tags.slice(0, 3).map((tag, i) => (
-                        <span key={i} className="inline-flex items-center px-2.5 py-0.5 
-                                               rounded-full bg-gray-100 dark:bg-gray-700 
-                                               text-gray-700 dark:text-gray-300 text-xs">
-                          #{tag}
+                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 break-words">
+                  {formData.title || "Untitled Event"}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-2 w-full max-w-full overflow-hidden">
+                  <span className="inline-flex items-center px-3 py-1 rounded-lg flex-shrink-0
+                  bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700
+                  dark:text-indigo-300 text-sm font-medium break-words max-w-full">
+                    {categories.find(c => c.value === formData.category)?.label || "Uncategorized"}
+                    </span>
+                    {formData.tags.slice(0, 3).map((tag, i) => (
+                      <span key={i} className="inline-flex items-center px-2.5 py-0.5
+                      rounded-full bg-gray-100 dark:bg-gray-700
+                      text-gray-700 dark:text-gray-300 text-xs break-all max-w-[150px] sm:max-w-xs truncate">
+                        #{tag}
                         </span>
                       ))}
                       {formData.tags.length > 3 && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                           +{formData.tags.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                          </span>
+                        )}
+                        </div>
+                        </div>
 
                   {/* Description */}
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
@@ -1686,7 +1677,7 @@ const EventCreation = () => {
                   {formData.ticketTiers.filter(t => t.name).length > 0 && (
                     <div className="space-y-3">
                       <h4 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                        <TicketIcon className="w-4 h-4 text-indigo-600" />
+                        <Ticket className="w-4 h-4 text-indigo-600" />
                         Available Tickets
                       </h4>
                       <div className="space-y-2">

@@ -1,27 +1,25 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Download } from 'lucide-react';
-import EmptyState from '../components/common/EmptyState';
-import useBookmarks from '../hooks/useBookmarks';
-import { exportEventsToCSV } from '../utils/exportEvents';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Download } from "lucide-react";
+import EmptyState from "../components/common/EmptyState";
+import useBookmarks from "../hooks/useBookmarks";
+import { exportToCSV } from "../utils/exportUtils";
 
 const SavedEventsPage = () => {
   const navigate = useNavigate();
   const { bookmarks, toggleBookmark } = useBookmarks();
-  const [sortBy, setSortBy] = useState('savedAt');
+  const [sortBy, setSortBy] = useState("savedAt");
   const [exporting, setExporting] = useState(false);
 
   const sorted = [...bookmarks].sort((a, b) =>
-    sortBy === 'savedAt'
-      ? b.savedAt - a.savedAt
-      : new Date(a.date) - new Date(b.date)
+    sortBy === "savedAt" ? b.savedAt - a.savedAt : new Date(a.date) - new Date(b.date)
   );
 
   const handleExportCSV = () => {
     if (sorted.length === 0) return;
     setExporting(true);
     try {
-      exportEventsToCSV(sorted, `eventra-saved-events-${new Date().toISOString().slice(0, 10)}`);
+      exportToCSV(sorted, `eventra-saved-events-${new Date().toISOString().slice(0, 10)}`);
     } finally {
       // Brief visual feedback before resetting
       setTimeout(() => setExporting(false), 800);
@@ -36,7 +34,7 @@ const SavedEventsPage = () => {
             type="bookmarks"
             title="No saved events yet!"
             message="Bookmark events you're interested in to find them here later."
-            onBrowseAll={() => navigate('/events')}
+            onBrowseAll={() => navigate("/events")}
           />
         </section>
       </div>
@@ -77,7 +75,7 @@ const SavedEventsPage = () => {
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Download size={15} aria-hidden="true" />
-              {exporting ? 'Exporting…' : 'Export CSV'}
+              {exporting ? "Exporting…" : "Export CSV"}
             </button>
           </div>
         </div>

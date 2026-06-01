@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS, apiUtils } from '../../config/api';
 import { motion } from "framer-motion";
@@ -15,6 +15,7 @@ const PasswordReset = () => {
 
   const lastSubmitRef = useRef(0);
   const intervalRef = useRef(null);
+  const navTimerRef = useRef(null);
   const navigate = useNavigate();
 
   const startCooldownTimer = useCallback(() => {
@@ -34,6 +35,7 @@ const PasswordReset = () => {
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (navTimerRef.current) clearTimeout(navTimerRef.current);
     };
   }, []);
 
@@ -68,7 +70,7 @@ const PasswordReset = () => {
       setMessage(response.data?.message || 'Password reset link sent! Check your email.');
       lastSubmitRef.current = Date.now();
       startCooldownTimer();
-      setTimeout(() => navigate('/login'), 3000);
+      navTimerRef.current = setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
       const backendMessage = err.response?.data?.message || err?.data?.message;
       setError(backendMessage || 'Failed to send reset link. Please try again.');

@@ -7,7 +7,7 @@ import CountUpLib from "react-countup";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 
-const CountUp = CountUpLib.default;
+const CountUp = CountUpLib.default || CountUpLib;
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
   <motion.div
@@ -27,7 +27,6 @@ const Tag = ({ tag, onRemove }) => (
 );
 
 export default function HackathonHero({
-  hackathons = [],
   searchQuery,
   setSearchQuery,
   scrollToCards,

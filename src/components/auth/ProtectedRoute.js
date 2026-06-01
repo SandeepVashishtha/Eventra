@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { isTokenValid } from '../../utils/auth';
@@ -61,7 +61,7 @@ const ProtectedRoute = ({
   // SECURITY: Check required permissions against JWT claims.
   // Permissions must be verified server-side for critical operations.
   if (requiredPermissions.length > 0) {
-    const hasRequiredPermission = requiredPermissions.some(permission => hasPermission(permission));
+    const hasRequiredPermission = requiredPermissions.every(permission => hasPermission(permission));
     if (!hasRequiredPermission) {
       return <Navigate to="/unauthorized" replace state={{ from: location }} />;
     }

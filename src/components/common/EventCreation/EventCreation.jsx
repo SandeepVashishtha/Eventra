@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { ArrowRightIcon, CalendarIcon, UsersIcon, ClipboardDocumentListIcon, TagIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
@@ -16,42 +17,23 @@ import {
   initialFormData,
   todayString,
 } from "../../../constants/eventDefaults";
-import {
-  ArrowRightIcon,
-  CalendarIcon,
-  MapPinIcon,
-  UsersIcon,
-  ClipboardDocumentListIcon,
-  TicketIcon,
-  TagIcon,
-  CheckCircleIcon,
-  PencilIcon,
-} from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import {
   Calendar,
   MapPin,
   Link2,
   Users,
-  Image,
-  ClipboardList,
-  FileText,
-  Layers,
   Globe,
   CalendarPlus,
   CalendarX,
   Map,
   Navigation,
   Compass,
-  Upload,
   Plus,
 } from "lucide-react";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
-import { LoadingButton } from "../../ui/LoadingButton";
 import {
   parseTimeToMinutes,
-  formatDate,
-  formatTime,
   validateCoordinates,
 } from "../../../utils/eventCreationUtils";
 
@@ -151,11 +133,53 @@ const EventCreation = () => {
       }
     }
 
-    if (formData.registrationStart && formData.registrationEnd) {
-      if (new Date(formData.registrationStart) >= new Date(formData.registrationEnd)) {
-        newErrors.registrationEnd = "Registration end must be after registration start";
-      }
-    }
+    if (formData.registrationStart || formData.registrationEnd) {
+  const now = new Date();
+
+  const registrationStart = formData.registrationStart
+    ? new Date(formData.registrationStart)
+    : null;
+
+  const registrationEnd = formData.registrationEnd
+    ? new Date(formData.registrationEnd)
+    : null;
+
+  const eventStart = new Date(
+    `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
+  );
+
+  if (registrationStart && registrationStart < now) {
+    newErrors.registrationStart =
+      "Registration start cannot be in the past";
+  }
+
+  if (
+    registrationStart &&
+    registrationEnd &&
+    registrationStart >= registrationEnd
+  ) {
+    newErrors.registrationEnd =
+      "Registration end must be after registration start";
+  }
+
+  if (
+    registrationStart &&
+    !isNaN(eventStart.getTime()) &&
+    registrationStart >= eventStart
+  ) {
+    newErrors.registrationStart =
+      "Registration start must be before the event starts";
+  }
+
+  if (
+    registrationEnd &&
+    !isNaN(eventStart.getTime()) &&
+    registrationEnd > eventStart
+  ) {
+    newErrors.registrationEnd =
+      "Registration must close before the event starts";
+  }
+}
 
     // Validate ticket tiers
     if (formData.ticketTiers && formData.ticketTiers.length > 0) {
@@ -260,12 +284,7 @@ const EventCreation = () => {
     }));
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      setCurrentStep(CREATION_STEPS.PREVIEW);
-    }
-  };
-  const handleNext = () => {
+    const handleNext = () => {
   try {
     if (currentStep === CREATION_STEPS.FORM) {
       const isValid = validateForm();
@@ -409,7 +428,9 @@ const EventCreation = () => {
     // Prevent saving before draft restoration
     if (!isDraftLoaded) return;
 
-    const { banner, bannerPreview, ...saveable } = formData;
+    const saveable = { ...formData };
+    delete saveable.banner;
+    delete saveable.bannerPreview;
 
     localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
   }, [formData, isDraftLoaded]);
@@ -1055,8 +1076,15 @@ const EventCreation = () => {
                     name="registrationStart"
                     value={formData.registrationStart}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300"
+                    className={`w-full border ${
+                      errors.registrationStart
+                        ? "border-red-500"
+                        : "border-gray-300 dark:border-gray-600"
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                   />
+                  {errors.registrationStart && (
+                    <span className="text-red-500 text-sm mt-1">{errors.registrationStart}</span>
+                  )}
                 </div>
 
                 <div>
