@@ -35,7 +35,7 @@ export default [
       },
     },
     rules: {
-      "no-console": "off"
+      "no-console": "off",
       "no-unused-vars": "warn",
       "react/jsx-no-target-blank": "error",
       // apply react-hooks recommended rules but relax some strict checks
