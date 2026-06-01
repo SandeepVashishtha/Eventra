@@ -140,11 +140,53 @@ const EventCreation = () => {
       }
     }
 
-    if (formData.registrationStart && formData.registrationEnd) {
-      if (new Date(formData.registrationStart) >= new Date(formData.registrationEnd)) {
-        newErrors.registrationEnd = "Registration end must be after registration start";
-      }
-    }
+    if (formData.registrationStart || formData.registrationEnd) {
+  const now = new Date();
+
+  const registrationStart = formData.registrationStart
+    ? new Date(formData.registrationStart)
+    : null;
+
+  const registrationEnd = formData.registrationEnd
+    ? new Date(formData.registrationEnd)
+    : null;
+
+  const eventStart = new Date(
+    `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
+  );
+
+  if (registrationStart && registrationStart < now) {
+    newErrors.registrationStart =
+      "Registration start cannot be in the past";
+  }
+
+  if (
+    registrationStart &&
+    registrationEnd &&
+    registrationStart >= registrationEnd
+  ) {
+    newErrors.registrationEnd =
+      "Registration end must be after registration start";
+  }
+
+  if (
+    registrationStart &&
+    !isNaN(eventStart.getTime()) &&
+    registrationStart >= eventStart
+  ) {
+    newErrors.registrationStart =
+      "Registration start must be before the event starts";
+  }
+
+  if (
+    registrationEnd &&
+    !isNaN(eventStart.getTime()) &&
+    registrationEnd > eventStart
+  ) {
+    newErrors.registrationEnd =
+      "Registration must close before the event starts";
+  }
+}
 
     // Validate ticket tiers
     if (formData.ticketTiers && formData.ticketTiers.length > 0) {
@@ -1041,8 +1083,15 @@ const EventCreation = () => {
                     name="registrationStart"
                     value={formData.registrationStart}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300"
+                    className={`w-full border ${
+                      errors.registrationStart
+                        ? "border-red-500"
+                        : "border-gray-300 dark:border-gray-600"
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                   />
+                  {errors.registrationStart && (
+                    <span className="text-red-500 text-sm mt-1">{errors.registrationStart}</span>
+                  )}
                 </div>
 
                 <div>
