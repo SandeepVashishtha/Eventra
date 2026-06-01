@@ -1,6 +1,35 @@
-/**
- * Build a structured error entry for persistence and diagnostics.
- */
+import { SENTRY_DSN, isSentryEnabled } from "../config/env.js";
+
+// Try to load the real Sentry SDK. If @sentry/browser is not installed
+// (e.g. the dependency was skipped during npm install), every call below
+// is a no-op — the app continues working without remote error reporting.
+let Sentry = null;
+
+if (isSentryEnabled && typeof window !== "undefined") {
+  try {
+    const SentryModule = require("@sentry/browser");
+    Sentry = SentryModule;
+
+    Sentry.init({
+      dsn: SENTRY_DSN,
+      integrations: [
+        typeof SentryModule.browserTracingIntegration === "function"
+          ? SentryModule.browserTracingIntegration()
+          : null,
+        typeof SentryModule.replayIntegration === "function"
+          ? SentryModule.replayIntegration()
+          : null,
+      ].filter(Boolean),
+      tracesSampleRate: 0.25,
+      replaysSessionSampleRate: 0.1,
+      replaysOnErrorSampleRate: 1.0,
+      environment: process.env.NODE_ENV || "development",
+    });
+  } catch {
+    // Sentry SDK unavailable — local-only logging will still work
+  }
+}
+
 function buildErrorEntry(error, errorInfo, extra = {}) {
   return {
     timestamp: new Date().toISOString(),
@@ -13,17 +42,12 @@ function buildErrorEntry(error, errorInfo, extra = {}) {
   };
 }
 
-/**
- * Persist an error entry to localStorage under `eventra_error_log`.
- * Keeps only the 10 most recent entries and never throws.
- */
 function persistToLocalStorage(entry) {
   try {
     const existing = JSON.parse(localStorage.getItem("eventra_error_log") || "[]");
     existing.unshift(entry);
     localStorage.setItem("eventra_error_log", JSON.stringify(existing.slice(0, 10)));
   } catch (_) {
-    // Ignore storage failures (private mode, quota exceeded, etc.)
   }
 }
 
@@ -38,6 +62,16 @@ export const logError = (error, errorInfo, extra = {}) => {
       console.info("Context:", extra);
     }
     console.groupEnd?.();
+
+    if (Sentry) {
+      Sentry.withScope((scope) => {
+        if (extra) scope.setExtras(extra);
+        if (errorInfo?.componentStack) {
+          scope.setExtra("componentStack", errorInfo.componentStack);
+        }
+        Sentry.captureException(error);
+      });
+    }
 
     const entry = buildErrorEntry(error, errorInfo, extra);
     persistToLocalStorage(entry);

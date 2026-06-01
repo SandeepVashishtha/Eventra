@@ -167,19 +167,13 @@ if (projectsList.length > 0) {
         }
 
         // --- MOCK DATA FALLBACK: API returned empty or invalid array ---
-        console.warn("Projects API returned empty or invalid array — loading mock data.");
         setProjects(mockProjects);
         const mockUniqueCategories = [
           ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
         ];
         setCategories(["all", ...mockUniqueCategories]);
       } catch (err) {
-        console.error("Error fetching projects:", err);
-
         if (err?.status === 401) {
-          console.warn(
-            "Projects API returned 401 for unauthenticated access — loading public mock data fallback."
-          );
           setProjects(mockProjects);
           const fallbackCategories = [
             ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
@@ -189,7 +183,6 @@ if (projectsList.length > 0) {
         }
 
         // Always gracefully fall back to mock data when API is unavailable
-        console.warn("API unavailable — falling back to mock project data.");
         setProjects(mockProjects);
         const fallbackCategories = [
           ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),

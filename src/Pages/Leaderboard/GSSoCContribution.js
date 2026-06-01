@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useInView } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb, Code2, GitBranch, BookOpen, Users, CheckCircle,
-  Trophy, Clock, Star, ArrowRight, Search, Filter, ExternalLink,
+  Trophy, Clock, Star, ArrowRight, Search, ExternalLink,
   Calendar, Award, MessageCircle, Zap, Target, Globe,
   Copy, Bell, WifiOff
 } from "lucide-react";
@@ -277,9 +277,7 @@ const ResourceItem = memo(({ resource, onCopy }) => {
       setCopied(true);
       onCopy?.(resource.title);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
+    } catch {}
   };
   
   return (
