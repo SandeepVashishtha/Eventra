@@ -1,3 +1,25 @@
+import { describe, it, beforeEach } from 'node:test';
+import assert from 'node:assert';
+
+// Mock localStorage globally
+const store = {};
+globalThis.localStorage = {
+  getItem(key) {
+    return store[key] || null;
+  },
+  setItem(key, value) {
+    store[key] = String(value);
+  },
+  removeItem(key) {
+    delete store[key];
+  },
+  clear() {
+    for (const key in store) {
+      delete store[key];
+    }
+  }
+};
+
 import {
   saveFeedback,
   getEventFeedback,
@@ -9,7 +31,17 @@ import {
   deleteFeedback,
   exportFeedbackAsCSV,
   clearAllFeedback,
-} from '../../utils/feedbackUtils';
+} from '../src/utils/feedbackUtils.js';
+
+const expect = (actual) => ({
+  toBe: (expected) => assert.strictEqual(actual, expected),
+  toHaveLength: (expected) => assert.strictEqual(actual.length, expected),
+  toContain: (expected) => assert.ok(actual.includes(expected)),
+  toBeNull: () => assert.strictEqual(actual, null),
+  not: {
+    toBeNull: () => assert.notStrictEqual(actual, null)
+  }
+});
 
 describe('Feedback Utils', () => {
   const testEventId = 'test-event-123';
