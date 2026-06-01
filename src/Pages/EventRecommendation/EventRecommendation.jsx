@@ -28,6 +28,7 @@ import {
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
 import mockEvents from "../Events/eventsMockData.json";
+import { EventCardSkeleton, SkeletonBlock } from "../../components/common/SkeletonLoaders";
 
 
 const EventRecommendation = () => {
@@ -391,17 +392,16 @@ const EventRecommendation = () => {
 
             {/* Loading */}
             {loading ? (
-
-              <div className="flex flex-col items-center justify-center py-20">
-
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-
-                <p className="mt-5 text-text-light">
+              <>
+                <div className="sr-only" role="status" aria-live="polite">
                   Searching recommendations...
-                </p>
-
-              </div>
-
+                </div>
+                <div className="grid md:grid-cols-2 gap-4" aria-hidden="true">
+                  {[...Array(4)].map((_, i) => (
+                    <EventCardSkeleton key={i} />
+                  ))}
+                </div>
+              </>
             ) : recommendedEvents.length > 0 ? (
 
               <>
@@ -676,13 +676,16 @@ const EventRecommendation = () => {
   </h3>
 
   {insightLoading ? (
-
-    <p className="text-text-light">
-
-      Generating AI insights...
-
-    </p>
-
+    <>
+      <div className="sr-only" role="status" aria-live="polite">
+        Generating AI insights...
+      </div>
+      <div className="space-y-3 py-4" aria-hidden="true">
+        <SkeletonBlock className="h-4 w-full" />
+        <SkeletonBlock className="h-4 w-5/6" />
+        <SkeletonBlock className="h-4 w-4/5" />
+      </div>
+    </>
   ) : (
 
     <div
