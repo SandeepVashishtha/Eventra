@@ -1,7 +1,7 @@
+import { ChevronDown, ChevronUp, MessageCircle, Github, Twitter, Youtube, Linkedin, Send } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, useAnimation } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
-import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import useReducedMotion from "../hooks/useReducedMotion.js";
 import {
   Search,
@@ -25,7 +25,7 @@ import {
   CalendarDays,
   GitMerge,
 } from "lucide-react";
-import { FaDiscord, FaGithub, FaTwitter, FaYoutube, FaLinkedin, FaTelegram } from "react-icons/fa"; // ✅ Community icons
+ // ✅ Community icons
 import { Link } from "react-router-dom"; // ✅ Import for navigation
 
 const categories = [
@@ -215,37 +215,37 @@ const HelpCenter = () => {
             {
               title: "Discord",
               link: "#discord",
-              icon: <FaDiscord className="w-8 h-8" />,
+              icon: <MessageCircle className="w-8 h-8" />,
               color: "from-gray-700 to-black",
             },
             {
               title: "GitHub Discussions",
               link: "https://github.com/sandeepvashishtha/Eventra",
-              icon: <FaGithub className="w-8 h-8" />,
+              icon: <Github className="w-8 h-8" />,
               color: "from-gray-800 to-gray-600",
             },
             {
               title: "Twitter",
               link: "https://x.com/#",
-              icon: <FaTwitter className="w-8 h-8" />,
+              icon: <Twitter className="w-8 h-8" />,
               color: "from-blue-400 to-cyan-500",
             },
             {
               title: "Telegram",
               link: "https://t.me/eventra",
-              icon: <FaTelegram className="w-8 h-8" />,
+              icon: <Send className="w-8 h-8" />,
               color: "from-gray-700 to-black",
             },
             {
               title: "YouTube",
               link: "#youtube",
-              icon: <FaYoutube className="w-8 h-8" />,
+              icon: <Youtube className="w-8 h-8" />,
               color: "from-red-500 to-orange-500",
             },
             {
               title: "LinkedIn",
               link: "https://www.linkedin.com/in/sandeepvashishtha/",
-              icon: <FaLinkedin className="w-8 h-8" />,
+              icon: <Linkedin className="w-8 h-8" />,
               color: "from-sky-600 to-blue-700",
             },
           ].map((item, idx) => (
@@ -586,9 +586,9 @@ const HelpCenter = () => {
                     </div>
                     <div className="flex-shrink-0 ml-4">
                       {expandedFAQ === faq.id ? (
-                        <FiChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                       ) : (
-                        <FiChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                       )}
                     </div>
                   </div>

@@ -1,3 +1,4 @@
+import { ArrowRightIcon, ChartBarIcon, UserGroupIcon, StarIcon, ClipboardDocumentListIcon, BuildingOffice2Icon, EnvelopeIcon, MapPinIcon, TrophyIcon, LinkIcon, CalendarDaysIcon, DocumentTextIcon, ComputerDesktopIcon } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -7,21 +8,6 @@ import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { sanitizeInputText } from "../../utils/inputSanitization";
-import {
-  ArrowRightIcon,
-  ChartBarIcon,
-  UserGroupIcon,
-  StarIcon,
-  ClipboardDocumentListIcon,
-  BuildingOffice2Icon,
-  EnvelopeIcon,
-  MapPinIcon,
-  TrophyIcon,
-  LinkIcon,
-  CalendarDaysIcon,
-  DocumentTextIcon,
-  ComputerDesktopIcon,
-} from "@heroicons/react/24/solid";
 
 const HostHackathon = () => {
   const prefersReducedMotion = useReducedMotion();
