@@ -26,7 +26,7 @@ npm run dev
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `REACT_APP_API_URL` | Yes | Backend API base URL used by client requests |
+| `REACT_APP_API_URL` | Yes | Backend API base URL used by client requests and SSE streams |
 | `REACT_APP_GITHUB_REPO` | No | Public repository identifier for metadata/links |
 | `REACT_APP_PUBLIC_URL` | No | Canonical public URL used for sharing/SEO helpers |
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public push-notification key |
@@ -40,7 +40,7 @@ npm run dev
 
 ## Troubleshooting
 
-- If API calls fail, verify `REACT_APP_API_URL` points to a reachable backend.
+- If API calls or SSE streams fail, verify `REACT_APP_API_URL` points to a reachable backend.
 - If shared links are wrong, check `REACT_APP_PUBLIC_URL`.
 - If build-time checks fail, run:
 

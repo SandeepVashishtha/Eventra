@@ -96,7 +96,7 @@ Use `.env.example` as the source of truth.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `REACT_APP_API_URL` | Yes | Backend API base URL |
+| `REACT_APP_API_URL` | Yes | Backend API base URL used by client requests and SSE streams |
 | `REACT_APP_GITHUB_REPO` | No | Public repo identifier used in metadata |
 | `REACT_APP_PUBLIC_URL` | No | Canonical public app URL |
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public web-push key |
