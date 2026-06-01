@@ -280,12 +280,15 @@ class SseMultiplexer {
   }
 
   openEventSource(path) {
-    const sseBaseUrl =
-      typeof window !== "undefined"
-        ? process.env.VITE_API_URL ||
-          process.env.REACT_APP_API_URL ||
-          "http://localhost:8080/api/v1"
-        : "http://localhost:8080/api/v1";
+    const sseBaseUrl = typeof window !== "undefined"
+      ? (process.env.VITE_SSE_URL || process.env.VITE_API_URL || process.env.REACT_APP_SSE_URL || process.env.REACT_APP_API_URL)
+      : undefined;
+
+    if (!sseBaseUrl) {
+      logger.error("[SSE Multiplexer] Missing SSE Base URL configuration. Connection aborted.");
+      this.updatePathStatus(path, "error");
+      return;
+    }
 
     logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
     this.updatePathStatus(path, "connecting");
