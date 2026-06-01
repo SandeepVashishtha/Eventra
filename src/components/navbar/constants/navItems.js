@@ -8,6 +8,7 @@ import {
   MessageSquare,
   HelpCircle,
   Book,
+  Bookmark,
 } from "lucide-react";
 
 export const NAV_ITEMS = [
@@ -32,6 +33,11 @@ export const NAV_ITEMS = [
     icon: <FolderKanban className="w-5 h-5" />,
   },
   {
+    name: "Saved",
+    href: "/saved-events",
+    icon: <Bookmark className="w-5 h-5" />,
+  },
+  {
     name: "Community",
     href: "/communityEvent",
     icon: <Users className="w-5 h-5" />,
@@ -43,7 +49,7 @@ export const NAV_ITEMS = [
       },
       {
         name: "Leaderboard",
-        href: "/leaderBoard",
+        href: "/leaderboard",
         icon: <Trophy className="w-5 h-5" />,
       },
       {
@@ -58,16 +64,7 @@ export const NAV_ITEMS = [
       },
     ],
   },
-  {
-    name: "About",
-    href: "/about",
-    icon: <Info className="w-5 h-5" />,
-  },
-  {
-    name: "FAQ",
-    href: "/faq",
-    icon: <HelpCircle className="w-5 h-5" />,
-  },
+
   {
     name: "Contact",
     href: "/contact",

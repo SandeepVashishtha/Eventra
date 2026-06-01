@@ -1,23 +1,62 @@
-export const logError = (
-  error,
-  errorInfo
-) => {
+/**
+ * Build a structured error entry for persistence and diagnostics.
+ */
+function buildErrorEntry(error, errorInfo, extra = {}) {
+  return {
+    timestamp: new Date().toISOString(),
+    url: typeof window !== "undefined" ? window.location.href : "",
+    userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+    message: error ? error.toString() : "Unknown error",
+    stack: error?.stack || "",
+    componentStack: errorInfo?.componentStack || "",
+    ...extra,
+  };
+}
+
+/**
+ * Persist an error entry to localStorage under `eventra_error_log`.
+ * Keeps only the 10 most recent entries and never throws.
+ */
+function persistToLocalStorage(entry) {
   try {
-    console.error(
-      "[GlobalErrorBoundary]",
-      error
-    );
-
-    console.error(
-      "[ComponentStack]",
-      errorInfo
-    );
-
-    // Future Monitoring Integration:
-    // Sentry
-    // LogRocket
-    // Datadog
+    const existing = JSON.parse(localStorage.getItem("eventra_error_log") || "[]");
+    existing.unshift(entry);
+    localStorage.setItem("eventra_error_log", JSON.stringify(existing.slice(0, 10)));
   } catch (_) {
-    // silent fail
+    // Ignore storage failures (private mode, quota exceeded, etc.)
   }
+}
+
+export const logError = (error, errorInfo, extra = {}) => {
+  try {
+    console.group?.("[Eventra ErrorLogger]");
+    console.error("[GlobalErrorBoundary]", error);
+    if (errorInfo?.componentStack) {
+      console.error("[ComponentStack]", errorInfo);
+    }
+    if (Object.keys(extra).length) {
+      console.info("Context:", extra);
+    }
+    console.groupEnd?.();
+
+    const entry = buildErrorEntry(error, errorInfo, extra);
+    persistToLocalStorage(entry);
+  } catch (loggerError) {
+    console.warn("[Eventra ErrorLogger] Failed to log error:", loggerError);
+  }
+};
+
+export const getErrorLog = () => {
+  try {
+    return JSON.parse(localStorage.getItem("eventra_error_log") || "[]");
+  } catch (_) {
+    return [];
+  }
+};
+
+export const clearErrorLog = () => {
+  try {
+    localStorage.removeItem("eventra_error_log");
+    localStorage.removeItem("eventra_feature_errors");
+  } catch (_) {}
 };

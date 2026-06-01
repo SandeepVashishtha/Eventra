@@ -6,10 +6,13 @@
     "time": "10:00 AM",
     "location": "San Francisco, CA",
     "type": "conference",
+    "category": "Web Development",
     "status": "upcoming",
     "description": "Join us for the biggest React conference of the year featuring latest updates and best practices.",
     "attendees": 250,
     "maxAttendees": 300,
+    "price": 299,
+    "eventMode": "offline",
     "image": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=200&fit=crop",
     "tags": ["React", "Frontend", "JavaScript"]
   },
@@ -20,10 +23,13 @@
     "time": "2:00 PM",
     "location": "Online",
     "type": "workshop",
+    "category": "AI & Machine Learning",
     "status": "upcoming",
     "description": "Hands-on workshop covering latest AI techniques and practical machine learning implementations.",
     "attendees": 120,
     "maxAttendees": 150,
+    "price": 199,
+    "eventMode": "online",
     "image": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&h=200&fit=crop",
     "tags": ["AI", "ML", "Python"]
   },
@@ -34,12 +40,38 @@
     "time": "9:00 AM",
     "location": "New York, NY",
     "type": "summit",
+    "category": "DevOps & Cloud",
     "status": "past",
     "description": "Comprehensive summit on modern DevOps practices and cloud technologies.",
     "attendees": 400,
     "maxAttendees": 400,
+    "price": 399,
+    "eventMode": "hybrid",
     "image": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=200&fit=crop",
-    "tags": ["DevOps", "Cloud", "Infrastructure"]
+    "tags": ["DevOps", "Cloud", "Infrastructure"],
+    "materials": [
+      {
+        "id": 1,
+        "title": "DevOps Best Practices 2026",
+        "type": "pdf",
+        "size": "2.4 MB",
+        "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+      },
+      {
+        "id": 2,
+        "title": "Cloud Infrastructure slides",
+        "type": "ppt",
+        "size": "5.1 MB",
+        "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+      },
+      {
+        "id": 3,
+        "title": "CI/CD Pipeline Workshop Notes",
+        "type": "doc",
+        "size": "1.2 MB",
+        "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+      }
+    ]
   },
   {
     "id": 4,
@@ -48,10 +80,13 @@
     "time": "1:00 PM",
     "location": "Austin, TX",
     "type": "bootcamp",
+    "category": "Web3 & Blockchain",
     "status": "upcoming",
     "description": "Intensive bootcamp covering blockchain development and cryptocurrency technologies.",
     "attendees": 80,
     "maxAttendees": 100,
+    "price": 899,
+    "eventMode": "offline",
     "image": "https://images.unsplash.com/photo-1639322537228-f710d846310a?w=400&h=200&fit=crop",
     "tags": ["Blockchain", "Web3", "Solidity"]
   },
@@ -62,10 +97,13 @@
     "time": "3:00 PM",
     "location": "Los Angeles, CA",
     "type": "workshop",
+    "category": "Design & UX",
     "status": "upcoming",
     "description": "Master the art of user experience design with industry experts and hands-on projects.",
     "attendees": 65,
     "maxAttendees": 80,
+    "price": 249,
+    "eventMode": "hybrid",
     "image": "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=200&fit=crop",
     "tags": ["UX", "Design", "UI"]
   },
@@ -76,10 +114,13 @@
     "time": "9:30 AM",
     "location": "Seattle, WA",
     "type": "conference",
+    "category": "Security & Privacy",
     "status": "upcoming",
     "description": "Learn about the latest cybersecurity threats and protection strategies from industry leaders.",
     "attendees": 180,
     "maxAttendees": 200,
+    "price": 349,
+    "eventMode": "offline",
     "image": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&h=200&fit=crop",
     "tags": ["Security", "Privacy", "Protection"]
   },
@@ -90,10 +131,13 @@
     "time": "10:00 AM",
     "location": "Chicago, IL",
     "type": "conference",
+    "category": "DevOps & Cloud",
     "status": "upcoming",
     "description": "Explore the future of cloud-native technologies and microservices architecture.",
     "attendees": 220,
     "maxAttendees": 300,
+    "price": 379,
+    "eventMode": "hybrid",
     "image": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=200&fit=crop",
     "tags": ["Cloud", "Kubernetes", "Docker"]
   },
@@ -104,10 +148,13 @@
     "time": "6:00 PM",
     "location": "Boston, MA",
     "type": "hackathon",
+    "category": "AI & Machine Learning",
     "status": "upcoming",
     "description": "48-hour hackathon focusing on solving real-world problems using data science and AI.",
     "attendees": 150,
     "maxAttendees": 200,
+    "price": 0,
+    "eventMode": "offline",
     "image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop",
     "tags": ["Data Science", "AI", "Hackathon"]
   },
@@ -118,12 +165,31 @@
     "time": "1:30 PM",
     "location": "Online",
     "type": "workshop",
+    "category": "Mobile Development",
     "status": "past",
     "description": "Learn to build cross-platform mobile apps with React Native and Flutter.",
     "attendees": 95,
     "maxAttendees": 100,
+    "price": 149,
+    "eventMode": "online",
     "image": "https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?w=400&h=200&fit=crop",
-    "tags": ["Mobile", "React Native", "Flutter"]
+    "tags": ["Mobile", "React Native", "Flutter"],
+    "materials": [
+      {
+        "id": 1,
+        "title": "React Native Setup Guide",
+        "type": "pdf",
+        "size": "1.8 MB",
+        "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+      },
+      {
+        "id": 2,
+        "title": "Flutter Basics Slides",
+        "type": "ppt",
+        "size": "3.2 MB",
+        "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+      }
+    ]
   },
   {
     "id": 10,
@@ -132,10 +198,13 @@
     "time": "9:00 AM",
     "location": "Austin, TX",
     "type": "summit",
+    "category": "Leadership & Management",
     "status": "upcoming",
     "description": "For tech leaders and managers to discuss leadership in the digital age.",
     "attendees": 180,
     "maxAttendees": 200,
+    "price": 449,
+    "eventMode": "hybrid",
     "image": "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=400&h=200&fit=crop",
     "tags": ["Leadership", "Management", "Strategy"]
   },
@@ -146,10 +215,13 @@
     "time": "11:00 AM",
     "location": "Los Angeles, CA",
     "type": "bootcamp",
+    "category": "Game Development",
     "status": "upcoming",
     "description": "Intensive 2-week bootcamp on game development using Unity and Unreal Engine.",
     "attendees": 40,
     "maxAttendees": 50,
+    "price": 1299,
+    "eventMode": "offline",
     "image": "https://images.unsplash.com/photo-1551103782-8ab07afd45c1?w=400&h=200&fit=crop",
     "tags": ["Game Dev", "Unity", "Unreal Engine"]
   },
@@ -160,10 +232,13 @@
     "time": "8:30 AM",
     "location": "Boston, MA",
     "type": "conference",
+    "category": "AI & Machine Learning",
     "status": "upcoming",
     "description": "Exploring the intersection of artificial intelligence and healthcare innovations.",
     "attendees": 300,
     "maxAttendees": 350,
+    "price": 299,
+    "eventMode": "hybrid",
     "image": "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=200&fit=crop",
     "tags": ["AI", "Healthcare", "Innovation"]
   },
@@ -174,12 +249,31 @@
     "time": "2:00 PM",
     "location": "Miami, FL",
     "type": "workshop",
+    "category": "Web3 & Blockchain",
     "status": "past",
     "description": "Hands-on workshop on building decentralized applications and DeFi protocols.",
     "attendees": 75,
     "maxAttendees": 80,
+    "price": 199,
+    "eventMode": "offline",
     "image": "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=400&h=200&fit=crop",
-    "tags": ["Web3", "DeFi", "Blockchain"]
+    "tags": ["Web3", "DeFi", "Blockchain"],
+    "materials": [
+      {
+        "id": 1,
+        "title": "Introduction to Web3",
+        "type": "pdf",
+        "size": "2.1 MB",
+        "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+      },
+      {
+        "id": 2,
+        "title": "DeFi Protocols Explained",
+        "type": "ppt",
+        "size": "4.5 MB",
+        "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+      }
+    ]
   },
   {
     "id": 14,
@@ -188,10 +282,13 @@
     "time": "9:00 AM",
     "location": "Portland, OR",
     "type": "conference",
+    "category": "DevOps & Cloud",
     "status": "upcoming",
     "description": "Annual conference for the DevOps community to share knowledge and best practices.",
     "attendees": 400,
     "maxAttendees": 500,
+    "price": 299,
+    "eventMode": "hybrid",
     "image": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=200&fit=crop",
     "tags": ["DevOps", "CI/CD", "Automation"]
   },
@@ -202,10 +299,13 @@
     "time": "10:00 AM",
     "location": "Online",
     "type": "bootcamp",
+    "category": "Design & UX",
     "status": "upcoming",
     "description": "Learn user research methodologies and how to apply them to product development.",
     "attendees": 60,
     "maxAttendees": 100,
+    "price": 599,
+    "eventMode": "online",
     "image": "https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=200&fit=crop",
     "tags": ["UX Research", "User Testing", "Product Design"]
   },
@@ -216,10 +316,13 @@
     "time": "6:00 PM",
     "location": "San Francisco, CA",
     "type": "networking",
+    "category": "Networking & Community",
     "status": "upcoming",
     "description": "An evening of startup pitches, networking, and innovation showcase.",
     "attendees": 120,
     "maxAttendees": 150,
+    "price": 0,
+    "eventMode": "offline",
     "image": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=400&h=200&fit=crop",
     "tags": ["Startups", "Pitching", "Networking"]
   }

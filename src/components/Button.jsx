@@ -1,4 +1,3 @@
-import React from 'react';
 import './Button.css';
 
 export const Button = ({
@@ -8,6 +7,7 @@ export const Button = ({
   className = '',
   type = 'button',
   disabled = false,
+  ariaLabel,
   ...props
 }) => {
 
@@ -38,6 +38,7 @@ export const Button = ({
       type={type}
       disabled={disabled}
       aria-disabled={disabled}
+      aria-label={ariaLabel}
       className={buttonClass.trim()}
       {...props}
     >
