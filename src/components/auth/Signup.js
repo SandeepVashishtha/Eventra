@@ -1,19 +1,28 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import useReducedMotion from '../../hooks/useReducedMotion';
+import useReducedMotion from "../../hooks/useReducedMotion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 import { useAuth } from "../../context/AuthContext";
 import {
-  Sparkles, Check, ArrowRight, EyeOff, Eye, User, Mail, Lock, AlertCircle, X
+  Sparkles,
+  Check,
+  ArrowRight,
+  EyeOff,
+  Eye,
+  User,
+  Mail,
+  Lock,
+  AlertCircle,
+  X,
 } from "lucide-react";
 const PASSWORD_REQUIREMENTS = [
-  { id: 'length', label: 'At least 8 characters', regex: /.{8,}/ },
-  { id: 'uppercase', label: 'One uppercase letter', regex: /[A-Z]/ },
-  { id: 'lowercase', label: 'One lowercase letter', regex: /[a-z]/ },
-  { id: 'number', label: 'One number', regex: /\d/ },
-  { id: 'special', label: 'One special character', regex: /[!@#$%^&*(),.?":{}|<>]/ },
+  { id: "length", label: "At least 8 characters", regex: /.{8,}/ },
+  { id: "uppercase", label: "One uppercase letter", regex: /[A-Z]/ },
+  { id: "lowercase", label: "One lowercase letter", regex: /[a-z]/ },
+  { id: "number", label: "One number", regex: /\d/ },
+  { id: "special", label: "One special character", regex: /[!@#$%^&*(),.?":{}|<>]/ },
 ];
 
 const NAME_VALIDATION = {
@@ -51,73 +60,83 @@ const checkPasswordRequirement = (password, requirement) => {
 };
 
 const getPasswordStrength = (password) => {
-  if (!password) return { score: 0, label: '', color: '' };
-  const met = PASSWORD_REQUIREMENTS.filter(req => checkPasswordRequirement(password, req)).length;
-  if (met === 5) return { score: 100, label: 'Strong', color: 'text-green-500' };
-  if (met >= 4) return { score: 75, label: 'Good', color: 'text-yellow-500' };
-  if (met >= 3) return { score: 50, label: 'Fair', color: 'text-orange-500' };
-  return { score: 25, label: 'Weak', color: 'text-red-500' };
+  if (!password) return { score: 0, label: "", color: "" };
+  const met = PASSWORD_REQUIREMENTS.filter((req) => checkPasswordRequirement(password, req)).length;
+  if (met === 5) return { score: 100, label: "Strong", color: "text-green-500" };
+  if (met >= 4) return { score: 75, label: "Good", color: "text-yellow-500" };
+  if (met >= 3) return { score: 50, label: "Fair", color: "text-orange-500" };
+  return { score: 25, label: "Weak", color: "text-red-500" };
 };
 
 // ============ REUSABLE ICON COMPONENTS ============
-const ToggleEyeIcon = ({ visible, className = "" }) => 
+const ToggleEyeIcon = ({ visible, className = "" }) =>
   visible ? <EyeOff className={className} /> : <Eye className={className} />;
 
 // ============ CUSTOM HOOK: useSignupForm ============
 const useSignupForm = () => {
   const [formData, setFormData] = useState({
-    firstName: "", lastName: "", email: "", password: "", confirmPassword: ""
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
 
-  const updateField = useCallback((name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
-    }
-  }, [errors]);
+  const updateField = useCallback(
+    (name, value) => {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      if (errors[name]) {
+        setErrors((prev) => ({ ...prev, [name]: "" }));
+      }
+    },
+    [errors]
+  );
 
-  const handleBlur = useCallback((name) => {
-    setTouched(prev => ({ ...prev, [name]: true }));
-    
-    // Real-time validation on blur
-    if (name === 'firstName' || name === 'lastName') {
-      const error = validateName(formData[name], name === 'firstName' ? 'First' : 'Last');
-      setErrors(prev => ({ ...prev, [name]: error }));
-    }
-    if (name === 'email') {
-      const error = validateEmail(formData.email);
-      setErrors(prev => ({ ...prev, [name]: error }));
-    }
-  }, [formData]);
+  const handleBlur = useCallback(
+    (name) => {
+      setTouched((prev) => ({ ...prev, [name]: true }));
+
+      // Real-time validation on blur
+      if (name === "firstName" || name === "lastName") {
+        const error = validateName(formData[name], name === "firstName" ? "First" : "Last");
+        setErrors((prev) => ({ ...prev, [name]: error }));
+      }
+      if (name === "email") {
+        const error = validateEmail(formData.email);
+        setErrors((prev) => ({ ...prev, [name]: error }));
+      }
+    },
+    [formData]
+  );
 
   const validateForm = useCallback(() => {
     const newErrors = {};
-    
+
     // Name validation
-    const firstNameErr = validateName(formData.firstName, 'First');
-    const lastNameErr = validateName(formData.lastName, 'Last');
+    const firstNameErr = validateName(formData.firstName, "First");
+    const lastNameErr = validateName(formData.lastName, "Last");
     if (firstNameErr) newErrors.firstName = firstNameErr;
     if (lastNameErr) newErrors.lastName = lastNameErr;
-    
+
     // Email validation
     const emailErr = validateEmail(formData.email);
     if (emailErr) newErrors.email = emailErr;
-    
+
     // Password validation
     const strength = getPasswordStrength(formData.password);
     if (strength.score < 75) {
       newErrors.password = "Password must be at least 'Good' strength";
     }
-    
+
     // Confirm password
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData]);
@@ -130,9 +149,19 @@ const useSignupForm = () => {
   }, []);
 
   return {
-    formData, errors, touched, loading, submitStatus,
-    updateField, handleBlur, validateForm, setLoading, setSubmitStatus, resetForm,
-    setTouched, setErrors
+    formData,
+    errors,
+    touched,
+    loading,
+    submitStatus,
+    updateField,
+    handleBlur,
+    validateForm,
+    setLoading,
+    setSubmitStatus,
+    resetForm,
+    setTouched,
+    setErrors,
   };
 };
 
@@ -141,30 +170,44 @@ const Signup = () => {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
   const { setAuthSession } = useAuth();
-  
+
   const {
-    formData, errors, touched, loading, submitStatus,
-    updateField, handleBlur, validateForm, setLoading, setSubmitStatus,
-    setTouched, setErrors
+    formData,
+    errors,
+    touched,
+    loading,
+    submitStatus,
+    updateField,
+    handleBlur,
+    validateForm,
+    setLoading,
+    setSubmitStatus,
+    setTouched,
+    setErrors,
   } = useSignupForm();
 
-  const passwordStrength = useMemo(() => 
-    getPasswordStrength(formData.password), [formData.password]);
+  const passwordStrength = useMemo(
+    () => getPasswordStrength(formData.password),
+    [formData.password]
+  );
 
-  const passwordsMatch = useMemo(() => 
-    formData.confirmPassword && formData.password === formData.confirmPassword, 
-    [formData.password, formData.confirmPassword]);
+  const passwordsMatch = useMemo(
+    () => formData.confirmPassword && formData.password === formData.confirmPassword,
+    [formData.password, formData.confirmPassword]
+  );
 
   // Document title effect
   useEffect(() => {
     const originalTitle = document.title;
     document.title = "Sign Up | Eventra";
-    return () => { document.title = originalTitle; };
+    return () => {
+      document.title = originalTitle;
+    };
   }, []);
 
   // Auto-clear success message after redirect
   useEffect(() => {
-    if (submitStatus === 'success') {
+    if (submitStatus === "success") {
       const timer = setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
       return () => clearTimeout(timer);
     }
@@ -172,12 +215,18 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Mark all fields as touched to show errors
-    setTouched({ firstName: true, lastName: true, email: true, password: true, confirmPassword: true });
-    
+    setTouched({
+      firstName: true,
+      lastName: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
+
     if (!validateForm()) return;
-    
+
     setLoading(true);
     setSubmitStatus(null);
 
@@ -204,28 +253,28 @@ const Signup = () => {
         permissions: data.permissions ?? [],
       });
 
-      setSubmitStatus('success');
-      
+      setSubmitStatus("success");
+
       // Analytics tracking (optional)
       if (window.gtag) {
-        window.gtag('event', 'sign_up', { method: 'email' });
+        window.gtag("event", "sign_up", { method: "email" });
       }
-      
     } catch (err) {
       console.error("Signup error:", { message: err.message, email: formData.email });
-      setSubmitStatus('error');
-      
+      setSubmitStatus("error");
+
       let errorMessage = getPublicErrorMessage(err, AUTH_ERRORS.registrationFailed);
-      
+
       if (err.name === "RateLimitError") {
         errorMessage = "Too many attempts. Please try again in a minute.";
       } else if (err.isTimeout || err.isNetworkError) {
-        errorMessage = "Network timeout or connection error. Please check your connection and try again.";
+        errorMessage =
+          "Network timeout or connection error. Please check your connection and try again.";
       }
-      
-      setErrors(prev => ({ 
-        ...prev, 
-        submit: errorMessage
+
+      setErrors((prev) => ({
+        ...prev,
+        submit: errorMessage,
       }));
     } finally {
       setLoading(false);
@@ -235,22 +284,22 @@ const Signup = () => {
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1, 
-      transition: { 
+    visible: {
+      opacity: 1,
+      transition: {
         duration: prefersReducedMotion ? 0 : 0.5,
-        staggerChildren: 0.1 
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
-    visible: { 
-      y: 0, 
+    visible: {
+      y: 0,
       opacity: 1,
-      transition: { duration: prefersReducedMotion ? 0 : 0.4 }
-    }
+      transition: { duration: prefersReducedMotion ? 0 : 0.4 },
+    },
   };
 
   return (
@@ -262,14 +311,13 @@ const Signup = () => {
       aria-live="polite"
     >
       <div className="w-full max-w-5xl mx-auto">
-        <motion.div 
+        <motion.div
           variants={itemVariants}
           className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-2xl overflow-hidden"
         >
           <div className="grid md:grid-cols-2">
-            
             {/* LEFT PANEL - Branding */}
-            <motion.div 
+            <motion.div
               variants={itemVariants}
               className="relative p-8 md:p-10 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white flex flex-col justify-between"
             >
@@ -278,7 +326,7 @@ const Signup = () => {
                 <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl" />
                 <div className="absolute bottom-20 right-10 w-40 h-40 bg-yellow-300 rounded-full blur-3xl" />
               </div>
-              
+
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-8">
                   <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -286,20 +334,21 @@ const Signup = () => {
                   </div>
                   <span className="text-xl font-bold tracking-tight">Eventra</span>
                 </div>
-                
+
                 <h2 className="text-3xl md:text-4xl font-extrabold mb-4 leading-tight">
-                  Build Your Community, <br/>
+                  Build Your Community, <br />
                   <span className="text-yellow-300">One Event at a Time</span>
                 </h2>
-                
+
                 <p className="text-blue-100 text-lg mb-8 leading-relaxed">
-                  Join thousands of developers, designers, and creators building the future of events.
+                  Join thousands of developers, designers, and creators building the future of
+                  events.
                 </p>
-                
+
                 {/* Feature list */}
                 <ul className="space-y-4">
                   {INTRO_POINTS.map(({ icon: Icon, text }, idx) => (
-                    <motion.li 
+                    <motion.li
                       key={text}
                       initial={{ x: -20, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
@@ -314,9 +363,9 @@ const Signup = () => {
                   ))}
                 </ul>
               </div>
-              
+
               {/* Testimonial */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: prefersReducedMotion ? 0 : 0.5 }}
@@ -363,12 +412,12 @@ const Signup = () => {
               <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 {/* Name Fields */}
                 <div className="grid grid-cols-2 gap-4">
-                  {['firstName', 'lastName'].map((field, idx) => {
-                    const label = field === 'firstName' ? 'First name' : 'Last name';
-                    const error = errors[field] && touched[field] ? errors[field] : '';
-                    
+                  {["firstName", "lastName"].map((field, idx) => {
+                    const label = field === "firstName" ? "First name" : "Last name";
+                    const error = errors[field] && touched[field] ? errors[field] : "";
+
                     return (
-                      <FormField 
+                      <FormField
                         key={field}
                         id={field}
                         label={label}
@@ -379,7 +428,7 @@ const Signup = () => {
                         onBlur={() => handleBlur(field)}
                         error={error}
                         required
-                        autoComplete={field === 'firstName' ? 'given-name' : 'family-name'}
+                        autoComplete={field === "firstName" ? "given-name" : "family-name"}
                         initialDelay={idx * 0.1}
                       />
                     );
@@ -393,9 +442,9 @@ const Signup = () => {
                   type="email"
                   icon={Mail}
                   value={formData.email}
-                  onChange={(e) => updateField('email', e.target.value)}
-                  onBlur={() => handleBlur('email')}
-                  error={errors.email && touched.email ? errors.email : ''}
+                  onChange={(e) => updateField("email", e.target.value)}
+                  onBlur={() => handleBlur("email")}
+                  error={errors.email && touched.email ? errors.email : ""}
                   required
                   autoComplete="email"
                   hint="We'll never share your email"
@@ -406,8 +455,8 @@ const Signup = () => {
                   id="password"
                   label="Password"
                   value={formData.password}
-                  onChange={(e) => updateField('password', e.target.value)}
-                  error={errors.password && touched.password ? errors.password : ''}
+                  onChange={(e) => updateField("password", e.target.value)}
+                  error={errors.password && touched.password ? errors.password : ""}
                   strength={passwordStrength}
                   requirements={PASSWORD_REQUIREMENTS}
                 />
@@ -419,9 +468,11 @@ const Signup = () => {
                   type="password"
                   icon={Lock}
                   value={formData.confirmPassword}
-                  onChange={(e) => updateField('confirmPassword', e.target.value)}
-                  onBlur={() => handleBlur('confirmPassword')}
-                  error={errors.confirmPassword && touched.confirmPassword ? errors.confirmPassword : ''}
+                  onChange={(e) => updateField("confirmPassword", e.target.value)}
+                  onBlur={() => handleBlur("confirmPassword")}
+                  error={
+                    errors.confirmPassword && touched.confirmPassword ? errors.confirmPassword : ""
+                  }
                   success={passwordsMatch ? "Passwords match" : ""}
                   required
                   autoComplete="new-password"
@@ -450,7 +501,7 @@ const Signup = () => {
 
                 {/* Status Messages */}
                 <AnimatePresence mode="wait">
-                  {submitStatus === 'error' && errors.submit && (
+                  {submitStatus === "error" && errors.submit && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -462,8 +513,8 @@ const Signup = () => {
                       <span>{errors.submit}</span>
                     </motion.div>
                   )}
-                  
-                  {submitStatus === 'success' && (
+
+                  {submitStatus === "success" && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -487,10 +538,20 @@ const Signup = () => {
                   {loading ? (
                     <>
                       <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" 
-                          stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" 
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
                       </svg>
                       <span>Creating account...</span>
                     </>
@@ -506,8 +567,8 @@ const Signup = () => {
               {/* Sign In Link */}
               <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
                 Already have an account?{" "}
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold transition-colors"
                 >
                   Sign in instead
@@ -523,14 +584,26 @@ const Signup = () => {
 
 // ============ REUSABLE FORM FIELD COMPONENT ============
 export const FormField = ({
-  id, label, type = "text", icon: Icon, value, onChange, onBlur,
-  error, success, hint, required, autoComplete, toggleVisibility, initialDelay = 0
+  id,
+  label,
+  type = "text",
+  icon: Icon,
+  value,
+  onChange,
+  onBlur,
+  error,
+  success,
+  hint,
+  required,
+  autoComplete,
+  toggleVisibility,
+  initialDelay = 0,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const inputType = toggleVisibility ? (showPassword ? "text" : "password") : type;
-  
+
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: initialDelay }}
@@ -539,12 +612,12 @@ export const FormField = ({
       <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      
+
       <div className="relative">
         {Icon && (
           <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500 pointer-events-none" />
         )}
-        
+
         <input
           id={id}
           name={id}
@@ -556,28 +629,29 @@ export const FormField = ({
           aria-invalid={!!error}
           aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
           className={`
-            w-full pl-10 pr-${toggleVisibility ? '10' : '4'} py-3 
+            w-full pl-10 pr-${toggleVisibility ? "10" : "4"} py-3 
             bg-white/70 dark:bg-gray-700/70 
             border rounded-xl 
             placeholder:text-gray-400 dark:placeholder:text-gray-500
             focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 
             transition-all duration-200
-            ${error 
-              ? 'border-red-300 dark:border-red-700 focus:ring-red-500/30' 
-              : success 
-                ? 'border-green-300 dark:border-green-700 focus:ring-green-500/30'
-                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+            ${
+              error
+                ? "border-red-300 dark:border-red-700 focus:ring-red-500/30"
+                : success
+                  ? "border-green-300 dark:border-green-700 focus:ring-green-500/30"
+                  : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
             }
             text-gray-900 dark:text-white
           `}
           placeholder={`Enter your ${label.toLowerCase()}`}
           required={required}
         />
-        
+
         {toggleVisibility && (
           <button
             type="button"
-            onClick={() => setShowPassword(v => !v)}
+            onClick={() => setShowPassword((v) => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label={showPassword ? "Hide password" : "Show password"}
             aria-pressed={showPassword}
@@ -586,19 +660,21 @@ export const FormField = ({
           </button>
         )}
       </div>
-      
+
       {/* Helper text */}
       {hint && !error && !success && (
-        <p id={`${id}-hint`} className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>
+        <p id={`${id}-hint`} className="text-xs text-gray-500 dark:text-gray-400">
+          {hint}
+        </p>
       )}
-      
+
       {/* Error message */}
       <AnimatePresence>
         {error && (
           <motion.p
             id={`${id}-error`}
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
             role="alert"
@@ -609,13 +685,13 @@ export const FormField = ({
           </motion.p>
         )}
       </AnimatePresence>
-      
+
       {/* Success message */}
       <AnimatePresence>
         {success && !error && (
           <motion.p
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1"
           >
@@ -631,16 +707,16 @@ export const FormField = ({
 // ============ PASSWORD FIELD WITH REQUIREMENTS ============
 export const PasswordField = ({ id, label, value, onChange, error, strength, requirements }) => {
   const [showPassword, setShowPassword] = useState(false);
-  
+
   return (
     <div className="space-y-2">
       <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
         {label} <span className="text-red-500">*</span>
       </label>
-      
+
       <div className="relative">
         <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500 pointer-events-none" />
-        
+
         <input
           id={id}
           name={id}
@@ -657,21 +733,22 @@ export const PasswordField = ({ id, label, value, onChange, error, strength, req
             placeholder:text-gray-400 dark:placeholder:text-gray-500
             focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 
             transition-all duration-200
-            ${error 
-              ? 'border-red-300 dark:border-red-700 focus:ring-red-500/30' 
-              : strength.score >= 75
-                ? 'border-green-300 dark:border-green-700 focus:ring-green-500/30'
-                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+            ${
+              error
+                ? "border-red-300 dark:border-red-700 focus:ring-red-500/30"
+                : strength.score >= 75
+                  ? "border-green-300 dark:border-green-700 focus:ring-green-500/30"
+                  : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
             }
             text-gray-900 dark:text-white
           `}
           placeholder="Create a strong password"
           required
         />
-        
+
         <button
           type="button"
-          onClick={() => setShowPassword(v => !v)}
+          onClick={() => setShowPassword((v) => !v)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           aria-label={showPassword ? "Hide password" : "Show password"}
           aria-pressed={showPassword}
@@ -679,7 +756,7 @@ export const PasswordField = ({ id, label, value, onChange, error, strength, req
           <ToggleEyeIcon visible={showPassword} className="w-5 h-5" />
         </button>
       </div>
-      
+
       {/* Password strength indicator */}
       {value && (
         <div id={`${id}-strength`} className="space-y-2">
@@ -691,25 +768,26 @@ export const PasswordField = ({ id, label, value, onChange, error, strength, req
                 animate={{ width: `${strength.score}%` }}
                 transition={{ duration: 0.3 }}
                 className={`h-full rounded-full ${
-                  strength.score >= 75 ? 'bg-green-500' : 
-                  strength.score >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                  strength.score >= 75
+                    ? "bg-green-500"
+                    : strength.score >= 50
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
                 }`}
               />
             </div>
-            <span className={`text-xs font-medium ${strength.color}`}>
-              {strength.label}
-            </span>
+            <span className={`text-xs font-medium ${strength.color}`}>{strength.label}</span>
           </div>
-          
+
           {/* Requirements checklist */}
           <ul className="grid grid-cols-2 gap-1.5 text-xs">
-            {requirements.map(req => {
+            {requirements.map((req) => {
               const met = checkPasswordRequirement(value, req);
               return (
-                <li 
+                <li
                   key={req.id}
                   className={`flex items-center gap-1.5 ${
-                    met ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'
+                    met ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"
                   }`}
                 >
                   {met ? (
@@ -726,14 +804,14 @@ export const PasswordField = ({ id, label, value, onChange, error, strength, req
           </ul>
         </div>
       )}
-      
+
       {/* Error message */}
       <AnimatePresence>
         {error && (
           <motion.p
             id={`${id}-error`}
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
             role="alert"

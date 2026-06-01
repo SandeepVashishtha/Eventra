@@ -48,7 +48,8 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
+    document.cookie =
+      "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     sessionStorage.removeItem("token");
     syncSecureStorage.removeItem("user");
     return true;
@@ -308,14 +309,15 @@ export const AuthProvider = ({ children }) => {
         return true;
       } catch (error) {
         if (!isMountedRef.current) return false;
-        setAuthRequestState({ loading: false, error: getAuthErrorMessage(error, "Login failed. Please try again.") });
+        setAuthRequestState({
+          loading: false,
+          error: getAuthErrorMessage(error, "Login failed. Please try again."),
+        });
         throw error;
       }
     },
     [extractSession, persistSession, setAuthRequestState]
   );
-
-
 
   const logout = useCallback(() => {
     clearSession();
