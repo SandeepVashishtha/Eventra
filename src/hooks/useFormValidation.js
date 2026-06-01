@@ -132,11 +132,44 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
       return nextValues;
     });
 
+    setValues((prev) => ({ ...prev, [name]: value }));
     setTouched((prev) => ({ ...prev, [name]: true }));
     setErrors((prev) => ({ ...prev, [name]: null }));
   }, [scheduleFieldValidation]);
 
   const handleBlur = useCallback(async (e) => {
+    if (!validationRulesRef.current[name]) return;
+    if (optionsRef.current.validateOnBlur) return;
+
+    clearValidationTimer();
+    const validationRun = validationRunRef.current + 1;
+    validationRunRef.current = validationRun;
+
+    timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = null;
+      if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
+
+      setValues((prev) => {
+        const currentValues = { ...prev, [name]: value };
+        const error = validateField(name, value, currentValues);
+        if (isMountedRef.current && validationRunRef.current === validationRun) {
+          setErrors((errs) => ({ ...errs, [name]: error }));
+        }
+        return prev;
+      });
+    }, optionsRef.current.debounceMs);
+  }, [validateField, clearValidationTimer]);
+
+  // Cancel the pending debounce timer when the hook unmounts to prevent
+  // setState calls on an unmounted component.
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  // Handle blur — run validation immediately without waiting for the debounce.
+  const handleBlur = useCallback((e) => {
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
 

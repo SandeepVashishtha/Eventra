@@ -50,7 +50,8 @@ describe("useKeyboardShortcuts", () => {
 
   // ─── Modal shortcuts ───────────────────────────────────────────────────────
 
-  it("opens the help modal when Shift+? is pressed", () => {
+  it("opens the help modal when Shift+? is pressed and closes command palette", () => {
+    const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
     renderHook(
       () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }),
       { wrapper }
@@ -58,9 +59,13 @@ describe("useKeyboardShortcuts", () => {
 
     fireKey("?", { shiftKey: true });
     expect(onOpenHelp).toHaveBeenCalledTimes(1);
+    const eventTypes = dispatchSpy.mock.calls.map(call => call[0].type);
+    expect(eventTypes).toContain('closeCommandPalette');
+    dispatchSpy.mockRestore();
   });
 
   it("opens the help modal when Shift+/ is pressed (same logical key)", () => {
+    const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
     renderHook(
       () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }),
       { wrapper }
@@ -68,9 +73,13 @@ describe("useKeyboardShortcuts", () => {
 
     fireKey("/", { shiftKey: true });
     expect(onOpenHelp).toHaveBeenCalledTimes(1);
+    const eventTypes = dispatchSpy.mock.calls.map(call => call[0].type);
+    expect(eventTypes).toContain('closeCommandPalette');
+    dispatchSpy.mockRestore();
   });
 
-  it("closes the help modal when Escape is pressed", () => {
+  it("closes the help modal and command palette when Escape is pressed", () => {
+    const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
     renderHook(
       () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: true }),
       { wrapper }
@@ -78,6 +87,23 @@ describe("useKeyboardShortcuts", () => {
 
     fireKey("Escape");
     expect(onCloseHelp).toHaveBeenCalledTimes(1);
+    const eventTypes = dispatchSpy.mock.calls.map(call => call[0].type);
+    expect(eventTypes).toContain('closeCommandPalette');
+    dispatchSpy.mockRestore();
+  });
+
+  it("toggles the command palette when Ctrl+K is pressed and closes help modal", () => {
+    const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
+    renderHook(
+      () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: true }),
+      { wrapper }
+    );
+
+    fireKey("k", { ctrlKey: true });
+    expect(onCloseHelp).toHaveBeenCalledTimes(1);
+    const eventTypes = dispatchSpy.mock.calls.map(call => call[0].type);
+    expect(eventTypes).toContain('toggleCommandPalette');
+    dispatchSpy.mockRestore();
   });
 
   // ─── Navigation shortcuts ──────────────────────────────────────────────────

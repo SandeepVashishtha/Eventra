@@ -2,9 +2,11 @@ import { lazy } from "react";
 import { Route } from "react-router-dom";
 
 import ProtectedRoute from "../auth/ProtectedRoute";
+import ErrorBoundary from "../common/ErrorBoundary";
 import { ROLES, PERMISSIONS } from "../../config/roles";
-const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
 
+// 🔥 FIX: Removed all duplicate const declarations that were causing fatal SyntaxErrors
+const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
 const EventCreation = lazy(() => import("../common/EventCreation/EventCreation"));
 const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
 const UserProfile = lazy(() => import("../user/UserProfile"));
@@ -16,6 +18,16 @@ const PasswordReset = lazy(() => import("../auth/PasswordReset"));
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
+
+const withModuleBoundary = (children, boundaryName) => (
+  <ErrorBoundary
+    variant="section"
+    boundaryName={boundaryName}
+    title={`${boundaryName} needs a reset`}
+  >
+    {children}
+  </ErrorBoundary>
+);
 
 export const getProtectedRoutes = () => [
   <Route
@@ -29,7 +41,7 @@ export const getProtectedRoutes = () => [
           user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
         }
       >
-        <EventCreation />
+        {withModuleBoundary(<EventCreation />, "Event creation")}
       </ProtectedRoute>
     }
   />,
@@ -42,7 +54,7 @@ export const getProtectedRoutes = () => [
         requiredScopes={["admin:all"]}
         validateContext={({ user }) => user?.status !== "Suspended"}
       >
-        <AdminDashboard />
+        {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
       </ProtectedRoute>
     }
   />,
@@ -57,7 +69,7 @@ export const getProtectedRoutes = () => [
           user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
         }
       >
-        <HostHackathon />
+        {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
       </ProtectedRoute>
     }
   />,
@@ -66,7 +78,7 @@ export const getProtectedRoutes = () => [
     path="/dashboard"
     element={
       <ProtectedRoute>
-        <Dashboard />
+        {withModuleBoundary(<Dashboard />, "User dashboard")}
       </ProtectedRoute>
     }
   />,
@@ -84,7 +96,7 @@ export const getProtectedRoutes = () => [
     path="/profile/edit"
     element={
       <ProtectedRoute>
-        <EditProfile />
+        {withModuleBoundary(<EditProfile />, "Profile editor")}
       </ProtectedRoute>
     }
   />,
@@ -102,7 +114,7 @@ export const getProtectedRoutes = () => [
     path="/settings"
     element={
       <ProtectedRoute>
-        <Settings />
+        {withModuleBoundary(<Settings />, "Settings")}
       </ProtectedRoute>
     }
   />,
@@ -125,7 +137,7 @@ export const getProtectedRoutes = () => [
           PERMISSIONS.CREATE_EVENT,
         ]}
       >
-        <SurveyEngine />
+        {withModuleBoundary(<SurveyEngine />, "Survey builder")}
       </ProtectedRoute>
     }
   />,

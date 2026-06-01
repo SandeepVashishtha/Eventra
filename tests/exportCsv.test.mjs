@@ -68,3 +68,22 @@ assert.ok(blobContent.includes(`"'-2026-05-26"`));
 assert.ok(blobContent.includes(`"'@VIP"`));
 assert.ok(blobContent.includes(`"'\tTabbed Name"`));
 assert.ok(blobContent.includes(`"'\rreturn@example.com"`));
+
+// Edge Case: Empty list of attendees should return early without triggering download
+let clickedEmpty = false;
+const originalClick = globalThis.document.createElement;
+globalThis.document.createElement = () => {
+  return {
+    href: "",
+    setAttribute() {},
+    click() {
+      clickedEmpty = true;
+    },
+  };
+};
+
+exportAttendeesToCSV([]);
+assert.equal(clickedEmpty, false, "export empty attendees list should return early and not trigger download");
+
+// Cleanup global mocks
+globalThis.document.createElement = originalClick;

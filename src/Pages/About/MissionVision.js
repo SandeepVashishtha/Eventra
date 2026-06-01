@@ -50,7 +50,7 @@ export default function MissionVision() {
             <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-lg">
               To democratize event management by providing powerful, accessible
               tools that enable any community to create meaningful connections
-              and memorable experiences. We believe that great events shouldn't
+              and memorable experiences. We believe that great events shouldn&apos;t
               require expensive software or technical expertise – just passion
               and the right platform.
             </p>
