@@ -1,13 +1,5 @@
+import { Github, ExternalLinkAlt, CodeBranch, MapMarkerAlt, Building, UserFriends, Medal } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
-import {
-  FaGithub,
-  FaExternalLinkAlt,
-  FaCodeBranch,
-  FaMapMarkerAlt,
-  FaBuilding,
-  FaUserFriends,
-  FaMedal,
-} from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
@@ -353,7 +345,7 @@ const ContributorsInner = () => {
                     {c.name}
                   </h3>
                   <p className="text-black dark:text-white text-sm font-medium mb-3 flex items-center justify-center gap-1">
-                    <FaMedal className="text-amber-300" />{" "}
+                    <Medal className="text-amber-300" />{" "}
                     {c.role}
                   </p>
                   {/* UPDATED: Contribution Badges */}
@@ -377,14 +369,14 @@ const ContributorsInner = () => {
                 {/* Stats Section (Glass style) */}
                 <div className="grid grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300 my-5 w-full">
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <FaCodeBranch className="text-black dark:text-white mb-1" />
+                    <CodeBranch className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.public_repos}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       Repos
                     </span>
                   </div>
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <FaUserFriends className="text-black dark:text-white mb-1" />
+                    <UserFriends className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.followers}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       Followers
@@ -417,12 +409,12 @@ const ContributorsInner = () => {
                 <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
                   {c.company && (
                     <span className="flex items-center gap-1 justify-center">
-                      <FaBuilding /> {c.company}
+                      <Building /> {c.company}
                     </span>
                   )}
                   {c.location && (
                     <span className="flex items-center gap-1 justify-center">
-                      <FaMapMarkerAlt /> {c.location}
+                      <MapMarkerAlt /> {c.location}
                     </span>
                   )}
                 </div>
@@ -439,11 +431,11 @@ const ContributorsInner = () => {
                     transition-all duration-300 ease-out transform hover:scale-105 relative overflow-hidden"
                   >
                     {/* GitHub Icon with animation */}
-                    <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-blue-200" />
+                    <Github className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-blue-200" />
 
                     <span>Profile</span>
 
-                    <FaExternalLinkAlt className="text-xs opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
+                    <ExternalLinkAlt className="text-xs opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
                   </a>
                 </div>
               </motion.div>

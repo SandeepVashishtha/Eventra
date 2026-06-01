@@ -1,24 +1,7 @@
+import { BarChart, Calendar, Check, CheckCircle, ChevronDown, Mail, MessageSquare, Monitor, MoreHorizontal, Plus, Star, User, Bug, RegComment } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
-import {
-  FiBarChart,
-  FiCalendar,
-  FiCheck,
-  FiCheckCircle,
-  FiChevronDown,
-  FiMail,
-  FiMessageSquare,
-  FiMonitor,
-  FiMoreHorizontal,
-  FiPlus,
-  FiStar,
-  FiUser,
-} from "react-icons/fi";
-import {
-  FaBug,
-  FaRegComment,
-} from "react-icons/fa";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { analyzeSentiment, getSentimentDisplay } from "../../utils/sentiment.js";
@@ -63,7 +46,7 @@ const StarRating = ({ rating, onRatingChange, error }) => {
             title={`Click to rate ${star} star${star > 1 ? "s" : ""
               } (click again to deselect)`}
           >
-            <FiStar
+            <Star
               className={`w-8 h-8 transition-colors duration-200 ${star <= (hoveredRating || rating)
                   ? "text-yellow-400 fill-current"
                   : "text-gray-300 dark:text-gray-600"
@@ -255,7 +238,7 @@ const CustomFloatingSelect = ({
           {label} {required && <span className="text-red-500">*</span>}
         </label>
 
-        <FiChevronDown
+        <ChevronDown
           className={`absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500 pointer-events-none transition-transform duration-300 ${isOpen ? "rotate-180" : ""
             }`}
         />
@@ -285,7 +268,7 @@ const CustomFloatingSelect = ({
                   )}
                   {option.label}
                   {value === option.value && (
-                    <FiCheck className="ml-auto w-5 h-5 text-sky-300 dark:text-sky-200" />
+                    <Check className="ml-auto w-5 h-5 text-sky-300 dark:text-sky-200" />
                   )}
                 </li>
               ))}
@@ -512,7 +495,7 @@ const FeedbackPage = () => {
                   {/* CARD 1 */}
                   <div className="flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300">
                     <div className="bg-white/20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiMessageSquare className="w-7 h-7 text-white" />
+                      <MessageSquare className="w-7 h-7 text-white" />
                     </div>
 
                     <div>
@@ -529,7 +512,7 @@ const FeedbackPage = () => {
                   {/* CARD 2 */}
                   <div className="flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300">
                     <div className="bg-white/20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiStar className="w-7 h-7 text-white" />
+                      <Star className="w-7 h-7 text-white" />
                     </div>
 
                     <div>
@@ -546,7 +529,7 @@ const FeedbackPage = () => {
                   {/* CARD 3 */}
                   <div className="flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300">
                     <div className="bg-white/20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiCheckCircle className="w-7 h-7 text-white" />
+                      <CheckCircle className="w-7 h-7 text-white" />
                     </div>
 
                     <div>
@@ -620,7 +603,7 @@ const FeedbackPage = () => {
                 {/* MESSAGE */}
                 <div className="relative mt-6">
                   <div className="relative">
-                    <FiMessageSquare className="absolute left-4 top-4 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
+                    <MessageSquare className="absolute left-4 top-4 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
 
                     <textarea
                       id="message"
