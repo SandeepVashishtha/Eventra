@@ -5,16 +5,14 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Search, ChevronDown, Plus, HelpCircle, X } from "lucide-react";
 import { NAV_ITEMS } from "./constants/navItems";
 
-const KeyboardShortcutsModal = lazy(() =>
-  import("../common/KeyboardShortcutsModal")
-);
+
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
   const navRef = useRef(null);
 
   const [openGroup, setOpenGroup] = useState(null);
-  const [showShortcuts, setShowShortcuts] = useState(false);
+
 
   useEffect(() => {
     setOpenGroup(null);
@@ -202,34 +200,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         );
       })}
 
-      <Suspense fallback={null}>
-        <KeyboardShortcutsModal
-          isOpen={showShortcuts}
-          onClose={() => setShowShortcuts(false)}
-          shortcuts={[
-            {
-              keys: ["Ctrl", "K"],
-              action: "Open search",
-              icon: Search,
-            },
-            {
-              keys: ["Ctrl", "N"],
-              action: "Create new event",
-              icon: Plus,
-            },
-            {
-              keys: ["?"],
-              action: "Show shortcuts",
-              icon: HelpCircle,
-            },
-            {
-              keys: ["Esc"],
-              action: "Close modals",
-              icon: X,
-            },
-          ]}
-        />
-      </Suspense>
+
     </nav>
   );
 };
