@@ -62,7 +62,6 @@ export default function GitHubStats() {
     let mounted = true;
     const cached = readCache();
     if (cached && mounted) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStats(cached);
       setIsLoading(false);
     }

@@ -177,32 +177,44 @@ const WhatsHappening = () => {
   return (
     <section
       ref={ref}
-      className="py-16 sm:py-20 bg-gradient-to-b from-slate-50 via-indigo-50/20 to-white dark:from-slate-950 dark:via-slate-900/50 dark:to-slate-950 text-slate-900 dark:text-gray-100 border-t border-slate-200/50 dark:border-slate-800/80"
+      className="relative overflow-hidden py-16 sm:py-20 text-slate-900 border-t border-slate-200/60"
+      style={{
+        background: "linear-gradient(180deg, #F8FBFD 0%, #F3F7FA 10%, #EAF1F7 42%, #DCE5EF 100%)",
+      }}
     >
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-white/80 to-transparent" />
+        <div className="absolute top-10 left-8 h-40 w-40 rounded-full bg-white/35 blur-3xl" />
+        <div className="absolute top-24 right-8 h-52 w-52 rounded-full bg-sky-100/35 blur-3xl" />
+      </div>
+
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading */}
         <motion.div
-          className="text-center mb-12"
+          className="text-center mb-10 sm:mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         >
-          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+          {/* <span className="inline-flex items-center rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-sm backdrop-blur">
+            Live updates
+          </span> */}
+          <h2 className="mt-4 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
             What&apos;s Happening Now
           </h2>
-          <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg text-slate-600 dark:text-slate-400">
+          <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg leading-relaxed text-slate-600">
             Stay updated with {upcomingEvents.length} upcoming events, community
             programs, and opportunities to contribute to Eventra
           </p>
         </motion.div>
 
         {/* Carousel */}
-        <div className="relative w-full max-w-7xl mx-auto">
+        <div className="relative w-full max-w-7xl mx-auto rounded-[28px] border border-slate-200/70 bg-white/70 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md px-3 sm:px-5 py-4 sm:py-5">
           {/* Play/Pause Button */}
-          <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-20">
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20">
             <button
               onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-              className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-800 shadow-md backdrop-blur-md hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
+              className="p-2.5 rounded-full bg-white/90 border border-slate-200 shadow-sm backdrop-blur-md hover:bg-white hover:shadow-md text-slate-600 transition-all duration-200"
               title={isAutoPlaying ? "Pause auto-play" : "Resume auto-play"}
             >
               {isAutoPlaying ? (
@@ -228,7 +240,7 @@ const WhatsHappening = () => {
           {/* Navigation Controls */}
           <button
             onClick={prevSlide}
-            className="absolute left-0 sm:-left-4 top-1/2 -translate-y-1/2 p-3 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/50 dark:border-slate-800 shadow-lg hover:bg-white dark:hover:bg-slate-800 z-10 text-slate-700 dark:text-slate-250 transition-all hover:scale-105"
+            className="absolute left-0 sm:-left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/95 border border-slate-200 shadow-lg hover:bg-white hover:shadow-xl z-10 text-slate-700 transition-all duration-200 hover:-translate-y-1"
             aria-label="Previous events"
           >
             <svg
@@ -250,7 +262,7 @@ const WhatsHappening = () => {
               );
               setIsAutoPlaying(false);
             }}
-            className="absolute right-0 sm:-right-4 top-1/2 -translate-y-1/2 p-3 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/50 dark:border-slate-800 shadow-lg hover:bg-white dark:hover:bg-slate-800 z-10 text-slate-700 dark:text-slate-250 transition-all hover:scale-105"
+            className="absolute right-0 sm:-right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/95 border border-slate-200 shadow-lg hover:bg-white hover:shadow-xl z-10 text-slate-700 transition-all duration-200 hover:-translate-y-1"
             aria-label="Next events"
           >
             <svg
@@ -266,7 +278,7 @@ const WhatsHappening = () => {
 
           {/* Content Area */}
           <div
-            className="overflow-hidden px-4 sm:px-8 py-5"
+            className="overflow-hidden px-4 sm:px-8 py-6"
             onMouseEnter={() => setIsAutoPlaying(false)}
             onMouseLeave={() => setIsAutoPlaying(true)}
           >
@@ -311,9 +323,12 @@ const WhatsHappening = () => {
                       )
                       .slice(0, cardsPerView)
                       .map((event) => (
-                        <div
+                        <motion.div
                           key={event.id}
-                          className="group relative w-full flex flex-col rounded-2xl overflow-hidden bg-white/70 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-800/80 p-5 sm:p-6 shadow-md shadow-indigo-500/5 hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-500/40 hover:-translate-y-1.5 transition-all duration-300 flex-1 min-h-[340px] pointer-events-auto"
+                          whileHover={prefersReducedMotion ? {} : { scale: 1.02, y: -6 }}
+                          whileTap={prefersReducedMotion ? {} : { scale: 0.995 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 24 }}
+                          className="group relative w-full flex flex-col rounded-[24px] overflow-hidden bg-white border border-slate-200/80 p-5 sm:p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.10)] transition-transform duration-300 flex-1 min-h-[340px] pointer-events-auto"
                           onMouseEnter={() => setIsAutoPlaying(false)}
                           onMouseLeave={() => setIsAutoPlaying(true)}
                         >
@@ -323,30 +338,30 @@ const WhatsHappening = () => {
                               <span
                                 className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
                                   event.status === "Live Now" || event.status === "Live Event"
-                                    ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                    ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
                                     : event.status === "Registration Open"
-                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                    : "bg-amber-500/10 text-amber-600 border-amber-500/20"
                                 }`}
                               >
                                 {event.status}
                               </span>
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/50">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200/70">
                                 {event.type}
                               </span>
                             </div>
 
-                            <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                            <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2 leading-snug group-hover:text-sky-700 transition-colors">
                               {event.title}
                             </h3>
                             
-                            <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-3 leading-relaxed flex-1">
+                            <p className="text-slate-600 text-sm mb-4 line-clamp-3 leading-relaxed flex-1">
                               {event.description}
                             </p>
 
                             <div className="flex flex-wrap gap-2.5 mb-4">
                               {event.prize && (
-                                <div className="inline-flex items-center text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/5 dark:bg-rose-500/10 px-2.5 py-1.5 rounded-xl border border-rose-500/10">
+                                <div className="inline-flex items-center text-xs font-semibold text-rose-600 bg-rose-500/5 px-2.5 py-1.5 rounded-xl border border-rose-500/10">
                                   <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.251-.11a3.375 3.375 0 000-6.166l-.251-.1a3.375 3.375 0 000 6.166zm6 0l.251-.11a3.375 3.375 0 000-6.166l-.251-.1a3.375 3.375 0 000 6.166z" />
                                   </svg>
@@ -355,7 +370,7 @@ const WhatsHappening = () => {
                               )}
 
                               {(event.participants || event.attendees) && (
-                                <div className="inline-flex items-center text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 dark:bg-indigo-500/10 px-2.5 py-1.5 rounded-xl border border-indigo-500/10">
+                                <div className="inline-flex items-center text-xs font-semibold text-sky-700 bg-sky-500/5 px-2.5 py-1.5 rounded-xl border border-sky-500/10">
                                   <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A2.25 2.25 0 0112.75 21.5h-1.5a2.25 2.25 0 01-2.25-2.263V19.13m-2.625.372A9.336 9.336 0 011.5 18.552a4.125 4.125 0 017.533-2.493m0 0a9.38 9.38 0 012.625.372 9.336 9.336 0 004.121-.952m-4.121.952v-.002c0-1.113-.285-2.16-.786-3.07M9 10.125c0 .621.504 1.125 1.125 1.125h1.75c.621 0 1.125-.504 1.125-1.125V8.875c0-.621-.504-1.125-1.125-1.125h-1.75C9.504 7.75 9 8.254 9 8.875v1.25z" />
                                   </svg>
@@ -364,15 +379,15 @@ const WhatsHappening = () => {
                               )}
                             </div>
 
-                            <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-800/80">
-                              <div className="flex items-center text-xs font-medium text-slate-500 dark:text-slate-400">
-                                <svg className="w-4 h-4 mr-1.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
+                              <div className="flex items-center text-xs font-medium text-slate-500">
+                                <svg className="w-4 h-4 mr-1.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                                 </svg>
                                 {event.date}
                               </div>
 
-                              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-500/20">
+                              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-700 text-xs font-semibold border border-amber-500/20">
                                 {event.timeLeft === "Ended" ? (
                                   <>
                                     <CheckCircle2 className="w-3.5 h-3.5" /> Ended
@@ -388,14 +403,14 @@ const WhatsHappening = () => {
 
                           <Link
                             to={event.link}
-                            className="mt-4 inline-flex items-center justify-center w-full px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-white dark:text-indigo-300 text-sm font-semibold transition-all duration-200 border border-transparent dark:border-indigo-500/20 hover:scale-[1.02]"
+                            className="mt-4 inline-flex items-center justify-center w-full px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-all duration-200 border border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-200"
                           >
                             {event.featured ? "Register Now" : "Learn More"}
                             <svg className="ml-2 w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                             </svg>
                           </Link>
-                        </div>
+                        </motion.div>
                       ))}
               </motion.div>
             </AnimatePresence>
@@ -420,8 +435,8 @@ const WhatsHappening = () => {
                 <div
                   className={`w-6 h-1.5 sm:w-8 sm:h-1.5 rounded-full transition-colors duration-300 ${
                     activeDotIndex === index
-                      ? "bg-indigo-600 dark:bg-indigo-500"
-                      : "bg-slate-300 dark:bg-slate-800 group-hover:bg-slate-400 dark:group-hover:bg-slate-700"
+                      ? "bg-slate-900"
+                      : "bg-slate-300 group-hover:bg-slate-400"
                   }`}
                 />
               </button>

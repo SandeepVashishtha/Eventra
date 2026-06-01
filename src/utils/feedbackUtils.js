@@ -4,6 +4,8 @@
  * Handles localStorage-based feedback management for events
  */
 
+import { safeJsonParse } from './safeJsonParse';
+
 const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
 
 /**
@@ -13,7 +15,7 @@ const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
  */
 export const getEventFeedback = (eventId) => {
   try {
-    const allFeedback = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '{}');
+    const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     return allFeedback[eventId] || [];
   } catch (error) {
     //console.error('Error retrieving feedback:', error);
@@ -29,7 +31,7 @@ export const getEventFeedback = (eventId) => {
  */
 export const saveFeedback = (eventId, feedback) => {
   try {
-    const allFeedback = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '{}');
+    const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const eventFeedback = allFeedback[eventId] || [];
 
     // Check if user already submitted feedback (by submittedAt timestamp if userId not available)
@@ -232,7 +234,7 @@ export const getTagStats = (eventId) => {
  */
 export const deleteFeedback = (eventId, userId = null) => {
   try {
-    const allFeedback = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '{}');
+    const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const eventFeedback = allFeedback[eventId] || [];
 
     if (userId) {

@@ -294,7 +294,7 @@ const SurveyEngine = () => {
                       📝 Resume where you left off?
                     </h3>
                     <p className="text-xs text-indigo-700/80 dark:text-indigo-400/80 leading-relaxed">
-                      We found an unsaved survey template draft with {cachedDraft.questions?.length || 0} question(s) titled <strong className="font-semibold">"{cachedDraft.title || "Untitled Survey"}"</strong>.
+                      We found an unsaved survey template draft with {cachedDraft.questions?.length || 0} question(s) titled <strong className="font-semibold">&quot;{cachedDraft.title || "Untitled Survey"}&quot;</strong>.
                     </p>
                   </div>
                   <div className="flex gap-2.5 shrink-0 w-full sm:w-auto">
