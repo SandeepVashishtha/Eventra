@@ -38,6 +38,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { safeGetItem, safeSetItem } from "../utils/safeStorage.js";
+
 
 const MyEventsContext = createContext(null);
 
@@ -76,7 +78,7 @@ const toPersistedRecord = (eventId, registeredAt, event) => ({
 const loadFromStorage = (userId) => {
   if (!userId) return [];
   try {
-    const raw = localStorage.getItem(storageKey(userId));
+    const raw = safeGetItem(storageKey(userId));
     const parsed = safeJsonParse(raw, []);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -91,7 +93,7 @@ const saveToStorage = (userId, records) => {
     toPersistedRecord(r.eventId, r.registeredAt, r.event || r.eventSummary),
   );
   try {
-    localStorage.setItem(storageKey(userId), JSON.stringify(persisted));
+    safeSetItem(storageKey(userId), JSON.stringify(persisted));
   } catch {
     // localStorage might be full — fail silently
   }

@@ -9,6 +9,8 @@ import {
 
 import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
+import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
+
 
 const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   const [rating, setRating] = useState(0);
@@ -19,7 +21,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
 
   useEffect(() => {
     const key = `feedback-submitted-${eventId}`;
-    if (localStorage.getItem(key)) {
+    if (safeGetItem(key)) {
       setSubmitted(true);
     } else {
       // 🔥 FIX: Reset the form state when navigating to a new, unreviewed event
@@ -46,7 +48,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
       // Simulate API submit delay
       await new Promise((resolve) => setTimeout(resolve, 800));
       
-      localStorage.setItem(`feedback-submitted-${eventId}`, "true");
+      safeSetItem(`feedback-submitted-${eventId}`, "true");
       setSubmitted(true);
       toast.success("Feedback submitted! Thank you for sharing your thoughts.");
     } catch (err) {

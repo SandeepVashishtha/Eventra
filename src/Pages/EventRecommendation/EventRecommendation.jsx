@@ -15,6 +15,8 @@ import {
 import {
   getUserProfile
 } from "../../utils/userProfileAnalyzer";
+import { safeSetItem } from "../../utils/safeStorage.js";
+
 
 
 const EventRecommendation = () => {
@@ -130,7 +132,7 @@ const EventRecommendation = () => {
     setShowOtherEvents(false);
     
     // Track execution for onboarding checklist
-    localStorage.setItem("eventra_ai_recommendation_generated", "true");
+    safeSetItem("eventra_ai_recommendation_generated", "true");
 
     setTimeout(() => {
       const totalWeight = (interest ? interestWeight : 0) + (level ? levelWeight : 0) + (eventType ? typeWeight : 0);

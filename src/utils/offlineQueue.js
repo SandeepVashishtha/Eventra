@@ -3,6 +3,8 @@
 // ---------------------------------------------------------------------------
 import { safeJsonParse } from "./safeJsonParse.js";
 import { logger } from "./logger.js";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "./safeStorage.js";
+
 
 const QUEUE_KEY = "eventra_offline_queue";
 const DB_NAME = "eventra_offline_db";
@@ -65,7 +67,7 @@ const DB_VERSION = 2;
 // ---------------------------------------------------------------------------
 const _rescueFromLocalStorage = () => {
   try {
-          const raw = localStorage.getItem(QUEUE_KEY);
+          const raw = safeGetItem(QUEUE_KEY);
           return safeJsonParse(raw, []);
   } catch {
     return [];
@@ -163,9 +165,9 @@ const openDB = () => {
           // Step 5: Update localStorage mirror to reflect rescued items
           try {
             if (rescuedItems.length > 0) {
-              localStorage.setItem(QUEUE_KEY, JSON.stringify(rescuedItems));
+              safeSetItem(QUEUE_KEY, JSON.stringify(rescuedItems));
             } else {
-              localStorage.removeItem(QUEUE_KEY);
+              safeRemoveItem(QUEUE_KEY);
             }
           } catch {
             // localStorage might be full — non-fatal
@@ -186,7 +188,7 @@ const openDB = () => {
 
           try {
             if (lsMirror.length > 0) {
-              localStorage.setItem(QUEUE_KEY, JSON.stringify(lsMirror));
+              safeSetItem(QUEUE_KEY, JSON.stringify(lsMirror));
             }
           } catch {
             // non-fatal
@@ -228,7 +230,7 @@ const openDB = () => {
  */
 export const getQueue = () => {
   try {
-    const raw = localStorage.getItem(QUEUE_KEY);
+    const raw = safeGetItem(QUEUE_KEY);
     return safeJsonParse(raw, []);
   } catch (error) {
     logger.error("[OfflineQueue] Failed to parse offline queue:", error);
@@ -337,7 +339,7 @@ export const pushToQueue = async (item, userId = null) => {
 
   // Guard against oversized payloads before they reach localStorage.
   // An uncapped payload can fill the 5 MB quota in a single write, causing
-  // every subsequent localStorage.setItem call (including auth-state writes
+  // every subsequent localStorage write (including auth-state writes
   // in AuthContext) to throw QuotaExceededError, silently corrupting the app.
   const serialisedPayload = JSON.stringify(actionItem.payload);
   if (serialisedPayload.length > MAX_PAYLOAD_BYTES) {
@@ -371,7 +373,7 @@ export const pushToQueue = async (item, userId = null) => {
 
   let localStorageSuccess = false;
   try {
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    safeSetItem(QUEUE_KEY, JSON.stringify(queue));
     localStorageSuccess = true;
   } catch (error) {
     logger.error("Error writing localStorage backup:", error);
@@ -411,9 +413,9 @@ export const setQueue = async (newQueue) => {
   // 1. Sync mirror updates immediately
   try {
     if (newQueue.length === 0) {
-      localStorage.removeItem(QUEUE_KEY);
+      safeRemoveItem(QUEUE_KEY);
     } else {
-      localStorage.setItem(QUEUE_KEY, JSON.stringify(newQueue));
+      safeSetItem(QUEUE_KEY, JSON.stringify(newQueue));
     }
   } catch (error) {
     logger.error("Error setting localStorage backup:", error);
@@ -458,7 +460,7 @@ export const setQueue = async (newQueue) => {
 export const clearQueue = async () => {
   // 1. Sync mirror
   try {
-    localStorage.removeItem(QUEUE_KEY);
+    safeRemoveItem(QUEUE_KEY);
   } catch (error) {
     logger.error("Error clearing localStorage backup:", error);
   }

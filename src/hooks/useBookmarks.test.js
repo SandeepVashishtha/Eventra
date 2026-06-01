@@ -1,11 +1,13 @@
 import { renderHook, act } from "@testing-library/react";
 import useBookmarks from "./useBookmarks";
+import { safeGetItem, safeSetItem, safeClear } from "../utils/safeStorage.js";
+
 
 const makeEvent = (id, title = `Event ${id}`) => ({ id, title, date: "2025-10-01" });
 
 describe("useBookmarks", () => {
   beforeEach(() => {
-    localStorage.clear();
+    safeClear();
   });
 
   // ─── Initial state ──────────────────────────────────────────────────────────
@@ -17,7 +19,7 @@ describe("useBookmarks", () => {
 
   it("loads pre-existing bookmarks from localStorage on mount", () => {
     const existing = [makeEvent(10)];
-    localStorage.setItem("bookmarks_user-2", JSON.stringify(existing));
+    safeSetItem("bookmarks_user-2", JSON.stringify(existing));
 
     const { result } = renderHook(() => useBookmarks("user-2"));
     expect(result.current.bookmarks).toHaveLength(1);
@@ -31,7 +33,7 @@ describe("useBookmarks", () => {
     act(() => {
       result.current.toggleBookmark(makeEvent(1));
     });
-    expect(localStorage.getItem("bookmarks_guest")).not.toBeNull();
+    expect(safeGetItem("bookmarks_guest")).not.toBeNull();
   });
 
   // ─── toggleBookmark ─────────────────────────────────────────────────────────
@@ -130,7 +132,7 @@ describe("useBookmarks", () => {
       result.current.toggleBookmark(makeEvent(55));
     });
 
-    const stored = JSON.parse(localStorage.getItem("bookmarks_user-10"));
+    const stored = JSON.parse(safeGetItem("bookmarks_user-10"));
     expect(stored).toHaveLength(1);
     expect(stored[0].id).toBe(55);
   });
@@ -147,7 +149,7 @@ describe("useBookmarks", () => {
   });
 
   it("recovers gracefully when localStorage contains corrupt data", () => {
-    localStorage.setItem("bookmarks_corrupt-user", "this is not json!!!");
+    safeSetItem("bookmarks_corrupt-user", "this is not json!!!");
     const { result } = renderHook(() => useBookmarks("corrupt-user"));
     expect(result.current.bookmarks).toEqual([]);
   });

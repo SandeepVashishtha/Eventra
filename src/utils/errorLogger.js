@@ -1,3 +1,4 @@
+import { safeGetItem, safeSetItem, safeRemoveItem } from "./safeStorage.js";
 const dsn = process.env.REACT_APP_SENTRY_DSN;
 const isProduction = process.env.NODE_ENV === "production";
 const Sentry = {
@@ -47,10 +48,10 @@ function buildErrorEntry(error, errorInfo, extra = {}) {
 function persistToLocalStorage(entry) {
   try {
     const existing = JSON.parse(
-      localStorage.getItem("eventra_error_log") || "[]"
+      safeGetItem("eventra_error_log") || "[]"
     );
     existing.unshift(entry);
-    localStorage.setItem(
+    safeSetItem(
       "eventra_error_log",
       JSON.stringify(existing.slice(0, 10))
     );
@@ -94,7 +95,7 @@ export const logError = (error, errorInfo, extra = {}) => {
 
 export const getErrorLog = () => {
   try {
-    return JSON.parse(localStorage.getItem("eventra_error_log") || "[]");
+    return JSON.parse(safeGetItem("eventra_error_log") || "[]");
   } catch (_) {
     return [];
   }
@@ -102,7 +103,7 @@ export const getErrorLog = () => {
 
 export const clearErrorLog = () => {
   try {
-    localStorage.removeItem("eventra_error_log");
-    localStorage.removeItem("eventra_feature_errors");
+    safeRemoveItem("eventra_error_log");
+    safeRemoveItem("eventra_feature_errors");
   } catch (_) {}
 };

@@ -3,6 +3,8 @@
  * @module hooks/useBookmarks
  */
 import { useState, useEffect, useCallback } from "react";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "../utils/safeStorage.js";
+
 
 /**
  * A custom React hook that manages bookmarked events for a user,
@@ -45,7 +47,7 @@ const useBookmarks = (userId = "guest") => {
 
   const [bookmarks, setBookmarks] = useState(() => {
     try {
-      const stored = localStorage.getItem(storageKey);
+      const stored = safeGetItem(storageKey);
       if (!stored) return [];
       const parsed = JSON.parse(stored);
       return Array.isArray(parsed) ? parsed : [];
@@ -56,7 +58,7 @@ const useBookmarks = (userId = "guest") => {
 
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(bookmarks));
+      safeSetItem(storageKey, JSON.stringify(bookmarks));
     } catch {
       // localStorage full — fail silently; in-memory state remains correct
     }
@@ -108,7 +110,7 @@ const useBookmarks = (userId = "guest") => {
    */
   const clearBookmarks = useCallback(() => {
     setBookmarks([]);
-    try { localStorage.removeItem(storageKey); } catch { /* non-fatal */ }
+    try { safeRemoveItem(storageKey); } catch { /* non-fatal */ }
   }, [storageKey]);
 
   return { bookmarks, toggleBookmark, isBookmarked, clearBookmarks };

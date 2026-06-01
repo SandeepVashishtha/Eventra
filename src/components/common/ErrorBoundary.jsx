@@ -1,6 +1,7 @@
 import React from "react";
 import "./ErrorBoundary.css";
 import { logError } from "../../utils/errorLogger";
+import { safeClear, safeGetItem, safeKey, safeLength, safeSetItem } from "../../utils/safeStorage.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -40,10 +41,10 @@ function saveAppStateSnapshot() {
       url: window.location.href,
       localStorage: (() => {
         const snap = {};
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
+        for (let i = 0; i < safeLength(); i++) {
+          const k = safeKey(i);
           if (k && !k.includes("token") && !k.includes("password")) {
-            snap[k] = localStorage.getItem(k)?.slice(0, 100);
+            snap[k] = safeGetItem(k)?.slice(0, 100);
           }
         }
         return snap;
@@ -83,10 +84,10 @@ function persistErrorLog(errorId, error, errorInfo) {
         }
       })(),
     };
-    const existing = JSON.parse(localStorage.getItem("eventra_error_log") || "[]");
+    const existing = JSON.parse(safeGetItem("eventra_error_log") || "[]");
     existing.unshift(log);
     // Keep only the 5 most recent errors
-    localStorage.setItem("eventra_error_log", JSON.stringify(existing.slice(0, 5)));
+    safeSetItem("eventra_error_log", JSON.stringify(existing.slice(0, 5)));
   } catch (_) {
     // Never crash inside the error boundary
   }
@@ -97,10 +98,10 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
   const lsSnapshot = (() => {
     try {
       const snap = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
+      for (let i = 0; i < safeLength(); i++) {
+        const k = safeKey(i);
         if (k && !k.includes("token") && !k.includes("password")) {
-          snap[k] = localStorage.getItem(k)?.slice(0, 200);
+          snap[k] = safeGetItem(k)?.slice(0, 200);
         }
       }
       return JSON.stringify(snap, null, 2);
@@ -203,24 +204,6 @@ class ErrorBoundary extends React.Component {
     setTimeout(() => window.location.reload(), 300);
   };
 
-  handleCopyReport = async () => {
-    const { error, errorInfo } = this.state;
-
-    const safeError =
-      error?.toString()?.trim() || "Unknown error";
-
-    const safeStack =
-      error?.stack?.trim() || "No stack";
-
-    const safeComponentStack =
-      errorInfo?.componentStack?.trim() || "Unavailable";
-
-    let safeLocalStorage = "{}";
-
-    try {
-      safeLocalStorage = JSON.stringify(localStorage, null, 2) || "{}";
-    } catch (err) {
-      safeLocalStorage = "Unable to read localStorage";
   handleTryAgain = () => {
     const { retryCount } = this.state;
     if (retryCount >= 3) {
@@ -250,13 +233,13 @@ class ErrorBoundary extends React.Component {
     try {
       const preserved = {};
       ["theme", "cursor", "eventra_user_prefs"].forEach((key) => {
-        const val = localStorage.getItem(key);
+        const val = safeGetItem(key);
         if (val) preserved[key] = val;
       });
-      localStorage.clear();
-      Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v));
+      safeClear();
+      Object.entries(preserved).forEach(([k, v]) => safeSetItem(k, v));
     } catch (_) {
-      localStorage.clear();
+      safeClear();
     }
     setTimeout(() => window.location.reload(), 300);
   };
@@ -305,10 +288,10 @@ class ErrorBoundary extends React.Component {
     const lsSnapshot = (() => {
       try {
         const snap = {};
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
+        for (let i = 0; i < safeLength(); i++) {
+          const k = safeKey(i);
           if (k && !k.includes("token") && !k.includes("password")) {
-            snap[k] = localStorage.getItem(k)?.slice(0, 200);
+            snap[k] = safeGetItem(k)?.slice(0, 200);
           }
         }
         return JSON.stringify(snap, null, 2);

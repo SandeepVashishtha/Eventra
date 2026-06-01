@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
+
 
 // ============ CONSTANTS ============
 const GSSOC_TIMELINE = [
@@ -373,10 +375,10 @@ const GSSoCContribution = () => {
   const { toasts, addToast, removeToast } = useToast();
   
   // State with localStorage persistence
-  const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
-  const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
+  const [searchQuery, setSearchQuery] = useState(() => safeGetItem("gssoc.search") || "");
+  const [selectedDifficulty, setSelectedDifficulty] = useState(() => safeGetItem("gssoc.difficulty") || "all");
   const [userStats] = useState(() => {
-    const saved = localStorage.getItem("gssoc.userStats");
+    const saved = safeGetItem("gssoc.userStats");
     return saved ? JSON.parse(saved) : {
       issuesClaimed: 3,
       prsMerged: 2,
@@ -393,9 +395,9 @@ const GSSoCContribution = () => {
   });
   
   // Persist state changes
-  useEffect(() => { localStorage.setItem("gssoc.search", searchQuery); }, [searchQuery]);
-  useEffect(() => { localStorage.setItem("gssoc.difficulty", selectedDifficulty); }, [selectedDifficulty]);
-  useEffect(() => { localStorage.setItem("gssoc.userStats", JSON.stringify(userStats)); }, [userStats]);
+  useEffect(() => { safeSetItem("gssoc.search", searchQuery); }, [searchQuery]);
+  useEffect(() => { safeSetItem("gssoc.difficulty", selectedDifficulty); }, [selectedDifficulty]);
+  useEffect(() => { safeSetItem("gssoc.userStats", JSON.stringify(userStats)); }, [userStats]);
   
   // Online/offline detection
   useEffect(() => {

@@ -6,6 +6,8 @@ import {
 import useReducedMotion from "../../hooks/useReducedMotion";
 import VirtualBoothModal from "../../components/events/VirtualBoothModal";
 import { toast } from "react-toastify";
+import { safeGetItem } from "../../utils/safeStorage.js";
+
 
 // Default premium developer sponsor booths (fallback if none loaded from designer)
 const DEFAULT_SPONSORS = [
@@ -131,7 +133,7 @@ const VirtualVenueWalkthrough = () => {
 
   // Load custom sponsor booths from local storage
   useEffect(() => {
-    const savedLayout = localStorage.getItem("eventra_floorplan_default");
+    const savedLayout = safeGetItem("eventra_floorplan_default");
     if (savedLayout) {
       try {
         const elements = JSON.parse(savedLayout);

@@ -43,6 +43,8 @@ import {
   parseTimeToMinutes,
   validateCoordinates,
 } from "../../../utils/eventCreationUtils";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "../../../utils/safeStorage.js";
+
 
 
 const EventCreation = () => {
@@ -351,7 +353,7 @@ const EventCreation = () => {
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem(DRAFT_KEY);
+    const saved = safeGetItem(DRAFT_KEY);
 
     if (saved) {
       setShowRestoreModal(true);
@@ -361,7 +363,7 @@ const EventCreation = () => {
   }, []);
   const handleRestoreDraft = () => {
     try {
-      const saved = localStorage.getItem(DRAFT_KEY);
+      const saved = safeGetItem(DRAFT_KEY);
 
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -382,7 +384,7 @@ const EventCreation = () => {
     setShowRestoreModal(false);
   };
   const handleDiscardDraft = () => {
-    localStorage.removeItem(DRAFT_KEY);
+    safeRemoveItem(DRAFT_KEY);
 
     setShowRestoreModal(false);
 
@@ -397,7 +399,7 @@ const EventCreation = () => {
     delete saveable.banner;
     delete saveable.bannerPreview;
 
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+    safeSetItem(DRAFT_KEY, JSON.stringify(saveable));
   }, [formData, isDraftLoaded]);
 
   /**
@@ -449,7 +451,7 @@ const EventCreation = () => {
   const resetForm = () => {
     setFormData(initialFormData);
     setErrors({});
-    localStorage.removeItem(DRAFT_KEY);
+    safeRemoveItem(DRAFT_KEY);
     setNewTag("");
     setCurrentStep(CREATION_STEPS.FORM);
   };

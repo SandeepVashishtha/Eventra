@@ -25,6 +25,8 @@ import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from
 import { safeParseJson } from "../../utils/jsonUtils";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
+import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
+
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -75,13 +77,13 @@ const EventDetails = () => {
     if (!event) return;
 
     try {
-      const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
+      const viewedEvents = safeParseJson(safeGetItem("recentlyViewedEvents"), []);
       const updatedEvents = [
         event,
         ...viewedEvents.filter((item) => item.id !== event.id),
       ].slice(0, 6);
 
-      localStorage.setItem("recentlyViewedEvents", JSON.stringify(updatedEvents));
+      safeSetItem("recentlyViewedEvents", JSON.stringify(updatedEvents));
     } catch {
       // localStorage unavailable — not critical
     }

@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "../utils/safeStorage.js";
+
 
 const STORAGE_KEY = 'eventra_recently_viewed';
 const MAX_ITEMS = 10;
@@ -48,7 +50,7 @@ const useRecentlyViewed = () => {
   // Load from localStorage on mount, filtering out stale entries immediately
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = safeGetItem(STORAGE_KEY);
       if (stored) {
         const parsed = safeJsonParse(stored, []);
         const fresh = Array.isArray(parsed) ? parsed.filter(isEntryFresh) : [];
@@ -63,7 +65,7 @@ const useRecentlyViewed = () => {
   // Persist to localStorage whenever state changes
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(recentlyViewed));
+      safeSetItem(STORAGE_KEY, JSON.stringify(recentlyViewed));
     } catch (err) {
       console.error('Failed to save recently viewed events:', err);
     }
@@ -99,7 +101,7 @@ const useRecentlyViewed = () => {
   const clearHistory = useCallback(() => {
     setRecentlyViewed([]);
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      safeRemoveItem(STORAGE_KEY);
     } catch (err) {
       console.error('Failed to clear recently viewed events:', err);
     }

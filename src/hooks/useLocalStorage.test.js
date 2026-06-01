@@ -2,6 +2,8 @@
 import { useEffect, act } from "react";
 import { createRoot } from "react-dom/client";
 import useLocalStorage from "./useLocalStorage";
+import { safeGetItem, safeClear } from "../utils/safeStorage.js";
+
 
 global.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -12,7 +14,7 @@ describe("useLocalStorage", () => {
   beforeEach(() => {
     container = document.createElement("div");
     document.body.appendChild(container);
-    window.localStorage.clear();
+    safeClear();
   });
 
   afterEach(() => {
@@ -46,7 +48,7 @@ describe("useLocalStorage", () => {
     });
 
     expect(container.querySelector("#val").textContent).toBe("new-value");
-    expect(window.localStorage.getItem("test-key-1")).toBe(JSON.stringify("new-value"));
+    expect(safeGetItem("test-key-1")).toBe(JSON.stringify("new-value"));
   });
 
   it("stabilizes the setValue reference", () => {

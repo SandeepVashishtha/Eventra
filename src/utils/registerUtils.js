@@ -1,4 +1,6 @@
 import { safeJsonParse } from "./safeJsonParse.js";
+import { safeGetItem, safeSetItem } from "./safeStorage.js";
+
 
 const STORAGE_KEY = "eventRegistrations";
 
@@ -6,7 +8,7 @@ const normalizeEmail = (email) => (email || "").trim().toLowerCase();
 
 const readRegistrations = () => {
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
+    const data = safeGetItem(STORAGE_KEY);
     return safeJsonParse(data, {});
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -17,7 +19,7 @@ const readRegistrations = () => {
 
 const writeRegistrations = (registrations) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(registrations));
+    safeSetItem(STORAGE_KEY, JSON.stringify(registrations));
   } catch {
     // localStorage may be unavailable or full; keep the UI functional.
   }

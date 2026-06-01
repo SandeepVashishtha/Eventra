@@ -54,6 +54,8 @@ import {
   formatTime,
   validateCoordinates,
 } from "../utils/eventCreationUtils";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "../utils/safeStorage.js";
+
 
 // 🎯 Constants for better maintainability
 const MAX_BANNER_SIZE = 5 * 1024 * 1024; // 5MB
@@ -338,7 +340,7 @@ const EventCreation = () => {
   useEffect(() => {
     const checkForDraft = () => {
       try {
-        const saved = localStorage.getItem(DRAFT_KEY);
+        const saved = safeGetItem(DRAFT_KEY);
         if (saved) {
           setShowRestoreModal(true);
         }
@@ -367,7 +369,7 @@ const EventCreation = () => {
         const saveable = { ...formDataRef.current };
         delete saveable.banner;
         delete saveable.bannerPreview;
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+        safeSetItem(DRAFT_KEY, JSON.stringify(saveable));
       } catch (error) {
         logger.error("Failed to save draft:", error);
         // Fallback: try to save without complex objects
@@ -377,7 +379,7 @@ const EventCreation = () => {
             description: formDataRef.current.description,
             date: formDataRef.current.date,
           };
-          localStorage.setItem(DRAFT_KEY, JSON.stringify(minimal));
+          safeSetItem(DRAFT_KEY, JSON.stringify(minimal));
         } catch (e) {
           logger.error("Critical: Could not save draft:", e);
         }
@@ -724,7 +726,7 @@ const EventCreation = () => {
   // 🔄 Draft Actions
   const handleRestoreDraft = useCallback(() => {
     try {
-      const saved = localStorage.getItem(DRAFT_KEY);
+      const saved = safeGetItem(DRAFT_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         setFormData(() => ({
@@ -743,7 +745,7 @@ const EventCreation = () => {
   }, []);
 
   const handleDiscardDraft = useCallback(() => {
-    localStorage.removeItem(DRAFT_KEY);
+    safeRemoveItem(DRAFT_KEY);
     setShowRestoreModal(false);
     toast.info("🗑️ Draft discarded");
   }, []);
@@ -754,7 +756,7 @@ const EventCreation = () => {
     setErrors({});
     setNewTag("");
     setCurrentStep("form");
-    localStorage.removeItem(DRAFT_KEY);
+    safeRemoveItem(DRAFT_KEY);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }

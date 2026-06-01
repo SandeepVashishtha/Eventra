@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
 import { darkTheme } from "../../components/styles/theme";
+import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
+
 
 const CountUp = CountUpLib.default;
 
@@ -14,7 +16,7 @@ const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
 
 const getStoredSearchHistory = () => {
   try {
-    const stored = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || "[]");
+    const stored = JSON.parse(safeGetItem(SEARCH_HISTORY_KEY) || "[]");
     return Array.isArray(stored) ? stored.slice(0, 5) : [];
   } catch {
     return [];
@@ -65,7 +67,7 @@ export default function EventHero({
 
   const persistSearchHistory = useCallback((nextHistory) => {
     setSearchHistory(nextHistory);
-    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(nextHistory));
+    safeSetItem(SEARCH_HISTORY_KEY, JSON.stringify(nextHistory));
   }, []);
 
   const saveSearchQuery = useCallback(

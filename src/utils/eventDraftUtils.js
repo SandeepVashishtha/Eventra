@@ -1,10 +1,12 @@
 import { safeJsonParse } from "./safeJsonParse.js";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "./safeStorage.js";
+
 
 const STORAGE_KEY = "event_creation_draft";
 
 export const saveDraft = (formData) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+    safeSetItem(STORAGE_KEY, JSON.stringify(formData));
   } catch (error) {
     console.error("Error saving draft:", error);
   }
@@ -12,7 +14,7 @@ export const saveDraft = (formData) => {
 
 export const getDraft = () => {
   try {
-    const draft = localStorage.getItem(STORAGE_KEY);
+    const draft = safeGetItem(STORAGE_KEY);
 
     return draft ? safeJsonParse(draft, {}) : null;
   } catch (error) {
@@ -23,7 +25,7 @@ export const getDraft = () => {
 
 export const clearDraft = () => {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    safeRemoveItem(STORAGE_KEY);
   } catch (error) {
     console.error("Error clearing draft:", error);
   }

@@ -1,3 +1,4 @@
+import { safeGetItem, safeSetItem } from "./safeStorage.js";
 export const NOTIFICATION_CATEGORIES = {
   registrations: {
     label: "Registrations",
@@ -87,7 +88,7 @@ export const readNotificationPreferences = () => {
   if (typeof window === "undefined") return DEFAULT_NOTIFICATION_PREFERENCES;
 
   try {
-    const stored = window.localStorage.getItem(NOTIFICATION_PREFERENCES_KEY);
+    const stored = safeGetItem(NOTIFICATION_PREFERENCES_KEY);
     return normalizeNotificationPreferences(stored ? JSON.parse(stored) : {});
   } catch {
     return DEFAULT_NOTIFICATION_PREFERENCES;
@@ -97,7 +98,7 @@ export const readNotificationPreferences = () => {
 export const writeNotificationPreferences = (preferences) => {
   if (typeof window === "undefined") return preferences;
   const normalized = normalizeNotificationPreferences(preferences);
-  window.localStorage.setItem(NOTIFICATION_PREFERENCES_KEY, JSON.stringify(normalized));
+  safeSetItem(NOTIFICATION_PREFERENCES_KEY, JSON.stringify(normalized));
   window.dispatchEvent(
     new CustomEvent("eventra-notification-preferences", { detail: normalized })
   );

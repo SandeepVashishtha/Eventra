@@ -18,6 +18,8 @@ import { safeParseJson } from "../../utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
+import { safeGetItem, safeRemoveItem } from "../../utils/safeStorage.js";
+
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -240,7 +242,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     [myEvents]
   );
   useEffect(() => {
-    const saved = safeParseJson(localStorage.getItem("recentSearches"), []);
+    const saved = safeParseJson(safeGetItem("recentSearches"), []);
 
     setRecentSearches(saved);
   }, []);
@@ -509,7 +511,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           >
             <button
               onClick={() => {
-                localStorage.removeItem(
+                safeRemoveItem(
                   "recentSearches"
                 );
 

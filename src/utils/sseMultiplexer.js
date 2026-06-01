@@ -1,4 +1,6 @@
 import { logger } from "./logger.js";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "./safeStorage.js";
+
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
@@ -59,7 +61,7 @@ class SseMultiplexer {
       if (this.isLeader) return;
 
       const now = Date.now();
-      const heartbeat = localStorage.getItem(HEARTBEAT_KEY);
+      const heartbeat = safeGetItem(HEARTBEAT_KEY);
 
       if (heartbeat) {
         try {
@@ -87,7 +89,7 @@ class SseMultiplexer {
     // waiting up to HEARTBEAT_INTERVAL (3 s) for the first interval tick.
     const writeHeartbeat = () => {
       try {
-        localStorage.setItem(
+        safeSetItem(
           HEARTBEAT_KEY,
           JSON.stringify({ tabId: this.tabId, timestamp: Date.now() }),
         );
@@ -382,7 +384,7 @@ class SseMultiplexer {
     // expiry. This removal covers the clean-close path.
     if (this.isLeader) {
       try {
-        localStorage.removeItem(HEARTBEAT_KEY);
+        safeRemoveItem(HEARTBEAT_KEY);
       } catch {
         // Non-fatal — the timeout mechanism in checkLeader will handle expiry
       }

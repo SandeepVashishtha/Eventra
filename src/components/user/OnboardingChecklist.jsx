@@ -13,6 +13,8 @@ import {
   ChevronUp,
   ChevronDown
 } from "lucide-react";
+import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
+
 
 // Confetti Component for celebration
 const OnboardingConfetti = () => {
@@ -67,7 +69,7 @@ export default function OnboardingChecklist() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [isDismissed, setIsDismissed] = useState(() => {
-    return localStorage.getItem("eventra_onboarding_dismissed") === "true";
+    return safeGetItem("eventra_onboarding_dismissed") === "true";
   });
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -108,7 +110,7 @@ export default function OnboardingChecklist() {
     // 1. Check user profile / skills in local storage or state
     let interestsDone = false;
     try {
-      const storedUser = localStorage.getItem("user");
+      const storedUser = safeGetItem("user");
       if (storedUser) {
         const parsed = JSON.parse(storedUser);
         if (parsed.skills && parsed.skills.length > 0) {
@@ -118,7 +120,7 @@ export default function OnboardingChecklist() {
         interestsDone = true;
       }
       
-      const storedInterests = localStorage.getItem("user_interests");
+      const storedInterests = safeGetItem("user_interests");
       if (storedInterests) {
         const parsedInt = JSON.parse(storedInterests);
         if (parsedInt.length > 0) {
@@ -132,7 +134,7 @@ export default function OnboardingChecklist() {
     // 2. Check bookmarked projects
     let bookmarkDone = false;
     try {
-      const storedBookmarks = localStorage.getItem("eventra_bookmarked_projects");
+      const storedBookmarks = safeGetItem("eventra_bookmarked_projects");
       if (storedBookmarks) {
         const parsed = JSON.parse(storedBookmarks);
         if (parsed.length > 0) {
@@ -144,10 +146,10 @@ export default function OnboardingChecklist() {
     }
 
     // 3. Check sandbox request execution
-    const sandboxDone = localStorage.getItem("eventra_sandbox_executed") === "true";
+    const sandboxDone = safeGetItem("eventra_sandbox_executed") === "true";
 
     // 4. Check AI recommendation generation
-    const recsDone = localStorage.getItem("eventra_ai_recommendation_generated") === "true";
+    const recsDone = safeGetItem("eventra_ai_recommendation_generated") === "true";
 
     setTasks(prevTasks => {
       const updated = prevTasks.map(t => {
@@ -163,11 +165,11 @@ export default function OnboardingChecklist() {
       const prevAllDone = prevTasks.every(t => t.completed);
       
       if (allDone && !prevAllDone) {
-        const alreadyCelebrated = localStorage.getItem("eventra_onboarding_completed_fired") === "true";
+        const alreadyCelebrated = safeGetItem("eventra_onboarding_completed_fired") === "true";
         if (!alreadyCelebrated) {
           setShowCelebration(true);
           setIsOpen(true);
-          localStorage.setItem("eventra_onboarding_completed_fired", "true");
+          safeSetItem("eventra_onboarding_completed_fired", "true");
           // auto close celebration modal in 6 seconds
           setTimeout(() => {
             setShowCelebration(false);
@@ -204,7 +206,7 @@ export default function OnboardingChecklist() {
   }, []);
 
   const handleDismiss = () => {
-    localStorage.setItem("eventra_onboarding_dismissed", "true");
+    safeSetItem("eventra_onboarding_dismissed", "true");
     setIsDismissed(true);
     setIsOpen(false);
   };

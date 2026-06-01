@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "./FloorPlanDesigner.css";
+import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
+
 // Preset layouts
 const PRESETS = {
   empty: [],
@@ -212,7 +214,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
   // Load layout from local storage or set preset
   useEffect(() => {
-    const savedLayout = localStorage.getItem(`eventra_floorplan_${eventId}`);
+    const savedLayout = safeGetItem(`eventra_floorplan_${eventId}`);
     let initialElements = [];
     if (savedLayout) {
       try {
@@ -237,7 +239,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   
   const saveLayout = () => {
     const serialized = JSON.stringify(elements);
-    localStorage.setItem(`eventra_floorplan_${eventId}`, serialized);
+    safeSetItem(`eventra_floorplan_${eventId}`, serialized);
     setLastSavedElementsStr(serialized);
     toast.success("Venue floor plan successfully saved!");
     announce("Venue floor plan successfully saved!");

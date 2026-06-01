@@ -19,6 +19,8 @@ import {
   fetchContributors,
   fetchPullRequests,
 } from "../../../utils/githubApiClient";
+import { safeGetItem, safeSetItem } from "../../../utils/safeStorage.js";
+
 
 const repoPath = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
 const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
@@ -28,7 +30,7 @@ const CACHE_MS = 30 * 60 * 1000; // 30 min
 
 const readCache = () => {
   try {
-    const raw = localStorage.getItem(LS_KEY);
+    const raw = safeGetItem(LS_KEY);
     if (!raw) return null;
     const { data, ts } = JSON.parse(raw);
     return Date.now() - ts > CACHE_MS ? null : data;
@@ -38,7 +40,7 @@ const readCache = () => {
 };
 const writeCache = (data) => {
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify({ data, ts: Date.now() }));
+    safeSetItem(LS_KEY, JSON.stringify({ data, ts: Date.now() }));
   } catch {}
 };
 

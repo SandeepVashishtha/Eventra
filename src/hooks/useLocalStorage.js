@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "../utils/safeStorage.js";
+
 
 const useLocalStorage = (key, initialValue) => {
   const initialValueRef = useRef(initialValue);
@@ -11,7 +13,7 @@ const useLocalStorage = (key, initialValue) => {
   const readValue = useCallback(() => {
     if (typeof window === "undefined") return initialValueRef.current;
     try {
-      const item = window.localStorage.getItem(key);
+      const item = safeGetItem(key);
       return safeJsonParse(item, initialValueRef.current);
     } catch (error) {
       console.warn(`useLocalStorage: error reading key "${key}":`, error);
@@ -26,7 +28,7 @@ const useLocalStorage = (key, initialValue) => {
       try {
         setStoredValue((currentVal) => {
           const newValue = value instanceof Function ? value(currentVal) : value;
-          window.localStorage.setItem(key, JSON.stringify(newValue));
+          safeSetItem(key, JSON.stringify(newValue));
 
           // 🔥 FIX: Mark as internal before dispatching so listener skips it
           isInternalWrite.current = true;
@@ -42,7 +44,7 @@ const useLocalStorage = (key, initialValue) => {
 
   const removeValue = useCallback(() => {
     try {
-      window.localStorage.removeItem(key);
+      safeRemoveItem(key);
       setStoredValue(initialValueRef.current);
 
       // 🔥 FIX: Mark as internal before dispatching
@@ -82,8 +84,8 @@ export default useLocalStorage;
 export const isLocalStorageAvailable = () => {
   try {
     const testKey = "__storage_test__";
-    window.localStorage.setItem(testKey, testKey);
-    window.localStorage.removeItem(testKey);
+    safeSetItem(testKey, testKey);
+    safeRemoveItem(testKey);
     return true;
   } catch (e) {
     return false;

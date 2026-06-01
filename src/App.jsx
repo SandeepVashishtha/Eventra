@@ -22,6 +22,8 @@ import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import { safeGetItem, safeSetItem } from "./utils/safeStorage.js";
+
 
 // Route-level lazy splits - loaded only when route is visited
 const Footer = lazy(() => import("./components/Layout/Footer"));
@@ -59,7 +61,7 @@ function App() {
   );
   const [cursorEnabled, setCursorEnabled] = useState(() => {
     try {
-      return localStorage.getItem("cursor") !== "off";
+      return safeGetItem("cursor") !== "off";
     } catch {
       return true; // fallback safe default
     }
@@ -78,7 +80,7 @@ function App() {
     const newValue = !cursorEnabled;
     setCursorEnabled(newValue);
     try {
-      localStorage.setItem("cursor", newValue ? "on" : "off");
+      safeSetItem("cursor", newValue ? "on" : "off");
     } catch {
       // Ignore storage failures in private browsing or restricted contexts.
     }

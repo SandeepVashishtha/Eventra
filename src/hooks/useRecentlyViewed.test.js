@@ -1,5 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import useRecentlyViewed from "./useRecentlyViewed";
+import { safeGetItem, safeSetItem, safeClear } from "../utils/safeStorage.js";
+
 
 const STORAGE_KEY = "eventra_recently_viewed";
 
@@ -13,7 +15,7 @@ const mockEvent = (id, title = `Event ${id}`) => ({
 
 describe("useRecentlyViewed", () => {
   beforeEach(() => {
-    localStorage.clear();
+    safeClear();
   });
 
   it("initialises with an empty list when localStorage is empty", () => {
@@ -23,7 +25,7 @@ describe("useRecentlyViewed", () => {
 
   it("loads persisted events from localStorage on mount", () => {
     const stored = [mockEvent(1), mockEvent(2)];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+    safeSetItem(STORAGE_KEY, JSON.stringify(stored));
 
     const { result } = renderHook(() => useRecentlyViewed());
     expect(result.current.recentlyViewed).toEqual(stored);
@@ -124,7 +126,7 @@ describe("useRecentlyViewed", () => {
     });
 
     expect(result.current.recentlyViewed).toEqual([]);
-    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+    expect(safeGetItem(STORAGE_KEY)).toBeNull();
   });
 
   it("persists state to localStorage whenever the list changes", () => {
@@ -134,13 +136,13 @@ describe("useRecentlyViewed", () => {
       result.current.addRecentlyViewed(mockEvent(5));
     });
 
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const stored = JSON.parse(safeGetItem(STORAGE_KEY));
     expect(stored).toHaveLength(1);
     expect(stored[0].id).toBe(5);
   });
 
   it("recovers gracefully when localStorage contains invalid JSON", () => {
-    localStorage.setItem(STORAGE_KEY, "{ this is not valid json }}}");
+    safeSetItem(STORAGE_KEY, "{ this is not valid json }}}");
 
     // Should not throw and should fall back to an empty list
     const { result } = renderHook(() => useRecentlyViewed());

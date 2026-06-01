@@ -1,3 +1,4 @@
+import { safeGetItem, safeSetItem, safeRemoveItem, safeClear } from "./safeStorage.js";
 // ---------------------------------------------------------------------------
 // AES-GCM Encryption Engine (Web Crypto API)
 // ---------------------------------------------------------------------------
@@ -22,7 +23,7 @@ const SALT_BYTE_LENGTH = 32; // 256-bit random salt
 
 const getOrCreateSalt = () => {
   try {
-    const stored = localStorage.getItem(SALT_STORAGE_KEY);
+    const stored = safeGetItem(SALT_STORAGE_KEY);
     if (stored) {
       // Restore the previously persisted salt
       return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
@@ -34,7 +35,7 @@ const getOrCreateSalt = () => {
   // First run: generate a cryptographically random salt and persist it
   const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTE_LENGTH));
   try {
-    localStorage.setItem(SALT_STORAGE_KEY, btoa(String.fromCharCode(...salt)));
+    safeSetItem(SALT_STORAGE_KEY, btoa(String.fromCharCode(...salt)));
   } catch {
     // If persistence fails, the salt will be regenerated on the next load.
     // This is a graceful degradation — encryption still works this session.
@@ -157,11 +158,12 @@ export const syncSecureStorage = {
    */
   setItem: (key, value) => {
     try {
-      localStorage.setItem(key, value);
+      const stored = safeSetItem(key, value);
+      if (!stored) return false;
       if (cryptoSupported) {
         encryptValue(value)
           .then((encrypted) => {
-            localStorage.setItem(key, encrypted);
+            safeSetItem(key, encrypted);
           })
           .catch((err) => {
             console.error('[secureStorage] Encryption failed, value stored as plaintext:', err);
@@ -184,7 +186,7 @@ export const syncSecureStorage = {
    */
   getItem: (key) => {
     try {
-      return localStorage.getItem(key);
+      return safeGetItem(key);
     } catch (error) {
       console.error('[secureStorage] getItem failed:', error);
       return null;
@@ -202,7 +204,7 @@ export const syncSecureStorage = {
    */
   getItemAsync: async (key) => {
     try {
-      const stored = localStorage.getItem(key);
+      const stored = safeGetItem(key);
       if (stored === null) return null;
 
       if (cryptoSupported) {
@@ -226,7 +228,7 @@ export const syncSecureStorage = {
    */
   removeItem: (key) => {
     try {
-      localStorage.removeItem(key);
+      safeRemoveItem(key);
     } catch (error) {
       console.error('[secureStorage] removeItem failed:', error);
     }
@@ -238,7 +240,7 @@ export const syncSecureStorage = {
    */
   clear: () => {
     try {
-      localStorage.clear();
+      safeClear();
       _keyPromise = null;
     } catch (error) {
       console.error('[secureStorage] clear failed:', error);

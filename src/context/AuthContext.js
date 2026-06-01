@@ -12,6 +12,8 @@ import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
 import { syncSecureStorage } from "../utils/secureStorage";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles";
+import { safeGetItem } from "../utils/safeStorage.js";
+
 
 const AuthContext = createContext();
 
@@ -58,7 +60,7 @@ export const AuthProvider = ({ children }) => {
   const clearExpiredSession = useCallback(() => {
     // 🔥 FIX: Check if a user was actually logged in before blasting them with an "Expired" toast.
     // Anonymous users (who trigger a 401 on mount) shouldn't see this.
-    const hadPreviousSession = !!localStorage.getItem("user") || !!sessionStorage.getItem("token");
+    const hadPreviousSession = !!safeGetItem("user") || !!sessionStorage.getItem("token");
 
     console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
     clearSession();
@@ -162,7 +164,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    // 🔥 THE FIX: We removed the `if (localStorage.getItem("user"))` check! 🔥
+    // 🔥 THE FIX: We removed the `if (safeGetItem("user"))` check! 🔥
     // The app will now ALWAYS ping the backend to verify HttpOnly cookies on load.
     validateSession();
   }, [clearSession, extractSession]);

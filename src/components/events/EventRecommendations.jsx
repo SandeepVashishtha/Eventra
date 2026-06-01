@@ -9,6 +9,8 @@ import {
   ArrowRight
 } from "lucide-react";
 import mockEvents from "../../Pages/Events/eventsMockData.json";
+import { safeGetItem } from "../../utils/safeStorage.js";
+
 
 /**
  * Premium Shimmer Skeleton Card that perfectly matches the final card dimensions
@@ -67,7 +69,7 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
 
       // --- Security & Crash Fix: Handle potentially corrupt localStorage JSON ---
       try {
-        const storedInterests = localStorage.getItem("user_interests");
+        const storedInterests = safeGetItem("user_interests");
         if (storedInterests) {
           userInterests = JSON.parse(storedInterests);
         }

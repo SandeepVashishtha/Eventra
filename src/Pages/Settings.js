@@ -5,12 +5,14 @@ import { Sun, Moon, MousePointer, Bell, ShieldCheck, ArrowRight, Palette, Key, E
 import useLocalStorage from "../hooks/useLocalStorage";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { toast } from "react-hot-toast";
+import { safeRemoveItem } from "../utils/safeStorage.js";
+
 
 const Settings = () => {
   useDocumentTitle("Eventra | Settings");
   const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
 
-  // Replace scattered localStorage.getItem / setItem calls with the hook
+  // Keep settings persistence behind the safe storage hook.
   const [cursorEnabled, setCursorEnabled] = useLocalStorage("cursor", "on");
   const [notificationsEnabled, setNotificationsEnabled] = useLocalStorage(
     "notifications",
@@ -351,10 +353,10 @@ const Settings = () => {
               <button
                 type="button"
                 onClick={() => {
-                  localStorage.removeItem("eventra_onboarding_dismissed");
-                  localStorage.removeItem("eventra_onboarding_completed_fired");
-                  localStorage.removeItem("eventra_sandbox_executed");
-                  localStorage.removeItem("eventra_ai_recommendation_generated");
+                  safeRemoveItem("eventra_onboarding_dismissed");
+                  safeRemoveItem("eventra_onboarding_completed_fired");
+                  safeRemoveItem("eventra_sandbox_executed");
+                  safeRemoveItem("eventra_ai_recommendation_generated");
                   toast.success("Onboarding checklist reset successfully!");
                   // Dispatch custom event to let widget know immediately if settings resets it
                   window.dispatchEvent(new CustomEvent("eventraOnboardingReset"));

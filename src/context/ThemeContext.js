@@ -9,6 +9,8 @@ import { MotionConfig } from "framer-motion";
 import { THEMES } from "../components/styles/theme";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "../utils/safeStorage.js";
+
 
 export const ThemeContext = createContext(null);
 
@@ -18,20 +20,20 @@ const getSystemTheme = () =>
     : "light";
 
 const getInitialTheme = () =>
-  localStorage.getItem("theme") || "system";
+  safeGetItem("theme") || "system";
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(getInitialTheme);
 
   // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {
-    return localStorage.getItem("activeThemeId") || "default";
+    return safeGetItem("activeThemeId") || "default";
   });
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
   // Custom HSL state
   const [customHsl, setCustomHsl] = useState(() => {
-    const saved = localStorage.getItem("customHsl");
+    const saved = safeGetItem("customHsl");
 
     return safeJsonParse(
       saved,
@@ -47,7 +49,7 @@ export const ThemeProvider = ({ children }) => {
   // Reduced motion state
   const prefersReduced = useReducedMotion();
   const [reducedMotion, setReducedMotion] = useState(() => {
-    const saved = localStorage.getItem("reducedMotion");
+    const saved = safeGetItem("reducedMotion");
     return saved !== null ? saved === "true" : prefersReduced;
   });
 
@@ -63,9 +65,9 @@ export const ThemeProvider = ({ children }) => {
     root.classList.add(resolvedTheme);
 
     if (theme === "system") {
-      localStorage.removeItem("theme");
+      safeRemoveItem("theme");
     } else {
-      localStorage.setItem("theme", theme);
+      safeSetItem("theme", theme);
     }
 
     // Apply active skin theme colors
@@ -87,8 +89,8 @@ export const ThemeProvider = ({ children }) => {
       root.style.removeProperty("--primary-hover");
     }
 
-    localStorage.setItem("activeThemeId", activeThemeId);
-    localStorage.setItem("customHsl", JSON.stringify(customHsl));
+    safeSetItem("activeThemeId", activeThemeId);
+    safeSetItem("customHsl", JSON.stringify(customHsl));
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
@@ -103,7 +105,7 @@ export const ThemeProvider = ({ children }) => {
 
   // Sync OS-level reduced motion preference changes
   useEffect(() => {
-    const saved = localStorage.getItem("reducedMotion");
+    const saved = safeGetItem("reducedMotion");
     if (saved === null) {
       setReducedMotion(prefersReduced);
     }
@@ -111,7 +113,7 @@ export const ThemeProvider = ({ children }) => {
 
   // Handle global CSS override for transitions and animations
   useEffect(() => {
-    localStorage.setItem("reducedMotion", reducedMotion);
+    safeSetItem("reducedMotion", reducedMotion);
 
     const styleId = "reduced-motion-override";
     let styleEl = document.getElementById(styleId);
@@ -139,7 +141,7 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      if (!localStorage.getItem("theme")) {
+      if (!safeGetItem("theme")) {
         setTheme("system");
       }
     };

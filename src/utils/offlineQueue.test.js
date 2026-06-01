@@ -1,8 +1,10 @@
 import { pushToQueue, getQueue, clearQueue } from './offlineQueue';
+import { safeClear } from "./safeStorage.js";
+
 
 describe('offlineQueue', () => {
   beforeEach(() => {
-    window.localStorage.clear();
+    safeClear();
     // Silence console warnings/errors during test execution
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});

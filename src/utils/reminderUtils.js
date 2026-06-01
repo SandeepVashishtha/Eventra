@@ -1,5 +1,7 @@
 import { parseEventDateTimeLocal } from "./timezoneUtils.js";
 import { safeJsonParse } from "./safeJsonParse.js";
+import { safeGetItem, safeSetItem } from "./safeStorage.js";
+
 
 export const REMINDERS_STORAGE_KEY = "eventra_event_reminders";
 export const REMINDERS_CHANGED_EVENT = "eventraRemindersChanged";
@@ -41,7 +43,7 @@ const readReminders = () => {
   if (typeof window === "undefined") return [];
 
   try {
-    const rawReminders = window.localStorage.getItem(REMINDERS_STORAGE_KEY);
+    const rawReminders = safeGetItem(REMINDERS_STORAGE_KEY);
     const parsedReminders = safeJsonParse(rawReminders, []);
     return Array.isArray(parsedReminders) ? parsedReminders : [];
   } catch {
@@ -53,7 +55,7 @@ const writeReminders = (reminders) => {
   if (typeof window === "undefined") return;
 
   try {
-    window.localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(reminders));
+    safeSetItem(REMINDERS_STORAGE_KEY, JSON.stringify(reminders));
     window.dispatchEvent(new CustomEvent(REMINDERS_CHANGED_EVENT, { detail: reminders }));
   } catch {
     // Keep the app usable if localStorage is blocked or full.

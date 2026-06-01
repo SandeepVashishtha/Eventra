@@ -15,6 +15,8 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { throttleProfileFetch } from "../../../components/Contributors";
 import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
+import { safeGetItem, safeSetItem } from "../../../utils/safeStorage.js";
+
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
@@ -71,7 +73,7 @@ const getRoleByGitHubActivity = (contributor) => {
 // Local storage helpers
 const getCachedContributors = () => {
   try {
-    const cachedData = localStorage.getItem(STORAGE_KEY);
+    const cachedData = safeGetItem(STORAGE_KEY);
     if (!cachedData) return { data: null, isStale: false };
     const { data, timestamp } = JSON.parse(cachedData);
     const age = Date.now() - timestamp;
@@ -86,7 +88,7 @@ const getCachedContributors = () => {
 };
 const cacheContributors = (data) => {
   try {
-    localStorage.setItem(
+    safeSetItem(
       STORAGE_KEY,
       JSON.stringify({ data, timestamp: Date.now() })
     );

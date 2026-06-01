@@ -1,3 +1,4 @@
+import { safeGetItem, safeSetItem, safeRemoveItem } from "./safeStorage.js";
 /**
  * Feedback Utilities
  * Handles localStorage-based feedback management for events
@@ -12,7 +13,7 @@ const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
  */
 export const getEventFeedback = (eventId) => {
   try {
-    const allFeedback = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '{}');
+    const allFeedback = JSON.parse(safeGetItem(FEEDBACK_STORAGE_KEY) || '{}');
     return allFeedback[eventId] || [];
   } catch (error) {
     console.error('Error retrieving feedback:', error);
@@ -28,7 +29,7 @@ export const getEventFeedback = (eventId) => {
  */
 export const saveFeedback = (eventId, feedback) => {
   try {
-    const allFeedback = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '{}');
+    const allFeedback = JSON.parse(safeGetItem(FEEDBACK_STORAGE_KEY) || '{}');
     const eventFeedback = allFeedback[eventId] || [];
 
     // Check if user already submitted feedback (by submittedAt timestamp if userId not available)
@@ -48,7 +49,7 @@ export const saveFeedback = (eventId, feedback) => {
     }
 
     allFeedback[eventId] = eventFeedback;
-    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
+    safeSetItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
   } catch (error) {
     console.error('Error saving feedback:', error);
@@ -231,7 +232,7 @@ export const getTagStats = (eventId) => {
  */
 export const deleteFeedback = (eventId, userId = null) => {
   try {
-    const allFeedback = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '{}');
+    const allFeedback = JSON.parse(safeGetItem(FEEDBACK_STORAGE_KEY) || '{}');
     const eventFeedback = allFeedback[eventId] || [];
 
     if (userId) {
@@ -240,7 +241,7 @@ export const deleteFeedback = (eventId, userId = null) => {
       delete allFeedback[eventId];
     }
 
-    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
+    safeSetItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
   } catch (error) {
     console.error('Error deleting feedback:', error);
@@ -283,7 +284,7 @@ export const exportFeedbackAsCSV = (eventId) => {
  */
 export const clearAllFeedback = () => {
   try {
-    localStorage.removeItem(FEEDBACK_STORAGE_KEY);
+    safeRemoveItem(FEEDBACK_STORAGE_KEY);
     return true;
   } catch (error) {
     console.error('Error clearing feedback:', error);

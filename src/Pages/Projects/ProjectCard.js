@@ -13,6 +13,8 @@ import {
   FiLayers,
   FiBookmark,
 } from "react-icons/fi";
+import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
+
 
 // Cache Keys & Constants
 const CACHE_KEY = "eventra_github_metrics_cache";
@@ -188,10 +190,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       const updated = { ...prev, stars: (prev?.stars || 0) + 1 };
       try {
         let cache = {};
-        const saved = localStorage.getItem(CACHE_KEY);
+        const saved = safeGetItem(CACHE_KEY);
         cache = saved ? JSON.parse(saved) : {};
         cache[key] = { data: updated, timestamp: Date.now() };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        safeSetItem(CACHE_KEY, JSON.stringify(cache));
       } catch (err) {
         console.error(err);
       }
@@ -210,10 +212,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       const updated = { ...prev, forks: (prev?.forks || 0) + 1 };
       try {
         let cache = {};
-        const saved = localStorage.getItem(CACHE_KEY);
+        const saved = safeGetItem(CACHE_KEY);
         cache = saved ? JSON.parse(saved) : {};
         cache[key] = { data: updated, timestamp: Date.now() };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        safeSetItem(CACHE_KEY, JSON.stringify(cache));
       } catch (err) {
         console.error(err);
       }
@@ -244,7 +246,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       try {
         let cache = {};
         try {
-          const saved = localStorage.getItem(CACHE_KEY);
+          const saved = safeGetItem(CACHE_KEY);
           cache = saved ? JSON.parse(saved) : {};
         } catch (e) {
           cache = {};
@@ -270,7 +272,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           data: freshMetrics,
           timestamp: Date.now(),
         };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        safeSetItem(CACHE_KEY, JSON.stringify(cache));
 
         setMetrics(freshMetrics);
         setMetricsLoading(false);

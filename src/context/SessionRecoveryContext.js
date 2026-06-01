@@ -3,6 +3,8 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 import { logger } from "../utils/logger";
 import { sanitizeSessionState } from "../utils/sessionSanitization";
 import { getDeviceFingerprint } from "../utils/deviceFingerprint";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "../utils/safeStorage.js";
+
 
 // ---------------------------------------------------------------------------
 // CryptoJS has been removed from this module.
@@ -43,7 +45,7 @@ const SESSION_SALT_KEY = "eventra_session_recovery_salt";
 /** Retrieve or generate the per-browser PBKDF2 salt for session recovery. */
 const getOrCreateRecoverySalt = () => {
   try {
-    const stored = localStorage.getItem(SESSION_SALT_KEY);
+    const stored = safeGetItem(SESSION_SALT_KEY);
     if (stored) {
       return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
     }
@@ -52,7 +54,7 @@ const getOrCreateRecoverySalt = () => {
   }
   const salt = crypto.getRandomValues(new Uint8Array(PBKDF2_SALT_LENGTH));
   try {
-    localStorage.setItem(SESSION_SALT_KEY, btoa(String.fromCharCode(...salt)));
+    safeSetItem(SESSION_SALT_KEY, btoa(String.fromCharCode(...salt)));
   } catch {
     // Non-fatal; salt will be regenerated next load
   }
@@ -218,10 +220,10 @@ export const SessionRecoveryProvider = ({ children }) => {
         if (!isCryptoAvailable()) return;
 
         const key = getOrCreateSessionKey();
-        const saved = localStorage.getItem(SESSION_KEY);
+        const saved = safeGetItem(SESSION_KEY);
 
         if (!saved || !key) {
-          if (saved) localStorage.removeItem(SESSION_KEY);
+          if (saved) safeRemoveItem(SESSION_KEY);
           return;
         }
 
@@ -233,7 +235,7 @@ export const SessionRecoveryProvider = ({ children }) => {
             "Decryption of session recovery state failed (invalid key or tampered state):",
             decryptError,
           );
-          localStorage.removeItem(SESSION_KEY);
+          safeRemoveItem(SESSION_KEY);
           return;
         }
 
@@ -252,7 +254,7 @@ export const SessionRecoveryProvider = ({ children }) => {
             logger.error(
               "Security Alert: Session recovery attempted from a mismatched device/browser fingerprint. Rejecting session restoration.",
             );
-            localStorage.removeItem(SESSION_KEY);
+            safeRemoveItem(SESSION_KEY);
             if (typeof window !== "undefined" && window.location) {
               window.location.href = "/login";
             }
@@ -263,7 +265,7 @@ export const SessionRecoveryProvider = ({ children }) => {
           setHasSession(true);
           setShowRecoveryPrompt(true);
         } else {
-          localStorage.removeItem(SESSION_KEY);
+          safeRemoveItem(SESSION_KEY);
         }
       } catch (e) {
         logger.error("Failed to load session:", e);
@@ -299,7 +301,7 @@ export const SessionRecoveryProvider = ({ children }) => {
           };
 
           const ciphertext = await encryptSession(JSON.stringify(currentSession), key);
-          localStorage.setItem(SESSION_KEY, ciphertext);
+          safeSetItem(SESSION_KEY, ciphertext);
           setSessionData(currentSession);
           setHasSession(true);
         } catch (e) {
@@ -312,7 +314,7 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const clearSession = useCallback(() => {
     try {
-      localStorage.removeItem(SESSION_KEY);
+      safeRemoveItem(SESSION_KEY);
       setSessionData(null);
       setHasSession(false);
       setShowRecoveryPrompt(false);

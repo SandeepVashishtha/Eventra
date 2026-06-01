@@ -1,4 +1,6 @@
 import { safeJsonParse } from "./safeJsonParse.js";
+import { safeGetItem, safeSetItem } from "./safeStorage.js";
+
 
 const BOOKMARKS_STORAGE_KEY = "eventra_bookmarked_events";
 const BOOKMARKS_CHANGED_EVENT = "eventraBookmarksChanged";
@@ -41,7 +43,7 @@ const readBookmarks = () => {
   if (typeof window === "undefined") return [];
 
   try {
-    const rawBookmarks = window.localStorage.getItem(BOOKMARKS_STORAGE_KEY);
+    const rawBookmarks = safeGetItem(BOOKMARKS_STORAGE_KEY);
     const parsed = safeJsonParse(rawBookmarks, []);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -53,7 +55,7 @@ const writeBookmarks = (bookmarks) => {
   if (typeof window === "undefined") return;
 
   try {
-    window.localStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(bookmarks));
+    safeSetItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(bookmarks));
     window.dispatchEvent(new CustomEvent(BOOKMARKS_CHANGED_EVENT, { detail: bookmarks }));
   } catch {
     // localStorage can be unavailable or full — keep the UI usable if persistence fails

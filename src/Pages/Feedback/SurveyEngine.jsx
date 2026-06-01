@@ -12,6 +12,8 @@ import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import SurveyAnalytics from "../../components/admin/SurveyAnalytics";
 import { validate } from "../../validation";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "../../utils/safeStorage.js";
+
 
 const SurveyEngine = () => {
   useDocumentTitle("Eventra | Dynamic Survey Engine");
@@ -61,7 +63,7 @@ const SurveyEngine = () => {
 
   // Check for saved template drafts on mount
   useEffect(() => {
-    const draft = localStorage.getItem("eventra_survey_builder_draft");
+    const draft = safeGetItem("eventra_survey_builder_draft");
     if (draft) {
       try {
         const parsed = JSON.parse(draft);
@@ -87,7 +89,7 @@ const SurveyEngine = () => {
         description: surveyDescription,
         questions: questions,
       };
-      localStorage.setItem("eventra_survey_builder_draft", JSON.stringify(payload));
+      safeSetItem("eventra_survey_builder_draft", JSON.stringify(payload));
     }, 1000);
 
     return () => clearTimeout(delayDebounceId);
@@ -106,7 +108,7 @@ const SurveyEngine = () => {
   };
 
   const handleDiscardDraft = () => {
-    localStorage.removeItem("eventra_survey_builder_draft");
+    safeRemoveItem("eventra_survey_builder_draft");
     setDraftDetected(false);
     setCachedDraft(null);
     setIsInitialized(true);
@@ -220,7 +222,7 @@ const SurveyEngine = () => {
     }
 
 
-    localStorage.removeItem("eventra_survey_builder_draft");
+    safeRemoveItem("eventra_survey_builder_draft");
     toast.success("Survey published and active for attendees!");
   };
 

@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "./TicketScanner.css";
+import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
+
 
 const LOCAL_STORAGE_KEY = "eventra_checkins";
 
@@ -161,7 +163,7 @@ export default function TicketScanner() {
   const processTicket = (ticketData) => {
     let savedCheckins = [];
     try {
-      const parsed = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+      const parsed = JSON.parse(safeGetItem(LOCAL_STORAGE_KEY) || "[]");
       savedCheckins = Array.isArray(parsed) ? parsed : [];
     } catch {
       savedCheckins = [];
@@ -196,7 +198,7 @@ export default function TicketScanner() {
     try {
       let savedCheckins = [];
       try {
-        const parsed = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+        const parsed = JSON.parse(safeGetItem(LOCAL_STORAGE_KEY) || "[]");
         savedCheckins = Array.isArray(parsed) ? parsed : [];
       } catch {
         savedCheckins = [];
@@ -211,7 +213,7 @@ export default function TicketScanner() {
       };
 
       const updated = [newCheckin, ...savedCheckins].slice(0, 50); // limit local history to 50
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+      safeSetItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
     } catch (err) {
       console.error("Failed to write check-in to localStorage:", err);
     }
@@ -571,7 +573,7 @@ export default function TicketScanner() {
             {(() => {
               let saved = [];
               try {
-                const parsed = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+                const parsed = JSON.parse(safeGetItem(LOCAL_STORAGE_KEY) || "[]");
                 saved = Array.isArray(parsed) ? parsed : [];
               } catch {
                 saved = [];

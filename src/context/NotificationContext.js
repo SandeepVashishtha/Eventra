@@ -23,6 +23,8 @@ import {
   urlBase64ToUint8Array,
   writeNotificationPreferences,
 } from "../utils/notificationPreferences";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "../utils/safeStorage.js";
+
 
 const NotificationContext = createContext();
 
@@ -463,7 +465,7 @@ export const NotificationProvider = ({ children }) => {
         subscribedAt: new Date().toISOString(),
       };
       try {
-        window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
+        safeSetItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
       } catch {
         // Non-fatal — the subscription is still active; local status just won't persist
       }
@@ -471,13 +473,13 @@ export const NotificationProvider = ({ children }) => {
       // Migrate: remove any existing full subscription object that may have been
       // stored by a previous version of this code before this fix was applied.
       // This runs once per subscribe() call and is a no-op if the key is absent.
-      const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
+      const existing = safeGetItem(PUSH_SUBSCRIPTION_KEY);
       if (existing) {
         try {
           const parsed = JSON.parse(existing);
           if (parsed?.keys) {
             // Old format with sensitive keys — replace with the safe record
-            window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
+            safeSetItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
           }
         } catch { /* non-fatal */ }
       }
@@ -506,7 +508,7 @@ export const NotificationProvider = ({ children }) => {
         await subscription.unsubscribe();
       }
 
-      window.localStorage.removeItem(PUSH_SUBSCRIPTION_KEY);
+      safeRemoveItem(PUSH_SUBSCRIPTION_KEY);
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_UNSUBSCRIBE;
       if (token && isValidEndpoint(endpoint)) {
         await apiUtils.post(endpoint, {});

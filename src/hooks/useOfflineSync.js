@@ -6,6 +6,8 @@ import { logger } from "../utils/logger";
 import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership } from '../utils/offlineQueue';
 import { isTokenValid } from '../utils/tokenUtils';
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "../utils/safeStorage.js";
+
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
@@ -297,7 +299,7 @@ const useOfflineSync = () => {
       const LOCK_TIMEOUT_MS = 30_000;
 
       const now = Date.now();
-      const lockVal = localStorage.getItem(LOCK_KEY);
+      const lockVal = safeGetItem(LOCK_KEY);
 
       if (lockVal) {
         try {
@@ -313,7 +315,7 @@ const useOfflineSync = () => {
       const lockData = JSON.stringify({ timestamp: now, tabId: currentTabId });
       
       try {
-        localStorage.setItem(LOCK_KEY, lockData);
+        safeSetItem(LOCK_KEY, lockData);
       } catch (e) {
         // If localStorage fails (private mode etc.), run sync directly to avoid blocking
         await executeSync();
@@ -322,7 +324,7 @@ const useOfflineSync = () => {
 
       const heartbeatInterval = setInterval(() => {
         try {
-          localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
+          safeSetItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
         } catch (e) {}
       }, 10_000);
 
@@ -331,11 +333,11 @@ const useOfflineSync = () => {
       } finally {
         clearInterval(heartbeatInterval);
         try {
-          const checkVal = localStorage.getItem(LOCK_KEY);
+          const checkVal = safeGetItem(LOCK_KEY);
           if (checkVal) {
             const parsed = JSON.parse(checkVal);
             if (parsed && parsed.tabId === currentTabId) {
-              localStorage.removeItem(LOCK_KEY);
+              safeRemoveItem(LOCK_KEY);
             }
           }
         } catch (e) {}

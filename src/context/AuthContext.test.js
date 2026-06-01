@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { AuthProvider, useAuth } from './AuthContext';
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { apiUtils } from '../config/api';
+import { safeGetItem, safeSetItem, safeClear } from "../utils/safeStorage.js";
+
 
 jest.mock('../config/api', () => ({
   API_ENDPOINTS: {
@@ -45,7 +47,7 @@ const renderConsumer = () =>
 
 describe('AuthContext', () => {
   beforeEach(() => {
-    localStorage.clear();
+    safeClear();
     sessionStorage.clear();
     jest.clearAllMocks();
     isTokenValid.mockReturnValue(true);
@@ -73,7 +75,7 @@ describe('AuthContext', () => {
   describe('session restoration', () => {
     it('restores user from storage when token is valid', async () => {
       sessionStorage.setItem('token', 'valid-jwt');
-      localStorage.setItem(
+      safeSetItem(
         'user',
         JSON.stringify({ email: 'alice@example.com', roles: ['ATTENDEE'] })
       );
@@ -89,7 +91,7 @@ describe('AuthContext', () => {
 
     it('clears storage when the stored token is expired', async () => {
       sessionStorage.setItem('token', 'expired-jwt');
-      localStorage.setItem(
+      safeSetItem(
         'user',
         JSON.stringify({ email: 'alice@example.com', roles: [] })
       );
@@ -102,14 +104,14 @@ describe('AuthContext', () => {
       );
       expect(screen.getByTestId('user-status')).toHaveTextContent('logged-out');
       expect(sessionStorage.getItem('token')).toBeNull();
-      expect(localStorage.getItem('user')).toBeNull();
+      expect(safeGetItem('user')).toBeNull();
     });
   });
 
   describe('logout', () => {
     it('clears user state and removes token/user from storage on logout', async () => {
       sessionStorage.setItem('token', 'valid-jwt');
-      localStorage.setItem(
+      safeSetItem(
         'user',
         JSON.stringify({ email: 'alice@example.com', roles: ['ATTENDEE'] })
       );
@@ -125,7 +127,7 @@ describe('AuthContext', () => {
 
       expect(screen.getByTestId('user-status')).toHaveTextContent('logged-out');
       expect(sessionStorage.getItem('token')).toBeNull();
-      expect(localStorage.getItem('user')).toBeNull();
+      expect(safeGetItem('user')).toBeNull();
     });
   });
 
@@ -167,7 +169,7 @@ describe('AuthContext', () => {
         expect(screen.getByTestId('user-status')).toHaveTextContent('logged-in')
       );
       expect(sessionStorage.getItem('token')).toBe('fresh-jwt');
-      expect(JSON.parse(localStorage.getItem('user')).email).toBe('bob@example.com');
+      expect(JSON.parse(safeGetItem('user')).email).toBe('bob@example.com');
     });
 
     it('throws when API returns non-200 status', async () => {
@@ -202,7 +204,7 @@ describe('AuthContext', () => {
   describe('hasRole', () => {
     it('returns true for a role the user has', async () => {
       sessionStorage.setItem('token', 'valid-jwt');
-      localStorage.setItem(
+      safeSetItem(
         'user',
         JSON.stringify({ email: 'admin@example.com', roles: ['ADMIN'] })
       );
@@ -220,7 +222,7 @@ describe('AuthContext', () => {
 
     it('returns false for a role the user does not have', async () => {
       sessionStorage.setItem('token', 'valid-jwt');
-      localStorage.setItem(
+      safeSetItem(
         'user',
         JSON.stringify({ email: 'user@example.com', roles: ['ATTENDEE'] })
       );
@@ -240,7 +242,7 @@ describe('AuthContext', () => {
   describe('isAuthenticated', () => {
     it('returns true when a valid token and user are present', async () => {
       sessionStorage.setItem('token', 'valid-jwt');
-      localStorage.setItem(
+      safeSetItem(
         'user',
         JSON.stringify({ email: 'user@example.com', roles: ['ATTENDEE'] })
       );
@@ -273,7 +275,7 @@ describe('AuthContext', () => {
   describe('corrupted storage', () => {
     it('clears session when localStorage user is invalid JSON', async () => {
       sessionStorage.setItem('token', 'valid-jwt');
-      localStorage.setItem('user', '{not valid json}');
+      safeSetItem('user', '{not valid json}');
 
       renderConsumer();
 
@@ -324,7 +326,7 @@ describe('AuthContext', () => {
   describe('role helpers', () => {
     const setupUser = (roles) => {
       sessionStorage.setItem('token', 'valid-jwt');
-      localStorage.setItem('user', JSON.stringify({ email: 'u@test.com', roles }));
+      safeSetItem('user', JSON.stringify({ email: 'u@test.com', roles }));
     };
 
     it('isAdmin returns true for ADMIN role', async () => {

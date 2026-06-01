@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
+
 
 // Centralized FAQ entries classified under General, Hackathons, or Account categories
 const faqs = [
@@ -134,7 +136,7 @@ export default function FAQSection() {
   // Helpfulness Ratings State
   const [ratings, setRatings] = useState(() => {
     try {
-      const saved = localStorage.getItem("eventra_faq_ratings");
+      const saved = safeGetItem("eventra_faq_ratings");
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
@@ -174,7 +176,7 @@ export default function FAQSection() {
       };
 
       try {
-        localStorage.setItem("eventra_faq_ratings", JSON.stringify(updated));
+        safeSetItem("eventra_faq_ratings", JSON.stringify(updated));
       } catch (err) {
         console.error(err);
       }

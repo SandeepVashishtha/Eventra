@@ -1,4 +1,6 @@
 import { safeJsonParse } from "./safeJsonParse";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "./safeStorage.js";
+
 
 const EVENTS_CACHE_KEY = "eventra_cached_events";
 const EVENT_DETAILS_CACHE_KEY = "eventra_cached_event_details";
@@ -19,7 +21,7 @@ export const DETAIL_CACHE_TTL_MS =  6 * 60 * 60 * 1000;  //  6 hours
 
 const readJson = (key, fallback) => {
   try {
-    return safeJsonParse(localStorage.getItem(key), fallback);
+    return safeJsonParse(safeGetItem(key), fallback);
   } catch {
     return fallback;
   }
@@ -27,7 +29,7 @@ const readJson = (key, fallback) => {
 
 const writeJson = (key, value) => {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    safeSetItem(key, JSON.stringify(value));
     return true;
   } catch {
     return false;
@@ -66,7 +68,7 @@ export const getCachedEvents = () => {
     return null;
   }
   if (cacheAgeMs(cached.cachedAt) > EVENTS_CACHE_TTL_MS) {
-    try { localStorage.removeItem(EVENTS_CACHE_KEY); } catch { /* non-fatal */ }
+    try { safeRemoveItem(EVENTS_CACHE_KEY); } catch { /* non-fatal */ }
     return null;
   }
   return cached;

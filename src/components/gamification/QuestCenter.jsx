@@ -5,20 +5,22 @@ import {
   Zap, CheckCircle, Gift, Target,
   Flame, Star, Trophy, Sparkles, Timer,
 } from 'lucide-react';
+import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
+
 
 // ─── localStorage helpers ──────────────────────────────────────────────────────
 const QUEST_STORAGE_KEY = 'eventra_quest_state';
 
 function loadQuestState() {
   try {
-    const raw = localStorage.getItem(QUEST_STORAGE_KEY);
+    const raw = safeGetItem(QUEST_STORAGE_KEY);
     if (!raw) return null;
     return JSON.parse(raw);
   } catch { return null; }
 }
 
 function saveQuestState(state) {
-  try { localStorage.setItem(QUEST_STORAGE_KEY, JSON.stringify(state)); } catch {}
+  try { safeSetItem(QUEST_STORAGE_KEY, JSON.stringify(state)); } catch {}
 }
 
 // ─── Time utilities ────────────────────────────────────────────────────────────

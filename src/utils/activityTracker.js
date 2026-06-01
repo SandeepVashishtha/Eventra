@@ -1,3 +1,4 @@
+import { safeGetItem, safeSetItem } from "./safeStorage.js";
 // 🔥 FIX: In-memory queue and lock to prevent localStorage race conditions
 let isUpdating = false;
 let interestQueue = [];
@@ -9,7 +10,7 @@ const processInterestQueue = () => {
   try {
     let existing = {};
     try {
-      const raw = localStorage.getItem("eventra_user_profile");
+      const raw = safeGetItem("eventra_user_profile");
       if (raw) {
         existing = JSON.parse(raw) || {};
       }
@@ -29,7 +30,7 @@ const processInterestQueue = () => {
     }
 
     if (modified) {
-      localStorage.setItem(
+      safeSetItem(
         "eventra_user_profile",
         JSON.stringify({ ...existing, interests })
       );

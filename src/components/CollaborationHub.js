@@ -9,6 +9,8 @@ import { sanitizeInputText } from "../utils/inputSanitization";
 import EventMaterials from "./common/EventMaterials";
 import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send } from 'lucide-react';
 import CollaborativeWhiteboard from './common/CollaborativeWhiteboard';
+import { safeGetItem, safeSetItem } from "../utils/safeStorage.js";
+
 
 
 const CollaborationHub = () => {
@@ -41,7 +43,7 @@ const CollaborationHub = () => {
   };
 
   const [collaborationOpportunities, setCollaborationOpportunities] = useState(() => {
-    const saved = localStorage.getItem('eventra_collaboration_opportunities');
+    const saved = safeGetItem('eventra_collaboration_opportunities');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -119,7 +121,7 @@ const CollaborationHub = () => {
 
     const updatedOpportunities = [newOpp, ...collaborationOpportunities];
     setCollaborationOpportunities(updatedOpportunities);
-    localStorage.setItem('eventra_collaboration_opportunities', JSON.stringify(updatedOpportunities));
+    safeSetItem('eventra_collaboration_opportunities', JSON.stringify(updatedOpportunities));
     
     toast.success('Collaboration request created successfully!');
     setNewRequest({

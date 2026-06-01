@@ -1,5 +1,7 @@
 import { STORAGE_KEYS } from "./storageKeys";
 import { validators } from "./storageValidators";
+import { safeGetItem, safeSetItem, safeRemoveItem, safeClear } from "../safeStorage.js";
+
 
 const DEFAULT_EXPIRY = 1000 * 60 * 60; // 1 hour
 
@@ -12,7 +14,7 @@ export const storageManager = {
         version: 1,
       };
 
-      localStorage.setItem(key, JSON.stringify(payload));
+      safeSetItem(key, JSON.stringify(payload));
     } catch (error) {
       console.error(`Storage set error for ${key}:`, error);
     }
@@ -20,7 +22,7 @@ export const storageManager = {
 
   get(key, validator = null) {
     try {
-      const raw = localStorage.getItem(key);
+      const raw = safeGetItem(key);
       if (!raw) return null;
 
       const parsed = JSON.parse(raw);
@@ -28,20 +30,20 @@ export const storageManager = {
       // 1. Check for expected structure
       if (!parsed || typeof parsed !== 'object' || !('value' in parsed)) {
         console.warn(`[Storage] Invalid structure for key: ${key}`);
-        localStorage.removeItem(key);
+        safeRemoveItem(key);
         return null;
       }
 
       // 2. Check for expiry (This is expected behavior)
       if (parsed.expiry && Date.now() > parsed.expiry) {
-        localStorage.removeItem(key);
+        safeRemoveItem(key);
         return null;
       }
 
       // 3. Optional validation
       if (validator && !validator(parsed.value)) {
         console.warn(`[Storage] Validation failed for key: ${key}`);
-        localStorage.removeItem(key);
+        safeRemoveItem(key);
         return null;
       }
 
@@ -53,7 +55,7 @@ export const storageManager = {
       // Only remove if it's a parse error (definitely corrupted)
       if (error instanceof SyntaxError) {
         console.warn(`[Storage] Removing corrupted key: ${key}`);
-        localStorage.removeItem(key);
+        safeRemoveItem(key);
       }
       return null;
     }
@@ -61,7 +63,7 @@ export const storageManager = {
   
   remove(key) {
     try {
-      localStorage.removeItem(key);
+      safeRemoveItem(key);
     } catch (error) {
       console.error(`Storage remove error for ${key}:`, error);
     }
@@ -69,7 +71,7 @@ export const storageManager = {
 
   clear() {
     try {
-      localStorage.clear();
+      safeClear();
     } catch (error) {
       console.error("Storage clear error:", error);
     }

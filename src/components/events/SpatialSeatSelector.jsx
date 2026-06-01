@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ZoomIn, ZoomOut, RotateCcw, CheckCircle, ShieldAlert, Sparkles, HelpCircle } from "lucide-react";
 import "./SpatialSeatSelector.css";
+import { safeGetItem } from "../../utils/safeStorage.js";
+
 
 // Fallback presets if no venue layout is stored yet
 const DEFAULT_PRESETS = {
@@ -30,7 +32,7 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
 
   // Load venue floor plan layout
   useEffect(() => {
-    const savedLayout = localStorage.getItem(`eventra_floorplan_${eventId}`);
+    const savedLayout = safeGetItem(`eventra_floorplan_${eventId}`);
     let initialElements = [];
     if (savedLayout) {
       try {

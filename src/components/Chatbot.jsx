@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import { quickPrompts, getAssistantReply, INITIAL_MESSAGES } from "../config/chatbotKnowledge";
+import { safeGetItem, safeSetItem } from "../utils/safeStorage.js";
+
 
 const ICON_MAP = {
   CalendarDays,
@@ -53,12 +55,12 @@ export default function Chatbot() {
   // Expiration check on mount (2 hours threshold)
   useEffect(() => {
     try {
-      const lastActive = localStorage.getItem("eventra_chatbot_last_active");
+      const lastActive = safeGetItem("eventra_chatbot_last_active");
       const twoHours = 2 * 60 * 60 * 1000;
       if (lastActive && Date.now() - parseInt(lastActive) > twoHours) {
         setMessages(INITIAL_MESSAGES);
       }
-      localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
+      safeSetItem("eventra_chatbot_last_active", Date.now().toString());
     } catch (e) {
       console.warn("localStorage unavailable for Chatbot expiration check");
     }
@@ -73,7 +75,7 @@ export default function Chatbot() {
   // Sync last active timestamp when messages change
   useEffect(() => {
     try {
-      localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
+      safeSetItem("eventra_chatbot_last_active", Date.now().toString());
     } catch (e) {
       console.warn("localStorage unavailable for Chatbot sync");
     }
