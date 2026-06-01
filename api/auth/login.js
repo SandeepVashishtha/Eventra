@@ -2,6 +2,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { users } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { buildCorsHeaders, corsResponse } from "./cors.js";
+import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
 
 // Pre-compute a dummy bcrypt hash at module load time (same cost factor used in signup.js).
 // When a login attempt references a username or email that does not exist, we still run
@@ -35,141 +37,12 @@ const validateLoginInput = (usernameOrEmail, password) => {
 };
 
 // ---------------------------------------------------------------------------
-// CORS Headers
+// CORS Headers (delegated to shared cors.js)
 // ---------------------------------------------------------------------------
 
-const corsHeaders = (req) => {
-  const allowedOrigin = process.env.ALLOWED_ORIGIN;
-  const requestOrigin = req.headers?.origin;
-
-  const corsOrigin = allowedOrigin || "*";
-  if (allowedOrigin && requestOrigin !== allowedOrigin) {
-    console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
-  }
-
-  // Access-Control-Allow-Credentials must not be sent with a wildcard origin.
-  // Per the CORS spec, browsers reject credentialed responses when the reflected
-  // origin is "*". Only set the header when a specific origin is configured.
-  const isSpecificOrigin = corsOrigin !== "*";
-
-  return {
-    "Access-Control-Allow-Origin": corsOrigin,
-    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
-};
-
-const corsResponse = (res, status, data, req) => {
-  return res.status(status).set(corsHeaders(req)).json(data);
-};
-
 // ---------------------------------------------------------------------------
-// Default Permissions based on roles
+// Default Permissions based on roles (delegated to shared permissions.js)
 // ---------------------------------------------------------------------------
-
-const ROLE_PERMISSIONS = {
-  SUPER_ADMIN: [
-    "events:view",
-    "events:create",
-    "events:edit",
-    "events:delete",
-    "events:register",
-    "hackathons:view",
-    "hackathons:host",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "users:view",
-    "users:edit",
-    "users:delete",
-    "analytics:view",
-    "content:moderate",
-    "profile:edit",
-    "profile:view",
-    "notifications:manage",
-    "admin:access",
-  ],
-  ADMIN: [
-    "events:view",
-    "events:create",
-    "events:edit",
-    "events:delete",
-    "events:register",
-    "hackathons:view",
-    "hackathons:host",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "users:view",
-    "analytics:view",
-    "content:moderate",
-    "profile:edit",
-    "profile:view",
-    "notifications:manage",
-    "admin:access",
-  ],
-  ORGANIZER: [
-    "events:view",
-    "events:create",
-    "events:edit",
-    "events:register",
-    "hackathons:view",
-    "hackathons:host",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "analytics:view",
-    "profile:edit",
-    "profile:view",
-  ],
-  VOLUNTEER: [
-    "events:view",
-    "events:register",
-    "hackathons:view",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "content:moderate",
-    "profile:edit",
-    "profile:view",
-  ],
-  ATTENDEE: [
-    "events:view",
-    "events:register",
-    "hackathons:view",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "profile:edit",
-    "profile:view",
-  ],
-  USER: [
-    "events:view",
-    "events:register",
-    "projects:view",
-    "projects:submit",
-    "hackathons:view",
-    "hackathons:participate",
-    "profile:edit",
-    "profile:view",
-  ],
-};
-
-const getPermissionsForRoles = (roles) => {
-  const permissionsSet = new Set();
-  roles.forEach((role) => {
-    const normalizedRole = role.toUpperCase();
-    const perms = ROLE_PERMISSIONS[normalizedRole] || ROLE_PERMISSIONS.USER;
-    perms.forEach((perm) => permissionsSet.add(perm));
-  });
-  return Array.from(permissionsSet);
-};
 
 // ---------------------------------------------------------------------------
 // Find user by username or email
@@ -199,12 +72,12 @@ const findUserByUsernameOrEmail = (usernameOrEmail) => {
 export default async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return res.status(200).set(corsHeaders(req)).end();
+    return res.status(200).set(buildCorsHeaders(req)).end();
   }
 
   // Only allow POST requests
   if (req.method !== "POST") {
-    return corsResponse(res, 405, { error: "Method not allowed" }, req);
+    return corsResponse(req, res, 405, { error: "Method not allowed" });
   }
 
   try {
@@ -216,9 +89,9 @@ export default async function handler(req, res) {
 
     const validationErrors = validateLoginInput(usernameOrEmail, password);
     if (validationErrors.length > 0) {
-      return corsResponse(res, 400, { 
+      return corsResponse(req, res, 400, { 
         error: validationErrors.join(", ") 
-      }, req);
+      });
     }
 
     // -----------------------------------------------------------------------
@@ -238,16 +111,16 @@ export default async function handler(req, res) {
     const isPasswordValid = await bcrypt.compare(password, hashToCompare);
 
     if (!user || !isPasswordValid) {
-      return corsResponse(res, 401, {
+      return corsResponse(req, res, 401, {
         error: "Invalid credentials"
-      }, req);
+      });
     }
 
     // Check if user is active after confirming identity to keep timing uniform
     if (user.isActive === false) {
-      return corsResponse(res, 401, {
+      return corsResponse(req, res, 401, {
         error: "Invalid credentials"
-      }, req);
+      });
     }
 
     // -----------------------------------------------------------------------
@@ -311,18 +184,18 @@ export default async function handler(req, res) {
       // Ignore write errors on test response objects
     }
 
-    return corsResponse(res, 200, {
+    return corsResponse(req, res, 200, {
       message: "Login successful",
       token,
       tokenType: "Bearer",
       ...userResponse,
-    }, req);
+    });
 
   } catch (error) {
     console.error("Login Error:", error);
-    return corsResponse(res, 500, { 
+    return corsResponse(req, res, 500, { 
       error: "Internal server error. Please try again later." 
-    }, req);
+    });
   }
 }
 

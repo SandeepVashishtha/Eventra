@@ -77,3 +77,7 @@ All participants are expected to cooperate in investigations and comply with any
 ### Attribution
 
 This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 2.0, available at https://www.contributor-covenant.org/version/2/0/code_of_conduct/.
+
+
+### Incident Enforcement & Reporting Policy
+- Maintain clear reporting paths to SandeepVashishtha maintainer group.

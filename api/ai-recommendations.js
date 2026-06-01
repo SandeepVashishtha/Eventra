@@ -2,6 +2,7 @@
 // Secures the Groq API key from frontend exposure
 
 import { verifyAuth } from "./middleware/auth.js";
+import { buildCorsHeaders } from "./auth/cors.js";
 
 // ---------------------------------------------------------------------------
 // Guards
@@ -64,17 +65,15 @@ const checkRateLimit = (userId) => {
 // ---------------------------------------------------------------------------
 
 async function handler(req, res) {
-  // Add CORS headers — credentials header must not be paired with wildcard origin
-  const corsOrigin = process.env.ALLOWED_ORIGIN || "*";
-  res.setHeader("Access-Control-Allow-Origin", corsOrigin);
-  if (corsOrigin !== "*") {
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  }
+  // Use shared CORS utility (never returns wildcard — maintains credentials safety)
+  res.setHeader("Access-Control-Allow-Origin", buildCorsHeaders(req)["Access-Control-Allow-Origin"]);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
   res.setHeader(
     "Access-Control-Allow-Headers",
     "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
   );
+  res.setHeader("Vary", "Origin");
 
   if (req.method === "OPTIONS") {
     res.status(200).end();

@@ -3,6 +3,14 @@ import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
+import {
+  applyAdvancedFilters,
+  getDateRange,
+  getDefaultFilters,
+  getPriceStats,
+  normalizeAdvancedFilters,
+} from "../../utils/advancedFilterUtils";
+import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
@@ -34,10 +42,7 @@ const useEventListing = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
 
-  const [advancedFilters, setAdvancedFilters] = useState({
-    category: "",
-    status: "",
-  });
+  const [advancedFilters, setAdvancedFiltersState] = useState(getDefaultFilters);
 
   const [pagination, setPagination] = useState({
     totalPages: 1,
@@ -63,12 +68,16 @@ const useEventListing = () => {
       params.append("status", filterType.toUpperCase());
     }
 
-    if (advancedFilters?.category) {
-      params.append("category", advancedFilters.category);
+    if (advancedFilters?.categories?.length) {
+      advancedFilters.categories.forEach((category) => {
+        params.append("category", category);
+      });
     }
 
-    if (advancedFilters?.status) {
-      params.append("status", advancedFilters.status.toUpperCase());
+    if (advancedFilters?.statuses?.length) {
+      advancedFilters.statuses.forEach((status) => {
+        params.append("status", status.toUpperCase());
+      });
     }
 
     const sortValue = SORT_MAPPING[sortType];
@@ -114,9 +123,7 @@ const useEventListing = () => {
         first: responseData.first ?? true,
         last: responseData.last ?? true,
       });
-    } catch (error) {
-      console.error("Failed to fetch events:", error);
-
+    } catch {
       if (process.env.NODE_ENV === "development") {
         const normalizedMockEvents = mockEvents.map(normalizeEvent);
         setEvents(normalizedMockEvents);
@@ -177,18 +184,37 @@ const useEventListing = () => {
     setCurrentPage(page);
   };
 
+  const setAdvancedFilters = useCallback((filters) => {
+    setAdvancedFiltersState(normalizeAdvancedFilters(filters));
+  }, []);
+
+  const priceStats = useMemo(() => getPriceStats(events), [events]);
+  const dateRangeStats = useMemo(() => getDateRange(events), [events]);
+
   const filteredEvents = useMemo(() => {
     const now = new Date();
-    return events.filter((event) => {
-      // Filter by Search Query
-      const query = debouncedSearchQuery.trim().toLowerCase();
-      if (query) {
-        const inTitle = event.title?.toLowerCase().includes(query);
-        const inDesc = event.description?.toLowerCase().includes(query);
-        const inLocation = event.location?.toLowerCase().includes(query);
-        if (!inTitle && !inDesc && !inLocation) return false;
-      }
+    const searchedEvents = getRouteSearchResults(
+      events,
+      debouncedSearchQuery,
+      [
+        "title",
+        "description",
+        "location",
+        "venue",
+        "category",
+        "type",
+        "eventMode",
+        "status",
+        "date",
+        "startDate",
+      ],
+      {
+        threshold: 0.35,
+        includeScore: true,
+      },
+    );
 
+    const basicFiltered = searchedEvents.filter((event) => {
       // Filter by Type/Status
       const eventDate = new Date(event.date || event.startDate);
       if (filterType === "upcoming") {
@@ -206,7 +232,9 @@ const useEventListing = () => {
 
       return true; // "all"
     });
-  }, [events, filterType, debouncedSearchQuery]);
+
+    return applyAdvancedFilters(basicFiltered, advancedFilters);
+  }, [events, filterType, debouncedSearchQuery, advancedFilters]);
 
   const sortedEvents = useMemo(() => {
     return [...filteredEvents].sort((a, b) => {
@@ -246,6 +274,8 @@ const useEventListing = () => {
     viewMode,
     advancedFilters,
     isAdvancedFiltersOpen,
+    priceStats,
+    dateRangeStats,
     setEventsPerPage,
     setFilterType,
     setSafePage,
