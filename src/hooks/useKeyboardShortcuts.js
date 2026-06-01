@@ -18,12 +18,18 @@ const useKeyboardShortcuts = ({
         active &&
         ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName);
 
-      if (isTyping) return;
-
-      // Safe normalized key
       let key = String(e?.key || "").toLowerCase();
 
       if (!key) return;
+
+      // Trigger Command Palette (Ctrl+K or Cmd+K)
+      if ((e.ctrlKey || e.metaKey) && key === "k") {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("toggleCommandPalette"));
+        return;
+      }
+
+      if (isTyping && key !== "escape") return;
 
       // Map ? shifted key to / for virtual matrix consistency
       if (key === "?") {
@@ -32,16 +38,20 @@ const useKeyboardShortcuts = ({
 
       // Open modal (Shift + ? or Shift + /)
       if (e.shiftKey && key === "/") {
-        e.preventDefault();
-        onOpenHelp?.();
+        if (!isTyping) {
+          e.preventDefault();
+          onOpenHelp?.();
+        }
         return;
       }
 
       // Close modal
       if (key === "escape") {
-        e.preventDefault();
-        onCloseHelp?.();
-        keyBuffer.current = [];
+        if (isOpen) {
+          e.preventDefault();
+          onCloseHelp?.();
+          keyBuffer.current = [];
+        }
         return;
       }
 
