@@ -42,35 +42,11 @@ import { logger } from "../../utils/logger";
 
 const MAX_NOTES_CHARS = 500;
 
-const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
-const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
-
-function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
-  const finalName = userName || "Participant";
-  if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
-    window.emailjs.init(EMAILJS_PUBLIC_KEY);
-    window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email: userEmail,
-      to_name: finalName,
-      event_name: eventName,
-      event_date: eventDate,
-    }).catch(() => { });
-  }
-}
-
 const getRegistrationFailureMessage = (error) => {
-  const message =
-    error?.data?.message ||
-    error?.data?.error ||
-    error?.message ||
-    "";
+  const message = error?.data?.message || error?.data?.error || error?.message || "";
   const normalizedMessage = message.toLowerCase();
 
-  if (
-    error?.status === 409 &&
-    /already registered|duplicate/.test(normalizedMessage)
-  ) {
+  if (error?.status === 409 && /already registered|duplicate/.test(normalizedMessage)) {
     return "You are already registered for this event.";
   }
 
@@ -97,10 +73,8 @@ const getRegistrationFailureMessage = (error) => {
 //   2. Always generated a 1-hour end time, ignoring event.durationMinutes.
 // See issue #2015 for details.
 
-
 // Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
-
 
 const EventRegistration = () => {
   const { eventId: routeEventId, id: routeId } = useParams();
@@ -150,7 +124,6 @@ const EventRegistration = () => {
       designation: "",
       additionalInfo: "",
       priority: "Medium",
-
     },
     validationRules,
     { debounceMs: 300 }
@@ -169,7 +142,8 @@ const EventRegistration = () => {
             ...foundMock,
             date: foundMock.startDate,
             time: "10:00 AM",
-            image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
+            image:
+              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
             attendees: foundMock.participants,
             maxAttendees: 1500,
             status: foundMock.status,
@@ -178,7 +152,8 @@ const EventRegistration = () => {
           if (isAuthenticated() && user) {
             setValues((prev) => ({
               ...prev,
-              fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
+              fullName:
+                user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
               email: user.email || "",
             }));
           }
@@ -206,7 +181,8 @@ const EventRegistration = () => {
           if (isAuthenticated() && user) {
             setValues((prev) => ({
               ...prev,
-              fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
+              fullName:
+                user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
               email: user.email || "",
             }));
           }
@@ -235,7 +211,8 @@ const EventRegistration = () => {
             ...foundMock,
             date: foundMock.startDate,
             time: "10:00 AM",
-            image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
+            image:
+              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
             attendees: foundMock.participants,
             maxAttendees: 1500,
             status: foundMock.status,
@@ -350,17 +327,19 @@ const EventRegistration = () => {
     const isEventFull = event ? event.attendees >= event.maxAttendees : false;
     const endpoint = isEventFull
       ? `/api/events/${eventId}/waitlist`
-      : (API_ENDPOINTS.EVENTS?.REGISTER ? API_ENDPOINTS.EVENTS.REGISTER(eventId) : `/api/events/${eventId}/register`);
+      : API_ENDPOINTS.EVENTS?.REGISTER
+        ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
+        : `/api/events/${eventId}/register`;
 
     try {
       await apiUtils.post(
         endpoint,
-          {
-            ...formData,
-            priority: formData.priority,
-            eventId: parseInt(eventId),
-            userId: user.id,
-          },
+        {
+          ...formData,
+          priority: formData.priority,
+          eventId: parseInt(eventId),
+          userId: user.id,
+        },
         // Registration is authenticated server-side; send the active token
         // explicitly instead of relying only on global storage lookup.
         token
@@ -369,10 +348,8 @@ const EventRegistration = () => {
       // Axios resolves for 2xx — treat as success
       setRegistered(true);
       toast.success("Registration successful!");
-      sendConfirmationEmail(formData.email, formData.fullName, event?.title, event?.date);
       addRegistration(event, formData);
       clearSession();
-
     } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
       const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
@@ -401,12 +378,13 @@ const EventRegistration = () => {
           setRegistered(true);
           addRegistration(event, formData);
           clearSession();
-          toast.warning(
-            "Network error. Registration queued and will sync when you are online.",
-            { autoClose: 4000 }
-          );
+          toast.warning("Network error. Registration queued and will sync when you are online.", {
+            autoClose: 4000,
+          });
         } else {
-          toast.error("Offline registration queue is full. Please reconnect to the internet to register.");
+          toast.error(
+            "Offline registration queue is full. Please reconnect to the internet to register."
+          );
         }
         return;
       }
@@ -457,9 +435,7 @@ const EventRegistration = () => {
   if (!event) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-          Event Not Found
-        </h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Event Not Found</h2>
         <Link
           to="/events"
           className="text-black hover:text-gray-700 dark:text-white flex items-center gap-2"
@@ -504,15 +480,17 @@ const EventRegistration = () => {
 
     const handleNativeShare = () => {
       if (navigator.share) {
-        navigator.share({
-          title: event.title,
-          text: shareText,
-          url: shareUrl,
-        }).catch((err) => {
-          if (err.name !== "AbortError") {
-            toast.error("Unable to share event. Try copying the link instead.");
-          }
-        });
+        navigator
+          .share({
+            title: event.title,
+            text: shareText,
+            url: shareUrl,
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              toast.error("Unable to share event. Try copying the link instead.");
+            }
+          });
       } else {
         navigator.clipboard.writeText(shareUrl).then(() => {
           toast.success("Event link copied to clipboard!");
@@ -551,7 +529,7 @@ const EventRegistration = () => {
             Registration Confirmed!
           </h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-            You&apos;re all set! A confirmation email has been sent to <span className="font-bold text-gray-700 dark:text-gray-300">{formData.email}</span>.
+            You&apos;re all set! Your registration details have been saved successfully.
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
@@ -591,7 +569,8 @@ const EventRegistration = () => {
             <div className="flex gap-3 justify-center">
               <a
                 href={googleCalendarUrl}
-                target="_blank" rel="noopener noreferrer"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
@@ -601,7 +580,8 @@ const EventRegistration = () => {
               </a>
               <a
                 href={outlookCalendarUrl}
-                target="_blank" rel="noopener noreferrer"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
@@ -619,7 +599,8 @@ const EventRegistration = () => {
             <div className="flex gap-3 justify-center">
               <a
                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
-                target="_blank" rel="noopener noreferrer"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on Twitter / X"
               >
@@ -629,7 +610,8 @@ const EventRegistration = () => {
               </a>
               <a
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-                target="_blank" rel="noopener noreferrer"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-[#0077b5] hover:bg-[#006297] rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on LinkedIn"
               >
@@ -643,7 +625,15 @@ const EventRegistration = () => {
                 className="w-10 h-10 inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share / Copy Link"
               >
-                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                <svg
+                  className="w-4.5 h-4.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                   <polyline points="16 6 12 2 8 6" />
                   <line x1="12" y1="2" x2="12" y2="15" />
@@ -652,7 +642,10 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          <Link to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`} className="block">
+          <Link
+            to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`}
+            className="block"
+          >
             <button
               type="button"
               className="w-full py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] shadow-lg transition-all duration-300"
@@ -680,7 +673,8 @@ const EventRegistration = () => {
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
           {/* Event Header */}
           <div className="relative h-64 overflow-hidden">
-            <img loading="lazy"
+            <img
+              loading="lazy"
               src={event.image}
               alt={event.title}
               className="w-full h-full object-cover"
@@ -712,7 +706,7 @@ const EventRegistration = () => {
 
           <div className="p-8">
             <CalendarView events={myEvents} />
-          
+
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               Register for this Event
             </h2>
@@ -735,10 +729,11 @@ const EventRegistration = () => {
                     value={formData.fullName}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.fullName && touched.fullName
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
+                      errors.fullName && touched.fullName
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                      }`}
+                    }`}
                     placeholder="Enter your full name"
                   />
                 </div>
@@ -764,10 +759,11 @@ const EventRegistration = () => {
                     value={formData.email}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.email && touched.email
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
+                      errors.email && touched.email
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                      }`}
+                    }`}
                     placeholder="your.email@example.com"
                   />
                 </div>
@@ -793,10 +789,11 @@ const EventRegistration = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.phone && touched.phone
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
+                      errors.phone && touched.phone
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                      }`}
+                    }`}
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -892,12 +889,17 @@ const EventRegistration = () => {
                 />
 
                 <div className="flex justify-end text-xs mt-1 text-gray-400 dark:text-gray-500">
-                  <span className={(formData.additionalInfo?.length || 0) >= MAX_NOTES_CHARS - 20 ? "text-red-500 font-medium animate-pulse" : ""}>
+                  <span
+                    className={
+                      (formData.additionalInfo?.length || 0) >= MAX_NOTES_CHARS - 20
+                        ? "text-red-500 font-medium animate-pulse"
+                        : ""
+                    }
+                  >
                     {formData.additionalInfo?.length || 0} / {MAX_NOTES_CHARS} characters
                   </span>
                 </div>
               </div>
-
 
               {/* Submit Button */}
               <div className="flex gap-4">
@@ -912,14 +914,17 @@ const EventRegistration = () => {
                   type="submit"
                   disabled={submitting || !isFormValid}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  aria-label="Submit registration">
+                  aria-label="Submit registration"
+                >
                   {submitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
                       {isEventFull ? "Joining Waitlist..." : "Registering..."}
                     </>
+                  ) : isEventFull ? (
+                    "Join Waitlist"
                   ) : (
-                    isEventFull ? "Join Waitlist" : "Complete Registration"
+                    "Complete Registration"
                   )}
                 </button>
               </div>

@@ -11,6 +11,7 @@ import {
   FaHome,
   FaInfoCircle,
   FaLinkedin,
+  FaDiscord,
   FaPlus,
   FaQuestion,
   FaQuestionCircle,
@@ -33,7 +34,7 @@ const footerLinks = {
     { name: "Documentation", href: "/documentation", icon: FaBook },
     { name: "Contributors", href: "/contributors", icon: FaUsers },
     { name: "Contributors Guide", href: "/contributorguide", icon: FaBook },
-    { name: "LeaderBoard", href: "/leaderBoard", icon: FaTrophy },
+    { name: "Leaderboard", href: "/leaderboard", icon: FaTrophy },
   ],
   support: [
     { name: "Help Center", href: "/helpcenter", icon: FaQuestionCircle },
@@ -54,6 +55,11 @@ const socialLinks = [
     name: "LinkedIn",
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
     icon: FaLinkedin,
+  },
+  {
+    name: "Discord",
+    href: "https://discord.com/users/sandeep_vashishtha",
+    icon: FaDiscord,
   },
 ];
 
@@ -92,7 +98,10 @@ const Newsletter = () => {
   };
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white/80 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 sm:p-4">
+    <div
+      className="w-full max-w-md rounded-2xl border bg-white/60 p-3 shadow-md sm:p-4 backdrop-blur-md"
+      style={{ borderColor: 'rgba(2,6,23,0.06)' }}
+    >
       <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
         Stay updated
       </h4>
@@ -112,13 +121,15 @@ const Newsletter = () => {
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             placeholder="Enter email"
+            aria-label="Newsletter email"
             className="footer-newsletter-input w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-indigo-400 hover:bg-indigo-50/40 hover:shadow-[0_8px_24px_rgba(99,102,241,0.14)] focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-indigo-400 dark:hover:bg-slate-900 dark:focus:bg-slate-950"
           />
         </div>
 
         <button
           disabled={loading}
-          className="footer-newsletter-btn shrink-0 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-500/20 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-indigo-400"
+          className="footer-newsletter-btn shrink-0 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition-shadow hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-200"
+          style={{ boxShadow: '0 8px 28px rgba(224,233,242,0.18)' }}
         >
           {loading ? "..." : "Subscribe"}
         </button>
@@ -137,10 +148,11 @@ const Social = () => (
       <ExternalLink
         key={name}
         href={href}
-        className="footer-social-btn border border-slate-200 bg-white text-slate-600 hover:scale-105 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+        className="footer-social-btn rounded-full bg-white/80 p-2 text-slate-700 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-200"
         aria-label={name}
+        style={{ boxShadow: '0 6px 18px rgba(2,6,23,0.04)' }}
       >
-        <Icon size={18} />
+        <Icon size={16} />
       </ExternalLink>
     ))}
   </div>
@@ -177,7 +189,10 @@ const FooterLinks = () => (
 
 const Footer = () => {
   return (
-    <footer className="site-footer border-t border-slate-200 bg-gradient-to-b from-white to-slate-50 dark:border-slate-800 dark:from-slate-950 dark:to-slate-900">
+    <footer
+      className="site-footer"
+      style={{ background: 'linear-gradient(180deg, #E0E9F2 0%, #F7FBFF 100%)' }}
+    >
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-12 lg:px-8">
         <div className="flex min-w-0 flex-col gap-4">
           <div className="flex items-center gap-3">
@@ -187,8 +202,8 @@ const Footer = () => {
             </h2>
           </div>
 
-          <p className="max-w-md text-sm leading-6 text-slate-600 dark:text-slate-400">
-            Open-source event management platform for communities worldwide.
+          <p className="max-w-md text-sm leading-6 text-slate-600">
+            Open-source event management for technical communities - discover, collaborate, and grow together.
           </p>
 
           <Newsletter />
@@ -200,45 +215,18 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="border-t border-slate-200 dark:border-slate-800">
-  <div
-    className="
-      mx-auto
-      flex
-      w-full
-      max-w-7xl
-      flex-col
-      items-center
-      justify-between
-      gap-3
-      px-4
-      py-3
-      text-sm
-      text-slate-500
-      sm:flex-row
-      sm:px-6
-      lg:px-8
-    "
-  >
-    <p>&copy; {new Date().getFullYear()} Eventra. All rights reserved.</p>
+      <div className="mt-6">
+        <div className="mx-auto w-full max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <p className="text-sm text-slate-600">&copy; {new Date().getFullYear()} Eventra. All rights reserved.</p>
 
-    <div className="flex flex-wrap gap-x-4 gap-y-2">
-      <Link
-        to="/privacy"
-        className="transition hover:text-slate-900 dark:hover:text-slate-100"
-      >
-        Privacy
-      </Link>
-
-      <Link
-        to="/terms"
-        className="transition hover:text-slate-900 dark:hover:text-slate-100"
-      >
-        Terms
-      </Link>
-    </div>
-  </div>
-</div>
+            <div className="flex gap-6">
+              <Link to="/privacy" className="text-sm text-slate-600 hover:text-slate-900">Privacy</Link>
+              <Link to="/terms" className="text-sm text-slate-600 hover:text-slate-900">Terms</Link>
+            </div>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 };

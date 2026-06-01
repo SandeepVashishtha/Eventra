@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SEOHead from "../../components/SEOHead";
 
 // Centralized FAQ entries classified under General, Hackathons, or Account categories
 const faqs = [
@@ -102,7 +102,19 @@ const faqs = [
 const NAVBAR_HEIGHT = 65;
 
 export default function FAQSection() {
-  useDocumentTitle("Eventra | FAQ");
+  return (
+    <>
+      <SEOHead
+        title="FAQ"
+        description="Frequently asked questions about Eventra — get answers about events, hackathons, registration, and community."
+        url={window.location.href}
+      />
+      <FAQSectionInner />
+    </>
+  );
+}
+
+function FAQSectionInner() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");

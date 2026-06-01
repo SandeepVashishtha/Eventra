@@ -39,15 +39,15 @@ global.Blob = MockBlob;
 
 // Mock navigator.sendBeacon
 let beaconSent = null;
-Object.defineProperty(global, "navigator", {
+Object.defineProperty(globalThis, "navigator", {
+  configurable: true,
+  writable: true,
   value: {
     sendBeacon(url, blob) {
       beaconSent = { url, blob };
       return true;
     }
-  },
-  configurable: true,
-  writable: true
+  }
 });
 
 // Import functions dynamically so NODE_ENV changes are active during evaluation
@@ -112,7 +112,7 @@ if (originalReportUri === undefined) {
 }
 console.warn = originalConsoleWarn;
 delete global.document;
-delete global.navigator;
+delete globalThis.navigator;
 delete global.Blob;
 
 console.log("cspReporting tests passed ✓");
