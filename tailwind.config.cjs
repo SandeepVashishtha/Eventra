@@ -104,7 +104,16 @@ module.exports = {
       // BORDER RADIUS
       // =========================
       borderRadius: {
-        xl2: '1rem',
+        none: '0',
+        sm: 'var(--radius-sm)',
+        DEFAULT: 'var(--radius-md)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)',
+        '3xl': 'var(--radius-3xl)',
+        full: 'var(--radius-full)',
+        xl2: 'var(--radius-lg)',
       },
 
       // =========================

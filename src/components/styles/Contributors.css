@@ -85,7 +85,7 @@
 
 .contributor-card {
   background: white;
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   padding: 20px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
@@ -124,7 +124,7 @@
 .contributor-avatar img {
   width: 60px;
   height: 60px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: 3px solid #6366f1;
   margin-bottom: 10px;
   transition: transform 0.3s ease;
@@ -138,7 +138,7 @@
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: white;
   padding: 6px 12px;
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   font-size: 0.875rem;
   font-weight: 600;
   white-space: nowrap;
@@ -186,7 +186,7 @@
   background: #1e293b;
   color: white;
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-size: 0.8rem;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -210,7 +210,7 @@
   text-align: center;
   background: white;
   padding: 40px;
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
   position: relative;
@@ -252,7 +252,7 @@
 
 .btn-primary, .btn-secondary {
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-weight: 600;
   text-decoration: none;
   transition: all 0.3s ease;
@@ -294,7 +294,7 @@
   height: 50px;
   border: 4px solid #e2e8f0;
   border-top: 4px solid #6366f1;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
 }

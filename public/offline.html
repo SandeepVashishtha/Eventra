@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Offline - Eventra</title>
   <style>
+    :root {
+      --radius-md: 0.75rem;
+      --radius-2xl: 1.5rem;
+      --radius-full: 9999px;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -23,7 +29,7 @@
 
     .container {
       background: white;
-      border-radius: 24px;
+      border-radius: var(--radius-2xl);
       padding: 48px;
       text-align: center;
       max-width: 500px;
@@ -35,7 +41,7 @@
       height: 80px;
       margin: 0 auto 24px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 50%;
+      border-radius: var(--radius-full);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -69,7 +75,7 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       border: none;
-      border-radius: 12px;
+      border-radius: var(--radius-md);
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;

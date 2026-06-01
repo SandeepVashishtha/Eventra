@@ -15,7 +15,7 @@
 .ocm-modal-container {
   background: linear-gradient(135deg, #0d0d18 0%, #06060c 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   width: 100%;
   max-width: 640px;
   box-shadow: 
@@ -51,7 +51,7 @@
   border: 1px solid rgba(245, 158, 11, 0.3);
   color: #f59e0b;
   padding: 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -79,7 +79,7 @@
 .ocm-diff-row {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 12px;
 }
 
@@ -90,7 +90,7 @@
 
 .ocm-diff-val {
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-family: 'Inter', sans-serif;
   word-break: break-all;
 }
@@ -108,7 +108,7 @@
   padding: 10px 14px;
   font-size: 0.75rem;
   font-weight: 700;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;

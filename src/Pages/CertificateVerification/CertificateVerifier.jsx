@@ -9,7 +9,7 @@ import { LinkedInShareButton } from '../../components/common/LinkedInShareButton
 const containerStyle = {
   backdropFilter: 'blur(12px)',
   background: 'rgba(255,255,255,0.1)',
-  borderRadius: '16px',
+  borderRadius: 'var(--radius-card)',
   padding: '2rem',
   maxWidth: '600px',
   margin: 'auto',

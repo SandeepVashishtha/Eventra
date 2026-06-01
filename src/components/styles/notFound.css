@@ -123,7 +123,7 @@
 .suggestion-card {
   position: relative;
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   padding: 1.7rem 1.5rem 1.5rem 1.5rem;
   overflow: hidden;
   box-shadow: 0 8px 32px 0 rgba(76, 110, 245, 0.10);
@@ -139,7 +139,7 @@
   position: absolute;
   inset: -2px;
   z-index: -1;
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background: linear-gradient(120deg, #764ba2, #667eea, #43cea2, #185a9d, #764ba2);
   background-size: 400% 400%;
   animation: borderGradient 6s ease-in-out infinite;
@@ -197,7 +197,7 @@
   left: 0; right: 0; bottom: -2px;
   height: 2px;
   background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   transform: scaleX(0);
   transition: transform 0.3s cubic-bezier(.4,2,.6,1);
 }
@@ -220,7 +220,7 @@
   max-width: 500px;
   margin: 0 auto;
   border: 1px solid var(--border-color);
-  border-radius: 50px;
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
@@ -257,7 +257,7 @@
   padding: 0.85rem 2.2rem;
   font-size: 1.1rem;
   font-weight: 600;
-  border-radius: 2.5rem;
+  border-radius: var(--radius-full);
   border: none;
   outline: none;
   cursor: pointer;
@@ -341,7 +341,7 @@
 
   .suggestion-card {
     padding: 1.2rem;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
   }
 
   .not-found-suggestions {

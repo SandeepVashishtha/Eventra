@@ -15,7 +15,7 @@
   right: -6px;
   background: red;
   color: white;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   font-size: 12px;
   width: 18px;
   height: 18px;
@@ -30,7 +30,7 @@
   top: 40px;
   width: 320px;
   background: white;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 12px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
   z-index: 1000;
@@ -44,7 +44,7 @@
 
 .notification-item {
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-top: 10px;
   background: #f5f5f5;
 }

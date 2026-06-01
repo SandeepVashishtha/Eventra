@@ -10,7 +10,7 @@
   text-align: center;
   max-width: 480px;
   padding: 2rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--card-bg, #fff);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
@@ -33,7 +33,7 @@
   margin-bottom: 1rem;
   padding: 1rem;
   background: #f9fafb;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.8rem;
   overflow: auto;
   max-height: 200px;
@@ -42,7 +42,7 @@
 .error-boundary__retry {
   padding: 0.75rem 2rem;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--primary, #6366f1);
   color: #fff;
   font-weight: 600;

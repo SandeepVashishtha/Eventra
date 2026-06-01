@@ -102,7 +102,7 @@ main {
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   box-shadow: 0 1px 2px 0 var(--evt-shadow-subtle);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   touch-action: manipulation;
@@ -197,7 +197,7 @@ main {
   border: 1px solid var(--border-color);
   background: var(--card-bg-color);
   color: var(--text-color);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: var(--font-body);
@@ -237,7 +237,7 @@ main {
 .event-card {
   background: var(--card-bg-color);
   border: var(--card-border);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   padding: 1.75rem;
   box-shadow: var(--card-shadow);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -254,7 +254,7 @@ main {
   position: relative;
   width: 100%;
   height: 200px;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   margin-bottom: 1rem;
 }
@@ -273,7 +273,7 @@ main {
 
 .status-badge {
   padding: 0.25rem 0.75rem;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   font-size: var(--font-h6);
   font-weight: bold;
   text-transform: uppercase;
@@ -311,7 +311,7 @@ main {
   border: 1px solid var(--border-color);
   color: var(--text-color-light);
   padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   font-size: var(--font-h6);
   text-transform: capitalize;
 }
@@ -352,7 +352,7 @@ main {
   border: 1px solid var(--border-color);
   color: var(--text-color-light);
   padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   font-size: var(--font-h6);
 }
 
@@ -366,7 +366,7 @@ main {
 .btn-secondary,
 .btn-outline {
   padding: 0.625rem 1.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-weight: var(--fw-medium);
   font-size: var(--font-body);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -453,7 +453,7 @@ main {
   border: 1px solid var(--border-color);
   background: var(--card-bg-color);
   color: var(--text-color);
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: var(--font-body);
@@ -492,7 +492,7 @@ main {
 .hackathon-card {
   background: var(--card-bg-color);
   border: var(--card-border);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   padding: 1.75rem;
   box-shadow: var(--card-shadow);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -521,7 +521,7 @@ main {
 .status-indicator {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
 }
 
 .status-indicator.live {
@@ -552,7 +552,7 @@ main {
   background: linear-gradient(45deg, var(--warning-border), var(--warning-text));
   color: var(--evt-color-black);
   padding: 0.5rem 1rem;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   font-weight: bold;
 }
 
@@ -584,7 +584,7 @@ main {
 
 .difficulty {
   padding: 0.25rem 0.75rem;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   font-size: var(--font-h6);
   font-weight: bold;
 }
@@ -611,7 +611,7 @@ main {
   margin-bottom: 1rem;
   padding: 1rem;
   background: color-mix(in srgb, var(--evt-color-white) 10%, transparent);
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
 }
 
 .stat {
@@ -647,7 +647,7 @@ main {
 .winner-announcement {
   background: color-mix(in srgb, var(--warning-border) 20%, transparent);
   padding: 1rem;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   margin-bottom: 1rem;
   text-align: center;
 }
@@ -677,7 +677,7 @@ main {
 .tech-tag {
   background: color-mix(in srgb, var(--evt-color-white) 20%, transparent);
   padding: 0.25rem 0.75rem;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   font-size: var(--font-h6);
 }
 
@@ -712,7 +712,7 @@ main {
 .cta-card {
   background: var(--card-bg-color);
   border: var(--card-border);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   padding: 2.5rem;
   text-align: center;
   box-shadow: var(--card-shadow);
@@ -765,7 +765,7 @@ main {
   border: 1px solid var(--border-color);
   background: var(--card-bg-color);
   color: var(--text-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: var(--font-body);
   outline: none;
   cursor: pointer;
@@ -803,7 +803,7 @@ main {
 .project-card {
   background: var(--card-bg-color);
   border: var(--card-border);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   padding: 1.75rem;
   box-shadow: var(--card-shadow);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -820,7 +820,7 @@ main {
   position: relative;
   width: 100%;
   height: 200px;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   margin-bottom: 1rem;
 }
@@ -887,13 +887,13 @@ main {
   border: 1px solid var(--border-color);
   color: var(--text-color-light);
   padding: 0.25rem 0.75rem;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   font-size: var(--font-h6);
 }
 
 .difficulty-badge {
   padding: 0.25rem 0.75rem;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   font-size: var(--font-h6);
   font-weight: bold;
 }
@@ -936,7 +936,7 @@ main {
   border: 1px solid var(--border-color);
   color: var(--text-color-light);
   padding: 0.25rem 0.75rem;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   font-size: var(--font-h6);
 }
 
@@ -1164,7 +1164,7 @@ main {
     color-mix(in srgb, var(--surface-muted) 40%, transparent)
   );
   border: 1px solid color-mix(in srgb, var(--evt-border-subtle) 80%, transparent);
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   box-shadow: 0 10px 30px var(--evt-shadow-subtle);
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
@@ -1219,7 +1219,7 @@ main {
   height: 140px;
   padding: 24px;
   background: var(--card-bg-color);
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   display: flex;
   align-items: center;
   justify-content: center;

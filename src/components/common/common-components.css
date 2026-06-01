@@ -13,7 +13,7 @@
   height: 40px;
   border: 3px solid rgba(102, 126, 234, 0.2);
   border-top: 3px solid #667eea;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 1s linear infinite;
 }
 .dark .loading-spinner {
@@ -40,7 +40,7 @@
 .error-message {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   padding: 1rem;
   margin: 1rem 0;
   color: #dc2626;
@@ -129,7 +129,7 @@
 
 .public-layout-card {
   background: white;
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   padding: 2rem;
   width: 100%;

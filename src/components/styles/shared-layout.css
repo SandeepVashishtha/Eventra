@@ -247,7 +247,7 @@
   width: 44px;
   height: 44px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -453,7 +453,7 @@
 .footer-dark .social-link {
   background-color: #2c2c2c;
   color: #f8fafc;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 6px;
   transition: background 0.3s ease;
 }
@@ -489,7 +489,7 @@ footer.footer-dark {
   border: none;
   cursor: pointer;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: all 0.3s ease;
   color: var(--text-color);
 }
@@ -501,7 +501,7 @@ footer.footer-dark {
 .profile-picture {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
   border: 2px solid var(--primary-color);
 }
@@ -522,7 +522,7 @@ footer.footer-dark {
   top: calc(100% + 8px);
   right: 0;
   background: white;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   min-width: 250px;
   z-index: 1000;
@@ -574,7 +574,7 @@ footer.footer-dark {
 .dropdown-profile-pic {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
 }
 
@@ -646,7 +646,7 @@ footer.footer-dark {
 .mobile-profile-pic {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
 }
 
