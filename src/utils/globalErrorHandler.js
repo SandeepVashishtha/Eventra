@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { ENV } from "../config/env";
 
 const dsn = ENV.SENTRY_DSN;
