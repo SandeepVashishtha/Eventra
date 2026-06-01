@@ -175,13 +175,11 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const updateActivity = useCallback(() => {
     const now = Date.now();
-    lastActivityRef.current = now;
-
-    if (!activityTimeoutRef.current) {
-      activityTimeoutRef.current = setTimeout(() => {
-        setLastActivity(lastActivityRef.current);
-        activityTimeoutRef.current = null;
-      }, 1000);
+    // 🔥 FIX: Throttle to max once per second to prevent CPU thrashing from mousemove/scroll
+    if (now - lastActivityRef.current > 1000) {
+      lastActivityRef.current = now;
+      // 🔥 FIX: Synchronize React state so context consumers get accurate data
+      setLastActivity(now);
     }
   }, []);
 
@@ -207,7 +205,9 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   useEffect(() => {
     const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click"];
-    events.forEach((event) => window.addEventListener(event, updateActivity));
+    // 🔥 FIX: Added { passive: true } to further optimize scroll performance
+    events.forEach((event) => window.addEventListener(event, updateActivity, { passive: true }));
+
     return () => {
       events.forEach((event) => window.removeEventListener(event, updateActivity));
     };

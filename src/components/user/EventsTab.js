@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
@@ -10,7 +11,9 @@ import {
   X,
   Ticket,
   Trash2,
-  } from "lucide-react";
+  Filter,
+  ArrowUpDown,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
 import StatusBadge from "../common/StatusBadge";
@@ -117,7 +120,8 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
           <img
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy"/>
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
         </div>
       )}
@@ -230,7 +234,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [sortBy, setSortBy] = useState("soonest");
   const [cancelTarget, setCancelTarget] = useState(null);
 
-  const [,
+  const [recentSearches,
     setRecentSearches] = useState([]);
   const registeredEvents = useMemo(
     () =>
@@ -388,6 +392,22 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
               />
             )}
           </div>
+          
+          {/* 🔥 FIX 2: Relocated Rogue "Clear History" button to its proper logical location */}
+          {recentSearches.length > 0 && (
+            <button
+              onClick={() => {
+                localStorage.removeItem(
+                  "recentSearches"
+                );
+
+                setRecentSearches([]);
+              }}
+              className="text-sm text-red-500 hover:underline mt-2"
+            >
+              Clear History
+            </button>
+          )}
 
           <StyledDropdown
             label=""
@@ -500,8 +520,9 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         </>
       )}
 
+      {/* 🔥 FIX 1: Portaled the modal out of the Framer Motion stacking context trap */}
       <AnimatePresence>
-        {cancelTarget && (
+        {cancelTarget && ReactDOM.createPortal(
           <motion.div
             className="my-events-dialog-backdrop"
             initial={{ opacity: 0 }}
@@ -533,15 +554,16 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                 Remove <strong>{cancelTarget.title}</strong> from your registrations?
               </p>
               <div className="my-events-dialog-actions">
-                <button className="my-events-dialog-cancel" onClick={handleCancelDismiss} aria-label="button">
+                <button className="my-events-dialog-cancel" onClick={handleCancelDismiss}>
                   Keep it
                 </button>
-                <button className="my-events-dialog-confirm" onClick={handleCancelConfirm} aria-label="button">
+                <button className="my-events-dialog-confirm" onClick={handleCancelConfirm}>
                   Yes, remove
                 </button>
               </div>
             </motion.div>
-          </motion.div>
+          </motion.div>,
+          document.body
         )}
       </AnimatePresence>
     </motion.div>

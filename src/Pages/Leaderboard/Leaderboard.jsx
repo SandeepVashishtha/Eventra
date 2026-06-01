@@ -15,10 +15,8 @@ import {
   FaSearch,
   FaFilter,
   FaDownload,
-  FaRefresh,
+  FaSync,
   FaTrophy,
-  FaMedal,
-  FaAward,
 } from "react-icons/fa";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
@@ -35,31 +33,18 @@ import {
   computeLeaderboardStats,
   applyAchievementBonus,
 } from "../../utils/leaderboardUtils";
-import { getAchievementBadge, type Contributor, type StreakData } from "../../utils/leaderboardUtils";
+import { getAchievementBadge } from "../../utils/leaderboardUtils";
 import { logger } from "../../utils/logger";
 import { storageManager } from "../../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
 import { validators } from "../../utils/storage/storageValidators";
-
-// ─── Types ───────────────────────────────────────────────
-interface LeaderboardCache {
-  data: Contributor[];
-  timestamp: number;
-}
-
-interface SearchHistory {
-  queries: string[];
-  lastUpdated: number;
-}
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
   { id: "overall", label: "Overall Leaders", icon: "🏆", description: "All-time top contributors" },
   { id: "monthly", label: "Monthly Stars", icon: "⭐", description: "This month's active contributors" },
   { id: "mentors", label: "Project Mentors", icon: "🎓", description: "Guiding the next generation" },
-] as const;
-
-type CategoryFilter = typeof CATEGORY_FILTERS[number]["id"];
+];
 
 // ─── Constants ───────────────────────────────────────────────
 const LEADERBOARD_CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -75,38 +60,23 @@ const CONFETTI_CONFIG = {
   colors: ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b"],
 };
 
-const POINTS = {
-  gssoclevel1: 3,
-  gssoclevel2: 7,
-  gssoclevel3: 10,
-} as const;
-const DEFAULT_MERGED_PR_POINTS = 1;
-
-// ─── Utility Functions ───────────────────────────────────────────────
-const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-const calculatePrPoints = (labels: string[]): number => {
-  const levelPoints = labels.reduce((total, label) => {
-    const normalized = normalizeLabel(label);
-    return total + (POINTS[normalized as keyof typeof POINTS] || 0);
-  }, 0);
-  return levelPoints || DEFAULT_MERGED_PR_POINTS;
-};
-
-const formatLastUpdated = (timestamp: number | string): string => {
+const formatLastUpdated = (timestamp) => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-  
+
   if (diffMinutes < 1) return "Just now";
   if (diffMinutes < 60) return `${diffMinutes}m ago`;
   if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
+const prepareLeaderboardEntries = (entries = []) =>
+  entries.map((entry) => applyAchievementBonus({ ...entry }));
+
 // ─── Custom Hooks ───────────────────────────────────────────────
-const useDebouncedValue = <T,>(value: T, delay: number): T => {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+const useDebouncedValue = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedValue(value), delay);
@@ -116,17 +86,17 @@ const useDebouncedValue = <T,>(value: T, delay: number): T => {
   return debouncedValue;
 };
 
-const useLocalStorage = <T,>(key: string, initialValue: T): [T, (value: T) => void] => {
-  const [storedValue, setStoredValue] = useState<T>(() => {
+const useLocalStorage = (key, initialValue) => {
+  const [storedValue, setStoredValue] = useState(() => {
     try {
-      const item = storageManager.get(key, validators.isObject) as T;
+      const item = storageManager.get(key, validators.isObject);
       return item ?? initialValue;
     } catch {
       return initialValue;
     }
   });
 
-  const setValue = useCallback((value: T) => {
+  const setValue = useCallback((value) => {
     try {
       storageManager.set(key, value);
       setStoredValue(value);
@@ -140,9 +110,9 @@ const useLocalStorage = <T,>(key: string, initialValue: T): [T, (value: T) => vo
 
 // ─── Sub-Components ───────────────────────────────────────────────
 
-const RankMovementIndicator: React.FC<{ liveDifference?: number }> = React.memo(({ liveDifference }) => {
+const RankMovementIndicator = React.memo(({ liveDifference }) => {
   const diff = liveDifference ?? 0;
-  
+
   if (diff > 0) {
     return (
       <motion.span
@@ -178,11 +148,12 @@ const RankMovementIndicator: React.FC<{ liveDifference?: number }> = React.memo(
     </span>
   );
 });
+RankMovementIndicator.displayName = "RankMovementIndicator";
 
-const AnimatedCounter: React.FC<{ value: number | string; duration?: number }> = React.memo(
+const AnimatedCounter = React.memo(
   ({ value, duration = 1200 }) => {
     const [count, setCount] = useState(0);
-    const rafRef = useRef<number>();
+    const rafRef = useRef();
     const endValue = useMemo(() => {
       const num = typeof value === "string" ? parseInt(value, 10) : value;
       return isNaN(num) ? 0 : num;
@@ -198,7 +169,7 @@ const AnimatedCounter: React.FC<{ value: number | string; duration?: number }> =
 
       const startTime = performance.now();
 
-      const tick = (now: number) => {
+      const tick = (now) => {
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
@@ -218,8 +189,9 @@ const AnimatedCounter: React.FC<{ value: number | string; duration?: number }> =
     return <span aria-live="polite">{count.toLocaleString()}</span>;
   }
 );
+AnimatedCounter.displayName = "AnimatedCounter";
 
-const LiveStatusBadge: React.FC<{ status: SSE_STATUS }> = ({ status }) => {
+const LiveStatusBadge = ({ status }) => {
   const statusConfig = {
     [SSE_STATUS.CONNECTED]: {
       label: "Live",
@@ -257,21 +229,7 @@ const LiveStatusBadge: React.FC<{ status: SSE_STATUS }> = ({ status }) => {
   );
 };
 
-const PodiumCard: React.FC<{
-  contributor: Contributor;
-  position: "1st" | "2nd" | "3rd";
-  orderClass: string;
-  styling: {
-    borderClass: string;
-    ringClass: string;
-    title: string;
-    badgeClass: string;
-    size: string;
-    pointsClass: string;
-    medalClass: string;
-  };
-  isFirst?: boolean;
-}> = React.memo(({ contributor, position, orderClass, styling, isFirst = false }) => {
+const PodiumCard = React.memo(({ contributor, position, orderClass, styling, isFirst = false }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -333,30 +291,31 @@ const PodiumCard: React.FC<{
     </motion.div>
   );
 });
+PodiumCard.displayName = "PodiumCard";
 
 // ─── Main Component ───────────────────────────────────────────────
 export default function LeaderBoard() {
   useDocumentTitle("Eventra | Leaderboard");
-  
+
   // State
-  const [contributors, setContributors] = useState<Contributor[]>([]);
-  const [streaks, setStreaks] = useState<Record<string, StreakData>>({});
+  const [contributors, setContributors] = useState([]);
+  const [streaks, setStreaks] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string>("");
+  const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState("");
   const [search, setSearch] = useState("");
-  const [recentSearches, setRecentSearches] = useLocalStorage<SearchHistory>(
+  const [, setRecentSearches] = useLocalStorage(
     STORAGE_KEYS.RECENT_SEARCHES,
     { queries: [], lastUpdated: Date.now() }
   );
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState<"points" | "prs" | "username">("points");
-  const [activeCategory, setActiveCategory] = useState<CategoryFilter>("overall");
+  const [sortBy, setSortBy] = useState("points");
+  const [activeCategory, setActiveCategory] = useState("overall");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Refs
-  const lastAppliedSyncRef = useRef<number | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const lastAppliedSyncRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   // Context
   const {
@@ -422,15 +381,17 @@ export default function LeaderBoard() {
   // Real-time stream updates
   useEffect(() => {
     if (streamContributors.length === 0 || lastSynced === lastAppliedSyncRef.current) return;
-    
+
     lastAppliedSyncRef.current = lastSynced;
+
+    const preparedContributors = prepareLeaderboardEntries(streamContributors);
 
     setContributors((prev) => {
       setStreaks((prevStreaks) => {
-        const updatedStreaks: Record<string, StreakData> = { ...prevStreaks };
+        const updatedStreaks = { ...prevStreaks };
         const prevRanks = new Map(prev.map((c, idx) => [c.username, idx + 1]));
 
-        streamContributors.forEach((c, newIdx) => {
+        preparedContributors.forEach((c, newIdx) => {
           const username = c.username;
           const newRank = newIdx + 1;
           const prevRank = prevRanks.get(username);
@@ -449,18 +410,17 @@ export default function LeaderBoard() {
 
         return updatedStreaks;
       });
-      return streamContributors;
+      return preparedContributors;
     });
 
     setLastUpdated(`Live: ${formatLastUpdated(lastSynced)}`);
-    
+
     // Update cache
     try {
-      const cacheData: LeaderboardCache = {
-        data: streamContributors,
+      storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
+        data: preparedContributors,
         timestamp: lastSynced,
-      };
-      storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, cacheData);
+      });
     } catch (err) {
       logger.warn("Failed to update leaderboard cache:", err);
     }
@@ -476,7 +436,7 @@ export default function LeaderBoard() {
         setError(null);
 
         // Try cache first
-        const cached = storageManager.get<LeaderboardCache>(
+        const cached = storageManager.get(
           STORAGE_KEYS.LEADERBOARD_CACHE,
           validators.isObject
         );
@@ -500,17 +460,16 @@ export default function LeaderBoard() {
           throw new Error("Invalid leaderboard data format");
         }
 
-        // Apply achievement bonuses
-        data.forEach(applyAchievementBonus);
+        const preparedData = prepareLeaderboardEntries(data);
 
         if (isMounted) {
-          const sorted = [...data].sort((a, b) => b.points - a.points);
+          const sorted = [...preparedData].sort((a, b) => b.points - a.points);
           setContributors(sorted);
           setLastUpdated(`Updated: ${formatLastUpdated(Date.now())}`);
-          
+
           // Cache the fresh data
           storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
-            data,
+            data: sorted,
             timestamp: Date.now(),
           });
         }
@@ -518,7 +477,6 @@ export default function LeaderBoard() {
         logger.error("Failed to load leaderboard:", err);
         if (isMounted) {
           setError("Unable to load leaderboard. Please try again.");
-          // Fallback to empty state
           setContributors([]);
         }
       } finally {
@@ -534,7 +492,7 @@ export default function LeaderBoard() {
 
   // ─── Handlers ───────────────────────────────────────────────
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = useCallback((e) => {
     const query = e.target.value;
     setSearch(query);
     setCurrentPage(1);
@@ -550,34 +508,32 @@ export default function LeaderBoard() {
 
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
-    
+
     setIsRefreshing(true);
     try {
       const { data } = await fetchWithTimeout("/api/leaderboard", {}, 10000);
       if (Array.isArray(data)) {
-        data.forEach(applyAchievementBonus);
-        const sorted = [...data].sort((a, b) => b.points - a.points);
+        const preparedData = prepareLeaderboardEntries(data);
+        const sorted = [...preparedData].sort((a, b) => b.points - a.points);
         setContributors(sorted);
         setLastUpdated(`Refreshed: ${formatLastUpdated(Date.now())}`);
-        
+
         storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
-          data,
+          data: sorted,
           timestamp: Date.now(),
         });
-        
-        // Subtle success feedback
+
         confetti({ ...CONFETTI_CONFIG, particleCount: 50, spread: 50 });
       }
     } catch (err) {
       logger.error("Refresh failed:", err);
-      // Visual feedback for error could be added here
     } finally {
       setIsRefreshing(false);
     }
   }, [isRefreshing]);
 
   const handleExport = useCallback(() => {
-    const exportData = sortedContributors.map((c, idx) => ({
+    const exportData = sortedContributors.map((c) => ({
       rank: ranksMap[c.username],
       username: c.username,
       name: c.name || "",
@@ -608,8 +564,7 @@ export default function LeaderBoard() {
     URL.revokeObjectURL(link.href);
   }, [sortedContributors, ranksMap]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    // Keyboard shortcuts
+  const handleKeyDown = useCallback((e) => {
     if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
       e.preventDefault();
       searchInputRef.current?.focus();
@@ -631,7 +586,7 @@ export default function LeaderBoard() {
   // ─── Podium Configuration ───────────────────────────────────────────────
   const podiumConfig = useMemo(() => [
     {
-      position: "2nd" as const,
+      position: "2nd",
       contributor: top3[1],
       orderClass: "order-2 md:order-1",
       styling: {
@@ -645,7 +600,7 @@ export default function LeaderBoard() {
       },
     },
     {
-      position: "1st" as const,
+      position: "1st",
       contributor: top3[0],
       orderClass: "order-1 md:order-2",
       styling: {
@@ -660,7 +615,7 @@ export default function LeaderBoard() {
       isFirst: true,
     },
     {
-      position: "3rd" as const,
+      position: "3rd",
       contributor: top3[2],
       orderClass: "order-3 md:order-3",
       styling: {
@@ -678,33 +633,39 @@ export default function LeaderBoard() {
   // ─── Render ───────────────────────────────────────────────
   return (
     <FeatureErrorBoundary>
-      <div 
-        className="bg-slate-50 dark:bg-slate-950 pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300"
+      <div
+        className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(224,233,242,0.52),_transparent_42%),linear-gradient(180deg,#f8fbfe_0%,#eef4fa_100%)] pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300"
         role="main"
         aria-labelledby="leaderboard-heading"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* HERO SECTION */}
-          <header className="text-center mb-12 space-y-4">
+          <header className="mb-10 rounded-[32px] border border-slate-200/70 bg-white/85 px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:px-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-600"
             >
               <FaTrophy className="w-3 h-3" aria-hidden="true" />
-              GSSoC'26 Contribution Arena
+              GSSoC&apos;26 Contribution Arena
             </motion.div>
 
-            <h1 id="leaderboard-heading" className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-950 dark:text-white">
+            <h1 id="leaderboard-heading" className="mt-5 text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-950">
               Community{" "}
-              <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-slate-700 via-slate-500 to-slate-300 bg-clip-text text-transparent">
                 Leaderboard
               </span>
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-              Celebrating our elite open-source creators driving Eventra's core features with exceptional code and design contributions.
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-500 sm:text-lg">
+              A concise view of active contributors, ranked by impact, with live updates and a clear breakdown of points, PRs, and achievement tiers.
             </p>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs font-semibold text-slate-500">
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{stats.totalContributors} contributors</span>
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{stats.flooredTotalPRs} merged PRs</span>
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{currentContributors.length} shown on this page</span>
+            </div>
           </header>
 
           {/* OLYMPIC PODIUM - Top 3 */}
@@ -712,10 +673,10 @@ export default function LeaderBoard() {
             <section className="mb-14" aria-labelledby="podium-heading">
               <h2 id="podium-heading" className="sr-only">Top 3 Contributors</h2>
               <div className="flex flex-col md:flex-row items-end justify-center gap-6 max-w-4xl mx-auto" role="list">
-                {podiumConfig.map((podium, index) => (
+                {podiumConfig.map((podium) => (
                   <PodiumCard
                     key={podium.position}
-                    contributor={podium.contributor!}
+                    contributor={podium.contributor}
                     position={podium.position}
                     orderClass={podium.orderClass}
                     styling={podium.styling}
@@ -727,7 +688,7 @@ export default function LeaderBoard() {
           )}
 
           {/* CATEGORY FILTERS */}
-          <nav className="flex flex-wrap items-center justify-center gap-3 mb-8" aria-label="Leaderboard categories">
+          <nav className="mb-8 flex flex-wrap items-center justify-center gap-3" aria-label="Leaderboard categories">
             {CATEGORY_FILTERS.map((cat) => (
               <motion.button
                 key={cat.id}
@@ -739,11 +700,11 @@ export default function LeaderBoard() {
                 whileTap={{ scale: 0.97 }}
                 aria-pressed={activeCategory === cat.id}
                 className={`
-                  flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all border backdrop-blur-xl
+                  flex items-center gap-2 rounded-full border px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all backdrop-blur-xl
                   ${
                     activeCategory === cat.id
-                      ? "bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-200/50 dark:shadow-indigo-900/30"
-                      : "bg-white/70 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 border-slate-200/50 dark:border-slate-800/40 hover:border-indigo-300 dark:hover:border-slate-700"
+                      ? "bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-300/40"
+                      : "bg-white/75 text-slate-600 border-slate-200/60 hover:border-slate-300 hover:bg-white"
                   }
                 `}
                 title={cat.description}
@@ -755,7 +716,7 @@ export default function LeaderBoard() {
           </nav>
 
           {/* SEARCH & CONTROLS */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-800/40">
+          <div className="mb-8 flex flex-col gap-4 rounded-[28px] border border-slate-200/70 bg-white/80 p-4 shadow-[0_16px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full sm:max-w-xs">
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
               <input
@@ -764,7 +725,7 @@ export default function LeaderBoard() {
                 value={search}
                 onChange={handleSearchChange}
                 placeholder="Search contributors... (Press / to focus)"
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-slate-950 dark:text-white placeholder-slate-400"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-950 transition-all placeholder:text-slate-400 focus:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#E0E9F2]"
                 aria-label="Search contributors by username"
               />
             </div>
@@ -776,7 +737,7 @@ export default function LeaderBoard() {
                 options={sortOptions.map((opt) => opt.label)}
                 onChange={(value) => {
                   const selected = sortOptions.find((opt) => opt.label === value);
-                  if (selected) setSortBy(selected.value as typeof sortBy);
+                  if (selected) setSortBy(selected.value);
                 }}
                 icon={<FaFilter className="w-3 h-3" aria-hidden="true" />}
               />
@@ -786,24 +747,33 @@ export default function LeaderBoard() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 disabled={isRefreshing}
-                className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all disabled:opacity-50"
+                className="rounded-2xl border border-slate-200 bg-white/70 p-2.5 text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-950 disabled:opacity-50"
                 aria-label="Refresh leaderboard data"
                 title="Refresh data"
               >
-                <FaRefresh className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
+                <FaSync className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
               </motion.button>
 
               <motion.button
                 onClick={handleExport}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all"
+                className="rounded-2xl border border-slate-200 bg-white/70 p-2.5 text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-950"
                 aria-label="Export leaderboard as CSV"
                 title="Export as CSV"
               >
                 <FaDownload className="w-4 h-4" aria-hidden="true" />
               </motion.button>
             </div>
+          </div>
+
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm text-slate-600 backdrop-blur-xl">
+            <span>
+              Showing <strong className="font-semibold text-slate-900">{currentContributors.length}</strong> of <strong className="font-semibold text-slate-900">{sortedContributors.length}</strong> contributors
+            </span>
+            <span>
+              Page <strong className="font-semibold text-slate-900">{currentPage}</strong> of <strong className="font-semibold text-slate-900">{totalPages}</strong>
+            </span>
           </div>
 
           {/* STATS CARDS */}
@@ -839,16 +809,16 @@ export default function LeaderBoard() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className={`p-6 rounded-2xl bg-gradient-to-br ${card.gradient} ${card.border} border shadow-sm flex items-center gap-4`}
+                className={`group flex items-center gap-4 rounded-3xl border bg-white/80 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl transition-transform duration-200 hover:-translate-y-0.5 ${card.border}`}
               >
-                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 shadow-sm">
-                  <card.icon className={`text-2xl ${card.textColor}`} aria-hidden="true" />
+                <div className="rounded-2xl border border-slate-200 bg-[#E0E9F2]/35 p-3.5 text-slate-700 shadow-sm">
+                  <card.icon className="text-2xl" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                     {card.title}
                   </p>
-                  <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1">
+                  <p className="mt-1 text-3xl font-extrabold text-slate-950">
                     {loading ? (
                       <span className="inline-block w-12 h-8 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
                     ) : (
@@ -862,11 +832,11 @@ export default function LeaderBoard() {
 
           {/* LEADERBOARD TABLE */}
           <section
-            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden"
+            className="overflow-hidden rounded-[32px] border border-slate-200/70 bg-white/90 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl"
             aria-labelledby="leaderboard-table-title"
           >
             <h2 id="leaderboard-table-title" className="sr-only">Contributor Rankings</h2>
-            
+
             {error ? (
               <div className="p-8 text-center">
                 <p className="text-rose-500 font-medium">{error}</p>
@@ -884,21 +854,21 @@ export default function LeaderBoard() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
-                  <thead className="bg-slate-50 dark:bg-slate-900/50">
+                <table className="min-w-full divide-y divide-slate-100">
+                  <thead className="bg-slate-50/90">
                     <tr>
                       {["Rank", "Contributor", "Achievement", "Points", "PRs"].map((header) => (
                         <th
                           key={header}
                           scope="col"
-                          className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400"
+                          className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.18em] text-slate-500"
                         >
                           {header}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900">
+                  <tbody className="divide-y divide-slate-100 bg-white">
                     <AnimatePresence mode="popLayout">
                       {currentContributors.length > 0 ? (
                         currentContributors.map((c, index) => {
@@ -1072,14 +1042,14 @@ export default function LeaderBoard() {
                 {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex justify-between items-center py-4 px-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    <span className="text-xs font-medium text-slate-500">
                       Page {currentPage} of {totalPages}
                     </span>
                     <div className="flex items-center gap-2" role="navigation" aria-label="Pagination">
                       <button
                         onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                         disabled={currentPage === 1}
-                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-50 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#E0E9F2] disabled:opacity-50"
                         aria-label="Previous page"
                       >
                         <FaChevronLeft className="w-3 h-3" aria-hidden="true" />
@@ -1087,7 +1057,7 @@ export default function LeaderBoard() {
                       <button
                         onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-50 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#E0E9F2] disabled:opacity-50"
                         aria-label="Next page"
                       >
                         <FaChevronRight className="w-3 h-3" aria-hidden="true" />
@@ -1099,9 +1069,9 @@ export default function LeaderBoard() {
             )}
 
             {/* Footer */}
-            <div className="bg-slate-50/50 dark:bg-black/30 px-6 py-3 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-6 py-3">
               {lastUpdated && (
-                <time className="text-xs font-medium text-slate-400" dateTime={lastUpdated}>
+                <time className="text-xs font-medium text-slate-500" dateTime={lastUpdated}>
                   {lastUpdated}
                 </time>
               )}

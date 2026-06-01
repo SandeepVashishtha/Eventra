@@ -22,7 +22,7 @@ import ShareMenu from "../../components/common/ShareMenu";
 import ShareModal from "../../components/common/ShareModal";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
-import { safeParseJson } from "../../utils/jsonUtils";
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
@@ -31,6 +31,7 @@ import { safeGetItem, safeSetItem } from "../../utils/safeStorage.js";
 const EventDetails = () => {
   const { eventId } = useParams();
   const { user } = useAuth();
+  const { addRecentlyViewed } = useRecentlyViewed();
 
   const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
 
@@ -72,7 +73,7 @@ const EventDetails = () => {
     loadEvent();
   }, [loadEvent]);
 
-  // Safely handle localStorage with try-catch
+  // Safely handle localStorage cache updates via hook
   useEffect(() => {
     if (!event) return;
 
@@ -88,6 +89,8 @@ const EventDetails = () => {
       // localStorage unavailable — not critical
     }
   }, [event]);
+    addRecentlyViewed(event);
+  }, [event, addRecentlyViewed]);
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -236,9 +239,28 @@ const EventDetails = () => {
                           onClick={async () => {
                             try {
                               setExportingRegistrants(true);
-                              const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-                              const registrants = await response.json();
-                              exportToCSV(registrants, `${event.title}_registrants`);
+                              let allRegistrants = [];
+                              let page = 1;
+                              const limit = 500;
+                              let hasMore = true;
+                              
+                              while (hasMore) {
+                                const url = `${API_ENDPOINTS.EVENTS.REGISTRANTS(eventId)}?page=${page}&limit=${limit}`;
+                                const response = await apiUtils.get(url);
+                                const data = response.data?.data || response.data || [];
+                                const totalPages = response.data?.totalPages || 1;
+                                
+                                if (Array.isArray(data)) {
+                                  allRegistrants = allRegistrants.concat(data);
+                                }
+                                
+                                if (page >= totalPages || data.length < limit) {
+                                  hasMore = false;
+                                } else {
+                                  page++;
+                                }
+                              }
+                              exportToCSV(allRegistrants, `${event.title}_registrants`);
                             } catch (error) {
                               toast.error("Failed to fetch registrants");
                             } finally {
@@ -255,9 +277,28 @@ const EventDetails = () => {
                           onClick={async () => {
                             try {
                               setExportingRegistrants(true);
-                              const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-                              const registrants = await response.json();
-                              exportToJSON(registrants, `${event.title}_registrants`);
+                              let allRegistrants = [];
+                              let page = 1;
+                              const limit = 500;
+                              let hasMore = true;
+                              
+                              while (hasMore) {
+                                const url = `${API_ENDPOINTS.EVENTS.REGISTRANTS(eventId)}?page=${page}&limit=${limit}`;
+                                const response = await apiUtils.get(url);
+                                const data = response.data?.data || response.data || [];
+                                const totalPages = response.data?.totalPages || 1;
+                                
+                                if (Array.isArray(data)) {
+                                  allRegistrants = allRegistrants.concat(data);
+                                }
+                                
+                                if (page >= totalPages || data.length < limit) {
+                                  hasMore = false;
+                                } else {
+                                  page++;
+                                }
+                              }
+                              exportToJSON(allRegistrants, `${event.title}_registrants`);
                             } catch (error) {
                               toast.error("Failed to fetch registrants");
                             } finally {

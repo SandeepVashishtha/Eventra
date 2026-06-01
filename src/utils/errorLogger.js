@@ -26,7 +26,7 @@ if (isProduction && dsn) {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
- * Build a structured error entry for persistence and reporting.
+ * Build a structured error entry for persistence and diagnostics.
  */
 function buildErrorEntry(error, errorInfo, extra = {}) {
   return {
@@ -42,8 +42,7 @@ function buildErrorEntry(error, errorInfo, extra = {}) {
 
 /**
  * Persist an error entry to localStorage under `eventra_error_log`.
- * Keeps only the 10 most recent entries and skips sensitive keys.
- * Safe — never throws.
+ * Keeps only the 10 most recent entries and never throws.
  */
 function persistToLocalStorage(entry) {
   try {
@@ -55,12 +54,13 @@ function persistToLocalStorage(entry) {
       "eventra_error_log",
       JSON.stringify(existing.slice(0, 10))
     );
+    const existing = JSON.parse(localStorage.getItem("eventra_error_log") || "[]");
+    existing.unshift(entry);
+    localStorage.setItem("eventra_error_log", JSON.stringify(existing.slice(0, 10)));
   } catch (_) {
-    // localStorage unavailable or quota exceeded — fail silently
+    // Ignore storage failures (private mode, quota exceeded, etc.)
   }
 }
-
-// ── Public API ────────────────────────────────────────────────────────────────
 
 export const logError = (error, errorInfo, extra = {}) => {
   try {
@@ -76,18 +76,6 @@ export const logError = (error, errorInfo, extra = {}) => {
 
     const entry = buildErrorEntry(error, errorInfo, extra);
     persistToLocalStorage(entry);
-
-    if (isProduction && dsn) {
-      Sentry.withScope((scope) => {
-        if (errorInfo?.componentStack) {
-          scope.setExtra("componentStack", errorInfo.componentStack);
-        }
-        Object.entries(extra).forEach(([key, value]) => {
-          scope.setExtra(key, value);
-        });
-        Sentry.captureException(error);
-      });
-    }
   } catch (loggerError) {
     console.warn("[Eventra ErrorLogger] Failed to log error:", loggerError);
   }
