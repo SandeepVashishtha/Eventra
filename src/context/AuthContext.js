@@ -323,11 +323,11 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
     if (token !== "cookie-managed" && !isTokenValid(token)) {
-      needsExpiryCleanupRef.current = true;
+      clearExpiredSession();
       return false;
     }
     return true;
-  }, [user, token]);
+  }, [user, token, clearExpiredSession]);
 
   const hasRole = useCallback(
     (roleName) => {
