@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { users } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { createRateLimiter } from "../middleware/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
 
@@ -69,7 +70,7 @@ const findUserByUsernameOrEmail = (usernameOrEmail) => {
 // Login Handler
 // ---------------------------------------------------------------------------
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return res.status(200).set(buildCorsHeaders(req)).end();
@@ -204,4 +205,11 @@ export default async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
+const loginRateLimiter = createRateLimiter({
+  max: 5,
+  windowMs: 15 * 60 * 1000,
+  message: "Too many authentication attempts. Please try again later.",
+});
+
+export default loginRateLimiter(handler);
 export { users };
