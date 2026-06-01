@@ -1,358 +1,404 @@
+import "./EventDetails.print.css";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  Users,
-  Tag,
-  Share2,
-  ArrowLeft,
-  LayoutTemplate,
-} from "lucide-react";
-import eventsMockData from "./eventsMockData.json";
-import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
-import ShareMenu from "../../components/common/ShareMenu";
-import CertificateDownload from "../../components/CertificateDownload";
-import { generateEventSharingData } from "../../utils/shareUtils";
+import { useEffect, useState, useRef } from "react";
+import { sanitizeHtml } from "../../utils/sanitizeHtml";
+import CountdownTimer from "../../components/common/CountdownTimer";
+import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
+import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
+import { toast } from "react-toastify";
+import { getEventStatus } from "../../utils/eventUtils";
+import { logError } from "../../utils/errorLogger";
+// Note: eventsMockData.json is NOT statically imported here.
+// It is loaded dynamically (and only in development/fallback mode) so that
+// the mock JSON is not bundled into the production build.
 
 const EventDetailsPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const latestRequestIdRef = useRef(0);
+  const [loading, setLoading] = useState(true);
+  const [event, setEvent] = useState(null);
+  const [, setError] = useState(null);
+  const [cacheInfo, setCacheInfo] = useState(null);
+  const [copied, setCopied] = useState(false);
 
-  // Find the event from mock data
-  const event = eventsMockData.find((e) => e.id === parseInt(eventId));
+  const shareUrl = event ? `${window.location.origin}/events/${event.id}` : "";
+  const shareText = event ? `Check out this event: ${event.title}` : "";
 
-  if (!event) {
+  const shareLinks = event
+    ? {
+        twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+        whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+      }
+    : {};
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy link to clipboard");
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: event.title,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          toast.error("Unable to share event");
+        }
+      }
+    }
+  };
+
+  useEffect(() => {
+    let isCancelled = false;
+    const requestId = latestRequestIdRef.current + 1;
+    latestRequestIdRef.current = requestId;
+    const controller = new AbortController();
+    const isLatestRequest = () =>
+      latestRequestIdRef.current === requestId && !controller.signal.aborted;
+
+    const fetchEvent = async () => {
+      setLoading(true);
+      setCacheInfo(null);
+      setError(null);
+
+      try {
+        // Try the live API first
+        const apiUrl = `/api/events/${encodeURIComponent(eventId)}`;
+        const response = await fetch(apiUrl, { signal: controller.signal });
+
+        if (response.ok) {
+          const data = await response.json();
+          const evt = data.event || data || null;
+          if (!isCancelled && isLatestRequest()) {
+            setEvent(evt);
+            setError(null);
+            setCacheInfo({ cachedAt: null, label: "live" });
+          }
+        } else {
+          // API returned error — fall back to mock data
+          const responseError = new Error(`Failed to load event details (${response.status})`);
+          const { default: mockData } = await import("./eventsMockData.json");
+          const foundEvent = mockData.find((item) => String(item.id) === String(eventId));
+          if (!isCancelled && isLatestRequest()) {
+            setEvent(foundEvent || null);
+            setError(foundEvent ? null : responseError);
+            if (foundEvent) setCacheInfo({ cachedAt: null, label: "mock fallback" });
+          }
+        }
+      } catch (err) {
+        if (err?.name === "AbortError") {
+          return;
+        }
+
+        // Network error or other failure — try mock data as last resort
+        try {
+          const { default: mockData } = await import("./eventsMockData.json");
+          const foundEvent = mockData.find((item) => String(item.id) === String(eventId));
+          if (!isCancelled && isLatestRequest()) {
+            setEvent(foundEvent || null);
+            setError(foundEvent ? null : err);
+            if (foundEvent) setCacheInfo({ cachedAt: null, label: "offline fallback" });
+          }
+        } catch (fallbackErr) {
+          if (!isCancelled && isLatestRequest()) {
+            logError(fallbackErr, null, {
+              cause: err?.message || String(err),
+              eventId,
+              source: "EventDetailsPage",
+            });
+            setEvent(null);
+            setError(fallbackErr);
+          }
+        }
+      } finally {
+        if (!isCancelled && isLatestRequest()) setLoading(false);
+      }
+    };
+
+    fetchEvent();
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
+  }, [eventId]);
+
+
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center px-4">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Event Not Found
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            The event you're looking for doesn't exist.
-          </p>
-          <button
-            onClick={() => navigate("/events")}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors"
-          >
-            <ArrowLeft size={18} />
-            Back to Events
-          </button>
+      <main
+        className="flex min-h-svh items-center justify-center bg-bg safe-area-x"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
+          <p className="font-medium text-gray-600 dark:text-gray-400">Loading event details...</p>
         </div>
-      </div>
+      </main>
     );
   }
 
-  const eventDateTime = new Date(`${event.date} ${event.time}`);
-  const isPastEvent = eventDateTime < new Date();
-  const attendeePercentage = (event.attendees / event.maxAttendees) * 100;
-  const popularEvents = eventsMockData
-    .filter((e) => e.id !== event.id)
-    .sort((a, b) => b.attendees - a.attendees)
-    .slice(0, 4);
-
-  const eventSharingData = generateEventSharingData({
-    ...event,
-    title: event.title,
-    description: event.description,
-    date: event.date,
-    id: event.id,
-  });
-
-  const handleCopyLink = (e) => {
-    e.preventDefault();
-    const shareUrl = `${window.location.origin}/events/${event.id}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      alert("Event link copied to clipboard!");
-    });
-  };
-
-  return (
-    <div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
-      {/* Back Button */}
-      <div className="sticky top-20 md:top-24 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+  if (!event) {
+    return (
+      <main className="flex min-h-svh items-center justify-center bg-bg safe-area-x py-10">
+        <div className="max-w-sm text-center">
+          <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white sm:text-4xl">
+            Event Not Found
+          </h1>
+          <p className="mb-6 text-gray-600 dark:text-gray-400">
+            The event you&apos;re looking for doesn&apos;t exist.
+          </p>
           <button
+            type="button"
             onClick={() => navigate("/events")}
-            className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold transition-colors"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white transition-colors hover:bg-indigo-700"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={18} aria-hidden="true" />
             Back to Events
           </button>
         </div>
-      </div>
+      </main>
+    );
+  }
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-8"
-        >
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {/* Hero Image */}
-            <div className="relative rounded-2xl overflow-hidden mb-8 shadow-xl">
-              <img
-                src={event.image}
-                alt={event.title}
-                className="w-full h-96 object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="px-3 py-1 bg-indigo-600 rounded-full text-sm font-semibold">
-                    {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
-                  </span>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      isPastEvent
-                        ? "bg-gray-600"
-                        : "bg-green-600"
-                    }`}
-                  >
-                    {isPastEvent ? "Past Event" : "Upcoming"}
-                  </span>
-                </div>
-                <h1 className="text-4xl font-bold">{event.title}</h1>
-              </div>
+  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+
+  return (
+    <>
+      <div className="min-h-screen mt-16 bg-bg">
+        {/* Back Button */}
+        <header className="sticky top-20 md:top-24 z-40 bg-navbar/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <button
+              type="button"
+              onClick={() => navigate("/events")}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg pr-2 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 sm:text-base"
+            >
+              <ArrowLeft size={20} aria-hidden="true" />
+              Back to Events
+            </button>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-6xl safe-area-x py-5 sm:px-6 sm:py-10 lg:px-8">
+          {cacheInfo && (
+            <div className="mb-5 inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+              <WifiOff size={16} aria-hidden="true" />
+              Showing {cacheInfo.label} details
             </div>
+          )}
 
-            {/* Description */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-8 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                About This Event
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
-                {event.description}
-              </p>
-            </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="grid min-w-0 grid-cols-1 gap-5 sm:gap-8 lg:grid-cols-3"
+          >
+            <section className="min-w-0 lg:col-span-2" aria-labelledby="event-details-title">
+              <div className="relative mb-5 aspect-[4/3] overflow-hidden rounded-2xl shadow-xl xs:aspect-video sm:mb-8">
+                <img
+                  src={event.image}
+                  alt={`${event.title} event banner`}
+                  className="w-full h-96 object-cover"
+                  loading="lazy"
+                />
 
-            {/* Event Details Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {/* Date & Time */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                    <Calendar className="text-indigo-600 dark:text-indigo-400" size={24} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+                <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6 text-white">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="px-3 py-1 bg-indigo-600 rounded-full text-sm font-semibold">
+                      {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+                    </span>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                        isPastEvent ? "bg-gray-600" : "bg-green-600"
+                      }`}
+                    >
+                      {isPastEvent ? "Past Event" : "Upcoming"}
+                    </span>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                      Date & Time
-                    </h3>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white mt-2">
+                  <h1
+                    id="event-details-title"
+                    className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl"
+                  >
+                    {event.title}
+                  </h1>
+                </div>
+              </div>
+
+              <section className="mb-5 rounded-2xl border border-gray-200 bg-card-bg p-4 shadow-sm dark:border-gray-700 dark:bg-card-bg sm:mb-8 sm:p-6">
+                <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-2xl">
+                  About This Event
+                </h2>
+                <p
+                  className="overflow-wrap-anywhere text-base leading-7 text-gray-600 dark:text-gray-300 sm:text-lg sm:leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeHtml(event.description),
+                  }}
+                />
+              </section>
+            </section>
+
+            <aside
+              className="flex min-w-0 flex-col gap-4 sm:gap-6 lg:col-span-1"
+              aria-label="Event registration and details"
+            >
+              {!isPastEvent && <CountdownTimer date={event.date} time={event.time} />}
+
+              <div className="rounded-2xl border border-gray-200 bg-card-bg p-4 shadow-sm dark:border-gray-700 dark:bg-card-bg sm:p-6">
+                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
+                  Event Details
+                </h3>
+                <div className="flex flex-col gap-4 text-sm text-gray-600 dark:text-gray-300">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <Calendar size={16} className="shrink-0 text-indigo-500" />
+                    <span>
                       {new Date(event.date).toLocaleDateString("en-US", {
                         weekday: "long",
                         year: "numeric",
                         month: "long",
                         day: "numeric",
                       })}
-                    </p>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      <Clock size={16} className="inline mr-2" />
-                      {event.time}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Location */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-pink-100 dark:bg-pink-900/30 rounded-lg">
-                    <MapPin className="text-pink-600 dark:text-pink-400" size={24} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                      Location
-                    </h3>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white mt-2">
-                      {event.location}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {event.location.includes("Online") ? "Virtual Event" : "In-Person"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Attendees */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                    <Users className="text-green-600 dark:text-green-400" size={24} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                      Attendees
-                    </h3>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white mt-2">
-                      {event.attendees} / {event.maxAttendees}
-                    </p>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
-                      <div
-                        className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full"
-                        style={{ width: `${Math.min(attendeePercentage, 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      {Math.round(attendeePercentage)}% capacity
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Event Type */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                    <Tag className="text-yellow-600 dark:text-yellow-400" size={24} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                      Event Type
-                    </h3>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white mt-2 capitalize">
-                      {event.type}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Tags */}
-            {event.tags && event.tags.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                  Topics
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {event.tags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="px-4 py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-sm font-semibold"
-                    >
-                      {tag}
                     </span>
-                  ))}
+                  </div>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Clock size={16} className="shrink-0 text-blue-500" />
+                    <span>{event.time}</span>
+                  </div>
+                  <div className="flex min-w-0 items-start gap-3">
+                    <MapPin size={16} className="shrink-0 text-pink-500" />
+                    <span className="min-w-0 break-words">{event.location}</span>
+                  </div>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Users size={16} className="shrink-0 text-green-500" />
+                    <span>
+                      {Number(event.attendees) || 0} / {Number(event.maxAttendees) || 0} registered
+                    </span>
+                  </div>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Tag size={16} className="shrink-0 text-yellow-500" />
+                    <span className="capitalize">{event.type || event.category || "event"}</span>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* Popular Events */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mt-8 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                Popular Events
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {popularEvents.map((popularEvent) => (
-                  <Link
-                    key={popularEvent.id}
-                    to={`/events/${popularEvent.id}`}
-                    className="block rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/60 transition-colors"
+              {!isPastEvent && (
+                <Link
+                  to={`/events/${event.id}/register`}
+                  className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
+                >
+                  Register Now
+                </Link>
+              )}
+
+              {/* Share Section */}
+              <div className="bg-card-bg rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Share2 size={16} className="text-indigo-500" />
+                  Share this Event
+                </h3>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <a
+                    href={shareLinks.whatsapp}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all text-xs font-semibold"
+                    aria-label="Share on WhatsApp"
                   >
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">
-                      {popularEvent.title}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                      {popularEvent.location} • {popularEvent.attendees} attendees
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
+                    <MessageCircle size={14} />
+                    WhatsApp
+                  </a>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            {/* CTA Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 sticky top-32">
-              <div className="mb-6">
-                {isPastEvent ? (
-  <>
-    <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
-      Event Ended
-    </div>
-    <div className="mt-3">
-      <CertificateDownload
-        eventName={event.title}
-        eventDate={event.date}
-        eventType={event.type}
-      />
-    </div>
-  </>
-                ) : event.attendees >= event.maxAttendees ? (
-                  <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
-                    Event Full
-                  </div>
-                ) : (
-                  <Link to={`/events/${event.id}/register`} className="block">
-                    <div className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-semibold text-center cursor-pointer transition-all">
-                      Register Now
-                    </div>
-                  </Link>
+                  <a
+                    href={shareLinks.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-all text-xs font-semibold"
+                    aria-label="Share on Twitter"
+                  >
+                    <Twitter size={14} />
+                    Twitter
+                  </a>
+
+                  <a
+                    href={shareLinks.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all text-xs font-semibold"
+                    aria-label="Share on Facebook"
+                  >
+                    <Facebook size={14} />
+                    Facebook
+                  </a>
+
+                  <a
+                    href={shareLinks.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all text-xs font-semibold"
+                    aria-label="Share on LinkedIn"
+                  >
+                    <Linkedin size={14} />
+                    LinkedIn
+                  </a>
+                </div>
+
+                <button
+                  onClick={handleCopyLink}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-all text-xs font-semibold"
+                  aria-label="Copy event link"
+                >
+                  {copied ? (
+                    <>
+                      <Check size={14} className="text-green-500" /> Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} /> Copy Link
+                    </>
+                  )}
+                </button>
+
+                {navigator.share && (
+                  <button
+                    onClick={handleNativeShare}
+                    className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all text-xs font-semibold"
+                    aria-label="Share via device"
+                  >
+                    <Share2 size={14} />
+                    Share via Device
+                  </button>
                 )}
               </div>
 
-              {/* Share & Actions */}
-              <div className="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-6">
-                <Link
-                  to={`/events/${event.id}/floor-plan`}
-                  className="w-full py-2.5 px-4 flex items-center justify-center gap-2 border border-indigo-500/30 hover:border-indigo-500 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg font-semibold text-center cursor-pointer transition-all duration-300"
-                >
-                  <LayoutTemplate size={18} />
-                  Floor Plan Designer
-                </Link>
-
-                <ShareMenu
-                  shareData={eventSharingData}
-                  position="above"
-                  menuClassName="!z-[999]"
-                >
-                  <div className="w-full py-2 px-4 flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors font-semibold text-gray-700 dark:text-gray-300">
-                    <Share2 size={18} />
-                    Share Event
-                  </div>
-                </ShareMenu>
-
-                <div
-                  onClick={handleCopyLink}
-                  className="w-full py-2 px-4 flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors font-semibold text-gray-700 dark:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                  </svg>
-                  Copy Link
-                </div>
-
-                <a
-                  href={addEventToGoogleCalendar(event)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2 px-4 flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors font-semibold text-gray-700 dark:text-gray-300"
-                >
-                  <Calendar size={18} />
-                  Add to Calendar
-                </a>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </main>
-    </div>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="print-hide flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-800 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-800"
+              >
+                Print / Save as PDF
+              </button>
+            </aside>
+          </motion.div>
+        </main>
+      </div>
+    </>
   );
 };
 

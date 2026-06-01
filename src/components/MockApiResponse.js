@@ -1,8 +1,7 @@
-import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const mockResponses = {
-  "/api/hackathons": {
+  "/mock-api/hackathons": {
     status: 200,
     source: "mock",
     data: [
@@ -15,7 +14,7 @@ const mockResponses = {
       },
     ],
   },
-  "/api/projects": {
+  "/mock-api/projects": {
     status: 200,
     source: "mock",
     data: [
@@ -27,7 +26,7 @@ const mockResponses = {
       },
     ],
   },
-  "/api/contributors": {
+  "/mock-api/contributors": {
     status: 200,
     source: "mock",
     data: [
@@ -39,7 +38,7 @@ const mockResponses = {
       },
     ],
   },
-  "/api/leaderboard": {
+  "/mock-api/leaderboard": {
     status: 200,
     source: "mock",
     data: [
@@ -78,7 +77,7 @@ const MockApiResponse = () => {
             <h1 className="mt-2 text-3xl font-bold">{payload.endpoint}</h1>
           </div>
           <Link
-            to="/apiDocs"
+            to="/api-docs"
             className="inline-flex items-center justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
           >
             Back to API Docs

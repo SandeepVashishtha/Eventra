@@ -1,27 +1,47 @@
-import React from 'react';
-import { Route } from 'react-router-dom';
+import { lazy } from "react";
+import { Route } from "react-router-dom";
 
-// --------------- COMPONENTS
 import ProtectedRoute from "../auth/ProtectedRoute";
-import EventCreation from "../common/EventCreation";
-import AdminDashboard from "../admin/AdminDashboard";
-import HostHackathon from "../../Pages/Hackathons/HostHackathon";
-import Dashboard from "../Dashboard";
-import EditProfile from "../user/EditProfile";
-import Settings from "../../Pages/Settings";
-import Login from "../auth/Login";
-import Signup from "../auth/Signup";
-import Unauthorized from "../auth/Unauthorized";
-import PasswordReset from "../auth/PasswordReset";
-import NotFound from "../NotFound";
+import ErrorBoundary from "../common/ErrorBoundary";
+import { ROLES, PERMISSIONS } from "../../config/roles";
+
+// 🔥 FIX: Removed all duplicate const declarations that were causing fatal SyntaxErrors
+const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
+const EventCreation = lazy(() => import("../common/EventCreation/EventCreation"));
+const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
+const UserProfile = lazy(() => import("../user/UserProfile"));
+const EditProfile = lazy(() => import("../user/EditProfile"));
+const Settings = lazy(() => import("../../Pages/Settings"));
+const AuthPage = lazy(() => import("../auth/AuthPage"));
+const Unauthorized = lazy(() => import("../auth/Unauthorized"));
+const PasswordReset = lazy(() => import("../auth/PasswordReset"));
+const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
+const Dashboard = lazy(() => import("../Dashboard"));
+const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
+
+const withModuleBoundary = (children, boundaryName) => (
+  <ErrorBoundary
+    variant="section"
+    boundaryName={boundaryName}
+    title={`${boundaryName} needs a reset`}
+  >
+    {children}
+  </ErrorBoundary>
+);
 
 export const getProtectedRoutes = () => [
   <Route
     key="/create-event"
     path="/create-event"
     element={
-      <ProtectedRoute requiredPermissions={["CREATE_EVENT"]}>
-        <EventCreation />
+      <ProtectedRoute
+        requiredPermissions={[PERMISSIONS.CREATE_EVENT]}
+        requiredScopes={["event:write"]}
+        validateContext={({ user }) =>
+          user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
+        }
+      >
+        {withModuleBoundary(<EventCreation />, "Event creation")}
       </ProtectedRoute>
     }
   />,
@@ -29,8 +49,12 @@ export const getProtectedRoutes = () => [
     key="/admin"
     path="/admin"
     element={
-      <ProtectedRoute requiredRoles={["ADMIN"]}>
-        <AdminDashboard />
+      <ProtectedRoute
+        requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
+        requiredScopes={["admin:all"]}
+        validateContext={({ user }) => user?.status !== "Suspended"}
+      >
+        {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
       </ProtectedRoute>
     }
   />,
@@ -38,8 +62,14 @@ export const getProtectedRoutes = () => [
     key="/host-hackathon"
     path="/host-hackathon"
     element={
-      <ProtectedRoute requiredPermissions={["HOST_HACKATHON"]}>
-        <HostHackathon />
+      <ProtectedRoute
+        requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
+        requiredScopes={["hackathon:write"]}
+        validateContext={({ user }) =>
+          user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
+        }
+      >
+        {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
       </ProtectedRoute>
     }
   />,
@@ -48,7 +78,25 @@ export const getProtectedRoutes = () => [
     path="/dashboard"
     element={
       <ProtectedRoute>
-        <Dashboard />
+        {withModuleBoundary(<Dashboard />, "User dashboard")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/dashboard/profile"
+    path="/dashboard/profile"
+    element={
+      <ProtectedRoute>
+        <UserProfile />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/profile/edit"
+    path="/profile/edit"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<EditProfile />, "Profile editor")}
       </ProtectedRoute>
     }
   />,
@@ -57,7 +105,7 @@ export const getProtectedRoutes = () => [
     path="/profile"
     element={
       <ProtectedRoute>
-        <EditProfile />
+        <UserProfile />
       </ProtectedRoute>
     }
   />,
@@ -66,16 +114,38 @@ export const getProtectedRoutes = () => [
     path="/settings"
     element={
       <ProtectedRoute>
-        <Settings />
+        {withModuleBoundary(<Settings />, "Settings")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/settings/notifications"
+    path="/settings/notifications"
+    element={
+      <ProtectedRoute>
+        <NotificationSettings />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/feedback/survey-builder"
+    path="/feedback/survey-builder"
+    element={
+      <ProtectedRoute
+        requiredPermissions={[
+          PERMISSIONS.HOST_HACKATHON,
+          PERMISSIONS.CREATE_EVENT,
+        ]}
+      >
+        {withModuleBoundary(<SurveyEngine />, "Survey builder")}
       </ProtectedRoute>
     }
   />,
 ];
 
 export const getAuthRoutes = () => [
-  <Route key="/login" path="/login" element={<Login />} />,
-  <Route key="/signup" path="/signup" element={<Signup />} />,
+  <Route key="/login" path="/login" element={<AuthPage />} />,
+  <Route key="/signup" path="/signup" element={<AuthPage />} />,
   <Route key="/unauthorized" path="/unauthorized" element={<Unauthorized />} />,
   <Route key="/password-reset" path="/password-reset" element={<PasswordReset />} />,
-  <Route key="/*" path="/*" element={<NotFound />} />,
 ];

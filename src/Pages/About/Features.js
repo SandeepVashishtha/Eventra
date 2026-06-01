@@ -1,14 +1,6 @@
+import { Star, Qrcode, ChartLine, Users, Lock, Globe, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  FaStar,
-  FaQrcode,
-  FaChartLine,
-  FaUsers,
-  FaLock,
-  FaGlobe,
-  FaArrowRight,
-} from "react-icons/fa";
 
 // Animation Variants
 const container = {
@@ -27,42 +19,42 @@ const item = {
 // UPDATED: Icon classNames now include dark mode variants
 const features = [
   {
-    icon: <FaStar className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
+    icon: <Star className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
     title: "Smart Event Creation",
     stat: "90% faster setup",
     description: "Launch events in minutes with intelligent templates, automatic capacity management, and integrated ticketing. Full support for workshops, conferences, meetups, and specialized events.",
     cta: "Start Creating",
   },
   {
-    icon: <FaQrcode className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
+    icon: <Qrcode className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
     title: "Instant QR Check-ins",
     stat: "3 sec check-in",
     description: "Lightning-fast attendee check-ins with QR codes that work offline. Real-time attendance tracking and automated no-show management keep your events running smoothly.",
     cta: "See Demo",
   },
   {
-    icon: <FaChartLine className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
+    icon: <ChartLine className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
     title: "Live Analytics",
     stat: "15+ metrics",
     description: "Real-time dashboards showing registration trends, attendance patterns, and engagement insights. Make data-driven decisions that lead to consistently better events.",
     cta: "View Dashboard",
   },
   {
-    icon: <FaUsers className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
+    icon: <Users className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
     title: "Team Collaboration",
     stat: "Unlimited members",
     description: "Invite co-organizers, assign specific roles, and coordinate effortlessly. Built-in communication tools and task management ensure seamless teamwork.",
     cta: "Add Team",
   },
   {
-    icon: <FaLock className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
+    icon: <Lock className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
     title: "Enterprise Security",
     stat: "Bank-level security",
     description: "SOC 2 compliant with end-to-end encryption. Advanced privacy controls and full GDPR compliance for handling sensitive attendee data with complete confidence.",
     cta: "Learn More",
   },
   {
-    icon: <FaGlobe className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
+    icon: <Globe className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
     title: "Global Reach",
     stat: "195 countries",
     description: "Multi-timezone coordination, 30+ languages, and international payment processing. Host events anywhere in the world and welcome attendees from everywhere.",
@@ -153,16 +145,16 @@ export default function Features() {
                     className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium text-sm flex items-center group"
                   >
                     {feature.cta}
-                    <FaArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" />
+                    <ArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" />
                   </Link>
                 ) : (
-                  <a
-                    href="#"
-                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium text-sm flex items-center group"
+                  <span
+                    className="text-indigo-400 dark:text-indigo-600 font-medium text-sm flex items-center cursor-not-allowed opacity-60"
+                    title="Coming soon"
                   >
-                    {feature.cta}
-                    <FaArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" />
-                  </a>
+                      {feature.cta}
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                  </span>
                 )}
               </div>
             </motion.div>

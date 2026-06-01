@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { Facebook, Linkedin, MessageCircle, Send } from "lucide-react";
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Copy, Mail, Check } from 'lucide-react';
-import { FiFacebook, FiLinkedin } from 'react-icons/fi';
-import { FaWhatsapp, FaTelegram } from 'react-icons/fa';
 import { generateSharingUrl, copyToClipboard } from '../../../utils/shareUtils';
+import { toast } from 'react-toastify';
 import './ShareMenu.css';
 
 /**
@@ -98,13 +98,20 @@ const ShareMenu = ({
         url: shareData.url || window.location.href,
       })
       .then(()=>setIsOpen(false))
-      .catch((err)=>console.error('Error sharing:', err));
+      .catch((err) => {
+        console.error('Error sharing:', err);
+        toast.error("Failed to share event", { autoClose: 2000 });
+      });
       return;
     }
     if (platform === 'copy') {
       copyToClipboard(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      return;
+    }
+
+    if (!url) {
       return;
     }
     
@@ -127,14 +134,23 @@ const ShareMenu = ({
         setIsOpen(false);
       }
     };
+
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        buttonRef.current?.focus();
+      }
+    };
     
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscapeKey);
       window.addEventListener('resize', handleResize);
     }
     
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
       window.removeEventListener('resize', handleResize);
     };
   }, [isOpen, menuRef]);
@@ -155,16 +171,21 @@ const ShareMenu = ({
   return (
     <div className={`relative inline-block z-[200] share-menu-container ${className}`} ref={menuRef}>
       {/* Share Button */}
-      <div className="cursor-pointer" onClick={toggleMenu} ref={buttonRef}>
+      <button
+        type="button"
+        className={`cursor-pointer ${buttonClassName}`}
+        onClick={toggleMenu}
+        ref={buttonRef}
+        aria-label={isOpen ? 'Close sharing options' : 'Open sharing options'}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+      >
         {children || (
-          <button 
-            className={`p-2.5 rounded-full shadow-sm hover:shadow-md active:shadow-inner flex items-center justify-center bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all ${buttonClassName}`}
-            aria-label="Share"
-          >
-            <Share2 className="w-4 h-4" />
-          </button>
+          <span className="p-2.5 rounded-full shadow-sm hover:shadow-md active:shadow-inner flex items-center justify-center bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all">
+            <Share2 className="w-4 h-4" aria-hidden="true" />
+          </span>
         )}
-      </div>
+      </button>
       
       <AnimatePresence>
         {isOpen && (
@@ -174,12 +195,15 @@ const ShareMenu = ({
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.15 }}
             className={`share-menu-dropdown absolute z-[9999] ${positionClasses[currentPosition]} shadow-xl rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 ${menuClassName}`}
+            role="menu"
+            aria-label="Sharing options"
           >
             <div className="py-2 w-64">
               {/* Native System Share (Only shows if browser supports it) */}
               {navigator.share && (
                 <button
                 onClick={() => handleShare('system')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800"
                 >
                   <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
@@ -194,8 +218,9 @@ const ShareMenu = ({
               {/* Copy Link Button */}
               <button
                 onClick={handleCopyLink}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
+               aria-label="Copy link to clipboard">
                 <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                   {copied ? (
                     <Check className="w-4 h-4 text-green-600" />
@@ -211,6 +236,7 @@ const ShareMenu = ({
               {/* Email */}
               <button
                 onClick={() => handleShare('email')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
@@ -222,10 +248,11 @@ const ShareMenu = ({
               {/* WhatsApp */}
               <button
                 onClick={() => handleShare('whatsapp')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <FaWhatsapp className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  <MessageCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">WhatsApp</span>
               </button>
@@ -233,6 +260,7 @@ const ShareMenu = ({
               {/* Twitter/X */}
               <button
                 onClick={() => handleShare('twitter')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-black dark:bg-gray-700 flex items-center justify-center">
@@ -247,10 +275,11 @@ const ShareMenu = ({
               {/* Facebook */}
               <button
                 onClick={() => handleShare('facebook')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <FiFacebook className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <Facebook className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Facebook</span>
               </button>
@@ -258,10 +287,11 @@ const ShareMenu = ({
               {/* LinkedIn */}
               <button
                 onClick={() => handleShare('linkedin')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <FiLinkedin className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                  <Linkedin className="w-4 h-4 text-blue-700 dark:text-blue-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">LinkedIn</span>
               </button>
@@ -269,10 +299,11 @@ const ShareMenu = ({
               {/* Telegram */}
               <button
                 onClick={() => handleShare('telegram')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <FaTelegram className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                  <Send className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Telegram</span>
               </button>
