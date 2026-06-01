@@ -1,28 +1,32 @@
-import { lazy, Suspense } from "react";
+import React from "react";
 import { useAuth } from "../context/AuthContext";
+import AdminDashboard from "./admin/AdminDashboard";
+import UserDashboard from "./user/UserDashboard";
 import FeatureErrorBoundary from "../components/common/FeatureErrorBoundary";
-import SEOHead from "../components/SEOHead";
-import Loading from "./common/Loading";
-
-const AdminDashboard = lazy(() => import("./admin/AdminDashboard"));
-const UserDashboard = lazy(() => import("./user/UserDashboard"));
 
 const Dashboard = () => {
-  const { isAdmin } = useAuth();
+  const auth = useAuth();
+  
+  if (!auth || typeof auth.isAdmin !== "function") {
+    return (
+      <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+        Loading dashboard...
+      </div>
+    );
+  }
+
+  if (auth.isAdmin()) {
+    return (
+      <FeatureErrorBoundary>
+        <AdminDashboard />
+      </FeatureErrorBoundary>
+    );
+  }
 
   return (
-    <>
-      <SEOHead
-        title="My Dashboard"
-        description="Manage your events, registrations, and account settings on Eventra."
-        url={window.location.href}
-      />
-      <FeatureErrorBoundary>
-        <Suspense fallback={<Loading text="Loading dashboard..." />}>
-          {isAdmin() ? <AdminDashboard /> : <UserDashboard />}
-        </Suspense>
-      </FeatureErrorBoundary>
-    </>
+    <FeatureErrorBoundary>
+      <UserDashboard />
+    </FeatureErrorBoundary>
   );
 };
 
