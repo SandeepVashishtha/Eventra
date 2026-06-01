@@ -4,10 +4,7 @@
   "description": "A modern website for Eventra - platform for builders",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": "22.x",
-    "npm": ">=9.6.4"
-  },
+ 
   "dependencies": {
     "@heroicons/react": "^2.0.16",
     "@studio-freight/lenis": "^1.0.42",
