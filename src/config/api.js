@@ -216,7 +216,7 @@ API.interceptors.response.use(
 
     const retryCount = config._retryCount || 0;
     const isNonMutating = config.method?.toUpperCase() === 'GET';
-    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status) || (status === 429);
+    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
     
     // Retry non-mutating requests with exponential backoff
     if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
