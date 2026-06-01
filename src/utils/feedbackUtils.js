@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Feedback Utilities
  * Handles localStorage-based feedback management for events
