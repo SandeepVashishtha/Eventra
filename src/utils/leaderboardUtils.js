@@ -16,7 +16,6 @@
  * test without mounting a React component.
  */
 
-import { FaTrophy, FaAward, FaStar, FaCode } from "react-icons/fa";
 
 // ─── Scoring constants ────────────────────────────────────────────────────────
 
