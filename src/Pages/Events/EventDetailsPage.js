@@ -2,7 +2,7 @@ import "./EventDetails.print.css";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
@@ -64,6 +64,7 @@ const EventDetailsPage = () => {
   };
 
   useEffect(() => {
+    let isCancelled = false;
     const requestId = latestRequestIdRef.current + 1;
     latestRequestIdRef.current = requestId;
     const controller = new AbortController();
@@ -83,7 +84,7 @@ const EventDetailsPage = () => {
         if (response.ok) {
           const data = await response.json();
           const evt = data.event || data || null;
-          if (isLatestRequest()) {
+          if (!isCancelled && isLatestRequest()) {
             setEvent(evt);
             setError(null);
             setCacheInfo({ cachedAt: null, label: "live" });
@@ -93,7 +94,7 @@ const EventDetailsPage = () => {
           const responseError = new Error(`Failed to load event details (${response.status})`);
           const { default: mockData } = await import("./eventsMockData.json");
           const foundEvent = mockData.find((item) => String(item.id) === String(eventId));
-          if (isLatestRequest()) {
+          if (!isCancelled && isLatestRequest()) {
             setEvent(foundEvent || null);
             setError(foundEvent ? null : responseError);
             if (foundEvent) setCacheInfo({ cachedAt: null, label: "mock fallback" });
@@ -108,13 +109,13 @@ const EventDetailsPage = () => {
         try {
           const { default: mockData } = await import("./eventsMockData.json");
           const foundEvent = mockData.find((item) => String(item.id) === String(eventId));
-          if (isLatestRequest()) {
+          if (!isCancelled && isLatestRequest()) {
             setEvent(foundEvent || null);
             setError(foundEvent ? null : err);
             if (foundEvent) setCacheInfo({ cachedAt: null, label: "offline fallback" });
           }
         } catch (fallbackErr) {
-          if (isLatestRequest()) {
+          if (!isCancelled && isLatestRequest()) {
             logError(fallbackErr, null, {
               cause: err?.message || String(err),
               eventId,
@@ -125,35 +126,23 @@ const EventDetailsPage = () => {
           }
         }
       } finally {
-        if (isLatestRequest()) setLoading(false);
+        if (!isCancelled && isLatestRequest()) setLoading(false);
       }
     };
 
     fetchEvent();
     return () => {
+      isCancelled = true;
       controller.abort();
     };
   }, [eventId]);
 
-  useEffect(() => {
-    if (!event) {
-      return;
-    }
 
-    addRecentlyViewed({
-      id: event.id,
-      title: event.title,
-      date: event.date,
-      location: event.location,
-      image: event.image,
-      category: event.type,
-    });
-  }, [addRecentlyViewed, event]);
 
   if (loading) {
     return (
       <main
-        className="flex min-h-svh items-center justify-center bg-white safe-area-x dark:bg-black"
+        className="flex min-h-svh items-center justify-center bg-bg safe-area-x"
         role="status"
         aria-live="polite"
         aria-busy="true"
@@ -168,13 +157,13 @@ const EventDetailsPage = () => {
 
   if (!event) {
     return (
-      <main className="flex min-h-svh items-center justify-center bg-white safe-area-x py-10 dark:bg-slate-950">
+      <main className="flex min-h-svh items-center justify-center bg-bg safe-area-x py-10">
         <div className="max-w-sm text-center">
           <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white sm:text-4xl">
             Event Not Found
           </h1>
           <p className="mb-6 text-gray-600 dark:text-gray-400">
-            The event you're looking for doesn't exist.
+            The event you&apos;re looking for doesn&apos;t exist.
           </p>
           <button
             type="button"
@@ -193,9 +182,9 @@ const EventDetailsPage = () => {
 
   return (
     <>
-      <div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
+      <div className="min-h-screen mt-16 bg-bg">
         {/* Back Button */}
-        <header className="sticky top-20 md:top-24 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
+        <header className="sticky top-20 md:top-24 z-40 bg-navbar/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <button
               type="button"
@@ -255,7 +244,7 @@ const EventDetailsPage = () => {
                 </div>
               </div>
 
-              <section className="mb-5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:mb-8 sm:p-6">
+              <section className="mb-5 rounded-2xl border border-gray-200 bg-card-bg p-4 shadow-sm dark:border-gray-700 dark:bg-card-bg sm:mb-8 sm:p-6">
                 <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-2xl">
                   About This Event
                 </h2>
@@ -274,7 +263,7 @@ const EventDetailsPage = () => {
             >
               {!isPastEvent && <CountdownTimer date={event.date} time={event.time} />}
 
-              <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-6">
+              <div className="rounded-2xl border border-gray-200 bg-card-bg p-4 shadow-sm dark:border-gray-700 dark:bg-card-bg sm:p-6">
                 <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
                   Event Details
                 </h3>
@@ -321,7 +310,7 @@ const EventDetailsPage = () => {
               )}
 
               {/* Share Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-card-bg rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <Share2 size={16} className="text-indigo-500" />
                   Share this Event

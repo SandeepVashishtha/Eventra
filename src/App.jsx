@@ -14,7 +14,6 @@ import ErrorBoundary from "./components/common/ErrorBoundary";
 import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
-import { ThemeProvider } from "./context/ThemeContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
@@ -24,6 +23,7 @@ import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { safeGetItem, safeSetItem } from "./utils/safeStorage.js";
 
+import PageTransition from "./components/common/PageTransition";
 
 // Route-level lazy splits - loaded only when route is visited
 const Footer = lazy(() => import("./components/Layout/Footer"));
@@ -35,7 +35,6 @@ const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/Event
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
-const ThemeCustomizerDrawer = lazy(() => import("./components/common/ThemeCustomizerDrawer"));
 const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
 const OnboardingChecklist = lazy(() => import("./components/user/OnboardingChecklist"));
 const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
@@ -43,7 +42,6 @@ const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
-const PageTransition = lazy(() => import("./components/common/PageTransition"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -127,103 +125,98 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <MyEventsProvider>
-              <SessionRecoveryProvider>
-                <NotificationToastContainer />
+      <AuthProvider>
+        <NotificationProvider>
+          <MyEventsProvider>
+            <SessionRecoveryProvider>
+              <NotificationToastContainer />
+              <Suspense fallback={null}>
+                <ReminderChecker />
+              </Suspense>
+              <OfflineSyncManager />
+
+              <div className="App">
+                <SectionErrorBoundary label="Navigation Bar">
+                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                </SectionErrorBoundary>
+
+                <OfflineBanner />
+                <OfflineConflictModal />
+
                 <Suspense fallback={null}>
-                  <ReminderChecker />
+                  <KeyboardShortcutsModal
+                    isOpen={showKeyboardModal}
+                    onClose={() => setShowKeyboardModal(false)}
+                  />
                 </Suspense>
-                <OfflineSyncManager />
 
-                <div className="App">
-                  <SectionErrorBoundary label="Navigation Bar">
-                    <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-                  </SectionErrorBoundary>
+                <Suspense fallback={null}>
+                  <OnboardingChecklist />
+                </Suspense>
 
-                  <OfflineBanner />
-                  <OfflineConflictModal />
+                <main
+                  id="main-content"
+                  className="relative z-10 min-h-[85vh] bg-bg text-text transition-colors duration-300"
+                >
+                  <PageTransition>
+                    <ErrorBoundary>
+                      <Suspense fallback={pageLoader}>
+                        <Routes location={location} key={location.pathname}>
+                          <Route
+                            path="/register/:id"
+                            element={
+                              <ProtectedRoute>
+                                <EventRegistration />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route path="/event-recommendation" element={<EventRecommendation />} />
+                          <Route path="/saved-events" element={<SavedEventsPage />} />
+                          <Route path="*" element={<AppRoutes />} />
+                        </Routes>
+                      </Suspense>
+                    </ErrorBoundary>
+                  </PageTransition>
+                </main>
 
+                <ScrollToTop />
+
+                <SectionErrorBoundary label="Chatbot Assist" silent>
                   <Suspense fallback={null}>
-                    <KeyboardShortcutsModal
-                      isOpen={showKeyboardModal}
-                      onClose={() => setShowKeyboardModal(false)}
-                    />
+                    <Chatbot />
                   </Suspense>
+                </SectionErrorBoundary>
 
+                <SectionErrorBoundary label="Footer">
                   <Suspense fallback={null}>
-                    <OnboardingChecklist />
+                    {!isDashboardOrAdmin && <Footer />}
                   </Suspense>
+                </SectionErrorBoundary>
 
-                  <main
-                    id="main-content"
-                    className="relative z-10 min-h-[85vh] bg-white dark:bg-slate-950 text-black dark:text-white transition-colors duration-300"
-                  >
-                    <Suspense fallback={pageLoader}>
-                      <PageTransition>
-                        <ErrorBoundary>
-                          <Routes>
-                            <Route
-                              path="/register/:id"
-                              element={
-                                <ProtectedRoute>
-                                  <EventRegistration />
-                                </ProtectedRoute>
-                              }
-                            />
-                            <Route path="/event-recommendation" element={<EventRecommendation />} />
-                            <Route path="/saved-events" element={<SavedEventsPage />} />
-                            <Route path="*" element={<AppRoutes />} />
-                          </Routes>
-                        </ErrorBoundary>
-                      </PageTransition>
-                    </Suspense>
-                  </main>
+                <Suspense fallback={null}>
+                  <ScrollToTopButton />
+                </Suspense>
+                {/* Enhanced back-to-top with progress ring - appears at 400px */}
+                <Suspense fallback={null}>
+                  <BackToTop />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <FeedbackButton />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <SessionRecovery />
+                </Suspense>
 
-                  <ScrollToTop />
-
-                  <SectionErrorBoundary label="Chatbot Assist" silent>
-                    <Suspense fallback={null}>
-                      <Chatbot />
-                    </Suspense>
-                  </SectionErrorBoundary>
-
-                  <SectionErrorBoundary label="Footer">
-                    <Suspense fallback={null}>
-                      {!isDashboardOrAdmin && <Footer />}
-                    </Suspense>
-                  </SectionErrorBoundary>
-
+                <SectionErrorBoundary label="Custom Cursor" silent>
                   <Suspense fallback={null}>
-                    <ScrollToTopButton />
+                    <FluidCursor enabled={cursorEnabled} />
                   </Suspense>
-                  {/* Enhanced back-to-top with progress ring - appears at 400px */}
-                  <Suspense fallback={null}>
-                    <BackToTop />
-                  </Suspense>
-                  <Suspense fallback={null}>
-                    <FeedbackButton />
-                  </Suspense>
-                  <Suspense fallback={null}>
-                    <ThemeCustomizerDrawer />
-                  </Suspense>
-                  <Suspense fallback={null}>
-                    <SessionRecovery />
-                  </Suspense>
-
-                  <SectionErrorBoundary label="Custom Cursor" silent>
-                    <Suspense fallback={null}>
-                      <FluidCursor enabled={cursorEnabled} />
-                    </Suspense>
-                  </SectionErrorBoundary>
-                </div>
-              </SessionRecoveryProvider>
-            </MyEventsProvider>
-          </NotificationProvider>
-        </AuthProvider>
-      </ThemeProvider>
+                </SectionErrorBoundary>
+              </div>
+            </SessionRecoveryProvider>
+          </MyEventsProvider>
+        </NotificationProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

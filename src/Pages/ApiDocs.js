@@ -584,7 +584,7 @@ const ApiDocs = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-slate-600 gap-2 text-center max-w-sm mx-auto">
                   <Terminal className="w-8 h-8 text-slate-800" />
-                  <p className="text-[11px]">Terminal idle. Configure your query parameters and click "Execute Request" to display payload console details.</p>
+                  <p className="text-[11px]">Terminal idle. Configure your query parameters and click &quot;Execute Request&quot; to display payload console details.</p>
                 </div>
               )}
             </div>

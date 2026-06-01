@@ -271,7 +271,7 @@ const HostHackathon = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
       {/* Heading Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
@@ -296,13 +296,13 @@ const HostHackathon = () => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
-        className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
+        className="w-full max-w-4xl bg-card-bg border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
         data-aos="fade-up"
         data-aos-delay="200"
       >
         <div className="flex items-center gap-2 mb-3">
-          <ClipboardDocumentListIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-400">
+          <ClipboardDocumentListIcon className="w-6 h-6 text-primary" />
+          <h2 className="text-xl font-semibold text-primary">
             Guidelines
           </h2>
         </div>
@@ -365,7 +365,7 @@ const HostHackathon = () => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
-        className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
+        className="w-full max-w-4xl bg-card-bg shadow-xl rounded-2xl p-8 border border-border"
         data-aos="fade-up"
         data-aos-delay="400"
       >
@@ -381,7 +381,7 @@ const HostHackathon = () => {
               data-aos-delay={index * 50 + 500}
             >
               <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <field.icon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
+                <field.icon className="w-5 h-5 mr-2 text-primary" />
                 {field.label}{" "}
                 {requiredFields.includes(field.name) && (
                   <span className="text-red-500 ml-1">*</span>
@@ -394,7 +394,7 @@ const HostHackathon = () => {
                 onChange={handleChange}
                 placeholder={field.placeholder}
                 ref={inputRefs[field.name]}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-bg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
               />
               {errors[field.name] && (
                 <p className="text-red-500 text-xs mt-1">
@@ -413,7 +413,7 @@ const HostHackathon = () => {
             {["startDate", "endDate"].map((name) => (
               <div key={name}>
                 <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <CalendarDaysIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
+                  <CalendarDaysIcon className="w-5 h-5 mr-2 text-primary" />
                   {name === "startDate" ? "Start Date" : "End Date"}{" "}
                   <span className="text-red-500 ml-1">*</span>
                 </label>
@@ -425,11 +425,11 @@ const HostHackathon = () => {
                   onChange={handleChange}
                   min={today}
                   className="w-full text-gray-700 dark:text-gray-300 
-        bg-white dark:bg-gray-700 
+        bg-bg 
         rounded-lg p-3 
         border border-gray-300 dark:border-gray-600
         focus:outline-none 
-        focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400
+        focus:ring-2 focus:ring-primary focus:border-primary
         transition duration-150 ease-in-out"
                 />
                 {errors[name] && (
@@ -449,7 +449,7 @@ const HostHackathon = () => {
             data-aos-delay="1000"
           >
             <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              <DocumentTextIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
+              <DocumentTextIcon className="w-5 h-5 mr-2 text-primary" />
               Description <span className="text-red-500 ml-1">*</span>
             </label>
             <textarea
@@ -459,7 +459,7 @@ const HostHackathon = () => {
               ref={inputRefs.description}
               rows="4"
               placeholder="Briefly describe your hackathon"
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-bg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
             />
             {errors.description && (
               <p className="text-red-500 text-xs mt-1">{errors.description}</p>
@@ -470,7 +470,7 @@ const HostHackathon = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 bg-primary text-white font-semibold p-3 rounded-xl shadow-lg hover:opacity-90 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
            aria-label="button">
             {isSubmitting ? "Submitting..." : "Submit Hackathon"}
             {!isSubmitting && <ArrowRightIcon className="w-5 h-5" />}
@@ -500,13 +500,13 @@ const HostHackathon = () => {
           <motion.div
             key={index}
             whileHover={{ scale: 1.08, rotate: 1 }}
-            className="bg-white dark:bg-gray-800 border border-indigo-200 dark:border-gray-700 rounded-2xl shadow-md p-6 text-center flex flex-col items-center"
+            className="bg-card-bg border border-border rounded-2xl shadow-md p-6 text-center flex flex-col items-center"
             data-aos="zoom-in"
             data-aos-delay={1200 + index * 100}
           >
             {/* UPDATED: Icon and text colors */}
-            <stat.icon className="w-10 h-10 text-indigo-600 dark:text-indigo-400 mb-3 animate-bounce" />
-            <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
+            <stat.icon className="w-10 h-10 text-primary mb-3 animate-bounce" />
+            <h3 className="text-3xl font-bold text-primary">
               {stat.number}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
@@ -522,12 +522,12 @@ const HostHackathon = () => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
-        className="w-full max-w-4xl mt-10 text-center bg-black border border-black rounded-2xl p-10 shadow-2xl"
+        className="w-full max-w-4xl mt-10 text-center bg-card-bg border border-border rounded-2xl p-10 shadow-2xl"
         data-aos="fade-up"
         data-aos-delay="1600"
       >
         <div className="flex items-center justify-center gap-2 mb-4">
-          <TrophyIcon className="w-8 h-8 text-indigo-400" />
+          <TrophyIcon className="w-8 h-8 text-primary" />
           <h2 className="text-3xl font-bold text-white">
             Ready to Inspire the Next Big Innovation?
           </h2>
@@ -542,7 +542,7 @@ const HostHackathon = () => {
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-block bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
+            className="inline-block bg-primary text-white px-8 py-3 rounded-xl shadow-lg hover:opacity-90 transition-all duration-300"
           >
             Explore Hosting Options
           </motion.button>
@@ -551,7 +551,7 @@ const HostHackathon = () => {
             href="/hackathons"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-block bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
+            className="inline-block bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
           >
             Explore Hackathons
           </motion.a>

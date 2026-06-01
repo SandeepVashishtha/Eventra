@@ -463,7 +463,6 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
             whileTap={{ scale: 0.97 }}
             href={project.githubUrl}
             target="_blank" rel="noopener noreferrer"
-            rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80 text-white text-xs font-black shadow-md hover:shadow-lg transition-all duration-300 border-none cursor-pointer"
           >
             <FiGithub className="text-sm" />
@@ -481,7 +480,6 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
             whileTap={{ scale: 0.97 }}
             href={project.liveDemo}
             target="_blank" rel="noopener noreferrer"
-            rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-200 hover:border-indigo-300 dark:border-indigo-800/50 dark:hover:border-indigo-700 bg-white/40 dark:bg-slate-900/20 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 text-xs font-black shadow-xs hover:shadow-sm transition-all duration-300 cursor-pointer"
           >
             <FiExternalLink className="text-sm" />

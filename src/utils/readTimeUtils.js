@@ -44,10 +44,11 @@ export const formatReadTime = (minutes) => {
 export const getEventReadTime = (event) => {
   const description = event?.description || '';
   const minutes = calculateReadTime(description);
-  
+  const plainText = description.replace(/<[^>]*>/g, '').trim();
+
   return {
     minutes,
     display: formatReadTime(minutes),
-    wordCount: description.trim().split(/\s+/).filter(word => word.length > 0).length,
+    wordCount: plainText.split(/\s+/).filter(word => word.length > 0).length,
   };
 };
