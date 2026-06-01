@@ -11,6 +11,7 @@ import {
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
+import { logger } from "../../utils/logger";
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
@@ -124,7 +125,7 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-      console.error("Failed to fetch events:", error);
+      logger.error("Failed to fetch events:", error);
 
       if (process.env.NODE_ENV === "development") {
         const normalizedMockEvents = mockEvents.map(normalizeEvent);
