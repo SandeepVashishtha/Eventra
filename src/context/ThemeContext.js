@@ -16,12 +16,40 @@ import { safeGetItem, safeSetItem, safeRemoveItem } from "../utils/safeStorage.j
 export const ThemeContext = createContext(null);
 
 const getSystemTheme = () =>
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
   window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 
 const getInitialTheme = () =>
   safeGetItem("theme") || "system";
+const safeStorage = {
+  getItem(key, fallback = null) {
+    try {
+      if (typeof window === "undefined" || !window.localStorage) return fallback;
+      return window.localStorage.getItem(key) ?? fallback;
+    } catch {
+      return fallback;
+    }
+  },
+  setItem(key, value) {
+    try {
+      window.localStorage?.setItem(key, value);
+    } catch {
+      // Storage can be blocked in private browsing or embedded contexts.
+    }
+  },
+  removeItem(key) {
+    try {
+      window.localStorage?.removeItem(key);
+    } catch {
+      // Non-fatal: theme state still updates in memory.
+    }
+  },
+};
+
+const getInitialTheme = () => safeStorage.getItem("theme", "system");
 
 export const ThemeProvider = ({ children }) => {
   const [theme] = useState("light");
@@ -29,12 +57,14 @@ export const ThemeProvider = ({ children }) => {
   // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {
     return safeGetItem("activeThemeId") || "default";
+    return safeStorage.getItem("activeThemeId", "default");
   });
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
   // Custom HSL state
   const [customHsl, setCustomHsl] = useState(() => {
     const saved = safeGetItem("customHsl");
+    const saved = safeStorage.getItem("customHsl");
 
     return safeJsonParse(
       saved,
@@ -51,6 +81,7 @@ export const ThemeProvider = ({ children }) => {
   const prefersReduced = useReducedMotion();
   const [reducedMotion, setReducedMotion] = useState(() => {
     const saved = safeGetItem("reducedMotion");
+    const saved = safeStorage.getItem("reducedMotion");
     return saved !== null ? saved === "true" : prefersReduced;
   });
 
@@ -76,6 +107,10 @@ export const ThemeProvider = ({ children }) => {
     root.classList.add("light");
     root.style.colorScheme = "light";
     localStorage.removeItem("theme");
+      safeStorage.removeItem("theme");
+    } else {
+      safeStorage.setItem("theme", theme);
+    }
 
     // Apply active skin theme colors
     const activeTheme = THEMES[activeThemeId] || THEMES.default;
@@ -98,6 +133,8 @@ export const ThemeProvider = ({ children }) => {
 
     safeSetItem("activeThemeId", activeThemeId);
     safeSetItem("customHsl", JSON.stringify(customHsl));
+    safeStorage.setItem("activeThemeId", activeThemeId);
+    safeStorage.setItem("customHsl", JSON.stringify(customHsl));
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
@@ -113,6 +150,7 @@ export const ThemeProvider = ({ children }) => {
   // Sync OS-level reduced motion preference changes
   useEffect(() => {
     const saved = safeGetItem("reducedMotion");
+    const saved = safeStorage.getItem("reducedMotion");
     if (saved === null) {
       setReducedMotion(prefersReduced);
     }
@@ -121,6 +159,7 @@ export const ThemeProvider = ({ children }) => {
   // Handle global CSS override for transitions and animations
   useEffect(() => {
     safeSetItem("reducedMotion", reducedMotion);
+    safeStorage.setItem("reducedMotion", reducedMotion);
 
     const styleId = "reduced-motion-override";
     let styleEl = document.getElementById(styleId);
@@ -149,6 +188,11 @@ export const ThemeProvider = ({ children }) => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
       if (!safeGetItem("theme")) {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = () => {
+      if (!safeStorage.getItem("theme")) {
         setTheme("system");
       }
     };

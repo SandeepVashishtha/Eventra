@@ -18,12 +18,18 @@ const useKeyboardShortcuts = ({
         active &&
         ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName);
 
-      if (isTyping) return;
-
-      // Safe normalized key
       let key = String(e?.key || "").toLowerCase();
 
       if (!key) return;
+
+      // Trigger Command Palette (Ctrl+K or Cmd+K)
+      if ((e.ctrlKey || e.metaKey) && key === "k") {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("toggleCommandPalette"));
+        return;
+      }
+
+      if (isTyping && key !== "escape") return;
 
       // Map ? shifted key to / for virtual matrix consistency
       if (key === "?") {
