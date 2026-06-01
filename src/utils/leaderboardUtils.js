@@ -1,4 +1,3 @@
-import { Trophy, Award, Star, Code } from "lucide-react";
 /**
  * Pure utility functions for leaderboard data processing.
  *
