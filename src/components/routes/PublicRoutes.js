@@ -62,6 +62,6 @@ export const getPublicRoutes = () => [
   <Route key="/hackathons-lifecycle" path="/hackathons/:id/lifecycle" element={withModuleBoundary(<HackathonLifecycle />, "Hackathon lifecycle")} />,
   <Route key="/projects" path="/projects" element={withModuleBoundary(<ProjectsPage />, "Projects explorer")} />,
   <Route key="/leaderboard" path="/leaderboard" element={withModuleBoundary(<LeaderBoard />, "Leaderboard")} />,
-  <Route key="/leaderBoard" path="/leaderBoard" element={withModuleBoundary(<LeaderBoard />, "Leaderboard")} />,
+  <Route key="/communityEvent" path="/communityEvent" element={withModuleBoundary(<CommunityEvent />, "Community Events")} />,
 
   <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,];
