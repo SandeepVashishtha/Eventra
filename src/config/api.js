@@ -196,12 +196,22 @@ const normalizeApiError = (error) => {
   );
 };
 
-// 🔥 HERE IS WHERE WE FIXED THE BUG 🔥
 // We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
 API.interceptors.request.use((config) => {
   if (isDev) {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
+  
+  const method = config.method?.toUpperCase();
+  if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    if (!config.headers['Idempotency-Key'] && !config.headers['X-Idempotency-Key']) {
+      const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+      config.headers['Idempotency-Key'] = generateId();
+    }
+  }
+  
   return config;
 });
 
