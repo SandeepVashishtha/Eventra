@@ -1,16 +1,29 @@
-import { Book, BookOpen, CalendarAlt, Comments, Envelope, Folder, Github, Home, InfoCircle, Linkedin, MessageCircle, Plus, Question, QuestionCircle, Star, Trophy, Users } from "lucide-react";
+import { Book, BookOpen, Calendar, Folder, Github, Home, Info, Linkedin, MessageCircle, Plus, HelpCircle, Star, Trophy, Users, Mail, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
 const footerLinks = {
   quick_links: [
-    { name: "Home", href: "/", icon: FaHome },
-    { name: "Events", href: "/events", icon: FaCalendarAlt },
-    { name: "Hackathons", href: "/hackathons", icon: FaStar },
-    { name: "Projects", href: "/projects", icon: FaFolder },
-    { name: "About", href: "/about", icon: FaInfoCircle },
+    { name: "Home", href: "/", icon: Home },
+    { name: "Events", href: "/events", icon: Calendar },
+    { name: "Hackathons", href: "/hackathons", icon: Star },
+    { name: "Projects", href: "/projects", icon: Folder },
+    { name: "About", href: "/about", icon: Info },
   ],
   community: [
+    { name: "Create Event", href: "/create-event", icon: Plus },
+    { name: "Community Events", href: "/communityEvent", icon: Users },
+    { name: "Documentation", href: "/documentation", icon: Book },
+    { name: "Contributors", href: "/contributors", icon: Users },
+    { name: "Contributors Guide", href: "/contributorguide", icon: Book },
+    { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
+  ],
+  support: [
+    { name: "Help Center", href: "/helpcenter", icon: HelpCircle },
+    { name: "FAQ", href: "/faq", icon: HelpCircle },
+    { name: "Contact Us", href: "/contact", icon: Mail },
+    { name: "Feedback", href: "/feedback", icon: MessageSquare },
+    { name: "API Docs", href: "/apiDocs", icon: BookOpen },
     { name: "Create Event", href: "/create-event", icon: FaPlus },
     { name: "Community Events", href: "/community-event", icon: FaUsers },
     { name: "Documentation", href: "/documentation", icon: FaBook },
@@ -31,17 +44,17 @@ const socialLinks = [
   {
     name: "GitHub",
     href: "https://github.com/sandeepvashishtha/Eventra",
-    icon: FaGithub,
+    icon: Github,
   },
   {
     name: "LinkedIn",
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
-    icon: FaLinkedin,
+    icon: Linkedin,
   },
   {
     name: "Discord",
     href: "https://discord.com/users/sandeep_vashishtha",
-    icon: FaDiscord,
+    icon: MessageCircle,
   },
 ];
 
@@ -93,7 +106,7 @@ const Newsletter = () => {
 
       <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3 xs:flex-row">
         <div className="group relative min-w-0 flex-1">
-          <Envelope
+          <Mail
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors duration-200 group-hover:text-indigo-500"
             size={14}
             aria-hidden="true"

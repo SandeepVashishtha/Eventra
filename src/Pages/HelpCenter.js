@@ -13,7 +13,6 @@ import {
   Settings,
   BookOpen,
   Mail,
-  MessageCircle,
   CheckCircle,
   Clock,
   AlertCircle,
