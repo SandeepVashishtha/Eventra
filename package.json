@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "22.x",
+    "node": ">=22.x",
     "npm": ">=9.6.4"
   },
   "dependencies": {
@@ -23,7 +23,6 @@
     "dompurify": "3.4.6",
     "framer-motion": "11.18.2",
     "fuse.js": "^7.1.0",
-    "google-auth-library": "10.6.2",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "2.3.8",
     "idb-keyval": "6.2.4",
@@ -55,7 +54,7 @@
     "preview": "vite preview",
     "validate-env": "node scripts/validate-env.js",
     "test": "npm run test:unit",
-    "test:unit": "node tests/eventPaginationUtils.test.mjs && node tests/routeSearchUtils.test.mjs && node tests/userNameUtils.test.mjs && node tests/relativeTime.test.mjs && node tests/safeJsonParse.test.mjs && node tests/registerUtils.test.mjs && node tests/bookmarkUtils.test.mjs && node tests/auth.test.mjs && node tests/passwordResetEndpoint.test.mjs && node tests/eventDraftUtils.test.mjs && node tests/exportCsv.test.mjs && node tests/githubProxy.test.mjs && node tests/hackathonFilterUtils.test.mjs && node tests/loginEndpoint.test.mjs && node tests/googleOAuthEndpoint.test.mjs && node tests/logoutEndpoint.test.mjs && node tests/themeConsistency.test.mjs && node tests/sseMultiplexer.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/cspReporting.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/readTimeUtils.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/secureStorage.test.mjs",
+    "test:unit": "node tests/eventPaginationUtils.test.mjs && node tests/routeSearchUtils.test.mjs && node tests/userNameUtils.test.mjs && node tests/relativeTime.test.mjs && node tests/safeJsonParse.test.mjs && node tests/registerUtils.test.mjs && node tests/bookmarkUtils.test.mjs && node tests/auth.test.mjs && node tests/passwordResetEndpoint.test.mjs && node tests/eventDraftUtils.test.mjs && node tests/exportCsv.test.mjs && node tests/githubProxy.test.mjs && node tests/hackathonFilterUtils.test.mjs && node tests/loginEndpoint.test.mjs && node tests/googleOAuthEndpoint.test.mjs && node tests/logoutEndpoint.test.mjs && node tests/colorTokens.test.mjs && node tests/themeConsistency.test.mjs && node tests/sseMultiplexer.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/cspReporting.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/readTimeUtils.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/secureStorage.test.mjs",
     "test:e2e": "playwright test",
     "lint": "eslint src --max-warnings=-1",
     "lint:fix": "eslint src --fix",
@@ -122,10 +121,10 @@
     "@tootallnate/once": "^2.0.1"
   },
   "optionalDependencies": {
-    "lightningcss-linux-x64-gnu": "1.32.0",
-    "lightningcss-linux-x64-musl": "1.32.0",
     "@rolldown/binding-linux-x64-gnu": "1.0.2",
-    "@rolldown/binding-linux-x64-musl": "1.0.2"
+    "@rolldown/binding-linux-x64-musl": "1.0.2",
+    "lightningcss-linux-x64-gnu": "1.32.0",
+    "lightningcss-linux-x64-musl": "1.32.0"
   },
   "_gssoc_comment_dx": "// DEVELOPER EXPERIENCE: Integrated pre-commit validations to prevent broken or unformatted scripts from being pushed upstream."
 }

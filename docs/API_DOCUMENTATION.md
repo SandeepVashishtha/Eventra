@@ -984,6 +984,43 @@ Not required. Public endpoint.
 
 ---
 
+## Upvote Project
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/projects/{id}/upvote` |
+
+Increments the upvote count for a project by 1 and returns the updated project details.
+
+### Authentication
+Requires a valid Bearer JWT in the `Authorization` header. Any authenticated user can upvote.
+
+### Success Response
+Status: `200 OK`
+
+#### Response Example:
+
+```json
+{
+  "id": 1,
+  "title": "Manual Test Project",
+  "description": "Project detail API manual verification",
+  "category": "Web Development",
+  "thumbnailUrl": "https://example.com/project.png",
+  "githubUrl": "https://github.com/example/project",
+  "upvotes": 1
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `401 Unauthorized` | JWT token is missing, invalid, or expired |
+| `404 Not Found` | Project not found with the given ID |
+
+---
+
 ## Get Project Categories
 
 | Method | Endpoint |
