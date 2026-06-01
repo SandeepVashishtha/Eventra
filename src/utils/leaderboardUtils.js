@@ -1,3 +1,4 @@
+import { Trophy, Award, Star, Code } from "lucide-react";
 /**
  * Pure utility functions for leaderboard data processing.
  *
@@ -16,7 +17,6 @@
  * test without mounting a React component.
  */
 
-import { FaTrophy, FaAward, FaStar, FaCode } from "react-icons/fa";
 
 // ─── Scoring constants ────────────────────────────────────────────────────────
 

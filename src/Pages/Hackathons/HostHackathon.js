@@ -1,3 +1,4 @@
+import { ArrowRightIcon, ChartBarIcon, UserGroupIcon, StarIcon, ClipboardDocumentListIcon, BuildingOffice2Icon, EnvelopeIcon, MapPinIcon, TrophyIcon, LinkIcon, CalendarDaysIcon, DocumentTextIcon, ComputerDesktopIcon } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -7,21 +8,6 @@ import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { sanitizeInputText } from "../../utils/inputSanitization";
-import {
-  ArrowRightIcon,
-  ChartBarIcon,
-  UserGroupIcon,
-  StarIcon,
-  ClipboardDocumentListIcon,
-  BuildingOffice2Icon,
-  EnvelopeIcon,
-  MapPinIcon,
-  TrophyIcon,
-  LinkIcon,
-  CalendarDaysIcon,
-  DocumentTextIcon,
-  ComputerDesktopIcon,
-} from "@heroicons/react/24/solid";
 
 const HostHackathon = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -471,7 +457,8 @@ const HostHackathon = () => {
             type="submit"
             disabled={isSubmitting}
             className="w-full flex items-center justify-center gap-2 bg-primary text-white font-semibold p-3 rounded-xl shadow-lg hover:opacity-90 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-           aria-label="button">
+            aria-label={isSubmitting ? "Submitting hackathon" : "Submit hackathon"}
+          >
             {isSubmitting ? "Submitting..." : "Submit Hackathon"}
             {!isSubmitting && <ArrowRightIcon className="w-5 h-5" />}
           </button>

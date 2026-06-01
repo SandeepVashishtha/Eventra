@@ -1,14 +1,5 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  FaStar,
-  FaQrcode,
-  FaChartLine,
-  FaUsers,
-  FaLock,
-  FaGlobe,
-  FaArrowRight,
-} from "react-icons/fa";
 
 // 🎯 Safe: Extracted common classes to avoid repetition
 const ICON_CLASSES = "text-indigo-500 dark:text-indigo-400 text-2xl";

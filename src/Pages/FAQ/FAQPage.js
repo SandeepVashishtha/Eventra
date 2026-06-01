@@ -150,7 +150,9 @@ function FAQSectionInner() {
     try {
       const saved = localStorage.getItem("eventra_faq_ratings");
       if (saved) return JSON.parse(saved);
-    } catch {}
+    } catch (e) {
+      logger.error("Failed to load FAQ ratings", e);
+    }
 
     const initial = {};
     faqs.forEach((faq, idx) => {
@@ -187,7 +189,9 @@ function FAQSectionInner() {
 
       try {
         localStorage.setItem("eventra_faq_ratings", JSON.stringify(updated));
-      } catch {}
+      } catch (err) {
+        logger.error("Failed to save FAQ ratings", err);
+      }
       return updated;
     });
   };
@@ -601,7 +605,7 @@ function FAQSectionInner() {
 
         <div className="faq-cards-container">
           {filteredFaqs.length === 0 ? (
-            <div className="max-w-[820px] w-full mx-auto mt-8 mb-16 text-center p-12 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md animate-pulse">
+            <div className="max-w-205 w-full mx-auto mt-8 mb-16 text-center p-12 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md animate-pulse">
               <div className="inline-flex p-4 rounded-full bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 mb-4">
                 <HelpCircle className="w-8 h-8" />
               </div>
