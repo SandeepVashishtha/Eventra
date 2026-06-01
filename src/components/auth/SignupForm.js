@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
@@ -54,18 +54,8 @@ const SignupForm = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
 
-  // Reconstructed missing state variables from the fragmented file
   const [error, setError] = useState("");
-  const [confirmPasswordError, setConfirmPasswordError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [fieldValidationState, setFieldValidationState] = useState({});
-
-  const emailValidationRequestRef = useRef(0);
   const { password, confirmPassword } = formData;
-
-  const setFieldState = useCallback((fieldName, state) => {
-    setFieldValidationState((prev) => ({ ...prev, [fieldName]: state }));
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -122,41 +112,18 @@ const SignupForm = () => {
       if (!password || !confirmPassword) {
         setError("");
         setPasswordMatchMessage("");
-        setConfirmPasswordError("");
-        setFieldState("confirmPassword", "idle");
         return;
       }
       if (password === confirmPassword) {
         setError("");
-        setConfirmPasswordError("");
-        setFieldState("confirmPassword", "success");
         setPasswordMatchMessage("Passwords match!");
       } else {
         setError("Passwords do not match");
-        setConfirmPasswordError("Passwords do not match");
-        setFieldState("confirmPassword", "error");
         setPasswordMatchMessage("");
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [password, confirmPassword, setFieldState]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    const validatePwd = async () => {
-      if (!formData.password) {
-        setPasswordError("");
-        setFieldState("password", "idle");
-        return;
-      }
-    };
-    validatePwd();
-
-    return () => {
-      isActive = false;
-    };
-  }, [formData.password, setFieldState]);
+  }, [password, confirmPassword]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
