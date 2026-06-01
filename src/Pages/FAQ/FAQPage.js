@@ -246,6 +246,16 @@ export default function FAQSection() {
           z-index: 90;
           width: 100%;
           box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .faq-heading-inner {
+          max-width: 760px;
+          width: 100%;
+          padding: 0 20px;
+          box-sizing: border-box;
         }
 
         .faq-heading-block.is-fixed {
@@ -279,7 +289,9 @@ export default function FAQSection() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 32px 20px 0;
+          padding: 32px 24px 0;
+          max-width: 100%;
+          box-sizing: border-box;
         }
 
         .card-pin-wrapper {
@@ -357,11 +369,13 @@ export default function FAQSection() {
           className={`faq-heading-block${isHeaderFixed ? " is-fixed" : ""}`}
           style={isHeaderFixed ? { top: headerTop } : {}}
         >
-          <h2>Frequently Asked Questions</h2>
-          <p>
-            Everything you need to know about using Eventra, from getting
-            started to hosting your own events.
-          </p>
+          <div className="faq-heading-inner">
+            <h2>Frequently Asked Questions</h2>
+            <p>
+              Everything you need to know about using Eventra, from getting
+              started to hosting your own events.
+            </p>
+          </div>
         </div>
 
         {/* Spacer holds layout space when heading is fixed */}
@@ -402,4 +416,4 @@ export default function FAQSection() {
       </div>
     </>
   );
-} 
+}
