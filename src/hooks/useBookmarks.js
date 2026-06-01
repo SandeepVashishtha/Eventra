@@ -124,4 +124,12 @@ const useBookmarks = (userId = "guest") => {
     setBookmarks([]);
   }, []);
 
+  return {
+    bookmarks,
+    toggleBookmark,
+    isBookmarked,
+    clearBookmarks,
+  };
+};
+
 export default useBookmarks;

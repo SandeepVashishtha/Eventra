@@ -1,8 +1,8 @@
-import { lazy, Suspense, useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 
 import { NavLink, useLocation } from "react-router-dom";
 
-import { Search, ChevronDown, Plus, HelpCircle, X } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { NAV_ITEMS } from "./constants/navItems";
 
 

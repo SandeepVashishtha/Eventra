@@ -32,7 +32,7 @@ export const fetchGitHubJson = async (path, queryParams = {}, options = {}) => {
     return data;
   } catch (error) {
     let message = "Failed to fetch data from GitHub";
-    let severity = "warn";
+    //let severity = "warn";
 
     if (error instanceof FetchError) {
       if (error.status === 403) {
