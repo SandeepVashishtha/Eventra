@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { logger } from "../utils/logger";
 
 const STORAGE_KEY = 'eventra_recently_viewed';
 const MAX_ITEMS = 10;
@@ -55,8 +56,8 @@ const useRecentlyViewed = () => {
       }
       return [];
     } catch (err) {
-      console.error('Failed to load recently viewed events on mount:', err);
-      return [];
+      logger.error('Failed to load recently viewed events:', err);
+      setRecentlyViewed([]);
     }
   });
 
@@ -65,7 +66,7 @@ const useRecentlyViewed = () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(recentlyViewed));
     } catch (err) {
-      console.error('Failed to save recently viewed events:', err);
+      logger.error('Failed to save recently viewed events:', err);
     }
   }, [recentlyViewed]);
 
@@ -102,7 +103,7 @@ const useRecentlyViewed = () => {
       const entry = toRecentlyViewedEntry(event);
       return [entry, ...filtered].slice(0, MAX_ITEMS);
     });
-  }, []);
+  }, [setRecentlyViewed]);
 
   /**
    * Remove a single event from the history.
@@ -110,7 +111,7 @@ const useRecentlyViewed = () => {
    */
   const removeRecentlyViewed = useCallback((eventId) => {
     setRecentlyViewed((prev) => prev.filter((e) => e.id !== eventId));
-  }, []);
+  }, [setRecentlyViewed]);
 
   /**
    * Clear the entire recently viewed history from state and localStorage.
@@ -120,9 +121,9 @@ const useRecentlyViewed = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (err) {
-      console.error('Failed to clear recently viewed events:', err);
+      logger.error('Failed to clear recently viewed events:', err);
     }
-  }, []);
+  }, [setRecentlyViewed]);
 
   return {
     recentlyViewed,

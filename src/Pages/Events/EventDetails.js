@@ -224,9 +224,28 @@ const EventDetails = () => {
                           onClick={async () => {
                             try {
                               setExportingRegistrants(true);
-                              const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-                              const registrants = response.data?.data || response.data || [];
-                              exportToCSV(registrants, `${event.title}_registrants`);
+                              let allRegistrants = [];
+                              let page = 1;
+                              const limit = 500;
+                              let hasMore = true;
+                              
+                              while (hasMore) {
+                                const url = `${API_ENDPOINTS.EVENTS.REGISTRANTS(eventId)}?page=${page}&limit=${limit}`;
+                                const response = await apiUtils.get(url);
+                                const data = response.data?.data || response.data || [];
+                                const totalPages = response.data?.totalPages || 1;
+                                
+                                if (Array.isArray(data)) {
+                                  allRegistrants = allRegistrants.concat(data);
+                                }
+                                
+                                if (page >= totalPages || data.length < limit) {
+                                  hasMore = false;
+                                } else {
+                                  page++;
+                                }
+                              }
+                              exportToCSV(allRegistrants, `${event.title}_registrants`);
                             } catch (error) {
                               toast.error("Failed to fetch registrants");
                             } finally {
@@ -243,9 +262,28 @@ const EventDetails = () => {
                           onClick={async () => {
                             try {
                               setExportingRegistrants(true);
-                              const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-                              const registrants = response.data?.data || response.data || [];
-                              exportToJSON(registrants, `${event.title}_registrants`);
+                              let allRegistrants = [];
+                              let page = 1;
+                              const limit = 500;
+                              let hasMore = true;
+                              
+                              while (hasMore) {
+                                const url = `${API_ENDPOINTS.EVENTS.REGISTRANTS(eventId)}?page=${page}&limit=${limit}`;
+                                const response = await apiUtils.get(url);
+                                const data = response.data?.data || response.data || [];
+                                const totalPages = response.data?.totalPages || 1;
+                                
+                                if (Array.isArray(data)) {
+                                  allRegistrants = allRegistrants.concat(data);
+                                }
+                                
+                                if (page >= totalPages || data.length < limit) {
+                                  hasMore = false;
+                                } else {
+                                  page++;
+                                }
+                              }
+                              exportToJSON(allRegistrants, `${event.title}_registrants`);
                             } catch (error) {
                               toast.error("Failed to fetch registrants");
                             } finally {

@@ -182,22 +182,22 @@ html {
 :root {
   --evt-color-white: #ffffff;
   --evt-color-black: #000000;
-  --evt-surface-page: #ffffff;
-  --evt-surface-page-alt: #f9fafb;
-  --evt-surface-muted: #f8fafc;
-  --evt-surface-hover: #f1f5f9;
-  --evt-text-primary: #1a1a1a;
+  --evt-surface-page: #e0e9f2;
+  --evt-surface-page-alt: #ebf1f7;
+  --evt-surface-muted: #f3f7fb;
+  --evt-surface-hover: #d5e1ee;
+  --evt-text-primary: #1f2937;
   --evt-text-heading: #111827;
-  --evt-text-secondary: #4a4a4a;
+  --evt-text-secondary: #475569;
   --evt-text-muted: #64748b;
-  --evt-border-default: #e1e5e9;
-  --evt-border-subtle: #e2e8f0;
-  --evt-border-input: #cbd5e1;
-  --evt-brand-primary: #667eea;
-  --evt-brand-primary-strong: #2563eb;
-  --evt-brand-primary-hover: #5a67d8;
+  --evt-border-default: #c8d6e5;
+  --evt-border-subtle: #d6e2ef;
+  --evt-border-input: #b8c9dd;
+  --evt-brand-primary: #1f4b6e;
+  --evt-brand-primary-strong: #173a56;
+  --evt-brand-primary-hover: #2a5f88;
   --evt-brand-secondary: #475569;
-  --evt-brand-accent: #764ba2;
+  --evt-brand-accent: #2a6ea8;
   --evt-focus-outline: #1d4ed8;
   --evt-focus-shadow: rgba(191, 219, 254, 0.75);
   --evt-skip-focus: #facc15;
@@ -219,8 +219,8 @@ html {
   --evt-footer-accent: #74b9ff;
   --evt-shadow-subtle: rgba(15, 23, 42, 0.08);
   --evt-shadow-medium: rgba(0, 0, 0, 0.15);
-  --evt-shadow-brand: rgba(102, 126, 234, 0.3);
-  --evt-glow-brand: rgba(59, 130, 246, 0.2);
+  --evt-shadow-brand: rgba(31, 75, 110, 0.24);
+  --evt-glow-brand: rgba(42, 110, 168, 0.2);
 
   --bg-color: var(--evt-surface-page);
   --bg-secondary: var(--evt-surface-muted);
@@ -249,7 +249,7 @@ html {
   --skip-link-focus: var(--evt-skip-focus);
 
   /* Additional Light Theme Variables */
-  --navbar-bg: var(--evt-surface-page);
+  --navbar-bg: #e0e9f2;
   --sidebar-bg: var(--evt-surface-page-alt);
 
   --input-bg: var(--evt-surface-page);

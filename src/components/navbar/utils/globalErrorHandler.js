@@ -10,9 +10,6 @@ export function initializeGlobalErrorHandling(logger) { // 🟢 Updated this lin
   appLogger = logger || { log: console.error };
   // If already initialized, exit early to prevent duplicate listeners
   if (isInitialized) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Error Monitoring] Already initialized. Skipping duplicate setup.');
-    }
     return;
   }
 
@@ -23,9 +20,6 @@ export function initializeGlobalErrorHandling(logger) { // 🟢 Updated this lin
   // Set flag to true
   isInitialized = true;
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Error Monitoring] Global error handlers initialized successfully.');
-  }
 }
 
 // Named handler for standard runtime errors
