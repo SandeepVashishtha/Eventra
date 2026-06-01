@@ -49,10 +49,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             ? "text-text border-primary font-semibold bg-bg-secondary"
             : "text-text-light hover:text-text border-transparent hover:bg-bg"
         }`
-      : `flex gap-1.5 items-center text-[12px] xl:text-[13px] font-medium uppercase tracking-[0.03em] transition-all duration-200 px-1.5 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
+      : `flex items-center text-[13px] font-medium tracking-normal transition-all duration-200 px-3 py-2 border-b-2 rounded-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
           active
-            ? "text-text border-primary"
-            : "text-text-light hover:text-text border-transparent hover:border-border"
+            ? "text-text border-primary bg-primary/10 font-semibold"
+            : "text-text-light/80 hover:text-text border-transparent hover:bg-bg-secondary/70 hover:border-border"
         }`;
   };
 
@@ -62,7 +62,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
-          : "items-center gap-0.5 xl:gap-1 mx-0.5 xl:mx-1 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
+          : "items-center gap-1.5 xl:gap-2 mx-1 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
       }`}
       aria-label={vertical ? "Mobile primary links" : "Primary links"}
     >
@@ -129,10 +129,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     aria-label={`${
                       isOpen ? "Collapse" : "Expand"
                     } ${item.name} submenu`}
-                    className={`ml-auto inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
+                    className={`ml-0.5 inline-flex min-h-8 min-w-8 items-center justify-center rounded-md p-1 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
                       isSubItemActive
-                        ? "text-text"
-                        : "text-text-light hover:text-text"
+                        ? "text-text bg-primary/10"
+                        : "text-text-light/75 hover:text-text hover:bg-bg-secondary/70"
                     }`}
                   >
                     <ChevronDown
@@ -194,7 +194,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
               getNavLinkClasses(isActive)
             }
           >
-            {item.icon}
+            {vertical ? item.icon : null}
             <span>{item.name}</span>
           </NavLink>
         );
