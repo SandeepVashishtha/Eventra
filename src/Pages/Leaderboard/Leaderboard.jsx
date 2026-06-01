@@ -1,4 +1,4 @@
-import { Code, Star, ChevronLeft, ChevronRight, Users, ArrowUp, ArrowDown, Minus, Search, Filter, Download, Sync, Trophy } from "lucide-react";
+import { Code, Star, ChevronLeft, ChevronRight, Users, ArrowUp, ArrowDown, Minus, Search, Filter, Download, RefreshCw, Trophy } from "lucide-react";
 // src/features/leaderboard/LeaderBoard.tsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -737,7 +737,7 @@ export default function LeaderBoard() {
                 aria-label="Refresh leaderboard data"
                 title="Refresh data"
               >
-                <Sync className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
               </motion.button>
 
               <motion.button

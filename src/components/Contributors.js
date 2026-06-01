@@ -1,4 +1,4 @@
-import { Github, ExternalLinkAlt, CodeBranch, MapMarkerAlt, Building, UserFriends, Medal } from "lucide-react";
+import { Github, ExternalLink, GitBranch, MapPin, Building, Users, Medal } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
@@ -369,14 +369,14 @@ const ContributorsInner = () => {
                 {/* Stats Section (Glass style) */}
                 <div className="grid grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300 my-5 w-full">
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <CodeBranch className="text-black dark:text-white mb-1" />
+                    <GitBranch className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.public_repos}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       Repos
                     </span>
                   </div>
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <UserFriends className="text-black dark:text-white mb-1" />
+                    <Users className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.followers}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       Followers
@@ -414,7 +414,7 @@ const ContributorsInner = () => {
                   )}
                   {c.location && (
                     <span className="flex items-center gap-1 justify-center">
-                      <MapMarkerAlt /> {c.location}
+                      <MapPin /> {c.location}
                     </span>
                   )}
                 </div>
@@ -435,7 +435,7 @@ const ContributorsInner = () => {
 
                     <span>Profile</span>
 
-                    <ExternalLinkAlt className="text-xs opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
+                    <ExternalLink className="text-xs opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
                   </a>
                 </div>
               </motion.div>
