@@ -5,7 +5,6 @@ import {
   ZoomIn, ZoomOut, X, Clock,
   TrendingUp, GitBranch, ExternalLink 
 } from "lucide-react";
-import "./CollaborationNetworkMap.css";
 
 // ============ DATA ============
 const HUBS = [
@@ -158,26 +157,27 @@ export default function CollaborationNetworkMap() {
   }, [pinnedHub]);
 
   return (
-    <section className="cnm-section light-theme">
-      <div className="cnm-container">
+    <section className="bg-[#020617] py-12 text-white">
+      <div className="mx-auto max-w-7xl px-6">
+      <div className="relative overflow-hidden">
         
         {/* Header with Controls */}
-        <div className="cnm-header">
-          <div className="cnm-header-top">
-            <div className="cnm-badge">
-              <Globe className="cnm-badge-icon" />
+        <div className="mb-8 flex flex-col gap-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium text-blue-400">
+              <Globe className="h-4 w-4" />
               <span>Global Connectivity</span>
             </div>
-            <div className="cnm-controls">
+            <div className="absolute top-6 right-6 flex items-center gap-3 z-10">
               <button 
-                className="cnm-control-btn"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg transition hover:scale-105 hover:bg-violet-500"
                 onClick={() => setZoom(z => Math.min(z + 0.2, 2))}
                 aria-label="Zoom in"
               >
                 <ZoomIn size={16} />
               </button>
               <button 
-                className="cnm-control-btn"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg transition hover:scale-105 hover:bg-violet-500"
                 onClick={() => setZoom(z => Math.max(z - 0.2, 0.5))}
                 aria-label="Zoom out"
               >
@@ -186,31 +186,31 @@ export default function CollaborationNetworkMap() {
             </div>
           </div>
           
-          <h2 className="cnm-title">Global Collaboration Network</h2>
-          <p className="cnm-subtitle">
+          <h2 className="text-3xl font-bold tracking-tight text-white">Global Collaboration Network</h2>
+          <p className="max-w-2xl text-slate-400">
             Real-time collaboration across {stats.totalDevs.toLocaleString()} developers in {stats.regions} regions.
           </p>
 
           {/* Filters */}
-          <div className="cnm-filters">
-            <div className="filter-group">
-              <Search size={14} className="filter-icon" />
+          <div className="mb-10 flex flex-wrap items-center gap-4">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search hubs or technologies..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="filter-input"
+                className="w-full md:w-80 rounded-xl border border-slate-700 bg-slate-900 py-3 pl-10 pr-4 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                 aria-label="Search hubs"
               />
             </div>
             
-            <div className="filter-group">
-              <Filter size={14} className="filter-icon" />
+            <div className="relative">
+              <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <select
                 value={selectedActivity}
                 onChange={(e) => setSelectedActivity(e.target.value)}
-                className="filter-select"
+                className="rounded-xl border border-slate-700 bg-slate-900 py-3 pl-10 pr-4 text-slate-200 focus:outline-none"
                 aria-label="Filter by activity"
               >
                 {["All", "Critical", "High", "Medium", "Low"].map(a => (
@@ -219,7 +219,7 @@ export default function CollaborationNetworkMap() {
               </select>
             </div>
 
-            <label className="filter-toggle">
+            <label className="flex items-center gap-2 text-slate-300">
               <input 
                 type="checkbox" 
                 checked={showConnections}
@@ -228,7 +228,7 @@ export default function CollaborationNetworkMap() {
               <span>Connections</span>
             </label>
 
-            <label className="filter-toggle">
+            <label className="flex items-center gap-2 text-slate-300">
               <input 
                 type="checkbox" 
                 checked={particlesEnabled}
@@ -240,41 +240,41 @@ export default function CollaborationNetworkMap() {
         </div>
 
         {/* Stats Summary */}
-        <div className="cnm-stats-bar">
-          <div className="stat-item">
+        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-lg">
             <Users size={18} />
             <div>
-              <span className="stat-number">{stats.totalDevs.toLocaleString()}</span>
-              <span className="stat-label">Developers</span>
+              <span className="block text-2xl font-bold text-emerald-400">{stats.totalDevs.toLocaleString()}</span>
+              <span className="mt-1 block text-sm text-slate-400">Developers</span>
             </div>
           </div>
-          <div className="stat-item">
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-lg">
             <Code size={18} />
             <div>
-              <span className="stat-number">{stats.totalProjects}</span>
-              <span className="stat-label">Projects</span>
+              <span className="block text-2xl font-bold text-emerald-400">{stats.totalProjects}</span>
+              <span className="mt-1 block text-sm text-slate-400">Projects</span>
             </div>
           </div>
-          <div className="stat-item">
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-lg">
             <GitBranch size={18} />
             <div>
-              <span className="stat-number">{CONNECTIONS.length}</span>
-              <span className="stat-label">Connections</span>
+              <span className="block text-2xl font-bold text-emerald-400">{CONNECTIONS.length}</span>
+              <span className="mt-1 block text-sm text-slate-400">Connections</span>
             </div>
           </div>
-          <div className="stat-item">
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-lg">
             <TrendingUp size={18} />
             <div>
-              <span className="stat-number">{stats.activeHubs}/{HUBS.length}</span>
-              <span className="stat-label">Active Hubs</span>
+              <span className="block text-2xl font-bold text-emerald-400">{stats.activeHubs}/{HUBS.length}</span>
+              <span className="mt-1 block text-sm text-slate-400">Active Hubs</span>
             </div>
           </div>
         </div>
 
         {/* Map Frame */}
-        <div className="cnm-map-frame" style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}>
+        <div className="relative mt-2 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60" style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}>
           <svg 
-            className="cnm-svg"
+            className="h-[420px] w-full"
             viewBox="0 0 1000 550"
             preserveAspectRatio="xMidYMid meet"
             role="img"
@@ -406,7 +406,7 @@ export default function CollaborationNetworkMap() {
                     y={hub.y + hubSize + 18} 
                     textAnchor="middle" 
                     className="node-label"
-                    fill="#334155"
+                    fill="#cbd5e1"
                     fontSize="11"
                     fontWeight="500"
                   >
@@ -460,15 +460,15 @@ export default function CollaborationNetworkMap() {
                   <div className="popup-stat">
                     <Users className="stat-icon" />
                     <div>
-                      <span className="stat-label">Developers</span>
-                      <span className="stat-value">{(activeHub || pinnedHub).devs.toLocaleString()}</span>
+                      <span className="mt-1 block text-sm text-slate-400">Developers</span>
+                      <span className="block text-2xl font-bold text-emerald-400">{(activeHub || pinnedHub).devs.toLocaleString()}</span>
                     </div>
                   </div>
                   <div className="popup-stat">
                     <Code className="stat-icon" />
                     <div>
-                      <span className="stat-label">Projects</span>
-                      <span className="stat-value">{(activeHub || pinnedHub).projects}</span>
+                      <span className="mt-1 block text-sm text-slate-400">Projects</span>
+                      <span className="block text-2xl font-bold text-emerald-400">{(activeHub || pinnedHub).projects}</span>
                     </div>
                   </div>
                 </div>
@@ -503,12 +503,12 @@ export default function CollaborationNetworkMap() {
         </div>
 
         {/* Legend */}
-        <div className="cnm-legend">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 text-sm text-slate-400">
           <h5>Activity Levels</h5>
-          <div className="legend-items">
+          <div className="flex flex-wrap items-center gap-4">
             {Object.entries(ACTIVITY_LEVELS).map(([key, config]) => (
               <div key={key} className="legend-item">
-                <span className="legend-dot" style={{ backgroundColor: config.color, boxShadow: `0 0 8px ${config.pulse}` }} />
+                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: config.color, boxShadow: `0 0 8px ${config.pulse}` }} />
                 <span>{config.label}</span>
               </div>
             ))}
@@ -516,10 +516,11 @@ export default function CollaborationNetworkMap() {
         </div>
 
         {/* Zoom Indicator */}
-        <div className="cnm-zoom-indicator">
+        <div className="absolute bottom-6 right-6 rounded-full bg-slate-900/90 px-4 py-2 text-sm text-slate-300 shadow-lg">
           Zoom: {Math.round(zoom * 100)}%
         </div>
 
+      </div>
       </div>
     </section>
   );
