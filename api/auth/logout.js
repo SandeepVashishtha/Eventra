@@ -35,43 +35,39 @@ const JWT_SECRET = getJwtSecret();
 //  3. The in-process blacklist, which is effective within a single long-running
 //     server process (e.g. local development or a non-serverless deployment).
 
-const tokenBlacklist = new Set();
+// Map<token, expiryUnixSeconds> — uses the JWT exp claim as the expiry so
+// entries are naturally bounded by the token lifetime (default 7d).
+// A Map is used instead of Set so we can check expiry at read time without
+// iterating, and the cleanup pass can delete entries without mutating during
+// iteration (collect keys first, then delete).
+const tokenBlacklist = new Map();
 
-// Optional: Token blacklist cleanup interval (cleanup expired tokens periodically)
 const BLACKLIST_CLEANUP_INTERVAL = parseInt(process.env.BLACKLIST_CLEANUP_INTERVAL) || 3600000; // 1 hour
 
-// Cleanup expired tokens from blacklist
+// Cleanup expired tokens from blacklist (runs every hour by default).
+// Collects expired keys into an array first, then deletes — avoids mutating
+// the Map during iteration (the bug the original Set-based approach had).
 const cleanupExpiredTokens = () => {
   const now = Math.floor(Date.now() / 1000);
-  for (const entry of tokenBlacklist) {
-    try {
-      const token = entry;
-      const tokenParts = token.split(".");
-      if (tokenParts.length === 3) {
-        const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
-        if (payload.exp && payload.exp < now) {
-          tokenBlacklist.delete(token);
-        }
-      }
-    } catch (e) {
-      // If parsing fails, keep the entry
-    }
+  const expired = [];
+  for (const [token, exp] of tokenBlacklist) {
+    if (exp < now) expired.push(token);
+  }
+  for (const token of expired) {
+    tokenBlacklist.delete(token);
   }
 };
 
-// Start periodic cleanup
 let cleanupInterval = null;
 const startCleanupInterval = () => {
   if (!cleanupInterval) {
     cleanupInterval = setInterval(cleanupExpiredTokens, BLACKLIST_CLEANUP_INTERVAL);
-    // Don't let this prevent the process from exiting
     if (cleanupInterval.unref) {
       cleanupInterval.unref();
     }
   }
 };
 
-// Start the cleanup interval
 startCleanupInterval();
 
 // ---------------------------------------------------------------------------
@@ -126,15 +122,33 @@ const extractToken = (authHeader) => {
 // ---------------------------------------------------------------------------
 
 const isTokenBlacklisted = (token) => {
-  return tokenBlacklist.has(token);
+  const exp = tokenBlacklist.get(token);
+  if (exp === undefined) return false;
+  // Auto-evict expired entries at read time so stale tokens don't linger
+  // until the next cleanup interval.
+  if (exp < Math.floor(Date.now() / 1000)) {
+    tokenBlacklist.delete(token);
+    return false;
+  }
+  return true;
 };
 
 // ---------------------------------------------------------------------------
-// Add token to blacklist
+// Add token to blacklist with auto-expiry based on JWT exp claim
 // ---------------------------------------------------------------------------
 
 const blacklistToken = (token) => {
-  tokenBlacklist.add(token);
+  try {
+    const payload = JSON.parse(
+      Buffer.from(token.split(".")[1], "base64").toString()
+    );
+    const exp = payload.exp ?? Math.floor(Date.now() / 1000) + 7 * 86400;
+    tokenBlacklist.set(token, exp);
+  } catch {
+    // If the token can't be decoded (malformed), keep it for a bounded
+    // default TTL so the blacklist can't be spammed with garbage entries.
+    tokenBlacklist.set(token, Math.floor(Date.now() / 1000) + 86400);
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -239,11 +253,11 @@ export default async function handler(req, res) {
 // Export utility functions for testing
 // ---------------------------------------------------------------------------
 
-export { 
-  tokenBlacklist, 
-  isTokenBlacklisted, 
-  blacklistToken, 
-  authenticateToken, 
+export {
+  tokenBlacklist,
+  isTokenBlacklisted,
+  blacklistToken,
+  authenticateToken,
   extractToken,
   cleanupExpiredTokens,
 };
