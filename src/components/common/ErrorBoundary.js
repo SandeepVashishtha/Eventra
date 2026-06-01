@@ -45,7 +45,7 @@ class ErrorBoundary extends Component {
                 Oops! Something went wrong.
               </h2>
               <p className="mt-3 text-base text-gray-500 dark:text-gray-400">
-                We're sorry, but an unexpected error occurred. Our team has been notified.
+                We&apos;re sorry, but an unexpected error occurred. Our team has been notified.
               </p>
             </div>
 

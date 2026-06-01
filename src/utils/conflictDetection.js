@@ -21,6 +21,7 @@ import {
   getUserTimezone,
   parseEventToUTC,
   parseTimeString,
+  normalizeDateString,
 } from './timezoneUtils.js';
 
 // ---------------------------------------------------------------------------
@@ -129,14 +130,9 @@ export const doEventsOverlap = (
   // Only reached when date/time fields are unparseable (e.g. undefined).
   // The legacy code compared raw date strings; we still do that but via
   // normalizeDateString for format-tolerance.
-  try {
-    const { normalizeDateString } = require('./timezoneUtils');
-    const d1 = normalizeDateString(event1?.date);
-    const d2 = normalizeDateString(event2?.date);
-    if (d1 && d2 && d1 !== d2) return false;
-  } catch {
-    if (event1?.date !== event2?.date) return false;
-  }
+  const d1 = normalizeDateString(event1?.date);
+  const d2 = normalizeDateString(event2?.date);
+  if (d1 && d2 && d1 !== d2) return false;
 
   const r1 = getEventTimeRange(event1, fallbackDuration);
   const r2 = getEventTimeRange(event2, fallbackDuration);
