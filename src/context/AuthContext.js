@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }) => {
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     sessionStorage.removeItem("token");
     syncSecureStorage.removeItem("user");
+    localStorage.removeItem("user");
     return true;
   }, []);
 
