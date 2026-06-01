@@ -38,8 +38,7 @@ const AboutCTA = () => {
             delay: bubble.delay,
             duration: 1.5,
             repeat: Infinity,
-            const randomDelay = useMemo(() => 2 + Math.random() * 2, []);
-            repeatDelay: randomDelay
+            repeatDelay: 2 + Math.random() * 2,
             ease: "easeInOut",
           }}
         />

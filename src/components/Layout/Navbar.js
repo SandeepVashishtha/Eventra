@@ -797,11 +797,16 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   useEffect(() => {
-    const handleToggleCommandPalette = () => {
-      setShowCommandPalette((prev) => !prev);
+    const handleToggle = () => setShowCommandPalette((prev) => !prev);
+    const handleClose = () => setShowCommandPalette(false);
+
+    window.addEventListener("toggleCommandPalette", handleToggle);
+    window.addEventListener("closeCommandPalette", handleClose);
+
+    return () => {
+      window.removeEventListener("toggleCommandPalette", handleToggle);
+      window.removeEventListener("closeCommandPalette", handleClose);
     };
-    window.addEventListener("toggleCommandPalette", handleToggleCommandPalette);
-    return () => window.removeEventListener("toggleCommandPalette", handleToggleCommandPalette);
   }, []);
 
   const drawerRef = useRef(null);

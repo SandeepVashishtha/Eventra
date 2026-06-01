@@ -13,6 +13,14 @@ const BASE_BACKOFF_MS = 1_000;
 const useOfflineSync = () => {
   const { token, user } = useAuth();
   const isSyncing = useRef(false);
+  const conflictControllerRef = useRef(new AbortController());
+
+  // Clean up controller on full unmount
+  useEffect(() => {
+    return () => {
+      conflictControllerRef.current.abort();
+    };
+  }, []);
 
   useEffect(() => {
   /**
@@ -140,8 +148,11 @@ const useOfflineSync = () => {
     };
 
     // AbortController used to cancel any in-progress resolveConflict() wait
-    // when the useEffect is cleaned up (component unmount or token change).
-    const conflictController = new AbortController();
+    // We use the stable ref to prevent it from being prematurely aborted during re-renders
+    if (conflictControllerRef.current.signal.aborted) {
+      conflictControllerRef.current = new AbortController();
+    }
+    const conflictController = conflictControllerRef.current;
 
     const executeSync = async () => {
       const queue = await getQueueIndexedDB();
@@ -415,7 +426,7 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, [token, user]);
+  }, [token, user?.id]);
 };
 
 export default useOfflineSync;
