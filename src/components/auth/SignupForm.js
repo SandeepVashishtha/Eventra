@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
@@ -56,11 +56,9 @@ const SignupForm = () => {
 
   // Reconstructed missing state variables from the fragmented file
   const [error, setError] = useState("");
-  const [confirmPasswordError, setConfirmPasswordError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [fieldValidationState, setFieldValidationState] = useState({});
-
-  const emailValidationRequestRef = useRef(0);
+  const [, setConfirmPasswordError] = useState("");
+  const [, setPasswordError] = useState("");
+  const [, setFieldValidationState] = useState({});
   const { password, confirmPassword } = formData;
 
   const setFieldState = useCallback((fieldName, state) => {
@@ -142,7 +140,6 @@ const SignupForm = () => {
   }, [password, confirmPassword, setFieldState]);
 
   useEffect(() => {
-    let isActive = true;
 
     const validatePwd = async () => {
       if (!formData.password) {
@@ -153,9 +150,6 @@ const SignupForm = () => {
     };
     validatePwd();
 
-    return () => {
-      isActive = false;
-    };
   }, [formData.password, setFieldState]);
 
   const handleSubmit = async (e) => {
