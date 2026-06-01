@@ -1,3 +1,4 @@
+import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FiMessageSquare } from "react-icons/fi";
@@ -17,8 +18,8 @@ const FeedbackButton = () => {
       <Link
         to="/feedback"
         className="relative flex items-center justify-center p-3.5 bg-white text-black border border-black/15 rounded-full shadow-lg hover:bg-gray-50 transition-all duration-300 group"
-        // title="Share Feedback"
         aria-label="Share Feedback"
+        role="button"
       >
         <motion.div
           whileHover={{ scale: 1.1, rotate: 5 }}
