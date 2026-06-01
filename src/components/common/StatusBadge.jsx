@@ -66,12 +66,12 @@ const STATUS_CONFIG = {
 };
 
 export default function StatusBadge({ status }) {
-  if (!status) return null;
-
-  const key = status.toLowerCase();
-
+  if (status === null || status === undefined) return null;
+  const normalized = String(status).trim();
+  if (!normalized) return null;
+  const key = normalized.toLowerCase();
   const config = STATUS_CONFIG[key] ?? {
-    label: status,
+    label: normalized,
     className: "sb-gray",
   };
 
