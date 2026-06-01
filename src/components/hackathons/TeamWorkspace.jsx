@@ -394,6 +394,7 @@ const TeamWorkspace = () => {
                       <button
                         onClick={() => handleToggleTask(task.id)}
                         className="flex items-start gap-3 flex-1 text-left cursor-pointer"
+                        aria-label={`${task.done ? "Mark incomplete" : "Mark complete"}: ${task.text}`}
                       >
                         <div className="mt-0.5 shrink-0">
                           {task.done ? (
@@ -416,6 +417,7 @@ const TeamWorkspace = () => {
                         onClick={() => handleDeleteTask(task.id)}
                         className="p-1 text-gray-500 hover:text-red-400 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
                         title="Delete Milestone"
+                        aria-label={`Delete milestone: ${task.text}`}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -500,6 +502,7 @@ const TeamWorkspace = () => {
                             onClick={() => handleDeletePin(pin.id)}
                             className="p-0.5 text-gray-600 hover:text-red-400 rounded transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
                             title="Unpin Announcement"
+                            aria-label={`Unpin announcement: ${pin.text}`}
                           >
                             <X size={10} />
                           </button>
@@ -578,6 +581,7 @@ const TeamWorkspace = () => {
               <button
                 onClick={() => setIsChatOpen(false)}
                 className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer bg-transparent border-none"
+                aria-label="Close team chat drawer"
               >
                 <X size={16} />
               </button>
@@ -643,7 +647,7 @@ const TeamWorkspace = () => {
               <button
                 type="submit"
                 className="p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shrink-0 cursor-pointer flex items-center justify-center"
-                aria-label="Send Message"
+                aria-label="Send team chat message"
               >
                 <Send size={14} />
               </button>

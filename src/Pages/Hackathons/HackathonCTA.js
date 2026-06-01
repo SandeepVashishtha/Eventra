@@ -129,6 +129,7 @@ const HackathonCTA = () => {
               <button
                 onClick={() => setShowModal(false)}
                 className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors"
+                aria-label="Close hackathon registration instructions"
               >
                 <X className="w-4 h-4 text-slate-500 dark:text-slate-300" />
               </button>

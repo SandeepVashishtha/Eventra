@@ -277,6 +277,8 @@ const InteractiveWhiteboard = () => {
                 : "text-slate-400 hover:text-white hover:bg-slate-900"
             }`}
             title="Pen Sketch Tool"
+            aria-label="Select pen sketch tool"
+            aria-pressed={tool === "pen"}
           >
             <PenTool size={16} />
           </button>
@@ -289,6 +291,8 @@ const InteractiveWhiteboard = () => {
                 : "text-slate-400 hover:text-white hover:bg-slate-900"
             }`}
             title="Rectangle Tool"
+            aria-label="Select rectangle drawing tool"
+            aria-pressed={tool === "rect"}
           >
             <Square size={16} />
           </button>
@@ -301,6 +305,8 @@ const InteractiveWhiteboard = () => {
                 : "text-slate-400 hover:text-white hover:bg-slate-900"
             }`}
             title="Circle Tool"
+            aria-label="Select circle drawing tool"
+            aria-pressed={tool === "circle"}
           >
             <Circle size={16} />
           </button>
@@ -313,6 +319,8 @@ const InteractiveWhiteboard = () => {
                 : "text-slate-400 hover:text-white hover:bg-slate-900"
             }`}
             title="Place Sticky Note"
+            aria-label="Select sticky note tool"
+            aria-pressed={tool === "sticky"}
           >
             <Plus size={14} />
             <span>Sticky</span>
@@ -334,6 +342,8 @@ const InteractiveWhiteboard = () => {
                 }`}
                 style={{ backgroundColor: c.value }}
                 title={c.name}
+                aria-label={`Use ${c.name} whiteboard color`}
+                aria-pressed={color === c.value}
               />
             ))}
           </div>
@@ -353,6 +363,8 @@ const InteractiveWhiteboard = () => {
                     : "text-slate-500 hover:text-white hover:bg-slate-900"
                 }`}
                 title={`Brush size: ${s}px`}
+                aria-label={`Use ${s}px brush size`}
+                aria-pressed={size === s}
               >
                 {s}
               </button>
@@ -368,6 +380,8 @@ const InteractiveWhiteboard = () => {
                   ? "bg-indigo-650/20 border-indigo-500/40 text-indigo-400 font-bold"
                   : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
               }`}
+              aria-label={isSolid ? "Disable solid shape fill" : "Enable solid shape fill"}
+              aria-pressed={isSolid}
             >
               <Check size={12} className={isSolid ? "opacity-100" : "opacity-30"} />
               <span>Solid Fill</span>
@@ -381,6 +395,7 @@ const InteractiveWhiteboard = () => {
             onClick={handleUndo}
             className="p-2 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-xl transition-all"
             title="Undo Last Drawing"
+            aria-label="Undo last whiteboard drawing"
           >
             <RotateCcw size={16} />
           </button>
@@ -388,6 +403,7 @@ const InteractiveWhiteboard = () => {
             onClick={handleClear}
             className="p-2 bg-red-950/20 hover:bg-red-950/50 border border-red-500/10 hover:border-red-500/30 text-red-400 rounded-xl transition-all"
             title="Clear Workspace"
+            aria-label="Clear whiteboard workspace"
           >
             <Trash2 size={16} />
           </button>
@@ -432,6 +448,7 @@ const InteractiveWhiteboard = () => {
               <button
                 onClick={(e) => { e.stopPropagation(); handleDeleteSticky(sticky.id); }}
                 className="text-gray-500 hover:text-red-400 p-0.5 rounded transition-colors bg-transparent border-none cursor-pointer"
+                aria-label={`Delete sticky note ${sticky.id}`}
               >
                 <X size={10} />
               </button>

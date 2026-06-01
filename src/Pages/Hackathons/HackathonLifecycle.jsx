@@ -395,7 +395,8 @@ const HackathonLifecycle = () => {
                         <button
                           type="button"
                           className="px-3 py-1.5 rounded-xl bg-bg hover:bg-card-bg border border-border text-xs font-bold text-primary shadow-sm"
-                         aria-label="button">
+                          aria-label={`Fetch ${res.name}`}
+                        >
                           Fetch File
                         </button>
                       </div>
@@ -437,7 +438,8 @@ const HackathonLifecycle = () => {
                     <button
                       type="submit"
                       className="px-4 py-2 rounded-xl bg-primary hover:opacity-90 text-sm font-bold text-white shadow-sm transition shrink-0"
-                     aria-label="button">
+                      aria-label={`Add task to ${selectedPhase.name}`}
+                    >
                       Add Task
                     </button>
                   </form>
@@ -453,6 +455,7 @@ const HackathonLifecycle = () => {
                           ? "bg-emerald-50/40 border-emerald-100 dark:bg-emerald-950/10 dark:border-emerald-900/30 text-emerald-800 dark:text-emerald-300"
                           : "bg-bg border-border hover:border-primary/50 hover:bg-card-bg text-text"
                       }`}
+                      aria-label={`${task.done ? "Mark incomplete" : "Mark complete"}: ${task.text}`}
                     >
                       <div className="mt-0.5">
                         {task.done ? (
