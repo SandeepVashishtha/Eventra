@@ -1,5 +1,6 @@
 import axios from "axios";
 import { ENV } from "./env";
+import { isSafeRetryMethod, shouldRetryApiRequest } from "../utils/retryPolicy";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -59,9 +60,10 @@ const buildApiUrl = (path = "") => {
 // ---------------------------------------------------------------------------
 
 const REQUEST_TIMEOUT_MS = 15_000;
-const RETRYABLE_STATUS_CODES = [502, 503, 504];
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1_000;
+
+export { isSafeRetryMethod, shouldRetryApiRequest };
 
 // ---------------------------------------------------------------------------
 // Normalized API Error
@@ -215,11 +217,14 @@ API.interceptors.response.use(
     }
 
     const retryCount = config._retryCount || 0;
-    const isNonMutating = config.method?.toUpperCase() === 'GET';
-    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status) || (status === 429);
     
-    // Retry non-mutating requests with exponential backoff
-    if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
+    if (
+      shouldRetryApiRequest({
+        method: config.method,
+        error,
+        retryCount,
+      })
+    ) {
       config._retryCount = retryCount + 1;
       const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 

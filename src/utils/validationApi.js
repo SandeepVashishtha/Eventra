@@ -1,8 +1,8 @@
 import { apiUtils } from "../config/api";
+import { isRetryableApiError, shouldRetryApiRequest } from "./retryPolicy";
 
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRIES = 1;
-const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -85,9 +85,9 @@ export const normalizeValidationApiResponse = (
 /**
  * Sends a validation request with timeout, retry, JSON parsing, and fallback errors.
  *
- * Retryable HTTP status codes are retried with a small increasing delay. Timeout,
- * missing `fetch`, network failures, and invalid responses are converted into
- * user-safe validation responses instead of throwing.
+ * Retryable HTTP status codes are retried with a small increasing delay only
+ * for safe HTTP methods (GET, HEAD, OPTIONS). Mutating validation requests are
+ * attempted once to avoid duplicate writes when a timeout hides a success.
  *
  * @param {string} endpoint - URL or path to request.
  * @param {Object} [options]
@@ -118,6 +118,7 @@ export const requestValidation = async (endpoint, options = {}) => {
   } = options;
 
   let lastError = null;
+  const uppercaseMethod = method.toUpperCase();
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     const controller = new AbortController();
@@ -126,7 +127,6 @@ export const requestValidation = async (endpoint, options = {}) => {
     try {
       const config = { headers, signal: controller.signal };
       let response;
-      const uppercaseMethod = method.toUpperCase();
       
       if (uppercaseMethod === "GET") {
         response = await apiUtils.get(endpoint, config);
@@ -164,7 +164,7 @@ export const requestValidation = async (endpoint, options = {}) => {
       const data = error.data;
 
       // If the API explicitly returned a validation failure (like 400, 409)
-      if (status && !RETRYABLE_STATUS_CODES.includes(status) && status < 500) {
+      if (status && !isRetryableApiError(error) && status < 500) {
         return createValidationResponse(
           false,
           data?.message || invalidMessage,
@@ -172,8 +172,14 @@ export const requestValidation = async (endpoint, options = {}) => {
         );
       }
 
-      // Retry on network errors, timeouts, or 5xx server errors
-      if (attempt < retries) {
+      if (
+        shouldRetryApiRequest({
+          method: uppercaseMethod,
+          error,
+          retryCount: attempt,
+          maxRetries: retries,
+        })
+      ) {
         await wait(retryDelayMs * (attempt + 1));
         continue;
       }
