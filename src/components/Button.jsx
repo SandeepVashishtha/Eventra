@@ -1,3 +1,4 @@
+import React from 'react';
 import './Button.css';
 
 export const Button = ({
@@ -8,24 +9,33 @@ export const Button = ({
   type = 'button',
   disabled = false,
   ariaLabel,
+  onClick,
   ...props
 }) => {
 
-  // Allowed variants and sizes
-  const validVariants = ['primary', 'secondary', 'danger', 'outline'];
+  const validVariants = ['primary', 'secondary', 'danger'];
   const validSizes = ['small', 'medium', 'large'];
 
-  // Fallback protection
-  const safeVariant = validVariants.includes(variant)
-    ? variant
-    : 'primary';
+  const safeVariant = validVariants.includes(variant) ? variant : 'primary';
+  const safeSize = validSizes.includes(size) ? size : 'medium';
 
-  const safeSize = validSizes.includes(size)
-    ? size
-    : 'medium';
+  const buttonClass = `
+    btn
+    btn-${safeVariant}
+    btn-${safeSize}
+    ${disabled ? 'btn-disabled' : ''}
+    ${className}
+  `;
 
-  // Combined class names
-  const buttonClass = `btn btn-${safeVariant} btn-${safeSize} ${disabled ? 'btn-disabled' : ''} ${className}`;
+  const handlePress = (e) => {
+    if (disabled) {
+      e.preventDefault();
+      return;
+    }
+    if (onClick && typeof onClick === 'function') {
+      onClick(e);
+    }
+  };
 
   return (
     <button
@@ -34,6 +44,7 @@ export const Button = ({
       aria-disabled={disabled}
       aria-label={ariaLabel}
       className={buttonClass.trim()}
+      onClick={handlePress}
       {...props}
     >
       {children}
