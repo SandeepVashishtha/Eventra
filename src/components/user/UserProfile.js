@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { syncSecureStorage } from "../../utils/secureStorage";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 import "./UserProfile.css";
 
 const fadeUp = (prefersReducedMotion) => ({
@@ -57,11 +58,8 @@ export default function UserProfile() {
     const saved = syncSecureStorage.getItem("user");
     let merged = user || {};
     if (saved) {
-      try {
-        merged = { ...user, ...JSON.parse(saved) };
-      } catch (error) {
-        console.error('Error parsing user profile from localStorage:', error);
-      }
+      const parsed = safeJsonParse(saved, {});
+      merged = { ...user, ...parsed };
     }
     setProfile(merged);
     const t = setTimeout(() => setLoading(false), 600);
