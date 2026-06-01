@@ -24,6 +24,19 @@ const footerLinks = {
     { name: "Contact Us", href: "/contact", icon: Mail },
     { name: "Feedback", href: "/feedback", icon: MessageSquare },
     { name: "API Docs", href: "/apiDocs", icon: BookOpen },
+    { name: "Create Event", href: "/create-event", icon: FaPlus },
+    { name: "Community Events", href: "/community-event", icon: FaUsers },
+    { name: "Documentation", href: "/documentation", icon: FaBook },
+    { name: "Contributors", href: "/contributors", icon: FaUsers },
+    { name: "Contributors Guide", href: "/contributorguide", icon: FaBook },
+    { name: "Leaderboard", href: "/leaderboard", icon: FaTrophy },
+  ],
+  support: [
+    { name: "Help Center", href: "/helpcenter", icon: FaQuestionCircle },
+    { name: "FAQ", href: "/faq", icon: FaQuestion },
+    { name: "Contact Us", href: "/contact", icon: FaEnvelope },
+    { name: "Feedback", href: "/feedback", icon: FaComments },
+    { name: "API Docs", href: "/api-docs", icon: FaBookOpen },
   ],
 };
 
