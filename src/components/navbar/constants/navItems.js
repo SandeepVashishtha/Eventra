@@ -37,12 +37,12 @@ export const NAV_ITEMS = [
   },
   {
     name: "Community",
-    href: "/communityEvent",
+    href: "/community-event",
     icon: <Users className="w-5 h-5" />,
     subItems: [
       {
         name: "Community Events",
-        href: "/communityEvent",
+        href: "/community-event",
         icon: <Users className="w-5 h-5" />,
       },
       {
