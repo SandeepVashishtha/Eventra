@@ -55,7 +55,7 @@ export default function CollaborationMap() {
           <span className="text-xs uppercase tracking-[0.25em] text-indigo-400 font-bold bg-indigo-500/10 px-3.5 py-1.5 rounded-full border border-indigo-500/20">
             Global Network
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
             Collaboration Hubs
           </h2>
           <p className="max-w-xl mx-auto text-sm sm:text-base text-slate-400">
@@ -181,7 +181,7 @@ export default function CollaborationMap() {
           {/* Absolute Hover Tooltip */}
           {hoveredCity && (
             <div
-              className="absolute bg-slate-950/90 backdrop-blur-xl border border-indigo-500/30 rounded-2xl p-4 shadow-xl text-left min-w-[200px] transition-all duration-300 pointer-events-none z-30"
+              className="absolute bg-slate-950/90 backdrop-blur-xl border border-indigo-500/30 rounded-2xl p-4 shadow-xl text-left min-w-50 transition-all duration-300 pointer-events-none z-30"
               style={{
                 left: `${(hoveredCity.x / 1000) * 100}%`,
                 top: `${(hoveredCity.y / 500) * 100}%`,

@@ -32,6 +32,7 @@ export default function TicketScanner() {
   const [manualEventName, setManualEventName] = useState("Global AI Hackathon");
 
   const qrCodeInstanceRef = useRef(null);
+  const isMountedRef = useRef(true);
   const readerId = "html5-qr-reader";
 
   // Load cameras
@@ -59,6 +60,7 @@ export default function TicketScanner() {
 
     return () => {
       // Cleanup scanner on unmount
+      isMountedRef.current = false;
       stopScanner();
     };
   }, []);
@@ -68,7 +70,9 @@ export default function TicketScanner() {
     if (qrCodeInstanceRef.current && qrCodeInstanceRef.current.isScanning) {
       try {
         await qrCodeInstanceRef.current.stop();
-        setScannerStatus("stopped");
+        if (isMountedRef.current) {
+          setScannerStatus("stopped");
+        }
       } catch (err) {
         console.error("Failed to stop scanner:", err);
       }
@@ -267,6 +271,7 @@ export default function TicketScanner() {
               setScanResult(null);
               startScanner(selectedCameraId);
             }}
+            aria-pressed={!manualMode}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
               !manualMode
                 ? "bg-white dark:bg-slate-850 text-indigo-600 dark:text-indigo-400 shadow-sm"
@@ -281,6 +286,7 @@ export default function TicketScanner() {
               stopScanner();
               setScanResult(null);
             }}
+            aria-pressed={manualMode}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
               manualMode
                 ? "bg-white dark:bg-slate-850 text-indigo-600 dark:text-indigo-400 shadow-sm"
@@ -393,7 +399,7 @@ export default function TicketScanner() {
                 <button
                   onClick={stopScanner}
                   className="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-xs font-bold text-slate-650 dark:text-slate-400 transition"
-                 aria-label="button">
+                 aria-label="Pause scanner">
                   Pause Scanner
                 </button>
               )}
@@ -462,7 +468,7 @@ export default function TicketScanner() {
               <button
                 type="submit"
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md hover:shadow-lg transition-all rounded-xl mt-2 flex items-center justify-center gap-1.5"
-               aria-label="button">
+               aria-label="Find and verify check-in">
                 <Search className="w-3.5 h-3.5" />
                 Find & Verify Check-In
               </button>
@@ -546,7 +552,7 @@ export default function TicketScanner() {
               <button
                 onClick={handleResetScan}
                 className="mt-2 inline-flex items-center gap-1.5 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-lg hover:shadow-indigo-500/25 transition-all"
-               aria-label="button">
+               aria-label="Scan next ticket">
                 <RefreshCw className="w-3.5 h-3.5" />
                 Scan Next Ticket
               </button>

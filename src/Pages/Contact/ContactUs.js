@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { User, Mail, FileText, MessageSquare, AlertCircle } from "lucide-react";
 import { FiStar, FiMessageSquare } from "react-icons/fi";
 import { toast } from "react-toastify";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SEOHead from "../../components/SEOHead";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 const FloatingField = ({
@@ -94,9 +94,8 @@ const FloatingField = ({
   );
 };
 
-const ContactUs = () => {
+const ContactUsInner = () => {
   const prefersReducedMotion = useReducedMotion();
-  useDocumentTitle("Eventra | Contact Us");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -420,6 +419,17 @@ const ContactUs = () => {
     </div>
   );
 };
+
+const ContactUs = () => (
+  <>
+    <SEOHead
+      title="Contact Us"
+      description="Get in touch with the Eventra team. We're here to help with questions, feedback, and support."
+      url={window.location.href}
+    />
+    <ContactUsInner />
+  </>
+);
 
 export default ContactUs;
 

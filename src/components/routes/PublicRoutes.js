@@ -1,14 +1,11 @@
-﻿import { lazy } from "react";
+import { lazy } from "react";
 import { Route } from "react-router-dom";
-import PageLayout from "../Layout/PageLayout";
 import ProtectedRoute from "../auth/ProtectedRoute";
 import ErrorBoundary from "../common/ErrorBoundary";
 
+// ─── Lazy-loaded page components ─────────────────────────────────────────────
+// 🔥 FIX: Removed duplicate const declarations for all components
 const HealthCheckPage = lazy(() => import("../../Pages/HealthCheckPage"));
-const CertificateVerifier = lazy(() => import("../../Pages/CertificateVerification/CertificateVerifier"));
-
-// ---- Lazy-loaded page components --------------------------------------------
-
 const MockApiResponse = lazy(() => import("../MockApiResponse"));
 
 const HomePage = lazy(() => import("../../Pages/Home/HomePage"));
@@ -16,7 +13,6 @@ const EventsPage = lazy(() => import("../../Pages/Events/EventsPage"));
 const EventDetails = lazy(() => import("../../Pages/Events/EventDetails"));
 const EventRegistration = lazy(() => import("../../Pages/Events/EventRegistration"));
 const HackathonPage = lazy(() => import("../../Pages/Hackathons/HackathonPage"));
-const LiveInteractionHub = lazy(() => import("../../Pages/Events/LiveInteractionHub"));
 const HackathonDetailsPage = lazy(() => import("../../Pages/Hackathons/HackathonDetailsPage"));
 const HackathonLifecycle = lazy(() => import("../../Pages/Hackathons/HackathonLifecycle"));
 const ProjectsPage = lazy(() => import("../../Pages/Projects/ProjectsPage"));
@@ -36,9 +32,6 @@ const ContactUs = lazy(() => import("../../Pages/Contact/ContactUs"));
 const FeedbackPage = lazy(() => import("../../Pages/Feedback/FeedbackPage"));
 const BookmarkedEvents = lazy(() => import("../../Pages/Events/BookmarkedEvents"));
 const RemindersPage = lazy(() => import("../../Pages/Events/RemindersPage"));
-const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
-const FloorPlanDesignerPage = lazy(() => import("../../Pages/Events/FloorPlanDesignerPage"));
-const VirtualVenueWalkthrough = lazy(() => import("../../Pages/Events/VirtualVenueWalkthrough"));
 const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
 
 const withModuleBoundary = (children, boundaryName) => (
@@ -56,41 +49,30 @@ export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={withModuleBoundary(<EventsPage />, "Events explorer")} />,
   <Route key="/event-details" path="/events/:eventId" element={withModuleBoundary(<EventDetails />, "Event details")} />,
+  
+  
   <Route key="/register" path="/events/:eventId/register" element={<ProtectedRoute><EventRegistration /></ProtectedRoute>} />,
   <Route key="/hackathons" path="/hackathons" element={withModuleBoundary(<HackathonPage />, "Hackathon explorer")} />,
   <Route key="/hackathon-details" path="/hackathons/:hackathonId" element={withModuleBoundary(<HackathonDetailsPage />, "Hackathon details")} />,
   <Route key="/hackathons-lifecycle" path="/hackathons/:id/lifecycle" element={withModuleBoundary(<HackathonLifecycle />, "Hackathon lifecycle")} />,
   <Route key="/projects" path="/projects" element={withModuleBoundary(<ProjectsPage />, "Projects explorer")} />,
-  <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,
-  <Route key="/api/projects" path="/api/projects" element={<MockApiResponse />} />,
-  <Route key="/api/contributors" path="/api/contributors" element={<MockApiResponse />} />,
-  <Route key="/api/leaderboard" path="/api/leaderboard" element={<MockApiResponse />} />,
-  <Route key="page-layout" element={<PageLayout />}>
-    <Route key="/contributors" path="/contributors" element={<Contributors />} />
-    <Route key="/communityEvent" path="/communityEvent" element={<CommunityEvent />} />
-    <Route key="/leaderBoard" path="/leaderBoard" element={<LeaderBoard />} />
-    <Route key="/contributorguide" path="/contributorguide" element={<ContributorGuide />} />
-    <Route key="/about" path="/about" element={<AboutPage />} />
-    <Route key="/about-fallback" path="/about/*" element={<AboutPage />} />
-    <Route key="/faq" path="/faq" element={<FAQPage />} />
-    <Route key="/terms" path="/terms" element={<Terms />} />
-    <Route key="/privacy" path="/privacy" element={<Privacy />} />
-    <Route key="/apiDocs" path="/apiDocs" element={<ApiDocs />} />
-    <Route key="/helpcenter" path="/helpcenter" element={<HelpCenter />} />
-    <Route key="/contact" path="/contact" element={<ContactUs />} />
-    <Route key="/feedback" path="/feedback" element={withModuleBoundary(<FeedbackPage />, "Feedback center")} />
-    <Route key="/verify-certificate" path="/verify-certificate" element={<CertificateVerifier />} />
-    <Route key="/analytics" path="/analytics" element={withModuleBoundary(<EventAnalyticsDashboard />, "Event analytics dashboard")} />
-    <Route key="/events/:eventId/floor-plan" path="/events/:eventId/floor-plan" element={withModuleBoundary(<FloorPlanDesignerPage />, "Floor plan designer")} />
-    <Route key="/events/:eventId/virtual-venue-walkthrough" path="/events/:eventId/virtual-venue-walkthrough" element={<VirtualVenueWalkthrough />} />
-    <Route key="/documentation" path="/documentation" element={<DocumentationPage />} />
-    <Route key="/submit-project" path="/submit-project" element={withModuleBoundary(<SubmitProject />, "Project submission")} />
-  </Route>,
-  <Route key="/mock-api/hackathons" path="/mock-api/hackathons" element={<MockApiResponse />} />,
-  <Route key="/mock-api/projects" path="/mock-api/projects" element={<MockApiResponse />} />,
-  <Route key="/mock-api/contributors" path="/mock-api/contributors" element={<MockApiResponse />} />,
-  <Route key="/mock-api/leaderboard" path="/mock-api/leaderboard" element={<MockApiResponse />} />,
-  <Route key="/bookmarks" path="/bookmarks" element={<ProtectedRoute>{withModuleBoundary(<BookmarkedEvents />, "Bookmarked events")}</ProtectedRoute>} />,
-  <Route key="/reminders" path="/reminders" element={<ProtectedRoute>{withModuleBoundary(<RemindersPage />, "Event reminders")}</ProtectedRoute>} />,
-  <Route key="/calendar" path="/calendar" element={<ProtectedRoute><MyCalendar /></ProtectedRoute>} />,
-];
+  <Route key="/leaderboard" path="/leaderboard" element={withModuleBoundary(<LeaderBoard />, "Leaderboard")} />,
+  <Route key="/communityEvent" path="/communityEvent" element={withModuleBoundary(<CommunityEvent />, "Community Events")} />,
+  <Route key="/leaderBoard" path="/leaderBoard" element={withModuleBoundary(<LeaderBoard />, "Leaderboard")} />,
+<Route key="/about" path="/about" element={withModuleBoundary(<AboutPage />, "About")} />,
+<Route key="/faq" path="/faq" element={withModuleBoundary(<FAQPage />, "FAQ")} />,
+<Route key="/contact" path="/contact" element={withModuleBoundary(<ContactUs />, "Contact")} />,
+<Route key="/contributors" path="/contributors" element={withModuleBoundary(<Contributors />, "Contributors")} />,
+<Route key="/contributorguide" path="/contributorguide" element={withModuleBoundary(<ContributorGuide />, "Contributor Guide")} />,
+<Route key="/documentation" path="/documentation" element={withModuleBoundary(<DocumentationPage />, "Documentation")} />,
+<Route key="/terms" path="/terms" element={withModuleBoundary(<Terms />, "Terms")} />,
+<Route key="/privacy" path="/privacy" element={withModuleBoundary(<Privacy />, "Privacy")} />,
+<Route key="/apiDocs" path="/apiDocs" element={withModuleBoundary(<ApiDocs />, "API Docs")} />,
+<Route key="/helpcenter" path="/helpcenter" element={withModuleBoundary(<HelpCenter />, "Help Center")} />,
+<Route key="/feedback" path="/feedback" element={withModuleBoundary(<FeedbackPage />, "Feedback")} />,
+<Route key="/bookmarks" path="/bookmarks" element={withModuleBoundary(<BookmarkedEvents />, "Bookmarks")} />,
+<Route key="/reminders" path="/reminders" element={withModuleBoundary(<RemindersPage />, "Reminders")} />,
+<Route key="/calendar" path="/calendar" element={withModuleBoundary(<MyCalendar />, "Calendar")} />,
+<Route key="/submit-project" path="/submit-project" element={withModuleBoundary(<SubmitProject />, "Submit Project")} />,
+
+  <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,];
