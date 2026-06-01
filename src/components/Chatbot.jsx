@@ -124,6 +124,13 @@ export default function Chatbot() {
     }
   }, [messages, isMinimized, isOpen, isTyping]);
 
+  const handleClose = useCallback(() => {
+    clearReplyTimer();
+    setIsTyping(false);
+    setIsOpen(false);
+    setIsMinimized(false);
+  }, [clearReplyTimer]);
+
   // Listen for Escape key to close the chatbot (accessibility)
   useEffect(() => {
     const handleKeyDown = (event) => {
