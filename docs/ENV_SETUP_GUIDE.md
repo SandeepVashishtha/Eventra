@@ -31,11 +31,13 @@ npm run dev
 | `REACT_APP_PUBLIC_URL` | No | Canonical public URL used for sharing/SEO helpers |
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public push-notification key |
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
+| `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN; only used in production builds |
 
 ## Security Notes
 
 - Never place private secrets in `REACT_APP_*` variables.
 - Values prefixed with `REACT_APP_` are exposed in the browser bundle.
+- Leave `REACT_APP_SENTRY_DSN` blank for local development unless you intentionally want browser error reports sent to Sentry.
 - Keep private credentials server-side only (for example `GITHUB_TOKEN`).
 
 ## Troubleshooting
