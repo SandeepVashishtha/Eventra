@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Wifi, WifiOff } from "lucide-react";
 import { getQueue } from "../../utils/offlineQueue";
 import "./OfflineBanner.css";
@@ -36,9 +36,9 @@ export default function OfflineBanner() {
     window.addEventListener("eventra-offline-queue-updated", handleQueueUpdated);
 
     return () => {
-      clearTimeout(timer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("eventra-offline-queue-updated", handleQueueUpdated);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);

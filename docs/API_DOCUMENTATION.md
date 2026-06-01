@@ -834,6 +834,41 @@ Authorization: Bearer <token>
 
 - Related event registrations are automatically cleaned up by the backend before the event is deleted.
 
+---
+
+## Stream Event Updates (SSE)
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/events/stream` |
+
+Opens a Server-Sent Events stream connection for event updates.
+
+### Authentication
+Public. No authentication required.
+
+### Purpose
+- This endpoint currently establishes a basic SSE connection.
+- It sends an initial connected event to confirm the stream is active.
+- It prepares the backend for future real-time event broadcasts.
+- *Note: Full real-time event create/update/register broadcasting is not yet implemented.*
+
+### Response Media Type
+`text/event-stream`
+
+### Manual Test Command
+```bash
+curl -N http://localhost:8080/api/events/stream
+```
+
+### Example Stream Output
+```text
+event:connected
+data:Stream connected successfully
+```
+
+#### Backend Implementation PR
+[SandeepVashishtha/Eventra-Backend#BACKEND_PR_NUMBER](https://github.com/SandeepVashishtha/Eventra-Backend/pull/BACKEND_PR_NUMBER)
 
 ---
 
@@ -845,7 +880,7 @@ Authorization: Bearer <token>
 |--------|----------|
 | POST | `/api/projects` |
 
-Submits a new project. Requires JWT authentication.
+Submits a new project. Requires authentication with one of the following roles: `ORGANIZER`, `ADMIN`, `SUPER_ADMIN`.
 
 ### Request Headers
 
@@ -858,37 +893,39 @@ Content-Type: application/json
 
 ```json
 {
-  "title": "Eventra Mobile App",
-  "description": "A cross-platform mobile application for event management",
-  "category": "Mobile Development",
-  "repositoryUrl": "https://github.com/example/eventra-mobile"
+  "title": "Manual Test Project",
+  "description": "Project created during manual backend verification.",
+  "category": "Web Development",
+  "thumbnailUrl": "https://example.com/project-thumbnail.png",
+  "githubUrl": "https://github.com/example/manual-test-project"
 }
 ```
+
+- `title`: required
+- `description`: required
+- `category`: required
+- `thumbnailUrl`: optional
+- `githubUrl`: optional
 
 ### Successful Response (201)
 
 ```json
 {
   "id": 1,
-  "title": "Eventra Mobile App",
-  "description": "A cross-platform mobile application for event management",
-  "category": "Mobile Development",
-  "repositoryUrl": "https://github.com/example/eventra-mobile",
-  "submittedBy": "john@example.com"
+  "title": "Manual Test Project",
+  "description": "Project created during manual backend verification.",
+  "category": "Web Development",
+  "thumbnailUrl": "https://example.com/project-thumbnail.png",
+  "githubUrl": "https://github.com/example/manual-test-project",
+  "upvotes": 0
 }
 ```
 
-### Error Response (401)
+### Error Responses
 
-```json
-{
-  "status": 401,
-  "error": "Unauthorized",
-  "message": "Full authentication is required to access this resource",
-  "path": "/api/projects",
-  "timestamp": "2026-05-19T12:20:31"
-}
-```
+- **400 Bad Request**: Validation failure for required fields.
+- **401 Unauthorized**: No token provided or token is invalid.
+- **403 Forbidden**: Authenticated user does not have the required role (`ORGANIZER`, `ADMIN`, or `SUPER_ADMIN`).
 
 ---
 
@@ -898,7 +935,12 @@ Content-Type: application/json
 |--------|----------|
 | GET | `/api/projects` |
 
-Returns a list of all submitted projects. No authentication required.
+Returns the list of projects for the Projects gallery/module.
+
+*This documentation update corresponds to the backend implementation PR for `GET /api/projects`.*
+
+### Authentication
+Not required. Public endpoint.
 
 ### Example Request
 
@@ -906,7 +948,12 @@ Returns a list of all submitted projects. No authentication required.
 GET /api/projects
 ```
 
-### Successful Response (200)
+### Success Response
+Status: `200 OK`
+
+Returns a JSON array of project objects. Returns `[]` if no projects exist.
+
+#### Response Example:
 
 ```json
 [
@@ -915,19 +962,97 @@ GET /api/projects
     "title": "Eventra Mobile App",
     "description": "A cross-platform mobile application for event management",
     "category": "Mobile Development",
-    "repositoryUrl": "https://github.com/example/eventra-mobile",
-    "submittedBy": "john@example.com"
+    "thumbnailUrl": "https://example.com/thumbnail1.png",
+    "githubUrl": "https://github.com/example/eventra-mobile",
+    "upvotes": 42
   },
   {
     "id": 2,
     "title": "Eventra CLI Tool",
     "description": "Command-line tool for managing Eventra events",
     "category": "Developer Tools",
-    "repositoryUrl": "https://github.com/example/eventra-cli",
-    "submittedBy": "jane@example.com"
+    "thumbnailUrl": "https://example.com/thumbnail2.png",
+    "githubUrl": "https://github.com/example/eventra-cli",
+    "upvotes": 15
   }
 ]
 ```
+
+---
+
+## Get Project By ID
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/projects/{id}` |
+
+Returns the details of a specific project by its ID.
+
+### Authentication
+Not required. Public endpoint.
+
+### Success response example:
+
+```json
+{
+  "id": 1,
+  "title": "Manual Test Project",
+  "description": "Project detail API manual verification",
+  "category": "Web Development",
+  "thumbnailUrl": "https://example.com/project.png",
+  "githubUrl": "https://github.com/example/project",
+  "upvotes": 0
+}
+```
+
+### Missing project response example:
+
+```json
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "Project not found with id: 999999",
+  "path": "/api/projects/999999",
+  "timestamp": "2026-05-30T02:01:54.6254625"
+}
+```
+
+---
+
+## Upvote Project
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/projects/{id}/upvote` |
+
+Increments the upvote count for a project by 1 and returns the updated project details.
+
+### Authentication
+Requires a valid Bearer JWT in the `Authorization` header. Any authenticated user can upvote.
+
+### Success Response
+Status: `200 OK`
+
+#### Response Example:
+
+```json
+{
+  "id": 1,
+  "title": "Manual Test Project",
+  "description": "Project detail API manual verification",
+  "category": "Web Development",
+  "thumbnailUrl": "https://example.com/project.png",
+  "githubUrl": "https://github.com/example/project",
+  "upvotes": 1
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `401 Unauthorized` | JWT token is missing, invalid, or expired |
+| `404 Not Found` | Project not found with the given ID |
 
 ---
 
@@ -937,16 +1062,18 @@ GET /api/projects
 |--------|----------|
 | GET | `/api/projects/categories` |
 
-Returns a list of available project categories. No authentication required.
+Returns the static list of supported project categories used by the Projects gallery/module.
 
-### Example Request
+### Authentication
+Not required. Public endpoint.
 
-```bash
-GET /api/projects/categories
-```
+### Request
+No request body.
 
-### Successful Response (200)
+### Success Response
+Status: `200 OK`
 
+#### Response example:
 ```json
 [
   "Mobile Development",
@@ -954,9 +1081,16 @@ GET /api/projects/categories
   "Developer Tools",
   "Machine Learning",
   "DevOps",
-  "Design"
+  "Design",
+  "IoT",
+  "Blockchain"
 ]
 ```
+
+### Notes
+- This endpoint is public and does not require JWT authentication.
+- This PR only documents the project categories endpoint.
+- Other Projects APIs will be documented separately when implemented.
 
 ---
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import "./styles/reduced-motion.css";
@@ -22,6 +22,7 @@ import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import PageTransition from "./components/common/PageTransition";
 
 // Route-level lazy splits - loaded only when route is visited
 const Footer = lazy(() => import("./components/Layout/Footer"));
@@ -41,7 +42,6 @@ const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
-const PageTransition = lazy(() => import("./components/common/PageTransition"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -57,9 +57,13 @@ function App() {
       Loading page...
     </div>
   );
-  const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off",
-  );
+  const [cursorEnabled, setCursorEnabled] = useState(() => {
+    try {
+      return localStorage.getItem("cursor") !== "off";
+    } catch {
+      return true; // fallback safe default
+    }
+  });
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
   useLenis();
@@ -153,12 +157,12 @@ function App() {
 
                   <main
                     id="main-content"
-                    className="relative z-10 min-h-[85vh] bg-white dark:bg-slate-950 text-black dark:text-white transition-colors duration-300"
+                    className="relative z-10 min-h-[85vh] bg-bg text-text transition-colors duration-300"
                   >
-                    <Suspense fallback={pageLoader}>
-                      <PageTransition>
-                        <SectionErrorBoundary label="Page Content">
-                          <Routes>
+                    <PageTransition>
+                      <SectionErrorBoundary label="Page Content">
+                        <Suspense fallback={pageLoader}>
+                          <Routes location={location} key={location.pathname}>
                             <Route
                               path="/register/:id"
                               element={
@@ -171,9 +175,9 @@ function App() {
                             <Route path="/saved-events" element={<SavedEventsPage />} />
                             <Route path="*" element={<AppRoutes />} />
                           </Routes>
-                        </SectionErrorBoundary>
-                      </PageTransition>
-                    </Suspense>
+                        </Suspense>
+                      </SectionErrorBoundary>
+                    </PageTransition>
                   </main>
 
                   <ScrollToTop />

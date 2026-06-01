@@ -1,17 +1,57 @@
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Search, Calendar, Trophy, Code, ArrowRight, Sparkles } from "lucide-react";
+import {
+  AnimatePresence,
+  MotionConfig,
+  motion,
+  useAnimation,
+  useScroll,
+  useTransform,
+} from "framer-motion";
+import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
+import CountUpLib from "react-countup";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
+import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
+import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import RespawningText from "../../../components/visual/RespawningText";
+import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
+import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
-import ModernSearchInput from "../../../components/common/ModernSearchInput";
-import CountUp from "react-countup";
-import useDocumentTitle from "../../../hooks/useDocumentTitle";
-import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
+
+const CountUp = CountUpLib.default || CountUpLib;
+const MotionLink = motion(Link);
+
+const HEADLINE_PHRASES = [
+  "Amazing Tech Events",
+  "Exciting Hackathons Today",
+  "Innovative Dev Workshops",
+  "Cutting-Edge Tech Meetups",
+];
+
+const TAGLINE_TEXTS = ["Discover & Join", "Innovate & Create", "Learn & Grow"];
+const SEARCH_RESULT_LIMIT = 5;
+
+const SEARCH_ROUTES = {
+  event: "/events",
+  hackathon: "/hackathons",
+  project: "/projects",
+};
+
+const SEARCH_ICONS = {
+  event: Calendar,
+  hackathon: Trophy,
+  project: Code,
+};
+
+const HERO_STATS = [
+  { value: 1500, label: "Developers", suffix: "+", icon: Users },
+  { value: 75, label: "Events", suffix: "+", icon: Calendar },
+  { value: 30, label: "Partners", suffix: "+", icon: Handshake },
+];
 
 const createSearchItem = (item, type, searchType) => ({
   id: item.id,
@@ -24,188 +64,381 @@ const createSearchItem = (item, type, searchType) => ({
   searchType,
 });
 
-const allData = [
+const allSearchItems = [
   ...eventsData.map((item) => createSearchItem(item, "event", "Events")),
   ...hackathonsData.map((item) => createSearchItem(item, "hackathon", "Hackathons")),
   ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
 ];
 
-const fuse = new Fuse(allData, {
-  keys: ["title", "description", "location", "tags", "techStack", "type"],
+const searchIndex = new Fuse(allSearchItems, {
+  keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
   threshold: 0.3,
   includeScore: true,
 });
 
+const getResultHref = (item, fallbackTerm) => {
+  const query = encodeURIComponent(item.title || fallbackTerm);
+  return `${SEARCH_ROUTES[item.type] || "/"}?search=${query}`;
+};
+
+const getResultIcon = (type) => {
+  const Icon = SEARCH_ICONS[type] || Search;
+  return <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />;
+};
+
 const Hero = () => {
-  const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | Home");
+
+  const prefersReducedMotion = useReducedMotion();
+  const controls = useAnimation();
   const containerRef = useRef(null);
+
+  const [isTouch, setIsTouch] = useState(false);
+  const [statsReady, setStatsReady] = useState(false);
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [showResults, setShowResults] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+
+  const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"],
   });
 
-  const opacityHero = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-  const yHero = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  const yText = useTransform(scrollYProgress, [0, 1], [0, 180]);
+  const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
+  const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
-  const [searchResults, setSearchResults] = useState([]);
-  const [showResults, setShowResults] = useState(false);
+  const container = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+  };
+
+  const fadeUp = {
+    hidden: { y: 32, opacity: 0 },
+    show: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
+    },
+  };
+
+  useEffect(() => {
+    const pointerQuery = window.matchMedia("(pointer: coarse)");
+    const updateTouchState = () => setIsTouch(pointerQuery.matches);
+
+    updateTouchState();
+    if (pointerQuery.addEventListener) {
+      pointerQuery.addEventListener("change", updateTouchState);
+      return () => pointerQuery.removeEventListener("change", updateTouchState);
+    }
+
+    pointerQuery.addListener(updateTouchState);
+    return () => pointerQuery.removeListener(updateTouchState);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhraseIndex((prev) => (prev + 1) % HEADLINE_PHRASES.length);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    controls.start("show");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [controls]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setStatsReady(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (debouncedTerm.trim()) {
-      setSearchResults(fuse.search(debouncedTerm).slice(0, 5));
+      setSearchResults(searchIndex.search(debouncedTerm).slice(0, SEARCH_RESULT_LIMIT));
       setShowResults(true);
-    } else {
-      setSearchResults([]);
-      setShowResults(false);
+      return;
     }
+
+    setSearchResults([]);
+    setShowResults(false);
   }, [debouncedTerm]);
 
-  const handleSearch = (query) => setSearchTerm(query);
-  const clearSearch = () => {
+  const handleSearch = useCallback((query) => setSearchTerm(query), [setSearchTerm]);
+
+  const clearSearch = useCallback(() => {
     setShowResults(false);
     clearSearchTerm();
-  };
-
-  const getResultHref = (item) => {
-    const query = encodeURIComponent(item.title || debouncedTerm);
-    if (item.type === "event") return `/events?search=${query}`;
-    if (item.type === "hackathon") return `/hackathons?search=${query}`;
-    if (item.type === "project") return `/projects?search=${query}`;
-    return "/";
-  };
-
-  const getResultIcon = (type) => {
-    if (type === "event") return <Calendar className="w-4 h-4" />;
-    if (type === "hackathon") return <Trophy className="w-4 h-4" />;
-    if (type === "project") return <Code className="w-4 h-4" />;
-    return <Search className="w-4 h-4" />;
-  };
-
-  const stats = [
-    { value: 1500, label: "Developers", suffix: "+" },
-    { value: 75, label: "Events", suffix: "+" },
-    { value: 30, label: "Partners", suffix: "+" },
-  ];
+  }, [clearSearchTerm]);
 
   return (
-    <section 
+    <section
       ref={containerRef}
-      className="relative min-h-[100dvh] flex flex-col justify-center overflow-hidden bg-white dark:bg-slate-950 transition-colors duration-500 pt-20 pb-16"
+      aria-label="Hero section"
+      className="relative overflow-hidden border-b border-gray-100 pb-16 text-slate-900 sm:pb-20 md:pb-24"
+      style={{ background: "linear-gradient(180deg, #F8FBFD 0%, #F3F7FA 10%, #EAF1F7 42%, #DAE3ED 100%)" }}
     >
-      {/* Premium Background Effects */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-100 via-white to-white dark:from-indigo-900/20 dark:via-slate-950 dark:to-slate-950"></div>
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-[40rem] h-[40rem] bg-pink-300/30 dark:bg-pink-900/20 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-70 animate-pulse"></div>
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-[40rem] h-[40rem] bg-indigo-300/30 dark:bg-indigo-900/20 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 150,
+            background: "linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.2) 100%)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: 12,
+            left: 28,
+            width: 260,
+            height: 160,
+            borderRadius: "50%",
+            background: "#E6F0F7",
+            filter: "blur(36px)",
+            opacity: 0.8,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: 36,
+            right: 80,
+            width: 180,
+            height: 120,
+            borderRadius: "50%",
+            background: "#EFF6FB",
+            filter: "blur(28px)",
+            opacity: 0.7,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: 20,
+            left: "12%",
+            width: 220,
+            height: 90,
+            borderRadius: "50%",
+            background: "#F7FAFC",
+            filter: "blur(20px)",
+            opacity: 0.85,
+          }}
+        />
       </div>
 
-      <motion.div 
-        style={{ opacity: opacityHero, y: prefersReducedMotion ? 0 : yHero }}
-        className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center text-center"
+      <motion.div
+        className="relative z-10 px-4 pt-20 sm:px-6 sm:pt-24 md:pt-28 lg:px-8"
+        style={{
+          y: isTouch || prefersReducedMotion ? 0 : yText,
+          opacity: isTouch ? 1 : opacityHero,
+          willChange: "transform, opacity",
+        }}
       >
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-medium text-sm mb-8 shadow-sm"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>The Ultimate Platform for Builders</span>
-        </motion.div>
-
-        <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 leading-[1.1]">
-          Unleash Your <br className="hidden sm:block" />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-500 dark:from-indigo-400 dark:to-pink-400">
-            Creative Potential
-          </span>
-        </h1>
-
-        <p className="max-w-2xl text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-10 leading-relaxed font-light">
-          Discover cutting-edge hackathons, join vibrant tech events, and collaborate on world-class projects. Your next big opportunity starts here.
-        </p>
-
-        {/* Search Bar */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="w-full max-w-2xl mx-auto mb-12 relative"
-        >
-          <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-pink-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-            <div className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl">
-              <ModernSearchInput
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Search for hackathons, events..."
-                onFocus={() => searchTerm && setShowResults(true)}
-                onBlur={() => setTimeout(() => setShowResults(false), 200)}
+        <motion.div className="mx-auto max-w-5xl text-center" variants={container} initial="hidden" animate={controls}>
+          <MotionConfig reducedMotion="never">
+            <motion.h1
+              className="flex flex-col items-center gap-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-4xl lg:text-5xl"
+              style={{ fontFamily: "\"Inter\", system-ui, sans-serif" }}
+            >
+              <motion.span
+                className="block text-sm font-medium text-gray-500"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.08 }}
               >
-                <AnimatePresence>
-                  {showResults && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute top-full mt-2 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50"
-                    >
-                      {searchResults.length > 0 ? (
-                        <div className="p-2">
-                          {searchResults.map((result) => (
-                            <Link
-                              key={result.item.id}
-                              to={getResultHref(result.item)}
-                              onClick={clearSearch}
-                              className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
-                            >
-                              <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50">
-                                {getResultIcon(result.item.type)}
-                              </div>
-                              <div className="flex-1 text-left">
-                                <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
-                                  {result.item.title}
-                                </h4>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                                  {result.item.searchType}
-                                </p>
-                              </div>
-                              <ArrowRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-indigo-500" />
-                            </Link>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="p-6 text-center text-slate-500 dark:text-slate-400">
-                          No results found for "{searchTerm}"
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </ModernSearchInput>
-            </div>
-          </div>
-        </motion.div>
+                <RespawningText texts={TAGLINE_TEXTS} />
+              </motion.span>
 
-        {/* Stats */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="grid grid-cols-3 gap-4 sm:gap-8 border-t border-slate-200 dark:border-slate-800 pt-8 mt-8 w-full max-w-3xl"
-        >
-          {stats.map((stat, idx) => (
-            <div key={idx} className="flex flex-col items-center">
-              <span className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                <CountUp start={0} end={stat.value} duration={2.5} separator="," />{stat.suffix}
-              </span>
-              <span className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">
-                {stat.label}
-              </span>
+              <div className="relative flex min-h-20 w-full items-center justify-center overflow-hidden sm:min-h-24 md:min-h-24">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={phraseIndex}
+                    className="block text-2xl font-extrabold text-gray-900 sm:text-3xl md:text-4xl lg:text-5xl"
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" },
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: -16,
+                      transition: { duration: prefersReducedMotion ? 0 : 0.3, ease: "easeIn" },
+                    }}
+                    whileHover={prefersReducedMotion ? {} : { scale: 1.01 }}
+                  >
+                    {HEADLINE_PHRASES[phraseIndex]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+            </motion.h1>
+          </MotionConfig>
+
+          <motion.p
+            variants={fadeUp}
+            className="mx-auto mb-8 mt-4 max-w-3xl text-base leading-relaxed text-gray-600 sm:mb-10 sm:mt-6 sm:text-lg md:text-lg"
+          >
+            Connect with developers, learn new skills, and grow your network at curated tech events, hackathons, and
+            workshops.
+          </motion.p>
+
+          <motion.div variants={fadeUp} className="mx-auto mb-10 w-full max-w-2xl">
+            <div className="relative">
+              <div className="relative rounded-lg border border-gray-200 bg-white shadow-sm">
+                <ModernSearchInput
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  placeholder="Search events, hackathons, projects..."
+                  onFocus={() => searchTerm && setShowResults(true)}
+                  onBlur={() => setTimeout(() => setShowResults(false), 200)}
+                  className="border-0 bg-transparent text-gray-700 placeholder-gray-400 focus:ring-0"
+                >
+                  <AnimatePresence>
+                    {showResults && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                        transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
+                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg"
+                        role="listbox"
+                        aria-label="Search results"
+                      >
+                        <div className="p-3">
+                          {searchResults.length > 0 ? (
+                            <>
+                              <div className="px-2 py-1.5 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                Results ({searchResults.length})
+                              </div>
+                              <div className="space-y-1">
+                                {searchResults.map((result, idx) => (
+                                  <MotionLink
+                                    key={`${result.item.type}-${result.item.id}`}
+                                    to={getResultHref(result.item, debouncedTerm)}
+                                    initial={{ opacity: 0, x: -12 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.03 }}
+                                    onClick={clearSearch}
+                                    className="group flex cursor-pointer items-center gap-3 rounded-lg p-3 text-left no-underline transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/60"
+                                    role="option"
+                                    aria-label={`Open ${result.item.title}`}
+                                  >
+                                    <div className="shrink-0 rounded-lg bg-gray-100 p-2 text-gray-700 transition-transform group-hover:scale-105">
+                                      {getResultIcon(result.item.type)}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="mb-0.5 flex items-center gap-2">
+                                        <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                                          {result.item.title}
+                                        </h4>
+                                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-slate-800 dark:text-gray-300">
+                                          {result.item.searchType}
+                                        </span>
+                                      </div>
+                                      <p className="line-clamp-1 text-xs text-gray-500 dark:text-gray-400">
+                                        {result.item.description
+                                          ? `${result.item.description.substring(0, 70)}...`
+                                          : "No description available"}
+                                      </p>
+                                    </div>
+                                    <ExternalLink
+                                      className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-indigo-500"
+                                      aria-hidden="true"
+                                    />
+                                  </MotionLink>
+                                ))}
+                              </div>
+                            </>
+                          ) : (
+                            <motion.div
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 8 }}
+                              className="py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+                            >
+                              No results for{" "}
+                              <span className="font-medium text-gray-700 dark:text-gray-200">&quot;{searchTerm}&quot;</span>
+                            </motion.div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </ModernSearchInput>
+              </div>
             </div>
-          ))}
+          </motion.div>
+
+          {!searchTerm.trim() && (
+            <SectionErrorBoundary label="Statistics">
+              <motion.div
+                variants={fadeUp}
+                style={{ y: isTouch || prefersReducedMotion ? 0 : yStats, willChange: "transform" }}
+                className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5"
+                role="region"
+                aria-label="Platform statistics"
+              >
+                {HERO_STATS.map((stat) => (
+                  <motion.div
+                    key={stat.label}
+                    variants={fadeUp}
+                    whileHover={{ y: -2, transition: { duration: 0.15 } }}
+                    className="flex flex-col items-center justify-center rounded-md border border-gray-100 bg-white p-4 shadow-sm transition-shadow sm:p-5"
+                  >
+                    <div className="mb-2 rounded-full bg-gray-100 p-2 text-gray-700">
+                      <stat.icon className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <p className="mb-1 text-2xl font-semibold tabular-nums text-gray-900 sm:text-3xl">
+                      {statsReady ? (
+                        <CountUp
+                          start={0}
+                          end={Number.isFinite(stat.value) ? stat.value : 0}
+                          duration={2.2}
+                          suffix={stat.suffix || ""}
+                        />
+                      ) : (
+                        <>
+                          {stat.value}
+                          {stat.suffix || ""}
+                        </>
+                      )}
+                    </p>
+                    <p className="text-center text-xs font-medium uppercase tracking-wider text-gray-600 sm:text-sm">
+                      {stat.label}
+                    </p>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </SectionErrorBoundary>
+          )}
+        </motion.div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.2 }}
+        className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-gray-500 dark:text-gray-400 md:flex"
+        aria-hidden="true"
+      >
+        <span className="text-xs font-medium">Scroll to explore</span>
+        <motion.div
+          animate={{ y: [0, 8, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="flex h-10 w-6 justify-center rounded-full border-2 border-current pt-2"
+        >
+          <motion.div
+            className="h-1.5 w-1.5 rounded-full bg-current"
+            animate={{ y: [0, 12, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          />
         </motion.div>
       </motion.div>
     </section>
@@ -213,4 +446,3 @@ const Hero = () => {
 };
 
 export default Hero;
-

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom"; // 🔥 FIX: Required for Modal Portal
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { safeJsonParse } from "../../utils/safeJsonParse";
@@ -99,6 +100,14 @@ const EditProfile = () => {
   const [currentSkillInput, setCurrentSkillInput] = useState("");
   const fileInputRef = useRef(null);
 
+  // 🔥 FIX 1: Track mount state to prevent ghost navigations
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   // Keep state synchronized if the auth context updates lazily
   useEffect(() => {
     const saved = syncSecureStorage.getItem("user");
@@ -176,6 +185,18 @@ const EditProfile = () => {
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // 🔥 FIX 1: Prevent LocalStorage QuotaExceededError Crash
+    // Enforce a strict 1MB limit. Base64 inflates sizes by ~33%, meaning
+    // anything over 1MB risks exceeding the total ~5MB localStorage boundary.
+    if (file.size > 1048576) {
+      alert("Image is too large. Please select an image under 1MB to prevent browser storage errors.");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = null;
+      }
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       const result = typeof reader.result === "string" ? reader.result : "";
@@ -204,13 +225,26 @@ const EditProfile = () => {
     setLoading(true);
 
     setTimeout(() => {
+      // 🔥 FIX 1: If user navigated away, stop executing!
+      if (!isMounted.current) return;
+
       setLoading(false);
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(resolvedForm);
-      syncSecureStorage.setItem("user", JSON.stringify(resolvedForm));
+      
+      // 🔥 FIX 2: Strip massive Base64 strings before saving to storage to prevent QuotaExceededError crashes
+      const safeStorageUser = { ...resolvedForm };
+      delete safeStorageUser.avatarBase64;
+      
+      try {
+        syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
+      } catch (e) {
+        console.warn("Could not save to secure storage, quota exceeded.");
+      }
 
       setTimeout(() => {
+        if (!isMounted.current) return;
         navigate("/dashboard/profile");
       }, 1000);
     }, 1500);
@@ -593,9 +627,10 @@ const EditProfile = () => {
   );
 };
 
+// 🔥 FIX 2: Wrapped the modal in a React Portal to prevent layout/z-index clipping
 const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
   if (!open) return null;
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
       <div className="relative w-full max-w-md mx-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-6 z-10">
@@ -621,7 +656,8 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

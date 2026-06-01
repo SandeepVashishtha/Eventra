@@ -1,4 +1,3 @@
-import React from 'react';
 import { formatTimeRange } from '../utils/conflictDetection';
 import { getUserTimezone } from '../utils/timezoneUtils';
 
@@ -25,11 +24,11 @@ const CalendarView = ({ events }) => {
         Your Registered Events
       </h3>
       <ul className="space-y-3">
-        {events.map((reg) => {
+        {events.map((reg, index) => {
           const ev = reg.event || reg;
           return (
             <li
-              key={ev.id}
+              key={ev.id ?? `reg-${index}`}
               className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
             >
               <p className="font-medium text-gray-900 dark:text-gray-100">

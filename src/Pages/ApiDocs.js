@@ -1,19 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import useReducedMotion from "../hooks/useReducedMotion.js";
-import {
-  Server,
-  AlertCircle,
-  BookOpen,
-  Users,
-  Trophy,
-  Play,
-  RefreshCw,
-  Terminal,
-  Settings,
-  ShieldAlert,
-} from "lucide-react";
+import { Server, AlertCircle, BookOpen, Users, Trophy, Play, RefreshCw, Terminal, Settings } from "lucide-react";
 
 const endpoints = [
   {
@@ -593,7 +582,7 @@ const ApiDocs = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-slate-600 gap-2 text-center max-w-sm mx-auto">
                   <Terminal className="w-8 h-8 text-slate-800" />
-                  <p className="text-[11px]">Terminal idle. Configure your query parameters and click "Execute Request" to display payload console details.</p>
+                  <p className="text-[11px]">Terminal idle. Configure your query parameters and click &quot;Execute Request&quot; to display payload console details.</p>
                 </div>
               )}
             </div>

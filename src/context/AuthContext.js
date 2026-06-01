@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useContext,
   useEffect,
@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }) => {
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     sessionStorage.removeItem("token");
     syncSecureStorage.removeItem("user");
+    localStorage.removeItem("user");
     return true;
   }, []);
 
@@ -307,7 +308,7 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         if (!isMountedRef.current) return false;
         setAuthRequestState({ loading: false, error: getAuthErrorMessage(error, "Login failed. Please try again.") });
-        throw error;
+        return false;
       }
     },
     [extractSession, persistSession, setAuthRequestState]
@@ -323,11 +324,11 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
     if (token !== "cookie-managed" && !isTokenValid(token)) {
-      needsExpiryCleanupRef.current = true;
+      clearExpiredSession();
       return false;
     }
     return true;
-  }, [user, token]);
+  }, [user, token, clearExpiredSession]);
 
   const hasRole = useCallback(
     (roleName) => {

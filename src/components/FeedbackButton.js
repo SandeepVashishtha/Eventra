@@ -1,7 +1,6 @@
-import React from "react";
+import { MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FiMessageSquare } from "react-icons/fi";
 import useReducedMotion from "../hooks/useReducedMotion";
 
 const FeedbackButton = () => {
@@ -26,7 +25,7 @@ const FeedbackButton = () => {
           whileTap={{ scale: 0.95 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
         >
-          <FiMessageSquare className="text-2xl text-black" />
+          <MessageSquare className="text-2xl text-black" />
         </motion.div>
 
         <div className="pointer-events-none absolute left-full mr-3 whitespace-nowrap rounded-lg bg-white border border-black/15 px-3 py-2 text-sm text-black opacity-0 shadow-md transition-opacity duration-300 group-hover:opacity-100">

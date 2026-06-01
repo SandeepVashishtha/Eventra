@@ -1,3 +1,5 @@
+import { getClientIp } from "./lib/getClientIp.js";
+
 const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
 
 const POINTS = {
@@ -5,7 +7,47 @@ const POINTS = {
   gssoclevel2: 7,
   gssoclevel3: 10,
 };
+
 const DEFAULT_MERGED_PR_POINTS = 1;
+const MAX_PAGES = 10;
+
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 5;
+const ipRateLimitMap = new Map();
+
+const isRateLimited = (ip) => {
+  const now = Date.now();
+  const entry = ipRateLimitMap.get(ip);
+
+  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    ipRateLimitMap.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return true;
+  }
+
+  entry.count += 1;
+  return false;
+};
+
+let lastEvictionAt = 0;
+const evictStaleIpEntries = () => {
+  const now = Date.now();
+  if (now - lastEvictionAt < RATE_LIMIT_WINDOW_MS) return;
+  lastEvictionAt = now;
+
+  for (const [key, entry] of ipRateLimitMap.entries()) {
+    if (now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+      ipRateLimitMap.delete(key);
+    }
+  }
+};
+
+const CACHE_TTL_MS = 5 * 60_000;
+let cachedLeaderboard = null;
+let cacheTimestamp = 0;
 
 const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -18,10 +60,80 @@ const calculatePrPoints = (labels) => {
   return levelPoints || DEFAULT_MERGED_PR_POINTS;
 };
 
+const fetchPrPage = async (page, headers) => {
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`;
+  try {
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      console.warn(`[Leaderboard API] PR page ${page} failed with status: ${response.status}`);
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.warn(`[Leaderboard API] PR page ${page} fetch error:`, error);
+    return [];
+  }
+};
+
+const aggregatePrs = (prs, contributorsInfo) => {
+  const contributorsMap = {};
+
+  prs.forEach((pr) => {
+    if (!pr.merged_at) return;
+
+    const labels = pr.labels.map((label) => label.name.toLowerCase());
+    const hasGsocLabel = labels.some((label) => label.includes("gssoc") || label.includes("gsoc"));
+    if (!hasGsocLabel) return;
+
+    const author = pr.user.login;
+    const points = calculatePrPoints(labels);
+
+    if (!contributorsMap[author]) {
+      const info = contributorsInfo[author] || {
+        name: author,
+        avatar: pr.user.avatar_url,
+        profile: pr.user.html_url,
+      };
+
+      contributorsMap[author] = {
+        username: author,
+        name: info.name,
+        avatar: info.avatar,
+        profile: info.profile,
+        points: 0,
+        prs: 0,
+      };
+    }
+
+    contributorsMap[author].points += points;
+    contributorsMap[author].prs += 1;
+  });
+
+  return contributorsMap;
+};
+
 export default async function handler(req, res) {
-  // Only allow GET requests
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+
+  const clientIp = getClientIp(req);
+  evictStaleIpEntries();
+
+  if (isRateLimited(clientIp)) {
+    res.setHeader("Retry-After", "60");
+    return res.status(429).json({
+      error: "Too many requests. The leaderboard may be requested at most 5 times per minute per client.",
+    });
+  }
+
+  const now = Date.now();
+  if (cachedLeaderboard && now - cacheTimestamp < CACHE_TTL_MS) {
+    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
+    res.setHeader("X-Cache", "HIT");
+    return res.status(200).json(cachedLeaderboard);
   }
 
   const token = process.env.GITHUB_TOKEN;
@@ -31,18 +143,18 @@ export default async function handler(req, res) {
   };
 
   try {
-    let contributorsMap = {};
-    const contributorsInfo = {};
-
-    // 1. Fetch contributors to get names and avatars
     const contributorsUrl = `https://api.github.com/repos/${GITHUB_REPO}/contributors`;
-    const contributorsRes = await fetch(contributorsUrl, { headers });
-    
+    const [contributorsRes, firstPagePrs] = await Promise.all([
+      fetchWithTimeout(contributorsUrl, { headers }, 10000),
+      fetchPrPage(1, headers),
+    ]);
+
     if (!contributorsRes.ok) {
       throw new Error(`Failed to fetch contributors: ${contributorsRes.status}`);
     }
 
     const contributorsData = await contributorsRes.json();
+    const contributorsInfo = {};
 
     if (Array.isArray(contributorsData)) {
       contributorsData.forEach((contributor) => {
@@ -54,68 +166,27 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Fetch all closed PRs
-    let page = 1;
-    let hasMore = true;
+    let allPrs = [...firstPagePrs];
 
-    // Limit to 10 pages (1000 PRs) to avoid hitting Vercel 10s timeout limits
-    // In production, consider Webhooks or a database-backed Cron job if > 1000 PRs
-    const MAX_PAGES = 10; 
+    if (firstPagePrs.length === 100) {
+      const remainingPageNumbers = Array.from(
+        { length: MAX_PAGES - 1 },
+        (_, index) => index + 2,
+      );
 
-    while (hasMore && page <= MAX_PAGES) {
-      const pullsUrl = `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`;
-      const prsRes = await fetch(pullsUrl, { headers });
+      const remainingResults = await Promise.allSettled(
+        remainingPageNumbers.map((page) => fetchPrPage(page, headers)),
+      );
 
-      if (!prsRes.ok) {
-        console.warn(`[Leaderboard API] GitHub API request failed with status: ${prsRes.status}`);
-        hasMore = false;
-        break;
-      }
-
-      const prs = await prsRes.json();
-      
-      if (!Array.isArray(prs) || prs.length === 0) {
-        hasMore = false;
-        break;
-      }
-
-      prs.forEach((pr) => {
-        if (!pr.merged_at) return; // Only count merged PRs
-
-        const labels = pr.labels.map((l) => l.name.toLowerCase());
-        const hasGsocLabel = labels.some(
-          (label) => label.includes("gssoc") || label.includes("gsoc")
-        );
-        
-        if (!hasGsocLabel) return; // Must have GSOC labels
-
-        const author = pr.user.login;
-        const points = calculatePrPoints(labels);
-
-        if (!contributorsMap[author]) {
-          const contributorInfo = contributorsInfo[author] || {
-            name: author,
-            avatar: pr.user.avatar_url,
-            profile: pr.user.html_url,
-          };
-          contributorsMap[author] = {
-            username: author,
-            name: contributorInfo.name,
-            avatar: contributorInfo.avatar,
-            profile: contributorInfo.profile,
-            points: 0,
-            prs: 0,
-          };
+      for (const result of remainingResults) {
+        if (result.status === "fulfilled" && result.value.length > 0) {
+          allPrs = allPrs.concat(result.value);
         }
-
-        contributorsMap[author].points += points;
-        contributorsMap[author].prs += 1;
-      });
-
-      page++;
+      }
     }
 
-    // 3. Add achievement-based bonus points to gamify contributors
+    const contributorsMap = aggregatePrs(allPrs, contributorsInfo);
+
     Object.keys(contributorsMap).forEach((user) => {
       const count = contributorsMap[user].prs;
       if (count >= 10) {
@@ -125,20 +196,24 @@ export default async function handler(req, res) {
       }
     });
 
-    // 4. Sort contributors by points
-    const sortedContributors = Object.values(contributorsMap).sort((a, b) => b.points - a.points);
+    const sortedContributors = Object.values(contributorsMap).sort(
+      (a, b) => b.points - a.points,
+    );
 
-    // 5. Apply Edge Caching (Cache-Control)
-    // s-maxage=3600 means Vercel's CDN will cache the response for 1 hour.
-    // stale-while-revalidate=86400 means if the cache is stale (older than 1h),
-    // it will immediately return the stale value to the user while re-fetching
-    // the fresh data in the background (preventing the 10-second wait).
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
-    
+    // 5. Populate the in-process cache so subsequent warm-instance calls skip
+    //    the GitHub round-trips entirely for the next CACHE_TTL_MS window.
+    cachedLeaderboard = sortedContributors;
+    cacheTimestamp = Date.now();
+
+    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
+    res.setHeader("X-Cache", "MISS");
+
     return res.status(200).json(sortedContributors);
-    
   } catch (error) {
     console.error("[Leaderboard API] Aggregation Error:", error);
     return res.status(500).json({ error: "Failed to compile leaderboard data" });
+  }
+}
+iled to compile leaderboard data" });
   }
 }

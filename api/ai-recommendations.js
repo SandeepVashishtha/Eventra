@@ -2,6 +2,7 @@
 // Secures the Groq API key from frontend exposure
 
 import { verifyAuth } from "./middleware/auth.js";
+import { buildCorsHeaders } from "./auth/cors.js";
 
 // ---------------------------------------------------------------------------
 // Guards
@@ -10,6 +11,28 @@ import { verifyAuth } from "./middleware/auth.js";
 // Hard limit on prompt length. Groq charges per token; an unbounded prompt
 // lets an unauthenticated caller exhaust the API quota in a single request.
 const MAX_PROMPT_LENGTH = 2000;
+
+// ---------------------------------------------------------------------------
+// System prompt
+//
+// Constrains the LLM to event-recommendation tasks only. Without this,
+// any authenticated user can use this endpoint as an unrestricted
+// general-purpose AI proxy — generating arbitrary content, consuming quota
+// for unintended use cases, or performing prompt-injection attacks.
+//
+// The system message is the first message in every conversation and
+// establishes the model's persona and operating boundaries. Callers
+// provide only the user turn; the server always injects this system turn.
+// ---------------------------------------------------------------------------
+const SYSTEM_PROMPT =
+  "You are an event recommendation assistant for the Eventra platform. " +
+  "Your only job is to help users discover, filter, and compare events " +
+  "based on their interests, schedule, and preferences. " +
+  "Always respond in the context of event recommendations. " +
+  "If a request is unrelated to finding or comparing events, politely decline " +
+  "and redirect the user to ask an event-related question instead. " +
+  "Never generate code, write documents, answer general knowledge questions, " +
+  "or fulfil any request that is not directly about helping users with events on Eventra.";
 
 // Per-user rate limit: at most RATE_LIMIT_MAX_REQUESTS within RATE_LIMIT_WINDOW_MS.
 // This Map lives in process memory. In a multi-instance serverless deployment,
@@ -42,17 +65,15 @@ const checkRateLimit = (userId) => {
 // ---------------------------------------------------------------------------
 
 async function handler(req, res) {
-  // Add CORS headers
-  res.setHeader("Access-Control-Allow-Credentials", true);
-  res.setHeader(
-    "Access-Control-Allow-Origin",
-    process.env.ALLOWED_ORIGIN || "*"
-  );
+  // Use shared CORS utility (never returns wildcard — maintains credentials safety)
+  res.setHeader("Access-Control-Allow-Origin", buildCorsHeaders(req)["Access-Control-Allow-Origin"]);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
   res.setHeader(
     "Access-Control-Allow-Headers",
     "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
   );
+  res.setHeader("Vary", "Origin");
 
   if (req.method === "OPTIONS") {
     res.status(200).end();
@@ -73,7 +94,7 @@ async function handler(req, res) {
     });
   }
 
-  const apiKey = process.env.GROQ_API_KEY || process.env.REACT_APP_GROQ_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
     return res.status(500).json({ error: "Groq API key not configured on the server." });
@@ -93,7 +114,7 @@ async function handler(req, res) {
       });
     }
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const response = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -101,10 +122,15 @@ async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
-        messages: [{ role: "user", content: prompt.trim() }],
+        messages: [
+          // System message is always injected server-side — callers cannot
+          // override it by supplying their own system turn in the request body.
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: prompt.trim() },
+        ],
         temperature: 0.7,
       }),
-    });
+    }, 12000);
 
     const data = await response.json();
 
@@ -117,6 +143,11 @@ async function handler(req, res) {
   } catch (error) {
     console.error("[Groq Proxy API] Request Failed:", error);
     return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export default verifyAuth(handler);
+
   }
 }
 

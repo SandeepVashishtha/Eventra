@@ -49,9 +49,22 @@ const isRateLimited = (userId) => {
 };
 
 // Evict stale entries to prevent unbounded memory growth in long-lived
-// instances. Called after every rate-limit check.
+// instances.
+//
+// Previous behaviour: called on every request, causing an O(n) Map
+// iteration on the hot path regardless of when the last eviction ran.
+// With many distinct users this became a measurable per-request cost.
+//
+// Fix: track the last eviction timestamp and skip the scan if it ran
+// within the current window. One scan per window is sufficient because
+// entries only become stale after RATE_LIMIT_WINDOW_MS has elapsed —
+// the same condition we are checking.
+let lastEvictionAt = 0;
+
 const evictStaleEntries = () => {
   const now = Date.now();
+  if (now - lastEvictionAt < RATE_LIMIT_WINDOW_MS) return;
+  lastEvictionAt = now;
   for (const [key, entry] of rateLimitMap.entries()) {
     if (now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
       rateLimitMap.delete(key);
@@ -115,12 +128,12 @@ async function handler(req, res) {
   const token = process.env.GITHUB_TOKEN;
 
   try {
-    const fetchRes = await fetch(url.toString(), {
+    const fetchRes = await fetchWithTimeout(url.toString(), {
       headers: {
         Accept: "application/vnd.github.v3+json",
         ...(token ? { Authorization: `token ${token}` } : {}),
       },
-    });
+    }, 10000);
 
     const data = await fetchRes.json();
 
@@ -135,6 +148,11 @@ async function handler(req, res) {
   } catch (error) {
     console.error("GitHub Proxy Error:", error);
     return res.status(500).json({ error: "Failed to fetch from GitHub API" });
+  }
+}
+
+export default verifyAuth(handler);
+
   }
 }
 

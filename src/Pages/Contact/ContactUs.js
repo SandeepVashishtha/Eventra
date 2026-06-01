@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import { Star, MessageSquare } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, FileText, MessageSquare, AlertCircle } from "lucide-react";
-import { FiStar, FiMessageSquare } from "react-icons/fi";
+import { User, Mail, FileText, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SEOHead from "../../components/SEOHead";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 const FloatingField = ({
@@ -94,9 +94,8 @@ const FloatingField = ({
   );
 };
 
-const ContactUs = () => {
+const ContactUsInner = () => {
   const prefersReducedMotion = useReducedMotion();
-  useDocumentTitle("Eventra | Contact Us");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -236,8 +235,8 @@ const ContactUs = () => {
                   Get in Touch
                 </h2>
                 <p className="mb-8 text-lg opacity-90 leading-relaxed">
-                  Questions about our events platform? We're here to help. Reach
-                  out and we'll respond promptly.
+                  Questions about our events platform? We&apos;re here to help. Reach
+                  out and we&apos;ll respond promptly.
                 </p>
 
                 <div className="space-y-6">
@@ -278,7 +277,7 @@ const ContactUs = () => {
                     data-aos-delay="300"
                   >
                     <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiMessageSquare className="w-7 h-7 text-white" aria-hidden="true" />
+                      <MessageSquare className="w-7 h-7 text-white" aria-hidden="true" />
                     </div>
                     <div className="overflow-hidden max-w-full">
                       <p className="font-semibold text-white">Quick Response</p>
@@ -295,7 +294,7 @@ const ContactUs = () => {
                     data-aos-delay="400"
                   >
                     <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiStar className="w-7 h-7 text-white" />
+                      <Star className="w-7 h-7 text-white" />
                     </div>
                     <div className="overflow-hidden max-w-full">
                       <p className="font-semibold text-white">
@@ -420,6 +419,17 @@ const ContactUs = () => {
     </div>
   );
 };
+
+const ContactUs = () => (
+  <>
+    <SEOHead
+      title="Contact Us"
+      description="Get in touch with the Eventra team. We're here to help with questions, feedback, and support."
+      url={window.location.href}
+    />
+    <ContactUsInner />
+  </>
+);
 
 export default ContactUs;
 
