@@ -9,7 +9,7 @@ import {
   ArrowRight,
   Image as ImageIcon,
   Layers,
-  Clock
+  Clock,
 } from "lucide-react";
 import mockEvents from "../../Pages/Events/eventsMockData.json";
 
@@ -20,7 +20,8 @@ import mockEvents from "../../Pages/Events/eventsMockData.json";
  * Secure base64 dynamic inline vector SVG string.
  * Used to immediately resolve broken image handles with zero external network overhead.
  */
-const INLINE_SVG_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'><rect width='100%' height='100%' fill='%231e293b'/><circle cx='200' cy='100' r='40' fill='%23334155'/><path d='M180 110 L200 90 L220 110' stroke='%23475569' stroke-width='4' fill='none'/></svg>";
+const INLINE_SVG_PLACEHOLDER =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'><rect width='100%' height='100%' fill='%231e293b'/><circle cx='200' cy='100' r='40' fill='%23334155'/><path d='M180 110 L200 90 L220 110' stroke='%23475569' stroke-width='4' fill='none'/></svg>";
 
 // =========================================================================
 // SUB-COMPONENTS FOR EXTENDED LAYOUT QUALITY
@@ -44,7 +45,7 @@ const RecommendationSkeleton = memo(() => {
 
         {/* Event Title */}
         <div className="h-4 w-4/5 bg-slate-200 dark:bg-slate-800 rounded-md mt-4" />
-        
+
         {/* Description lines */}
         <div className="space-y-2 mt-3">
           <div className="h-3 w-full bg-slate-200 dark:bg-slate-800 rounded-md" />
@@ -83,7 +84,8 @@ const CardBannerImage = memo(({ src, alt }) => {
   const handleImageLoadingError = (e) => {
     e.target.onerror = null; // Prevent infinite fallback trigger loops
     e.target.src = INLINE_SVG_PLACEHOLDER;
-    e.target.className = "h-full w-full object-cover opacity-60 filter grayscale dark:brightness-75";
+    e.target.className =
+      "h-full w-full object-cover opacity-60 filter grayscale dark:brightness-75";
   };
 
   return (
@@ -139,17 +141,23 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
       const scoredPool = filteringPool.map((event) => {
         if (!event) return { recommendationScore: 0 };
         let score = 0;
-        
+
         // Exact category alignment check vector (+10 points)
         if (currentCategory && event.category?.toLowerCase() === currentCategory.toLowerCase()) {
           score += 10;
         }
-        
+
         // Match user's array metrics elements (+5 points per intersection matching)
         const parsedCategoryTerms = (event.category || "").split(/[\s/&-]+/);
         parsedCategoryTerms.forEach((term) => {
           if (!term) return;
-          if (Array.isArray(userInterests) && userInterests.some((interest) => typeof interest === "string" && interest.toLowerCase().includes(term.toLowerCase()))) {
+          if (
+            Array.isArray(userInterests) &&
+            userInterests.some(
+              (interest) =>
+                typeof interest === "string" && interest.toLowerCase().includes(term.toLowerCase())
+            )
+          ) {
             score += 5;
           }
         });
@@ -158,8 +166,10 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
       });
 
       // 3. Sort pool in descending structural order based on priority scores
-      const sortedResultMatrix = scoredPool.sort((a, b) => b.recommendationScore - a.recommendationScore);
-      
+      const sortedResultMatrix = scoredPool.sort(
+        (a, b) => b.recommendationScore - a.recommendationScore
+      );
+
       // Select topmost 6 scoring matches for the carousel limits
       setRecommendedEvents(sortedResultMatrix.slice(0, 6));
       setLoading(false);
@@ -181,7 +191,6 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
   if (loading) {
     return (
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 shadow-md recommendations-skeleton-loading-view animate-pulse-subtle">
-        
         {/* HEADER RIBBON SKELETON */}
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-6">
           <div className="flex items-center gap-2.5">
@@ -216,7 +225,6 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 shadow-md real-recommendations-carousel-block">
-      
       {/* HEADER RENDERING CONTROLS */}
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-6">
         <div className="flex items-center gap-2.5">
@@ -260,13 +268,15 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
           className="flex transition-transform duration-500 ease-out gap-4 slider-film-strip-axis"
           style={{
             transform: `translateX(-${currentIndex * (100 / 3)}%)`,
-            width: `${Math.max(100, (recommendedEvents.length / 3) * 100)}%`
+            width: `${Math.max(100, (recommendedEvents.length / 3) * 100)}%`,
           }}
         >
           {recommendedEvents.map((event) => {
             if (!event) return null;
             const hasStrongMatchingScore = event.recommendationScore > 10;
-            const targetFormattedDateString = event.date ? new Date(event.date).toLocaleDateString() : "Upcoming";
+            const targetFormattedDateString = event.date
+              ? new Date(event.date.replace(/-/g, "/")).toLocaleDateString()
+              : "Upcoming";
 
             return (
               <div
@@ -275,10 +285,7 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
               >
                 <div>
                   {/* INJECTED CARD BANNER: Implements robust a11y image onError error fallbacks */}
-                  <CardBannerImage 
-                    src={event.image || event.banner} 
-                    alt={event.title} 
-                  />
+                  <CardBannerImage src={event.image || event.banner} alt={event.title} />
 
                   {/* Badge Row Overlay Elements */}
                   <div className="flex items-center justify-between gap-2 categories-meta-container">
@@ -296,9 +303,10 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
                   <h4 className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100 mt-3 line-clamp-1">
                     {event.title}
                   </h4>
-                  
+
                   <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5 line-clamp-2 leading-relaxed font-medium">
-                    {event.description || "No metadata description records mapped to this event instance outline."}
+                    {event.description ||
+                      "No metadata description records mapped to this event instance outline."}
                   </p>
 
                   {/* Iconified Detail Logs */}
@@ -309,7 +317,9 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
                     </div>
                     <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                       <MapPin className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                      <span className="truncate">{event.location || "Virtual / Remote Studio"}</span>
+                      <span className="truncate">
+                        {event.location || "Virtual / Remote Studio"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -333,7 +343,6 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
           })}
         </div>
       </div>
-
     </div>
   );
 };
