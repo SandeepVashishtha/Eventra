@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { users } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { createRateLimiter } from "../middleware/rateLimiter.js";
 
 // Pre-compute a dummy bcrypt hash at module load time (same cost factor used in signup.js).
 // When a login attempt references a username or email that does not exist, we still run
@@ -196,7 +197,7 @@ const findUserByUsernameOrEmail = (usernameOrEmail) => {
 // Login Handler
 // ---------------------------------------------------------------------------
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return res.status(200).set(corsHeaders(req)).end();
@@ -331,4 +332,11 @@ export default async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
+const loginRateLimiter = createRateLimiter({
+  max: 5,
+  windowMs: 15 * 60 * 1000,
+  message: "Too many authentication attempts. Please try again later.",
+});
+
+export default loginRateLimiter(handler);
 export { users };
