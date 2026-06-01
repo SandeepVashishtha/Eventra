@@ -308,7 +308,7 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         if (!isMountedRef.current) return false;
         setAuthRequestState({ loading: false, error: getAuthErrorMessage(error, "Login failed. Please try again.") });
-        throw error;
+        return false;
       }
     },
     [extractSession, persistSession, setAuthRequestState]
