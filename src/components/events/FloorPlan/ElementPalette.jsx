@@ -10,7 +10,7 @@ export default function ElementPalette({
   elements, totalOccupiedSeats, totalMaxSeats,
   snapToGrid, setSnapToGrid, onAddElement,
   loadPreset, handleExportPNG, handleExportSVG,
-  handleDownloadJSON, handleImportJSON, navigate, eventId
+  handleDownloadJSON, handleImportJSON
 }) {
   return (
     <aside className="fp-sidebar fp-sidebar-left" aria-label="Floor plan designer tools sidebar">

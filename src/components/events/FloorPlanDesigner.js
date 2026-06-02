@@ -393,8 +393,6 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
           handleExportSVG={() => exportAsSVG(canvasRef, eventId)}
           handleDownloadJSON={() => downloadLayoutJSON(elements, eventId)}
           handleImportJSON={(e) => importLayoutJSON(e, handleImport)}
-          navigate={navigate}
-          eventId={eventId}
         />
 
         <div className="fp-canvas-wrapper"
