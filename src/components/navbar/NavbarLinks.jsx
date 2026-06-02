@@ -83,7 +83,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                 vertical ? "w-full flex-col items-start" : "flex-none"
               }`}
             >
-              <div className="flex w-full items-center">
+              <div className="flex w-full items-center gap-0.5">
                 <NavLink
                   to={item.href}
                   onClick={onClick}
@@ -138,7 +138,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     }`}
                   >
                     <ChevronDown
-                      className={`w-4 h-4 opacity-70 transition-transform duration-200 ${
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
                         isOpen
                           ? "rotate-180"
                           : "group-hover/nav:rotate-180"
@@ -171,6 +171,14 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     onClick={onClick}
                     role={!vertical ? "menuitem" : undefined}
                     className={({ isActive }) =>
+                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
+                        isActive
+                          ? "bg-gray-50 dark:bg-gray-700/80 text-black dark:text-white font-semibold"
+                          : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white hover:bg-gray-50/80 dark:hover:bg-gray-700/50"
+                      }`
+                    }
+                  >
+                    <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">{sub.icon}</span>
                       `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-md p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
                         isActive
                           ? "bg-bg-secondary text-text font-semibold"
@@ -197,7 +205,9 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
               getNavLinkClasses(isActive)
             }
           >
-            {item.icon}
+            <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">
+              {item.icon}
+            </span>
             <span>{item.name}</span>
           </NavLink>
         );
