@@ -9,6 +9,7 @@ import {
 } from "react";
 import { apiUtils, API_ENDPOINTS } from "../config/api";
 import { useAuth } from "./AuthContext";
+import usePageVisibility from "../hooks/usePageVisibility";
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   PUSH_SUBSCRIPTION_KEY,
@@ -68,6 +69,7 @@ const normalizeNotification = (notification = {}) => ({
 
 export const NotificationProvider = ({ children }) => {
   const { token } = useAuth();
+  const isPageVisible = usePageVisibility();
   const [notifications, setNotifications] = useState([]);
   const [achievements, setAchievements] = useState({
     totalEvents: 0,
@@ -86,8 +88,32 @@ export const NotificationProvider = ({ children }) => {
 
   const isMounted = useRef(true);
   const activeTokenRef = useRef(token);
-  const seenNotificationIds = useRef(new Set());
   const hasCompletedInitialFetch = useRef(false);
+
+  // ---------------------------------------------------------------------------
+  // Bounded seen-notification Set
+  //
+  // seenNotificationIds deduplicates incoming notifications so browser push
+  // alerts do not fire twice for the same ID across polling cycles. The Set
+  // previously grew without bound: every polled ID was added but nothing was
+  // ever removed. On long-running sessions (open tabs left running overnight)
+  // the Set accumulated thousands of string IDs, increasing GC pressure.
+  //
+  // MAX_SEEN_IDS caps the Set. When the cap is reached the insertion helper
+  // evicts the oldest entry (Sets preserve insertion order, so the first value
+  // is the oldest) before adding the new one — a constant-time O(1) eviction.
+  // ---------------------------------------------------------------------------
+  const MAX_SEEN_IDS = 500;
+  const seenNotificationIds = useRef(new Set());
+
+  const addSeenId = (id) => {
+    if (seenNotificationIds.current.has(id)) return;
+    if (seenNotificationIds.current.size >= MAX_SEEN_IDS) {
+      const oldest = seenNotificationIds.current.values().next().value;
+      seenNotificationIds.current.delete(oldest);
+    }
+    seenNotificationIds.current.add(id);
+  };
 
   const groupedNotifications = useMemo(() => {
     return notifications.reduce((groups, notification) => {
@@ -285,7 +311,7 @@ export const NotificationProvider = ({ children }) => {
           return isNew && !notification.isRead;
         });
 
-        normalizedData.forEach((notification) => seenNotificationIds.current.add(notification.id));
+        normalizedData.forEach((notification) => addSeenId(notification.id));
         setNotifications(normalizedData);
         setUnreadCount(normalizedData.filter((n) => !n.isRead).length);
 
@@ -420,7 +446,41 @@ export const NotificationProvider = ({ children }) => {
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         }));
 
-      window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(subscription));
+      // Store only non-sensitive subscription metadata locally.
+      //
+      // The full Web Push subscription object includes keys.p256dh and keys.auth —
+      // a 128-bit symmetric secret used to encrypt push payloads. Storing it in
+      // plaintext localStorage exposes it to any XSS payload or malicious browser
+      // extension that can read localStorage, allowing arbitrary push notifications
+      // to be sent to the user's device without the server's VAPID private key.
+      //
+      // Store only { endpoint, subscribed, subscribedAt } for local status checks.
+      // The full subscription (including keys) is sent to the backend over HTTPS
+      // where it is stored securely server-side and never re-read by the client.
+      const safeLocalRecord = {
+        endpoint: subscription?.endpoint ?? "",
+        subscribed: true,
+        subscribedAt: new Date().toISOString(),
+      };
+      try {
+        window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
+      } catch {
+        // Non-fatal — the subscription is still active; local status just won't persist
+      }
+
+      // Migrate: remove any existing full subscription object that may have been
+      // stored by a previous version of this code before this fix was applied.
+      // This runs once per subscribe() call and is a no-op if the key is absent.
+      const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
+      if (existing) {
+        try {
+          const parsed = JSON.parse(existing);
+          if (parsed?.keys) {
+            // Old format with sensitive keys — replace with the safe record
+            window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
+          }
+        } catch { /* non-fatal */ }
+      }
 
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
       if (token && isValidEndpoint(endpoint)) {
@@ -490,14 +550,28 @@ export const NotificationProvider = ({ children }) => {
 
     initData();
 
+    // Visibility-aware polling: skip the network call when the tab is hidden.
+    // The setInterval still fires on schedule so the cadence is maintained, but
+    // the fetch is gated on isPageVisible. When the tab becomes visible again,
+    // a separate useEffect (below) fires an immediate catch-up fetch so no
+    // notifications are missed.
     const intervalId = setInterval(() => {
-      if (isMounted.current && activeTokenRef.current === requestToken) {
+      if (isMounted.current && activeTokenRef.current === requestToken && isPageVisible) {
         fetchNotifications({ isBackground: true });
       }
     }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [token, fetchNotifications, fetchAchievements]);
+  }, [token, fetchNotifications, fetchAchievements, isPageVisible]);
+
+  // Catch-up fetch: when the tab becomes visible after being hidden, immediately
+  // fetch notifications so the user sees fresh data without waiting up to
+  // POLLING_INTERVAL_MS for the next scheduled tick.
+  useEffect(() => {
+    if (!isPageVisible || !token) return;
+    if (!hasCompletedInitialFetch.current) return;
+    fetchNotifications({ isBackground: true });
+  }, [isPageVisible, token, fetchNotifications]);
 
   return (
     <NotificationContext.Provider

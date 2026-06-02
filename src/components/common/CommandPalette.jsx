@@ -18,6 +18,7 @@ import {
   ArrowDown,
   CornerDownLeft
 } from "lucide-react";
+import { useModalStack } from "../../hooks/useModalStack";
 
 const trendTags = ["AI", "Web3", "Hackathons", "Workshops", "Community", "Auth"];
 
@@ -36,6 +37,7 @@ export default function CommandPalette({
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
+  const { isTopmost } = useModalStack(isOpen);
 
   // Search Catalog containing navigations, quick system actions, events, and hackathons
   const searchCatalog = useMemo(() => [
@@ -43,7 +45,7 @@ export default function CommandPalette({
     { name: "Explore Events Portal", href: "/events", category: "Pages", type: "nav", icon: Calendar },
     { name: "Live Hackathons", href: "/hackathons", category: "Pages", type: "nav", icon: Sparkles },
     { name: "Platform Projects Hub", href: "/projects", category: "Pages", type: "nav", icon: Layers },
-    { name: "Leaderboard Standings", href: "/leaderBoard", category: "Pages", type: "nav", icon: Sparkles },
+    { name: "Leaderboard Standings", href: "/leaderboard", category: "Pages", type: "nav", icon: Sparkles },
     { name: "Eventra Bookmarks", href: "/bookmarks", category: "Pages", type: "nav", icon: Calendar },
     { name: "Contribute & Open Source Guide", href: "/contributorguide", category: "Pages", type: "nav", icon: Layers },
     { name: "Platform Frequently Asked Questions (FAQ)", href: "/faq", category: "Pages", type: "nav", icon: HelpCircle },
@@ -130,6 +132,8 @@ export default function CommandPalette({
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
+      setQuery("");
+      setActiveIndex(0);
     }
     return () => {
       document.body.style.overflow = "";
@@ -156,6 +160,8 @@ export default function CommandPalette({
     if (!isOpen) return;
 
     const handleKeyDown = (e) => {
+      if (!isTopmost()) return;
+
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setActiveIndex(prev => (prev + 1) % Math.max(1, filteredItems.length));
@@ -175,7 +181,7 @@ export default function CommandPalette({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, filteredItems, activeIndex, handleSelect, onClose]);
+  }, [isOpen, filteredItems, activeIndex, handleSelect, onClose, isTopmost]);
 
   // Categorized index mapper helper
   const categorizedItems = useMemo(() => {

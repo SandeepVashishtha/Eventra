@@ -1,0 +1,29 @@
+.vertical-scroll-bar-container {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.dark .vertical-scroll-bar-container {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.vertical-scroll-bar-container.hidden {
+  opacity: 0;
+}
+
+.vertical-scroll-bar-container.visible {
+  opacity: 1;
+}
+
+.vertical-scroll-bar-progress {
+  width: 100%;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+  transition: height 0.1s ease-out;
+}

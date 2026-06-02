@@ -13,6 +13,8 @@ import {
 } from "recharts";
 import { toast } from "react-toastify";
 import { useAnalyticsStream, SSE_STATUS } from "../../context/RealTimeContext";
+import BudgetPlanner from "./BudgetPlanner";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // =========================================================================
 // CONSTANTS & INITIAL DATA
@@ -117,32 +119,25 @@ const LOCAL_STORAGE_KEY = "eventra_checkins";
 const AnalyticsDashboard = () => {
   // Merge real scanned check-ins from localStorage (set by TicketScanner) with mock defaults
   const getInitialCheckins = () => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
-      if (saved.length > 0) {
-        // Merge: show real scanned check-ins first, then pad with mocks if fewer than 5
-        const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
-        return merged;
-      }
-    } catch (e) {
-      // fallback to mock if localStorage is corrupted
+    const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+    if (saved.length > 0) {
+      // Merge: show real scanned check-ins first, then pad with mocks if fewer than 5
+      const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
+      return merged;
     }
     return MOCK_CHECKINS;
   };
 
   const getInitialLiveCount = () => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
-      return 342 + saved.filter((c) => c.status === "Verified").length;
-    } catch (e) {
-      return 342;
-    }
+    const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+    return 342 + saved.filter((c) => c.status === "Verified").length;
   };
 
   const [checkins, setCheckins] = useState(getInitialCheckins);
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
+const [activeTab, setActiveTab] = useState('analytics');
 
   // Real-time SSE stream — takes priority over local simulation when connected
   const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
@@ -302,6 +297,26 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="space-y-8 text-slate-800 dark:text-slate-100">
+  {/* Tab Navigation */}
+  <div className="flex gap-2 mb-4">
+    <button
+      onClick={() => setActiveTab('analytics')}
+      className={`px-4 py-2 rounded ${activeTab === 'analytics' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+    >
+      Analytics
+    </button>
+    <button
+      onClick={() => setActiveTab('budget')}
+      className={`px-4 py-2 rounded ${activeTab === 'budget' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+    >
+      Budget
+    </button>
+  </div>
+  {activeTab === 'budget' ? (
+    <BudgetPlanner />
+  ) : (
+    // Original analytics UI starts here
+    <>
       {/* CONTROL BANNER */}
       <div className="flex flex-col gap-4 p-5 bg-white border shadow-sm sm:flex-row sm:items-center sm:justify-between dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl">
         <div>
@@ -521,7 +536,9 @@ const AnalyticsDashboard = () => {
           ))}
         </div>
       </div>
-    </div>
+      </>
+  )}
+</div>
   );
 };
 

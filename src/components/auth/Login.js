@@ -339,7 +339,7 @@ const Login = () => {
               {/* Sign up link */}
               <div className="text-center">
                 <p style={{ color: "var(--text-color-light)" }}>
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <Link to="/signup" className="text-blue-600 hover:underline font-semibold">
                     Create one here
                   </Link>
