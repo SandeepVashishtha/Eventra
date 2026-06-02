@@ -185,7 +185,7 @@ export default async function handler(req, res) {
 
       for (const result of remainingResults) {
         if (result.status === "fulfilled" && result.value.length > 0) {
-          allPrs = allPrs.concat(result.value);
+          allPrs.push(...result.value);
         }
       }
     }
