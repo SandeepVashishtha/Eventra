@@ -344,8 +344,11 @@ export default function LeaderBoard() {
     [contributors]
   );
 
-  // FIX: Podium should always show global top 3, not filtered search results
-  const top3 = useMemo(() => contributors.slice(0, 3), [contributors]);
+  // Podium always reflects the active sort criterion so the #1/#2/#3 positions
+  // match what the user sees in the table below.  filteredContributors is the
+  // pre-sort array; reading top-3 from it caused the podium to show the wrong
+  // contributors whenever the sort was set to anything other than the default.
+  const top3 = useMemo(() => sortedContributors.slice(0, 3), [sortedContributors]);
 
   const sortOptions = useMemo(
     () => [
@@ -578,6 +581,14 @@ export default function LeaderBoard() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
+
+  // Reset to page 1 whenever the sort criterion or active category changes.
+  // Without this a user on page 5 who switches sort stays on page 5 — which
+  // may now have no rows if the sorted list is shorter, or shows a confusing
+  // mid-list entry point that does not correspond to the new ranking.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy, activeCategory]);
 
   // ─── Podium Configuration ───────────────────────────────────────────────
   const podiumConfig = useMemo(() => [
