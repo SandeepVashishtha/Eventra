@@ -190,10 +190,7 @@ export default function Features() {
                     aria-label={`${feature.cta} - ${feature.title}`}
                   >
                     {feature.cta}
-                    <FaArrowRight 
-                      className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" 
-                      aria-hidden="true"
-                    />
+                    <FaArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" />
                   </Link>
                 ) : (
                   <span
@@ -202,11 +199,8 @@ export default function Features() {
                     role="text"
                     aria-disabled="true"
                   >
-                    {feature.cta}
-                    <FaArrowRight 
-                      className="ml-2 w-4 h-4 opacity-50" 
-                      aria-hidden="true"
-                    />
+                      {feature.cta}
+                      <FaArrowRight className="ml-2 w-4 h-4" />
                   </span>
                 )}
               </div>
