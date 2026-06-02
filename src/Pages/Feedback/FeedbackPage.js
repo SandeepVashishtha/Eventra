@@ -574,7 +574,7 @@ const FeedbackPage = () => {
                   value={formData.name}
                   onChange={handleChange}
                   error={errors.name}
-                  icon={FiUser}
+                  icon={User}
                   required={true}
                 />
 
@@ -585,7 +585,7 @@ const FeedbackPage = () => {
                   value={formData.email}
                   onChange={handleChange}
                   error={errors.email}
-                  icon={FiMail}
+                  icon={Mail}
                   required={true}
                 />
 
@@ -596,7 +596,6 @@ const FeedbackPage = () => {
                   onChange={handleSelectChange}
                   options={feedbackTypes}
                   error={errors.feedbackType}
-                  icon={FiMessageSquare}
                   required={true}
                 />
 
