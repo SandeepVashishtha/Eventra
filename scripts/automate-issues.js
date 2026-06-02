@@ -451,9 +451,16 @@ for (const issue of issues) {
       throw new Error(`Target search content not found in file! Check syntax or line endings.`);
     }
 
-    // 4. Return to master and make sure clean
-    runCmd('git checkout master');
-
+    //  RECTIFIED CHUNK
+    // 4. State Isolation: Clean working tree and return safely to master branch
+    try {
+      console.log('🔄 Ensuring a clean state on master...');
+      runCmd('git reset --hard HEAD'); // Discards any uncommitted failures from the prior loop
+      runCmd('git checkout master');   // Now safely switches without Git blocking the operation
+    } catch (stateError) {
+      throw new Error(`State reset failed. Cannot safely return to master branch: ${stateError.message}`);
+    }
+    
     // 5. Delete branch if it already exists to avoid conflicts
     try {
       runCmd(`git branch -D ${issue.branchName}`);
