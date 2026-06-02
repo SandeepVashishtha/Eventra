@@ -220,18 +220,21 @@ export const suggestAlternativeEvents = (
   });
 
   // Prioritise events of the same category / type / tags as the target
+  const targetTagSet = new Set(targetEvent.tags || []);
+
   const sameCategoryEvents = nonConflictingEvents.filter(
     (event) =>
       event.category === targetEvent.category ||
       event.type === targetEvent.type ||
-      event.tags?.some((tag) => targetEvent.tags?.includes(tag))
+      event.tags?.some((tag) => targetTagSet.has(tag))
   );
 
   if (sameCategoryEvents.length >= maxSuggestions) {
     return sameCategoryEvents.slice(0, maxSuggestions);
   }
 
-  const otherEvents = nonConflictingEvents.filter((event) => !sameCategoryEvents.includes(event));
+  const sameCategorySet = new Set(sameCategoryEvents);
+  const otherEvents = nonConflictingEvents.filter((event) => !sameCategorySet.has(event));
 
   return [...sameCategoryEvents, ...otherEvents].slice(0, maxSuggestions);
 };
