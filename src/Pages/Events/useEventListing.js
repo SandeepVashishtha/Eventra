@@ -33,6 +33,7 @@ const normalizeEvent = (event) => ({
 const useEventListing = () => {
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
@@ -125,8 +126,6 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-      logger.error("Failed to fetch events:", error);
-
       if (process.env.NODE_ENV === "development") {
         const normalizedMockEvents = mockEvents.map(normalizeEvent);
         setEvents(normalizedMockEvents);
@@ -195,10 +194,8 @@ const useEventListing = () => {
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
   const filteredEvents = useMemo(() => {
-    const now = new Date();
-    
-    // 1. Search (typo-tolerant fuzzy search with ranking)
-    let processedEvents = debouncedSearchQuery.trim()
+    // 1. Search (typo-tolerant fuzzy search with ranking from PR #5461)
+    let filtered = debouncedSearchQuery.trim()
       ? getRouteSearchResults(
           events,
           debouncedSearchQuery,
@@ -213,22 +210,65 @@ const useEventListing = () => {
         )
       : [...events];
 
-    // 2. Category/Status Tabs Filtering
-    if (filterType !== "all") {
-      processedEvents = processedEvents.filter((event) => {
-        const eventDate = new Date(event.date || event.startDate);
-        if (filterType === "upcoming") return eventDate >= now;
-        if (filterType === "past") return eventDate < now;
-        
+    // 2. Status Timing Filter ('Live Now', 'Upcoming', 'Past Events') based on current system date
+    filtered = filtered.filter((event) => {
+      const status = getEventStatus(event);
+      if (filterType === "live") {
+        return status === "live";
+      }
+      if (filterType === "upcoming") {
+        return status === "upcoming";
+      }
+      if (filterType === "past") {
+        return status === "past" || status === "ended";
+      }
+      return true; // "all"
+    });
+
+    // 3. Category Filter matching domain categories (Hackathons, Tech Talks, Cultural, Web Dev, etc.)
+    if (categoryFilter && categoryFilter !== "all") {
+      const target = categoryFilter.toLowerCase();
+      filtered = filtered.filter((event) => {
+        const cat = event.category?.toLowerCase() || "";
         const type = event.type?.toLowerCase() || "";
-        const category = event.category?.toLowerCase() || "";
-        return type === filterType || category === filterType;
+        
+        if (target === "hackathon" || target === "hackathons") {
+          return type === "hackathon" || cat.includes("hackathon");
+        }
+        if (target === "tech talks" || target === "tech-talks" || target === "conference") {
+          return (
+            type === "conference" ||
+            type === "summit" ||
+            cat.includes("tech") ||
+            cat.includes("conference") ||
+            cat.includes("summit")
+          );
+        }
+        if (target === "cultural" || target === "networking" || target === "cultural & networking") {
+          return (
+            cat.includes("networking") ||
+            cat.includes("cultural") ||
+            cat.includes("community")
+          );
+        }
+        
+        // General domain category matching (e.g. web development -> web-development / web)
+        const normalizedTarget = target.replace(/[^a-z0-9]+/g, "");
+        const normalizedCat = cat.replace(/[^a-z0-9]+/g, "");
+        const normalizedType = type.replace(/[^a-z0-9]+/g, "");
+        
+        return (
+          normalizedCat.includes(normalizedTarget) ||
+          normalizedType.includes(normalizedTarget) ||
+          normalizedTarget.includes(normalizedCat) ||
+          normalizedTarget.includes(normalizedType)
+        );
       });
     }
 
-    // 3. Advanced Filters (Sidebar)
-    return applyAdvancedFilters(processedEvents, advancedFilters);
-  }, [events, filterType, debouncedSearchQuery, advancedFilters]);
+    // 4. Advanced Filters fallback
+    return applyAdvancedFilters(filtered, advancedFilters);
+  }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
 
   const sortedEvents = useMemo(() => {
     return [...filteredEvents].sort((a, b) => {
@@ -258,6 +298,7 @@ const useEventListing = () => {
     fetchEvents,
     filteredEvents,
     filterType,
+    categoryFilter,
     loadError,
     isLoading,
     paginatedEvents,
@@ -272,6 +313,7 @@ const useEventListing = () => {
     dateRangeStats,
     setEventsPerPage,
     setFilterType,
+    setCategoryFilter,
     setSafePage,
     setSearchQuery,
     setSortType,
