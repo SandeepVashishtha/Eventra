@@ -25,7 +25,8 @@ export const throttleProfileFetch = async () => {
   }
 };
 
-const fetchJsonWithTimeout = async (url) => {
+// 🔥 FIX: Added options parameter so the AbortSignal actually reaches the network request
+const fetchJsonWithTimeout = async (url, options = {}) => {
   const proxyUrl = url.startsWith("https://api.github.com")
     ? `/api/github-proxy?path=${encodeURIComponent(
         url.replace("https://api.github.com", "")
@@ -34,7 +35,7 @@ const fetchJsonWithTimeout = async (url) => {
 
   const { data } = await fetchWithTimeout(
     proxyUrl,
-    {},
+    options,
     REQUEST_TIMEOUT
   );
 
@@ -88,9 +89,23 @@ const ContributorsInner = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const fetchControllerRef = useRef(null);
   const isFetchingRef = useRef(false);
+  
+  // 🔥 FIX: Added mounted ref to prevent state updates after unmount
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+      // 🔥 FIX: Explicitly abort network requests when component is destroyed
+      if (fetchControllerRef.current) {
+        fetchControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Fetch GitHub profile details
-  const fetchGitHubProfile = useCallback(async (username) => {
+  // 🔥 FIX: Accept signal to cancel pending profile fetches
+  const fetchGitHubProfile = useCallback(async (username, signal) => {
     await throttleProfileFetch();
     if (!username) {
       return {
@@ -106,6 +121,7 @@ const ContributorsInner = () => {
     try {
       const profile = await fetchJsonWithTimeout(
         `https://api.github.com/users/${username}`,
+        { signal }
       );
       return {
         followers: profile.followers || 0,
@@ -139,11 +155,14 @@ const ContributorsInner = () => {
       fetchControllerRef.current.abort();
     }
     fetchControllerRef.current = new AbortController();
+    const currentSignal = fetchControllerRef.current.signal;
 
     const cached = getCachedContributors();
     if (cached) {
-      setContributors(cached);
-      setLoading(false);
+      if (isMounted.current) {
+        setContributors(cached);
+        setLoading(false);
+      }
       isFetchingRef.current = false;
       return;
     }
@@ -153,8 +172,10 @@ const ContributorsInner = () => {
       let page = 1;
       let hasMore = true;
       while (hasMore && page <= MAX_CONTRIBUTOR_PAGES) {
+        // 🔥 FIX: Passed the signal to actually cancel the request if aborted
         const data = await fetchJsonWithTimeout(
           `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`,
+          { signal: currentSignal }
         );
 
         if (!Array.isArray(data)) {
@@ -175,14 +196,15 @@ const ContributorsInner = () => {
       }
 
       if (allContributors.length === 0) {
-        setContributors([]);
+        if (isMounted.current) setContributors([]);
         isFetchingRef.current = false;
         return;
       }
 
       const enhanced = await Promise.all(
         allContributors.map(async (c) => {
-          const profile = await fetchGitHubProfile(c.login);
+          // 🔥 FIX: Passed the signal down to profile requests
+          const profile = await fetchGitHubProfile(c.login, currentSignal);
           return {
             ...c,
             ...profile,
@@ -192,18 +214,19 @@ const ContributorsInner = () => {
       );
 
       enhanced.sort((a, b) => b.contributions - a.contributions);
-      setContributors(enhanced);
-      cacheContributors(enhanced);
+      
+      if (isMounted.current) {
+        setContributors(enhanced);
+        cacheContributors(enhanced);
+      }
     } catch (err) {
-      if (err.name === "AbortError") return;
+      if (err.name === "AbortError" || !isMounted.current) return;
       setError(
-        err?.name === "AbortError"
-          ? "GitHub took too long to respond. Please try again."
-          : "Unable to load contributors from GitHub right now. Please try again.",
+        "Unable to load contributors from GitHub right now. Please try again.",
       );
       setContributors([]);
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
       isFetchingRef.current = false;
     }
   }, [fetchGitHubProfile]);
@@ -226,7 +249,8 @@ const ContributorsInner = () => {
   if (loading) {
     return (
       <FeatureErrorBoundary>
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        {/* 🔥 FIX: Changed invalid bg-Linear-to-br to bg-gradient-to-br */}
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
             {[...Array(8)].map((_, i) => (
@@ -242,7 +266,8 @@ const ContributorsInner = () => {
   if (error)
     return (
       <FeatureErrorBoundary>
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        {/* 🔥 FIX: Changed invalid bg-Linear-to-br to bg-gradient-to-br */}
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
             Contributors are unavailable
@@ -262,7 +287,8 @@ const ContributorsInner = () => {
   return (
     // UPDATED: Section background
     <FeatureErrorBoundary>
-      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+      {/* 🔥 FIX: Changed invalid bg-Linear-to-br to bg-gradient-to-br */}
+      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           {/* Added The Search Bar */}
           <div className="flex justify-center mb-8">
