@@ -41,10 +41,19 @@ const createResponse = () => {
 // Mock Request Helper
 // ---------------------------------------------------------------------------
 
-const createRequest = (method, body) => ({
-  method,
-  body,
-});
+let requestCounter = 0;
+const createRequest = (method, body, headers = {}) => {
+  const finalHeaders = { ...headers };
+  if (!finalHeaders["x-forwarded-for"] && !finalHeaders["x-real-ip"]) {
+    requestCounter += 1;
+    finalHeaders["x-forwarded-for"] = `10.0.0.${requestCounter}`;
+  }
+  return {
+    method,
+    body,
+    headers: finalHeaders,
+  };
+};
 
 // ---------------------------------------------------------------------------
 // Test: Successful signup
@@ -397,6 +406,49 @@ console.log("Running signup endpoint tests...");
   assert.equal(res.statusCode, 400, "Should return 400 for lastName > 50 chars");
   assert.ok(res.body.error, "Should return error message");
   console.log("✓ Test 19: Last name too long (>50 chars) returns 400");
+}
+
+// Test 20: Signup rate limit allows normal requests before limit
+{
+  const baseEmail = "ratelimit.signup";
+  for (let i = 1; i <= 5; i += 1) {
+    const validUserData = {
+      firstName: "Normal",
+      lastName: `User${i}`,
+      email: `${baseEmail}${i}@example.com`,
+      password: "SecurePass123!",
+      confirmPassword: "SecurePass123!",
+    };
+
+    const req = createRequest("POST", validUserData, { "x-forwarded-for": "127.0.0.2" });
+    const res = createResponse();
+    await handler(req, res);
+
+    assert.notEqual(res.statusCode, 429, `Signup request ${i} should not be rate limited`);
+  }
+  console.log("✓ Test 20: Signup rate limit allows normal requests before limit");
+}
+
+// Test 21: Signup rate limit blocks after max attempts
+{
+  const req = createRequest(
+    "POST",
+    {
+      firstName: "Blocked",
+      lastName: "User",
+      email: "ratelimit.signup6@example.com",
+      password: "SecurePass123!",
+      confirmPassword: "SecurePass123!",
+    },
+    { "x-forwarded-for": "127.0.0.2" }
+  );
+  const res = createResponse();
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 429, "Should return 429 after signup attempts exceed the limit");
+  assert.equal(res.body.success, false, "Should return success false when blocked");
+  assert.equal(res.body.message, "Too many authentication attempts. Please try again later.");
+  console.log("✓ Test 21: Signup rate limit blocks after max attempts");
 }
 
 console.log("\n✅ All signup endpoint tests passed!");

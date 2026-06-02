@@ -1,20 +1,3 @@
-/**
- * BackToTop
- *
- * A floating "scroll to top" button that:
- * - Appears after the user scrolls more than SCROLL_THRESHOLD px (default 400)
- * - Smoothly scrolls back to the top on click
- * - Fades in/out with a CSS transition
- * - Is fully keyboard-accessible (focusable, Enter/Space activates it)
- * - Respects prefers-reduced-motion by using instant scroll when enabled
- * - Shows a subtle scroll progress arc so the user knows how far they've scrolled
- *
- * Usage:
- *   import BackToTop from "../common/BackToTop";
- *   // In your component/layout return:
- *   <BackToTop />
- */
-
 import { useEffect, useState, useCallback } from "react";
 import { ChevronUp } from "lucide-react";
 
@@ -70,8 +53,8 @@ const BackToTop = ({ threshold = SCROLL_THRESHOLD }) => {
       title="Back to top"
       tabIndex={visible ? 0 : -1}
       className={[
-        "fixed bottom-6 right-6 z-50",
-        "w-12 h-12",
+        "fixed bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-6 sm:right-6",
+        "w-11 h-11 sm:w-12 sm:h-12",
         "rounded-full",
         "bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600",
         "text-white",

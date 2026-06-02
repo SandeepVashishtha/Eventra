@@ -1,24 +1,7 @@
+import { BarChart, Calendar, Check, CheckCircle, ChevronDown, Mail, MessageSquare, Monitor, MoreHorizontal, Plus, Star, User, Bug } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
-import {
-  FiBarChart,
-  FiCalendar,
-  FiCheck,
-  FiCheckCircle,
-  FiChevronDown,
-  FiMail,
-  FiMessageSquare,
-  FiMonitor,
-  FiMoreHorizontal,
-  FiPlus,
-  FiStar,
-  FiUser,
-} from "react-icons/fi";
-import {
-  FaBug,
-  FaRegComment,
-} from "react-icons/fa";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { analyzeSentiment, getSentimentDisplay } from "../../utils/sentiment.js";
@@ -63,7 +46,7 @@ const StarRating = ({ rating, onRatingChange, error }) => {
             title={`Click to rate ${star} star${star > 1 ? "s" : ""
               } (click again to deselect)`}
           >
-            <FiStar
+            <Star
               className={`w-8 h-8 transition-colors duration-200 ${star <= (hoveredRating || rating)
                   ? "text-yellow-400 fill-current"
                   : "text-gray-300 dark:text-gray-600"
@@ -189,7 +172,7 @@ const CustomFloatingSelect = ({
   const hasValue = value && value.length > 0;
   const selectedOption = options.find((opt) => opt.value === value);
   const selectedLabel = selectedOption ? selectedOption.label : "";
-  const selectedIcon = selectedOption ? selectedOption.icon : FiMessageSquare;
+  const selectedIcon = selectedOption ? selectedOption.icon : MessageSquare;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -215,10 +198,7 @@ const CustomFloatingSelect = ({
 
   return (
     <div className="relative mt-6" ref={dropdownRef}>
-      <div className="relative">
-        {selectedIcon && (
-          <selectedIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
-        )}
+      <div className="relative">        
 
         <button
           type="button"
@@ -255,7 +235,7 @@ const CustomFloatingSelect = ({
           {label} {required && <span className="text-red-500">*</span>}
         </label>
 
-        <FiChevronDown
+        <ChevronDown
           className={`absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500 pointer-events-none transition-transform duration-300 ${isOpen ? "rotate-180" : ""
             }`}
         />
@@ -285,7 +265,7 @@ const CustomFloatingSelect = ({
                   )}
                   {option.label}
                   {value === option.value && (
-                    <FiCheck className="ml-auto w-5 h-5 text-sky-300 dark:text-sky-200" />
+                    <Check className="ml-auto w-5 h-5 text-sky-300 dark:text-sky-200" />
                   )}
                 </li>
               ))}
@@ -346,13 +326,13 @@ const FeedbackPage = () => {
 
   const formRef = useRef(null);
   const feedbackTypes = [
-    { value: "general", label: "General Feedback", icon: FaRegComment },
-    { value: "bug", label: "Bug Report", icon: FaBug },
-    { value: "feature", label: "Feature Request", icon: FiPlus },
-    { value: "ui", label: "UI/UX Feedback", icon: FiMonitor },
-    { value: "performance", label: "Performance Issue", icon: FiBarChart },
-    { value: "event", label: "Event Feedback", icon: FiCalendar },
-    { value: "other", label: "Other", icon: FiMoreHorizontal },
+    { value: "general", label: "General Feedback", icon: MessageSquare },
+    { value: "bug", label: "Bug Report", icon: Bug },
+    { value: "feature", label: "Feature Request", icon: Plus },
+    { value: "ui", label: "UI/UX Feedback", icon: Monitor },
+    { value: "performance", label: "Performance Issue", icon: BarChart },
+    { value: "event", label: "Event Feedback", icon: Calendar },
+    { value: "other", label: "Other", icon: MoreHorizontal },
   ];
 
   useEffect(() => {
@@ -396,9 +376,6 @@ const FeedbackPage = () => {
 
     setErrors(newErrors);
 
-    // Log for debugging
-    if (Object.keys(newErrors).length > 0) {
-    }
 
     return Object.keys(newErrors).length === 0;
   };
@@ -481,19 +458,19 @@ const FeedbackPage = () => {
   };
 
   return (
-    <div className="pastel-grid-bg min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="pastel-grid-bg min-h-screen bg-bg flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="max-w-6xl w-full mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-          className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
+          className="bg-card-bg shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
         >
           {/* FIXED FLEX LAYOUT */}
           <div className="md:flex">
 
             {/* LEFT SECTION */}
-            <div className="md:w-2/5 bg-black text-white p-12 flex flex-col justify-between">
+            <div className="md:w-2/5 bg-slate-900 text-white p-12 flex flex-col justify-between">
               <div>
                 <h2
                   className="text-4xl font-extrabold mb-6 tracking-wide"
@@ -512,7 +489,7 @@ const FeedbackPage = () => {
                   {/* CARD 1 */}
                   <div className="flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300">
                     <div className="bg-white/20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiMessageSquare className="w-7 h-7 text-white" />
+                      <MessageSquare className="w-7 h-7 text-white" />
                     </div>
 
                     <div>
@@ -529,7 +506,7 @@ const FeedbackPage = () => {
                   {/* CARD 2 */}
                   <div className="flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300">
                     <div className="bg-white/20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiStar className="w-7 h-7 text-white" />
+                      <Star className="w-7 h-7 text-white" />
                     </div>
 
                     <div>
@@ -546,7 +523,7 @@ const FeedbackPage = () => {
                   {/* CARD 3 */}
                   <div className="flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300">
                     <div className="bg-white/20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiCheckCircle className="w-7 h-7 text-white" />
+                      <CheckCircle className="w-7 h-7 text-white" />
                     </div>
 
                     <div>
@@ -591,7 +568,7 @@ const FeedbackPage = () => {
                   value={formData.name}
                   onChange={handleChange}
                   error={errors.name}
-                  icon={FiUser}
+                  icon={User}
                   required={true}
                 />
 
@@ -602,7 +579,7 @@ const FeedbackPage = () => {
                   value={formData.email}
                   onChange={handleChange}
                   error={errors.email}
-                  icon={FiMail}
+                  icon={Mail}
                   required={true}
                 />
 
@@ -613,14 +590,13 @@ const FeedbackPage = () => {
                   onChange={handleSelectChange}
                   options={feedbackTypes}
                   error={errors.feedbackType}
-                  icon={FiMessageSquare}
                   required={true}
                 />
 
                 {/* MESSAGE */}
                 <div className="relative mt-6">
                   <div className="relative">
-                    <FiMessageSquare className="absolute left-4 top-4 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
+                    <MessageSquare className="absolute left-4 top-4 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
 
                     <textarea
                       id="message"

@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useInView } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb, Code2, GitBranch, BookOpen, Users, CheckCircle,
-  Trophy, Clock, Star, ArrowRight, Search, Filter, ExternalLink,
+  Trophy, Clock, Star, ArrowRight, Search, ExternalLink,
   Calendar, Award, MessageCircle, Zap, Target, Globe,
   Copy, Bell, WifiOff
 } from "lucide-react";
@@ -277,9 +277,7 @@ const ResourceItem = memo(({ resource, onCopy }) => {
       setCopied(true);
       onCopy?.(resource.title);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
+    } catch {}
   };
   
   return (
@@ -515,7 +513,7 @@ const GSSoCContribution = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-[95%] mx-auto my-10 bg-white dark:bg-black min-h-screen pb-12"
+        className="w-[95%] mx-auto my-10 bg-bg min-h-screen pb-12"
         role="main"
       >
         {/* 🎯 HERO SECTION */}
@@ -639,7 +637,7 @@ const GSSoCContribution = () => {
         {/* 🎮 Achievements & Resources */}
         <motion.section variants={itemVariants} className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Achievements */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2 mb-4">
               <Award className="w-5 h-5 text-yellow-500" aria-hidden="true" />
               <h3 className="font-semibold text-gray-900 dark:text-white">Your Achievements</h3>
@@ -659,7 +657,7 @@ const GSSoCContribution = () => {
           </article>
 
           {/* Resources with Search & Filter */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-blue-500" aria-hidden="true" />
@@ -721,7 +719,7 @@ const GSSoCContribution = () => {
         </motion.section>
 
         {/* 👥 Mentors */}
-        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
+        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-indigo-500" aria-hidden="true" />
@@ -740,7 +738,7 @@ const GSSoCContribution = () => {
         </motion.section>
 
         {/* 📅 Timeline */}
-        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
+        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
           <div className="flex items-center gap-2 mb-4 sm:mb-6">
             <Calendar className="w-5 h-5 text-purple-500" aria-hidden="true" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Program Timeline</h3>
@@ -782,7 +780,7 @@ const GSSoCContribution = () => {
           </article>
 
           {/* Best Practices */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border dark:border-gray-700">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" aria-hidden="true" />

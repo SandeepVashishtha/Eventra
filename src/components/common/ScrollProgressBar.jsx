@@ -15,8 +15,9 @@ const ScrollProgressBar = () => {
       const scrollableHeight =
         documentHeight - windowHeight;
 
-      const progress =
-        (scrollTop / scrollableHeight) * 100;
+      const progress = scrollableHeight > 0
+        ? (scrollTop / scrollableHeight) * 100
+        : 0;
 
       setScrollProgress(progress);
     };
