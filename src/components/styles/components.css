@@ -557,7 +557,11 @@
   transition: color 0.3s ease;
 }
 .dark .hero-subtitle {
-  color: #d1d5db;
+  color: #e5e7eb;
+}
+
+.dark .hero-subtitle strong {
+  color: #93c5fd;
 }
 
 /* Highlight strong tags inside subtitle */

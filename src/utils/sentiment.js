@@ -45,7 +45,7 @@ export const analyzeSentiment = (text) => {
  * Gets a descriptive label and an emoji representation based on the sentiment score
  */
 export const getSentimentDisplay = (score) => {
-  if (score > 1.5) {
+  if (score >= 1.5) {
     return {
       emoji: "🌟",
       label: "Excited / Highly Positive",

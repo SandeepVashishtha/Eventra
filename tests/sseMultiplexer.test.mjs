@@ -1,17 +1,22 @@
 import assert from "node:assert/strict";
 
 // Mock environment and globals before importing sseMultiplexer
-process.env.REACT_APP_SSE_URL = "http://localhost:8080/api/v1";
 
 const store = {};
 globalThis.window = {
   addEventListener() {},
   removeEventListener() {},
   localStorage: {
-    getItem(key) { return store[key] || null; },
-    setItem(key, value) { store[key] = String(value); },
-    removeItem(key) { delete store[key]; }
-  }
+    getItem(key) {
+      return store[key] || null;
+    },
+    setItem(key, value) {
+      store[key] = String(value);
+    },
+    removeItem(key) {
+      delete store[key];
+    },
+  },
 };
 
 // Mock BroadcastChannel for tab coordination
@@ -47,11 +52,11 @@ Object.defineProperty(globalThis, "navigator", {
         lockAcquiredCallback = callback;
         // Resolve immediately to simulate lock acquisition
         return callback({});
-      }
-    }
+      },
+    },
   },
   writable: true,
-  configurable: true
+  configurable: true,
 });
 
 // Mock EventSource
@@ -73,7 +78,7 @@ class MockEventSource {
   emitMessage(data, type = "message") {
     this.onmessage?.({
       data: typeof data === "string" ? data : JSON.stringify(data),
-      type
+      type,
     });
   }
 }
@@ -90,13 +95,10 @@ const runTests = async () => {
   // Test 1: Local subscription and message delivery
   let receivedData = null;
   let receivedType = null;
-  const unsubscribe = sseMultiplexer.subscribe(
-    "/stream/leaderboard",
-    (data, type) => {
-      receivedData = data;
-      receivedType = type;
-    }
-  );
+  const unsubscribe = sseMultiplexer.subscribe("/stream/leaderboard", (data, type) => {
+    receivedData = data;
+    receivedType = type;
+  });
 
   // Reconcile and trigger open EventSource
   sseMultiplexer.reconcileConnections();
@@ -132,12 +134,12 @@ const runTests = async () => {
 
   // Test 4: UNSUBSCRIBE_ALL and multi-tab connection cleanup
   sseMultiplexer.isLeader = true;
-  
+
   // Simulate Tab B subscribing to "/stream/analytics" by broadcasting a SUBSCRIBE event
   sseMultiplexer.handleBroadcastMessage({
     type: "SUBSCRIBE",
     tabId: "tab_b",
-    path: "/stream/analytics"
+    path: "/stream/analytics",
   });
 
   // Reconcile on leader Tab A
@@ -152,7 +154,7 @@ const runTests = async () => {
   sseMultiplexer.handleBroadcastMessage({
     type: "UNSUBSCRIBE_ALL",
     tabId: "tab_b",
-    paths: ["/stream/analytics"]
+    paths: ["/stream/analytics"],
   });
 
   // Reconcile on leader Tab A
