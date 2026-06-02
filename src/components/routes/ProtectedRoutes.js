@@ -20,6 +20,7 @@ const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
 const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
+const UIInventoryEmptyState = lazy(() => import("../admin/UIInventoryEmptyState"));
 
 const withModuleBoundary = (children, boundaryName) => (
   <ErrorBoundary
@@ -142,6 +143,15 @@ export const getProtectedRoutes = () => [
         ]}
       >
         {withModuleBoundary(<SurveyEngine />, "Survey builder")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/admin/ui-inventory-empty"
+    path="/admin/ui-inventory-empty"
+    element={
+      <ProtectedRoute requiredRoles={[ROLES.ADMIN]}>
+        {withModuleBoundary(<UIInventoryEmptyState />, "UI Inventory Empty")}
       </ProtectedRoute>
     }
   />,
