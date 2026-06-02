@@ -1147,6 +1147,50 @@ GET /api/hackathons/1
 
 ---
 
+# Analytics APIs
+
+## Get Admin Analytics
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/admin/analytics` |
+
+Returns high-level system analytics and dashboard statistics.
+
+*This documentation update corresponds to the backend implementation for GET /api/admin/analytics.*
+
+### Authentication
+
+Requires a valid Bearer JWT in the `Authorization` header. This endpoint is restricted to users with `ADMIN`, `ORGANIZER`, or `SUPER_ADMIN` roles.
+
+### Successful Response (200)
+
+```json
+{
+  "monthlyRegistrations": [
+    { "month": "Jan", "count": 120 },
+    { "month": "Feb", "count": 150 }
+  ],
+  "categoryBreakdown": [
+    { "category": "Technology", "count": 20 },
+    { "category": "Design", "count": 8 }
+  ],
+  "registrationTrend": "up",
+  "topEvents": [
+    { "id": 1, "title": "Tech Conference 2026", "participants": 300 }
+  ]
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `401 Unauthorized` | JWT token is missing, invalid, or expired |
+| `403 Forbidden` | Authenticated user does not have the required administrative role |
+
+---
+
 # Structured Error Responses
 
 The backend returns standardized JSON error responses for better frontend integration and debugging.
