@@ -196,76 +196,56 @@ const useEventListing = () => {
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
   const filteredEvents = useMemo(() => {
-    let filtered = events;
+    const query = debouncedSearchQuery.trim() ? debouncedSearchQuery.toLowerCase().trim() : "";
+    const target = categoryFilter && categoryFilter !== "all" ? categoryFilter.toLowerCase() : null;
 
-    // 1. Search Bar: Real-time text filter matching Title or Description (case-insensitive)
-    if (debouncedSearchQuery.trim()) {
-      const query = debouncedSearchQuery.toLowerCase().trim();
-      filtered = events.filter((event) => {
+    // Single-pass filter: apply search, status, and category in one traversal,
+    // then pass the result through advanced filters. Eliminates 3 intermediate arrays.
+    const preFiltered = events.filter((event) => {
+      // 1. Search Bar
+      if (query) {
         const titleMatch = event.title?.toLowerCase().includes(query) ?? false;
         const descMatch = event.description?.toLowerCase().includes(query) ?? false;
-        return titleMatch || descMatch;
-      });
-    }
+        if (!titleMatch && !descMatch) return false;
+      }
 
-    // 2. Status Timing Filter ('Live Now', 'Upcoming', 'Past Events') based on current system date
-    filtered = filtered.filter((event) => {
+      // 2. Status Timing Filter
       const status = getEventStatus(event);
-      if (filterType === "live") {
-        return status === "live";
-      }
-      if (filterType === "upcoming") {
-        return status === "upcoming";
-      }
-      if (filterType === "past") {
-        return status === "past" || status === "ended";
-      }
-      return true; // "all"
-    });
+      if (filterType === "live" && status !== "live") return false;
+      if (filterType === "upcoming" && status !== "upcoming") return false;
+      if (filterType === "past" && status !== "past" && status !== "ended") return false;
 
-    // 3. Category Filter matching domain categories (Hackathons, Tech Talks, Cultural, Web Dev, etc.)
-    if (categoryFilter && categoryFilter !== "all") {
-      const target = categoryFilter.toLowerCase();
-      filtered = filtered.filter((event) => {
+      // 3. Category Filter
+      if (target) {
         const cat = event.category?.toLowerCase() || "";
         const type = event.type?.toLowerCase() || "";
-        
+
         if (target === "hackathon" || target === "hackathons") {
-          return type === "hackathon" || cat.includes("hackathon");
+          if (type !== "hackathon" && !cat.includes("hackathon")) return false;
+        } else if (target === "tech talks" || target === "tech-talks" || target === "conference") {
+          const isMatch = type === "conference" || type === "summit" ||
+            cat.includes("tech") || cat.includes("conference") || cat.includes("summit");
+          if (!isMatch) return false;
+        } else if (target === "cultural" || target === "networking" || target === "cultural & networking") {
+          const isMatch = cat.includes("networking") || cat.includes("cultural") || cat.includes("community");
+          if (!isMatch) return false;
+        } else {
+          const normalizedTarget = target.replace(/[^a-z0-9]+/g, "");
+          const normalizedCat = cat.replace(/[^a-z0-9]+/g, "");
+          const normalizedType = type.replace(/[^a-z0-9]+/g, "");
+          const isMatch = normalizedCat.includes(normalizedTarget) ||
+            normalizedType.includes(normalizedTarget) ||
+            normalizedTarget.includes(normalizedCat) ||
+            normalizedTarget.includes(normalizedType);
+          if (!isMatch) return false;
         }
-        if (target === "tech talks" || target === "tech-talks" || target === "conference") {
-          return (
-            type === "conference" ||
-            type === "summit" ||
-            cat.includes("tech") ||
-            cat.includes("conference") ||
-            cat.includes("summit")
-          );
-        }
-        if (target === "cultural" || target === "networking" || target === "cultural & networking") {
-          return (
-            cat.includes("networking") ||
-            cat.includes("cultural") ||
-            cat.includes("community")
-          );
-        }
-        
-        // General domain category matching (e.g. web development -> web-development / web)
-        const normalizedTarget = target.replace(/[^a-z0-9]+/g, "");
-        const normalizedCat = cat.replace(/[^a-z0-9]+/g, "");
-        const normalizedType = type.replace(/[^a-z0-9]+/g, "");
-        
-        return (
-          normalizedCat.includes(normalizedTarget) ||
-          normalizedType.includes(normalizedTarget) ||
-          normalizedTarget.includes(normalizedCat) ||
-          normalizedTarget.includes(normalizedType)
-        );
-      });
-    }
+      }
+
+      return true;
+    });
 
     // 4. Advanced Filters fallback
-    return applyAdvancedFilters(filtered, advancedFilters);
+    return applyAdvancedFilters(preFiltered, advancedFilters);
   }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
 
   const sortedEvents = useMemo(() => {
