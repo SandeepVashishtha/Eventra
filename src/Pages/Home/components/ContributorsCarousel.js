@@ -1,16 +1,6 @@
+import { Github, ExternalLinkAlt, CodeBranch, MapMarkerAlt, Building, UserFriends, Medal, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
-import {
-  FaGithub,
-  FaExternalLinkAlt,
-  FaCodeBranch,
-  FaMapMarkerAlt,
-  FaBuilding,
-  FaUserFriends,
-  FaMedal,
-  FaChevronLeft,
-  FaChevronRight,
-} from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { throttleProfileFetch } from "../../../components/Contributors";
@@ -245,7 +235,6 @@ const Contributors = () => {
   }, [fetchGitHubProfile]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchContributors();
   }, [fetchContributors]);
 
@@ -324,7 +313,7 @@ const Contributors = () => {
             disabled={currentIndex === 0}
            aria-label="Previous slide">
             {/* UPDATED: Arrow icon color */}
-            <FaChevronLeft className="text-gray-900 dark:text-white text-xl" />
+            <ChevronLeft className="text-gray-900 dark:text-white text-xl" />
           </button>
 
           <button
@@ -335,7 +324,7 @@ const Contributors = () => {
             aria-label="Next slide"
           >
             {/* UPDATED: Arrow icon color */}
-            <FaChevronRight className="text-gray-900 dark:text-white text-xl" />
+            <ChevronRight className="text-gray-900 dark:text-white text-xl" />
           </button>
 
           {/* Carousel Content */}
@@ -383,7 +372,7 @@ const Contributors = () => {
                       {c.name ? c.name : c.login || "Unknown Contributor"}
                     </h3>
                     <p className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-3 flex items-center justify-center gap-1">
-                      <FaMedal className="text-yellow-500" />{" "}
+                      <Medal className="text-yellow-500" />{" "}
                       {c.role}
                     </p>
 
@@ -409,21 +398,21 @@ const Contributors = () => {
                   <div className="grid grid-cols-3 gap-3 text-sm text-gray-900 dark:text-white my-3 w-full">
                     {/* UPDATED: Stat box background and icon colors */}
                     <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
+                      <CodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
                       <span className="font-semibold">{c.public_repos}</span>
                       <span className="text-xs text-gray-600 dark:text-gray-400">
                         Repos
                       </span>
                     </div>
                     <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <FaUserFriends className="text-gray-900 dark:text-indigo-400 mb-1" />
+                      <UserFriends className="text-gray-900 dark:text-indigo-400 mb-1" />
                       <span className="font-semibold">{c.followers}</span>
                       <span className="text-xs text-gray-600 dark:text-gray-400">
                         Followers
                       </span>
                     </div>
                     <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
+                      <CodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
                       <span className="font-semibold">{c.contributions}</span>
                       <span className="text-xs text-gray-600 dark:text-gray-400">
                         Contribs
@@ -442,12 +431,12 @@ const Contributors = () => {
                   <div className="flex flex-col gap-1 text-xs text-gray-700 dark:text-gray-300 mb-4">
                     {c.company && (
                       <span className="flex items-center gap-1 justify-center">
-                        <FaBuilding /> {c.company}
+                        <Building /> {c.company}
                       </span>
                     )}
                     {c.location && (
                       <span className="flex items-center gap-1 justify-center">
-                        <FaMapMarkerAlt /> {c.location}
+                        <MapMarkerAlt /> {c.location}
                       </span>
                     )}
                   </div>
@@ -460,11 +449,11 @@ const Contributors = () => {
                       className="group inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out transform relative overflow-hidden"
                     >
                       {/* GitHub Icon with animation */}
-                      <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-gray-200" />
+                      <Github className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-gray-200" />
 
                       <span>Profile</span>
 
-                      <FaExternalLinkAlt className="text-sm opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
+                      <ExternalLinkAlt className="text-sm opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
                     </a>
                   </div>
                 </motion.div>
@@ -495,7 +484,7 @@ const Contributors = () => {
               className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>View All Contributors</span>
-              <FaExternalLinkAlt className="text-sm" />
+              <ExternalLinkAlt className="text-sm" />
             </Link>
             <Link
               to="/ContributorGuide"
@@ -503,7 +492,7 @@ const Contributors = () => {
               className="inline-flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out ml-10"
             >
               <span>Guide</span>
-              <FaExternalLinkAlt className="text-sm" />
+              <ExternalLinkAlt className="text-sm" />
             </Link>
           </div>
         </div>

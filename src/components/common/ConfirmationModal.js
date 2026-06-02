@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import "./ConfirmationModal.css";
 
 const FOCUSABLE_SELECTOR = [
@@ -30,8 +30,8 @@ const ConfirmationModal = ({
 
     const prevOverflow = document.body.style.overflow;
     previouslyFocusedElementRef.current = document.activeElement;
-    document.body.style.overflow = "hidden";
 
+    document.body.style.overflow = "hidden";
     cancelButtonRef.current?.focus();
 
     const handleKeyDown = (event) => {
@@ -43,8 +43,8 @@ const ConfirmationModal = ({
       if (event.key !== "Tab") return;
 
       const focusableElements = Array.from(
-        modalRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) || [],
-      ).filter((element) => !element.hasAttribute("disabled"));
+        modalRef.current.querySelectorAll(FOCUSABLE_SELECTOR)
+      ).filter((el) => !el.hasAttribute("disabled"));
 
       if (focusableElements.length === 0) {
         event.preventDefault();
@@ -75,6 +75,7 @@ const ConfirmationModal = ({
     };
 
     document.addEventListener("keydown", handleKeyDown);
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = prevOverflow;
@@ -84,7 +85,6 @@ const ConfirmationModal = ({
       previouslyFocusedElementRef.current = null;
     };
   }, [isOpen, onClose]);
-
 
   if (!isOpen) return null;
 

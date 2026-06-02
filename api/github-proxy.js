@@ -128,12 +128,12 @@ async function handler(req, res) {
   const token = process.env.GITHUB_TOKEN;
 
   try {
-    const fetchRes = await fetch(url.toString(), {
+    const fetchRes = await fetchWithTimeout(url.toString(), {
       headers: {
         Accept: "application/vnd.github.v3+json",
         ...(token ? { Authorization: `token ${token}` } : {}),
       },
-    });
+    }, 10000);
 
     const data = await fetchRes.json();
 
@@ -148,6 +148,11 @@ async function handler(req, res) {
   } catch (error) {
     console.error("GitHub Proxy Error:", error);
     return res.status(500).json({ error: "Failed to fetch from GitHub API" });
+  }
+}
+
+export default verifyAuth(handler);
+
   }
 }
 

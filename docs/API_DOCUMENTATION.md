@@ -834,6 +834,41 @@ Authorization: Bearer <token>
 
 - Related event registrations are automatically cleaned up by the backend before the event is deleted.
 
+---
+
+## Stream Event Updates (SSE)
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/events/stream` |
+
+Opens a Server-Sent Events stream connection for event updates.
+
+### Authentication
+Public. No authentication required.
+
+### Purpose
+- This endpoint currently establishes a basic SSE connection.
+- It sends an initial connected event to confirm the stream is active.
+- It prepares the backend for future real-time event broadcasts.
+- *Note: Full real-time event create/update/register broadcasting is not yet implemented.*
+
+### Response Media Type
+`text/event-stream`
+
+### Manual Test Command
+```bash
+curl -N http://localhost:8080/api/events/stream
+```
+
+### Example Stream Output
+```text
+event:connected
+data:Stream connected successfully
+```
+
+#### Backend Implementation PR
+[SandeepVashishtha/Eventra-Backend#BACKEND_PR_NUMBER](https://github.com/SandeepVashishtha/Eventra-Backend/pull/BACKEND_PR_NUMBER)
 
 ---
 
@@ -981,6 +1016,43 @@ Not required. Public endpoint.
   "timestamp": "2026-05-30T02:01:54.6254625"
 }
 ```
+
+---
+
+## Upvote Project
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/projects/{id}/upvote` |
+
+Increments the upvote count for a project by 1 and returns the updated project details.
+
+### Authentication
+Requires a valid Bearer JWT in the `Authorization` header. Any authenticated user can upvote.
+
+### Success Response
+Status: `200 OK`
+
+#### Response Example:
+
+```json
+{
+  "id": 1,
+  "title": "Manual Test Project",
+  "description": "Project detail API manual verification",
+  "category": "Web Development",
+  "thumbnailUrl": "https://example.com/project.png",
+  "githubUrl": "https://github.com/example/project",
+  "upvotes": 1
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `401 Unauthorized` | JWT token is missing, invalid, or expired |
+| `404 Not Found` | Project not found with the given ID |
 
 ---
 

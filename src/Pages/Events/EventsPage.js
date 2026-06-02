@@ -14,6 +14,17 @@ import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import { EventTimeline } from "../../components/EventTimeline";
+import {
+  decodeAdvancedFilters,
+  encodeAdvancedFilters,
+  getDefaultFilters,
+  hasActiveFilters as hasActiveAdvancedFilters,
+  normalizeAdvancedFilters,
+  serializeAdvancedFilters,
+} from "../../utils/advancedFilterUtils";
+
+const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
 const DEFAULT_EVENTS_PER_PAGE = 6;
 const renderCardSection = (
@@ -95,6 +106,8 @@ const EventsPage = () => {
 
   const listing = useEventListing();
   const cardSectionRef = useRef();
+  const hasHydratedFilters = useRef(false);
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
 
   // Local input value updates immediately on each keystroke so the input
   // feels responsive. The debounced value is passed to the listing hook so
@@ -108,8 +121,20 @@ const EventsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchQuery]);
 
-  // Initialize state from URL params
+  // Initialize state from URL params, falling back to persisted filters.
   useEffect(() => {
+    if (hasHydratedFilters.current) return;
+
+    let savedFilters = {};
+
+    try {
+      savedFilters = JSON.parse(
+        window.localStorage.getItem(FILTER_STORAGE_KEY) || "{}"
+      );
+    } catch {
+      savedFilters = {};
+    }
+
     const page = parseInt(searchParams.get("page")) || 1;
     const perPage =
       parseInt(searchParams.get("perPage")) || DEFAULT_EVENTS_PER_PAGE;
@@ -125,10 +150,14 @@ const EventsPage = () => {
       listing.setEventsPerPage(perPage);
     }
     if (page !== 1) listing.setSafePage(page);
-  }, [searchParams, routeSearchQuery]);
+    hasHydratedFilters.current = true;
+    setFiltersHydrated(true);
+  }, [searchParams, routeSearchQuery, listing]);
 
   // Sync search query when URL param changes (e.g. navigating from navbar search)
   useEffect(() => {
+    if (!filtersHydrated) return;
+
     const params = {};
     if (listing.currentPage > 1) params.page = listing.currentPage;
     if (listing.eventsPerPage !== DEFAULT_EVENTS_PER_PAGE) {
@@ -138,7 +167,26 @@ const EventsPage = () => {
     if (listing.filterType !== "all") params.filter = listing.filterType;
     if (listing.sortType !== "Newest") params.sort = listing.sortType;
     if (listing.viewMode !== "grid") params.view = listing.viewMode;
+    if (hasActiveAdvancedFilters(listing.advancedFilters)) {
+      params.filters = encodeAdvancedFilters(listing.advancedFilters);
+    }
     setSearchParams(params, { replace: true });
+
+    try {
+      window.localStorage.setItem(
+        FILTER_STORAGE_KEY,
+        JSON.stringify({
+          searchQuery: listing.searchQuery,
+          filterType: listing.filterType,
+          sortType: listing.sortType,
+          viewMode: listing.viewMode,
+          perPage: listing.eventsPerPage,
+          advancedFilters: serializeAdvancedFilters(listing.advancedFilters),
+        })
+      );
+    } catch {
+      // localStorage can be unavailable in private browsing or embedded views.
+    }
   }, [
     listing.currentPage,
     listing.eventsPerPage,
@@ -146,17 +194,26 @@ const EventsPage = () => {
     listing.filterType,
     listing.sortType,
     listing.viewMode,
+    listing.advancedFilters,
+    filtersHydrated,
     setSearchParams,
   ]);
 
-  // Keep local state in sync when route search changes.
+  // Keep local state in sync when an explicit route search changes.
   useEffect(() => {
+    if (!rawSearchParam) return;
+
     const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
     if (safeQuery !== listing.searchQuery) {
       setLocalSearchInput(safeQuery);
       listing.setSearchQuery(safeQuery);
     }
-  }, [routeSearchQuery, listing.searchQuery, listing.setSearchQuery]);
+  }, [
+    rawSearchParam,
+    routeSearchQuery,
+    listing.searchQuery,
+    listing.setSearchQuery,
+  ]);
 
   const handleSearch = (query = "") => {
     const safeQuery = prepareSafeSearchQuery(query.trim());
@@ -192,13 +249,9 @@ const EventsPage = () => {
     listing.setSearchQuery("");
     listing.setFilterType("all");
     listing.setSortType("Newest");
+    listing.setAdvancedFilters(getDefaultFilters());
     setLocalSearchInput("");
   };
-
-  const hasActiveFilters =
-    listing.filterType !== "all" ||
-    listing.sortType !== "Newest" ||
-    listing.searchQuery !== "";
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
@@ -246,6 +299,8 @@ const EventsPage = () => {
           setSortType={listing.setSortType}
           viewMode={listing.viewMode}
           setViewMode={listing.setViewMode}
+          advancedFilters={listing.advancedFilters}
+          onAdvancedFiltersChange={listing.setAdvancedFilters}
         />
 
         <SectionErrorBoundary label="Events">
@@ -267,6 +322,13 @@ const EventsPage = () => {
             </div>
           )}
         </SectionErrorBoundary>
+
+        {/* Interactive Event Timeline Planner Section */}
+        <div className="mt-12 sm:mt-16">
+          <SectionErrorBoundary label="Event Timeline Planner">
+            <EventTimeline />
+          </SectionErrorBoundary>
+        </div>
       </div>
 
       <EventCTA />
