@@ -79,9 +79,9 @@ export default defineConfig(({ mode }) => {
       outDir: "build",
       sourcemap: false,
       minify: "esbuild",
-      // Disable CSS minification — lightningcss (Vite 8 default) cannot parse
-      // the custom Tailwind `short` screen: (max-height: 520px) media query.
-      cssMinify: false,
+      // Use esbuild for CSS minification instead of the default lightningcss,
+      // which cannot parse the custom Tailwind `short` screen media query.
+      cssMinify: "esbuild",
       chunkSizeWarningLimit: 1500,
       rollupOptions: {
         output: {
