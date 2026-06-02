@@ -297,6 +297,11 @@ export const API_ENDPOINTS = {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
   },
+  TICKETS: {
+    VALIDATE: buildApiUrl("/api/tickets/validate"),
+    CHECK_IN: buildApiUrl("/api/tickets/checkin"),
+    HISTORY: buildApiUrl("/api/tickets/checkins"),
+  },
   ADMIN: {
     USERS: buildApiUrl("/api/admin/users"),
     USER: (id) => buildApiUrl(`/api/admin/users/${id}`),
