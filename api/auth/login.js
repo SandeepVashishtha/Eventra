@@ -107,19 +107,22 @@ async function handler(req, res) {
     // Rate Limiting (brute-force protection)
     // -----------------------------------------------------------------------
 
-    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
+    const clientIp =
+  req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+  || req.headers?.["x-real-ip"]
+  || req.socket?.remoteAddress
+  || null;
 
-    loginRateLimiter.evictStale();
+if (clientIp) {
+  loginRateLimiter.evictStale();
 
-    if (!loginRateLimiter.check(clientIp)) {
-      return corsResponse(req, res, 429, {
-        error: "Too many login attempts. Please try again later.",
-        retryAfter: 60,
-      });
-    }
+  if (!loginRateLimiter.check(clientIp)) {
+    return corsResponse(req, res, 429, {
+      success: false,
+      message: "Too many authentication attempts. Please try again later.",
+    });
+  }
+}
 
     // -----------------------------------------------------------------------
     // Find user by username or email
@@ -212,7 +215,6 @@ async function handler(req, res) {
     }
 
     // Reset rate limit on successful login so a legitimate user is not penalised
-    loginRateLimiter.reset(clientIp);
 
     return corsResponse(req, res, 200, {
       message: "Login successful",
