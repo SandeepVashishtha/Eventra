@@ -19,6 +19,8 @@ const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
+const MFASetup = lazy(() => import("../../Pages/Auth/MFASetup"));
+const AuditLogs = lazy(() => import("../../Pages/Admin/AuditLogs"));
 
 const withModuleBoundary = (children, boundaryName) => (
   <ErrorBoundary
@@ -91,6 +93,24 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         {withModuleBoundary(<MatchmakingHub />, "Matchmaking Hub")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/auth/mfa"
+    path="/auth/mfa"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<MFASetup />, "MFA Setup")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/admin/audit-logs"
+    path="/admin/audit-logs"
+    element={
+      <ProtectedRoute requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}>
+        {withModuleBoundary(<AuditLogs />, "Security Audit Logs")}
       </ProtectedRoute>
     }
   />,
