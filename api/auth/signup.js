@@ -30,6 +30,7 @@ if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
 }
 
 const users = new Map();
+const usersById = new Map();
 const usersByUsername = new Map();
 
 // ---------------------------------------------------------------------------
@@ -230,6 +231,7 @@ async function handler(req, res) {
 
     // Store user (in production, save to database)
     users.set(normalizedEmail, newUser);
+    usersById.set(userId, newUser);
     if (newUser.username) {
       usersByUsername.set(newUser.username.toLowerCase(), newUser);
     }
@@ -301,4 +303,4 @@ const signupRateLimiterMiddleware = createRateLimiterMiddleware({
 });
 
 export default signupRateLimiterMiddleware(handler);
-export { users, usersByUsername };
+export { users, usersById, usersByUsername };

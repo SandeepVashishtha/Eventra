@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../auth/jwt-config.js";
-import { users } from "../auth/signup.js";
+import { users, usersById } from "../auth/signup.js";
 
 // ---------------------------------------------------------------------------
 // JWT Middleware
@@ -61,7 +61,7 @@ export const verifyAuth = (handler) => {
     if (userEmail || userId) {
       const userExists = userEmail
         ? users.has(userEmail.toLowerCase())
-        : Array.from(users.values()).some((u) => u.id === userId);
+        : usersById.has(userId);
 
       if (!userExists) {
         return res.status(401).json({
