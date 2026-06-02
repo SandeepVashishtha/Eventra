@@ -130,11 +130,6 @@ const AdminDashboard = () => {
     setActiveTab("overview");
   }, [location.pathname]);
 
-  if (!isAdmin) {
-    if (!user) return <Navigate to="/login" replace />;
-    return <Navigate to="/unauthorized" replace />;
-  }
-
   const loadUsers = useCallback(async (page, search) => {
     setUsersLoading(true);
     setUsersError(null);
@@ -221,6 +216,11 @@ const AdminDashboard = () => {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchEvent]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!isAdmin) {
+    if (!user) return <Navigate to="/login" replace />;
+    return <Navigate to="/unauthorized" replace />;
+  }
 
   const handleConfirmDelete = async () => {
     const { type, id } = confirmModal;
