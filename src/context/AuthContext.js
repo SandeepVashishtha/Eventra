@@ -92,6 +92,11 @@ export const AuthProvider = ({ children }) => {
 
   const extractSession = useCallback(
     (res, data, fallbackEmail) => {
+      // Prefer an explicit token from the response body (legacy / non-HttpOnly
+      // deployments) or from a Bearer header, but fall back to "cookie-managed"
+      // when neither is present. The server sets an HttpOnly cookie that is
+      // transmitted automatically via withCredentials on every subsequent
+      // request; no client-side token string is needed for that flow.
       let sessionToken = data?.token ?? data?.accessToken ?? null;
 
       if (!sessionToken) {
@@ -99,6 +104,13 @@ export const AuthProvider = ({ children }) => {
         if (authHeader && authHeader.startsWith("Bearer ")) {
           sessionToken = authHeader.substring(7);
         }
+      }
+
+      // Cookie-only flow: the server set an HttpOnly cookie but did not include
+      // the token in the response body.  Sentinel value tells the rest of
+      // AuthContext not to attempt client-side JWT validation.
+      if (!sessionToken) {
+        sessionToken = "cookie-managed";
       }
 
       const rawUser = data?.user ?? data?.data ?? data ?? null;
@@ -293,11 +305,10 @@ export const AuthProvider = ({ children }) => {
           throw new Error(data?.message || data?.error || "Invalid credentials");
         }
 
+        // extractSession now returns "cookie-managed" instead of null when the
+        // server uses HttpOnly cookies and omits the token from the response
+        // body. There is no longer a missing-token failure path here.
         const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
-
-        if (!sessionToken) {
-          throw new Error("Login failed: token missing from response");
-        }
 
         const persisted = persistSession(sessionToken, sessionUser);
         if (!persisted) return false;
