@@ -13,6 +13,7 @@ import {
   ChevronUp,
   ChevronDown
 } from "lucide-react";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Confetti Component for celebration
 const OnboardingConfetti = () => {
@@ -107,40 +108,32 @@ export default function OnboardingChecklist() {
   const checkTaskStatus = () => {
     // 1. Check user profile / skills in local storage or state
     let interestsDone = false;
-    try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        if (parsed.skills && parsed.skills.length > 0) {
-          interestsDone = true;
-        }
-      } else if (user?.skills && user.skills.length > 0) {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsed = safeJsonParse(storedUser, {});
+      if (parsed.skills && parsed.skills.length > 0) {
         interestsDone = true;
       }
-      
-      const storedInterests = localStorage.getItem("user_interests");
-      if (storedInterests) {
-        const parsedInt = JSON.parse(storedInterests);
-        if (parsedInt.length > 0) {
-          interestsDone = true;
-        }
+    } else if (user?.skills && user.skills.length > 0) {
+      interestsDone = true;
+    }
+    
+    const storedInterests = localStorage.getItem("user_interests");
+    if (storedInterests) {
+      const parsedInt = safeJsonParse(storedInterests, []);
+      if (parsedInt.length > 0) {
+        interestsDone = true;
       }
-    } catch (e) {
-      console.error("Error reading interests for onboarding checklist:", e);
     }
 
     // 2. Check bookmarked projects
     let bookmarkDone = false;
-    try {
-      const storedBookmarks = localStorage.getItem("eventra_bookmarked_projects");
-      if (storedBookmarks) {
-        const parsed = JSON.parse(storedBookmarks);
-        if (parsed.length > 0) {
-          bookmarkDone = true;
-        }
+    const storedBookmarks = localStorage.getItem("eventra_bookmarked_projects");
+    if (storedBookmarks) {
+      const parsed = safeJsonParse(storedBookmarks, []);
+      if (parsed.length > 0) {
+        bookmarkDone = true;
       }
-    } catch (e) {
-      console.error("Error reading bookmarks for onboarding checklist:", e);
     }
 
     // 3. Check sandbox request execution

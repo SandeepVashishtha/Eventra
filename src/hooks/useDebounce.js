@@ -7,17 +7,15 @@ import { useState, useEffect } from "react";
  * @returns {any} The debounced value.
  */
 export default function useDebounce(value, delay = 300) {
+  const safeDelay = typeof delay === 'number' && isFinite(delay) && delay > 0 ? delay : 300;
   const [debouncedValue, setDebouncedValue] = useState(value);
-
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value);
-    }, delay);
-
+    }, safeDelay);
     return () => {
       clearTimeout(handler);
     };
-  }, [value, delay]);
-
+  }, [value, safeDelay]);
   return debouncedValue;
 }

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 
 /**
  * A drop-in replacement for useState that skips state updates when the new
@@ -40,7 +40,9 @@ export function useStableFilters(initialValue) {
 
   // Keep the ref in sync so the stable setter always compares against the
   // latest committed value, not a stale closure capture.
-  valueRef.current = value;
+  useEffect(()=>{
+    valueRef.current=value;
+  },[value]);
 
   const setStableValue = useCallback((newValue) => {
     try {
