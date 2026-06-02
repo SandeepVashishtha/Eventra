@@ -76,15 +76,17 @@ export const fetchWithTimeout = async (
     };
   } catch (error) {
     if (error.name === "AbortError") {
-      logger.error("[fetchWithTimeout] Request aborted or timed out:", url);
-
-      throw new FetchError(
-        `Request timed out after ${timeout}ms or was manually aborted`
-      );
+      // Check if it was our timeout that caused the abort, or the user's custom signal
+      if (options.signal && options.signal.aborted) {
+        logger.log("[fetchWithTimeout] Request aborted by user/component:", url);
+        throw error;
+      } else {
+        logger.error("[fetchWithTimeout] Request timeout:", url);
+        throw new FetchError(`Request timed out after ${timeout}ms`);
+      }
     }
 
     logger.error("[fetchWithTimeout] Request failed:", error);
-
     throw error;
   } finally {
     clearTimeout(timeoutId);
