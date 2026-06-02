@@ -63,9 +63,11 @@ const toEventSummary = (event) => ({
 // Persisted record shape — strips all PII before writing to localStorage.
 // formData and the full event object are intentionally excluded.
 // ---------------------------------------------------------------------------
-const toPersistedRecord = (eventId, registeredAt, event) => ({
+const toPersistedRecord = (eventId, registeredAt, event, registrationId, qrToken) => ({
   eventId,
   registeredAt,
+  registrationId,
+  qrToken,
   eventSummary: toEventSummary(event),
 });
 
@@ -88,7 +90,7 @@ const saveToStorage = (userId, records) => {
   if (!userId) return;
   // Only persist the minimal, PII-free shape — strip formData and full event
   const persisted = records.map((r) =>
-    toPersistedRecord(r.eventId, r.registeredAt, r.event || r.eventSummary),
+    toPersistedRecord(r.eventId, r.registeredAt, r.event || r.eventSummary, r.registrationId, r.qrToken),
   );
   try {
     localStorage.setItem(storageKey(userId), JSON.stringify(persisted));
@@ -136,8 +138,10 @@ export const MyEventsProvider = ({ children }) => {
    *
    * @param {object} event    — the full event object (kept in session state only)
    * @param {object} formData — the registration form data (kept in session state only)
+   * @param {string} registrationId — the unique registration identifier
+   * @param {string} qrToken — the signed JWT ticket token
    */
-  const addRegistration = useCallback((event, formData = {}) => {
+  const addRegistration = useCallback((event, formData = {}, registrationId = null, qrToken = null) => {
     setMyEvents((prev) => {
       if (prev.some((r) => r.eventId === event.id)) return prev;
       return [
@@ -145,6 +149,8 @@ export const MyEventsProvider = ({ children }) => {
         {
           eventId: event.id,
           registeredAt: new Date().toISOString(),
+          registrationId: registrationId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`),
+          qrToken: qrToken || "",
           // formData and event are kept in memory for this session so the
           // success screen can display them, but they are NOT written to
           // localStorage (saveToStorage strips them via toPersistedRecord).
