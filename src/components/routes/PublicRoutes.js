@@ -1,13 +1,11 @@
 import { lazy } from "react";
 import { Route } from "react-router-dom";
-import PageLayout from "../Layout/PageLayout";
 import ProtectedRoute from "../auth/ProtectedRoute";
 import ErrorBoundary from "../common/ErrorBoundary";
 
 // ─── Lazy-loaded page components ─────────────────────────────────────────────
 // 🔥 FIX: Removed duplicate const declarations for all components
 const HealthCheckPage = lazy(() => import("../../Pages/HealthCheckPage"));
-const CertificateVerifier = lazy(() => import("../../Pages/CertificateVerification/CertificateVerifier"));
 const MockApiResponse = lazy(() => import("../MockApiResponse"));
 
 const HomePage = lazy(() => import("../../Pages/Home/HomePage"));
@@ -34,9 +32,6 @@ const ContactUs = lazy(() => import("../../Pages/Contact/ContactUs"));
 const FeedbackPage = lazy(() => import("../../Pages/Feedback/FeedbackPage"));
 const BookmarkedEvents = lazy(() => import("../../Pages/Events/BookmarkedEvents"));
 const RemindersPage = lazy(() => import("../../Pages/Events/RemindersPage"));
-const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
-const FloorPlanDesignerPage = lazy(() => import("../../Pages/Events/FloorPlanDesignerPage"));
-const VirtualVenueWalkthrough = lazy(() => import("../../Pages/Events/VirtualVenueWalkthrough"));
 const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
 
 const withModuleBoundary = (children, boundaryName) => (
@@ -62,8 +57,7 @@ export const getPublicRoutes = () => [
   <Route key="/hackathons-lifecycle" path="/hackathons/:id/lifecycle" element={withModuleBoundary(<HackathonLifecycle />, "Hackathon lifecycle")} />,
   <Route key="/projects" path="/projects" element={withModuleBoundary(<ProjectsPage />, "Projects explorer")} />,
   <Route key="/leaderboard" path="/leaderboard" element={withModuleBoundary(<LeaderBoard />, "Leaderboard")} />,
-  <Route key="/communityEvent" path="/communityEvent" element={withModuleBoundary(<CommunityEvent />, "Community Events")} />,
-  <Route key="/leaderBoard" path="/leaderBoard" element={withModuleBoundary(<LeaderBoard />, "Leaderboard")} />,
+  <Route key="/community-event" path="/community-event" element={withModuleBoundary(<CommunityEvent />, "Community Events")} />,
 <Route key="/about" path="/about" element={withModuleBoundary(<AboutPage />, "About")} />,
 <Route key="/faq" path="/faq" element={withModuleBoundary(<FAQPage />, "FAQ")} />,
 <Route key="/contact" path="/contact" element={withModuleBoundary(<ContactUs />, "Contact")} />,
@@ -72,7 +66,7 @@ export const getPublicRoutes = () => [
 <Route key="/documentation" path="/documentation" element={withModuleBoundary(<DocumentationPage />, "Documentation")} />,
 <Route key="/terms" path="/terms" element={withModuleBoundary(<Terms />, "Terms")} />,
 <Route key="/privacy" path="/privacy" element={withModuleBoundary(<Privacy />, "Privacy")} />,
-<Route key="/apiDocs" path="/apiDocs" element={withModuleBoundary(<ApiDocs />, "API Docs")} />,
+<Route key="/api-docs" path="/api-docs" element={withModuleBoundary(<ApiDocs />, "API Docs")} />,
 <Route key="/helpcenter" path="/helpcenter" element={withModuleBoundary(<HelpCenter />, "Help Center")} />,
 <Route key="/feedback" path="/feedback" element={withModuleBoundary(<FeedbackPage />, "Feedback")} />,
 <Route key="/bookmarks" path="/bookmarks" element={withModuleBoundary(<BookmarkedEvents />, "Bookmarks")} />,

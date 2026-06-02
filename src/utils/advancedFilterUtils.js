@@ -93,15 +93,29 @@ const toDateInputValue = (value) => {
 
 /**
  * Get category label from mapping
+ * @param {string} categoryKey - The key or label to look up
+ * @returns {string} The display label or the original key if not found
  */
 export const getCategoryLabel = (categoryKey) => {
-  if (!categoryKey) return categoryKey;
+  // 🛡️ Robust Defensive Guard: Return empty string for null/undefined/falsy values
+  // to prevent downstream UI components from crashing when trying to render/slice.
+  if (categoryKey === null || categoryKey === undefined) {
+    return "";
+  }
+
+  // Handle empty strings or whitespace-only keys early
+  const trimmedKey = String(categoryKey).trim();
+  if (!trimmedKey) {
+    return "";
+  }
+
   const category = EVENT_CATEGORIES.find(
     (cat) =>
-      cat.id === categoryKey ||
-      normalizeFilterValue(cat.label) === normalizeFilterValue(categoryKey),
+      cat.id === trimmedKey ||
+      normalizeFilterValue(cat.label) === normalizeFilterValue(trimmedKey),
   );
-  return category?.label || categoryKey;
+
+  return category?.label || trimmedKey;
 };
 
 /**

@@ -1,3 +1,4 @@
+import { ArrowRightIcon, CalendarIcon, MapPinIcon, UsersIcon, ClipboardDocumentListIcon, Ticket, TagIcon, CheckCircleIcon, PencilIcon, AlertCircleIcon, Trash2Icon } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
@@ -6,19 +7,6 @@ import useReducedMotion from "../hooks/useReducedMotion";
 import CharacterCounter from "./common/CharacterCounter";
 import { exportAttendeesToCSV } from "../utils/exportCsv";
 import { logger } from "../utils/logger";
-import {
-  ArrowRightIcon,
-  CalendarIcon,
-  MapPinIcon,
-  UsersIcon,
-  ClipboardDocumentListIcon,
-  TicketIcon,
-  TagIcon,
-  CheckCircleIcon,
-  PencilIcon,
-  AlertCircleIcon,
-  Trash2Icon,
-} from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../config/api";
 import {
   Calendar,
@@ -1489,7 +1477,7 @@ const EventCreation = () => {
               <motion.div variants={fadeInUp} className="border-t border-gray-200 dark:border-gray-700 pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <TicketIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <Ticket className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       Ticket Tiers
                     </h3>
@@ -1689,7 +1677,7 @@ const EventCreation = () => {
                   {formData.ticketTiers.filter(t => t.name).length > 0 && (
                     <div className="space-y-3">
                       <h4 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                        <TicketIcon className="w-4 h-4 text-indigo-600" />
+                        <Ticket className="w-4 h-4 text-indigo-600" />
                         Available Tickets
                       </h4>
                       <div className="space-y-2">

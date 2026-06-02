@@ -1,6 +1,6 @@
+import { AlertCircle, ChevronDown, Search, X } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiAlertCircle, FiChevronDown, FiSearch, FiX } from "react-icons/fi";
 import SEOHead from "../../components/SEOHead";
 
 import ProjectHero from "./ProjectHero";
@@ -15,7 +15,7 @@ import { safeJsonParse } from "../../utils/safeJsonParse";
 // Modern custom styled search input
 const ModernSearchInput = ({ value, onChange, placeholder }) => (
   <div className="relative flex items-center w-full">
-    <FiSearch className="absolute left-4 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
+    <Search className="absolute left-4 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
     <input
       type="text"
       value={value}
@@ -28,7 +28,7 @@ const ModernSearchInput = ({ value, onChange, placeholder }) => (
         onClick={() => onChange({ target: { value: "" } })}
         className="absolute right-4 text-gray-400 dark:text-gray-500 hover:text-black dark:hover:text-white transition-colors"
       >
-        <FiX className="w-4 h-4" />
+        <X className="w-4 h-4" />
       </button>
     )}
   </div>
@@ -167,19 +167,13 @@ if (projectsList.length > 0) {
         }
 
         // --- MOCK DATA FALLBACK: API returned empty or invalid array ---
-        console.warn("Projects API returned empty or invalid array — loading mock data.");
         setProjects(mockProjects);
         const mockUniqueCategories = [
           ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
         ];
         setCategories(["all", ...mockUniqueCategories]);
       } catch (err) {
-        console.error("Error fetching projects:", err);
-
         if (err?.status === 401) {
-          console.warn(
-            "Projects API returned 401 for unauthenticated access — loading public mock data fallback."
-          );
           setProjects(mockProjects);
           const fallbackCategories = [
             ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
@@ -189,7 +183,6 @@ if (projectsList.length > 0) {
         }
 
         // Always gracefully fall back to mock data when API is unavailable
-        console.warn("API unavailable — falling back to mock project data.");
         setProjects(mockProjects);
         const fallbackCategories = [
           ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
@@ -325,7 +318,7 @@ if (projectsList.length > 0) {
                         : filterCategory}
                     </span>
 
-                    <FiChevronDown
+                    <ChevronDown
                       className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform ${
                         categoryOpen ? "rotate-180" : ""
                       }`}
@@ -405,7 +398,7 @@ if (projectsList.length > 0) {
                       {sortByLabels[sortBy]}
                     </span>
 
-                    <FiChevronDown
+                    <ChevronDown
                       className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform ${
                         sortOpen ? "rotate-180" : ""
                       }`}
@@ -469,7 +462,7 @@ if (projectsList.length > 0) {
                 data-aos="zoom-in"
                 data-aos-delay="400"
               >
-                <FiX className="w-4 h-4 animate-pulse" />
+                <X className="w-4 h-4 animate-pulse" />
                 Clear Filters
               </motion.button>
             </div>
@@ -492,7 +485,7 @@ if (projectsList.length > 0) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <FiAlertCircle className="mx-auto h-12 w-12 text-red-400" />
+              <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
 
               <h3 className="mt-2 text-lg font-medium text-red-900 dark:text-red-200">
                 Error loading projects
@@ -556,7 +549,7 @@ if (projectsList.length > 0) {
             >
               <div className="mx-auto max-w-sm relative z-10">
                 <div className="flex justify-center items-center w-20 h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg mx-auto border border-sky-100 dark:border-gray-600">
-                  <FiSearch className="h-10 w-10 text-black dark:text-white" />
+                  <Search className="h-10 w-10 text-black dark:text-white" />
                 </div>
 
                 <h3 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100">

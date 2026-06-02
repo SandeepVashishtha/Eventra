@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { logger } from "../../utils/logger";
 import { 
@@ -187,8 +187,7 @@ const SignupFormExample = ({ onSignupSuccess }) => {
       if (onSignupSuccess) {
         onSignupSuccess(formValues);
       }
-    } catch (error) {
-      console.error("Critical Interception: Sign-up pipeline runtime breakdown.", error);
+    } catch {
       alert("Registration failed. Please audit inputs or try again later.");
     }
   }), [handleSubmit, resetForm, onSignupSuccess]);

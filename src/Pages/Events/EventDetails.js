@@ -1,5 +1,5 @@
 import "./EventDetails.print.css";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
@@ -43,11 +43,18 @@ const EventDetails = () => {
 
   const { isRegistered } = useMyEvents();
 
+  const latestRequestIdRef = useRef(0);
+
   const loadEvent = useCallback(async () => {
+    const requestId = ++latestRequestIdRef.current;
+    const isLatestRequest = () => latestRequestIdRef.current === requestId;
+
     setFetchLoading(true);
     setFetchError(null);
+
     try {
       const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+      if (!isLatestRequest()) return;
       if (res.ok && res.data) {
         const raw = res.data?.data ?? res.data;
         setEvent({ ...raw, status: getEventStatus(raw) });
@@ -55,6 +62,7 @@ const EventDetails = () => {
         throw new Error(res.data?.message || `Event not found (${res.status})`);
       }
     } catch {
+      if (!isLatestRequest()) return;
       // Fall back to bundled mock data when the API is unreachable
       const fallback = mockEvents.find((item) => String(item.id) === eventId);
       if (fallback) {
@@ -63,7 +71,9 @@ const EventDetails = () => {
         setFetchError("Event not found.");
       }
     } finally {
-      setFetchLoading(false);
+      if (isLatestRequest()) {
+        setFetchLoading(false);
+      }
     }
   }, [eventId]);
 

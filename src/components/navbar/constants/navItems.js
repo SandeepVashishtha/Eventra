@@ -4,11 +4,12 @@ import {
   FolderKanban,
   Users,
   Trophy,
-  Info,
   MessageSquare,
-  HelpCircle,
   Book,
   Bookmark,
+  Info,
+  HelpCircle,
+  MoreHorizontal,
 } from "lucide-react";
 
 export const NAV_ITEMS = [
@@ -39,12 +40,12 @@ export const NAV_ITEMS = [
   },
   {
     name: "Community",
-    href: "/communityEvent",
+    href: "/community-event",
     icon: <Users className="w-5 h-5" />,
     subItems: [
       {
         name: "Community Events",
-        href: "/communityEvent",
+        href: "/community-event",
         icon: <Users className="w-5 h-5" />,
       },
       {
@@ -64,10 +65,26 @@ export const NAV_ITEMS = [
       },
     ],
   },
-
   {
-    name: "Contact",
-    href: "/contact",
-    icon: <MessageSquare className="w-5 h-5" />,
+    name: "More",
+    href: "/about",
+    icon: <MoreHorizontal className="w-5 h-5" />,
+    subItems: [
+      {
+        name: "About",
+        href: "/about",
+        icon: <Info className="w-5 h-5" />,
+      },
+      {
+        name: "FAQ",
+        href: "/faq",
+        icon: <HelpCircle className="w-5 h-5" />,
+      },
+      {
+        name: "Contact",
+        href: "/contact",
+        icon: <MessageSquare className="w-5 h-5" />,
+      },
+    ],
   },
 ];
