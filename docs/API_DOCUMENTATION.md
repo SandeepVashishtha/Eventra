@@ -865,12 +865,6 @@ curl -N http://localhost:8080/api/events/stream
 ```text
 event:connected
 data:Stream connected successfully
-```
-
-#### Backend Implementation PR
-[SandeepVashishtha/Eventra-Backend#BACKEND_PR_NUMBER](https://github.com/SandeepVashishtha/Eventra-Backend/pull/BACKEND_PR_NUMBER)
-
----
 
 # Project APIs
 
@@ -1095,6 +1089,43 @@ Status: `200 OK`
 ---
 
 # Hackathon APIs
+
+## List Hackathons
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/hackathons` |
+
+Fetches the list of available hackathons.
+
+### Authentication
+Public. No authentication required.
+
+### Example Request
+```bash
+curl http://localhost:8080/api/hackathons
+```
+
+### Successful Response (200)
+Returns a JSON array of hackathon objects. Returns `[]` if no hackathons exist.
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Hackathon Name",
+    "description": "Hackathon description",
+    "organizer": "Organizer Name",
+    "startDate": "2026-06-10",
+    "endDate": "2026-06-12",
+    "location": "Bhopal",
+    "mode": "Offline",
+    "prizePool": "50000",
+    "registrationDeadline": "2026-06-05",
+    "imageUrl": "https://example.com/hackathon.png"
+  }
+]
+```
 
 ## Get Hackathon By ID
 
