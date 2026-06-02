@@ -57,8 +57,14 @@ const Unauthorized = () => {
       {/* UPDATED: Card background and border */}
       <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-10 max-w-md w-full text-center z-10 dark:border dark:border-gray-700">
         <div className="flex flex-col items-center space-y-4">
-          {/* Icon color is fine for both themes */}
-          <XCircleIcon className="h-20 w-20 text-red-500 animate-pulse" />
+          {/* 🔥 FIX: Replaced infinite pulse with motion-aware entry animation */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 200 }}
+          >
+            <XCircleIcon className="h-20 w-20 text-red-500" />
+          </motion.div>
           
           {/* UPDATED: Text colors */}
           <h2 className="text-3xl font-extrabold text-gray-800 dark:text-gray-100">
