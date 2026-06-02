@@ -286,16 +286,5 @@ async function handler(req, res) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Export users map for sharing with login.js (development purposes)
-// In production, replace with actual database
-// ---------------------------------------------------------------------------
-
-const signupRateLimiter = createRateLimiter({
-  max: 5,
-  windowMs: 15 * 60 * 1000,
-  message: "Too many authentication attempts. Please try again later.",
-});
-
 export default signupRateLimiter(handler);
 export { users };
