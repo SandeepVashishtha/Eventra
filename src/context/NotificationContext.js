@@ -462,25 +462,37 @@ export const NotificationProvider = ({ children }) => {
         subscribed: true,
         subscribedAt: new Date().toISOString(),
       };
-      try {
-        window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-      } catch {
-        // Non-fatal — the subscription is still active; local status just won't persist
-      }
+     try {
+  // Read old value BEFORE overwriting
+  const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
 
-      // Migrate: remove any existing full subscription object that may have been
-      // stored by a previous version of this code before this fix was applied.
-      // This runs once per subscribe() call and is a no-op if the key is absent.
-      const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
-      if (existing) {
-        try {
-          const parsed = JSON.parse(existing);
-          if (parsed?.keys) {
-            // Old format with sensitive keys — replace with the safe record
-            window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-          }
-        } catch { /* non-fatal */ }
+  if (existing) {
+    try {
+      const parsed = JSON.parse(existing);
+
+      // Old format with sensitive keys
+      if (parsed?.keys) {
+        window.localStorage.setItem(
+          PUSH_SUBSCRIPTION_KEY,
+          JSON.stringify(safeLocalRecord)
+        );
+
+        window.localStorage.removeItem(PUSH_SUBSCRIPTION_KEY);
       }
+    } catch {
+      // Ignore invalid legacy data
+    }
+  }
+
+  // Save new safe format
+  window.localStorage.setItem(
+    PUSH_SUBSCRIPTION_KEY,
+    JSON.stringify(safeLocalRecord)
+  );
+
+} catch {
+  // Non-fatal — subscription still works
+}
 
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
       if (token && isValidEndpoint(endpoint)) {
