@@ -2,6 +2,7 @@
 // Secures the Groq API key from frontend exposure
 
 import { verifyAuth } from "./middleware/auth.js";
+import { rateLimiter } from "./middleware/rateLimiter.js";
 
 // ---------------------------------------------------------------------------
 // Guards
@@ -11,34 +12,8 @@ import { verifyAuth } from "./middleware/auth.js";
 // lets an unauthenticated caller exhaust the API quota in a single request.
 const MAX_PROMPT_LENGTH = 2000;
 
-// Per-user rate limit: at most RATE_LIMIT_MAX_REQUESTS within RATE_LIMIT_WINDOW_MS.
-// This Map lives in process memory. In a multi-instance serverless deployment,
-// each instance maintains its own window, which reduces but does not eliminate
-// the ability to exceed the limit by spreading requests across warm instances.
-// A Redis-backed limiter would enforce a strict global cap if needed later.
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 10;
-const rateLimitMap = new Map();
-
-const checkRateLimit = (userId) => {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-
-  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
-    rateLimitMap.set(userId, { count: 1, windowStart: now });
-    return true;
-  }
-
-  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return false;
-  }
-
-  entry.count += 1;
-  return true;
-};
-
 // ---------------------------------------------------------------------------
-// Handler (wrapped by verifyAuth - requires a valid Eventra JWT)
+// Handler (wrapped by verifyAuth and rateLimiter)
 // ---------------------------------------------------------------------------
 
 async function handler(req, res) {
@@ -61,16 +36,6 @@ async function handler(req, res) {
 
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
-  }
-
-  // req.user is set by verifyAuth after successful JWT verification
-  const userId = req.user?.id || req.user?.email || "unknown";
-
-  // Per-user rate limiting
-  if (!checkRateLimit(userId)) {
-    return res.status(429).json({
-      error: "Too many requests. Please wait before sending another recommendation request.",
-    });
   }
 
   const apiKey = process.env.GROQ_API_KEY || process.env.REACT_APP_GROQ_API_KEY;
@@ -120,4 +85,4 @@ async function handler(req, res) {
   }
 }
 
-export default verifyAuth(handler);
+export default verifyAuth(rateLimiter(10)(handler));
