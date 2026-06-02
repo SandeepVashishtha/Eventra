@@ -1,19 +1,8 @@
 import { useMemo, useState } from "react";
-import {
-  Bell,
-  BellOff,
-  Check,
-  Mail,
-  Monitor,
-  Save,
-  Volume2,
-} from "lucide-react";
+import { Bell, BellOff, Check, Mail, Monitor, Save, Volume2 } from "lucide-react";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { useNotification } from "../context/NotificationContext";
-import {
-  NOTIFICATION_CATEGORIES,
-  NOTIFICATION_SOUNDS,
-} from "../utils/notificationPreferences";
+import { NOTIFICATION_CATEGORIES, NOTIFICATION_SOUNDS } from "../utils/notificationPreferences";
 
 const digestOptions = [
   { value: "instant", label: "Instant" },
@@ -131,7 +120,7 @@ const NotificationSettings = () => {
   };
 
   return (
-    <section className="min-h-screen bg-white py-24 text-slate-900 dark:bg-black dark:text-slate-100">
+    <section className="min-h-screen bg-bg py-24 text-text">
       <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
@@ -156,7 +145,7 @@ const NotificationSettings = () => {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          <article className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950">
+          <article className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-card-bg/70">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <Monitor className="h-5 w-5 text-cyan-500" />
@@ -175,7 +164,7 @@ const NotificationSettings = () => {
             </div>
           </article>
 
-          <article className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950">
+          <article className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-card-bg/70">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 {preferences.push ? (
@@ -203,7 +192,7 @@ const NotificationSettings = () => {
             ) : null}
           </article>
 
-          <article className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950">
+          <article className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-card-bg/70">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-indigo-500" />
@@ -239,7 +228,7 @@ const NotificationSettings = () => {
           </article>
         </div>
 
-        <section className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950">
+        <section className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-card-bg/70">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-base font-semibold">Categories</h2>
@@ -258,7 +247,7 @@ const NotificationSettings = () => {
           </div>
 
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <div className="grid grid-cols-[minmax(180px,1fr)_repeat(3,72px)] border-b border-slate-200 bg-slate-100 px-4 py-3 text-xs font-semibold uppercase text-slate-500 dark:border-slate-800 dark:bg-slate-950">
+            <div className="grid grid-cols-[minmax(180px,1fr)_repeat(3,72px)] border-b border-slate-200 bg-card-bg/50">
               <span>Category</span>
               {channelConfig.map(({ key, label }) => (
                 <span key={key} className="text-center">
@@ -289,7 +278,7 @@ const NotificationSettings = () => {
                       className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${
                         preferences.categories[category]?.[key]
                           ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200"
-                          : "border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-950"
+                          : "border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-bg"
                       }`}
                       aria-label={`Toggle ${label} notifications for ${meta.label}`}
                       title={`${label}: ${meta.label}`}
@@ -307,7 +296,7 @@ const NotificationSettings = () => {
           </div>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950">
+        <section className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-card-bg/70">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <Volume2 className="h-5 w-5 text-cyan-500" />

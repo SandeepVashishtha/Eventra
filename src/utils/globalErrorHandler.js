@@ -1,41 +1,20 @@
-import { ENV } from "../config/env";
+import { logError } from "./errorLogger.js";
 
-const dsn = ENV.SENTRY_DSN;
-const isProduction = process.env.NODE_ENV === "production";
-const Sentry = {
-  captureException: () => {},
-};
+export const initializeGlobalErrorHandling = () => {
+  if (typeof window === "undefined") return;
 
-export const initializeGlobalErrorHandling =
-  () => {
-    // Global JS Errors
-    window.onerror = (
-      message,
-      source,
-      lineno,
-      colno,
-      error
-    ) => {
-      console.error(
-        "[GlobalError]",
-        error
-      );
-
-      if (isProduction && dsn) {
-        Sentry.captureException(error || new Error(message));
-      }
-    };
-
-    // Unhandled Promise Rejections
-    window.onunhandledrejection =
-      (event) => {
-        console.error(
-          "[UnhandledPromiseRejection]",
-          event.reason
-        );
-
-        if (isProduction && dsn) {
-          Sentry.captureException(event.reason);
-        }
-      };
+  window.onerror = (message, source, lineno, colno, error) => {
+    console.error("[GlobalError]", error || message);
+    if (error) {
+      logError(error, null, { source, lineno, colno });
+    }
   };
+
+  window.onunhandledrejection = (event) => {
+    const reason = event.reason;
+    console.error("[UnhandledPromiseRejection]", reason);
+    logError(reason instanceof Error ? reason : new Error(String(reason)), null, {
+      type: "unhandled_promise_rejection",
+    });
+  };
+};
