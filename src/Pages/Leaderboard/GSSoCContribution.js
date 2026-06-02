@@ -221,7 +221,7 @@ const AchievementBadge = memo(({ achievement, onUnlock }) => {
       whileTap={{ scale: 0.95 }}
       onClick={() => !isUnlocked && onUnlock?.(achievement)}
       disabled={isUnlocked}
-      className={`p-3 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+      className={`relative p-3 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
         isUnlocked 
           ? 'bg-white dark:bg-gray-700 border-yellow-300 dark:border-yellow-600 shadow-md cursor-default' 
           : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-60 hover:opacity-100 hover:border-blue-300 dark:hover:border-blue-700'
