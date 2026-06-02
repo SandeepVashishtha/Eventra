@@ -34,13 +34,7 @@ export const getProtectedRoutes = () => [
     key="/create-event"
     path="/create-event"
     element={
-      <ProtectedRoute
-        requiredPermissions={[PERMISSIONS.CREATE_EVENT]}
-        requiredScopes={["event:write"]}
-        validateContext={({ user }) =>
-          user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
-        }
-      >
+      <ProtectedRoute redirectTo="/login">
         {withModuleBoundary(<EventCreation />, "Event creation")}
       </ProtectedRoute>
     }
