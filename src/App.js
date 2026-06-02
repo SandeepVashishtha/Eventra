@@ -1,15 +1,24 @@
-import SavedEventsPage from './Pages/SavedEventsPage';
-import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
-import ScrollToTopButton from "./components/ScrollToTopButton";
+
+// Contexts & Providers
+import { NotificationProvider } from "./context/NotificationContext";
+import { AuthProvider } from "./context/AuthContext";
+import { MyEventsProvider } from "./context/MyEventsContext";
+import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
+
+// Hooks
+import useOfflineSync from "./hooks/useOfflineSync";
+import useLenis from "./hooks/useLenis";
+import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+
+// Core Components
 import Navbar from "./components/Layout/Navbar";
-import OfflineBanner from "./components/common/OfflineBanner";
-import OfflineConflictModal from "./components/common/OfflineConflictModal";
+import ScrollToTopButton from "./components/ScrollToTopButton";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import FluidCursor from "./jhalak/FluidCursor";
@@ -19,28 +28,28 @@ import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
 import SessionRecovery from "./components/SessionRecovery";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
+import NotificationToastContainer from "./components/common/NotificationProvider";
+import OfflineBanner from "./components/common/OfflineBanner";
+import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import OnboardingChecklist from "./components/user/OnboardingChecklist";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import NotificationToastContainer from "./components/common/NotificationProvider";
-import { NotificationProvider } from "./context/NotificationContext";
-import { AuthProvider } from "./context/AuthContext";
-import { MyEventsProvider } from "./context/MyEventsContext";
-import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
-import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
-import useOfflineSync from "./hooks/useOfflineSync";
-import useLenis from "./hooks/useLenis";
-import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 
+// Lazy Loaded Pages & Routes
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
 const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
+const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
+const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
 };
 
+// 🔥 FIX 2: useLocation requires BrowserRouter to wrap the <App /> component inside index.js. 
+// If your app crashes here, ensure index.js has: <BrowserRouter><App /></BrowserRouter>
 function App() {
   const location = useLocation();
   const isDashboardOrAdmin = location.pathname === "/dashboard" || location.pathname === "/admin";
@@ -99,48 +108,9 @@ function App() {
     };
   }, []);
 
+  // 🔥 FIX 1: Completely rebuilt the JSX tree to resolve fatal syntax errors, 
+  // duplicate unclosed roots, and correctly ordered context providers.
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <MyEventsProvider>
-          <SessionRecoveryProvider>
-            <NotificationProvider />
-            <ReminderChecker />
-            <NotificationToastContainer />
-
-            <OfflineSyncManager />
-
-            <Router>
-            <div className="App">
-              <a href="#main-content" className="skip-to-content">
-                Skip to main content
-              </a>
-              <Navbar
-                cursorEnabled={cursorEnabled}
-                toggleCursor={toggleCursor}
-              />
-
-              <main
-                id="main-content"
-                tabIndex={-1}
-                className="
-                  relative
-                  z-10
-                min-h-[85vh]
-                  bg-white
-                  dark:bg-slate-950
-                  text-black
-                  dark:text-white
-                  transition-colors
-                  duration-300
-                "
-              >
-                <PageTransition>
-                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-                    <Routes>
-                      <Route path="/register/:id" element={<RegistrationPage />} />
-                      <Route path="*" element={<AppRoutes />} />
-                    </Routes>
     <ErrorBoundary>
       <AuthProvider>
         <NotificationProvider>
@@ -151,9 +121,14 @@ function App() {
               <OfflineSyncManager />
 
               <div className="App">
+                <a href="#main-content" className="skip-to-content">
+                  Skip to main content
+                </a>
+                
                 <SectionErrorBoundary label="Navigation Bar">
                   <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                 </SectionErrorBoundary>
+                
                 <OfflineBanner />
                 <OfflineConflictModal />
                 <KeyboardShortcutsModal
@@ -164,6 +139,7 @@ function App() {
 
                 <main
                   id="main-content"
+                  tabIndex={-1}
                   className="
                     relative z-10 min-h-[85vh]
                     bg-white dark:bg-slate-950
@@ -192,6 +168,10 @@ function App() {
                           <Route
                             path="/event-recommendation"
                             element={<EventRecommendation />}
+                          />
+                          <Route 
+                            path="/saved-events" 
+                            element={<SavedEventsPage />} 
                           />
                           <Route path="*" element={<AppRoutes />} />
                         </Routes>
