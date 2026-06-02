@@ -38,6 +38,7 @@ import {
 import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
 import ConfettiCanvas from "../../components/common/ConfettiCanvas";
+import { logger } from "../../utils/logger";
 
 const MAX_NOTES_CHARS = 500;
 
@@ -261,7 +262,8 @@ const EventRegistration = () => {
           conflicts: conflictCheck.conflicts,
           suggestions,
         });
-      } catch {
+      } catch (err) {
+        logger.error("Failed to fetch alternative events", err);
         setConflictData({
           conflicts: conflictCheck.conflicts,
           suggestions: [],
@@ -502,13 +504,14 @@ const EventRegistration = () => {
           });
       } else {
         navigator.clipboard
-          .writeText(shareUrl)
-          .then(() => {
-            toast.success("Event link copied to clipboard!");
-          })
-          .catch(() => {
-            toast.error("Could not copy link. Please copy manually.");
-          });
+  .writeText(shareUrl)
+  .then(() => {
+    toast.success("Event link copied to clipboard!");
+  })
+  .catch((err) => {
+    logger.error("Failed to copy link:", err);
+    toast.error("Could not copy link. Please copy manually.");
+  });
       }
     };
 
@@ -529,14 +532,14 @@ const EventRegistration = () => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 15 }}
-            className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-emerald-500 p-0.5 mx-auto mb-6 shadow-[0_0_20px_rgba(99,102,241,0.3)]"
+            className="w-24 h-24 rounded-full bg-linear-to-br from-indigo-500 to-emerald-500 p-0.5 mx-auto mb-6 shadow-[0_0_20px_rgba(99,102,241,0.3)]"
           >
             <div className="w-full h-full rounded-full bg-white dark:bg-slate-900 flex items-center justify-center">
               <CheckCircle className="w-12 h-12 text-indigo-500 dark:text-indigo-400 stroke-[2.5]" />
             </div>
           </motion.div>
 
-          <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 mb-2">
+          <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-linear-to-t from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 mb-2">
             Registration Confirmed!
           </h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
@@ -690,7 +693,7 @@ const EventRegistration = () => {
               alt={event.title}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
               <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-sm">

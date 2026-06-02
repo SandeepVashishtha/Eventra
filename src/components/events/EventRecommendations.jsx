@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useCallback, useMemo } from "react";
+import React, { useState, useEffect, memo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Sparkles,
@@ -7,7 +7,6 @@ import {
   Calendar,
   MapPin,
   ArrowRight,
-  Image as ImageIcon,
   Layers,
   Clock,
 } from "lucide-react";

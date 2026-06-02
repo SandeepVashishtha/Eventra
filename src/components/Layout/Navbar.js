@@ -671,7 +671,7 @@ const NAV_ITEMS = [
       { name: "Leaderboard", href: "/leaderboard", icon: <Trophy className="w-5 h-5" /> },
       { name: "Contributors", href: "/contributors", icon: <Users className="w-5 h-5" /> },
       { name: "Contributors Guide", href: "/contributorguide", icon: <Book className="w-5 h-5" /> },
-      { name: "Community Events", href: "/communityEvent", icon: <Users className="w-5 h-5" /> },
+      { name: "Community Events", href: "/community-event", icon: <Users className="w-5 h-5" /> },
     ],
   },
   {
