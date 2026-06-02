@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Trash2, Users } from "lucide-react";
 import { MOCK_ATTENDEES } from "../../../constants/floorPlanPresets";
 
@@ -5,6 +6,12 @@ export default function PropertiesPanel({
   activeElement, elements, onUpdateSelected, onDeleteSelected,
   onSeatAssign
 }) {
+  const allAssignedNames = useMemo(() => {
+    return new Set(
+      elements.flatMap(el => Object.values(el.assignedAttendees || {}))
+    );
+  }, [elements]);
+
   if (!activeElement) {
     return (
       <aside className="fp-sidebar fp-sidebar-right" aria-label="Element properties and seating configuration sidebar">
@@ -180,10 +187,8 @@ export default function PropertiesPanel({
                       onChange={(e) => onSeatAssign(seatIdx, e.target.value)}>
                       <option value="">-- Choose Attendee --</option>
                       {MOCK_ATTENDEES.map((attName) => {
-                        const isAssignedElsewhere = elements.some(
-                          el => Object.values(el.assignedAttendees).includes(attName) &&
-                            !(el.id === activeElement.id && el.assignedAttendees[seatIdx] === attName)
-                        );
+                        const currentlyAssignedHere = activeElement.assignedAttendees[seatIdx] === attName;
+                        const isAssignedElsewhere = !currentlyAssignedHere && allAssignedNames.has(attName);
                         return (
                           <option key={attName} value={attName} disabled={isAssignedElsewhere}>
                             {attName} {isAssignedElsewhere ? "(Booked)" : ""}
