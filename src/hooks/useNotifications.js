@@ -69,6 +69,14 @@ export const useNotifications = () => {
     );
   }, []);
 
+  const deleteNotification = useCallback((id) => {
+    setNotifications((prev) => prev.filter((item) => item.id !== id));
+  }, []);
+
+  const clearAllNotifications = useCallback(() => {
+    setNotifications([]);
+  }, []);
+
   const unreadCount = notifications.filter(
     (item) => !item.read
   ).length;
@@ -78,6 +86,8 @@ export const useNotifications = () => {
     unreadCount,
     addNotification,
     markAllAsRead,
+    deleteNotification,
+    clearAllNotifications,
     requestPermission,
   };
 };
