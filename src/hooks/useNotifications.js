@@ -5,30 +5,30 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 const STORAGE_KEY = "eventra_notifications";
 
 export const useNotifications = () => {
-  const [notifications, setNotifications] = useState([]);
+   const [notifications, setNotifications] = useState([]);
 
-  useEffect(() => {
-    idbGet(STORAGE_KEY)
-      .then((stored) => {
-        if (stored) {
-          const parsed = safeJsonParse(stored, []);
-          setNotifications(parsed);
-        }
-      })
-      .catch((error) => {
-        logger.error("Failed to fetch notifications from indexedDB", error);
-        setNotifications([]);
-      })
-      .finally(() => {
-        // Allow the persistence effect to run only after the initial
-        // load has settled — prevents wiping IndexedDB on mount.
-        didLoadRef.current = true;
-      });
-  }, []);
+   // Track whether the initial load from IndexedDB has completed so we
+   // don't immediately overwrite persisted data with an empty array on mount.
+   const didLoadRef = useRef(false);
 
-  // Track whether the initial load from IndexedDB has completed so we
-  // don't immediately overwrite persisted data with an empty array on mount.
-  const didLoadRef = useRef(false);
+   useEffect(() => {
+     idbGet(STORAGE_KEY)
+       .then((stored) => {
+         if (stored) {
+           const parsed = safeJsonParse(stored, []);
+           setNotifications(parsed);
+         }
+       })
+       .catch((error) => {
+         logger.error("Failed to fetch notifications from indexedDB", error);
+         setNotifications([]);
+       })
+       .finally(() => {
+         // Allow the persistence effect to run only after the initial
+         // load has settled — prevents wiping IndexedDB on mount.
+         didLoadRef.current = true;
+       });
+   }, []);
 
   useEffect(() => {
     const handleUpdate = () => {
