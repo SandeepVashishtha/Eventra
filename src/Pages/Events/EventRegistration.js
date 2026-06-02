@@ -335,7 +335,7 @@ const EventRegistration = () => {
         : `/api/events/${eventId}/register`;
 
     try {
-      await apiUtils.post(
+      const response = await apiUtils.post(
         endpoint,
         {
           ...formData,
@@ -346,9 +346,13 @@ const EventRegistration = () => {
         token
       );
 
+      const regData = response.data || {};
+      const registrationId = regData.registrationId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-${Date.now()}`);
+      const qrToken = regData.qrToken || "";
+
       setRegistered(true);
       toast.success("Registration successful!");
-      addRegistration(event, formData);
+      addRegistration(event, formData, registrationId, qrToken);
       clearSession();
         } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
@@ -379,7 +383,8 @@ const EventRegistration = () => {
 
         if (success) {
           setRegistered(true);
-          addRegistration(event, formData);
+          const offlineRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-offline-${Date.now()}`;
+          addRegistration(event, formData, offlineRegId, "");
           clearSession();
           toast.warning("Network error. Registration queued and will sync when you are online.", {
             autoClose: 4000,
@@ -395,7 +400,8 @@ const EventRegistration = () => {
       if (isAlreadyRegistered) {
         setRegistered(true);
         toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
-        addRegistration(event, formData);
+        const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
+        addRegistration(event, formData, existingRegId, "");
         clearSession();
         toast.info(failureMessage);
         return;
