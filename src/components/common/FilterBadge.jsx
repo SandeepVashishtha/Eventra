@@ -1,3 +1,4 @@
+import React from "react";
 import { X } from "lucide-react";
 
 /**
@@ -69,4 +70,4 @@ const FilterBadge = ({
   );
 };
 
-export default FilterBadge;
+export default React.memo(FilterBadge);
