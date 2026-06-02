@@ -57,7 +57,7 @@ const useRecentlyViewed = () => {
       return [];
     } catch (err) {
       logger.error('Failed to load recently viewed events:', err);
-      setRecentlyViewed([]);
+      return [];
     }
   });
 
@@ -80,7 +80,7 @@ const useRecentlyViewed = () => {
           const fresh = Array.isArray(parsed) ? parsed.filter(isEntryFresh) : [];
           setRecentlyViewed(fresh);
         } else {
-          setRecentlyViewed([]);
+          return [];
         }
       }
     };
@@ -117,7 +117,7 @@ const useRecentlyViewed = () => {
    * Clear the entire recently viewed history from state and localStorage.
    */
   const clearHistory = useCallback(() => {
-    setRecentlyViewed([]);
+    return [];
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (err) {
@@ -134,3 +134,4 @@ const useRecentlyViewed = () => {
 };
 
 export default useRecentlyViewed;
+

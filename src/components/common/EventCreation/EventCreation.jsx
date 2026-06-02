@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { Download, Calendar, Globe, Link2, Plus } from "lucide-react";
+import { Download, Calendar, Globe, Link2, Plus, Save, FileJson } from "lucide-react";
 import { logger } from "../../../utils/logger";
 import useReducedMotion from "../../../hooks/useReducedMotion";
+import { useEventTemplates } from "../../../hooks/useEventTemplates";
 import TicketsStep from "./components/TicketsStep";
 import GeneralInfoStep from "./components/GeneralInfoStep";
 import { exportAttendeesToCSV } from "../../../utils/exportCsv";
 import PreviewStep from "./components/PreviewStep";
 import RestoreDraftModal from "./components/RestoreDraftModal";
+import TemplatePicker from "./components/TemplatePicker";
+import TemplateNamePrompt from "./components/TemplateNamePrompt";
 import GuidelinesSection from "./components/GuidelinesSection";
 import EventDurationSelector from "./components/EventDurationSelector";
 import DateTimeFields from "./components/DateTimeFields";
@@ -79,6 +82,16 @@ const EventCreation = () => {
   const [newTag, setNewTag] = useState("");
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+  // Template management states
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showTemplateNamePrompt, setShowTemplateNamePrompt] = useState(false);
+  const {
+    templates,
+    handleSaveTemplate,
+    handleLoadTemplate,
+    handleDeleteTemplate,
+  } = useEventTemplates();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -318,6 +331,41 @@ const EventCreation = () => {
     toast.info("Saved draft discarded.");
   };
 
+  const handleOpenSaveTemplatePrompt = () => {
+    setShowTemplateNamePrompt(true);
+  };
+
+  const handleSaveTemplateSubmit = (templateName) => {
+    const success = handleSaveTemplate(templateName, formData);
+    if (success) {
+      setShowTemplateNamePrompt(false);
+    }
+  };
+
+  const handleOpenTemplatePicker = () => {
+    setShowTemplatePicker(true);
+  };
+
+  const handleLoadTemplateFromPicker = (templateId) => {
+    const templateData = handleLoadTemplate(templateId);
+    if (templateData) {
+      setFormData((prev) => ({
+        ...prev,
+        ...templateData,
+        banner: null,
+        bannerPreview: null,
+      }));
+      setErrors({});
+    }
+  };
+
+  const handleDeleteTemplateFromPicker = (templateId) => {
+    handleDeleteTemplate(templateId, () => {
+      // Refresh templates list after deletion
+      // The templates state will be updated by the hook
+    });
+  };
+
   useEffect(() => {
     if (!isDraftLoaded) return;
 
@@ -391,6 +439,21 @@ const EventCreation = () => {
         onRestore={handleRestoreDraft}
         onDiscard={handleDiscardDraft}
       />
+
+      <TemplatePicker
+        isOpen={showTemplatePicker}
+        templates={templates}
+        onLoad={handleLoadTemplateFromPicker}
+        onDelete={handleDeleteTemplateFromPicker}
+        onClose={() => setShowTemplatePicker(false)}
+      />
+
+      <TemplateNamePrompt
+        isOpen={showTemplateNamePrompt}
+        onSave={handleSaveTemplateSubmit}
+        onCancel={() => setShowTemplateNamePrompt(false)}
+      />
+
       {showRestoreModal && (
         <div
           className="
@@ -469,7 +532,25 @@ const EventCreation = () => {
 
       {currentStep === CREATION_STEPS.FORM ? (
         <>
-          <div className="w-full max-w-4xl flex justify-end mb-6">
+          <div className="w-full max-w-4xl flex justify-end gap-3 mb-6">
+            <button
+              onClick={handleOpenTemplatePicker}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+              aria-label="Load template"
+            >
+              <FileJson size={18} />
+              Use Template
+            </button>
+
+            <button
+              onClick={handleOpenSaveTemplatePrompt}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+              aria-label="Save as template"
+            >
+              <Save size={18} />
+              Save as Template
+            </button>
+
             <button
               onClick={() => {
                 exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
