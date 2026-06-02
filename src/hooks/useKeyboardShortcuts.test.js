@@ -50,7 +50,8 @@ describe("useKeyboardShortcuts", () => {
 
   // ─── Modal shortcuts ───────────────────────────────────────────────────────
 
-  it("opens the help modal when Shift+? is pressed", () => {
+  it("opens the help modal when Shift+? is pressed and closes command palette", () => {
+    const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
     renderHook(
       () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }),
       { wrapper }
@@ -58,9 +59,13 @@ describe("useKeyboardShortcuts", () => {
 
     fireKey("?", { shiftKey: true });
     expect(onOpenHelp).toHaveBeenCalledTimes(1);
+    const eventTypes = dispatchSpy.mock.calls.map(call => call[0].type);
+    expect(eventTypes).toContain('closeCommandPalette');
+    dispatchSpy.mockRestore();
   });
 
   it("opens the help modal when Shift+/ is pressed (same logical key)", () => {
+    const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
     renderHook(
       () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }),
       { wrapper }
@@ -68,9 +73,14 @@ describe("useKeyboardShortcuts", () => {
 
     fireKey("/", { shiftKey: true });
     expect(onOpenHelp).toHaveBeenCalledTimes(1);
+    const eventTypes = dispatchSpy.mock.calls.map(call => call[0].type);
+    expect(eventTypes).toContain('closeCommandPalette');
+    dispatchSpy.mockRestore();
   });
 
   it("does not treat Escape as a global shortcut", () => {
+  it("closes the help modal and command palette when Escape is pressed", () => {
+    const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
     renderHook(
       () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: true }),
       { wrapper }
@@ -78,6 +88,24 @@ describe("useKeyboardShortcuts", () => {
 
     fireKey("Escape");
     expect(onCloseHelp).not.toHaveBeenCalled();
+    expect(onCloseHelp).toHaveBeenCalledTimes(1);
+    const eventTypes = dispatchSpy.mock.calls.map(call => call[0].type);
+    expect(eventTypes).toContain('closeCommandPalette');
+    dispatchSpy.mockRestore();
+  });
+
+  it("toggles the command palette when Ctrl+K is pressed and closes help modal", () => {
+    const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
+    renderHook(
+      () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: true }),
+      { wrapper }
+    );
+
+    fireKey("k", { ctrlKey: true });
+    expect(onCloseHelp).toHaveBeenCalledTimes(1);
+    const eventTypes = dispatchSpy.mock.calls.map(call => call[0].type);
+    expect(eventTypes).toContain('toggleCommandPalette');
+    dispatchSpy.mockRestore();
   });
 
   // ─── Navigation shortcuts ──────────────────────────────────────────────────
@@ -92,7 +120,7 @@ describe("useKeyboardShortcuts", () => {
     ["g", "r", "/reminders"],
     ["g", "k", "/hackathons"],
     ["g", "p", "/projects"],
-    ["g", "a", "/leaderBoard"],
+    ["g", "a", "/leaderboard"],
     ["g", "f", "/faq"],
     ["g", "d", "/dashboard"],
   ];

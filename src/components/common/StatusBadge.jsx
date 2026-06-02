@@ -1,4 +1,5 @@
 import { memo } from "react";
+import React from "react";
 import "./StatusBadge.css";
 
 const STATUS_CONFIG = {
@@ -71,8 +72,13 @@ const StatusBadge = memo(function StatusBadge({ status }) {
 
   const key = status.toLowerCase();
 
+const StatusBadge = ({ status }) => {
+  if (status === null || status === undefined) return null;
+  const normalized = String(status).trim();
+  if (!normalized) return null;
+  const key = normalized.toLowerCase();
   const config = STATUS_CONFIG[key] ?? {
-    label: status,
+    label: normalized,
     className: "sb-gray",
   };
 
@@ -85,3 +91,6 @@ const StatusBadge = memo(function StatusBadge({ status }) {
 });
 
 export default StatusBadge;
+};
+
+export default React.memo(StatusBadge);

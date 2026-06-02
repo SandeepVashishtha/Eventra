@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const FieldError = memo(function FieldError({ id, message }) {
@@ -21,4 +22,4 @@ const FieldError = memo(function FieldError({ id, message }) {
   );
 });
 
-export default FieldError;
+export default React.memo(FieldError);

@@ -1,6 +1,9 @@
 import { memo } from "react";
 
  /**
+import React from "react";
+
+/**
  * A theme-aware loading spinner component.
  * @param {{
  * text?: string,
@@ -40,3 +43,4 @@ const Loading = memo(function Loading({
 });
 
 export default Loading;
+export default React.memo(Loading);
