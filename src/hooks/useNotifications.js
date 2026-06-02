@@ -31,12 +31,29 @@ export const useNotifications = () => {
   const didLoadRef = useRef(false);
 
   useEffect(() => {
+    const handleUpdate = () => {
+      idbGet(STORAGE_KEY)
+        .then((stored) => {
+          if (stored) {
+            const parsed = safeJsonParse(stored, []);
+            setNotifications(parsed);
+          }
+        })
+        .catch((error) => {
+          logger.error("Failed to reload notifications from indexedDB", error);
+        });
+    };
+    window.addEventListener("eventra-notifications-updated", handleUpdate);
+    return () => window.removeEventListener("eventra-notifications-updated", handleUpdate);
+  }, []);
+
+  useEffect(() => {
     if (!didLoadRef.current) return;
     // Persist on every change — including when the list is cleared to []
     // so that markAllAsRead and future "clear all" features are durable.
     idbSet(STORAGE_KEY, JSON.stringify(notifications)).catch((error) => {
-  logger.error("Failed to persist notifications to indexedDB", error);
-  });
+      logger.error("Failed to persist notifications to indexedDB", error);
+    });
   }, [notifications]);
 
   const requestPermission = async () => {
@@ -58,6 +75,10 @@ export const useNotifications = () => {
       },
       ...prev,
     ]);
+    // Dispatch event to sync other instances
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
+    }, 50);
   }, []);
 
   const markAllAsRead = useCallback(() => {
@@ -67,6 +88,9 @@ export const useNotifications = () => {
         read: true,
       }))
     );
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
+    }, 50);
   }, []);
 
   const unreadCount = notifications.filter(
