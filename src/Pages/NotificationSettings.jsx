@@ -3,6 +3,7 @@ import { Bell, BellOff, Check, Mail, Monitor, Save, Volume2 } from "lucide-react
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { useNotification } from "../context/NotificationContext";
 import { NOTIFICATION_CATEGORIES, NOTIFICATION_SOUNDS } from "../utils/notificationPreferences";
+import React, { useEffect, useRef, useState } from "react";
 
 const digestOptions = [
   { value: "instant", label: "Instant" },
@@ -49,7 +50,26 @@ const NotificationSettings = () => {
     showBrowserNotification,
   } = useNotification();
   const [statusMessage, setStatusMessage] = useState("");
+  const timeoutRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+  if (statusMessage) {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      setStatusMessage('');
+    }, 4000);
+  }
+
+  return () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+  };
+}, [statusMessage]);
 
   const enabledCategoryCount = useMemo(
     () =>
