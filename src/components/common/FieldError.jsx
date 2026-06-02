@@ -19,4 +19,4 @@ const FieldError = ({ id, message }) => (
   </AnimatePresence>
 );
 
-export default FieldError;
+export default React.memo(FieldError);

@@ -1,23 +1,14 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
+import useDebounce from "../hooks/useDebounce";
 import "./styles/components.css";
 
 const SearchFilter = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm]);
 
   const categories = [
     { value: "all", label: "All Categories" },
@@ -253,15 +244,19 @@ const SearchFilter = () => {
             <div className="event-content">
               <h3 className="event-title">{event.title}</h3>
               <p className="event-description">{event.description}</p>
-              <div className="event-meta">
+              <div className="event-meta" aria-label="Event details">
                 <span className="event-date">
-                  📅 {new Date(event.date).toLocaleDateString()}
+                  <span role="img" aria-label="Date" className="mr-1">📅</span> {new Date(event.date).toLocaleDateString()}
                 </span>
-                <span className="event-location">📍 {event.location}</span>
-                <span className="event-attendees">👥 {event.attendees}</span>
+                <span className="event-location">
+                  <span role="img" aria-label="Location" className="mr-1">📍</span> {event.location}
+                </span>
+                <span className="event-attendees">
+                  <span role="img" aria-label="Attendees" className="mr-1">👥</span> {event.attendees}
+                </span>
               </div>
-              <div className="event-rating">
-                <span className="stars">⭐⭐⭐⭐⭐</span>
+              <div className="event-rating" aria-label={`Rating: ${event.rating} out of 5 stars`}>
+                <span className="stars" aria-hidden="true">⭐⭐⭐⭐⭐</span>
                 <span className="rating-value">{event.rating}</span>
               </div>
               <div className="event-actions">

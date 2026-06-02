@@ -1,14 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { Plus, Trash2, PlusCircle, Save, ArrowUp, ArrowDown } from "lucide-react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  FiPlus,
-  FiTrash2,
-  FiEye,
-  FiPlusCircle,
-  FiSave,
-  FiArrowUp,
-  FiArrowDown,
-} from "react-icons/fi";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import SurveyAnalytics from "../../components/admin/SurveyAnalytics";
@@ -71,9 +63,7 @@ const SurveyEngine = () => {
           setDraftDetected(true);
           return; // Skip setting isInitialized to prevent early overwrite
         }
-      } catch (e) {
-        console.error("Failed to parse cached survey draft:", e);
-      }
+      } catch {}
     }
     setIsInitialized(true);
   }, []);
@@ -220,12 +210,6 @@ const SurveyEngine = () => {
       return;
     }
 
-    const payload = {
-      title: surveyTitle,
-      description: surveyDescription,
-      questions: questions,
-      createdAt: new Date().toISOString(),
-    };
 
     localStorage.removeItem("eventra_survey_builder_draft");
     toast.success("Survey published and active for attendees!");
@@ -250,8 +234,8 @@ const SurveyEngine = () => {
             <button
               onClick={handleSaveSurvey}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
-            >
-              <FiSave className="w-5 h-5" />
+             aria-label="button">
+              <Save className="w-5 h-5" />
               Publish Survey
             </button>
           </div>
@@ -301,20 +285,20 @@ const SurveyEngine = () => {
                       📝 Resume where you left off?
                     </h3>
                     <p className="text-xs text-indigo-700/80 dark:text-indigo-400/80 leading-relaxed">
-                      We found an unsaved survey template draft with {cachedDraft.questions?.length || 0} question(s) titled <strong className="font-semibold">"{cachedDraft.title || "Untitled Survey"}"</strong>.
+                      We found an unsaved survey template draft with {cachedDraft.questions?.length || 0} question(s) titled <strong className="font-semibold">&quot;{cachedDraft.title || "Untitled Survey"}&quot;</strong>.
                     </p>
                   </div>
                   <div className="flex gap-2.5 shrink-0 w-full sm:w-auto">
                     <button
                       onClick={handleRestoreDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-sm transition"
-                    >
+                     aria-label="button">
                       Restore Template
                     </button>
                     <button
                       onClick={handleDiscardDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-350 dark:hover:bg-slate-750 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl transition"
-                    >
+                     aria-label="button">
                       Discard
                     </button>
                   </div>
@@ -402,7 +386,7 @@ const SurveyEngine = () => {
                             }`}
                             title="Move question up"
                           >
-                            <FiArrowUp className="w-4 h-4" />
+                            <ArrowUp className="w-4 h-4" />
                           </button>
                           
                           <button
@@ -415,7 +399,7 @@ const SurveyEngine = () => {
                             }`}
                             title="Move question down"
                           >
-                            <FiArrowDown className="w-4 h-4" />
+                            <ArrowDown className="w-4 h-4" />
                           </button>
                           
                           <button
@@ -430,7 +414,7 @@ const SurveyEngine = () => {
                             className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer ml-1"
                             title="Remove question"
                           >
-                            <FiTrash2 className="w-5 h-5" />
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
@@ -468,7 +452,7 @@ const SurveyEngine = () => {
                                   onClick={() => setConfirmModal({ open: true, type: "option", questionId: question.id, optionIndex: optIdx }) }
                                   className="text-slate-400 hover:text-red-500 p-1 self-start"
                                 >
-                                  <FiTrash2 className="w-4 h-4" />
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </motion.div>
                             ))}
@@ -477,7 +461,7 @@ const SurveyEngine = () => {
                             onClick={() => addOption(question.id)}
                             className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 mt-2"
                           >
-                            <FiPlusCircle className="w-4 h-4" />
+                            <PlusCircle className="w-4 h-4" />
                             Add Option
                           </button>
                         </div>
@@ -521,7 +505,7 @@ const SurveyEngine = () => {
                       onClick={() => addQuestion(type.value)}
                       className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 hover:shadow-md transition-all active:scale-98"
                     >
-                      <FiPlus className="w-5 h-5" />
+                      <Plus className="w-5 h-5" />
                       {type.label}
                     </button>
                   ))}
@@ -599,7 +583,7 @@ const SurveyEngine = () => {
                 <button
                   disabled
                   className="px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-semibold cursor-not-allowed text-sm"
-                >
+                 aria-label="button">
                   Submit Survey Feedback
                 </button>
               </div>

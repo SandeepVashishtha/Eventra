@@ -102,6 +102,11 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     await waitFor(
       () => {
         expect(result.current.errors.username).toBe("Username already taken");
+      },
+      { timeout: 500 },
+    );
+    await waitFor(
+      () => {
         expect(result.current.validationState.username).toBe("error");
       },
       { timeout: 500 },
@@ -117,6 +122,11 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     await waitFor(
       () => {
         expect(result.current.errors.username).toBeNull();
+      },
+      { timeout: 500 },
+    );
+    await waitFor(
+      () => {
         expect(result.current.validationState.username).toBe("success");
       },
       { timeout: 500 },
@@ -221,6 +231,11 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     await waitFor(
       () => {
         expect(result.current.errors.email).toBe("Invalid email format");
+      },
+      { timeout: 300 },
+    );
+    await waitFor(
+      () => {
         expect(asyncValidators.emailAvailable).not.toHaveBeenCalled();
       },
       { timeout: 300 },
@@ -236,6 +251,11 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     await waitFor(
       () => {
         expect(result.current.errors.email).toBe("Email already registered");
+      },
+      { timeout: 300 },
+    );
+    await waitFor(
+      () => {
         expect(asyncValidators.emailAvailable).toHaveBeenCalled();
       },
       { timeout: 300 },
@@ -278,6 +298,11 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     await waitFor(
       () => {
         expect(isValid).toBe(true);
+      },
+      { timeout: 500 },
+    );
+    await waitFor(
+      () => {
         expect(result.current.isFormValid).toBe(true);
       },
       { timeout: 500 },
@@ -444,6 +469,43 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       },
       { timeout: 500 },
     );
+  });
+
+  // Test 13: Unmounted component state update prevention
+  it("should not update state if component unmounts during async validation", async () => {
+    const initialState = { username: "" };
+    const rules = {
+      username: asyncValidators.usernameAvailable,
+    };
+
+    const { result, unmount } = renderHook(() =>
+      useFormValidation(initialState, rules, { debounceMs: 50 }),
+    );
+
+    // Trigger async validation
+    act(() => {
+      result.current.handleChange({
+        target: { name: "username", value: "admin", type: "text" },
+      });
+    });
+
+    // Wait for the debounce timer to fire (validation state becomes "validating")
+    await waitFor(
+      () => {
+        expect(result.current.validationState.username).toBe("validating");
+      },
+      { timeout: 200 },
+    );
+
+    // UNMOUNT the component WHILE the async promise is still pending
+    unmount();
+
+    // Wait enough time for the async validator to resolve
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    // After resolution, the error state should NOT have been updated,
+    // avoiding the React warning. The errors should still be empty/undefined.
+    expect(result.current.errors.username).toBeUndefined();
   });
 
   // Cleanup

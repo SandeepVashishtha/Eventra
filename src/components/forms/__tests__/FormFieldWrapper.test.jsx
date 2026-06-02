@@ -1,17 +1,20 @@
-import React, { act } from "react";
+import { act } from "react";
 import { createRoot } from "react-dom/client";
 import FormFieldWrapper from "../FormFieldWrapper";
 
 let container;
 let root;
 
+/* eslint-disable no-undef */
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+/* eslint-enable no-undef */
 
 const render = (element) => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
+  // eslint-disable-next-line testing-library/no-unnecessary-act
   act(() => {
     root.render(element);
   });
@@ -21,6 +24,7 @@ const render = (element) => {
 
 afterEach(() => {
   if (root) {
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     act(() => {
       root.unmount();
     });
@@ -190,7 +194,7 @@ describe("FormFieldWrapper", () => {
         id="email"
         label="Email"
         prefix={<span data-testid="prefix">prefix</span>}
-        suffix={<button type="button">toggle</button>}
+        suffix={<button type="button" aria-label="button">toggle</button>}
       >
         <input />
       </FormFieldWrapper>,

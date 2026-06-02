@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { AlertTriangle, Clock, Calendar, X, ArrowRight, Globe } from 'lucide-react';
 import { formatTimeRange } from '../utils/conflictDetection';
 import { getUserTimezone } from '../utils/timezoneUtils';
@@ -75,7 +75,6 @@ const EventConflictModal = ({
 
     const focusableElements = getFocusableElements();
     const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
 
     // Focus the first element when modal opens, with a tiny timeout to ensure rendering is complete
     const timeoutId = setTimeout(() => {
@@ -154,7 +153,7 @@ const EventConflictModal = ({
                 Scheduling Conflict Detected
               </h2>
               <p className="mt-1 text-gray-600 dark:text-gray-400">
-                This event overlaps with one or more events you've already registered for.
+                This event overlaps with one or more events you&apos;ve already registered for.
               </p>
               <span className="mt-2 inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                 <Globe className="w-3 h-3" />
@@ -169,7 +168,7 @@ const EventConflictModal = ({
           {/* New Event Details */}
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
             <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-              Event You're Trying to Register For
+              Event You&apos;re Trying to Register For
             </h3>
             <div className="text-blue-800 dark:text-blue-200">
               <p className="font-medium text-lg">{newEvent?.title}</p>
@@ -284,14 +283,14 @@ const EventConflictModal = ({
           <button
             onClick={onCancel}
             className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
-          >
+           aria-label="button">
             Cancel Registration
           </button>
           {!strictMode && (
             <button
               onClick={onProceed}
               className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium"
-            >
+             aria-label="button">
               Proceed Anyway
             </button>
           )}
