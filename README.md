@@ -122,6 +122,7 @@ Use `.env.example` as the source of truth.
 | `REACT_APP_PUBLIC_URL` | No | Canonical public app URL |
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public web-push key |
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
+| `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN, used only in production |
 
 Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variables because they are exposed to the client bundle.
 
