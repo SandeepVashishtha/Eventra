@@ -37,17 +37,17 @@ class MockBlob {
 }
 global.Blob = MockBlob;
 
-// ✅ FIX: Node 22 has read-only navigator getter → use defineProperty
+// ✅ FIX: Safe navigator mock for Node 22
 let beaconSent = null;
 
 Object.defineProperty(globalThis, "navigator", {
+  configurable: true,
   value: {
     sendBeacon(url, blob) {
       beaconSent = { url, blob };
       return true;
     }
-  },
-  configurable: true
+  }
 });
 
 // Import module after mocks + env setup
@@ -56,7 +56,11 @@ const { initCspReporting, teardownCspReporting } = await import(
 );
 
 // Test 1: initCspReporting registers event listener
-assert.equal(listeners["securitypolicyviolation"], undefined, "no listener before init");
+assert.equal(
+  listeners["securitypolicyviolation"],
+  undefined,
+  "no listener before init"
+);
 
 initCspReporting();
 
@@ -121,7 +125,7 @@ if (originalReportUri === undefined) {
 console.warn = originalConsoleWarn;
 
 delete global.document;
-delete global.navigator;
+delete globalThis.navigator;
 delete global.Blob;
 
 console.log("cspReporting tests passed ✓");

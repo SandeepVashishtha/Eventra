@@ -27,8 +27,8 @@ const resolveEnvApiBaseUrl = () => {
   if (envUrl) {
     return normalizeApiBaseUrl(envUrl);
   }
-  if (process.env.NODE_ENV === "production") {
-    console.warn("VITE_API_URL environment variable is missing in production. Defaulting to relative API requests.");
+  if (!isDev) {
+    console.warn(`VITE_API_URL environment variable is missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
     return "";
   }
   return "http://localhost:8080";
@@ -60,6 +60,7 @@ const buildApiUrl = (path = "") => {
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
+const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1_000;
 
@@ -195,12 +196,22 @@ const normalizeApiError = (error) => {
   );
 };
 
-// 🔥 HERE IS WHERE WE FIXED THE BUG 🔥
 // We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
 API.interceptors.request.use((config) => {
   if (isDev) {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
+  
+  const method = config.method?.toUpperCase();
+  if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    if (!config.headers['Idempotency-Key'] && !config.headers['X-Idempotency-Key']) {
+      const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+      config.headers['Idempotency-Key'] = generateId();
+    }
+  }
+  
   return config;
 });
 
@@ -216,9 +227,10 @@ API.interceptors.response.use(
 
     const retryCount = config._retryCount || 0;
     const isNonMutating = config.method?.toUpperCase() === 'GET';
-    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status) || (status === 429);
+    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
     
-    // Retry non-mutating requests with exponential backoff
+    // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
+    // because those can duplicate writes or worsen server-side rate limiting.
     if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
       config._retryCount = retryCount + 1;
       const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
@@ -254,6 +266,7 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+    AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
 
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
@@ -284,6 +297,18 @@ export const API_ENDPOINTS = {
   USERS: {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
+  },
+  TICKETS: {
+    VALIDATE: buildApiUrl("/api/tickets/validate"),
+    CHECK_IN: buildApiUrl("/api/tickets/checkin"),
+    HISTORY: buildApiUrl("/api/tickets/checkins"),
+  },
+  ADMIN: {
+    USERS: buildApiUrl("/api/admin/users"),
+    USER: (id) => buildApiUrl(`/api/admin/users/${id}`),
+    EVENTS: buildApiUrl("/api/admin/events"),
+    EVENT: (id) => buildApiUrl(`/api/admin/events/${id}`),
+    STATS: buildApiUrl("/api/admin/stats"),
   },
   VALIDATION: {
     EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
