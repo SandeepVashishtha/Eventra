@@ -1,38 +1,20 @@
-import React, {
-  lazy,
-  Suspense,
-  useRef,
-  useState,
-  useEffect,
-} from "react";
-
+import { useRef, useState, useEffect, useCallback } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-
-import {
-  Moon,
-  Sun,
-  Search,
-  ChevronDown,
-  Plus,
-  HelpCircle,
-  X,
-} from "lucide-react";
-
-import { useTheme } from "../../context/ThemeContext";
+import { ChevronDown } from "lucide-react";
 import { NAV_ITEMS } from "./constants/navItems";
-
-const KeyboardShortcutsModal = lazy(() =>
-  import("../common/KeyboardShortcutsModal")
-);
+import { prefetchRoute } from "../../utils/prefetchUtils";
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
   const navRef = useRef(null);
 
   const [openGroup, setOpenGroup] = useState(null);
-  const [showShortcuts, setShowShortcuts] = useState(false);
 
-  const { isDarkMode } = useTheme();
+  const handlePrefetch = (href) => {
+    if (href === "/events") prefetchRoute(() => import("../../Pages/Events/ExploreEvents"), "explore");
+    if (href === "/saved-events") prefetchRoute(() => import("../../Pages/SavedEventsPage"), "saved");
+  };
+
 
   useEffect(() => {
     setOpenGroup(null);
@@ -64,15 +46,15 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
 
   const getNavLinkClasses = (active) => {
     return vertical
-      ? `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-all duration-200 w-full py-2 px-3 border-l-2 rounded-lg focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
+      ? `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-all duration-200 w-full py-2 px-3 border-l-2 rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
           active
-            ? "text-black dark:text-white border-black dark:border-white font-semibold bg-gray-100 dark:bg-gray-800"
-            : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50"
+            ? "text-text border-primary font-semibold bg-bg-secondary"
+            : "text-text-light hover:text-text border-transparent hover:bg-bg"
         }`
-      : `flex gap-1 items-center text-xs xl:text-sm font-medium transition-all duration-200 px-1.5 xl:px-2 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 focus-visible:rounded-lg ${
+      : `flex gap-1.5 items-center text-[12px] xl:text-[13px] font-medium uppercase tracking-[0.03em] transition-all duration-200 px-1.5 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
           active
-            ? "text-black dark:text-white border-black dark:border-white font-semibold"
-            : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent hover:border-gray-300 dark:hover:border-gray-600"
+            ? "text-text border-primary"
+            : "text-text-light hover:text-text border-transparent hover:border-border"
         }`;
   };
 
@@ -82,7 +64,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
-          : "items-center gap-1.5 xl:gap-3 mx-1 xl:mx-3 min-w-0 flex-nowrap"
+          : "items-center gap-0.5 xl:gap-1 mx-0.5 xl:mx-1 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
       }`}
       aria-label={vertical ? "Mobile primary links" : "Primary links"}
     >
@@ -118,7 +100,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     getNavLinkClasses(isActive || isSubItemActive)
                   }
                 >
-                  {item.icon}
+                  {vertical ? item.icon : null}
                   <span>{item.name}</span>
                 </NavLink>
 
@@ -149,10 +131,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     aria-label={`${
                       isOpen ? "Collapse" : "Expand"
                     } ${item.name} submenu`}
-                    className={`ml-auto inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
+                    className={`ml-auto inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
                       isSubItemActive
-                        ? "text-black dark:text-white"
-                        : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white"
+                        ? "text-text"
+                        : "text-text-light hover:text-text"
                     }`}
                   >
                     <ChevronDown
@@ -172,12 +154,12 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                   .replace(/\s+/g, "-")}`}
                 className={
                   vertical
-                    ? "mt-1 block w-full space-y-1 rounded-lg bg-gray-50 p-2 dark:bg-gray-800/60"
+                    ? "mt-1 block w-full space-y-1 rounded-lg bg-bg p-2"
                     : `${
                         isOpen
                           ? "block"
                           : "hidden group-hover/nav:block"
-                      } absolute top-full left-0 bg-white dark:bg-gray-800 shadow-lg rounded-md p-2 min-w-55 z-50 border border-gray-100 dark:border-gray-700 mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
+                      } absolute top-full left-0 bg-navbar shadow-premium-md rounded-md p-2 min-w-55 z-50 border border-border mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
                 }
                 role={!vertical ? "menu" : undefined}
                 aria-label={`${item.name} submenu`}
@@ -189,14 +171,14 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     onClick={onClick}
                     role={!vertical ? "menuitem" : undefined}
                     className={({ isActive }) =>
-                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-md p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 focus-visible:rounded-lg ${
+                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-md p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
                         isActive
-                          ? "bg-gray-100 dark:bg-gray-700 text-black dark:text-white font-semibold"
-                          : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                          ? "bg-bg-secondary text-text font-semibold"
+                          : "text-text-light hover:text-text hover:bg-bg"
                       }`
                     }
                   >
-                    {sub.icon}
+                    {vertical ? sub.icon : null}
                     <span>{sub.name}</span>
                   </NavLink>
                 ))}
@@ -210,6 +192,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             key={item.name}
             to={item.href}
             onClick={onClick}
+            onMouseEnter={() => handlePrefetch(item.href)}
             className={({ isActive }) =>
               getNavLinkClasses(isActive)
             }
@@ -220,39 +203,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         );
       })}
 
-      <Suspense fallback={null}>
-        <KeyboardShortcutsModal
-          isOpen={showShortcuts}
-          onClose={() => setShowShortcuts(false)}
-          shortcuts={[
-            {
-              keys: ["Ctrl", "K"],
-              action: "Open search",
-              icon: Search,
-            },
-            {
-              keys: ["Ctrl", "N"],
-              action: "Create new event",
-              icon: Plus,
-            },
-            {
-              keys: ["T"],
-              action: "Toggle theme",
-              icon: isDarkMode ? Sun : Moon,
-            },
-            {
-              keys: ["?"],
-              action: "Show shortcuts",
-              icon: HelpCircle,
-            },
-            {
-              keys: ["Esc"],
-              action: "Close modals",
-              icon: X,
-            },
-          ]}
-        />
-      </Suspense>
+
     </nav>
   );
 };

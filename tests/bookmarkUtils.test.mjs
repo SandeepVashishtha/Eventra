@@ -85,4 +85,12 @@ const bookmarks3 = removeBookmarkedEvent(101);
 assert.equal(bookmarks3.length, 1);
 assert.equal(isEventBookmarked(101), false);
 
+// Edge Cases: non-existent bookmark removal
+const bookmarks4 = removeBookmarkedEvent(999);
+assert.equal(bookmarks4.length, 1, "removing non-existent bookmark should return the same bookmark list size");
+
+// Handling invalid ID arguments (null/undefined/objects)
+assert.equal(isEventBookmarked(null), false, "null event id should return not bookmarked");
+assert.equal(isEventBookmarked(undefined), false, "undefined event id should return not bookmarked");
+
 unsubscribe();

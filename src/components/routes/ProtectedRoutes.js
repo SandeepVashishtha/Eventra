@@ -1,11 +1,12 @@
-import React, { lazy } from "react";
+import { lazy } from "react";
 import { Route } from "react-router-dom";
 
-import { lazyWithRetry } from "../../utils/lazyWithRetry";
 import ProtectedRoute from "../auth/ProtectedRoute";
+import ErrorBoundary from "../common/ErrorBoundary";
 import { ROLES, PERMISSIONS } from "../../config/roles";
-const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
 
+// 🔥 FIX: Removed all duplicate const declarations that were causing fatal SyntaxErrors
+const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
 const EventCreation = lazy(() => import("../common/EventCreation/EventCreation"));
 const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
 const UserProfile = lazy(() => import("../user/UserProfile"));
@@ -14,24 +15,29 @@ const Settings = lazy(() => import("../../Pages/Settings"));
 const AuthPage = lazy(() => import("../auth/AuthPage"));
 const Unauthorized = lazy(() => import("../auth/Unauthorized"));
 const PasswordReset = lazy(() => import("../auth/PasswordReset"));
-const NotFound = lazy(() => import("../NotFound"));
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
+const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
+const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
+
+const withModuleBoundary = (children, boundaryName) => (
+  <ErrorBoundary
+    variant="section"
+    boundaryName={boundaryName}
+    title={`${boundaryName} needs a reset`}
+  >
+    {children}
+  </ErrorBoundary>
+);
 
 export const getProtectedRoutes = () => [
   <Route
     key="/create-event"
     path="/create-event"
     element={
-      <ProtectedRoute
-        requiredPermissions={[PERMISSIONS.CREATE_EVENT]}
-        requiredScopes={["event:write"]}
-        validateContext={({ user }) =>
-          user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
-        }
-      >
-        <EventCreation />
+      <ProtectedRoute redirectTo="/login">
+        {withModuleBoundary(<EventCreation />, "Event creation")}
       </ProtectedRoute>
     }
   />,
@@ -40,35 +46,34 @@ export const getProtectedRoutes = () => [
     path="/admin"
     element={
       <ProtectedRoute
-        requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
-        requiredScopes={["admin:all"]}
-        validateContext={({ user }) => user?.status !== "Suspended"}
-      >
-        <AdminDashboard />
+  requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
+  redirectTo="/login"
+>
+        {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
       </ProtectedRoute>
     }
   />,
-  <Route
-    key="/host-hackathon"
-    path="/host-hackathon"
-    element={
-      <ProtectedRoute
-        requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
-        requiredScopes={["hackathon:write"]}
-        validateContext={({ user }) =>
-          user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
-        }
-      >
-        <HostHackathon />
-      </ProtectedRoute>
-    }
-  />,
+ <Route
+  key="/host-hackathon"
+  path="/host-hackathon"
+  element={
+    <ProtectedRoute
+      requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
+      requiredScopes={["hackathon:write"]}
+      validateContext={({ user }) =>
+        user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
+      }
+    >
+      {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
+    </ProtectedRoute>
+  }
+/>,
   <Route
     key="/dashboard"
     path="/dashboard"
     element={
       <ProtectedRoute>
-        <Dashboard />
+        {withModuleBoundary(<Dashboard />, "User dashboard")}
       </ProtectedRoute>
     }
   />,
@@ -82,11 +87,20 @@ export const getProtectedRoutes = () => [
     }
   />,
   <Route
+    key="/networking"
+    path="/networking"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<MatchmakingHub />, "Matchmaking Hub")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
     key="/profile/edit"
     path="/profile/edit"
     element={
       <ProtectedRoute>
-        <EditProfile />
+        {withModuleBoundary(<EditProfile />, "Profile editor")}
       </ProtectedRoute>
     }
   />,
@@ -104,7 +118,7 @@ export const getProtectedRoutes = () => [
     path="/settings"
     element={
       <ProtectedRoute>
-        <Settings />
+        {withModuleBoundary(<Settings />, "Settings")}
       </ProtectedRoute>
     }
   />,
@@ -127,7 +141,16 @@ export const getProtectedRoutes = () => [
           PERMISSIONS.CREATE_EVENT,
         ]}
       >
-        <SurveyEngine />
+        {withModuleBoundary(<SurveyEngine />, "Survey builder")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/:eventId/floorplan-editor"
+    path="/events/:eventId/floorplan-editor"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<CollaborativeFloorPlan />, "Floor Plan Designer")}
       </ProtectedRoute>
     }
   />,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -75,7 +75,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  if (loading) return;
     if (isLockedOut()) return;
     if (!validate()) return;
 
@@ -339,7 +339,7 @@ const Login = () => {
               {/* Sign up link */}
               <div className="text-center">
                 <p style={{ color: "var(--text-color-light)" }}>
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <Link to="/signup" className="text-blue-600 hover:underline font-semibold">
                     Create one here
                   </Link>

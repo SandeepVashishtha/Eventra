@@ -1,6 +1,7 @@
+import "./helpers/authTestEnv.mjs";
 process.env.ALLOWED_ORIGIN = "http://localhost:3000";
 import assert from "node:assert/strict";
-import handler, { users } from "../api/auth/login.js";
+const { default: handler, users } = await import("../api/auth/login.js");
 
 // Mock allowed origin to test specific CORS headers correctly
 process.env.ALLOWED_ORIGIN = "http://localhost:3000";
@@ -43,16 +44,25 @@ const createResponse = () => {
 // Mock Request Helper
 // ---------------------------------------------------------------------------
 
-const createRequest = (method, body) => ({
-  method,
-  body,
-});
+let requestCounter = 0;
+const createRequest = (method, body, headers = {}) => {
+  const finalHeaders = { ...headers };
+  if (!finalHeaders["x-forwarded-for"] && !finalHeaders["x-real-ip"]) {
+    requestCounter += 1;
+    finalHeaders["x-forwarded-for"] = `10.0.0.${requestCounter}`;
+  }
+  return {
+    method,
+    body,
+    headers: finalHeaders,
+  };
+};
 
 // ---------------------------------------------------------------------------
 // Helper: Create a test user by calling signup first
 // ---------------------------------------------------------------------------
 
-import signupHandler from "../api/auth/signup.js";
+const { default: signupHandler } = await import("../api/auth/signup.js");
 
 const createTestUser = async (userData) => {
   const req = createRequest("POST", userData);
@@ -242,7 +252,7 @@ console.log("Running login endpoint tests...");
   assert.ok(payload.id, "JWT should contain user id");
   assert.ok(payload.email, "JWT should contain email");
   assert.ok(payload.roles, "JWT should contain roles");
-  assert.ok(payload.permissions, "JWT should contain permissions");
+  assert.equal(payload.permissions, undefined, "JWT should NOT contain permissions");
   assert.ok(payload.exp, "JWT should contain expiration");
   console.log("✓ Test 11: JWT token contains required claims");
 }
@@ -318,6 +328,47 @@ console.log("Running login endpoint tests...");
   assert.equal(res.statusCode, 400, "Should return 400 for whitespace-only usernameOrEmail");
   assert.ok(res.body.error, "Should return error message");
   console.log("✓ Test 16: Whitespace-only usernameOrEmail returns 400");
+}
+
+// Test 17: Login rate limit allows normal requests before limit
+{
+  const userData = {
+    firstName: "RateLimit",
+    lastName: "Tester",
+    email: "ratelimit.login@example.com",
+    password: "SecurePass123!",
+    confirmPassword: "SecurePass123!",
+  };
+  await createTestUser(userData);
+
+  for (let i = 1; i <= 5; i += 1) {
+    const req = createRequest(
+      "POST",
+      { usernameOrEmail: "ratelimit.login@example.com", password: "SecurePass123!" },
+      { "x-forwarded-for": "127.0.0.1" }
+    );
+    const res = createResponse();
+    await handler(req, res);
+
+    assert.notEqual(res.statusCode, 429, `Request ${i} should not be rate limited`);
+  }
+  console.log("✓ Test 17: Login rate limit allows normal requests before limit");
+}
+
+// Test 18: Login rate limit blocks after max attempts
+{
+  const req = createRequest(
+    "POST",
+    { usernameOrEmail: "ratelimit.login@example.com", password: "WrongPass123!" },
+    { "x-forwarded-for": "127.0.0.1" }
+  );
+  const res = createResponse();
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 429, "Should return 429 after login attempts exceed the limit");
+  assert.equal(res.body.success, false, "Should return success false when blocked");
+  assert.equal(res.body.message, "Too many authentication attempts. Please try again later.");
+  console.log("✓ Test 18: Login rate limit blocks after max attempts");
 }
 
 console.log("\n✅ All login endpoint tests passed!");

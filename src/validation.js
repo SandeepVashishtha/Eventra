@@ -22,23 +22,16 @@ export const VALIDATION_MESSAGES = {
   validationUnavailable: "Unable to validate right now. Please try again.",
 };
 
-export const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-export const phonePattern = /^\+?[\d\s-()]{10,}$/;
-
-/**
- * Synchronous validators for common form fields.
- *
- * Each validator returns `true` when the value passes, or a string message when
- * the value fails. This shape matches the existing `useFormValidation` hook.
- *
- * @example
- * const result = validate.email("person@example.com");
- * if (result !== true) showError(result);
- */
+// Single source of truth regular expressions (Anchored, non-backtracking)
 const EMAIL_REGEX = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{1,63}$/;
-const MAX_EMAIL_LENGTH = 254;
 const PHONE_REGEX = /^\+?[\d\s\-()]+$/;
+
+const MAX_EMAIL_LENGTH = 254;
 const URL_REGEX = /^https?:\/\/[^\s]{1,2048}$/;
+
+// Shared top-level exports pointing directly to the source of truth constants
+export const emailPattern = EMAIL_REGEX;
+export const phonePattern = PHONE_REGEX;
 
 export const validate = {
 
@@ -101,6 +94,38 @@ export const validate = {
 
   minLength: (min) => (val) => (val && val.length >= min) || `Minimum ${min} characters`,
   maxLength: (max) => (val) => (!val || val.length <= max) || `Maximum ${max} characters`,
+
+  // --- Event Specific Validations ---
+  eventTitle: (val) => {
+    if (!val || !val.trim()) return "Event title is required";
+    if (val.trim().length < 3) return "Title must be at least 3 characters";
+    if (val.trim().length > 200) return "Title must be less than 200 characters";
+    return true;
+  },
+
+  eventDescription: (val) => (val && val.trim() !== "") || "Event description is required",
+
+  eventCategory: (val) => (val && val !== "") || "Please select a category",
+
+  eventDate: (val) => (val && val !== "") || "Event date is required",
+
+  eventTime: (val) => (val && val !== "") || "Time is required",
+
+  eventCapacity: (val) => {
+    if (!val) return true; // Optional
+    const cap = Number(val);
+    if (isNaN(cap) || cap <= 0) return "Must be a positive number";
+    if (cap > 100000) return "Maximum capacity is 100,000";
+    return true;
+  },
+
+  ticketTierName: (val) => (val && val.trim() !== "") || "Tier name is required",
+
+  ticketTierPrice: (val) => {
+    const price = Number(val);
+    if (isNaN(price) || price < 0) return "Price cannot be negative";
+    return true;
+  },
 
   /**
    * Survey sanitizers & XSS guards.

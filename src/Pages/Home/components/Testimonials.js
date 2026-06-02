@@ -1,7 +1,6 @@
-import React, { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import { Quote, Star, Play, Pause, ChevronLeft, ChevronRight, Share2, CheckCircle, ExternalLink } from "lucide-react";
+import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaQuoteLeft, FaStar, FaPlay, FaPause, FaChevronLeft, FaChevronRight, FaShareAlt, FaCheckCircle } from "react-icons/fa";
-import { FiExternalLink } from "react-icons/fi";
 
 // 🎯 Enhanced testimonials data with more metadata
 const testimonials = [
@@ -205,9 +204,7 @@ const ModernTestimonialTrain = () => {
           text: testimonial.quote,
           url: testimonial.shareUrl,
         });
-      } catch (err) {
-        if (err.name !== "AbortError") console.error("Share failed:", err);
-      }
+      } catch {}
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(`${testimonial.quote} — ${testimonial.author}, ${testimonial.company}`);
@@ -247,7 +244,7 @@ const ModernTestimonialTrain = () => {
           transition={{ repeat: Infinity, duration: 3 + Math.random() * 2, delay: star.delay, ease: "easeInOut" }}
           aria-hidden="true"
         >
-          <FaStar />
+          <Star />
         </motion.div>
       ))}
 
@@ -294,7 +291,7 @@ const ModernTestimonialTrain = () => {
           aria-label={isPlaying ? "Pause auto-scroll" : "Play auto-scroll"}
           title={isPlaying ? "Pause (Space)" : "Play (Space)"}
         >
-          {isPlaying ? <FaPause className="text-indigo-600 dark:text-indigo-400" /> : <FaPlay className="text-indigo-600 dark:text-indigo-400 ml-0.5" />}
+          {isPlaying ? <Pause className="text-indigo-600 dark:text-indigo-400" /> : <Play className="text-indigo-600 dark:text-indigo-400 ml-0.5" />}
         </button>
         
         <button
@@ -304,7 +301,7 @@ const ModernTestimonialTrain = () => {
           aria-label="Previous testimonial"
           title="← Arrow Key"
         >
-          <FaChevronLeft className="text-gray-700 dark:text-gray-300" />
+          <ChevronLeft className="text-gray-700 dark:text-gray-300" />
         </button>
         
         <button
@@ -314,7 +311,7 @@ const ModernTestimonialTrain = () => {
           aria-label="Next testimonial"
           title="Arrow Key →"
         >
-          <FaChevronRight className="text-gray-700 dark:text-gray-300" />
+          <ChevronRight className="text-gray-700 dark:text-gray-300" />
         </button>
       </div>
 
@@ -329,9 +326,6 @@ const ModernTestimonialTrain = () => {
         >
           <AnimatePresence>
             {scrollItems.map((testimonial, index) => {
-              const isOriginal = index < filteredTestimonials.length;
-              const displayIndex = isOriginal ? index : index - filteredTestimonials.length;
-              
               return (
                 <motion.div
                   key={`${testimonial.id}-${index}`}
@@ -347,12 +341,12 @@ const ModernTestimonialTrain = () => {
                   {/* ✅ Verified Badge */}
                   {testimonial.verified && (
                     <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md" title="Verified Organizer">
-                      <FaCheckCircle className="w-3 h-3" /> Verified
+                      <CheckCircle className="w-3 h-3" /> Verified
                     </div>
                   )}
 
                   {/* 💬 Quote Icon */}
-                  <FaQuoteLeft className="absolute top-4 left-4 text-gray-300 dark:text-gray-800 text-4xl -z-10 opacity-50" aria-hidden="true" />
+                  <Quote className="absolute top-4 left-4 text-gray-300 dark:text-gray-800 text-4xl -z-10 opacity-50" aria-hidden="true" />
 
                   {/* 📝 Quote Text with Expand */}
                   <p className="mb-6 text-gray-900 dark:text-gray-100 relative z-10 text-sm leading-relaxed">
@@ -392,7 +386,7 @@ const ModernTestimonialTrain = () => {
                   {/* ⭐ Rating Stars */}
                   <div className="absolute bottom-4 right-4 flex gap-0.5" aria-label={`Rating: ${testimonial.rating} out of 5 stars`}>
                     {[...Array(5)].map((_, i) => (
-                      <FaStar
+                      <Star
                         key={i}
                         className={`${i < testimonial.rating ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-300 dark:text-gray-600'} text-xs`}
                         aria-hidden="true"
@@ -407,7 +401,7 @@ const ModernTestimonialTrain = () => {
                     aria-label={`Share ${testimonial.author}'s testimonial`}
                     title="Share this testimonial"
                   >
-                    <FaShareAlt className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
+                    <Share2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
                   </button>
                 </motion.div>
               );
@@ -449,7 +443,7 @@ const ModernTestimonialTrain = () => {
             href="/submit-testimonial"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors shadow-md hover:shadow-lg"
           >
-            Share Your Story <FiExternalLink className="w-3.5 h-3.5" />
+            Share Your Story <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       </motion.div>

@@ -1,14 +1,17 @@
 export const getUserProfile = () => {
-
-  const saved =
-    JSON.parse(
-      localStorage.getItem(
-        "eventra_user_profile"
-      )
-    ) || {};
+  let saved = {};
+  try {
+    saved =
+      JSON.parse(
+        localStorage.getItem(
+          "eventra_user_profile"
+        )
+      ) || {};
+  } catch {
+    saved = {};
+  }
 
   return {
-
     interests:
       saved.interests || [],
 
@@ -20,7 +23,5 @@ export const getUserProfile = () => {
 
     level:
       saved.level || "Beginner",
-
   };
-
 };

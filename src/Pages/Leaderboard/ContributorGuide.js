@@ -1,27 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { Copy, Check, ChevronDown, ChevronUp, Info, File, Lock, Code2, FileText, Package, CheckCircle, Server, Clipboard, GitBranch, Github, ArrowRightCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
-  FiCopy,
-  FiCheck,
-  FiChevronDown,
-  FiChevronUp,
-  FiInfo,
-  FiFile,
-  FiLock,
-  FiCode,
-  FiFileText,
-  FiPackage,
-  FiCheckCircle,
-  FiServer,
-  FiClipboard,
-  FiGitBranch,
-  FiGithub,
-  FiArrowRightCircle,
-} from "react-icons/fi";
-import {
   HelpCircle,
-  GitBranch,
   GitPullRequest,
   FileText as LucideFileText, 
   Users,
@@ -170,13 +152,11 @@ const ContributorGuide = () => {
     navigator.clipboard.writeText(cmd).then(() => {
       setCopied(id);
       setTimeout(() => setCopied(""), 2000);
-    }).catch((err) => {
-      console.error("Failed to copy command:", err);
-    });
+    }).catch(() => {});
   };
 
   return (
-    <div className="pastel-grid-bg bg-gray-50 dark:bg-black min-h-screen pt-20 md:pt-24 px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16 overflow-x-hidden">
+    <div className="pastel-grid-bg bg-bg min-h-screen pt-20 md:pt-24 px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16 overflow-x-hidden">
       {/* Page Heading */}
       <div className="text-center mb-12">
         <h1
@@ -186,14 +166,14 @@ const ContributorGuide = () => {
           Welcome to Eventra Contributions!
         </h1>
         <p className="text-gray-700 dark:text-gray-300 text-base max-w-3xl mx-auto">
-          We're excited to have you join the Eventra community! This guide
+          We&apos;re excited to have you join the Eventra community! This guide
           provides detailed, actionable instructions, examples, and interactive
           tips to help first-time contributors succeed.
         </p>
       </div>
 
       {/* GAMIFICATION & SCORING SYSTEM CARD */}
-      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-md">
+      <div className="bg-card-bg p-6 md:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-md">
         <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-gray-100 mb-6 text-center">
           🎮 Contribution Gamification & Points Arena
         </h2>
@@ -261,7 +241,7 @@ const ContributorGuide = () => {
       </div>
 
       {/* Step-by-Step Contribution Section */}
-      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md">
+      <div className="bg-card-bg p-6 md:p-8 rounded-xl shadow-md">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 mt-8 text-center">
           Step-by-Step Contribution Journey
         </h2>
@@ -273,10 +253,10 @@ const ContributorGuide = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: index * 0.1 }}
-              className="border-l-4 border-sky-200 dark:border-sky-300 p-4 bg-gray-200 dark:bg-gray-800 rounded shadow-sm"
+              className="border-l-4 border-sky-200 dark:border-sky-300 p-4 bg-card-bg rounded shadow-sm"
             >
               <div className="flex items-center mb-2">
-                <FiInfo className="text-sky-300 dark:text-sky-200 mr-2 flex-shrink-0" />
+                <Info className="text-sky-300 dark:text-sky-200 mr-2 flex-shrink-0" />
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                   {type.title}
                 </h3>
@@ -293,14 +273,14 @@ const ContributorGuide = () => {
       </div>
 
       {/* Important Files Section */}
-      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md">
+      <div className="bg-card-bg p-6 md:p-8 rounded-xl shadow-md">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center flex items-center justify-center gap-3">
-          <FiFile className="text-emerald-300 dark:text-emerald-200" size={32} />
+          <File className="text-emerald-300 dark:text-emerald-200" size={32} />
           Important Files in This Project
         </h2>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
-            <thead className="bg-indigo-50 dark:bg-gray-800/50">
+            <thead className="bg-card-bg">
               <tr>
                 <th className="px-4 sm:px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                   File
@@ -313,7 +293,7 @@ const ContributorGuide = () => {
             <tbody className="divide-y divide-gray-300 dark:divide-gray-600">
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                 <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
-                  <FiLock /> .env
+                  <Lock /> .env
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Stores environment variables like API keys. Do not commit this
@@ -322,7 +302,7 @@ const ContributorGuide = () => {
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                 <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
-                  <FiLock /> .env.example
+                  <Lock /> .env.example
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Example environment file. Use it as a template to create your
@@ -331,7 +311,7 @@ const ContributorGuide = () => {
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                 <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
-                  <FiCode /> .gitignore
+                  <Code2 /> .gitignore
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Lists files/folders to ignore in Git commits, like
@@ -340,7 +320,7 @@ const ContributorGuide = () => {
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                 <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
-                  <FiFileText /> LICENSE
+                  <FileText /> LICENSE
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Contains the license details for the project.
@@ -348,7 +328,7 @@ const ContributorGuide = () => {
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                 <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
-                  <FiClipboard /> README.md
+                  <Clipboard /> README.md
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Main documentation for the project. Explains setup, usage, and
@@ -357,7 +337,7 @@ const ContributorGuide = () => {
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                 <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
-                  <FiPackage /> package.json
+                  <Package /> package.json
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Contains project metadata, scripts, and dependencies.
@@ -365,7 +345,7 @@ const ContributorGuide = () => {
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                 <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
-                  <FiCheckCircle /> package-lock.json
+                  <CheckCircle /> package-lock.json
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Locks dependency versions for consistent installs across
@@ -374,7 +354,7 @@ const ContributorGuide = () => {
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                 <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
-                  <FiServer /> vercel.json
+                  <Server /> vercel.json
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Configuration file for deployment on Vercel.
@@ -382,7 +362,7 @@ const ContributorGuide = () => {
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                 <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
-                  <FiFileText /> CODE_OF_CONDUCT.md
+                  <FileText /> CODE_OF_CONDUCT.md
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Outlines expected behavior and guidelines for contributors.
@@ -394,9 +374,9 @@ const ContributorGuide = () => {
       </div>
 
       {/* Issue & PR Workflow Section */}
-      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md mt-10">
+      <div className="bg-card-bg p-6 md:p-8 rounded-xl shadow-md mt-10">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-10 text-center flex items-center justify-center gap-3">
-          <FiGitBranch
+          <GitBranch
             className="text-violet-300 dark:text-violet-200"
             size={32}
           />
@@ -406,7 +386,7 @@ const ContributorGuide = () => {
           {[
             {
               step: 1,
-              icon: <FiFileText />,
+              icon: <FileText />,
               title: "Pick an Issue",
               description: (
                 <>
@@ -424,7 +404,7 @@ const ContributorGuide = () => {
             },
             {
               step: 2,
-              icon: <FiGitBranch />,
+              icon: <GitBranch />,
               title: "Create a Branch",
               description: (
                 <>
@@ -442,7 +422,7 @@ const ContributorGuide = () => {
             },
             {
               step: 3,
-              icon: <FiCheckCircle />,
+              icon: <CheckCircle />,
               title: "Make Changes & Commit",
               description: (
                 <>
@@ -457,7 +437,7 @@ const ContributorGuide = () => {
             },
             {
               step: 4,
-              icon: <FiArrowRightCircle />,
+              icon: <ArrowRightCircle />,
               title: "Open a Pull Request",
               description: (
                 <>
@@ -513,7 +493,7 @@ const ContributorGuide = () => {
 
         <div className="mt-10 flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6">
           <div className="flex flex-col items-center gap-2">
-            <FiFileText
+            <FileText
               className="text-sky-300 dark:text-sky-200"
               size={36}
             />
@@ -522,13 +502,13 @@ const ContributorGuide = () => {
             </span>
           </div>
 
-          <FiChevronDown className="text-slate-300 dark:text-gray-600 text-2xl md:hidden" />
+          <ChevronDown className="text-slate-300 dark:text-gray-600 text-2xl md:hidden" />
           <div className="text-slate-300 dark:text-gray-600 text-2xl hidden md:block">
             →
           </div>
 
           <div className="flex flex-col items-center gap-2">
-            <FiGitBranch
+            <GitBranch
               className="text-emerald-300 dark:text-emerald-200"
               size={36}
             />
@@ -537,13 +517,13 @@ const ContributorGuide = () => {
             </span>
           </div>
 
-          <FiChevronDown className="text-slate-300 dark:text-gray-600 text-2xl md:hidden" />
+          <ChevronDown className="text-slate-300 dark:text-gray-600 text-2xl md:hidden" />
           <div className="text-slate-300 dark:text-gray-600 text-2xl hidden md:block">
             →
           </div>
 
           <div className="flex flex-col items-center gap-2">
-            <FiCheckCircle
+            <CheckCircle
               className="text-amber-300 dark:text-amber-200"
               size={36}
             />
@@ -552,13 +532,13 @@ const ContributorGuide = () => {
             </span>
           </div>
 
-          <FiChevronDown className="text-slate-300 dark:text-gray-600 text-2xl md:hidden" />
+          <ChevronDown className="text-slate-300 dark:text-gray-600 text-2xl md:hidden" />
           <div className="text-slate-300 dark:text-gray-600 text-2xl hidden md:block">
             →
           </div>
 
           <div className="flex flex-col items-center gap-2">
-            <FiArrowRightCircle
+            <ArrowRightCircle
               className="text-rose-300 dark:text-rose-200"
               size={36}
             />
@@ -570,7 +550,7 @@ const ContributorGuide = () => {
       </div>
 
       {/* Git Commands Section */}
-      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md">
+      <div className="bg-card-bg p-6 md:p-8 rounded-xl shadow-md">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
           Essential Git Commands
         </h2>
@@ -592,7 +572,7 @@ const ContributorGuide = () => {
                 onClick={() => copyCommand(c.cmd, c.id)}
                 className="flex items-center justify-center sm:justify-start gap-2 bg-sky-100 dark:bg-sky-900/40 text-black dark:text-white px-3 py-1.5 rounded hover:bg-amber-100 dark:hover:bg-amber-900/40 transition self-start sm:self-center flex-shrink-0"
               >
-                {copied === c.id ? <FiCheck /> : <FiCopy />}
+                {copied === c.id ? <Check /> : <Copy />}
                 <span>{copied === c.id ? "Copied" : "Copy"}</span>
               </button>
             </div>
@@ -634,7 +614,7 @@ const ContributorGuide = () => {
                     </span>
                   </div>
                   <span className="text-gray-500 dark:text-gray-400">
-                    {isOpen ? <FiChevronUp /> : <FiChevronDown />}
+                    {isOpen ? <ChevronUp /> : <ChevronDown />}
                   </span>
                 </button>
 
@@ -659,11 +639,11 @@ const ContributorGuide = () => {
 
       {/* Call to Action */}
       <div className="relative overflow-hidden rounded-xl p-10 shadow-xl text-center text-white bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950">
-        <FiGithub className="absolute top-5 left-5 text-white/10 text-6xl rotate-12" />
-        <FiGithub className="absolute bottom-5 right-5 text-white/10 text-6xl -rotate-12" />
+        <Github className="absolute top-5 left-5 text-white/10 text-6xl rotate-12" />
+        <Github className="absolute bottom-5 right-5 text-white/10 text-6xl -rotate-12" />
 
         <h2 className="text-2xl md:text-3xl font-bold mb-3 flex items-center justify-center gap-2">
-          <FiArrowRightCircle /> Ready to Contribute?
+          <ArrowRightCircle /> Ready to Contribute?
         </h2>
         <p className="mb-6 text-white/90 text-lg">
           Take the first step and submit your pull request today!
@@ -671,12 +651,11 @@ const ContributorGuide = () => {
         <motion.a
           href="https://github.com/SandeepVashishtha/Eventra"
           target="_blank" rel="noopener noreferrer"
-          rel="noopener noreferrer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-sky-100 to-amber-100 text-black font-semibold px-8 py-3 rounded-full shadow-lg hover:from-sky-200 hover:to-amber-200 transition-all duration-300"
         >
-          <FiGithub className="text-lg" /> Go to GitHub
+          <Github className="text-lg" /> Go to GitHub
         </motion.a>
       </div>
     </div>

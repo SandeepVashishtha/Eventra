@@ -1,11 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { Star, MessageSquare, Send, CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  FiStar,
-  FiMessageSquare,
-  FiSend,
-  FiCheckCircle,
-} from "react-icons/fi";
 
 import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -17,17 +12,24 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // Synchronize and reset form states cleanly whenever switching to a new event context
   useEffect(() => {
     const key = `feedback-submitted-${eventId}`;
     if (localStorage.getItem(key)) {
       setSubmitted(true);
     } else {
+      setSubmitted(false);
       // 🔥 FIX: Reset the form state when navigating to a new, unreviewed event
       setSubmitted(false);
       setRating(0);
       setHoveredRating(0);
       setComment("");
     }
+    
+    // Wipe out state properties from the preceding event
+    setRating(0);
+    setHoveredRating(0);
+    setComment("");
   }, [eventId]);
 
   const handleSubmit = async (e) => {
@@ -95,7 +97,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                     className="focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md p-0.5"
                     aria-label={`Rate ${star} Star${star > 1 ? "s" : ""}`}
                   >
-                    <FiStar
+                    <Star
                       className={`w-8 h-8 transition-colors duration-150 ${
                         star <= (hoveredRating || rating)
                           ? "text-yellow-400 fill-current"
@@ -125,7 +127,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                 Comments & Suggestions <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <FiMessageSquare className="absolute left-3.5 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
+                <MessageSquare className="absolute left-3.5 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
                 <textarea
                   id="feedback-comments"
                   rows={4}
@@ -150,20 +152,13 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
               className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/15 disabled:opacity-75 transition-all"
             >
               {isSubmitting ? (
-  <>
-    <Loader2
-      className="
-        w-4
-        h-4
-        animate-spin
-      "
-    />
-
-    Submitting...
-  </>
-) : (
                 <>
-                  <FiSend className="w-4 h-4" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
                   Submit Feedback
                 </>
               )}
@@ -177,17 +172,16 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
             className="text-center py-6 space-y-4"
           >
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
-              <FiCheckCircle className="w-10 h-10" />
+              <CheckCircle className="w-10 h-10" />
             </div>
             <div>
               <h4 className="text-lg font-bold text-slate-900 dark:text-white">
                 Thank you for your feedback!
               </h4>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-2.5">
-                We've received your submission. Your rating and comments have been shared with the event organizers.
+                We&apos;ve received your submission. Your rating and comments have been shared with the event organizers.
               </p>
             </div>
-
           </motion.div>
         )}
       </AnimatePresence>

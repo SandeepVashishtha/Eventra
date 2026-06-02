@@ -1,11 +1,11 @@
+import { Code2, RefreshCw, Compass, ChevronDown, X } from "lucide-react";
 import TeamMatchmaking from "./components/TeamMatchmaking";
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { fetchHackathons } from "../../services/hackathonService";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
-import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
@@ -24,14 +24,14 @@ const Tag = ({ tag, onRemove }) => (
     initial={{ scale: 0.8, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
     exit={{ scale: 0.8, opacity: 0 }}
-    className="flex items-center gap-1.5 bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full text-xs font-semibold border border-indigo-500/30 backdrop-blur-sm"
+    className="flex items-center gap-1.5 bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-semibold border border-primary/30 backdrop-blur-sm"
   >
     <span>{tag}</span>
     <button
       onClick={() => onRemove(tag)}
-      className="hover:bg-indigo-500/30 rounded-full p-0.5 transition-colors"
+      className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
     >
-      <FiX className="w-3 h-3" />
+      <X className="w-3 h-3" />
     </button>
   </motion.div>
 );
@@ -89,16 +89,16 @@ const CustomDropdown = ({
       <button
         type="button"
         ref={buttonRef}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 cursor-pointer hover:ring-2 hover:ring-indigo-500/30 dark:hover:ring-indigo-500/50 hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-all text-slate-700 dark:text-slate-300"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 border border-border rounded-xl bg-white dark:bg-white/5 cursor-pointer hover:ring-2 hover:ring-primary/30 dark:hover:ring-primary/50 hover:border-primary/55 dark:hover:border-primary/30 transition-all text-text-light"
         onClick={toggleOpen}
       >
         <span
-          className={`flex-1 text-left text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis ${!value ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-slate-200"}`}
+          className={`flex-1 text-left text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis ${!value ? "text-slate-400 dark:text-slate-500" : "text-text"}`}
         >
           {displayText}
         </span>
 
-        <FiChevronDown className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
+        <ChevronDown className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
       </button>
 
       {open &&
@@ -107,8 +107,8 @@ const CustomDropdown = ({
             ref={dropdownRef}
             className="
               z-[10000]
-              bg-white dark:bg-slate-900
-              border border-slate-200 dark:border-white/10
+              bg-card-bg
+              border border-border
               rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]
               overflow-hidden
               min-w-[180px]
@@ -125,7 +125,7 @@ const CustomDropdown = ({
                 onChange("");
                 setOpen(false);
               }}
-              className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-indigo-500/10 text-slate-500 dark:text-slate-400 text-sm transition-colors"
+              className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-primary/10 text-text-light text-sm transition-colors"
             >
               {placeholder}
             </li>
@@ -133,8 +133,8 @@ const CustomDropdown = ({
             {options.map((opt) => (
               <li
                 key={opt}
-                className={`px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-indigo-500/10 text-slate-700 dark:text-slate-300 text-sm transition-colors ${opt === value
-                  ? "font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
+                className={`px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-primary/10 text-text-light text-sm transition-colors ${opt === value
+                  ? "font-semibold bg-primary/10 text-primary"
                   : ""
                   }`}
                 onClick={() => {
@@ -224,8 +224,8 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
   }, []);
 
   const positionClass = `
-    ${isScrollVisible ? "bottom-40" : "bottom-24"} 
-    ${isChatbotOpen ? "left-6" : "right-6"}
+    ${isScrollVisible ? "bottom-[calc(2.5rem+var(--safe-area-bottom))] sm:bottom-40" : "bottom-[calc(1rem+var(--safe-area-bottom))] sm:bottom-24"}
+    ${isChatbotOpen ? "left-[calc(1rem+var(--safe-area-left))] sm:left-6" : "right-[calc(1rem+var(--safe-area-right))] sm:right-6"}
   `;
 
   const containerVariants = {
@@ -276,13 +276,13 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
     }
   };
 
-  const fuse = new Fuse(hackathons, {
+  const fuse = useMemo(() => new Fuse(hackathons, {
     keys: ["title", "description", "location", "techStack"],
     threshold: 0.4,
-  });
+  }), [hackathons]);
 
   const searchedHackathons = debouncedSearchQuery
-    ? fuse.search(debouncedSearchQuery).map((result) => result.item)
+    ? fuse.search(debouncedSearchQuery.trim()).map((result) => result.item)
     : hackathons;
 
   const filteredHackathons = filterHackathons(searchedHackathons, {
@@ -318,7 +318,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
   }, []);
   
   return (
-    <div className="overflow-x-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-6 transition-colors duration-300">
+    <div className="overflow-x-hidden bg-bg text-text py-6 transition-colors duration-300">
       {/* Floating Action Button */}
       <motion.div
         className={`fixed z-50  ${positionClass}`}
@@ -328,7 +328,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
       >
         <Link
           to="/host-hackathon"
-          className="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 to-violet-600 text-white rounded-xl shadow-[0_0_24px_rgba(99,102,241,0.5)] hover:shadow-[0_0_36px_rgba(99,102,241,0.7)] border border-indigo-500/30 transition-all"
+          className="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-primary to-secondary text-white rounded-xl shadow-glow-md hover:shadow-glow-lg border border-primary/30 transition-all"
           title="Host a Hackathon"
         >
           <svg
@@ -392,22 +392,22 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
       {/* Featured Hackathons */}
       {!isLoading && featuredHackathons.length > 0 && (
         <div
-          className="py-10 border-b border-slate-200 dark:border-white/5"
+          className="py-10 border-b border-border"
           data-aos="fade-up"
           data-aos-duration="1000"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center mb-8">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-1">Handpicked for you</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">Handpicked for you</p>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                   Featured{" "}
-                  <span className="bg-gradient-to-r from-blue-600 to-violet-600 dark:from-blue-400 dark:to-violet-400 bg-clip-text text-transparent">Hackathons</span>
+                  <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Hackathons</span>
                 </h2>
               </div>
               <Link
                 to="/hackathons?filter=featured"
-                className="text-indigo-400 hover:text-indigo-300 text-sm font-medium transition-colors"
+                className="text-primary hover:opacity-80 text-sm font-medium transition-colors"
               >
                 View all →
               </Link>
@@ -433,10 +433,10 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
         <div className="mb-8" data-aos="fade-up" data-aos-delay="200">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-1">Browse all</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">Browse all</p>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                 All{" "}
-                <span className="bg-gradient-to-r from-blue-600 to-violet-600 dark:from-blue-400 dark:to-violet-400 bg-clip-text text-transparent">Hackathons</span>
+                <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Hackathons</span>
               </h2>
             </div>
             <div className="flex items-center gap-3">
@@ -444,8 +444,8 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
                   showFilters
-                    ? "bg-indigo-600 text-white border-indigo-500 shadow-md dark:shadow-[0_0_16px_rgba(99,102,241,0.4)]"
-                    : "bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 hover:border-indigo-300 dark:hover:border-indigo-500/40 shadow-sm dark:shadow-none"
+                    ? "bg-primary text-white border-primary shadow-glow-sm"
+                    : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 shadow-sm dark:shadow-none"
                 }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -459,9 +459,10 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                 selectedTags.length > 0) && (
                   <button
                     onClick={resetFilters}
-                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold border border-indigo-200 dark:border-indigo-500/30 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all"
-                   aria-label="button">
-                    ✕ Clear filters
+                    className="text-xs text-primary hover:opacity-90 font-semibold border border-primary/20 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all"
+                    aria-label="Clear hackathon filters"
+                  >
+                    Clear filters
                   </button>
                 )}
             </div>
@@ -496,8 +497,8 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                 className="
                 relative overflow-hidden mb-6
                 rounded-2xl
-                border border-slate-200 dark:border-white/10
-                bg-white/90 dark:bg-slate-900/80
+                border border-border
+                bg-card-bg/90
                 backdrop-blur-xl
                 shadow-lg dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)]
                 p-6 md:p-8
@@ -535,8 +536,8 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
                 {/* Available tags for selection */}
                 {availableTags.length > 0 && (
-                  <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/10">
-                    <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4">
+                  <div className="mt-8 pt-6 border-t border-border">
+                    <label className="block text-xs font-semibold uppercase tracking-widest text-text-light mb-4">
                       Filter by Technology
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -546,8 +547,8 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                           onClick={() => handleTagSelect(tag)}
                           className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${
                             selectedTags.includes(tag)
-                              ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm dark:shadow-[0_0_10px_rgba(99,102,241,0.4)]'
-                              : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 hover:border-indigo-300 dark:hover:border-indigo-500/40 hover:text-indigo-700 dark:hover:text-white shadow-sm dark:shadow-none'
+                              ? 'bg-primary text-white border-primary shadow-glow-sm'
+                              : 'bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 hover:text-primary shadow-sm dark:shadow-none'
                           }`}
                         >
                           {tag}
@@ -580,8 +581,8 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${
                   activeTab === tab.key
-                    ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white border-indigo-500/50 shadow-md dark:shadow-[0_0_16px_rgba(99,102,241,0.4)] scale-105"
-                    : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 hover:border-indigo-300 dark:hover:border-indigo-500/30 hover:text-indigo-700 dark:hover:text-white shadow-sm dark:shadow-none"
+                    ? "bg-gradient-to-r from-primary via-primary to-secondary text-white border-primary/50 shadow-glow-sm scale-105"
+                    : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/30 hover:text-primary shadow-sm dark:shadow-none"
                 }`}
               >
                 {tab.label}
@@ -619,13 +620,13 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
             </motion.div>
           ) : (
             <motion.div
-              className="relative overflow-hidden rounded-3xl p-10 text-center shadow-md dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-800"
+              className="relative overflow-hidden rounded-3xl p-10 text-center shadow-md dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-border bg-card-bg"
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
             >
               <motion.div
-                className="absolute inset-0 -z-10 bg-indigo-50/50 dark:bg-black/30 blur-3xl"
+                className="absolute inset-0 -z-10 bg-primary/10 dark:bg-primary/5 blur-3xl"
                 animate={{
                   opacity: [0.3, 0.6, 0.3],
                   scale: [1, 1.1, 1],
@@ -653,7 +654,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                   return (
                     <motion.div
                       key={i}
-                      className="absolute rounded-full bg-blue-400/60 dark:bg-blue-500/40"
+                      className="absolute rounded-full bg-primary/20 dark:bg-primary/20"
                       style={{
                         width: size,
                         height: size,
@@ -685,9 +686,9 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
-                  className="flex justify-center items-center w-20 h-20 rounded-full bg-slate-50 dark:bg-gray-700 shadow-sm dark:shadow-lg mx-auto border border-slate-200 dark:border-gray-600"
+                  className="flex justify-center items-center w-20 h-20 rounded-full bg-bg dark:bg-bg shadow-sm mx-auto border border-border"
                 >
-                  <FiCode className="h-10 w-10 text-indigo-500 dark:text-indigo-400" />
+                  <Code2 className="h-10 w-10 text-primary" />
                 </motion.div>
 
                 <h3 className="mt-6 text-2xl font-bold text-slate-900 dark:text-gray-100">
@@ -709,9 +710,9 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={resetFilters}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-primary hover:opacity-90 shadow-lg transition-all"
                   >
-                    <FiRotateCw className="w-4 h-4" />
+                    <RefreshCw className="w-4 h-4" />
                     Reset Filters
                   </motion.button>
 
@@ -719,10 +720,10 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => {}}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md transition-all"
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-bg hover:bg-card-bg shadow-md transition-all"
                   >
                     Explore Hackathons
-                    <FiCompass className="w-4 h-4" />
+                    <Compass className="w-4 h-4" />
                   </motion.button>
                 </div>
               </div>
@@ -732,7 +733,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
         </SectionErrorBoundary>
       </div>
       <HackathonCTA></HackathonCTA>
-      <BackToTopButton />
+      <BackToTopButton positionClass={positionClass} />
     </div>
   );
 };

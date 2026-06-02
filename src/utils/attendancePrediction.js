@@ -193,8 +193,7 @@ export const computeAttendancePrediction = (event = {}, options = {}) => {
 
 export const buildWaitlistPromotionSummary = (event = {}, options = {}) => {
   const prediction = computeAttendancePrediction(event, options);
-  const currentAttendees = Number(event.attendees || 0);
-  const capacity = Number(event.maxAttendees || event.capacity || 0);
+    const capacity = Number(event.maxAttendees || event.capacity || 0);
   const seatsToPromote = prediction.recommendedPromotions;
   const hasWaitlist = prediction.waitlistSize > 0;
 
