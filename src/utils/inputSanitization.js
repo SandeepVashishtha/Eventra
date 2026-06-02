@@ -21,28 +21,8 @@ export const sanitizeSearchQuery = (query = '') => {
   // Trim whitespace
   let sanitized = query.trim();
 
-  // Remove/reject NoSQL injection operators
-  const dangerousPatterns = [
-    /\$/g, // NoSQL operators start with $
-    /\{/g, // Object notation
-    /\}/g,
-    /\[/g, // Array notation
-    /\]/g,
-    /;/g, // Statement terminators
-    /'/g, // SQL/NoSQL quotes
-    /`/g, // Backticks
-    /\|/g, // Pipes for command execution
-    /\\/g, // Escape characters
-    /\n/g, // Newlines
-    /\r/g, // Carriage returns
-    /</g,  // HTML tags / XSS
-    />/g,
-  ];
-
-  // Remove dangerous characters
-  dangerousPatterns.forEach(pattern => {
-    sanitized = sanitized.replace(pattern, '');
-  });
+  // Remove dangerous characters in a single pass
+  sanitized = sanitized.replace(/[${}\[\];'`|\\\n\r<>]/g, '');
 
   // Ensure max length to prevent ReDoS attacks
   const MAX_QUERY_LENGTH = 200;
@@ -124,4 +104,18 @@ export const sanitizeInputText = (text = '') => {
   };
 
   return text.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
+};
+
+/**
+ * Strip all HTML tags from a text string.
+ * Faster than full DOMPurify when only raw text is needed.
+ *
+ * @param {string} text - Raw input text
+ * @returns {string} - Text with HTML tags stripped
+ */
+export const stripHtmlTags = (text = '') => {
+  if (typeof text !== 'string') {
+    return '';
+  }
+  return text.replace(/<[^>]*>?/gm, '');
 };

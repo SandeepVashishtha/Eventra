@@ -41,16 +41,14 @@ const Settings = () => {
         "crypto", "kernel", "daemon", "syntax", "lexicon", "cosmos", "beacon", "vortex"
       ];
       
-      const phraseArr = [];
-      for (let i = 0; i < 12; i++) {
-        const idx = Math.floor(Math.random() * words.length);
-        phraseArr.push(words[idx]);
-      }
-      
+      const randomIndices = new Uint32Array(12);
+      crypto.getRandomValues(randomIndices);
+      const phraseArr = Array.from(randomIndices, (v) => words[v % words.length]);
+
       const keyMnemonic = phraseArr.join(" ");
-      const keyHex = Array.from({ length: 64 }, () => 
-        Math.floor(Math.random() * 16).toString(16)
-      ).join("");
+      const randomBytes = new Uint8Array(32);
+      crypto.getRandomValues(randomBytes);
+      const keyHex = Array.from(randomBytes, (b) => b.toString(16).padStart(2, "0")).join("");
       
       setBackupKey({
         mnemonic: keyMnemonic,
