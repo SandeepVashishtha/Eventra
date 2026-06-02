@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Keyboard, Sparkles, X } from "lucide-react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { useModalStack } from "../../hooks/useModalStack";
 
 const shortcutData = [
   {
@@ -175,6 +176,7 @@ const ShortcutRow = ({ action, keys, isPressed }) => (
 
 const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
   const trapRef = useFocusTrap(isOpen);
+  const { isTopmost } = useModalStack(isOpen);
   const [pressedKeys, setPressedKeys] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -182,6 +184,8 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
     if (!isOpen) return;
 
     const handleKeyDown = (e) => {
+      if (!isTopmost()) return;
+
       // Bypass tracking if editing standard forms/inputs
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
         return;
@@ -203,6 +207,8 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
     };
 
     const handleKeyUp = (e) => {
+      if (!isTopmost()) return;
+
       let key = e.key.toLowerCase();
       if (key === "?") key = "/";
 
@@ -230,6 +236,13 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("blur", handleBlur);
     };
+  }, [isOpen, isTopmost]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchQuery("");
+      setPressedKeys(new Set());
+    }
   }, [isOpen]);
 
   const isKeyPressed = (keyId) => {

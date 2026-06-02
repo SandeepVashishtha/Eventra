@@ -1,6 +1,7 @@
+import { AlertCircle, ChevronDown, Search, X } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiAlertCircle, FiChevronDown, FiSearch, FiX } from "react-icons/fi";
+import SEOHead from "../../components/SEOHead";
 
 import ProjectHero from "./ProjectHero";
 import ProjectCard from "./ProjectCard";
@@ -14,7 +15,7 @@ import { safeJsonParse } from "../../utils/safeJsonParse";
 // Modern custom styled search input
 const ModernSearchInput = ({ value, onChange, placeholder }) => (
   <div className="relative flex items-center w-full">
-    <FiSearch className="absolute left-4 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
+    <Search className="absolute left-4 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
     <input
       type="text"
       value={value}
@@ -27,7 +28,7 @@ const ModernSearchInput = ({ value, onChange, placeholder }) => (
         onClick={() => onChange({ target: { value: "" } })}
         className="absolute right-4 text-gray-400 dark:text-gray-500 hover:text-black dark:hover:text-white transition-colors"
       >
-        <FiX className="w-4 h-4" />
+        <X className="w-4 h-4" />
       </button>
     )}
   </div>
@@ -40,7 +41,7 @@ const ProjectCardSkeleton = () => (
     <div className="p-6">
       <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
       <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded w-5/6 mb-4"></div>
+      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded mb-4"></div>
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>
@@ -66,6 +67,19 @@ const ProjectCardSkeleton = () => (
 
 
 const ProjectGallery = () => {
+  return (
+    <>
+      <SEOHead
+        title="Projects"
+        description="Explore community-built projects from hackathons, events, and open-source contributions on Eventra."
+        url={window.location.href}
+      />
+      <InnerGallery />
+    </>
+  );
+};
+
+const InnerGallery = () => {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterCategory, setFilterCategory] = useState("all");
@@ -131,11 +145,11 @@ const ProjectGallery = () => {
           publicRequestConfig
         );
         const projectsData = response.data;
-
-        // only use API data if it is non-empty; otherwise fall back to mock
-        if (projectsData && projectsData.length > 0) {
-          setProjects(projectsData);
-
+const projectsList = Array.isArray(projectsData)
+  ? projectsData
+  : projectsData?.content || projectsData?.projects || [];
+if (projectsList.length > 0) {
+  setProjects(projectsList);
           // Attempt to fetch categories from API
           try {
             const categoriesResponse = await apiUtils.get(
@@ -143,48 +157,37 @@ const ProjectGallery = () => {
               publicRequestConfig
             );
             const categoriesData = categoriesResponse.data;
-            setCategories(["all", ...categoriesData]);
+            setCategories(["all", ...(Array.isArray(categoriesData) ? categoriesData : [])]);
           } catch {
             // derive categories from API project data if categories endpoint throws
-            const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
+            const uniqueCategories = [...new Set(projectsData.map(p => p?.category).filter(Boolean))];
             setCategories(["all", ...uniqueCategories]);
           }
           return; // exit successfully
         }
 
-        // --- MOCK DATA FALLBACK: API returned empty array ---
-        console.warn("Projects API returned empty array — loading mock data.");
+        // --- MOCK DATA FALLBACK: API returned empty or invalid array ---
         setProjects(mockProjects);
         const mockUniqueCategories = [
-          ...new Set(mockProjects.map((p) => p.category)),
+          ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
         ];
         setCategories(["all", ...mockUniqueCategories]);
       } catch (err) {
-        console.error("Error fetching projects:", err);
-
         if (err?.status === 401) {
-          console.warn(
-            "Projects API returned 401 for unauthenticated access — loading public mock data fallback."
-          );
           setProjects(mockProjects);
           const fallbackCategories = [
-            ...new Set(mockProjects.map((p) => p.category)),
+            ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
           ];
           setCategories(["all", ...fallbackCategories]);
           return;
         }
 
-        // Fall back to mock data in development so local work is unaffected
-        if (process.env.NODE_ENV === "development") {
-          console.warn("API unavailable — falling back to mock project data.");
-          setProjects(mockProjects);
-          const devUniqueCategories = [
-            ...new Set(mockProjects.map((p) => p.category)),
-          ];
-          setCategories(["all", ...devUniqueCategories]);
-        } else {
-          setError("Failed to load projects. Please try again later.");
-        }
+        // Always gracefully fall back to mock data when API is unavailable
+        setProjects(mockProjects);
+        const fallbackCategories = [
+          ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
+        ];
+        setCategories(["all", ...fallbackCategories]);
       } finally {
         setIsLoading(false);
       }
@@ -194,7 +197,7 @@ const ProjectGallery = () => {
     fetchProjects();
   }, [fetchProjects]);
 
-  const filteredAndSortedProjects = projects
+ const filteredAndSortedProjects = (Array.isArray(projects) ? projects : [])
     .filter((project) => {
       if (filterCategory === "bookmarked") {
         if (!bookmarks.includes(project.id)) {
@@ -211,13 +214,13 @@ const ProjectGallery = () => {
         const query = searchQuery.toLowerCase();
 
         return (
-          project.title.toLowerCase().includes(query) ||
-          project.description.toLowerCase().includes(query) ||
-          project.category.toLowerCase().includes(query) ||
-          project.author.toLowerCase().includes(query) ||
-          (Array.isArray(project.techStack) &&
+          project?.title?.toLowerCase()?.includes(query) ||
+          project?.description?.toLowerCase()?.includes(query) ||
+          project?.category?.toLowerCase()?.includes(query) ||
+          project?.author?.toLowerCase()?.includes(query) ||
+          (Array.isArray(project?.techStack) &&
             project.techStack.some((tech) =>
-              tech.toLowerCase().includes(query)
+              tech?.toLowerCase()?.includes(query)
             ))
         );
       }
@@ -315,7 +318,7 @@ const ProjectGallery = () => {
                         : filterCategory}
                     </span>
 
-                    <FiChevronDown
+                    <ChevronDown
                       className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform ${
                         categoryOpen ? "rotate-180" : ""
                       }`}
@@ -395,7 +398,7 @@ const ProjectGallery = () => {
                       {sortByLabels[sortBy]}
                     </span>
 
-                    <FiChevronDown
+                    <ChevronDown
                       className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform ${
                         sortOpen ? "rotate-180" : ""
                       }`}
@@ -459,7 +462,7 @@ const ProjectGallery = () => {
                 data-aos="zoom-in"
                 data-aos-delay="400"
               >
-                <FiX className="w-4 h-4 animate-pulse" />
+                <X className="w-4 h-4 animate-pulse" />
                 Clear Filters
               </motion.button>
             </div>
@@ -482,7 +485,7 @@ const ProjectGallery = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <FiAlertCircle className="mx-auto h-12 w-12 text-red-400" />
+              <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
 
               <h3 className="mt-2 text-lg font-medium text-red-900 dark:text-red-200">
                 Error loading projects
@@ -546,7 +549,7 @@ const ProjectGallery = () => {
             >
               <div className="mx-auto max-w-sm relative z-10">
                 <div className="flex justify-center items-center w-20 h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg mx-auto border border-sky-100 dark:border-gray-600">
-                  <FiSearch className="h-10 w-10 text-black dark:text-white" />
+                  <Search className="h-10 w-10 text-black dark:text-white" />
                 </div>
 
                 <h3 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
