@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
+import { getServerTime } from "../../utils/timeSync";
 
 import ShareMenu from "../../components/common/ShareMenu";
 import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";
@@ -11,7 +12,7 @@ import { generateEventSharingData } from "../../utils/shareUtils";
 const useCountdown = (targetDate) => {
   useReducedMotion();
   const calculateTimeLeft = useCallback(() => {
-    const difference = new Date(targetDate) - new Date();
+    const difference = new Date(targetDate) - getServerTime();
 
     if (!targetDate || difference <= 0) {
       return null;
@@ -89,7 +90,7 @@ const UrgencyBadge = ({ startDate, endDate, status }) => {
 };
 
 const computeStatus = (startDate, endDate) => {
-  const now = new Date();
+  const now = getServerTime();
   const start = new Date(startDate);
   const end = new Date(endDate);
 
