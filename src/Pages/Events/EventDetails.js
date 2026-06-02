@@ -246,7 +246,7 @@ const EventDetails = () => {
                                 const totalPages = response.data?.totalPages || 1;
                                 
                                 if (Array.isArray(data)) {
-                                  allRegistrants = allRegistrants.concat(data);
+                                  allRegistrants.push(...data);
                                 }
                                 
                                 if (page >= totalPages || data.length < limit) {
@@ -284,7 +284,7 @@ const EventDetails = () => {
                                 const totalPages = response.data?.totalPages || 1;
                                 
                                 if (Array.isArray(data)) {
-                                  allRegistrants = allRegistrants.concat(data);
+                                  allRegistrants.push(...data);
                                 }
                                 
                                 if (page >= totalPages || data.length < limit) {

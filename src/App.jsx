@@ -23,6 +23,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
+import Breadcrumbs from "./components/common/Breadcrumbs";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
@@ -34,6 +35,12 @@ import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import OnboardingChecklist from "./components/user/OnboardingChecklist";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { 
+  AuthFormSkeleton, 
+  ExploreEventsSkeleton, 
+  EventDetailSkeleton,
+  DashboardHomeSkeleton,
+} from "./components/common/SkeletonLoaders";
 
 // Lazy Loaded Pages & Routes
 const Footer = lazy(() => import("./components/Layout/Footer"));
@@ -48,7 +55,6 @@ const OfflineSyncManager = () => {
   return null;
 };
 
-// 🔥 FIX 2: useLocation requires BrowserRouter to wrap the <App /> component inside index.jsx. 
 function App() {
   const location = useLocation();
   const isDashboardOrAdmin = location.pathname === "/dashboard" || location.pathname === "/admin";
@@ -107,8 +113,6 @@ function App() {
     };
   }, []);
 
-  // 🔥 FIX 1: Completely rebuilt the JSX tree to resolve fatal syntax errors, 
-  // duplicate unclosed roots, and correctly ordered context providers.
   return (
     <ErrorBoundary>
       <AuthProvider>
@@ -135,6 +139,8 @@ function App() {
                   onClose={() => setShowKeyboardModal(false)}
                 />
                 <OnboardingChecklist />
+
+                <Breadcrumbs />
 
                 <main
                   id="main-content"

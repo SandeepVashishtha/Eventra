@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell, BellOff, Check, Mail, Monitor, Save, Volume2 } from "lucide-react";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { useNotification } from "../context/NotificationContext";
@@ -53,22 +53,22 @@ const NotificationSettings = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-  if (statusMessage) {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    if (statusMessage) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        setStatusMessage("");
+      }, 4000);
     }
 
-    timeoutRef.current = setTimeout(() => {
-      setStatusMessage('');
-    }, 4000);
-  }
-
-  return () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-  };
-}, [statusMessage]);
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [statusMessage]);
 
   const enabledCategoryCount = useMemo(
     () =>
@@ -97,7 +97,6 @@ const NotificationSettings = () => {
 
   const showStatusMessage = (message) => {
     setStatusMessage(message);
-    setTimeout(() => setStatusMessage(""), 4000);
   };
 
   const handlePushToggle = async (enabled) => {
