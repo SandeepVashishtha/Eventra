@@ -1,36 +1,111 @@
-import { motion } from "framer-motion";
+import { memo, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { logger } from "../../utils/logger";
-import { Check, AlertCircle, Loader } from "lucide-react";
+import { 
+  Check, 
+  AlertCircle, 
+  Loader, 
+  User, 
+  Mail, 
+  Lock, 
+  ShieldCheck, 
+  UserCheck, 
+  Info 
+} from "lucide-react";
 import useFormValidation from "../hooks/useFormValidation.enhanced";
 import useValidationState from "../hooks/useValidationState";
 
+// =========================================================================
+// INTERFACE DESIGN CONSTANTS (PREVENTING INLINE REDECLARATIONS)
+// =========================================================================
+const INITIAL_FORM_VALUES = {
+  firstName: "",
+  lastName: "",
+  username: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+};
+
+const DEBOUNCE_CONFIGURATION_PRESETS = {
+  debounceMs: 500,
+  validateOnBlur: false,
+  asyncValidationTimeout: 15000,
+  cacheResults: true,
+};
+
+// =========================================================================
+// COMPACT EXTENDED LAYOUT SUB-COMPONENTS
+// =========================================================================
+const FormHeaderRibbon = memo(() => {
+  return (
+    <div className="text-center mb-6 header-branding-wrapper select-none">
+      <div className="inline-flex p-3 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 mb-3 border border-blue-100/30">
+        <ShieldCheck className="w-6 h-6 animate-pulse" />
+      </div>
+      <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">
+        Create Account
+      </h1>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xs mx-auto">
+        Join the Eventra network portal to securely manage, map, and organize live interactive project hub environments.
+      </p>
+    </div>
+  );
+});
+
+FormHeaderRibbon.displayName = "FormHeaderRibbon";
+
+const FormFieldIconSelector = memo(({ fieldName }) => {
+  const iconClasses = "w-4 h-4 text-gray-400 dark:text-gray-500 transition-colors duration-200 group-focus-within:text-blue-500";
+  
+  switch (fieldName) {
+    case "firstName":
+    case "lastName":
+      return <User className={iconClasses} />;
+    case "username":
+      return <UserCheck className={iconClasses} />;
+    case "email":
+      return <Mail className={iconClasses} />;
+    case "password":
+    case "confirmPassword":
+      return <Lock className={iconClasses} />;
+    default:
+      return <Info className={iconClasses} />;
+  }
+});
+
+FormFieldIconSelector.displayName = "FormFieldIconSelector";
+
+// =========================================================================
+// MAIN EXPORTED AUTHSIGNUP COMPONENT CORE
+// =========================================================================
 /**
- * Example SignupForm component demonstrating the enhanced useFormValidation hook
- * with async validation, real-time feedback, and visual indicators
+ * SignupFormExample Component
+ * Demonstrates async validation pipelines, high contrast accessibility hooks,
+ * and layout-stabilized feedback nodes preventing interface page shifts.
  */
 const SignupFormExample = ({ onSignupSuccess }) => {
-  // Mock async validators (in production, these would call your API)
-  const validateUsernameAvailable = async (username) => {
-    if (!username || username.length < 3) return true; // Skip validation
+  
+  // ── MOCK ASYNC VALIDATION MICRO-SERVICES ───────────────────────────────
+  const validateUsernameAvailable = useCallback(async (username) => {
+    if (!username || username.length < 3) return true;
 
-    // Simulate API call
+    // Simulate standard asynchronous API fetch delay parameters
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    // Mock taken usernames
     const takenUsernames = ["admin", "john", "jane", "testuser"];
     return (
       !takenUsernames.includes(username.toLowerCase()) ||
       "Username already taken"
     );
-  };
+  }, []);
 
-  const validateEmailAvailable = async (email) => {
-    if (!email) return true; // Skip validation
+  const validateEmailAvailable = useCallback(async (email) => {
+    if (!email) return true;
 
-    // Simulate API call
+    // Simulate standard asynchronous API fetch delay parameters
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Mock registered emails
     const registeredEmails = [
       "test@example.com",
       "admin@example.com",
@@ -40,10 +115,10 @@ const SignupFormExample = ({ onSignupSuccess }) => {
       !registeredEmails.includes(email.toLowerCase()) ||
       "Email already registered"
     );
-  };
+  }, []);
 
-  // Validation rules with both sync and async validators
-  const validationRules = {
+  // ── VALIDATION SCHEMA STRUCTURAL PRESETS ────────────────────────────────
+  const validationRules = useMemo(() => ({
     firstName: [
       (val) => (val && val.trim() !== "") || "First name is required",
       (val) => val.length >= 2 || "At least 2 characters",
@@ -58,33 +133,29 @@ const SignupFormExample = ({ onSignupSuccess }) => {
       (val) => (val && val.trim() !== "") || "Username is required",
       (val) => val.length >= 3 || "At least 3 characters",
       (val) => val.length <= 30 || "Maximum 30 characters",
-      (val) =>
-        /^[a-zA-Z0-9_-]+$/.test(val) ||
-        "Only alphanumeric, underscore, and dash allowed",
-      validateUsernameAvailable, // Async validator
+      (val) => /^[a-zA-Z0-9_-]+$/.test(val) || "Alphanumeric, underscore, dash only",
+      validateUsernameAvailable,
     ],
     email: [
       (val) => (val && val.trim() !== "") || "Email is required",
       (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || "Invalid email format",
-      validateEmailAvailable, // Async validator
+      validateEmailAvailable,
     ],
     password: [
       (val) => (val && val.trim() !== "") || "Password is required",
       (val) => val.length >= 8 || "At least 8 characters",
-      (val) => /[A-Z]/.test(val) || "Must contain uppercase letter",
-      (val) => /[a-z]/.test(val) || "Must contain lowercase letter",
-      (val) => /[0-9]/.test(val) || "Must contain number",
-      (val) =>
-        /[!@#$%^&*]/.test(val) || "Must contain special character (!@#$%^&*)",
+      (val) => /[A-Z]/.test(val) || "Must contain an uppercase letter",
+      (val) => /[a-z]/.test(val) || "Must contain a lowercase letter",
+      (val) => /[0-9]/.test(val) || "Must contain a digit number",
+      (val) => /[!@#$%^&*]/.test(val) || "Must contain special character (!@#$%^&*)",
     ],
     confirmPassword: [
       (val) => (val && val.trim() !== "") || "Please confirm your password",
-      (val, allValues) =>
-        val === allValues.password || "Passwords do not match",
+      (val, allValues) => val === allValues.password || "Passwords do not match",
     ],
-  };
+  }), [validateUsernameAvailable, validateEmailAvailable]);
 
-  // Initialize form with validation
+  // Hook Initialization
   const {
     values,
     errors,
@@ -97,88 +168,72 @@ const SignupFormExample = ({ onSignupSuccess }) => {
     handleSubmit,
     resetForm,
   } = useFormValidation(
-    {
-      firstName: "",
-      lastName: "",
-      username: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
+    INITIAL_FORM_VALUES,
     validationRules,
-    {
-      debounceMs: 500,
-      validateOnBlur: false,
-      asyncValidationTimeout: 15000,
-      cacheResults: true,
-    },
+    DEBOUNCE_CONFIGURATION_PRESETS,
   );
 
-  // Handle form submission
-  const handleFormSubmit = handleSubmit(async (formValues) => {
+  // Form submission execution pipeline
+  const handleFormSubmit = useMemo(() => handleSubmit(async (formValues) => {
     try {
-      logger.info("Form submitted with values:", formValues);
-      // In production, call your signup API here
-      // await api.post('/auth/signup', formValues);
-
-      // Simulate API call
+      logger.info("Form validation pipeline passed. Submitting credentials payload:", formValues);
+      
+      // Simulate underlying network delivery framework latency
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // Success feedback
-      alert("Signup successful! Check console for values.");
+      alert("Registration process completed successfully! Logging data parameters.");
       resetForm();
 
       if (onSignupSuccess) {
         onSignupSuccess(formValues);
       }
-    } catch (error) {
-      console.error("Signup error:", error);
-      alert("Signup failed. Please try again.");
+    } catch {
+      alert("Registration failed. Please audit inputs or try again later.");
     }
-  });
+  }), [handleSubmit, resetForm, onSignupSuccess]);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-md mx-auto mt-8 p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg"
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="max-w-md mx-auto mt-8 p-6 md:p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800/60 registration-card-container"
     >
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-900 dark:text-white">
-        Create Account
-      </h1>
+      {/* Decoupled header segment insertion */}
+      <FormHeaderRibbon />
 
-      <form onSubmit={handleFormSubmit} className="space-y-5">
-        {/* First Name Field */}
-        <FormField
-          label="First Name"
-          name="firstName"
-          type="text"
-          value={values.firstName}
-          error={errors.firstName}
-          touched={touched.firstName}
-          validationState={validationState.firstName}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="John"
-        />
+      <form onSubmit={handleFormSubmit} className="space-y-4" noValidate>
+        
+        <div className="grid grid-cols-2 gap-4 names-split-row">
+          <FormField
+            label="First Name"
+            name="firstName"
+            type="text"
+            value={values.firstName}
+            error={errors.firstName}
+            touched={touched.firstName}
+            validationState={validationState.firstName}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            placeholder="John"
+          />
 
-        {/* Last Name Field */}
-        <FormField
-          label="Last Name"
-          name="lastName"
-          type="text"
-          value={values.lastName}
-          error={errors.lastName}
-          touched={touched.lastName}
-          validationState={validationState.lastName}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="Doe"
-        />
+          <FormField
+            label="Last Name"
+            name="lastName"
+            type="text"
+            value={values.lastName}
+            error={errors.lastName}
+            touched={touched.lastName}
+            validationState={validationState.lastName}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            placeholder="Doe"
+          />
+        </div>
 
-        {/* Username Field - with async validation */}
         <FormField
-          label="Username"
+          label="Username Handle"
           name="username"
           type="text"
           value={values.username}
@@ -188,12 +243,11 @@ const SignupFormExample = ({ onSignupSuccess }) => {
           onChange={handleChange}
           onBlur={handleBlur}
           placeholder="johndoe"
-          helpText="3-30 characters, alphanumeric and dash"
+          helpText="3-30 characters, alphanumeric rules apply"
         />
 
-        {/* Email Field - with async validation */}
         <FormField
-          label="Email"
+          label="Email Address"
           name="email"
           type="email"
           value={values.email}
@@ -205,9 +259,8 @@ const SignupFormExample = ({ onSignupSuccess }) => {
           placeholder="john@example.com"
         />
 
-        {/* Password Field */}
         <FormField
-          label="Password"
+          label="Password Account Credential"
           name="password"
           type="password"
           value={values.password}
@@ -217,12 +270,11 @@ const SignupFormExample = ({ onSignupSuccess }) => {
           onChange={handleChange}
           onBlur={handleBlur}
           placeholder="••••••••"
-          helpText="Min 8 chars, uppercase, lowercase, number, and special char"
+          helpText="Min 8 characters, alphanumeric mixed parameters required"
         />
 
-        {/* Confirm Password Field */}
         <FormField
-          label="Confirm Password"
+          label="Confirm Password Match"
           name="confirmPassword"
           type="password"
           value={values.confirmPassword}
@@ -234,36 +286,40 @@ const SignupFormExample = ({ onSignupSuccess }) => {
           placeholder="••••••••"
         />
 
-        {/* Submit Button */}
-        <motion.button
-          type="submit"
-          disabled={!isFormValid || isSubmitting}
-          whileHover={{ scale: isFormValid && !isSubmitting ? 1.02 : 1 }}
-          whileTap={{ scale: isFormValid && !isSubmitting ? 0.98 : 1 }}
-          className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-            isFormValid && !isSubmitting
-              ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-              : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-          }`}
-        >
-          {isSubmitting ? (
-            <span className="flex items-center justify-center gap-2">
-              <Loader size={18} className="animate-spin" />
-              Creating account...
-            </span>
-          ) : (
-            "Create Account"
-          )}
-        </motion.button>
+        {/* Action Button Segment Wrapper */}
+        <div className="pt-2 action-submission-wrapper">
+          <motion.button
+            type="submit"
+            disabled={!isFormValid || isSubmitting}
+            whileHover={{ scale: isFormValid && !isSubmitting ? 1.015 : 1 }}
+            whileTap={{ scale: isFormValid && !isSubmitting ? 0.985 : 1 }}
+            className={`w-full py-3 rounded-xl font-bold transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 tracking-wide text-sm ${
+              isFormValid && !isSubmitting
+                ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-blue-500/10"
+                : "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none"
+            }`}
+          >
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader size={16} className="animate-spin text-blue-500" />
+                Validating Ledger Credentials...
+              </span>
+            ) : (
+              "Create Account Profile"
+            )}
+          </motion.button>
+        </div>
 
-        {/* Form Status */}
-        <div className="text-sm text-center text-gray-600 dark:text-gray-400">
+        {/* Stabilization Context Ribbon */}
+        <div className="text-center text-xs font-semibold h-4 mt-2 transition-colors duration-200 tracking-wide select-none">
           {isFormValid ? (
-            <p className="text-green-600 dark:text-green-400 font-medium">
-              ✓ Form is ready to submit
+            <p className="text-green-600 dark:text-green-400 font-bold animate-pulse">
+              ✓ Token checks initialized successfully. Form validation clear.
             </p>
           ) : (
-            <p>Complete all fields to continue</p>
+            <p className="text-gray-400 dark:text-gray-500">
+              Please complete all mandatory parameters to unlock submission routes.
+            </p>
           )}
         </div>
       </form>
@@ -271,11 +327,10 @@ const SignupFormExample = ({ onSignupSuccess }) => {
   );
 };
 
-/**
- * FormField Component
- * Reusable form field with validation indicators, error messages, and help text
- */
-const FormField = ({
+// =========================================================================
+// RESILIENT FORMFIELD LAYOUT COMPONENT
+// =========================================================================
+const FormField = memo(({
   label,
   name,
   type = "text",
@@ -290,38 +345,45 @@ const FormField = ({
 }) => {
   const validation = useValidationState(name, validationState, error, touched);
 
-  const fieldClasses = `
-    w-full px-4 py-2 border-2 rounded-lg
-    bg-white dark:bg-gray-800
-    text-gray-900 dark:text-white
-    placeholder-gray-400 dark:placeholder-gray-500
-    transition-colors duration-200
-    focus:outline-none focus:ring-2 focus:ring-blue-500
-    ${
-      touched
-        ? validation.validationState === "success"
-          ? "border-green-500 dark:border-green-400"
-          : validation.validationState === "error"
-            ? "border-red-500 dark:border-red-400"
-            : validation.validationState === "validating"
-              ? "border-blue-500 dark:border-blue-400"
-              : "border-gray-300 dark:border-gray-700"
-        : "border-gray-300 dark:border-gray-700"
+  // Compute dynamic focus/border indicators cleanly
+  const fieldBorderClasses = useMemo(() => {
+    if (!touched) return "border-gray-300 dark:border-gray-700 focus-within:border-blue-500";
+    
+    switch (validation.validationState) {
+      case "success":
+        return "border-green-500 dark:border-green-400";
+      case "error":
+        return "border-red-500 dark:border-red-400";
+      case "validating":
+        return "border-blue-500 dark:border-blue-400";
+      default:
+        return "border-gray-300 dark:border-gray-700 focus-within:border-blue-500";
     }
-  `;
+  }, [touched, validation.validationState]);
 
   return (
-    <div className="space-y-2">
-      {/* Label */}
+    <div className="space-y-1.5 field-structural-node-block group">
+      
+      {/* Accessible Label Node */}
       <label
         htmlFor={name}
-        className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
       >
         {label}
       </label>
 
-      {/* Input with validation indicator */}
-      <div className="relative">
+      {/* Input Outer Control Frame Wrapper */}
+      <div 
+        className={`
+          flex items-center gap-3 w-full px-3.5 py-2 border-2 rounded-xl
+          bg-white dark:bg-gray-800 transition-all duration-200
+          focus-within:ring-2 focus-within:ring-blue-500/20 shadow-sm
+          ${fieldBorderClasses}
+        `}
+      >
+        {/* Dynamic Inner Prefix Indicator Icon Node */}
+        <FormFieldIconSelector fieldName={name} />
+
         <input
           id={name}
           name={name}
@@ -331,62 +393,75 @@ const FormField = ({
           onBlur={onBlur}
           placeholder={placeholder}
           disabled={validation.isValidating}
-          className={fieldClasses}
+          className="flex-1 bg-transparent border-none outline-none text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0 p-0"
           {...validation.ariaAttributes}
         />
 
-        {/* Validation Status Icon */}
-        {touched && (
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="absolute right-3 top-1/2 -translate-y-1/2"
-          >
-            {validation.isValidating && (
-              <Loader size={20} className="text-blue-500 animate-spin" />
-            )}
-            {validation.validationState === "success" && (
-              <Check size={20} className="text-green-500" />
-            )}
-            {validation.validationState === "error" && (
-              <AlertCircle size={20} className="text-red-500" />
-            )}
-          </motion.div>
-        )}
+        {/* Real-time Loading/Status Icon Overlay */}
+        <AnimatePresence mode="wait">
+          {touched && (
+            <motion.div
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.6, opacity: 0 }}
+              className="shrink-0 selection-indicator-node"
+            >
+              {validation.isValidating && (
+                <Loader size={16} className="text-blue-500 animate-spin" />
+              )}
+              {validation.validationState === "success" && (
+                <Check size={16} className="text-green-500 font-bold" />
+              )}
+              {validation.validationState === "error" && (
+                <AlertCircle size={16} className="text-red-500" />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Error Message */}
-      {validation.shouldShowError && (
-        <motion.p
-          id={`${name}-error`}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-sm text-red-600 dark:text-red-400"
-          role="alert"
-          aria-live="assertive"
-        >
-          {error}
-        </motion.p>
-      )}
+      {/* 🎯 PRE-ALLOCATED STABILIZATION CONTAINER FOR ALERT MESSAGE PLACEMENT */}
+      <div className="h-5 px-1 overflow-hidden layout-stabilizer-container select-none">
+        <AnimatePresence mode="wait">
+          {validation.shouldShowError ? (
+            <motion.p
+              key={`${name}-error-message`}
+              id={`${name}-error`}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              className="text-xs font-bold text-red-600 dark:text-red-400 tracking-tight"
+              role="alert"
+              aria-live="assertive"
+            >
+              ⚠️ {error}
+            </motion.p>
+          ) : touched && validation.validationState === "success" ? (
+            <motion.p
+              key={`${name}-success-message`}
+              id={`${name}-success`}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              className="text-xs font-semibold text-green-600 dark:text-green-400 tracking-tight flex items-center gap-1"
+            >
+              Field entry verified.
+            </motion.p>
+          ) : helpText ? (
+            <motion.p
+              key={`${name}-help-text`}
+              className="text-[11px] text-gray-400 dark:text-gray-500 tracking-tight leading-none"
+            >
+              {helpText}
+            </motion.p>
+          ) : null}
+        </AnimatePresence>
+      </div>
 
-      {/* Success Message */}
-      {touched && validation.validationState === "success" && (
-        <motion.p
-          id={`${name}-success`}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-sm text-green-600 dark:text-green-400"
-        >
-          Looks good!
-        </motion.p>
-      )}
-
-      {/* Help Text */}
-      {helpText && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>
-      )}
     </div>
   );
-};
+});
+
+FormField.displayName = "FormField";
 
 export default SignupFormExample;

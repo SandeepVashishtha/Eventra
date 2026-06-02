@@ -1,3 +1,6 @@
+import { getClientIp } from "./lib/getClientIp.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
+
 const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
 
 const POINTS = {
@@ -5,21 +8,10 @@ const POINTS = {
   gssoclevel2: 7,
   gssoclevel3: 10,
 };
-const DEFAULT_MERGED_PR_POINTS = 1;
 
-// Maximum number of PR pages to fetch. Each page = 100 PRs.
-// 10 pages × 100 PRs = 1 000 PRs max.
+const DEFAULT_MERGED_PR_POINTS = 1;
 const MAX_PAGES = 10;
-// ---------------------------------------------------------------------------
-// Per-IP rate limiting
-//
-// Prevents a single unauthenticated caller from flooding this endpoint and
-// exhausting the authenticated GITHUB_TOKEN quota (5 000 req/hr). Each call
-// triggers up to 11 sequential GitHub API requests, so even a modest flood
-// drains the quota quickly.
-//
-// Limit: 5 requests per IP per minute. In-memory; resets on cold start.
-// ---------------------------------------------------------------------------
+
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 5;
 const ipRateLimitMap = new Map();
@@ -41,13 +33,12 @@ const isRateLimited = (ip) => {
   return false;
 };
 
-// Evict stale rate-limit entries at most once per window to avoid O(n)
-// iteration on every request.
 let lastEvictionAt = 0;
 const evictStaleIpEntries = () => {
   const now = Date.now();
   if (now - lastEvictionAt < RATE_LIMIT_WINDOW_MS) return;
   lastEvictionAt = now;
+
   for (const [key, entry] of ipRateLimitMap.entries()) {
     if (now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
       ipRateLimitMap.delete(key);
@@ -55,13 +46,7 @@ const evictStaleIpEntries = () => {
   }
 };
 
-// ---------------------------------------------------------------------------
-// Server-side in-memory cache
-//
-// Prevents every CDN cache miss / cold start from firing 11 GitHub API calls.
-// The leaderboard data changes slowly; 5-minute freshness is sufficient.
-// ---------------------------------------------------------------------------
-const CACHE_TTL_MS = 5 * 60_000; // 5 minutes
+const CACHE_TTL_MS = 5 * 60_000;
 let cachedLeaderboard = null;
 let cacheTimestamp = 0;
 
@@ -72,43 +57,35 @@ const calculatePrPoints = (labels) => {
     const normalized = normalizeLabel(label);
     return total + (POINTS[normalized] || 0);
   }, 0);
+
   return levelPoints || DEFAULT_MERGED_PR_POINTS;
 };
 
-// ---------------------------------------------------------------------------
-// Fetch a single page of pull requests from GitHub.
-// Returns the parsed JSON array, or an empty array on failure so that a
-// single bad page does not abort the entire aggregation.
-// ---------------------------------------------------------------------------
 const fetchPrPage = async (page, headers) => {
   const url = `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`;
   try {
-    const res = await fetch(url, { headers });
-    if (!res.ok) {
-      console.warn(`[Leaderboard API] PR page ${page} failed with status: ${res.status}`);
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      console.warn(`[Leaderboard API] PR page ${page} failed with status: ${response.status}`);
       return [];
     }
-    const data = await res.json();
+
+    const data = await response.json();
     return Array.isArray(data) ? data : [];
-  } catch (err) {
-    console.warn(`[Leaderboard API] PR page ${page} fetch error:`, err);
+  } catch (error) {
+    console.warn(`[Leaderboard API] PR page ${page} fetch error:`, error);
     return [];
   }
 };
 
-// ---------------------------------------------------------------------------
-// Aggregate pull-request data into a contributor points map.
-// ---------------------------------------------------------------------------
 const aggregatePrs = (prs, contributorsInfo) => {
   const contributorsMap = {};
 
   prs.forEach((pr) => {
-    if (!pr.merged_at) return; // Only count merged PRs
+    if (!pr.merged_at) return;
 
-    const labels = pr.labels.map((l) => l.name.toLowerCase());
-    const hasGsocLabel = labels.some(
-      (label) => label.includes("gssoc") || label.includes("gsoc"),
-    );
+    const labels = pr.labels.map((label) => label.name.toLowerCase());
+    const hasGsocLabel = labels.some((label) => label.includes("gssoc") || label.includes("gsoc"));
     if (!hasGsocLabel) return;
 
     const author = pr.user.login;
@@ -120,6 +97,7 @@ const aggregatePrs = (prs, contributorsInfo) => {
         avatar: pr.user.avatar_url,
         profile: pr.user.html_url,
       };
+
       contributorsMap[author] = {
         username: author,
         name: info.name,
@@ -135,24 +113,13 @@ const aggregatePrs = (prs, contributorsInfo) => {
   });
 
   return contributorsMap;
-// Resolve the caller's IP from common proxy headers then socket address
-// ---------------------------------------------------------------------------
-const getClientIp = (req) => {
-  const forwarded = req.headers?.["x-forwarded-for"];
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
-  return req.socket?.remoteAddress || req.connection?.remoteAddress || "unknown";
 };
 
 export default async function handler(req, res) {
-  // Only allow GET requests
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // Per-IP rate limiting — prevents unauthenticated callers from draining the
-  // GitHub token quota (each leaderboard call can fire 11 GitHub API requests).
   const clientIp = getClientIp(req);
   evictStaleIpEntries();
 
@@ -163,8 +130,6 @@ export default async function handler(req, res) {
     });
   }
 
-  // Serve from the in-process cache when fresh — avoids redundant GitHub calls
-  // on warm instances within the same 5-minute window.
   const now = Date.now();
   if (cachedLeaderboard && now - cacheTimestamp < CACHE_TTL_MS) {
     res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
@@ -179,16 +144,11 @@ export default async function handler(req, res) {
   };
 
   try {
-    // 1. Fetch contributors and the first PR page concurrently so the
-    //    contributors round-trip does not add to the PR-fetching latency.
+    const contributorsUrl = `https://api.github.com/repos/${GITHUB_REPO}/contributors`;
     const [contributorsRes, firstPagePrs] = await Promise.all([
-      fetch(`https://api.github.com/repos/${GITHUB_REPO}/contributors`, { headers }),
+      fetchWithTimeout(contributorsUrl, { headers }, 10000),
       fetchPrPage(1, headers),
     ]);
-
-    // 1. Fetch contributors to get names and avatars
-    const contributorsUrl = `https://api.github.com/repos/${GITHUB_REPO}/contributors`;
-    const contributorsRes = await fetch(contributorsUrl, { headers });
 
     if (!contributorsRes.ok) {
       throw new Error(`Failed to fetch contributors: ${contributorsRes.status}`);
@@ -207,21 +167,12 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Fetch remaining PR pages in parallel.
-    //
-    //    We determined the total page count from how many results page 1
-    //    returned: if it returned a full 100 we assume more pages exist
-    //    and fan out pages 2–MAX_PAGES concurrently with Promise.allSettled.
-    //
-    //    Promise.allSettled ensures a single failed page does not abort the
-    //    entire aggregation — failed pages are logged and skipped, so the
-    //    leaderboard is still populated from the pages that succeeded.
     let allPrs = [...firstPagePrs];
 
     if (firstPagePrs.length === 100) {
       const remainingPageNumbers = Array.from(
         { length: MAX_PAGES - 1 },
-        (_, i) => i + 2,
+        (_, index) => index + 2,
       );
 
       const remainingResults = await Promise.allSettled(
@@ -231,66 +182,12 @@ export default async function handler(req, res) {
       for (const result of remainingResults) {
         if (result.status === "fulfilled" && result.value.length > 0) {
           allPrs = allPrs.concat(result.value);
-    // 2. Fetch all closed PRs
-    let page = 1;
-    let hasMore = true;
-
-    // Limit to 10 pages (1000 PRs) to avoid hitting Vercel 10s timeout limits
-    // In production, consider Webhooks or a database-backed Cron job if > 1000 PRs
-    const MAX_PAGES = 10;
-
-    while (hasMore && page <= MAX_PAGES) {
-      const pullsUrl = `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`;
-      const prsRes = await fetch(pullsUrl, { headers });
-
-      if (!prsRes.ok) {
-        console.warn(`[Leaderboard API] GitHub API request failed with status: ${prsRes.status}`);
-        hasMore = false;
-        break;
-      }
-
-      const prs = await prsRes.json();
-
-      if (!Array.isArray(prs) || prs.length === 0) {
-        hasMore = false;
-        break;
-      }
-
-      prs.forEach((pr) => {
-        if (!pr.merged_at) return; // Only count merged PRs
-
-        const labels = pr.labels.map((l) => l.name.toLowerCase());
-        const hasGsocLabel = labels.some(
-          (label) => label.includes("gssoc") || label.includes("gsoc")
-        );
-
-        if (!hasGsocLabel) return; // Must have GSOC labels
-
-        const author = pr.user.login;
-        const points = calculatePrPoints(labels);
-
-        if (!contributorsMap[author]) {
-          const contributorInfo = contributorsInfo[author] || {
-            name: author,
-            avatar: pr.user.avatar_url,
-            profile: pr.user.html_url,
-          };
-          contributorsMap[author] = {
-            username: author,
-            name: contributorInfo.name,
-            avatar: contributorInfo.avatar,
-            profile: contributorInfo.profile,
-            points: 0,
-            prs: 0,
-          };
         }
       }
     }
 
-    // 3. Aggregate points from all collected PRs
     const contributorsMap = aggregatePrs(allPrs, contributorsInfo);
 
-    // 4. Add achievement-based bonus points
     Object.keys(contributorsMap).forEach((user) => {
       const count = contributorsMap[user].prs;
       if (count >= 10) {
@@ -300,16 +197,8 @@ export default async function handler(req, res) {
       }
     });
 
-    // 5. Sort contributors by points
     const sortedContributors = Object.values(contributorsMap).sort(
       (a, b) => b.points - a.points,
-    );
-
-    // 6. Apply Edge Caching
-    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
-    // 4. Sort contributors by points
-    const sortedContributors = Object.values(contributorsMap).sort(
-      (a, b) => b.points - a.points
     );
 
     // 5. Populate the in-process cache so subsequent warm-instance calls skip
@@ -317,7 +206,6 @@ export default async function handler(req, res) {
     cachedLeaderboard = sortedContributors;
     cacheTimestamp = Date.now();
 
-    // 6. Apply Edge Caching (Cache-Control)
     res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
     res.setHeader("X-Cache", "MISS");
 
@@ -325,5 +213,8 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("[Leaderboard API] Aggregation Error:", error);
     return res.status(500).json({ error: "Failed to compile leaderboard data" });
+  }
+}
+iled to compile leaderboard data" });
   }
 }

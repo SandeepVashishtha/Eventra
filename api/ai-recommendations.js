@@ -2,6 +2,8 @@
 // Secures the Groq API key from frontend exposure
 
 import { verifyAuth } from "./middleware/auth.js";
+import { buildCorsHeaders } from "./auth/cors.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
 
 // ---------------------------------------------------------------------------
 // Guards
@@ -41,8 +43,21 @@ const SYSTEM_PROMPT =
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 10;
 const rateLimitMap = new Map();
+let lastEvictionAt = 0;
+
+const evictStaleEntries = () => {
+  const now = Date.now();
+  if (now - lastEvictionAt < RATE_LIMIT_WINDOW_MS) return;
+  lastEvictionAt = now;
+  for (const [key, entry] of rateLimitMap.entries()) {
+    if (now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+      rateLimitMap.delete(key);
+    }
+  }
+};
 
 const checkRateLimit = (userId) => {
+  evictStaleEntries();
   const now = Date.now();
   const entry = rateLimitMap.get(userId);
 
@@ -64,17 +79,15 @@ const checkRateLimit = (userId) => {
 // ---------------------------------------------------------------------------
 
 async function handler(req, res) {
-  // Add CORS headers — credentials header must not be paired with wildcard origin
-  const corsOrigin = process.env.ALLOWED_ORIGIN || "*";
-  res.setHeader("Access-Control-Allow-Origin", corsOrigin);
-  if (corsOrigin !== "*") {
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  }
+  // Use shared CORS utility (never returns wildcard — maintains credentials safety)
+  res.setHeader("Access-Control-Allow-Origin", buildCorsHeaders(req)["Access-Control-Allow-Origin"]);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
   res.setHeader(
     "Access-Control-Allow-Headers",
     "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
   );
+  res.setHeader("Vary", "Origin");
 
   if (req.method === "OPTIONS") {
     res.status(200).end();
@@ -115,7 +128,7 @@ async function handler(req, res) {
       });
     }
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const response = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -131,7 +144,7 @@ async function handler(req, res) {
         ],
         temperature: 0.7,
       }),
-    });
+    }, 12000);
 
     const data = await response.json();
 
@@ -144,6 +157,11 @@ async function handler(req, res) {
   } catch (error) {
     console.error("[Groq Proxy API] Request Failed:", error);
     return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export default verifyAuth(handler);
+
   }
 }
 
