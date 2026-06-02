@@ -1,17 +1,10 @@
+import { Github, ExternalLink, GitBranch, MapPin, Building, Users, Medal } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
-import {
-  FaGithub,
-  FaExternalLinkAlt,
-  FaCodeBranch,
-  FaMapMarkerAlt,
-  FaBuilding,
-  FaUserFriends,
-  FaMedal,
-} from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
 import FeatureErrorBoundary from "./common/FeatureErrorBoundary";
+import SEOHead from "../components/SEOHead";
 import { storageManager } from "../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../utils/storage/storageKeys";
 import { validators } from "../utils/storage/storageValidators";
@@ -87,7 +80,7 @@ const cacheContributors = (data) => {
   );
 };
 
-const Contributors = () => {
+const ContributorsInner = () => {
   const prefersReducedMotion = useReducedMotion();
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -233,7 +226,7 @@ const Contributors = () => {
   if (loading) {
     return (
       <FeatureErrorBoundary>
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
             {[...Array(8)].map((_, i) => (
@@ -249,7 +242,7 @@ const Contributors = () => {
   if (error)
     return (
       <FeatureErrorBoundary>
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
             Contributors are unavailable
@@ -269,7 +262,7 @@ const Contributors = () => {
   return (
     // UPDATED: Section background
     <FeatureErrorBoundary>
-      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           {/* Added The Search Bar */}
           <div className="flex justify-center mb-8">
@@ -291,7 +284,7 @@ const Contributors = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
         >
-          🌟 Our Amazing {/* UPDATED: Gradient text for dark mode */}
+          🌟 Our Amazing {/* UPDATED: Linear text for dark mode */}
           <span className="text-black dark:text-white">
             Contributors
           </span>
@@ -352,7 +345,7 @@ const Contributors = () => {
                     {c.name}
                   </h3>
                   <p className="text-black dark:text-white text-sm font-medium mb-3 flex items-center justify-center gap-1">
-                    <FaMedal className="text-amber-300" />{" "}
+                    <Medal className="text-amber-300" />{" "}
                     {c.role}
                   </p>
                   {/* UPDATED: Contribution Badges */}
@@ -376,14 +369,14 @@ const Contributors = () => {
                 {/* Stats Section (Glass style) */}
                 <div className="grid grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300 my-5 w-full">
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <FaCodeBranch className="text-black dark:text-white mb-1" />
+                    <GitBranch className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.public_repos}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       Repos
                     </span>
                   </div>
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <FaUserFriends className="text-black dark:text-white mb-1" />
+                    <Users className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.followers}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       Followers
@@ -416,12 +409,12 @@ const Contributors = () => {
                 <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
                   {c.company && (
                     <span className="flex items-center gap-1 justify-center">
-                      <FaBuilding /> {c.company}
+                      <Building /> {c.company}
                     </span>
                   )}
                   {c.location && (
                     <span className="flex items-center gap-1 justify-center">
-                      <FaMapMarkerAlt /> {c.location}
+                      <MapPin /> {c.location}
                     </span>
                   )}
                 </div>
@@ -438,11 +431,11 @@ const Contributors = () => {
                     transition-all duration-300 ease-out transform hover:scale-105 relative overflow-hidden"
                   >
                     {/* GitHub Icon with animation */}
-                    <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-blue-200" />
+                    <Github className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-blue-200" />
 
                     <span>Profile</span>
 
-                    <FaExternalLinkAlt className="text-xs opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
+                    <ExternalLink className="text-xs opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
                   </a>
                 </div>
               </motion.div>
@@ -454,4 +447,16 @@ const Contributors = () => {
     </FeatureErrorBoundary>
   );
 };
+
+const Contributors = () => (
+  <>
+    <SEOHead
+      title="Contributors"
+      description="Meet the amazing contributors building the Eventra open-source community. Join us and make an impact."
+      url={window.location.href}
+    />
+    <ContributorsInner />
+  </>
+);
+
 export default Contributors;

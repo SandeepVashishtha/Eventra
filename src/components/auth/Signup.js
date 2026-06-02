@@ -214,7 +214,6 @@ const Signup = () => {
       }
       
     } catch (err) {
-      console.error("Signup error:", { message: err.message, email: formData.email });
       setSubmitStatus('error');
       
       let errorMessage = getPublicErrorMessage(err, AUTH_ERRORS.registrationFailed);

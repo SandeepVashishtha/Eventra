@@ -1,5 +1,5 @@
+import { Target, Star } from "lucide-react";
 import { motion } from "framer-motion";
-import { FaBullseye, FaStar } from "react-icons/fa";
 
 const item = {
   hidden: { opacity: 0, y: 40 },
@@ -38,7 +38,7 @@ export default function MissionVision() {
             className="flex-shrink-0 w-20 h-20 rounded-2xl bg-indigo-100 dark:bg-gray-700 flex items-center justify-center shadow-md transition"
           >
             {/* UPDATED: Icon color */}
-            <FaBullseye className="text-indigo-600 dark:text-indigo-400 text-3xl" />
+            <Target className="text-indigo-600 dark:text-indigo-400 text-3xl" />
           </motion.div>
 
           {/* Text */}
@@ -76,7 +76,7 @@ export default function MissionVision() {
             whileHover="hover"
             className="flex-shrink-0 w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-md transition"
           >
-            <FaStar className="text-white text-3xl" />
+            <Star className="text-white text-3xl" />
           </motion.div>
 
           {/* Text */}
