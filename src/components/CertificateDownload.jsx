@@ -58,7 +58,7 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
   };
 
   return (
-  <button onClick={generateCertificate} aria-label="button">
+  <button onClick={generateCertificate} aria-label="Download participation certificate">
     📜 Download Certificate
   </button>
 );

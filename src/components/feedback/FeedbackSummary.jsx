@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Star, Users, BarChart3 } from 'lucide-react';
 import {
   getAverageRating,

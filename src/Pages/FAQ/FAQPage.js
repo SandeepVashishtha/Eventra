@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SEOHead from "../../components/SEOHead";
 
 // Centralized FAQ entries classified under General, Hackathons, or Account categories
 const faqs = [
@@ -102,7 +102,19 @@ const faqs = [
 const NAVBAR_HEIGHT = 65;
 
 export default function FAQSection() {
-  useDocumentTitle("Eventra | FAQ");
+  return (
+    <>
+      <SEOHead
+        title="FAQ"
+        description="Frequently asked questions about Eventra — get answers about events, hackathons, registration, and community."
+        url={window.location.href}
+      />
+      <FAQSectionInner />
+    </>
+  );
+}
+
+function FAQSectionInner() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -110,19 +122,21 @@ export default function FAQSection() {
   // Search Suggestions State
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const filteredFaqs = faqs.filter((faq) => {
-    const matchesCategory =
-      selectedCategory === "All" || faq.tab?.toLowerCase() === selectedCategory.toLowerCase();
+  const filteredFaqs = useMemo(() => {
+    return faqs.filter((faq) => {
+      const matchesCategory =
+        selectedCategory === "All" || faq.tab?.toLowerCase() === selectedCategory.toLowerCase();
 
-    const query = searchTerm.toLowerCase().trim();
-    const matchesSearch =
-      !query ||
-      faq.question.toLowerCase().includes(query) ||
-      faq.answer.toLowerCase().includes(query) ||
-      faq.category.toLowerCase().includes(query);
+      const query = searchTerm.toLowerCase().trim();
+      const matchesSearch =
+        !query ||
+        faq.question.toLowerCase().includes(query) ||
+        faq.answer.toLowerCase().includes(query) ||
+        faq.category.toLowerCase().includes(query);
 
-    return matchesCategory && matchesSearch;
-  });
+      return matchesCategory && matchesSearch;
+    });
+  }, [searchTerm, selectedCategory]);
 
   const suggestions = faqs
     .filter((faq) => {
@@ -137,7 +151,7 @@ export default function FAQSection() {
       const saved = localStorage.getItem("eventra_faq_ratings");
       if (saved) return JSON.parse(saved);
     } catch (e) {
-      console.error(e);
+      logger.error("Failed to load FAQ ratings", e);
     }
 
     const initial = {};
@@ -176,7 +190,7 @@ export default function FAQSection() {
       try {
         localStorage.setItem("eventra_faq_ratings", JSON.stringify(updated));
       } catch (err) {
-        console.error(err);
+        logger.error("Failed to save FAQ ratings", err);
       }
       return updated;
     });
@@ -316,7 +330,6 @@ export default function FAQSection() {
           padding: 60px 20px 32px;
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
-          z-index: 90;
           width: 100%;
           box-sizing: border-box;
           transition: transform 0.5s ease, opacity 0.5s ease, padding 0.5s ease, background 0.5s ease;
@@ -326,6 +339,7 @@ export default function FAQSection() {
           position: fixed;
           left: 0;
           right: 0;
+          z-index: 90;
           border-bottom: 1px solid var(--heading-border);
           padding: 10px 20px 16px;
         }
@@ -591,7 +605,7 @@ export default function FAQSection() {
 
         <div className="faq-cards-container">
           {filteredFaqs.length === 0 ? (
-            <div className="max-w-[820px] w-full mx-auto mt-8 mb-16 text-center p-12 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md animate-pulse">
+            <div className="max-w-205 w-full mx-auto mt-8 mb-16 text-center p-12 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md animate-pulse">
               <div className="inline-flex p-4 rounded-full bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 mb-4">
                 <HelpCircle className="w-8 h-8" />
               </div>
@@ -599,7 +613,7 @@ export default function FAQSection() {
                 No matching FAQs found
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6 leading-relaxed">
-                We couldn't find any questions matching "{searchTerm}" under the {selectedCategory}{" "}
+                We couldn&apos;t find any questions matching &quot;{searchTerm}&quot; under the {selectedCategory}{" "}
                 category. Try broadening your keywords.
               </p>
               <button

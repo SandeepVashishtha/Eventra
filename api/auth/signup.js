@@ -1,6 +1,9 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { createRateLimiter } from "../middleware/rateLimiter.js";
+import { buildCorsHeaders, corsResponse } from "./cors.js";
+import { createRateLimiter } from "../lib/rateLimit.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
@@ -33,6 +36,12 @@ const users = new Map();
 // ---------------------------------------------------------------------------
 
 const JWT_SECRET = getJwtSecret();
+
+// ---------------------------------------------------------------------------
+// Rate Limiting (IP-based, 3 signups per minute)
+// ---------------------------------------------------------------------------
+
+const signupRateLimiter = createRateLimiter(60_000, 3);
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
@@ -76,34 +85,8 @@ const validatePassword = (password) => {
 };
 
 // ---------------------------------------------------------------------------
-// CORS Headers
+// CORS Headers (delegated to shared cors.js)
 // ---------------------------------------------------------------------------
-
-const corsHeaders = (req) => {
-  const allowedOrigin = process.env.ALLOWED_ORIGIN;
-  const requestOrigin = req.headers?.origin;
-
-  const corsOrigin = allowedOrigin || "*";
-  if (allowedOrigin && requestOrigin !== allowedOrigin) {
-    console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
-  }
-
-  // Access-Control-Allow-Credentials must not be sent with a wildcard origin.
-  // Per the CORS spec, browsers reject credentialed responses when the reflected
-  // origin is "*". Only set the header when a specific origin is configured.
-  const isSpecificOrigin = corsOrigin !== "*";
-
-  return {
-    "Access-Control-Allow-Origin": corsOrigin,
-    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
-};
-
-const corsResponse = (res, status, data, req) => {
-  return res.status(status).set(corsHeaders(req)).json(data);
-};
 
 // ---------------------------------------------------------------------------
 // Generate User ID
@@ -136,19 +119,37 @@ const DEFAULT_PERMISSIONS = [
 // Signup Handler
 // ---------------------------------------------------------------------------
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return res.status(200).set(corsHeaders(req)).end();
+    return res.status(200).set(buildCorsHeaders(req)).end();
   }
 
   // Only allow POST requests
   if (req.method !== "POST") {
-    return corsResponse(res, 405, { error: "Method not allowed" }, req);
+    return corsResponse(req, res, 405, { error: "Method not allowed" });
   }
 
   try {
     const { firstName, lastName, email, password, confirmPassword } = req.body;
+
+    // -----------------------------------------------------------------------
+    // Rate Limiting (signup spam protection)
+    // -----------------------------------------------------------------------
+
+    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+      || req.headers?.["x-real-ip"]
+      || req.socket?.remoteAddress
+      || "unknown";
+
+    signupRateLimiter.evictStale();
+
+    if (!signupRateLimiter.check(clientIp)) {
+      return corsResponse(res, 429, {
+        error: "Too many signup attempts. Please try again later.",
+        retryAfter: 60,
+      }, req);
+    }
 
     // -----------------------------------------------------------------------
     // Input Validation
@@ -157,36 +158,36 @@ export default async function handler(req, res) {
     // Validate firstName
     const firstNameValidation = validateName(firstName);
     if (!firstNameValidation.valid) {
-      return corsResponse(res, 400, { error: `First name: ${firstNameValidation.message}` }, req);
+      return corsResponse(req, res, 400, { error: `First name: ${firstNameValidation.message}` });
     }
 
     // Validate lastName
     const lastNameValidation = validateName(lastName);
     if (!lastNameValidation.valid) {
-      return corsResponse(res, 400, { error: `Last name: ${lastNameValidation.message}` }, req);
+      return corsResponse(req, res, 400, { error: `Last name: ${lastNameValidation.message}` });
     }
 
     // Validate email
     if (!email || !email.trim()) {
-      return corsResponse(res, 400, { error: "Email is required" }, req);
+      return corsResponse(req, res, 400, { error: "Email is required" });
     }
     const normalizedEmail = email.trim().toLowerCase();
     if (!validateEmail(normalizedEmail)) {
-      return corsResponse(res, 400, { error: "Invalid email format" }, req);
+      return corsResponse(req, res, 400, { error: "Invalid email format" });
     }
 
     // Validate password
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.valid) {
-      return corsResponse(res, 400, { error: passwordValidation.message }, req);
+      return corsResponse(req, res, 400, { error: passwordValidation.message });
     }
 
     // Validate confirmPassword matches password
     if (!confirmPassword) {
-      return corsResponse(res, 400, { error: "Please confirm your password" }, req);
+      return corsResponse(req, res, 400, { error: "Please confirm your password" });
     }
     if (password !== confirmPassword) {
-      return corsResponse(res, 400, { error: "Passwords do not match" }, req);
+      return corsResponse(req, res, 400, { error: "Passwords do not match" });
     }
 
     // -----------------------------------------------------------------------
@@ -194,7 +195,7 @@ export default async function handler(req, res) {
     // -----------------------------------------------------------------------
 
     if (users.has(normalizedEmail)) {
-      return corsResponse(res, 409, { error: "An account with this email already exists" }, req);
+      return corsResponse(req, res, 409, { error: "An account with this email already exists" });
     }
 
     // -----------------------------------------------------------------------
@@ -272,16 +273,16 @@ export default async function handler(req, res) {
       // Ignore write errors on test response objects
     }
 
-    return corsResponse(res, 201, {
+    return corsResponse(req, res, 201, {
       message: "Account created successfully",
       token,
       tokenType: "Bearer",
       ...userResponse,
-    }, req);
+    });
 
   } catch (error) {
     console.error("Signup Error:", error);
-    return corsResponse(res, 500, { error: "Internal server error. Please try again later." }, req);
+    return corsResponse(req, res, 500, { error: "Internal server error. Please try again later." });
   }
 }
 
@@ -290,4 +291,11 @@ export default async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
+const signupRateLimiter = createRateLimiter({
+  max: 5,
+  windowMs: 15 * 60 * 1000,
+  message: "Too many authentication attempts. Please try again later.",
+});
+
+export default signupRateLimiter(handler);
 export { users };
