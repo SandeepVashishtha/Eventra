@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { isValidShareUrl } from "../../utils/shareUtils";
 
 const ModalCloseButton = memo(({ onClick }) => (
   <button
@@ -32,6 +33,10 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     }
 
     const shareUrl = `${window.location.origin}/events/${event.id}`;
+    if (!isValidShareUrl(shareUrl)) {
+      console.warn("[ShareModal] Rejected invalid share URL:", shareUrl);
+      return null;
+    }
     const shareText = `Check out this event: ${event.title}`;
 
     return {

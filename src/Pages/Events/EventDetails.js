@@ -43,16 +43,18 @@ const EventDetails = () => {
 
   const { isRegistered } = useMyEvents();
 
-  const activeRequestId = useRef(0);
+  const latestRequestIdRef = useRef(0);
 
   const loadEvent = useCallback(async () => {
-    const currentRequestId = ++activeRequestId.current;
+    const requestId = ++latestRequestIdRef.current;
+    const isLatestRequest = () => latestRequestIdRef.current === requestId;
 
     setFetchLoading(true);
     setFetchError(null);
+
     try {
       const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
-      if (currentRequestId !== activeRequestId.current) return;
+      if (!isLatestRequest()) return;
       if (res.ok && res.data) {
         const raw = res.data?.data ?? res.data;
         setEvent({ ...raw, status: getEventStatus(raw) });
@@ -60,7 +62,7 @@ const EventDetails = () => {
         throw new Error(res.data?.message || `Event not found (${res.status})`);
       }
     } catch {
-      if (currentRequestId !== activeRequestId.current) return;
+      if (!isLatestRequest()) return;
       // Fall back to bundled mock data when the API is unreachable
       const fallback = mockEvents.find((item) => String(item.id) === eventId);
       if (fallback) {
@@ -69,7 +71,7 @@ const EventDetails = () => {
         setFetchError("Event not found.");
       }
     } finally {
-      if (currentRequestId === activeRequestId.current) {
+      if (isLatestRequest()) {
         setFetchLoading(false);
       }
     }
@@ -244,7 +246,7 @@ const EventDetails = () => {
                                 const totalPages = response.data?.totalPages || 1;
                                 
                                 if (Array.isArray(data)) {
-                                  allRegistrants = allRegistrants.concat(data);
+                                  allRegistrants.push(...data);
                                 }
                                 
                                 if (page >= totalPages || data.length < limit) {
@@ -282,7 +284,7 @@ const EventDetails = () => {
                                 const totalPages = response.data?.totalPages || 1;
                                 
                                 if (Array.isArray(data)) {
-                                  allRegistrants = allRegistrants.concat(data);
+                                  allRegistrants.push(...data);
                                 }
                                 
                                 if (page >= totalPages || data.length < limit) {

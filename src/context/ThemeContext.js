@@ -129,14 +129,17 @@ export const ThemeProvider = ({ children }) => {
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
-      metaTheme.setAttribute(
-        "content",
-        customHsl && customHsl.active
-          ? `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l}%)`
-          : "#ffffff"
-      );
+      let themeColor = "#ffffff";
+      if (customHsl && customHsl.active) {
+        themeColor = `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l}%)`;
+      } else {
+        const isDark = document.documentElement.classList.contains("dark") || 
+                       window.matchMedia("(prefers-color-scheme: dark)").matches;
+        themeColor = isDark ? "#090e1a" : "#ffffff";
+      }
+      metaTheme.setAttribute("content", themeColor);
     }
-  }, [activeThemeId, customHsl]);
+  }, [activeThemeId, customHsl, theme, resolvedTheme]);
 
   // Sync OS-level reduced motion preference changes
   useEffect(() => {
