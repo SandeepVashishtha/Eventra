@@ -4,6 +4,7 @@ import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
+import { safeLocalStorage } from "./utils/safeStorage";
 
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
@@ -23,7 +24,6 @@ import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
-import Breadcrumbs from "./components/common/Breadcrumbs";
 import { 
   AuthFormSkeleton, 
   ExploreEventsSkeleton, 
@@ -63,19 +63,14 @@ const OfflineSyncManager = () => {
 
 function App() {
   const location = useLocation();
-  const isDashboardOrAdmin =
-    location.pathname === "/dashboard" || location.pathname === "/admin";
+  const isDashboardOrAdmin = location.pathname === "/dashboard" || location.pathname === "/admin";
   const pageLoader = (
     <div className="flex items-center justify-center min-h-screen text-gray-500">
       Loading page...
     </div>
   );
   const [cursorEnabled, setCursorEnabled] = useState(() => {
-    try {
-      return localStorage.getItem("cursor") !== "off";
-    } catch {
-      return true; // fallback safe default
-    }
+    return safeLocalStorage.getItem("cursor") !== "off";
   });
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
@@ -91,11 +86,7 @@ function App() {
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
     setCursorEnabled(newValue);
-    try {
-      localStorage.setItem("cursor", newValue ? "on" : "off");
-    } catch {
-      // Ignore storage failures in private browsing or restricted contexts.
-    }
+    safeLocalStorage.setItem("cursor", newValue ? "on" : "off");
   };
 
   useEffect(() => {
@@ -187,49 +178,56 @@ function App() {
                             </ProtectedRoute>
                           }
                         />
-                        <Route 
-                          path="/explore" 
+                        <Route
+                          path="/explore"
                           element={
                             <Suspense fallback={<ExploreEventsSkeleton />}>
                               <ExploreEvents />
                             </Suspense>
-                          } 
+                          }
                         />
-                        <Route 
-                          path="/events/:id" 
+                        <Route
+                          path="/events/:id"
                           element={
                             <Suspense fallback={<EventDetailSkeleton />}>
                               <EventDetails />
                             </Suspense>
-                          } 
+                          }
                         />
-                        <Route 
-                          path="/login" 
+                        <Route
+                          path="/login"
                           element={
                             <Suspense fallback={<AuthFormSkeleton />}>
                               <Login />
                             </Suspense>
-                          } 
+                          }
                         />
-                        <Route 
-                          path="/signup" 
+                        <Route
+                          path="/signup"
                           element={
                             <Suspense fallback={<AuthFormSkeleton />}>
                               <Signup />
                             </Suspense>
-                          } 
+                          }
                         />
-                        <Route 
-                          path="/dashboard" 
+                        <Route
+                          path="/dashboard"
                           element={
                             <ProtectedRoute>
                               <Suspense fallback={<DashboardHomeSkeleton />}>
                                 <Dashboard />
                               </Suspense>
                             </ProtectedRoute>
-                          } 
+                          }
                         />
-                        <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+                        <Route
+                          path="/admin"
+                          element={
+                            <ProtectedRoute>
+                              <AdminPanel />
+                            </ProtectedRoute>
+                          }
+                        />
                         <Route path="/event-recommendation" element={<EventRecommendation />} />
                         <Route path="/saved-events" element={<SavedEventsPage />} />
                         <Route path="*" element={<AppRoutes />} />
@@ -247,9 +245,7 @@ function App() {
                 </SectionErrorBoundary>
 
                 <SectionErrorBoundary label="Footer">
-                  <Suspense fallback={null}>
-                    {!isDashboardOrAdmin && <Footer />}
-                  </Suspense>
+                  <Suspense fallback={null}>{!isDashboardOrAdmin && <Footer />}</Suspense>
                 </SectionErrorBoundary>
 
                 <Suspense fallback={null}>

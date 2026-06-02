@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import { quickPrompts, getAssistantReply, INITIAL_MESSAGES } from "../config/chatbotKnowledge";
+import { safeLocalStorage } from "../utils/safeStorage";
 
 const ICON_MAP = {
   CalendarDays,
@@ -52,16 +53,12 @@ export default function Chatbot() {
 
   // Expiration check on mount (2 hours threshold)
   useEffect(() => {
-    try {
-      const lastActive = localStorage.getItem("eventra_chatbot_last_active");
-      const twoHours = 2 * 60 * 60 * 1000;
-      if (lastActive && Date.now() - parseInt(lastActive) > twoHours) {
-        setMessages(INITIAL_MESSAGES);
-      }
-      localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
-    } catch (e) {
-      console.warn("localStorage unavailable for Chatbot expiration check");
+    const lastActive = safeLocalStorage.getItem("eventra_chatbot_last_active");
+    const twoHours = 2 * 60 * 60 * 1000;
+    if (lastActive && Date.now() - parseInt(lastActive) > twoHours) {
+      setMessages(INITIAL_MESSAGES);
     }
+    safeLocalStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
   }, [setMessages]);
 
   useEffect(() => {
@@ -72,11 +69,7 @@ export default function Chatbot() {
 
   // Sync last active timestamp when messages change
   useEffect(() => {
-    try {
-      localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
-    } catch (e) {
-      console.warn("localStorage unavailable for Chatbot sync");
-    }
+    safeLocalStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
   }, [messages]);
 
   const handleClearConversation = () => {
@@ -158,14 +151,17 @@ export default function Chatbot() {
     wasOpenRef.current = isOpen;
     wasMinimizedRef.current = isMinimized;
 
-    const timer = setTimeout(() => {
-      if (chatLogsRef.current) {
-        chatLogsRef.current.scrollTo({
-          top: chatLogsRef.current.scrollHeight,
-          behavior: isOpening ? "auto" : "smooth",
-        });
-      }
-    }, isOpening ? 250 : 50);
+    const timer = setTimeout(
+      () => {
+        if (chatLogsRef.current) {
+          chatLogsRef.current.scrollTo({
+            top: chatLogsRef.current.scrollHeight,
+            behavior: isOpening ? "auto" : "smooth",
+          });
+        }
+      },
+      isOpening ? 250 : 50
+    );
 
     return () => clearTimeout(timer);
   }, [messages, isTyping, isMinimized, isOpen]);
@@ -184,7 +180,9 @@ export default function Chatbot() {
     // Append User Message, pruning the oldest entries when the cap is exceeded.
     setMessages((prev) => {
       const next = [...prev, { role: "user", content: cleanMessage }];
-      return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
+      return next.length > MAX_STORED_MESSAGES
+        ? next.slice(next.length - MAX_STORED_MESSAGES)
+        : next;
     });
     setDraft("");
     setIsTyping(true);
@@ -194,8 +192,13 @@ export default function Chatbot() {
     replyTimerRef.current = setTimeout(() => {
       const reply = getAssistantReply(cleanMessage);
       setMessages((prev) => {
-        const next = [...prev, { role: "assistant", content: reply.answer, actions: reply.actions }];
-        return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
+        const next = [
+          ...prev,
+          { role: "assistant", content: reply.answer, actions: reply.actions },
+        ];
+        return next.length > MAX_STORED_MESSAGES
+          ? next.slice(next.length - MAX_STORED_MESSAGES)
+          : next;
       });
       setIsTyping(false);
       replyTimerRef.current = null;
@@ -406,9 +409,7 @@ export default function Chatbot() {
                   </motion.div>
                 </div>
               )}
-              
-              {/* 🔥 FIX: Added the missing dummy div to act as the scroll target for messagesEndRef */}
-              <div ref={messagesEndRef} />
+
             </div>
 
             {/* Footer controls */}
