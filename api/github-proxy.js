@@ -82,12 +82,15 @@ const normalizePath = (path) => {
 };
 
 const isSafeGitHubPath = (path) => {
-  if (path.includes("..") || path.includes("@") || path.includes("://")) {
+  if (path.includes("..") || path.includes("@") || path.includes("://") || path.startsWith("//")) {
     return false;
   }
 
-  const { pathname } = new URL(path, "https://api.github.com");
-  return SAFE_GITHUB_PATH_PATTERNS.some((pattern) => pattern.test(pathname));
+  const url = new URL(path, "https://api.github.com");
+  if (url.hostname !== "api.github.com") {
+    return false;
+  }
+  return SAFE_GITHUB_PATH_PATTERNS.some((pattern) => pattern.test(url.pathname));
 };
 
 async function handler(req, res) {
