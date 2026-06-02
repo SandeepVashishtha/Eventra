@@ -25,9 +25,8 @@ export default defineConfig(({ mode }) => {
         },
       },
       react({
-        // Only .jsx/.tsx — .js files are handled above
-        include: /\.(jsx|tsx)$/,
-      }),
+       include: /\.(js|jsx|tsx)$/,
+     }),  
     ],
 
     // Path aliases — cleaner imports and faster resolution
