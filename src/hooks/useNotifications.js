@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { get as idbGet, set as idbSet } from "idb-keyval";
 import { logger } from "../utils/logger";
-
+import { safeJsonParse } from "../utils/safeJsonParse";
 const STORAGE_KEY = "eventra_notifications";
 
 export const useNotifications = () => {
@@ -11,12 +11,8 @@ export const useNotifications = () => {
     idbGet(STORAGE_KEY)
       .then((stored) => {
         if (stored) {
-          try {
-            setNotifications(JSON.parse(stored));
-          } catch (error) {
-            logger.error("Failed to parse notifications from local storage", error);
-            setNotifications([]);
-          }
+          const parsed = safeJsonParse(stored, []);
+          setNotifications(parsed);
         }
       })
       .catch((error) => {
@@ -38,7 +34,9 @@ export const useNotifications = () => {
     if (!didLoadRef.current) return;
     // Persist on every change — including when the list is cleared to []
     // so that markAllAsRead and future "clear all" features are durable.
-    idbSet(STORAGE_KEY, JSON.stringify(notifications)).catch(console.error);
+    idbSet(STORAGE_KEY, JSON.stringify(notifications)).catch((error) => {
+  logger.error("Failed to persist notifications to indexedDB", error);
+  });
   }, [notifications]);
 
   const requestPermission = async () => {

@@ -549,3 +549,93 @@ export const EventDetailSkeleton = () => (
     </div>
   </div>
 );
+export const SearchResultsSkeleton = ({ rows = 5 }) => (
+  <div className="p-4 flex flex-col gap-2">
+    <SkeletonBlock className="h-3 w-24 mb-2" />
+    {[...Array(rows)].map((_, i) => (
+      <div key={i} className="flex items-center gap-3 px-2 py-1.5 rounded-xl">
+        <SkeletonBlock className="h-4 w-4 rounded flex-shrink-0" />
+        <SkeletonBlock className={`h-4 rounded ${i % 2 === 0 ? "w-3/4" : "w-1/2"}`} />
+      </div>
+    ))}
+  </div>
+);
+
+export const AuthFormSkeleton = () => (
+  <div className="w-full max-w-md mx-auto space-y-8 p-8 bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800">
+    <div className="text-center space-y-3">
+      <SkeletonBlock className="h-9 w-2/3 mx-auto" />
+      <SkeletonBlock className="h-4 w-5/6 mx-auto" />
+    </div>
+    <div className="space-y-6">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="space-y-2">
+          <SkeletonBlock className="h-4 w-20" />
+          <SkeletonBlock className="h-12 w-full rounded-xl" />
+        </div>
+      ))}
+      <SkeletonBlock className="h-12 w-full rounded-xl mt-8" />
+    </div>
+    <div className="pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
+      <SkeletonBlock className="h-4 w-3/4 mx-auto" />
+    </div>
+  </div>
+);
+
+export const ExploreEventsSkeleton = () => (
+  <div className="max-w-7xl mx-auto px-4 py-12 space-y-12">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+      <div className="space-y-4 flex-1">
+        <SkeletonBlock className="h-10 w-2/3" />
+        <SkeletonBlock className="h-5 w-1/2" />
+      </div>
+      <div className="flex gap-3">
+        <SkeletonBlock className="h-12 w-32 rounded-xl" />
+        <SkeletonBlock className="h-12 w-32 rounded-xl" />
+      </div>
+    </div>
+
+    <div className="flex flex-wrap gap-3">
+      {[...Array(6)].map((_, i) => (
+        <SkeletonBlock key={i} className="h-10 w-24 rounded-full" />
+      ))}
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {[...Array(6)].map((_, i) => (
+        <SkeletonEventCard key={i} />
+      ))}
+    </div>
+  </div>
+);
+
+export const DashboardHomeSkeleton = () => (
+  <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+    <div className="flex justify-between items-center">
+      <div className="space-y-2">
+        <SkeletonBlock className="h-8 w-48" />
+        <SkeletonBlock className="h-4 w-64" />
+      </div>
+      <SkeletonBlock className="h-10 w-32 rounded-lg" />
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {[...Array(4)].map((_, i) => (
+        <DashboardStatCardSkeleton key={i} />
+      ))}
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="lg:col-span-2 space-y-6">
+        <SkeletonBlock className="h-64 w-full rounded-2xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <DashboardItemCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+      <div className="space-y-6">
+        <DashboardListCardSkeleton />
+        <DashboardListCardSkeleton />
+      </div>
+    </div>
+  </div>
+);

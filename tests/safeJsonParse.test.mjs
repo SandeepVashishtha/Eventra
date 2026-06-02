@@ -21,6 +21,14 @@ try {
 
   assert.equal(capturedErrors.length, 0, "parse fallback should not log errors");
 
+  // Custom fallback parameters testing
+  const customFallbackObj = { ok: false };
+  assert.deepStrictEqual(safeJsonParse("invalid-json", customFallbackObj), customFallbackObj, "custom fallback object should be returned on parsing failure");
+
+  // Non-string arguments parsing
+  assert.equal(safeJsonParse(123), null, "number input should return fallback value");
+  assert.deepStrictEqual(safeJsonParse({ value: 123 }), null, "object input should return fallback value");
+
   console.log("safeJsonParse silent fallback tests passed ✓");
 } finally {
   console.error = originalConsoleError;

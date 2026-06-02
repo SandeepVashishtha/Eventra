@@ -1,17 +1,8 @@
+import { Lock, ShieldCheck, Database, Globe, Mail, Shield, ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { Link } from "react-router-dom";
 import useDocumentTitle from "../hooks/useDocumentTitle";
-import {
-  FaLock,
-  FaUserShield,
-  FaDatabase,
-  FaGlobe,
-  FaEnvelope,
-  FaShieldAlt,
-  FaChevronDown,
-  FaChevronUp,
-} from "react-icons/fa";
 
 export const Privacy = () => {
   useDocumentTitle("Eventra | Privacy Policy");
@@ -55,37 +46,37 @@ export const Privacy = () => {
 
   const policySections = [
     {
-      icon: <FaDatabase className="text-sky-300 text-3xl" />,
+      icon: <Database className="text-sky-300 text-3xl" />,
       title: "Information We Collect",
       content:
         "We may collect personal details such as your name, email address, organization details, event information, payment details, and any other information you provide through our platform. As part of our event management services, we may also collect attendee information, ticketing data, and event analytics on behalf of event organizers.",
     },
     {
-      icon: <FaUserShield className="text-emerald-300 text-3xl" />,
+      icon: <ShieldCheck className="text-emerald-300 text-3xl" />,
       title: "How We Use Your Information",
       content:
         "The data we collect is used to provide and manage our event management services, process event registrations and ticket purchases, enable event check-ins with QR code technology, generate analytics and reports for event organizers, improve your experience on the platform, provide support and respond to your queries, and send important updates or notifications about events.",
     },
     {
-      icon: <FaLock className="text-amber-300 text-3xl" />,
+      icon: <Lock className="text-amber-300 text-3xl" />,
       title: "Data Protection",
       content:
         "We implement enterprise-grade security measures to protect your data, including end-to-end encryption and SOC 2 compliant practices. However, no digital platform can guarantee 100% security. As an open-source platform, our codebase is transparent and available for security review by the community.",
     },
     {
-      icon: <FaShieldAlt className="text-rose-300 text-3xl" />,
+      icon: <Shield className="text-rose-300 text-3xl" />,
       title: "Third-Party Sharing",
       content:
         "We do not share your personal information with third parties without your explicit consent, except as required to provide our services (e.g., payment processors) or as required by law. Event organizers may have access to attendee information for their events, but we require them to comply with applicable privacy laws.",
     },
     {
-      icon: <FaGlobe className="text-teal-300 text-3xl" />,
+      icon: <Globe className="text-teal-300 text-3xl" />,
       title: "International Data Transfers",
       content:
         "As a global platform serving users in 195+ countries, your information may be processed outside of your country of residence. We ensure appropriate safeguards are in place to protect your data in accordance with this privacy policy.",
     },
     {
-      icon: <FaEnvelope className="text-violet-300 text-3xl" />,
+      icon: <Mail className="text-violet-300 text-3xl" />,
       title: "Your Rights & Consent",
       content:
         "You have the right to access, correct, or delete your personal information. You can also object to processing of your personal data, ask us to restrict processing, or request portability of your personal data. By using our website and services, you consent to our Privacy Policy.",
@@ -93,7 +84,7 @@ export const Privacy = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-bg text-text py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-16">
         {" "}
         {/* Increased horizontal width */}
@@ -106,14 +97,14 @@ export const Privacy = () => {
         >
           <motion.h1
             variants={item}
-            className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-5xl mb-4"
+            className="text-4xl font-extrabold text-text sm:text-5xl mb-4"
             style={{ fontFamily: '"Anton", sans-serif' }}
           >
             Privacy Policy
           </motion.h1>
           <motion.p
             variants={item}
-            className="text-xl text-gray-600 dark:text-gray-400"
+            className="text-xl text-text-light"
           >
             Your privacy is important to us. Learn how we protect your data and
             your rights.
@@ -124,18 +115,18 @@ export const Privacy = () => {
           variants={container}
           initial="hidden"
           animate={controls}
-          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-md"
+          className="bg-card-bg/80 backdrop-blur-lg rounded-2xl border border-border p-8 shadow-md"
         >
-          <p className="text-lg text-gray-800 dark:text-gray-200">
+          <p className="text-lg text-text">
             At{" "}
-            <span className="font-bold text-black dark:text-white">
+            <span className="font-bold text-text">
               Eventra
             </span>
             , we are committed to protecting your personal information and your
             right to privacy. As an open-source event management platform, we
             value transparency in how we handle your data.
           </p>
-          <p className="mt-4 text-gray-700 dark:text-gray-300">
+          <p className="mt-4 text-text-light">
             This Privacy Policy explains how we collect, use, disclose, and
             safeguard your information when you use our event management
             platform and services.
@@ -152,28 +143,28 @@ export const Privacy = () => {
             <motion.div
               key={index}
               variants={item}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden group hover:border-blue-400 dark:hover:border-blue-500 transition-colors duration-300"
+              className="bg-card-bg/80 backdrop-blur-lg rounded-2xl border border-border shadow-md overflow-hidden group hover:border-primary transition-colors duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-50 dark:from-gray-900/40 dark:via-gray-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
               <div className="relative z-10">
                 <button
                   onClick={() => toggleSection(index)}
-                  className="w-full flex items-center justify-between p-8 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 rounded-t-2xl"
+                  className="w-full flex items-center justify-between p-8 text-left hover:bg-bg transition-colors duration-200 rounded-t-2xl"
                 >
                   <div className="flex items-center">
-                    <div className="flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-xl text-black dark:text-white text-2xl mr-4">
+                    <div className="flex items-center justify-center w-12 h-12 bg-bg rounded-xl text-black dark:text-white text-2xl mr-4">
                       {section.icon}
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <h2 className="text-2xl font-bold text-text">
                       {section.title}
                     </h2>
                   </div>
                   <div className="flex-shrink-0 ml-4">
                     {openSections[index] ? (
-                      <FaChevronUp className="text-black dark:text-white text-lg" />
+                      <ChevronUp className="text-black dark:text-white text-lg" />
                     ) : (
-                      <FaChevronDown className="text-black dark:text-white text-lg" />
+                      <ChevronDown className="text-black dark:text-white text-lg" />
                     )}
                   </div>
                 </button>
@@ -192,7 +183,7 @@ export const Privacy = () => {
                 >
                   {/* Added a structural wrapper div here to guarantee clear layout calculations */}
                   <div className="px-8 pb-8 w-full block clear-both">
-                    <p className="text-gray-700 dark:text-gray-300 text-base md:text-lg leading-relaxed antialiased">
+                    <p className="text-text-light text-base md:text-lg leading-relaxed antialiased">
                       {section.content}
                     </p>
                   </div>
@@ -206,17 +197,17 @@ export const Privacy = () => {
           variants={container}
           initial="hidden"
           animate={controls}
-          className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-md"
+          className="bg-card-bg rounded-2xl border border-border p-8 shadow-md"
         >
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+          <h3 className="text-2xl font-bold text-text mb-4">
             Policy Updates
           </h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
+          <p className="text-text-light mb-4">
             We may update our privacy practices. Changes will be posted on this
             page with a revised date. For significant changes, we will notify
             you through email or a prominent notice on our website.
           </p>
-          <p className="text-gray-700 dark:text-gray-300">
+          <p className="text-text-light">
             <strong>Last updated:</strong>{" "}
             {new Date().toLocaleDateString("en-US", {
               year: "numeric",
@@ -230,19 +221,19 @@ export const Privacy = () => {
           variants={container}
           initial="hidden"
           animate={controls}
-          className="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center relative overflow-hidden shadow-md border border-gray-200 dark:border-gray-700"
+          className="bg-card-bg rounded-2xl p-8 text-center relative overflow-hidden shadow-md border border-border"
         >
           <div className="relative z-10">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h3 className="text-2xl font-bold text-text mb-4">
               Have Questions?
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              If you have any questions or concerns about this policy, we're
+            <p className="text-text-light mb-6">
+              If you have any questions or concerns about this policy, we&apos;re
               here to help.
             </p>
             <Link
               to="/contact"
-              className="inline-flex items-center px-6 py-3 rounded-xl font-medium text-white dark:text-black bg-black dark:bg-white hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors duration-300"
+              className="inline-flex items-center px-6 py-3 rounded-xl font-medium text-white bg-primary hover:opacity-90 transition-colors duration-300"
             >
               Contact Us
             </Link>
