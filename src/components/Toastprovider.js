@@ -95,6 +95,20 @@ const ToastProvider = () => {
 
   return (
     <>
+      <style>{`
+        .eventra-toast-close-btn {
+          outline: none;
+          transition: color 0.15s ease, transform 0.15s ease;
+        }
+        .eventra-toast-close-btn:focus-visible {
+          outline: 2px solid #2563eb !important;
+          outline-offset: 1px;
+          border-radius: 4px;
+        }
+        .eventra-toast-close-btn:hover {
+          transform: scale(1.15);
+        }
+      `}</style>
       {/* Visually hidden screen reader live region */}
       <div
         aria-live="polite"
@@ -160,6 +174,7 @@ const ToastProvider = () => {
             <button
               type="button"
               aria-label="Close notification"
+              className="eventra-toast-close-btn"
               onClick={() => dismissToast(item.id)}
               style={{
                 border: "none",

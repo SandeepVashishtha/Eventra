@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * src/utils/p2pFileTransfer.js
  *
@@ -380,6 +381,44 @@ export class P2PFileTransferCoordinator {
     }
   }
 
+  // Regulate chunk transmission using DataChannel flow control
+  async sendChunks(fileChunks) {
+    const total = fileChunks.length;
+    const channel = this.channel;
+    if (!channel) return;
+
+    // Monitor bufferedAmount and pause sending when the buffer is congested
+    channel.bufferedAmountLowThreshold = 65536; // 64 KB
+    let index = 0;
+
+    const sendNext = () => {
+      while (index < total) {
+        if (!channel || channel.readyState !== "open") {
+          break;
+        }
+
+        // Check if browser DataChannel buffer is congested
+        if (channel.bufferedAmount > channel.bufferedAmountLowThreshold) {
+          channel.onbufferedamountlow = () => {
+            channel.onbufferedamountlow = null;
+            sendNext();
+          };
+          return;
+        }
+
+        const chunk = fileChunks[index];
+        channel.send(JSON.stringify({
+          chunkIndex: chunk.chunkIndex,
+          totalChunks: total,
+          data: chunk.data
+        }));
+        index++;
+      }
+    };
+
+    sendNext();
+  }
+
   // Setup WebRTC DataChannel handlers for transferring chunks
   setupDataChannel() {
     if (!this.channel) return;
@@ -391,18 +430,7 @@ export class P2PFileTransferCoordinator {
       if (!this.isInitiator) {
         const fileChunks = await getCachedFile(this.fileId);
         if (fileChunks) {
-          const total = fileChunks.length;
-          fileChunks.forEach((chunk, index) => {
-            setTimeout(() => {
-              if (this.channel && this.channel.readyState === "open") {
-                this.channel.send(JSON.stringify({
-                  chunkIndex: chunk.chunkIndex,
-                  totalChunks: total,
-                  data: chunk.data
-                }));
-              }
-            }, index * 200); // Throttling chunk transmissions
-          });
+          this.sendChunks(fileChunks);
         }
       }
     };
