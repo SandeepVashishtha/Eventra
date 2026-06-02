@@ -19,6 +19,7 @@ const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
+const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
 const NetworkingLounge = lazy(() => import("../events/NetworkingLounge"));
 
 const withModuleBoundary = (children, boundaryName) => (
@@ -151,6 +152,15 @@ export const getProtectedRoutes = () => [
         ]}
       >
         {withModuleBoundary(<SurveyEngine />, "Survey builder")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/:eventId/floorplan-editor"
+    path="/events/:eventId/floorplan-editor"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<CollaborativeFloorPlan />, "Floor Plan Designer")}
       </ProtectedRoute>
     }
   />,

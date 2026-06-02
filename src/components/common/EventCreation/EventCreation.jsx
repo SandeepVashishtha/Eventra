@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { Download } from "lucide-react";
+import { Download, Calendar, Globe, Link2, Plus, Save, FileJson } from "lucide-react";
 import { logger } from "../../../utils/logger";
 import useReducedMotion from "../../../hooks/useReducedMotion";
+import { useEventTemplates } from "../../../hooks/useEventTemplates";
 import TicketsStep from "./components/TicketsStep";
 import GeneralInfoStep from "./components/GeneralInfoStep";
 import { exportAttendeesToCSV } from "../../../utils/exportCsv";
 import PreviewStep from "./components/PreviewStep";
 import RestoreDraftModal from "./components/RestoreDraftModal";
+import TemplatePicker from "./components/TemplatePicker";
+import TemplateNamePrompt from "./components/TemplateNamePrompt";
 import GuidelinesSection from "./components/GuidelinesSection";
 import EventDurationSelector from "./components/EventDurationSelector";
 import DateTimeFields from "./components/DateTimeFields";
@@ -25,25 +28,18 @@ import {
   todayString,
 } from "../../../constants/eventDefaults";
 import {
-  ArrowRightIcon,
-  CalendarIcon,
-  UsersIcon,
-  ClipboardDocumentListIcon,
   TagIcon,
-  CheckCircleIcon,
 } from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
 import { validateCoordinates } from "../../../utils/eventCreationUtils";
 import { validateForm } from "../../../utils/eventFormValidation";
-import { parseTimeToMinutes, validateCoordinates } from "../../../utils/eventCreationUtils";
 
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
 
   const [currentStep, setCurrentStep] = useState(CREATION_STEPS.FORM);
 
-  const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
   const {
     handleSubmit: submitEventForm,
     isSubmitting,
@@ -53,6 +49,7 @@ const EventCreation = () => {
     // Auth is handled by the HttpOnly session cookie — apiUtils sends it
     // automatically via withCredentials. Never read tokens from sessionStorage;
     // setToken was removed as part of the HttpOnly cookie migration.
+
     if (!API_ENDPOINTS.EVENTS.CREATE) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return;
@@ -62,7 +59,8 @@ const EventCreation = () => {
     const result = response.data;
 
     if (!(response.status === 200 && result.success)) {
-      const errorMessage = result.message || result.error || `Server error: ${response.status}`;
+      const errorMessage =
+        result.message || result.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }
   });
@@ -84,6 +82,16 @@ const EventCreation = () => {
   const [newTag, setNewTag] = useState("");
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
+
+  // Template management states
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showTemplateNamePrompt, setShowTemplateNamePrompt] = useState(false);
+  const {
+    templates,
+    handleSaveTemplate,
+    handleLoadTemplate,
+    handleDeleteTemplate,
+  } = useEventTemplates();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -120,38 +128,23 @@ const EventCreation = () => {
   };
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors((prev) => ({
-          ...prev,
-          banner: "Image size should be less than 5MB",
-        }));
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormData((prev) => ({
-          ...prev,
-          banner: file,
-          bannerPreview: event.target.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-      if (errors.banner) {
-        setErrors((prev) => ({ ...prev, banner: "" }));
-      }
+    const file = e.target.files?.[0];
 
     if (!file) return;
 
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+    ];
 
     if (!allowedTypes.includes(file.type)) {
       setErrors((prev) => ({
         ...prev,
         banner: "Please upload a valid image file (JPG, PNG, GIF, or WebP)",
       }));
-
       e.target.value = "";
       return;
     }
@@ -161,7 +154,6 @@ const EventCreation = () => {
         ...prev,
         banner: "Image size should be less than 5MB",
       }));
-
       e.target.value = "";
       return;
     }
@@ -175,10 +167,9 @@ const EventCreation = () => {
         bannerPreview: event.target.result,
       }));
 
-      setErrors((prev) => ({
-        ...prev,
-        banner: "",
-      }));
+      if (errors.banner) {
+        setErrors((prev) => ({ ...prev, banner: "" }));
+      }
     };
 
     reader.readAsDataURL(file);
@@ -209,9 +200,6 @@ const EventCreation = () => {
         setErrors(newErrors);
 
         if (Object.keys(newErrors).length > 0) {
-        const isValid = validateForm();
-
-        if (!isValid) {
           toast.error("Please fix the form errors before continuing.");
           return;
         }
@@ -343,6 +331,41 @@ const EventCreation = () => {
     toast.info("Saved draft discarded.");
   };
 
+  const handleOpenSaveTemplatePrompt = () => {
+    setShowTemplateNamePrompt(true);
+  };
+
+  const handleSaveTemplateSubmit = (templateName) => {
+    const success = handleSaveTemplate(templateName, formData);
+    if (success) {
+      setShowTemplateNamePrompt(false);
+    }
+  };
+
+  const handleOpenTemplatePicker = () => {
+    setShowTemplatePicker(true);
+  };
+
+  const handleLoadTemplateFromPicker = (templateId) => {
+    const templateData = handleLoadTemplate(templateId);
+    if (templateData) {
+      setFormData((prev) => ({
+        ...prev,
+        ...templateData,
+        banner: null,
+        bannerPreview: null,
+      }));
+      setErrors({});
+    }
+  };
+
+  const handleDeleteTemplateFromPicker = (templateId) => {
+    handleDeleteTemplate(templateId, () => {
+      // Refresh templates list after deletion
+      // The templates state will be updated by the hook
+    });
+  };
+
   useEffect(() => {
     if (!isDraftLoaded) return;
 
@@ -416,6 +439,21 @@ const EventCreation = () => {
         onRestore={handleRestoreDraft}
         onDiscard={handleDiscardDraft}
       />
+
+      <TemplatePicker
+        isOpen={showTemplatePicker}
+        templates={templates}
+        onLoad={handleLoadTemplateFromPicker}
+        onDelete={handleDeleteTemplateFromPicker}
+        onClose={() => setShowTemplatePicker(false)}
+      />
+
+      <TemplateNamePrompt
+        isOpen={showTemplateNamePrompt}
+        onSave={handleSaveTemplateSubmit}
+        onCancel={() => setShowTemplateNamePrompt(false)}
+      />
+
       {showRestoreModal && (
         <div
           className="
@@ -494,7 +532,25 @@ const EventCreation = () => {
 
       {currentStep === CREATION_STEPS.FORM ? (
         <>
-          <div className="w-full max-w-4xl flex justify-end mb-6">
+          <div className="w-full max-w-4xl flex justify-end gap-3 mb-6">
+            <button
+              onClick={handleOpenTemplatePicker}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+              aria-label="Load template"
+            >
+              <FileJson size={18} />
+              Use Template
+            </button>
+
+            <button
+              onClick={handleOpenSaveTemplatePrompt}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+              aria-label="Save as template"
+            >
+              <Save size={18} />
+              Save as Template
+            </button>
+
             <button
               onClick={() => {
                 exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
@@ -821,72 +877,13 @@ const EventCreation = () => {
                   )}
                 </motion.div>
               ) : (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      <MapPin className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                      Location Name <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="location.name"
-                      value={formData.location.name}
-                      onChange={handleInputChange}
-                      placeholder="Convention Center, Community Hall, etc."
-                      className={`w-full border ${
-                        errors.location ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
-                    />
-                    {errors.location && (
-                      <span className="text-red-500 text-sm mt-1">{errors.location}</span>
-                    )}
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{
-                      duration: prefersReducedMotion ? 0 : 0.5,
-                      delay: prefersReducedMotion ? 0 : 0.1,
-                    }}
-                  >
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      <Map className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      name="location.address"
-                      value={formData.location.address}
-                      onChange={handleInputChange}
-                      placeholder="123 Main St, City, State ZIP"
-                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300"
-                    />
-                  </motion.div>
-
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                <input
-                  type="checkbox"
-                  name="isVirtual"
-                  checked={formData.isVirtual}
-                  onChange={handleInputChange}
-                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                <LocationFields
+                  formData={formData}
+                  handleInputChange={handleInputChange}
+                  errors={errors}
+                  prefersReducedMotion={prefersReducedMotion}
                 />
-                This is a virtual event
-              </label>
-
-              <LocationFields
-                formData={formData}
-                handleInputChange={handleInputChange}
-                errors={errors}
-                prefersReducedMotion={prefersReducedMotion}
-              />
+              )}
 
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
