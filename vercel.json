@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run lint && GENERATE_SOURCEMAP=false npm run build",
   "outputDirectory": "build",
-  "framework": "create-react-app",
+  "framework": "vite",
   "env": {
     "REACT_APP_API_URL": "/api"
   },
