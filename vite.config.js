@@ -82,7 +82,7 @@ export default defineConfig(({ mode }) => {
       // Disable CSS minification — lightningcss (Vite 8 default) cannot parse
       // the custom Tailwind `short` screen: (max-height: 520px) media query.
       cssMinify: false,
-      chunkSizeWarningLimit: 1500,
+      chunkSizeWarningLimit: 1000,
       rollupOptions: {
         output: {
           // manualChunks must be a function in Vite 8 / Rolldown
