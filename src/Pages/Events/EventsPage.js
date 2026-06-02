@@ -14,6 +14,7 @@ import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
 import {
   decodeAdvancedFilters,
@@ -28,6 +29,8 @@ const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
 const renderCardSection = (
   isLoading,
+  loadError,
+  onRetry,
   paginatedEvents,
   viewMode,
   searchQuery,
@@ -48,6 +51,20 @@ const renderCardSection = (
             <EventCardSkeleton key={`skeleton-${i}`} />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <ErrorMessage title="Failed to load events" message={loadError} />
+        <button
+          onClick={onRetry}
+          className="mt-2 px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
+        >
+          Try again
+        </button>
       </div>
     );
   }
@@ -304,13 +321,15 @@ const EventsPage = () => {
         />
 
         <SectionErrorBoundary label="Events">
-          {renderCardSection(
-            listing.isLoading,
-            listing.paginatedEvents,
-            listing.viewMode,
-            listing.searchQuery,
-            clearSearchAndFilters
-          )}
+     {renderCardSection(
+  listing.isLoading,
+  listing.loadError,
+  listing.fetchEvents,
+  listing.paginatedEvents,
+  listing.viewMode,
+  listing.searchQuery,
+  clearSearchAndFilters
+)}
 
           {!listing.isLoading && listing.totalPages > 1 && (
             <div className="mt-8 flex justify-center">
