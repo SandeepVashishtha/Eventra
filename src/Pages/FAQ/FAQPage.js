@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
 import SEOHead from "../../components/SEOHead";
+import { logger } from "../../utils/logger";
 
 // Centralized FAQ entries classified under General, Hackathons, or Account categories
 const faqs = [

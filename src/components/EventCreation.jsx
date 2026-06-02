@@ -73,7 +73,7 @@ const EventCreation = () => {
 
         <AnimatePresence mode="wait">
           {currentStep === "form" ? (
-            <motion
+            <motion.div
               key="form"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -164,9 +164,9 @@ const EventCreation = () => {
                   </p>
                 </div>
               </form>
-            </motion>
+            </motion.div>
           ) : (
-            <motion
+            <motion.div
               key="preview"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -282,7 +282,7 @@ const EventCreation = () => {
                   )}
                 </div>
               </div>
-            </motion>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
