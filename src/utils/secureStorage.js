@@ -252,6 +252,7 @@ export const syncSecureStorage = {
    */
   removeItem: (key) => {
     try {
+      pendingWrites.delete(key);
       localStorage.removeItem(key);
     } catch (error) {
       console.error('[secureStorage] removeItem failed:', error);
@@ -264,6 +265,7 @@ export const syncSecureStorage = {
    */
   clear: () => {
     try {
+      pendingWrites.clear();
       localStorage.clear();
       _keyPromise = null;
     } catch (error) {

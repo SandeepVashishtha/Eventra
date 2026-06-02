@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
-import { createRateLimiter } from "../middleware/rateLimiter.js";
+import { createRateLimiter as createRateLimiterMiddleware } from "../middleware/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
 
@@ -41,7 +41,7 @@ const JWT_SECRET = getJwtSecret();
 // Rate Limiting (IP-based, 3 signups per minute)
 // ---------------------------------------------------------------------------
 
-const signupRateLimiter = createRateLimiter(60_000, 3);
+const signupRateLimiter = createRateLimiter(60_000, 5);
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
@@ -145,10 +145,10 @@ async function handler(req, res) {
     signupRateLimiter.evictStale();
 
     if (!signupRateLimiter.check(clientIp)) {
-      return corsResponse(res, 429, {
+      return corsResponse(req, res, 429, {
         error: "Too many signup attempts. Please try again later.",
         retryAfter: 60,
-      }, req);
+      });
     }
 
     // -----------------------------------------------------------------------
@@ -291,11 +291,11 @@ async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
-const signupRateLimiter = createRateLimiter({
+const signupRateLimiterMiddleware = createRateLimiterMiddleware({
   max: 5,
   windowMs: 15 * 60 * 1000,
   message: "Too many authentication attempts. Please try again later.",
 });
 
-export default signupRateLimiter(handler);
+export default signupRateLimiterMiddleware(handler);
 export { users };

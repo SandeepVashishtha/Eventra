@@ -41,11 +41,19 @@ const createResponse = () => {
 // Mock Request Helper
 // ---------------------------------------------------------------------------
 
-const createRequest = (method, body, headers = {}) => ({
-  method,
-  body,
-  headers,
-});
+let requestCounter = 0;
+const createRequest = (method, body, headers = {}) => {
+  const finalHeaders = { ...headers };
+  if (!finalHeaders["x-forwarded-for"] && !finalHeaders["x-real-ip"]) {
+    requestCounter += 1;
+    finalHeaders["x-forwarded-for"] = `10.0.0.${requestCounter}`;
+  }
+  return {
+    method,
+    body,
+    headers: finalHeaders,
+  };
+};
 
 // ---------------------------------------------------------------------------
 // Test: Successful signup

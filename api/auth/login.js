@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { users } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
-import { createRateLimiter } from "../middleware/rateLimiter.js";
+import { createRateLimiter as createRateLimiterMiddleware } from "../middleware/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
@@ -103,10 +103,10 @@ async function handler(req, res) {
     loginRateLimiter.evictStale();
 
     if (!loginRateLimiter.check(clientIp)) {
-      return corsResponse(res, 429, {
+      return corsResponse(req, res, 429, {
         error: "Too many login attempts. Please try again later.",
         retryAfter: 60,
-      }, req);
+      });
     }
 
     // -----------------------------------------------------------------------
@@ -233,11 +233,11 @@ async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
-const loginRateLimiter = createRateLimiter({
+const loginRateLimiterMiddleware = createRateLimiterMiddleware({
   max: 5,
   windowMs: 15 * 60 * 1000,
   message: "Too many authentication attempts. Please try again later.",
 });
 
-export default loginRateLimiter(handler);
+export default loginRateLimiterMiddleware(handler);
 export { users };

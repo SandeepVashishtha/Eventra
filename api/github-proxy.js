@@ -1,4 +1,5 @@
 import { verifyAuth } from "./middleware/auth.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
 
 const SAFE_GITHUB_PATH_PATTERNS = [
   /^\/repos\/[^/?#]+\/[^/?#]+$/,
@@ -148,11 +149,6 @@ async function handler(req, res) {
   } catch (error) {
     console.error("GitHub Proxy Error:", error);
     return res.status(500).json({ error: "Failed to fetch from GitHub API" });
-  }
-}
-
-export default verifyAuth(handler);
-
   }
 }
 
