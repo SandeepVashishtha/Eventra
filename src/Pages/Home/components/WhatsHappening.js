@@ -20,6 +20,7 @@ const WhatsHappening = () => {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isAutoPlaying, setIsAutoPlaying] = useState(!prefersReducedMotion);
+  const [isManuallyPaused, setIsManuallyPaused] = useState(false);
 
   useEffect(() => {
     if (prefersReducedMotion) {
@@ -143,6 +144,7 @@ const WhatsHappening = () => {
         ? Math.max(0, upcomingEvents.length - cardsPerView)
         : newIndex;
     });
+    setIsManuallyPaused(true);
     setIsAutoPlaying(false);
   };
 
@@ -157,14 +159,6 @@ const WhatsHappening = () => {
       if (timer) clearInterval(timer);
     };
   }, [isAutoPlaying, nextSlide]);
-
-  useEffect(() => {
-    if (isAutoPlaying) return;
-    const timeout = setTimeout(() => {
-      setIsAutoPlaying(true);
-    }, 10000);
-    return () => clearTimeout(timeout);
-  }, [isAutoPlaying]);
 
   const cardVariants = {
     enter: (dir) => ({ opacity: 0, x: prefersReducedMotion ? 0 : (dir > 0 ? 300 : -300) }),
@@ -262,6 +256,7 @@ const WhatsHappening = () => {
               setCurrent(
                 (prev) => (prev + cardsPerView) % upcomingEvents.length,
               );
+              setIsManuallyPaused(true);
               setIsAutoPlaying(false);
             }}
             className="absolute right-0 sm:-right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/95 border border-slate-200 shadow-lg hover:bg-white hover:shadow-xl z-10 text-slate-700 transition-all duration-200 hover:-translate-y-1"
@@ -282,7 +277,11 @@ const WhatsHappening = () => {
           <div
             className="overflow-hidden px-4 sm:px-8 py-6"
             onMouseEnter={() => setIsAutoPlaying(false)}
-            onMouseLeave={() => setIsAutoPlaying(true)}
+            onMouseLeave={() => {
+              if (!isManuallyPaused) {
+                setIsAutoPlaying(true);
+              }
+            }}
           >
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
