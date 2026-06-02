@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
@@ -18,6 +18,12 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
+import {
+  isCapacityConflictError,
+  isEventAtCapacity,
+  mergeAvailabilityIntoEvent,
+  normalizeEventAvailability,
+} from "../../utils/eventAvailabilityUtils.mjs";
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { getEventStatus } from "../../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
@@ -88,6 +94,7 @@ const EventRegistration = () => {
   const registrationPath = location.pathname;
 
   const [event, setEvent] = useState(null);
+  const [availability, setAvailability] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -229,18 +236,36 @@ const EventRegistration = () => {
     };
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
-  const checkEventCapacity = useCallback(async (id, currentEvent) => {
-    try {
-      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(id));
-      if (freshRes.status === 200) {
-        const freshEvent = freshRes.data;
-        return freshEvent.attendees >= freshEvent.maxAttendees;
-      }
-    } catch {
-      return currentEvent.attendees >= currentEvent.maxAttendees;
+  const refreshEventAvailability = async (id) => {
+  try {
+    const response = await apiUtils.get(API_ENDPOINTS.EVENTS.AVAILABILITY(id));
+
+    if (response.status === 200 && response.data) {
+      const normalized = normalizeEventAvailability(response.data);
+
+      setAvailability(normalized);
+      setEvent((prev) =>
+        prev ? mergeAvailabilityIntoEvent(prev, response.data) : prev
+      );
+
+      return normalized;
     }
-    return false;
-  }, []);
+  } catch (error) {
+    logger.error("Failed to refresh event availability", error);
+  }
+
+  return null;
+};
+  
+  const checkEventCapacity = async (id, currentEvent) => {
+  const latestAvailability = await refreshEventAvailability(id);
+
+  if (latestAvailability) {
+    return latestAvailability.isFull;
+  }
+
+  return isEventAtCapacity(currentEvent);
+};
 
   const checkAndHandleConflicts = useCallback(async () => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
@@ -305,8 +330,13 @@ const EventRegistration = () => {
       toast.success("Registration successful!");
       addRegistration(event, formData);
       clearSession();
-    } catch (error) {
+        } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
+
+      if (isCapacityConflictError(error)) {
+        await refreshEventAvailability(eventId);
+      }
+
       const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
@@ -388,8 +418,9 @@ const EventRegistration = () => {
 
     const isFull = await checkEventCapacity(eventId, event);
     if (isFull) {
-      toast.info("This event is full. You will be added to the waitlist.");
-    }
+  toast.error("This event is sold out. Please choose another event.");
+  return;
+}
 
     if (await checkAndHandleConflicts()) return;
 

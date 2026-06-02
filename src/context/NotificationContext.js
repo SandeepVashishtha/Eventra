@@ -467,9 +467,10 @@ export const NotificationProvider = ({ children }) => {
         subscribedAt: new Date().toISOString(),
       };
 
+      // Migrate any legacy push subscription object that included sensitive keys.
+      // If no legacy object exists, this still writes the safe status record.
       try {
         const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
-
         if (existing) {
           try {
             const parsed = JSON.parse(existing);
@@ -477,16 +478,12 @@ export const NotificationProvider = ({ children }) => {
               console.info("[NotificationContext] Migrating legacy push subscription record.");
             }
           } catch {
-            // Ignore invalid legacy data
+            // Ignore invalid legacy data and continue with the safe record.
           }
         }
-
-        window.localStorage.setItem(
-          PUSH_SUBSCRIPTION_KEY,
-          JSON.stringify(safeLocalRecord)
-        );
+        window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
       } catch {
-        // Non-fatal — subscription still works
+        // Non-fatal — the subscription is still active; local status just won't persist.
       }
 
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
@@ -569,12 +566,7 @@ export const NotificationProvider = ({ children }) => {
     }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [token, fetchNotifications, fetchAchievements, notifications, isPageVisible]);
-
-  const notificationsRef = useRef(notifications);
-  useEffect(() => {
-  notificationsRef.current = notifications;
-}, [notifications]);
+  }, [token, fetchNotifications, fetchAchievements, isPageVisible]);
 
   // Catch-up fetch: when the tab becomes visible after being hidden, immediately
   // fetch notifications so the user sees fresh data without waiting up to
