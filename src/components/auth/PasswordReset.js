@@ -14,9 +14,7 @@ const PasswordReset = () => {
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   const lastSubmitRef = useRef(0);
-  const intervalRef = useRef(null);
-  const navTimerRef = useRef(null);
-  const navigate = useNavigate();
+
 
   const startCooldownTimer = useCallback(() => {
     const unlockAt = lastSubmitRef.current + RESET_COOLDOWN_SECONDS * 1000;
@@ -32,12 +30,7 @@ const PasswordReset = () => {
     }, 1000);
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (navTimerRef.current) clearTimeout(navTimerRef.current);
-    };
-  }, []);
+
 
   const isCoolingDown = () => {
     return Date.now() - lastSubmitRef.current < RESET_COOLDOWN_SECONDS * 1000;
@@ -133,16 +126,17 @@ const PasswordReset = () => {
               Email address  <sup className="ml-1 text-red-500">*</sup>
             </label>
             <input
-              id="email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={isSubmitDisabled}
-              placeholder="@ Enter your email address"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
-            />
+  ref={emailInputRef}
+  id="email"
+  name="email"
+  type="email"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  required
+  disabled={isSubmitDisabled}
+  placeholder="@ Enter your email address"
+  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+/>
           </div>
 
           {error && (

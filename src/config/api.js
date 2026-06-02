@@ -266,6 +266,7 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+    AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
 
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
@@ -296,6 +297,18 @@ export const API_ENDPOINTS = {
   USERS: {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
+  },
+  TICKETS: {
+    VALIDATE: buildApiUrl("/api/tickets/validate"),
+    CHECK_IN: buildApiUrl("/api/tickets/checkin"),
+    HISTORY: buildApiUrl("/api/tickets/checkins"),
+  },
+  ADMIN: {
+    USERS: buildApiUrl("/api/admin/users"),
+    USER: (id) => buildApiUrl(`/api/admin/users/${id}`),
+    EVENTS: buildApiUrl("/api/admin/events"),
+    EVENT: (id) => buildApiUrl(`/api/admin/events/${id}`),
+    STATS: buildApiUrl("/api/admin/stats"),
   },
   VALIDATION: {
     EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),

@@ -372,32 +372,29 @@ export default function LeaderBoard() {
 
     const preparedContributors = prepareLeaderboardEntries(streamContributors);
 
-    setContributors((prev) => {
-      setStreaks((prevStreaks) => {
-        const updatedStreaks = { ...prevStreaks };
-        const prevRanks = new Map(prev.map((c, idx) => [c.username, idx + 1]));
+    // Compute streaks BEFORE calling any setState
+    const prevRanks = new Map(contributors.map((c, idx) => [c.username, idx + 1]));
+    const updatedStreaks = { ...streaks };
 
-        preparedContributors.forEach((c, newIdx) => {
-          const username = c.username;
-          const newRank = newIdx + 1;
-          const prevRank = prevRanks.get(username);
-          const currentStreak = prevStreaks[username] || { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+    preparedContributors.forEach((c, newIdx) => {
+      const username = c.username;
+      const newRank = newIdx + 1;
+      const prevRank = prevRanks.get(username);
+      const currentStreak = streaks[username] || { consecutiveUp: 0, onFire: false, rankDifference: 0 };
 
-          if (prevRank !== undefined) {
-            const rankDifference = prevRank - newRank;
-            let consecutiveUp = rankDifference > 0 ? currentStreak.consecutiveUp + 1 : rankDifference < 0 ? 0 : currentStreak.consecutiveUp;
-            const onFire = rankDifference >= 3 || consecutiveUp >= 3;
-
-            updatedStreaks[username] = { consecutiveUp, onFire, rankDifference };
-          } else {
-            updatedStreaks[username] = { consecutiveUp: 0, onFire: false, rankDifference: 0 };
-          }
-        });
-
-        return updatedStreaks;
-      });
-      return preparedContributors;
+      if (prevRank !== undefined) {
+        const rankDifference = prevRank - newRank;
+        const consecutiveUp = rankDifference > 0 ? currentStreak.consecutiveUp + 1 : rankDifference < 0 ? 0 : currentStreak.consecutiveUp;
+        const onFire = rankDifference >= 3 || consecutiveUp >= 3;
+        updatedStreaks[username] = { consecutiveUp, onFire, rankDifference };
+      } else {
+        updatedStreaks[username] = { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+      }
     });
+
+    // Now call each setState separately and cleanly
+    setStreaks(updatedStreaks);
+    setContributors(preparedContributors);
 
     setLastUpdated(`Live: ${formatLastUpdated(lastSynced)}`);
 
@@ -544,10 +541,11 @@ export default function LeaderBoard() {
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
+    link.href = objectUrl;
     link.download = `eventra-leaderboard-${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
-    URL.revokeObjectURL(link.href);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 100);
   }, [sortedContributors, ranksMap]);
 
   const handleKeyDown = useCallback((e) => {

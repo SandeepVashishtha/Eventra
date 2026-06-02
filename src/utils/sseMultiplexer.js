@@ -16,6 +16,7 @@ class SseMultiplexer {
     this.activeEventSources = new Map(); // path -> EventSource instance
     this.pathStatuses = new Map(); // path -> status string
     this.statusListeners = new Set(); // callbacks listening to status changes
+    this.lastSeenFollowers = new Map();
 
     if (typeof window !== "undefined") {
       this.channel = new BroadcastChannel(MULTIPLEX_CHANNEL_NAME);
@@ -36,6 +37,7 @@ class SseMultiplexer {
         .request(LOCK_NAME, async () => {
           logger.log(`[SSE Multiplexer] Tab ${this.tabId} acquired lock and became LEADER.`);
           this.isLeader = true;
+          this.startHeartbeatChecks();
           this.queryGlobalSubscribers();
           this.reconcileConnections();
 
@@ -105,6 +107,7 @@ class SseMultiplexer {
     // Heartbeat loop — keep the entry fresh while leadership is held
     this.heartbeatInterval = setInterval(writeHeartbeat, 2000);
 
+    this.startHeartbeatChecks();
     this.queryGlobalSubscribers();
     this.reconcileConnections();
   }
@@ -176,6 +179,10 @@ class SseMultiplexer {
   handleBroadcastMessage(msg) {
     if (!msg || msg.tabId === this.tabId) return;
 
+    if (this.isLeader && this.lastSeenFollowers) {
+      this.lastSeenFollowers.set(msg.tabId, Date.now());
+    }
+
     switch (msg.type) {
       case "SUBSCRIBE":
         this.addGlobalSubscriber(msg.path, msg.tabId);
@@ -223,6 +230,15 @@ class SseMultiplexer {
         if (this.isLeader) {
           this.reconnect(msg.path);
         }
+        break;
+
+      case "PING":
+        if (!this.isLeader) {
+          this.broadcastMessage({ type: "PONG", tabId: this.tabId });
+        }
+        break;
+
+      case "PONG":
         break;
 
       default:
@@ -351,9 +367,71 @@ class SseMultiplexer {
     });
   }
 
+  startHeartbeatChecks(interval = 5000, maxMissed = 3) {
+    this.stopHeartbeatChecks();
+
+    const HEARTBEAT_INTERVAL = interval;
+    const MISSING_TIMEOUT = HEARTBEAT_INTERVAL * maxMissed;
+
+    this.lastSeenFollowers = new Map();
+
+    this.pingInterval = setInterval(() => {
+      if (!this.isLeader) return;
+
+      this.broadcastMessage({ type: "PING", tabId: this.tabId });
+
+      const now = Date.now();
+      let changed = false;
+
+      const registeredTabIds = new Set();
+      this.globalSubscribers.forEach((tabs) => {
+        tabs.forEach((id) => {
+          if (id !== this.tabId) {
+            registeredTabIds.add(id);
+          }
+        });
+      });
+
+      registeredTabIds.forEach((tabId) => {
+        const lastSeen = this.lastSeenFollowers.get(tabId);
+        if (lastSeen === undefined) {
+          this.lastSeenFollowers.set(tabId, now);
+        } else if (now - lastSeen > MISSING_TIMEOUT) {
+          logger.log(
+            `[SSE Multiplexer] Follower tab ${tabId} missed heartbeats. Removing stale subscriptions.`
+          );
+          this.globalSubscribers.forEach((tabs, path) => {
+            if (tabs.has(tabId)) {
+              tabs.delete(tabId);
+              if (tabs.size === 0) {
+                this.globalSubscribers.delete(path);
+              }
+            }
+          });
+          this.lastSeenFollowers.delete(tabId);
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        this.reconcileConnections();
+      }
+    }, HEARTBEAT_INTERVAL);
+  }
+
+  stopHeartbeatChecks() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+    this.lastSeenFollowers = null;
+  }
+
   // --- 5. Unload Cleanup ---
   teardown() {
     logger.log(`[SSE Multiplexer] Teardown triggered for tab: ${this.tabId}`);
+
+    this.stopHeartbeatChecks();
 
     if (this.channel) {
       this.broadcastMessage({

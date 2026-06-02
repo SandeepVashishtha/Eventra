@@ -18,6 +18,8 @@ const PasswordReset = lazy(() => import("../auth/PasswordReset"));
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
+const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
+const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
 
 const withModuleBoundary = (children, boundaryName) => (
   <ErrorBoundary
@@ -34,13 +36,7 @@ export const getProtectedRoutes = () => [
     key="/create-event"
     path="/create-event"
     element={
-      <ProtectedRoute
-        requiredPermissions={[PERMISSIONS.CREATE_EVENT]}
-        requiredScopes={["event:write"]}
-        validateContext={({ user }) =>
-          user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
-        }
-      >
+      <ProtectedRoute redirectTo="/login">
         {withModuleBoundary(<EventCreation />, "Event creation")}
       </ProtectedRoute>
     }
@@ -50,29 +46,28 @@ export const getProtectedRoutes = () => [
     path="/admin"
     element={
       <ProtectedRoute
-        requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
-        requiredScopes={["admin:all"]}
-        validateContext={({ user }) => user?.status !== "Suspended"}
-      >
+  requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
+  redirectTo="/login"
+>
         {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
       </ProtectedRoute>
     }
   />,
-  <Route
-    key="/host-hackathon"
-    path="/host-hackathon"
-    element={
-      <ProtectedRoute
-        requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
-        requiredScopes={["hackathon:write"]}
-        validateContext={({ user }) =>
-          user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
-        }
-      >
-        {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
-      </ProtectedRoute>
-    }
-  />,
+ <Route
+  key="/host-hackathon"
+  path="/host-hackathon"
+  element={
+    <ProtectedRoute
+      requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
+      requiredScopes={["hackathon:write"]}
+      validateContext={({ user }) =>
+        user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
+      }
+    >
+      {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
+    </ProtectedRoute>
+  }
+/>,
   <Route
     key="/dashboard"
     path="/dashboard"
@@ -88,6 +83,15 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         <UserProfile />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/networking"
+    path="/networking"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<MatchmakingHub />, "Matchmaking Hub")}
       </ProtectedRoute>
     }
   />,
@@ -138,6 +142,15 @@ export const getProtectedRoutes = () => [
         ]}
       >
         {withModuleBoundary(<SurveyEngine />, "Survey builder")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/:eventId/floorplan-editor"
+    path="/events/:eventId/floorplan-editor"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<CollaborativeFloorPlan />, "Floor Plan Designer")}
       </ProtectedRoute>
     }
   />,
