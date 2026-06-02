@@ -18,6 +18,7 @@ const PasswordReset = lazy(() => import("../auth/PasswordReset"));
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
+const RBACSettings = lazy(() => import("../admin/RBACSettings"));
 
 const withModuleBoundary = (children, boundaryName) => (
   <ErrorBoundary
@@ -48,6 +49,18 @@ export const getProtectedRoutes = () => [
   redirectTo="/login"
 >
         {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/admin/rbac"
+    path="/admin/rbac"
+    element={
+      <ProtectedRoute
+        requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
+        redirectTo="/login"
+      >
+        {withModuleBoundary(<RBACSettings />, "RBAC Policy Manager")}
       </ProtectedRoute>
     }
   />,
