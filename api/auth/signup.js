@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
-import { createRateLimiter as createRateLimiterMiddleware } from "../middleware/rateLimiter.js";
+
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
 
@@ -296,11 +296,5 @@ async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
-const signupRateLimiterMiddleware = createRateLimiterMiddleware({
-  max: 5,
-  windowMs: 15 * 60 * 1000,
-  message: "Too many authentication attempts. Please try again later.",
-});
-
-export default signupRateLimiterMiddleware(handler);
+export default handler;
 export { users, usersById, usersByUsername };
