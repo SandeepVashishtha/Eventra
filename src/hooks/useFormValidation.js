@@ -107,22 +107,6 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
 
-    if (validationRulesRef.current[name] && !validateOnBlur) {
-      clearValidationTimer();
-      const validationRun = validationRunRef.current + 1;
-      validationRunRef.current = validationRun;
-
-      timeoutRef.current = setTimeout(() => {
-        timeoutRef.current = null;
-        if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
-
-        const error = validateField(name, value, { ...values, [name]: value });
-        if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
-
-        setErrors(prev => ({ ...prev, [name]: error }));
-      }, debounceMs);
-    }
-  }, [validateOnBlur, debounceMs, validateField, values, clearValidationTimer]);
     setValues((prev) => ({ ...prev, [name]: value }));
     setTouched((prev) => ({ ...prev, [name]: true }));
     setErrors((prev) => ({ ...prev, [name]: null }));
@@ -130,28 +114,26 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     if (!validationRulesRef.current[name]) return;
     if (optionsRef.current.validateOnBlur) return;
 
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    clearValidationTimer();
+    const validationRun = validationRunRef.current + 1;
+    validationRunRef.current = validationRun;
 
     timeoutRef.current = setTimeout(() => {
-      // Read the current field value from the functional-update closure to
-      // avoid the stale-closure problem that arose when `values` was in the
-      // dependency array of the callback.
+      timeoutRef.current = null;
+      if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
+
       setValues((prev) => {
         const currentValues = { ...prev, [name]: value };
         const error = validateField(name, value, currentValues);
-        setErrors((errs) => ({ ...errs, [name]: error }));
-        return prev; // no state change — we only needed prev for validation
+        if (isMountedRef.current && validationRunRef.current === validationRun) {
+          setErrors((errs) => ({ ...errs, [name]: error }));
+        }
+        return prev;
       });
     }, optionsRef.current.debounceMs);
-  }, [validateField]);
+  }, [validateField, clearValidationTimer]);
 
-  // Cancel the pending debounce timer when the hook unmounts to prevent
-  // setState calls on an unmounted component.
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
+  // Cleanup handled by the unified clearValidationTimer effect above
 
   // Handle blur — run validation immediately without waiting for the debounce.
   const handleBlur = useCallback((e) => {
@@ -181,11 +163,6 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     setTouched({});
     setIsFormValid(false);
   }, [clearValidationTimer]);
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, []);
 
   return {
     values,

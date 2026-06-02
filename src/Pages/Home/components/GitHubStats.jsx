@@ -91,7 +91,7 @@ export default function GitHubStats() {
             contribCount = contributors.length;
           }
         } else {
-          console.warn("Failed to fetch contributor count:", contributorsResult.reason);
+          //console.warn("Failed to fetch contributor count:", contributorsResult.reason);
         }
 
         // Pull request count — graceful fallback on failure
@@ -102,7 +102,7 @@ export default function GitHubStats() {
             prCount = pullRequests.length;
           }
         } else {
-          console.warn("Failed to fetch pull request count:", pullRequestsResult.reason);
+         //console.warn("Failed to fetch pull request count:", pullRequestsResult.reason);
         }
 
         const next = {
@@ -126,8 +126,8 @@ export default function GitHubStats() {
           writeCache(next);
           setIsLoading(false);
         }
-      } catch (err) {
-        console.warn("GitHub stats fetch failed", err);
+      } catch {
+        //console.warn("GitHub stats fetch failed", err);
         if (!cached && mounted) {
           setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
           setIsLoading(false);
@@ -232,7 +232,6 @@ export default function GitHubStats() {
                   key={label}
                   href={link}
                   target="_blank" rel="noopener noreferrer"
-                  rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, rotate: 1 }}
                   whileTap={{ scale: 0.95 }}
                   // UPDATED: Card background, border, and responsive sizing
