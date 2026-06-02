@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { users } from "./signup.js";
+import { users, usersByUsername } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 import { createRateLimiter } from "../middleware/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
@@ -59,17 +59,13 @@ const validateLoginInput = (usernameOrEmail, password) => {
 const findUserByUsernameOrEmail = (usernameOrEmail) => {
   const normalizedInput = usernameOrEmail.trim().toLowerCase();
   
-  // Search through all users
-  for (const [key, user] of users.entries()) {
-    if (
-      user.email === normalizedInput ||
-      user.username === normalizedInput ||
-      user.email === usernameOrEmail.trim() ||
-      user.username === usernameOrEmail.trim()
-    ) {
-      return user;
-    }
-  }
+  // O(1) lookup: try email key first (primary key), then username index
+  const byEmail = users.get(normalizedInput);
+  if (byEmail) return byEmail;
+  
+  const byUsername = usersByUsername.get(normalizedInput);
+  if (byUsername) return byUsername;
+  
   return null;
 };
 
