@@ -11,6 +11,8 @@
 // ---------------------------------------------------------------------------
 
 import { verifyAuth } from "./middleware/auth.js";
+import { buildCorsHeaders } from "./auth/cors.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_SENDS = 5;
@@ -46,14 +48,11 @@ const isValidEmail = (email) =>
   typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 
 async function handler(req, res) {
-  const corsOrigin = process.env.ALLOWED_ORIGIN || "*";
-  res.setHeader("Access-Control-Allow-Origin", corsOrigin);
-  if (corsOrigin !== "*") res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  const corsHeaders = buildCorsHeaders(req);
+  res.set(corsHeaders);
 
   if (req.method === "OPTIONS") {
-    return res.status(200).end();
+    return res.status(204).end();
   }
 
   if (req.method !== "POST") {
@@ -61,6 +60,7 @@ async function handler(req, res) {
   }
 
   const userId = req.user?.id || req.user?.email || "unknown";
+  const authenticatedEmail = typeof req.user?.email === "string" ? req.user.email.trim().toLowerCase() : "";
   evictStale();
 
   if (!checkRateLimit(userId)) {
@@ -82,12 +82,24 @@ async function handler(req, res) {
     return res.status(400).json({ error: "A valid recipient email address is required." });
   }
 
+  const normalizedRecipientEmail = toEmail.trim().toLowerCase();
+  if (!authenticatedEmail || normalizedRecipientEmail !== authenticatedEmail) {
+    return res.status(403).json({
+      error: "You can only send confirmation emails to your authenticated email address.",
+    });
+  }
+
   const recipientName = typeof toName === "string" ? toName.slice(0, 100).trim() : "Participant";
   const eventTitle = typeof eventName === "string" ? eventName.slice(0, 200).trim() : "your event";
   const eventDateStr = typeof eventDate === "string" ? eventDate.slice(0, 50).trim() : "";
 
+  console.info("[send-email] confirmation email requested", {
+    userId,
+    recipient: normalizedRecipientEmail,
+  });
+
   try {
-    const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+    const response = await fetchWithTimeout("https://api.emailjs.com/api/v1.0/email/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -101,7 +113,7 @@ async function handler(req, res) {
           event_date: eventDateStr,
         },
       }),
-    });
+    }, 8000);
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
@@ -117,3 +129,5 @@ async function handler(req, res) {
 }
 
 export default verifyAuth(handler);
+
+

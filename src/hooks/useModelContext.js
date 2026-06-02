@@ -48,7 +48,7 @@ export const useModelContext = () => {
             description: "Get information about Eventra APIs",
             inputSchema: { type: "object", properties: {} },
             execute: async () => {
-              window.location.href = "/apiDocs";
+              window.location.href = "/api-docs";
               return { success: true, message: "Navigating to API documentation" };
             }
           }

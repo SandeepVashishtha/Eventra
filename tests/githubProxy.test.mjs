@@ -31,6 +31,14 @@ const createResponse = () => {
       this.statusCode = code;
       return this;
     },
+    set(key, value) {
+      if (typeof key === "object") {
+        Object.assign(this.headers, key);
+      } else {
+        this.headers[key] = value;
+      }
+      return this;
+    },
     json(body) {
       this.body = body;
       return this;

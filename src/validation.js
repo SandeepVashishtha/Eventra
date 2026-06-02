@@ -95,6 +95,38 @@ export const validate = {
   minLength: (min) => (val) => (val && val.length >= min) || `Minimum ${min} characters`,
   maxLength: (max) => (val) => (!val || val.length <= max) || `Maximum ${max} characters`,
 
+  // --- Event Specific Validations ---
+  eventTitle: (val) => {
+    if (!val || !val.trim()) return "Event title is required";
+    if (val.trim().length < 3) return "Title must be at least 3 characters";
+    if (val.trim().length > 200) return "Title must be less than 200 characters";
+    return true;
+  },
+
+  eventDescription: (val) => (val && val.trim() !== "") || "Event description is required",
+
+  eventCategory: (val) => (val && val !== "") || "Please select a category",
+
+  eventDate: (val) => (val && val !== "") || "Event date is required",
+
+  eventTime: (val) => (val && val !== "") || "Time is required",
+
+  eventCapacity: (val) => {
+    if (!val) return true; // Optional
+    const cap = Number(val);
+    if (isNaN(cap) || cap <= 0) return "Must be a positive number";
+    if (cap > 100000) return "Maximum capacity is 100,000";
+    return true;
+  },
+
+  ticketTierName: (val) => (val && val.trim() !== "") || "Tier name is required",
+
+  ticketTierPrice: (val) => {
+    const price = Number(val);
+    if (isNaN(price) || price < 0) return "Price cannot be negative";
+    return true;
+  },
+
   /**
    * Survey sanitizers & XSS guards.
    * Capped to 150 chars for prompts, 80 for options.
