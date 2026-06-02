@@ -14,9 +14,7 @@ const PasswordReset = () => {
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   const lastSubmitRef = useRef(0);
-const intervalRef = useRef(null);
-const emailInputRef = useRef(null);
-const navigate = useNavigate();
+
 
   const startCooldownTimer = useCallback(() => {
     const unlockAt = lastSubmitRef.current + RESET_COOLDOWN_SECONDS * 1000;
@@ -32,13 +30,7 @@ const navigate = useNavigate();
     }, 1000);
   }, []);
 
- useEffect(() => {
-  emailInputRef.current?.focus();
 
-  return () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-  };
-}, []);
 
   const isCoolingDown = () => {
     return Date.now() - lastSubmitRef.current < RESET_COOLDOWN_SECONDS * 1000;
@@ -71,7 +63,7 @@ const navigate = useNavigate();
       setMessage(response.data?.message || 'Password reset link sent! Check your email.');
       lastSubmitRef.current = Date.now();
       startCooldownTimer();
-      setTimeout(() => navigate('/login'), 3000);
+      navTimerRef.current = setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
       const backendMessage = err.response?.data?.message || err?.data?.message;
       setError(backendMessage || 'Failed to send reset link. Please try again.');
