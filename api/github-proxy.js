@@ -1,4 +1,5 @@
 import { verifyAuth } from "./middleware/auth.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
 
 const SAFE_GITHUB_PATH_PATTERNS = [
   /^\/repos\/[^/?#]+\/[^/?#]+$/,

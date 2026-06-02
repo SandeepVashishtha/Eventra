@@ -3,6 +3,7 @@
 
 import { verifyAuth } from "./middleware/auth.js";
 import { buildCorsHeaders } from "./auth/cors.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
 
 // ---------------------------------------------------------------------------
 // Guards
