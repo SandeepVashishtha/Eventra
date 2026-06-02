@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
@@ -6,18 +7,21 @@ import { getGoogleCalendarUrl, getOutlookCalendarUrl } from "../../utils/calenda
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 import {
-  Calendar,
-  MapPin,
-  Clock,
-  User,
-  Mail,
-  Phone,
-  Briefcase,
   ArrowLeft,
+  Briefcase,
+  Calendar,
   CheckCircle,
+  Clock,
   Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  User,
 } from "lucide-react";
+import { getGoogleCalendarUrl, getOutlookCalendarUrl } from "../../utils/calendarUrlUtils";
+import useEventRegistration from "../../hooks/useEventRegistration";
 import {
   isCapacityConflictError,
   isEventAtCapacity,
@@ -32,55 +36,11 @@ import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import CalendarView from "../../components/CalendarView";
-
-import { validate } from "../../validation";
-import { toast } from "react-toastify";
-import {
-  getCacheAgeLabel,
-  getCachedEventDetail,
-  saveCachedEventDetail,
-} from "../../utils/offlineEventCache";
-
-import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
 import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 import { logger } from "../../utils/logger";
 
 const MAX_NOTES_CHARS = 500;
-
-const getRegistrationFailureMessage = (error) => {
-  const message = error?.data?.message || error?.data?.error || error?.message || "";
-  const normalizedMessage = message.toLowerCase();
-
-  if (error?.status === 409 && /already registered|duplicate/.test(normalizedMessage)) {
-    return "You are already registered for this event.";
-  }
-
-  if (
-    error?.status === 409 ||
-    error?.status === 423 ||
-    /capacity|full|sold out|max(?:imum)? capacity/.test(normalizedMessage)
-  ) {
-    return "This event has reached maximum capacity. Please choose another event.";
-  }
-
-  if (/conflict/.test(normalizedMessage)) {
-    return "Registration could not be completed because the server reported a conflict.";
-  }
-
-  return message || "Registration failed. Please try again.";
-};
-
-// NOTE: getGoogleCalendarUrl and getOutlookCalendarUrl are now imported from
-// src/utils/calendarUrlUtils.js at the top of this file. The old inline
-// implementations (formatDateForGoogle, getGoogleCalendarUrl,
-// getOutlookCalendarUrl) have been removed because they:
-//   1. Treated local event times as UTC (no timezone conversion).
-//   2. Always generated a 1-hour end time, ignoring event.durationMinutes.
-// See issue #2015 for details.
-
-// Registration lock map to prevent concurrent registrations for the same event
-const registrationLocks = new Map();
 
 const EventRegistration = () => {
   const { eventId: routeEventId, id: routeId } = useParams();
@@ -114,12 +74,54 @@ const EventRegistration = () => {
   }), []);
 
   const {
-    values: formData,
+    event,
+    loading,
+    submitting,
+    registered,
+    isEventFull,
+    isPastEvent,
+    formData,
     errors,
     touched,
     isFormValid,
     handleChange,
     handleBlur,
+    showConflictModal,
+    conflictData,
+    handleSubmit,
+    handleConflictCancel,
+    handleConflictProceed,
+    handleSelectAlternative,
+    myEvents,
+  } = useEventRegistration();
+
+  const isHackathonPath = window.location.pathname.startsWith("/register");
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Event Not Found</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+          The event you are looking for does not exist or has been removed.
+        </p>
+        <Link
+          to="/events"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Events
+        </Link>
+      </div>
+    );
+  }
     validateAll,
     setValues,
   } = useFormValidation(
@@ -453,12 +455,10 @@ const EventRegistration = () => {
           Registration Unavailable
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
-          {isPastEvent
-            ? "This event has already ended."
-            : "This event is currently full. You can still check back later in case a spot opens up."}
+          This event has already ended.
         </p>
         <Link
-          to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`}
+          to={isHackathonPath ? `/hackathons/${event.id}` : `/events/${event.id}`}
           className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -489,14 +489,14 @@ const EventRegistration = () => {
           });
       } else {
         navigator.clipboard
-  .writeText(shareUrl)
-  .then(() => {
-    toast.success("Event link copied to clipboard!");
-  })
-  .catch((err) => {
-    logger.error("Failed to copy link:", err);
-    toast.error("Could not copy link. Please copy manually.");
-  });
+          .writeText(shareUrl)
+          .then(() => {
+            toast.success("Event link copied to clipboard!");
+          })
+          .catch((err) => {
+            logger.error("Failed to copy link:", err);
+            toast.error("Could not copy link. Please copy manually.");
+          });
       }
     };
 
@@ -642,7 +642,7 @@ const EventRegistration = () => {
           </div>
 
           <Link
-            to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`}
+            to={isHackathonPath ? `/hackathons/${event.id}` : `/events/${event.id}`}
             className="block"
           >
             <button
@@ -660,7 +660,6 @@ const EventRegistration = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        {/* Back Button */}
         <Link
           to={isHackathonPath ? "/hackathons" : "/events"}
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white mb-6 transition-colors"
@@ -670,7 +669,6 @@ const EventRegistration = () => {
         </Link>
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
-          {/* Event Header */}
           <div className="relative h-64 overflow-hidden">
             <img
               loading="lazy"
@@ -837,7 +835,6 @@ const EventRegistration = () => {
                 >
                   Designation (Optional)
                 </label>
-
                 <div className="relative">
                   <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -860,7 +857,6 @@ const EventRegistration = () => {
                 >
                   Priority (Optional)
                 </label>
-
                 <select
                   id="priority"
                   name="priority"
@@ -892,7 +888,6 @@ const EventRegistration = () => {
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
                   placeholder="Any special requirements or questions?"
                 />
-
                 <div className="flex justify-end text-xs mt-1 text-gray-400 dark:text-gray-500">
                   <span
                     className={
@@ -910,7 +905,7 @@ const EventRegistration = () => {
               <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={() => navigate(-1)}
+                  onClick={() => window.history.back()}
                   className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
                 >
                   Cancel
@@ -938,7 +933,6 @@ const EventRegistration = () => {
         </div>
       </div>
 
-      {/* Conflict Detection Modal */}
       <EventConflictModal
         isOpen={showConflictModal}
         newEvent={event}

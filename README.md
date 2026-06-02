@@ -6,6 +6,27 @@ Modern event and hackathon platform for communities, organizers, and contributor
 [![React](https://img.shields.io/badge/React-19.x-blue.svg)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.x-646CFF.svg)](https://vitejs.dev/)
 
+---
+
+> [!IMPORTANT]
+> ## Project Status Notice
+>
+> Due to time constraints and other commitments, **I ([@SandeepVashishtha](https://github.com/SandeepVashishtha)) will no longer be actively contributing to or managing this project** going forward. I sincerely apologize for any inconvenience this may cause to contributors and users.
+>
+> **The project will NOT be archived** - it remains open and active, especially for **GSSoC 2026** participants and the broader open-source community.
+>
+> There are mentors currently involved, and the project can continue to grow with community support. However, **we are looking for 2-3 dedicated volunteers to step up as maintainers** to help review PRs, triage issues, and guide contributors.
+>
+> ### Interested in becoming a maintainer?
+>
+> If you are passionate about this project and willing to take on a maintainer role, please reach out by:
+> - Opening an issue titled **"Maintainer Volunteer - [Your Name]"**
+> - Or contacting via the existing community channels
+>
+> Your contributions and leadership would mean a lot to this project and the community around it. 🙏
+
+---
+
 ## Overview
 
 Eventra is an open-source frontend application built with React and Vite. It supports event discovery, registration, dashboards, hackathons, collaboration features, feedback flows, and role-based access experiences.
