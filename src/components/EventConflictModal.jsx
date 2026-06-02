@@ -33,6 +33,17 @@ const EventConflictModal = ({
   const previousFocusRef = useRef(null);
   const userTimezone = getUserTimezone();
 
+  // 🔥 FIX: Added scroll lock to prevent background page from scrolling behind the modal
+  useEffect(() => {
+    if (isOpen) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen) {
       previousFocusRef.current = document.activeElement;
@@ -115,6 +126,17 @@ const EventConflictModal = ({
     };
   }, [isOpen]);
 
+  // 🔥 FIX: Safe date formatter to prevent RangeError crashes if event data is malformed
+  const safeFormatDate = (dateStr) => {
+    if (!dateStr) return "TBD";
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? "TBD" : d.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -175,11 +197,8 @@ const EventConflictModal = ({
               <div className="flex flex-wrap gap-4 mt-2 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
-                  {new Date(newEvent?.date).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
+                  {/* 🔥 FIX: Safely parse date */}
+                  {safeFormatDate(newEvent?.date)}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
@@ -209,11 +228,8 @@ const EventConflictModal = ({
                   <div className="flex flex-wrap gap-4 mt-2 text-sm text-red-700 dark:text-red-300">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {new Date(event.date).toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      {/* 🔥 FIX: Safely parse date */}
+                      {safeFormatDate(event.date)}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
@@ -252,11 +268,8 @@ const EventConflictModal = ({
                         <div className="flex flex-wrap gap-4 mt-2 text-sm text-green-700 dark:text-green-300">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
-                            {new Date(event.date).toLocaleDateString('en-US', {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
+                            {/* 🔥 FIX: Safely parse date */}
+                            {safeFormatDate(event.date)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
