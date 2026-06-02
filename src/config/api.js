@@ -266,6 +266,7 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+    AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
 
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the

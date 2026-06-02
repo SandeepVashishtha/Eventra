@@ -35,6 +35,13 @@ import {
   saveCachedEventDetail,
 } from "../../utils/offlineEventCache";
 
+import {
+  isCapacityConflictError,
+  isEventAtCapacity,
+  mergeAvailabilityIntoEvent,
+  normalizeEventAvailability,
+} from "../../utils/eventAvailabilityUtils.mjs";
+
 import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
 import ConfettiCanvas from "../../components/common/ConfettiCanvas";
@@ -48,6 +55,10 @@ const getRegistrationFailureMessage = (error) => {
 
   if (error?.status === 409 && /already registered|duplicate/.test(normalizedMessage)) {
     return "You are already registered for this event.";
+  }
+
+  if (isCapacityConflictError(error)) {
+    return "This event is sold out. Please choose another event.";
   }
 
   if (
@@ -88,6 +99,7 @@ const EventRegistration = () => {
   const registrationPath = location.pathname;
 
   const [event, setEvent] = useState(null);
+  const [availability, setAvailability] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -183,17 +195,22 @@ const EventRegistration = () => {
         if (response.status === 200 && response.data) {
           if (isCancelled) return;
 
-          const fetchedEvent = {
-            ...response.data,
-            status: getEventStatus(response.data),
-          };
+          const fetchedEvent = mergeAvailabilityIntoEvent(
+            {
+              ...response.data,
+              status: getEventStatus(response.data),
+            },
+            response.data
+          );
+
+          setAvailability(normalizeEventAvailability(fetchedEvent));
           applyLoadedEvent(fetchedEvent);
           saveCachedEventDetail(fetchedEvent);
 
           // Pre-fill form if user is authenticated
           prefillAuthenticatedUser();
         }
-//      } catch {
+        //      } catch {
       } catch (error) {
         if (isCancelled) return;
         console.error("Failed to load event details:", error);
@@ -237,18 +254,33 @@ const EventRegistration = () => {
     };
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
-  const checkEventCapacity = async (id, currentEvent) => {
+  const refreshEventAvailability = async (id) => {
     try {
-      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(id));
-      if (freshRes.status === 200) {
-        const freshEvent = freshRes.data;
-        return freshEvent.attendees >= freshEvent.maxAttendees;
+      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.AVAILABILITY(id));
+
+      if (response.status === 200 && response.data) {
+        const normalized = normalizeEventAvailability(response.data);
+
+        setAvailability(normalized);
+        setEvent((prev) => (prev ? mergeAvailabilityIntoEvent(prev, response.data) : prev));
+
+        return normalized;
       }
-    } catch {
-      // If the re-fetch fails, fall back to the cached snapshot
-      return currentEvent.attendees >= currentEvent.maxAttendees;
+    } catch (error) {
+      logger.error("Failed to refresh event availability", error);
     }
-    return false;
+
+    return null;
+  };
+
+  const checkEventCapacity = async (id, currentEvent) => {
+    const latestAvailability = await refreshEventAvailability(id);
+
+    if (latestAvailability) {
+      return latestAvailability.isFull;
+    }
+
+    return isEventAtCapacity(currentEvent);
   };
 
   const checkAndHandleConflicts = async () => {
@@ -307,7 +339,8 @@ const EventRegistration = () => {
     // Quick UX hint based on the latest visible event snapshot.
     const isFull = await checkEventCapacity(eventId, event);
     if (isFull) {
-      toast.info("This event is full. You will be added to the waitlist.");
+      toast.error("This event is sold out. Please choose another event.");
+      return;
     }
 
     // Check for scheduling conflicts
@@ -335,12 +368,16 @@ const EventRegistration = () => {
     isSubmittingRef.current = true;
     setSubmitting(true);
 
-    const isEventFull = event ? event.attendees >= event.maxAttendees : false;
-    const endpoint = isEventFull
-      ? `/api/events/${eventId}/waitlist`
-      : API_ENDPOINTS.EVENTS?.REGISTER
-        ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
-        : `/api/events/${eventId}/register`;
+    const latestAvailability = availability || normalizeEventAvailability(event);
+
+    if (latestAvailability.isFull) {
+      toast.error("This event is sold out. Please choose another event.");
+      return;
+    }
+
+    const endpoint = API_ENDPOINTS.EVENTS?.REGISTER
+      ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
+      : `/api/events/${eventId}/register`;
 
     try {
       await apiUtils.post(
@@ -363,6 +400,9 @@ const EventRegistration = () => {
       clearSession();
     } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
+      if (isCapacityConflictError(error)) {
+        await refreshEventAvailability(eventId);
+      }
       const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
@@ -458,10 +498,11 @@ const EventRegistration = () => {
     );
   }
 
-  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+  const eventAvailability = availability || normalizeEventAvailability(event);
+  const isEventFull = eventAvailability.isFull;
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
 
-  if (isPastEvent) {
+  if (isPastEvent || isEventFull) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -470,7 +511,7 @@ const EventRegistration = () => {
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
           {isPastEvent
             ? "This event has already ended."
-            : "This event is currently full. You can still check back later in case a spot opens up."}
+            : "This event is sold out. Please choose another event."}
         </p>
         <Link
           to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`}
@@ -504,14 +545,14 @@ const EventRegistration = () => {
           });
       } else {
         navigator.clipboard
-  .writeText(shareUrl)
-  .then(() => {
-    toast.success("Event link copied to clipboard!");
-  })
-  .catch((err) => {
-    logger.error("Failed to copy link:", err);
-    toast.error("Could not copy link. Please copy manually.");
-  });
+          .writeText(shareUrl)
+          .then(() => {
+            toast.success("Event link copied to clipboard!");
+          })
+          .catch((err) => {
+            logger.error("Failed to copy link:", err);
+            toast.error("Could not copy link. Please copy manually.");
+          });
       }
     };
 
@@ -752,7 +793,11 @@ const EventRegistration = () => {
                   />
                 </div>
                 {errors.fullName && touched.fullName && (
-                  <p id="registration-fullName-error" role="alert" className="text-red-500 text-sm mt-1">
+                  <p
+                    id="registration-fullName-error"
+                    role="alert"
+                    className="text-red-500 text-sm mt-1"
+                  >
                     {errors.fullName}
                   </p>
                 )}
@@ -784,7 +829,11 @@ const EventRegistration = () => {
                   />
                 </div>
                 {errors.email && touched.email && (
-                  <p id="registration-email-error" role="alert" className="text-red-500 text-sm mt-1">
+                  <p
+                    id="registration-email-error"
+                    role="alert"
+                    className="text-red-500 text-sm mt-1"
+                  >
                     {errors.email}
                   </p>
                 )}
@@ -816,7 +865,11 @@ const EventRegistration = () => {
                   />
                 </div>
                 {errors.phone && touched.phone && (
-                  <p id="registration-phone-error" role="alert" className="text-red-500 text-sm mt-1">
+                  <p
+                    id="registration-phone-error"
+                    role="alert"
+                    className="text-red-500 text-sm mt-1"
+                  >
                     {errors.phone}
                   </p>
                 )}
