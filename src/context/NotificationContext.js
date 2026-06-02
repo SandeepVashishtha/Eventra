@@ -467,55 +467,26 @@ export const NotificationProvider = ({ children }) => {
         subscribedAt: new Date().toISOString(),
       };
 
-     try {
-  // Read old value BEFORE overwriting
-  const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
+      try {
+        const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
 
-  if (existing) {
-    try {
-      const parsed = JSON.parse(existing);
+        if (existing) {
+          try {
+            const parsed = JSON.parse(existing);
+            if (parsed?.keys) {
+              console.info("[NotificationContext] Migrating legacy push subscription record.");
+            }
+          } catch {
+            // Ignore invalid legacy data
+          }
+        }
 
-      // Old format with sensitive keys
-      if (parsed?.keys) {
         window.localStorage.setItem(
           PUSH_SUBSCRIPTION_KEY,
           JSON.stringify(safeLocalRecord)
         );
-
-        window.localStorage.removeItem(PUSH_SUBSCRIPTION_KEY);
-
-
-      // Migrate: check for legacy subscription object with sensitive keys BEFORE overwriting.
-      const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
-      if (existing) {
-        try {
-          const parsed = JSON.parse(existing);
-          if (parsed?.keys) {
-            // Old format with sensitive keys detected — will be replaced by safe record below
-            console.info("[NotificationContext] Migrating legacy push subscription record.");
-          }
-        } catch { /* non-fatal */ }
-
-      }
-    } catch {
-      // Ignore invalid legacy data
-    }
-  }
-
-  // Save new safe format
-  window.localStorage.setItem(
-    PUSH_SUBSCRIPTION_KEY,
-    JSON.stringify(safeLocalRecord)
-  );
-
-} catch {
-  // Non-fatal — subscription still works
-}
-
-      try {
-        window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
       } catch {
-        // Non-fatal — the subscription is still active; local status just won't persist
+        // Non-fatal — subscription still works
       }
 
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
