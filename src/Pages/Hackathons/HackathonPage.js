@@ -282,7 +282,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
   }), [hackathons]);
 
   const searchedHackathons = debouncedSearchQuery
-    ? fuse.search(debouncedSearchQuery).map((result) => result.item)
+    ? fuse.search(debouncedSearchQuery.trim()).map((result) => result.item)
     : hackathons;
 
   const filteredHackathons = filterHackathons(searchedHackathons, {

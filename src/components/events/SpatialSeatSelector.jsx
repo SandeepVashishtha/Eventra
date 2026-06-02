@@ -515,6 +515,7 @@ const SpatialSeatSelector = ({
                     key={`seat-${el.id}-${seat.index}`}
                     el={el}
                     seat={seat}
+                    seats={elementSeatPositions.get(el.id) || []}
                     isSelected={isSeatSelected(el.id, seat.index)}
                     readOnly={readOnly}
                     onSelect={handleSeatClick}
@@ -634,16 +635,97 @@ export default SpatialSeatSelector;
 
 // ── Optimized Seat Component ────────────────────────────────────────────────
 
-const Seat = ({ el, seat, isSelected, readOnly, onSelect, onHover, containerRef }) => {
+const Seat = ({ el, seat, seats, isSelected, readOnly, onSelect, onHover, containerRef }) => {
   const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
   const isOccupied = el.assignedAttendees[seat.index];
   const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
   const seatTier = el.tier || (isVIP ? "VIP Front Row" : "General Seating");
 
+  const tabIndex = readOnly || isOccupied ? -1 : 0;
+  const role = !readOnly && !isOccupied ? "button" : undefined;
+  const availability = isOccupied ? "Occupied" : "Available";
+  const ariaLabel = `${el.label} - ${seatLabel}, ${availability} (${seatTier})`;
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      if (readOnly || isOccupied) return;
+      e.preventDefault();
+      onSelect(el, seat, seat.index);
+      return;
+    }
+
+    const arrowKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+    if (arrowKeys.includes(e.key)) {
+      e.preventDefault();
+      let tx = 0,
+        ty = 0;
+      if (e.key === "ArrowRight") tx = 1;
+      if (e.key === "ArrowLeft") tx = -1;
+      if (e.key === "ArrowUp") ty = -1;
+      if (e.key === "ArrowDown") ty = 1;
+
+      let bestSeat = null;
+      let minScore = Infinity;
+
+      (seats || []).forEach((s) => {
+        if (s.index === seat.index) return;
+        const dx = s.x - seat.x;
+        const dy = s.y - seat.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist === 0) return;
+
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const dot = nx * tx + ny * ty;
+
+        if (dot > 0.1) {
+          const score = dist / dot;
+          if (score < minScore) {
+            minScore = score;
+            bestSeat = s;
+          }
+        }
+      });
+
+      if (bestSeat) {
+        const nextSeatEl = document.getElementById(`seat-element-${el.id}-${bestSeat.index}`);
+        if (nextSeatEl) {
+          nextSeatEl.focus();
+        }
+      }
+    }
+  };
+
+  const handleFocus = (e) => {
+    if (!containerRef.current) return;
+    const bbox = e.currentTarget.getBoundingClientRect();
+    const vrect = containerRef.current.getBoundingClientRect();
+    onHover({
+      el,
+      seatIdx: seat.index,
+      label: seatLabel,
+      tier: seatTier,
+      occupiedBy: isOccupied || null,
+      x: bbox.left - vrect.left + bbox.width / 2,
+      y: bbox.top - vrect.top - 10,
+    });
+  };
+
+  const handleBlur = () => {
+    onHover(null);
+  };
+
   return (
     <g
+      id={`seat-element-${el.id}-${seat.index}`}
       className={`ssp-interactive-seat ${isSelected ? "ssp-seat-glowing" : ""}`}
+      tabIndex={tabIndex}
+      role={role}
+      aria-label={ariaLabel}
       onClick={() => onSelect(el, seat, seat.index)}
+      onKeyDown={handleKeyDown}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       onMouseEnter={(e) => {
         const bbox = e.currentTarget.getBoundingClientRect();
         const vrect = containerRef.current.getBoundingClientRect();
@@ -674,15 +756,7 @@ const Seat = ({ el, seat, isSelected, readOnly, onSelect, onHover, containerRef 
                 ? "url(#ssp-vip-avail)"
                 : "url(#ssp-gen-avail)"
         }
-        stroke={
-          isSelected
-            ? "#67e8f9"
-            : isOccupied
-              ? "#18181b"
-              : isVIP
-                ? "#f59e0b"
-                : "#6366f1"
-        }
+        stroke={isSelected ? "#67e8f9" : isOccupied ? "#18181b" : isVIP ? "#f59e0b" : "#6366f1"}
         strokeWidth={1.5}
       />
       {readOnly && isSelected && (

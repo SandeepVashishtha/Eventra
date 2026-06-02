@@ -2,10 +2,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { users, usersByUsername } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
-import { createRateLimiter as createRateLimiterMiddleware } from "../middleware/rateLimiter.js";
+import { createRateLimiter } from "../lib/rateLimit.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
-import { createRateLimiter } from "../lib/rateLimit.js";
+
 
 // Pre-compute a dummy bcrypt hash at module load time (same cost factor used in signup.js).
 // When a login attempt references a username or email that does not exist, we still run
@@ -85,7 +85,23 @@ async function handler(req, res) {
   }
 
   try {
+    if (!req.body || typeof req.body !== "object") {
+      return corsResponse(req, res, 400, { error: "Request body is required" });
+    }
+
     const { usernameOrEmail, password } = req.body;
+
+    // -----------------------------------------------------------------------
+    // Input Validation
+    // Run before rate-limit so malformed requests don't burn the budget.
+    // -----------------------------------------------------------------------
+
+    const validationErrors = validateLoginInput(usernameOrEmail, password);
+    if (validationErrors.length > 0) {
+      return corsResponse(req, res, 400, { 
+        error: validationErrors.join(", ") 
+      });
+    }
 
     // -----------------------------------------------------------------------
     // Rate Limiting (brute-force protection)
@@ -102,17 +118,6 @@ async function handler(req, res) {
       return corsResponse(req, res, 429, {
         error: "Too many login attempts. Please try again later.",
         retryAfter: 60,
-      });
-    }
-
-    // -----------------------------------------------------------------------
-    // Input Validation
-    // -----------------------------------------------------------------------
-
-    const validationErrors = validateLoginInput(usernameOrEmail, password);
-    if (validationErrors.length > 0) {
-      return corsResponse(req, res, 400, { 
-        error: validationErrors.join(", ") 
       });
     }
 
@@ -229,11 +234,5 @@ async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
-const loginRateLimiterMiddleware = createRateLimiterMiddleware({
-  max: 5,
-  windowMs: 15 * 60 * 1000,
-  message: "Too many authentication attempts. Please try again later.",
-});
-
-export default loginRateLimiterMiddleware(handler);
+export default handler;
 export { users };

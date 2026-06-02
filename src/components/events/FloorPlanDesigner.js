@@ -38,10 +38,12 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const dragStartRef = useRef({ x: 0, y: 0 });
   const elementStartRef = useRef({ x: 0, y: 0 });
   const panStartRef = useRef({ x: 0, y: 0 });
+  const elementsMapRef = useRef(new Map());
 
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => { snapToGridRef.current = snapToGrid; }, [snapToGrid]);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+  useEffect(() => { elementsMapRef.current = new Map(elements.map((el) => [el.id, el])); }, [elements]);
 
   const updateSelectedElement = (key, value) => {
     const updates = typeof key === "object" ? key : { [key]: value };
@@ -191,7 +193,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     const handleKeyDown = (e) => {
       if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT")) return;
       if (!selectedIdRef.current) return;
-      const activeEl = elements.find((el) => el.id === selectedIdRef.current);
+      const activeEl = elementsMapRef.current.get(selectedIdRef.current);
       if (!activeEl) return;
       const step = snapToGridRef.current ? 20 : 5;
       switch (e.key) {

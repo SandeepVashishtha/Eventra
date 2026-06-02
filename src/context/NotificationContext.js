@@ -467,6 +467,24 @@ export const NotificationProvider = ({ children }) => {
         subscribedAt: new Date().toISOString(),
       };
 
+     try {
+  // Read old value BEFORE overwriting
+  const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
+
+  if (existing) {
+    try {
+      const parsed = JSON.parse(existing);
+
+      // Old format with sensitive keys
+      if (parsed?.keys) {
+        window.localStorage.setItem(
+          PUSH_SUBSCRIPTION_KEY,
+          JSON.stringify(safeLocalRecord)
+        );
+
+        window.localStorage.removeItem(PUSH_SUBSCRIPTION_KEY);
+
+
       // Migrate: check for legacy subscription object with sensitive keys BEFORE overwriting.
       const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
       if (existing) {
@@ -477,7 +495,22 @@ export const NotificationProvider = ({ children }) => {
             console.info("[NotificationContext] Migrating legacy push subscription record.");
           }
         } catch { /* non-fatal */ }
+
       }
+    } catch {
+      // Ignore invalid legacy data
+    }
+  }
+
+  // Save new safe format
+  window.localStorage.setItem(
+    PUSH_SUBSCRIPTION_KEY,
+    JSON.stringify(safeLocalRecord)
+  );
+
+} catch {
+  // Non-fatal — subscription still works
+}
 
       try {
         window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
@@ -565,7 +598,12 @@ export const NotificationProvider = ({ children }) => {
     }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [token, fetchNotifications, fetchAchievements, isPageVisible]);
+  }, [token, fetchNotifications, fetchAchievements, notifications, isPageVisible]);
+
+  const notificationsRef = useRef(notifications);
+  useEffect(() => {
+  notificationsRef.current = notifications;
+}, [notifications]);
 
   // Catch-up fetch: when the tab becomes visible after being hidden, immediately
   // fetch notifications so the user sees fresh data without waiting up to
