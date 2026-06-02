@@ -1,7 +1,7 @@
+import { Github, ExternalLink, Plus, X } from "lucide-react";
 import { getPublicErrorMessage, FORM_ERRORS } from "../../utils/errorMessages";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { FiGithub, FiExternalLink, FiPlus, FiX } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getUserFullName } from "../../utils/userNameUtils.mjs";
@@ -144,7 +144,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
         <div className="submission-header">
           <h2>Submit Your Project</h2>
           <button onClick={onClose} className="close-btn" aria-label="button">
-            <FiX />
+            <X />
           </button>
         </div>
 
@@ -227,7 +227,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
                 onClick={handleTechStackAdd}
                 className="add-tech-btn"
                aria-label="button">
-                <FiPlus />
+                <Plus />
               </button>
             </div>
             <div className="tech-stack-list">
@@ -238,7 +238,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
                     type="button"
                     onClick={() => handleTechStackRemove(tech)}
                   >
-                    <FiX />
+                    <X />
                   </button>
                 </span>
               ))}
@@ -249,7 +249,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
             <div className="form-group">
               <label htmlFor="githubUrl">GitHub URL</label>
               <div className="input-with-icon">
-                <FiGithub />
+                <Github />
                 <input
                   type="url"
                   id="githubUrl"
@@ -264,7 +264,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
             <div className="form-group">
               <label htmlFor="liveDemo">Live Demo URL</label>
               <div className="input-with-icon">
-                <FiExternalLink />
+                <ExternalLink />
                 <input
                   type="url"
                   id="liveDemo"

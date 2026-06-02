@@ -1,23 +1,9 @@
+import { Code, Star, ChevronLeft, ChevronRight, Users, ArrowUp, ArrowDown, Minus, Search, Filter, Download, RefreshCw, Trophy } from "lucide-react";
 // src/features/leaderboard/LeaderBoard.tsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
 import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
-import {
-  FaCode,
-  FaStar,
-  FaChevronLeft,
-  FaChevronRight,
-  FaUsers,
-  FaArrowUp,
-  FaArrowDown,
-  FaMinus,
-  FaSearch,
-  FaFilter,
-  FaDownload,
-  FaSync,
-  FaTrophy,
-} from "react-icons/fa";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
@@ -121,7 +107,7 @@ const RankMovementIndicator = React.memo(({ liveDifference }) => {
         className="inline-flex items-center gap-0.5 text-[10px] font-black text-emerald-500"
         aria-label={`Rank improved by ${diff} position${diff > 1 ? "s" : ""}`}
       >
-        <FaArrowUp className="w-2.5 h-2.5 animate-bounce" />
+        <ArrowUp className="w-2.5 h-2.5 animate-bounce" />
         <span className="sr-only">Up</span>
         {diff}
       </motion.span>
@@ -136,7 +122,7 @@ const RankMovementIndicator = React.memo(({ liveDifference }) => {
         className="inline-flex items-center gap-0.5 text-[10px] font-black text-rose-500"
         aria-label={`Rank dropped by ${absDiff} position${absDiff > 1 ? "s" : ""}`}
       >
-        <FaArrowDown className="w-2.5 h-2.5" />
+        <ArrowDown className="w-2.5 h-2.5" />
         <span className="sr-only">Down</span>
         {absDiff}
       </motion.span>
@@ -144,7 +130,7 @@ const RankMovementIndicator = React.memo(({ liveDifference }) => {
   }
   return (
     <span className="inline-flex items-center text-[10px] font-bold text-slate-400" aria-label="No rank change">
-      <FaMinus className="w-2 h-2" aria-hidden="true" />
+      <Minus className="w-2 h-2" aria-hidden="true" />
     </span>
   );
 });
@@ -154,13 +140,13 @@ const AnimatedCounter = React.memo(
   ({ value, duration = 1200 }) => {
     const [count, setCount] = useState(0);
     const rafRef = useRef();
-    const endValue = useMemo(() => {
-      const num = typeof value === "string" ? parseInt(value, 10) : value;
-      return isNaN(num) ? 0 : num;
+    const end = useMemo(() => {
+      const end = typeof value === "string" ? parseInt(value, 10) : value;
+      return isNaN(end) ? 0 : end;
     }, [value]);
 
     useEffect(() => {
-      if (endValue === 0) {
+      if (end === 0) {
         setCount(0);
         return;
       }
@@ -173,7 +159,7 @@ const AnimatedCounter = React.memo(
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
-        setCount(Math.round(eased * endValue));
+        setCount(Math.round(eased * end));
 
         if (progress < 1) {
           rafRef.current = requestAnimationFrame(tick);
@@ -184,7 +170,7 @@ const AnimatedCounter = React.memo(
       return () => {
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
       };
-    }, [endValue, duration]);
+    }, [end, duration]);
 
     return <span aria-live="polite">{count.toLocaleString()}</span>;
   }
@@ -386,32 +372,29 @@ export default function LeaderBoard() {
 
     const preparedContributors = prepareLeaderboardEntries(streamContributors);
 
-    setContributors((prev) => {
-      setStreaks((prevStreaks) => {
-        const updatedStreaks = { ...prevStreaks };
-        const prevRanks = new Map(prev.map((c, idx) => [c.username, idx + 1]));
+    // Compute streaks BEFORE calling any setState
+    const prevRanks = new Map(contributors.map((c, idx) => [c.username, idx + 1]));
+    const updatedStreaks = { ...streaks };
 
-        preparedContributors.forEach((c, newIdx) => {
-          const username = c.username;
-          const newRank = newIdx + 1;
-          const prevRank = prevRanks.get(username);
-          const currentStreak = prevStreaks[username] || { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+    preparedContributors.forEach((c, newIdx) => {
+      const username = c.username;
+      const newRank = newIdx + 1;
+      const prevRank = prevRanks.get(username);
+      const currentStreak = streaks[username] || { consecutiveUp: 0, onFire: false, rankDifference: 0 };
 
-          if (prevRank !== undefined) {
-            const rankDifference = prevRank - newRank;
-            let consecutiveUp = rankDifference > 0 ? currentStreak.consecutiveUp + 1 : rankDifference < 0 ? 0 : currentStreak.consecutiveUp;
-            const onFire = rankDifference >= 3 || consecutiveUp >= 3;
-
-            updatedStreaks[username] = { consecutiveUp, onFire, rankDifference };
-          } else {
-            updatedStreaks[username] = { consecutiveUp: 0, onFire: false, rankDifference: 0 };
-          }
-        });
-
-        return updatedStreaks;
-      });
-      return preparedContributors;
+      if (prevRank !== undefined) {
+        const rankDifference = prevRank - newRank;
+        const consecutiveUp = rankDifference > 0 ? currentStreak.consecutiveUp + 1 : rankDifference < 0 ? 0 : currentStreak.consecutiveUp;
+        const onFire = rankDifference >= 3 || consecutiveUp >= 3;
+        updatedStreaks[username] = { consecutiveUp, onFire, rankDifference };
+      } else {
+        updatedStreaks[username] = { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+      }
     });
+
+    // Now call each setState separately and cleanly
+    setStreaks(updatedStreaks);
+    setContributors(preparedContributors);
 
     setLastUpdated(`Live: ${formatLastUpdated(lastSynced)}`);
 
@@ -558,10 +541,11 @@ export default function LeaderBoard() {
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
+    link.href = objectUrl;
     link.download = `eventra-leaderboard-${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
-    URL.revokeObjectURL(link.href);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 100);
   }, [sortedContributors, ranksMap]);
 
   const handleKeyDown = useCallback((e) => {
@@ -646,7 +630,7 @@ export default function LeaderBoard() {
               animate={{ opacity: 1, scale: 1 }}
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-600"
             >
-              <FaTrophy className="w-3 h-3" aria-hidden="true" />
+              <Trophy className="w-3 h-3" aria-hidden="true" />
               GSSoC&apos;26 Contribution Arena
             </motion.div>
 
@@ -718,7 +702,7 @@ export default function LeaderBoard() {
           {/* SEARCH & CONTROLS */}
           <div className="mb-8 flex flex-col gap-4 rounded-[28px] border border-slate-200/70 bg-white/80 p-4 shadow-[0_16px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full sm:max-w-xs">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
               <input
                 ref={searchInputRef}
                 type="search"
@@ -739,7 +723,7 @@ export default function LeaderBoard() {
                   const selected = sortOptions.find((opt) => opt.label === value);
                   if (selected) setSortBy(selected.value);
                 }}
-                icon={<FaFilter className="w-3 h-3" aria-hidden="true" />}
+                icon={<Filter className="w-3 h-3" aria-hidden="true" />}
               />
 
               <motion.button
@@ -751,7 +735,7 @@ export default function LeaderBoard() {
                 aria-label="Refresh leaderboard data"
                 title="Refresh data"
               >
-                <FaSync className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
               </motion.button>
 
               <motion.button
@@ -762,7 +746,7 @@ export default function LeaderBoard() {
                 aria-label="Export leaderboard as CSV"
                 title="Export as CSV"
               >
-                <FaDownload className="w-4 h-4" aria-hidden="true" />
+                <Download className="w-4 h-4" aria-hidden="true" />
               </motion.button>
             </div>
           </div>
@@ -995,7 +979,7 @@ export default function LeaderBoard() {
                               {/* Points */}
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-white">
-                                  <FaStar className="text-yellow-400 text-xs animate-spin-slow" aria-hidden="true" />
+                                  <Star className="text-yellow-400 text-xs animate-spin-slow" aria-hidden="true" />
                                   <span className="font-extrabold">
                                     <AnimatedCounter value={c.points} />
                                   </span>
@@ -1005,7 +989,7 @@ export default function LeaderBoard() {
                               {/* PRs */}
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-white">
-                                  <FaCode className="text-indigo-500 text-xs" aria-hidden="true" />
+                                  <Code className="text-indigo-500 text-xs" aria-hidden="true" />
                                   <span className="font-extrabold">
                                     <AnimatedCounter value={c.prs} />
                                   </span>
@@ -1018,7 +1002,7 @@ export default function LeaderBoard() {
                         <tr>
                           <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                             <div className="flex flex-col items-center gap-3">
-                              <FaSearch className="w-8 h-8 text-slate-300 dark:text-slate-700" aria-hidden="true" />
+                              <Search className="w-8 h-8 text-slate-300 dark:text-slate-700" aria-hidden="true" />
                               <p className="font-medium">No contributors found</p>
                               <p className="text-sm">Try adjusting your search or filters</p>
                               <button
@@ -1052,7 +1036,7 @@ export default function LeaderBoard() {
                         className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#E0E9F2] disabled:opacity-50"
                         aria-label="Previous page"
                       >
-                        <FaChevronLeft className="w-3 h-3" aria-hidden="true" />
+                        <ChevronLeft className="w-3 h-3" aria-hidden="true" />
                       </button>
                       <button
                         onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
@@ -1060,7 +1044,7 @@ export default function LeaderBoard() {
                         className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#E0E9F2] disabled:opacity-50"
                         aria-label="Next page"
                       >
-                        <FaChevronRight className="w-3 h-3" aria-hidden="true" />
+                        <ChevronRight className="w-3 h-3" aria-hidden="true" />
                       </button>
                     </div>
                   </div>

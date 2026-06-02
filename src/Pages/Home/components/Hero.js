@@ -158,7 +158,7 @@ const Hero = () => {
 
   useEffect(() => {
     if (debouncedTerm.trim()) {
-      setSearchResults(searchIndex.search(debouncedTerm).slice(0, SEARCH_RESULT_LIMIT));
+      setSearchResults(searchIndex.search(debouncedTerm.trim()).slice(0, SEARCH_RESULT_LIMIT));
       setShowResults(true);
       return;
     }

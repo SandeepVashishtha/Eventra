@@ -11,6 +11,7 @@ import {
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
+import { logger } from "../../utils/logger";
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
@@ -32,6 +33,7 @@ const normalizeEvent = (event) => ({
 const useEventListing = () => {
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
@@ -123,7 +125,7 @@ const useEventListing = () => {
         first: responseData.first ?? true,
         last: responseData.last ?? true,
       });
-    } catch {
+    } catch (error) {
       if (process.env.NODE_ENV === "development") {
         const normalizedMockEvents = mockEvents.map(normalizeEvent);
         setEvents(normalizedMockEvents);
@@ -192,49 +194,81 @@ const useEventListing = () => {
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
   const filteredEvents = useMemo(() => {
-    const now = new Date();
-    const searchedEvents = getRouteSearchResults(
-      events,
-      debouncedSearchQuery,
-      [
-        "title",
-        "description",
-        "location",
-        "venue",
-        "category",
-        "type",
-        "eventMode",
-        "status",
-        "date",
-        "startDate",
-      ],
-      {
-        threshold: 0.35,
-        includeScore: true,
-      },
-    );
+    // 1. Search (typo-tolerant fuzzy search with ranking from PR #5461)
+    let filtered = debouncedSearchQuery.trim()
+      ? getRouteSearchResults(
+          events,
+          debouncedSearchQuery,
+          [
+            { name: "title", weight: 0.8 },
+            { name: "category", weight: 0.5 },
+            { name: "tags", weight: 0.4 },
+            { name: "location.name", weight: 0.3 },
+            { name: "location.city", weight: 0.3 },
+            { name: "description", weight: 0.1 },
+          ]
+        )
+      : [...events];
 
-    const basicFiltered = searchedEvents.filter((event) => {
-      // Filter by Type/Status
-      const eventDate = new Date(event.date || event.startDate);
+    // 2. Status Timing Filter ('Live Now', 'Upcoming', 'Past Events') based on current system date
+    filtered = filtered.filter((event) => {
+      const status = getEventStatus(event);
+      if (filterType === "live") {
+        return status === "live";
+      }
       if (filterType === "upcoming") {
-        return eventDate >= now;
+        return status === "upcoming";
       }
       if (filterType === "past") {
-        return eventDate < now;
+        return status === "past" || status === "ended";
       }
-      if (filterType === "conference") {
-        return event.type?.toLowerCase() === "conference" || event.category?.toLowerCase() === "conference";
-      }
-      if (filterType === "workshop") {
-        return event.type?.toLowerCase() === "workshop" || event.category?.toLowerCase() === "workshop";
-      }
-
       return true; // "all"
     });
 
-    return applyAdvancedFilters(basicFiltered, advancedFilters);
-  }, [events, filterType, debouncedSearchQuery, advancedFilters]);
+    // 3. Category Filter matching domain categories (Hackathons, Tech Talks, Cultural, Web Dev, etc.)
+    if (categoryFilter && categoryFilter !== "all") {
+      const target = categoryFilter.toLowerCase();
+      filtered = filtered.filter((event) => {
+        const cat = event.category?.toLowerCase() || "";
+        const type = event.type?.toLowerCase() || "";
+        
+        if (target === "hackathon" || target === "hackathons") {
+          return type === "hackathon" || cat.includes("hackathon");
+        }
+        if (target === "tech talks" || target === "tech-talks" || target === "conference") {
+          return (
+            type === "conference" ||
+            type === "summit" ||
+            cat.includes("tech") ||
+            cat.includes("conference") ||
+            cat.includes("summit")
+          );
+        }
+        if (target === "cultural" || target === "networking" || target === "cultural & networking") {
+          return (
+            cat.includes("networking") ||
+            cat.includes("cultural") ||
+            cat.includes("community")
+          );
+        }
+        
+        // General domain category matching (e.g. web development -> web-development / web)
+        const normalizedTarget = target.replace(/[^a-z0-9]+/g, "");
+        const normalizedCat = cat.replace(/[^a-z0-9]+/g, "");
+        const normalizedType = type.replace(/[^a-z0-9]+/g, "");
+        
+        return (
+          normalizedCat.includes(normalizedTarget) ||
+          normalizedType.includes(normalizedTarget) ||
+          normalizedTarget.includes(normalizedCat) ||
+          normalizedTarget.includes(normalizedType)
+        );
+      });
+    }
+
+    // 4. Advanced Filters fallback
+    return applyAdvancedFilters(filtered, advancedFilters);
+  }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
 
   const sortedEvents = useMemo(() => {
     return [...filteredEvents].sort((a, b) => {
@@ -264,6 +298,7 @@ const useEventListing = () => {
     fetchEvents,
     filteredEvents,
     filterType,
+    categoryFilter,
     loadError,
     isLoading,
     paginatedEvents,
@@ -278,6 +313,7 @@ const useEventListing = () => {
     dateRangeStats,
     setEventsPerPage,
     setFilterType,
+    setCategoryFilter,
     setSafePage,
     setSearchQuery,
     setSortType,

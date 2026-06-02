@@ -33,6 +33,7 @@ const FeedbackPage = lazy(() => import("../../Pages/Feedback/FeedbackPage"));
 const BookmarkedEvents = lazy(() => import("../../Pages/Events/BookmarkedEvents"));
 const RemindersPage = lazy(() => import("../../Pages/Events/RemindersPage"));
 const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
+const OptimizedImage = lazy(() => import("../common/OptimizedImage"));
 
 const withModuleBoundary = (children, boundaryName) => (
   <ErrorBoundary
@@ -57,8 +58,7 @@ export const getPublicRoutes = () => [
   <Route key="/hackathons-lifecycle" path="/hackathons/:id/lifecycle" element={withModuleBoundary(<HackathonLifecycle />, "Hackathon lifecycle")} />,
   <Route key="/projects" path="/projects" element={withModuleBoundary(<ProjectsPage />, "Projects explorer")} />,
   <Route key="/leaderboard" path="/leaderboard" element={withModuleBoundary(<LeaderBoard />, "Leaderboard")} />,
-  <Route key="/communityEvent" path="/communityEvent" element={withModuleBoundary(<CommunityEvent />, "Community Events")} />,
-  <Route key="/leaderBoard" path="/leaderBoard" element={withModuleBoundary(<LeaderBoard />, "Leaderboard")} />,
+  <Route key="/community-event" path="/community-event" element={withModuleBoundary(<CommunityEvent />, "Community Events")} />,
 <Route key="/about" path="/about" element={withModuleBoundary(<AboutPage />, "About")} />,
 <Route key="/faq" path="/faq" element={withModuleBoundary(<FAQPage />, "FAQ")} />,
 <Route key="/contact" path="/contact" element={withModuleBoundary(<ContactUs />, "Contact")} />,
@@ -67,12 +67,12 @@ export const getPublicRoutes = () => [
 <Route key="/documentation" path="/documentation" element={withModuleBoundary(<DocumentationPage />, "Documentation")} />,
 <Route key="/terms" path="/terms" element={withModuleBoundary(<Terms />, "Terms")} />,
 <Route key="/privacy" path="/privacy" element={withModuleBoundary(<Privacy />, "Privacy")} />,
-<Route key="/apiDocs" path="/apiDocs" element={withModuleBoundary(<ApiDocs />, "API Docs")} />,
+<Route key="/api-docs" path="/api-docs" element={withModuleBoundary(<ApiDocs />, "API Docs")} />,
 <Route key="/helpcenter" path="/helpcenter" element={withModuleBoundary(<HelpCenter />, "Help Center")} />,
 <Route key="/feedback" path="/feedback" element={withModuleBoundary(<FeedbackPage />, "Feedback")} />,
 <Route key="/bookmarks" path="/bookmarks" element={withModuleBoundary(<BookmarkedEvents />, "Bookmarks")} />,
 <Route key="/reminders" path="/reminders" element={withModuleBoundary(<RemindersPage />, "Reminders")} />,
 <Route key="/calendar" path="/calendar" element={withModuleBoundary(<MyCalendar />, "Calendar")} />,
+<Route key="/image-test" path="/image-test" element={<OptimizedImage src="https://images.unsplash.com/photo-1540575861501-7c90b707a27d" alt="Test" />} />,
 <Route key="/submit-project" path="/submit-project" element={withModuleBoundary(<SubmitProject />, "Submit Project")} />,
-
   <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,];
