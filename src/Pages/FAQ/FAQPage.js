@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
 import SEOHead from "../../components/SEOHead";
+import { logger } from "../../utils/logger";
 
 // Centralized FAQ entries classified under General, Hackathons, or Account categories
 const faqs = [
@@ -203,6 +204,7 @@ function FAQSectionInner() {
   const wrapperRefs = useRef([]);
   const sectionRef = useRef(null);
   const headerRef = useRef(null);
+  const suggestionsRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [isHeaderFixed, setIsHeaderFixed] = useState(false);
   const [headerTop, setHeaderTop] = useState(0);
@@ -275,7 +277,7 @@ function FAQSectionInner() {
         setCardStyles(nextStyles);
         ticking = false;
       });
-    };
+    };   
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", handleScroll);
@@ -286,6 +288,16 @@ function FAQSectionInner() {
       window.removeEventListener("resize", handleScroll);
     };
   }, [headerHeight]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <>
@@ -564,6 +576,7 @@ function FAQSectionInner() {
                   setShowSuggestions(true);
                 }}
                 onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                 placeholder="Search FAQs..."
                 className="search-input"
               />
@@ -579,7 +592,7 @@ function FAQSectionInner() {
                 </button>
               )}
               {showSuggestions && suggestions.length > 0 && (
-                <div className="suggestions">
+                <div className="suggestions" ref={suggestionsRef}>
                   {suggestions.map((s, i) => (
                     <div
                       key={i}

@@ -27,6 +27,7 @@ import { darkTheme } from "../../components/styles/theme";
 import { getEventStatus } from "../../utils/eventUtils";
 import useCalendarEvents from "./useCalendarEvents";
 import { SkeletonBlock } from "../../components/common/SkeletonLoaders";
+import EmptyState from "../../components/common/EmptyState";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./CalendarPage.css";
 
@@ -368,9 +369,12 @@ const CalendarPage = () => {
               ) : null}
 
               {!isLoading && selectedEvents.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                  No upcoming events scheduled for this day.
-                </div>
+                <EmptyState
+                  compact={true}
+                  icon={<CalendarDays size={32} className="text-slate-400 dark:text-slate-500" />}
+                  title="No events scheduled"
+                  message="No upcoming events scheduled for this day."
+                />
               ) : null}
 
               {!isLoading && selectedEvents.length > 0
