@@ -1,5 +1,8 @@
 import Fuse from "fuse.js";
 
+/**
+ * Normalizes text for searching: lowercase, remove accents, and strip special chars.
+ */
 export const normalizeSearchText = (value) => {
   if (Array.isArray(value)) {
     return value.map(normalizeSearchText).join(" ");
@@ -17,39 +20,42 @@ export const normalizeSearchText = (value) => {
     .trim();
 };
 
-const getSearchableText = (item, keys) =>
-  keys.map((key) => normalizeSearchText(item[key])).filter(Boolean).join(" ");
-
-const getSearchTokens = (query) =>
-  normalizeSearchText(query).split(" ").filter(Boolean);
-
+/**
+ * Performs a fuzzy search using Fuse.js with weighted keys.
+ * 
+ * @param {Array} items - List of objects to search through
+ * @param {string} query - Search query
+ * @param {Array|Object} keys - Keys to search in, optionally with weights
+ * @param {Object} options - Fuse.js options
+ */
 export const getRouteSearchResults = (items, query, keys, options = {}) => {
-  const tokens = getSearchTokens(query);
-
-  if (tokens.length === 0) {
+  if (!query || query.trim() === "") {
     return items;
   }
 
-  const normalizedQuery = tokens.join(" ");
+  const defaultKeys = [
+    { name: "title", weight: 0.7 },
+    { name: "category", weight: 0.5 },
+    { name: "tags", weight: 0.4 },
+    { name: "description", weight: 0.1 },
+  ];
+
   const fuse = new Fuse(items, {
-    keys,
+    keys: keys || defaultKeys,
     threshold: 0.4,
+    distance: 100,
     ignoreLocation: true,
+    findAllMatches: true,
+    includeScore: true,
+    useExtendedSearch: true,
     ...options,
   });
-  const fuseMatches = new Set(fuse.search(query).map((result) => result.item));
 
-  return items.filter((item) => {
-    if (fuseMatches.has(item)) {
-      return true;
-    }
-
-    const searchableText = getSearchableText(item, keys);
-
-    if (searchableText.includes(normalizedQuery)) {
-      return true;
-    }
-
-    return tokens.every((token) => searchableText.includes(token));
-  });
+  const results = fuse.search(query);
+  
+  // Return just the items, sorted by Fuse.js score (lower is better)
+  return results.map(result => ({
+    ...result.item,
+    _searchScore: result.score,
+  }));
 };

@@ -12,7 +12,7 @@ const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilt
     () =>
       `grid gap-6 ${
         viewMode === "grid"
-          ? "grid-cols-1 md:grid-cols-3"
+          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
           : "grid-cols-1 max-w-4xl mx-auto"
       }`,
     [viewMode],
@@ -20,7 +20,7 @@ const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilt
 
   if (isLoading) {
     return (
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {skeletonItems.map((key) => (
           <SkeletonEventCard key={key} />
         ))}
@@ -51,7 +51,7 @@ const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilt
           No events found
         </h3>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Try a different keyword or adjust your filters to find what you're
+          Try a different keyword or adjust your filters to find what you&apos;re
           looking for.
         </p>
         {onClearFilters && (
