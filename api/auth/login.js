@@ -84,7 +84,23 @@ async function handler(req, res) {
   }
 
   try {
+    if (!req.body || typeof req.body !== "object") {
+      return corsResponse(req, res, 400, { error: "Request body is required" });
+    }
+
     const { usernameOrEmail, password } = req.body;
+
+    // -----------------------------------------------------------------------
+    // Input Validation
+    // Run before rate-limit so malformed requests don't burn the budget.
+    // -----------------------------------------------------------------------
+
+    const validationErrors = validateLoginInput(usernameOrEmail, password);
+    if (validationErrors.length > 0) {
+      return corsResponse(req, res, 400, { 
+        error: validationErrors.join(", ") 
+      });
+    }
 
     // -----------------------------------------------------------------------
     // Rate Limiting (brute-force protection)
@@ -101,17 +117,6 @@ async function handler(req, res) {
       return corsResponse(req, res, 429, {
         error: "Too many login attempts. Please try again later.",
         retryAfter: 60,
-      });
-    }
-
-    // -----------------------------------------------------------------------
-    // Input Validation
-    // -----------------------------------------------------------------------
-
-    const validationErrors = validateLoginInput(usernameOrEmail, password);
-    if (validationErrors.length > 0) {
-      return corsResponse(req, res, 400, { 
-        error: validationErrors.join(", ") 
       });
     }
 
