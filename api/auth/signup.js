@@ -30,6 +30,7 @@ if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
 }
 
 const users = new Map();
+const usersByUsername = new Map();
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
@@ -229,6 +230,9 @@ async function handler(req, res) {
 
     // Store user (in production, save to database)
     users.set(normalizedEmail, newUser);
+    if (newUser.username) {
+      usersByUsername.set(newUser.username.toLowerCase(), newUser);
+    }
 
     // -----------------------------------------------------------------------
     // Generate JWT token
@@ -287,4 +291,4 @@ async function handler(req, res) {
 }
 
 export default signupRateLimiter(handler);
-export { users };
+export { users, usersByUsername };
