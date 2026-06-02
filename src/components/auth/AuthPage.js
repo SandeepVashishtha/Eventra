@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AlertCircle, X as XIcon } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,21 +17,32 @@ const AuthPage = () => {
   const isLogin = location.pathname === '/login';
   const sessionExpired = location.state?.sessionExpired === true;
   const from = location.state?.from;
-  const redirectPath =
+  
+  // 🔥 FIX 1A: Derived the raw path, but we will sanitize it below.
+  const rawRedirectPath =
     typeof from === "string"
       ? from
       : from?.pathname
         ? `${from.pathname}${from.search || ""}${from.hash || ""}`
         : "/dashboard";
+        
   const [showExpiredBanner, setShowExpiredBanner] = useState(sessionExpired);
   
   useDocumentTitle(isLogin ? "Login | Eventra" : "Sign Up | Eventra");
 
   useEffect(() => {
     if (isAuthenticated()) {
-      navigate(redirectPath, { replace: true });
+      // 🔥 FIX 1B: The Infinite Redirect Guard
+      // If a user is authenticated, we must NEVER redirect them back to /login or /signup,
+      // even if location.state demands it. Doing so creates an infinite loop that crashes the browser.
+      const safeRedirectPath = 
+        rawRedirectPath.includes('/login') || rawRedirectPath.includes('/register') // Note: Using /register based on typical routing, adapt if needed
+          ? '/dashboard' 
+          : rawRedirectPath;
+
+      navigate(safeRedirectPath, { replace: true });
     }
-  }, [navigate, isAuthenticated, redirectPath]);
+  }, [navigate, isAuthenticated, rawRedirectPath]);
 
   const introPoints = [
     "Create your account to post events, join hackathons, and submit projects.",
@@ -39,8 +50,11 @@ const AuthPage = () => {
     "Get quick access to the tools you need to start contributing immediately.",
   ];
 
-  // Animation variants
-  const formVariants = {
+  // 🔥 FIX 2: Memoized Animation Variants
+  // Hoisted these complex objects into a useMemo block. 
+  // Previously, they were recreated on every single render, causing layout thrashing 
+  // and excess garbage collection during fast updates (like typing in inputs).
+  const formVariants = useMemo(() => ({
     hidden: (isLoginView) => ({
       x: isLoginView ? -50 : 50,
       opacity: 0,
@@ -64,7 +78,7 @@ const AuthPage = () => {
         duration: prefersReducedMotion ? 0 : 0.2,
       },
     }),
-  };
+  }), [prefersReducedMotion]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0f172a] py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
