@@ -100,6 +100,12 @@ module.exports = {
       // =========================
       boxShadow: {
         card: '0 4px 10px rgba(0,0,0,0.08)',
+        'premium-sm': 'var(--shadow-premium-sm)',
+        'premium-md': 'var(--shadow-premium-md)',
+        'premium-lg': 'var(--shadow-premium-lg)',
+        'glow-sm': 'var(--shadow-glow-sm)',
+        'glow-md': 'var(--shadow-glow-md)',
+        'glow-lg': 'var(--shadow-glow-lg)',
       },
 
       // =========================
