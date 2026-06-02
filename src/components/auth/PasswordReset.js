@@ -15,18 +15,24 @@ const PasswordReset = () => {
 
   const lastSubmitRef = useRef(0);
   const intervalRef = useRef(null);
+  const navTimerRef = useRef(null);
+  const emailInputRef = useRef(null);
   const navigate = useNavigate();
 
-  // 🔥 FIX: Unified cleanup function to prevent memory leaks
-  const clearCooldown = useCallback(() => {
+  // 🔥 MERGED FIX: Unified cleanup for both interval and navigation timers
+  const clearAllTimers = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
+    if (navTimerRef.current) {
+      clearTimeout(navTimerRef.current);
+      navTimerRef.current = null;
+    }
   }, []);
 
   const startCooldownTimer = useCallback(() => {
-    clearCooldown(); // Ensure any existing interval is dead
+    clearAllTimers(); 
     const unlockAt = lastSubmitRef.current + RESET_COOLDOWN_SECONDS * 1000;
     setCooldownSeconds(secondsUntilUnlock(unlockAt));
 
@@ -34,14 +40,14 @@ const PasswordReset = () => {
       const remaining = secondsUntilUnlock(unlockAt);
       setCooldownSeconds(remaining);
       if (remaining <= 0) {
-        clearCooldown();
+        clearAllTimers();
       }
     }, 1000);
-  }, [clearCooldown]);
+  }, [clearAllTimers]);
 
   useEffect(() => {
-    return () => clearCooldown(); // Safely clean up on unmount
-  }, [clearCooldown]);
+    return () => clearAllTimers(); // Safely clean up everything on unmount
+  }, [clearAllTimers]);
 
   const isCoolingDown = () => {
     return Date.now() - lastSubmitRef.current < RESET_COOLDOWN_SECONDS * 1000;
@@ -68,8 +74,7 @@ const PasswordReset = () => {
       setMessage(response.data?.message || 'Password reset link sent! Check your email.');
       lastSubmitRef.current = Date.now();
       startCooldownTimer();
-      // Navigate after a delay, but rely on useEffect cleanup to stop intervals
-      setTimeout(() => navigate('/login'), 3000);
+      navTimerRef.current = setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
       const backendMessage = err.response?.data?.message || err?.data?.message;
       setError(backendMessage || 'Failed to send reset link. Please try again.');
@@ -109,28 +114,38 @@ const PasswordReset = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Email address <sup className="text-red-500">*</sup>
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
+          <div className="space-y-2">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Email address <sup className="ml-1 text-red-500">*</sup>
+            </label>
+            <input
+              ref={emailInputRef}
+              id="email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isSubmitDisabled}
+              placeholder="@ Enter your email address"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+            />
+          </div>
+
+          {error && <div className="bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-md text-sm">{error}</div>}
+          {message && <div className="bg-green-50 dark:bg-green-900/40 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 px-4 py-3 rounded-md text-sm">{message}</div>}
+
+          <button
+            type="submit"
             disabled={isSubmitDisabled}
-            className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
-            placeholder="Enter your email address"
-          />
-          {error && <div className="text-red-500 text-sm">{error}</div>}
-          {message && <div className="text-green-500 text-sm">{message}</div>}
-          <button type="submit" disabled={isSubmitDisabled} className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700">
+            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
+          >
             {loading ? 'Sending...' : isCoolingDown() ? `Wait ${cooldownSeconds}s` : 'Send Reset Link'}
           </button>
         </form>
 
         <div className="text-center">
-          <Link to="/login" className="text-blue-600 hover:underline">Back to Login</Link>
+          <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">Back to Login</Link>
         </div>
       </div>
     </div>

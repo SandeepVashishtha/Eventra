@@ -1,22 +1,21 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
-import { FormFieldWrapper, ValidationMessage } from "../forms";
+import { ValidationMessage } from "../forms";
 import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { validate as fieldValidators } from "../../validation";
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
   const [error, setError] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [validationState, setValidationState] = useState({
+  const [, setValidationState] = useState({
     usernameOrEmail: "idle",
     password: "idle",
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -77,7 +76,6 @@ const LoginForm = () => {
         );
       }
     } catch (err) {
-      console.error("Login error:", err);
       const errorMsg = err.message || "Invalid email or password";
       setError({ general: errorMsg });
       toast.error(errorMsg);
@@ -87,21 +85,20 @@ const LoginForm = () => {
 
   return (
     <div className="w-full">
-      <div className="text-center space-y-4 mb-8">
+      <div className="text-center space-y-3 mb-6">
         <motion.div
-          whileHover={{ scale: 1.1, rotate: 8 }}
+          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.92 }}
-          className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-500/20 to-indigo-500/10 shadow-[0_0_25px_rgba(59,130,246,0.35)] border border-blue-500/30 hover:shadow-[0_0_35px_rgba(59,130,246,0.6)] transition-all duration-300"
+          className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center bg-bg-secondary border border-border transition-all duration-300"
         >
-          <LogIn className="w-8 h-8 text-blue-400" />
+          <LogIn className="w-7 h-7 text-primary" />
         </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-200 to-indigo-300 hover:from-blue-200 hover:via-purple-200 hover:to-pink-200 transition-all duration-500 cursor-default"
-          style={{ fontFamily: '"Anton", sans-serif', letterSpacing: "1px" }}
+          className="text-3xl font-extrabold text-text tracking-tight"
         >
           Welcome Back
         </motion.h1>
@@ -110,20 +107,20 @@ const LoginForm = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-sm text-slate-400 hover:text-slate-200 transition-colors duration-300"
+          className="text-sm text-text-light"
         >
-          Sign in to your <span className="text-blue-400 font-semibold">Eventra</span> account
+          Sign in to your <span className="text-primary font-semibold">Eventra</span> account
         </motion.p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {/* Username/Email Field */}
         <div className="space-y-1.5">
-          <label htmlFor="usernameOrEmail" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-            Email or username <span className='ml-1 text-red-400'>*</span>
+          <label htmlFor="usernameOrEmail" className="block text-sm font-semibold text-text">
+            Email or Username <span className='ml-1 text-red-500'>*</span>
           </label>
           <div className="relative group">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-400 transition-all duration-300 pointer-events-none" />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-light group-focus-within:text-primary transition-all duration-300 pointer-events-none" />
             <input
               id="usernameOrEmail"
               name="usernameOrEmail"
@@ -131,17 +128,17 @@ const LoginForm = () => {
               value={formData.usernameOrEmail}
               onChange={handleChange}
               required
-              disabled={loading}
+              disabled={authRequest.loading}
               placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
               aria-invalid={!!error.usernameOrEmail}
               aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
-              className={`w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border ${
-                error.usernameOrEmail ? "border-red-500" : "border-slate-700/50"
-              } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
+              className={`w-full pl-10 pr-4 py-3 bg-bg border ${
+                error.usernameOrEmail ? "border-red-500" : "border-border"
+              } rounded-xl placeholder:text-text-light focus:ring-2 focus:ring-primary/25 focus:border-primary hover:bg-card-bg transition-all duration-300 text-text text-sm`}
             />
           </div>
           {error.usernameOrEmail && (
-            <motion.p id="usernameOrEmail-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
+            <motion.p id="usernameOrEmail-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-600 text-xs mt-1 flex items-center gap-1" role="alert">
               <span>⚠</span> {error.usernameOrEmail}
             </motion.p>
           )}
@@ -149,11 +146,11 @@ const LoginForm = () => {
 
         {/* Password Field */}
         <div className="space-y-1.5">
-          <label htmlFor="password" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-            Password <span className='ml-1 text-red-400'>*</span>
+          <label htmlFor="password" className="block text-sm font-semibold text-text">
+            Password <span className='ml-1 text-red-500'>*</span>
           </label>
           <div className="relative group">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-400 transition-all duration-300 pointer-events-none" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-light group-focus-within:text-primary transition-all duration-300 pointer-events-none" />
             <input
               id="password"
               name="password"
@@ -161,18 +158,18 @@ const LoginForm = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              disabled={loading}
-              placeholder="Create a secure password"
+              disabled={authRequest.loading}
+              placeholder="••••••••"
               aria-invalid={!!error.password}
               aria-describedby={error.password ? "password-error" : undefined}
-              className={`w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border ${
-                error.password ? "border-red-500" : "border-slate-700/50"
-              } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
+              className={`w-full pl-10 pr-10 py-3 bg-bg border ${
+                error.password ? "border-red-500" : "border-border"
+              } rounded-xl placeholder:text-text-light focus:ring-2 focus:ring-primary/25 focus:border-primary hover:bg-card-bg transition-all duration-300 text-text text-sm`}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400 transition-all duration-200"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-primary transition-all duration-200"
               aria-label={showPassword ? "Hide password" : "Show password"}
               tabIndex={-1}
             >
@@ -180,14 +177,14 @@ const LoginForm = () => {
             </button>
           </div>
           {error.password && (
-            <motion.p id="password-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
+            <motion.p id="password-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-600 text-xs mt-1 flex items-center gap-1" role="alert">
               <span>⚠</span> {error.password}
             </motion.p>
           )}
           <div className="flex justify-end pt-1">
             <Link
               to="/password-reset"
-              className="text-xs text-slate-400 hover:text-blue-400 transition-colors duration-200 hover:underline"
+              className="text-xs text-primary hover:text-primary-hover transition-colors duration-200 hover:underline"
             >
               Forgot Password?
             </Link>
@@ -198,22 +195,26 @@ const LoginForm = () => {
         <ValidationMessage
           message={error.general}
           state="error"
-          className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm"
+          className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
         />
-
+        {authRequest.error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+            {authRequest.error}
+          </div>
+        )}
 
         {/* Submit Button */}
         <motion.button
-          whileHover={{ scale: 1.03, boxShadow: "0 0 30px rgba(59,130,246,0.6)" }}
+          whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.97 }}
           type="submit"
-          disabled={loading}
-          className="relative w-full overflow-hidden flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400 hover:from-blue-300 hover:to-indigo-300 shadow-[0_0_20px_rgba(59,130,246,0.4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0f172a] focus:ring-blue-500 transition-all duration-300 group"
+          disabled={authRequest.loading}
+          className="relative w-full overflow-hidden flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 group"
         >
-          <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-          {loading ? (
+          <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
+          {authRequest.loading ? (
             <div className="flex items-center gap-2 relative z-10">
-              <div className="w-4 h-4 border-2 border-[#0f172a] border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               <span>Signing In...</span>
             </div>
           ) : (
@@ -227,28 +228,28 @@ const LoginForm = () => {
 
       {/* Divider */}
       <div className="flex items-center gap-3 my-5">
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent to-slate-700"></div>
-        <span className="text-xs text-slate-600 uppercase tracking-widest">or</span>
-        <div className="flex-1 h-px bg-gradient-to-l from-transparent to-slate-700"></div>
+        <div className="flex-1 h-px bg-border"></div>
+        <span className="text-xs text-text-light uppercase tracking-widest">or</span>
+        <div className="flex-1 h-px bg-border"></div>
       </div>
 
       {/* Signup Link */}
-      <p className="text-center text-sm text-slate-400">
+      <p className="text-center text-sm text-text-light">
         Don&apos;t have an account?{" "}
         <Link
           to="/signup"
-          className="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400 hover:from-blue-300 hover:to-purple-300 transition-all duration-300 hover:underline"
+          className="font-semibold text-primary hover:text-primary-hover transition-all duration-300 hover:underline"
         >
           Create one here -&gt;
         </Link>
       </p>
 
       {/* Terms & Privacy */}
-      <p className="text-[11px] text-center text-slate-600 mt-4 leading-relaxed">
+      <p className="text-[11px] text-center text-text-light mt-4 leading-relaxed">
         By signing in, you agree to our{" "}
-        <Link to="/terms" className="text-slate-500 hover:text-blue-400 underline transition-colors duration-200">Terms of Service</Link>{" "}
+        <Link to="/terms" className="text-primary hover:text-primary-hover underline transition-colors duration-200">Terms of Service</Link>{" "}
         and{" "}
-        <Link to="/privacy" className="text-slate-500 hover:text-blue-400 underline transition-colors duration-200">Privacy Policy</Link>
+        <Link to="/privacy" className="text-primary hover:text-primary-hover underline transition-colors duration-200">Privacy Policy</Link>
       </p>
     </div>
   );
