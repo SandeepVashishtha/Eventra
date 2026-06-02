@@ -19,6 +19,8 @@ const mapStatusKey = (status = "") => {
   return explicitStatusMap[normalized] ?? normalized;
 };
 
+import { getServerTime } from "./timeSync";
+
 const parseEventDate = (dateValue) => {
   if (!dateValue) return null;
   const parsed = new Date(dateValue);
@@ -35,7 +37,7 @@ const asEndOfDay = (date) => {
 export const computeDateStatus = (event) => {
   const startDate = parseEventDate(event.startDate || event.date);
   const endDate = asEndOfDay(parseEventDate(event.endDate || event.date));
-  const now = new Date();
+  const now = getServerTime();
 
   if (!startDate) return "upcoming";
   if (now < startDate) return "upcoming";
@@ -45,19 +47,25 @@ export const computeDateStatus = (event) => {
 
 export const getEventStatus = (event) => {
   if (!event) return "upcoming";
-
   const explicitStatus = mapStatusKey(event.status);
   const dateStatus = computeDateStatus(event);
 
   if (explicitStatus === "ended") {
     return "ended";
   }
-
-  if (dateStatus) {
-    return dateStatus;
+  if (explicitStatus && explicitStatus !== dateStatus) {
+    return explicitStatus;
   }
+  return dateStatus || "upcoming";
+};
 
-  return explicitStatus || "upcoming";
+export const isEventRegistrationClosed = (eventOrStatus) => {
+  const status =
+    typeof eventOrStatus === "string"
+      ? mapStatusKey(eventOrStatus)
+      : getEventStatus(eventOrStatus);
+
+  return status === "past" || status === "ended";
 };
 
 export const normalizeEvent = (event) => ({

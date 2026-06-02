@@ -6,6 +6,7 @@ const ToastProvider = () => {
   const { theme } = useContext(ThemeContext);
   const toastTimersRef = useRef(new Map());
   const [toasts, setToasts] = useState([]);
+  const [announcement, setAnnouncement] = useState("");
 
   const dismissToast = (id) => {
     if (id == null) {
@@ -34,6 +35,9 @@ const ToastProvider = () => {
           const filtered = prev.filter((item) => item.id !== incomingToast.id);
           return [...filtered, incomingToast];
         });
+        
+        // programmatically trigger visually-hidden live region announcement
+        setAnnouncement(incomingToast.message);
 
         if (incomingToast.autoClose === false) {
           return;
@@ -90,27 +94,63 @@ const ToastProvider = () => {
   };
 
   return (
-    <div
-      aria-live="polite"
-      aria-atomic="false"
-      style={{
-        position: "fixed",
-        top: "1rem",
-        right: "1rem",
-        zIndex: 2147483647,
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.6rem",
-        pointerEvents: "none",
-      }}
-    >
+    <>
+      <style>{`
+        .eventra-toast-close-btn {
+          outline: none;
+          transition: color 0.15s ease, transform 0.15s ease;
+        }
+        .eventra-toast-close-btn:focus-visible {
+          outline: 2px solid #2563eb !important;
+          outline-offset: 1px;
+          border-radius: 4px;
+        }
+        .eventra-toast-close-btn:hover {
+          transform: scale(1.15);
+        }
+      `}</style>
+      {/* Visually hidden screen reader live region */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        style={{
+          position: "absolute",
+          width: "1px",
+          height: "1px",
+          padding: 0,
+          margin: "-1px",
+          overflow: "hidden",
+          clip: "rect(0, 0, 0, 0)",
+          whiteSpace: "nowrap",
+          border: 0,
+        }}
+      >
+        {announcement}
+      </div>
+
+      <div
+        aria-live="polite"
+        aria-atomic="false"
+        aria-label="Notifications"
+        style={{
+          position: "fixed",
+          top: "1rem",
+          right: "1rem",
+          zIndex: 2147483647,
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.6rem",
+          pointerEvents: "none",
+        }}
+      >
       {toasts.map((item) => {
         const accent = accentByType[item.type] || accentByType.info;
 
         return (
           <div
             key={item.id}
-            role="status"
+            role={item.type === "error" ? "alert" : "status"}
+            aria-live={item.type === "error" ? "assertive" : "polite"}
             style={{
               width: "min(360px, calc(100vw - 2rem))",
               background: palette.bg,
@@ -134,6 +174,7 @@ const ToastProvider = () => {
             <button
               type="button"
               aria-label="Close notification"
+              className="eventra-toast-close-btn"
               onClick={() => dismissToast(item.id)}
               style={{
                 border: "none",
@@ -151,6 +192,7 @@ const ToastProvider = () => {
         );
       })}
     </div>
+    </>
   );
 };
 
