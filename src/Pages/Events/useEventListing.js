@@ -126,8 +126,6 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-      logger.error("Failed to fetch events:", error);
-
       if (process.env.NODE_ENV === "development") {
         const normalizedMockEvents = mockEvents.map(normalizeEvent);
         setEvents(normalizedMockEvents);
@@ -208,6 +206,21 @@ const useEventListing = () => {
         const descMatch = event.description?.toLowerCase().includes(query) ?? false;
         if (!titleMatch && !descMatch) return false;
       }
+    // 1. Search (typo-tolerant fuzzy search with ranking from PR #5461)
+    let filtered = debouncedSearchQuery.trim()
+      ? getRouteSearchResults(
+          events,
+          debouncedSearchQuery,
+          [
+            { name: "title", weight: 0.8 },
+            { name: "category", weight: 0.5 },
+            { name: "tags", weight: 0.4 },
+            { name: "location.name", weight: 0.3 },
+            { name: "location.city", weight: 0.3 },
+            { name: "description", weight: 0.1 },
+          ]
+        )
+      : [...events];
 
       // 2. Status Timing Filter
       const status = getEventStatus(event);

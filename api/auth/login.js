@@ -2,10 +2,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { users, usersByUsername } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
-import { createRateLimiter } from "../middleware/rateLimiter.js";
+import { createRateLimiter } from "../lib/rateLimit.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
-import { createRateLimiter } from "../lib/rateLimit.js";
+
 
 // Pre-compute a dummy bcrypt hash at module load time (same cost factor used in signup.js).
 // When a login attempt references a username or email that does not exist, we still run
@@ -85,28 +85,15 @@ async function handler(req, res) {
   }
 
   try {
+    if (!req.body || typeof req.body !== "object") {
+      return corsResponse(req, res, 400, { error: "Request body is required" });
+    }
+
     const { usernameOrEmail, password } = req.body;
 
     // -----------------------------------------------------------------------
-    // Rate Limiting (brute-force protection)
-    // -----------------------------------------------------------------------
-
-    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
-
-    loginRateLimiter.evictStale();
-
-    if (!loginRateLimiter.check(clientIp)) {
-      return corsResponse(req, res, 429, {
-        error: "Too many login attempts. Please try again later.",
-        retryAfter: 60,
-      });
-    }
-
-    // -----------------------------------------------------------------------
     // Input Validation
+    // Run before rate-limit so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
     const validationErrors = validateLoginInput(usernameOrEmail, password);
@@ -115,6 +102,27 @@ async function handler(req, res) {
         error: validationErrors.join(", ") 
       });
     }
+
+    // -----------------------------------------------------------------------
+    // Rate Limiting (brute-force protection)
+    // -----------------------------------------------------------------------
+
+    const clientIp =
+  req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+  || req.headers?.["x-real-ip"]
+  || req.socket?.remoteAddress
+  || null;
+
+if (clientIp) {
+  loginRateLimiter.evictStale();
+
+  if (!loginRateLimiter.check(clientIp)) {
+    return corsResponse(req, res, 429, {
+      success: false,
+      message: "Too many authentication attempts. Please try again later.",
+    });
+  }
+}
 
     // -----------------------------------------------------------------------
     // Find user by username or email
@@ -207,7 +215,6 @@ async function handler(req, res) {
     }
 
     // Reset rate limit on successful login so a legitimate user is not penalised
-    loginRateLimiter.reset(clientIp);
 
     return corsResponse(req, res, 200, {
       message: "Login successful",
@@ -224,5 +231,10 @@ async function handler(req, res) {
   }
 }
 
-export default loginRateLimiter(handler);
+// ---------------------------------------------------------------------------
+// Export users map for sharing with signup.js (development purposes)
+// In production, replace with actual database
+// ---------------------------------------------------------------------------
+
+export default handler;
 export { users };
