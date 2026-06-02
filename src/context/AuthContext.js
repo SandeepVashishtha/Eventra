@@ -49,7 +49,6 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
-    sessionStorage.removeItem("token");
     syncSecureStorage.removeItem("user");
     localStorage.removeItem("user");
     return true;
@@ -58,7 +57,7 @@ export const AuthProvider = ({ children }) => {
   const clearExpiredSession = useCallback(() => {
     // 🔥 FIX: Check if a user was actually logged in before blasting them with an "Expired" toast.
     // Anonymous users (who trigger a 401 on mount) shouldn't see this.
-    const hadPreviousSession = !!localStorage.getItem("user") || !!sessionStorage.getItem("token");
+    const hadPreviousSession = !!localStorage.getItem("user");
 
     console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
     clearSession();
