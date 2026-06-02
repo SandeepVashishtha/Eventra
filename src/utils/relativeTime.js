@@ -19,7 +19,12 @@ export function getRelativeTime(dateInput) {
       return `${Math.abs(diffHour)} hour${Math.abs(diffHour) !== 1 ? "s" : ""} ago`;
     if (Math.abs(diffDay) === 1) return "Yesterday";
     if (Math.abs(diffDay) < 30) return `${Math.abs(diffDay)} days ago`;
-    return null;
+    return new Date(dateInput).toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   }
 
   if (diffSec < 60) return "Starting soon";

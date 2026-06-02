@@ -36,9 +36,9 @@ export default function OfflineBanner() {
     window.addEventListener("eventra-offline-queue-updated", handleQueueUpdated);
 
     return () => {
-      clearTimeout(timer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("eventra-offline-queue-updated", handleQueueUpdated);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);

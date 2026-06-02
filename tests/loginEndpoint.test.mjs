@@ -44,9 +44,10 @@ const createResponse = () => {
 // Mock Request Helper
 // ---------------------------------------------------------------------------
 
-const createRequest = (method, body) => ({
+const createRequest = (method, body, headers = {}) => ({
   method,
   body,
+  headers,
 });
 
 // ---------------------------------------------------------------------------
@@ -319,6 +320,47 @@ console.log("Running login endpoint tests...");
   assert.equal(res.statusCode, 400, "Should return 400 for whitespace-only usernameOrEmail");
   assert.ok(res.body.error, "Should return error message");
   console.log("✓ Test 16: Whitespace-only usernameOrEmail returns 400");
+}
+
+// Test 17: Login rate limit allows normal requests before limit
+{
+  const userData = {
+    firstName: "RateLimit",
+    lastName: "Tester",
+    email: "ratelimit.login@example.com",
+    password: "SecurePass123!",
+    confirmPassword: "SecurePass123!",
+  };
+  await createTestUser(userData);
+
+  for (let i = 1; i <= 5; i += 1) {
+    const req = createRequest(
+      "POST",
+      { usernameOrEmail: "ratelimit.login@example.com", password: "SecurePass123!" },
+      { "x-forwarded-for": "127.0.0.1" }
+    );
+    const res = createResponse();
+    await handler(req, res);
+
+    assert.notEqual(res.statusCode, 429, `Request ${i} should not be rate limited`);
+  }
+  console.log("✓ Test 17: Login rate limit allows normal requests before limit");
+}
+
+// Test 18: Login rate limit blocks after max attempts
+{
+  const req = createRequest(
+    "POST",
+    { usernameOrEmail: "ratelimit.login@example.com", password: "WrongPass123!" },
+    { "x-forwarded-for": "127.0.0.1" }
+  );
+  const res = createResponse();
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 429, "Should return 429 after login attempts exceed the limit");
+  assert.equal(res.body.success, false, "Should return success false when blocked");
+  assert.equal(res.body.message, "Too many authentication attempts. Please try again later.");
+  console.log("✓ Test 18: Login rate limit blocks after max attempts");
 }
 
 console.log("\n✅ All login endpoint tests passed!");
