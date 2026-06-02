@@ -44,7 +44,9 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     };
   }, [vertical]);
 
-  const getNavLinkClasses = (active) => {
+  const secondaryItemNames = ["Saved", "About", "FAQ", "Contact"];
+
+  const getNavLinkClasses = (active, isSecondary = false) => {
     return vertical
       ? `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-all duration-200 w-full py-2 px-3 border-l-2 rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
           active
@@ -81,7 +83,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
               key={item.name}
               className={`relative group/nav flex items-center shrink-0 ${
                 vertical ? "w-full flex-col items-start" : "flex-none"
-              }`}
+              } ${!vertical && secondaryItemNames.includes(item.name) ? "hidden xl:flex" : ""}`}
             >
               <div className="flex w-full items-center gap-0.5">
                 <NavLink
@@ -97,7 +99,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                       : undefined
                   }
                   className={({ isActive }) =>
-                    getNavLinkClasses(isActive || isSubItemActive)
+                    getNavLinkClasses(
+                      isActive || isSubItemActive,
+                      secondaryItemNames.includes(item.name)
+                    )
                   }
                 >
                   {vertical ? item.icon : null}
@@ -202,7 +207,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             onClick={onClick}
             onMouseEnter={() => handlePrefetch(item.href)}
             className={({ isActive }) =>
-              getNavLinkClasses(isActive)
+              getNavLinkClasses(isActive, secondaryItemNames.includes(item.name))
             }
           >
             <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">
