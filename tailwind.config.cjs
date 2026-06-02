@@ -8,6 +8,9 @@ module.exports = {
 
   theme: {
     extend: {
+      screens: {
+        xs: '380px',
+      },
 
       // =========================
       // FONT SIZES
@@ -55,6 +58,27 @@ module.exports = {
         sidebar: 'var(--sidebar-color)',
       },
 
+      spacing: {
+        'safe-top': 'var(--safe-area-top)',
+        'safe-right': 'var(--safe-area-right)',
+        'safe-bottom': 'var(--safe-area-bottom)',
+        'safe-left': 'var(--safe-area-left)',
+      },
+
+      minHeight: {
+        svh: '100svh',
+        dvh: '100dvh',
+      },
+
+      height: {
+        svh: '100svh',
+        dvh: '100dvh',
+      },
+
+      maxWidth: {
+        drawer: 'min(92vw, 24rem)',
+      },
+
       // =========================
       // TRANSITIONS
       // =========================
@@ -68,6 +92,12 @@ module.exports = {
       // =========================
       boxShadow: {
         card: '0 4px 10px rgba(0,0,0,0.08)',
+        'premium-sm': 'var(--shadow-premium-sm)',
+        'premium-md': 'var(--shadow-premium-md)',
+        'premium-lg': 'var(--shadow-premium-lg)',
+        'glow-sm': 'var(--shadow-glow-sm)',
+        'glow-md': 'var(--shadow-glow-md)',
+        'glow-lg': 'var(--shadow-glow-lg)',
       },
 
       // =========================

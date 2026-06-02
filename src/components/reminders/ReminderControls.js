@@ -27,10 +27,19 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
   const eventHasPassed = useMemo(() => isPastEvent(event), [event]);
 
   useEffect(() => {
+    // Initial sync
     setEventReminders(getEventReminders(event.id));
 
     return subscribeToReminderChanges(() => {
-      setEventReminders(getEventReminders(event.id));
+      // 🔥 FIX 1: Prevent O(N) Render Storms
+      // Only update the state if the array data for THIS specific event actually changed.
+      setEventReminders((prevReminders) => {
+        const newReminders = getEventReminders(event.id);
+        if (JSON.stringify(prevReminders) === JSON.stringify(newReminders)) {
+          return prevReminders; // Bails out of the React render cycle
+        }
+        return newReminders;
+      });
     });
   }, [event.id]);
 
@@ -40,60 +49,68 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
   );
 
   const handleReminderToggle = async (timing) => {
-    if (eventHasPassed) {
-      toast.warning("Reminders are not available for past events.", {
-        toastId: `reminder-past-${event.id}`,
-        className: "custom-toast",
-      });
-      return;
-    }
+    try {
+      if (eventHasPassed) {
+        toast.warning("Reminders are not available for past events.", {
+          toastId: `reminder-past-${event.id}`,
+          className: "custom-toast",
+        });
+        return;
+      }
 
-    if (!canSetReminder) {
-      toast.info("Bookmark or register for this event before setting a reminder.", {
-        toastId: `reminder-locked-${event.id}`,
-        className: "custom-toast",
-      });
-      return;
-    }
+      if (!canSetReminder) {
+        toast.info("Bookmark or register for this event before setting a reminder.", {
+          toastId: `reminder-locked-${event.id}`,
+          className: "custom-toast",
+        });
+        return;
+      }
 
-    if (activeTimingSet.has(timing)) {
-      removeReminder(event.id, timing);
-      toast.info("Reminder removed.", {
-        toastId: `reminder-remove-${event.id}-${timing}`,
-        autoClose: 1800,
-        className: "custom-toast",
-      });
-      return;
-    }
+      if (activeTimingSet.has(timing)) {
+        removeReminder(event.id, timing);
+        toast.info("Reminder removed.", {
+          toastId: `reminder-remove-${event.id}-${timing}`,
+          autoClose: 1800,
+          className: "custom-toast",
+        });
+        return;
+      }
 
-    const result = addReminder(event, timing);
+      const result = addReminder(event, timing);
 
-    if (!result.ok) {
-      const messages = {
-        duplicate: "That reminder is already active.",
-        elapsed: "That reminder time has already passed.",
-        past: "Reminders are not available for past events.",
-        invalid: "We could not read this event date.",
-      };
+      if (!result.ok) {
+        const messages = {
+          duplicate: "That reminder is already active.",
+          elapsed: "That reminder time has already passed.",
+          past: "Reminders are not available for past events.",
+          invalid: "We could not read this event date.",
+        };
 
-      toast.warning(messages[result.reason] || "Unable to set reminder.", {
-        toastId: `reminder-failed-${event.id}-${timing}`,
-        className: "custom-toast",
-      });
-      return;
-    }
+        toast.warning(messages[result.reason] || "Unable to set reminder.", {
+          toastId: `reminder-failed-${event.id}-${timing}`,
+          className: "custom-toast",
+        });
+        return;
+      }
 
-    const permission = await requestBrowserNotificationPermission();
-    if (permission === "denied") {
-      toast.info("Reminder saved. Browser notifications are blocked in your settings.", {
-        toastId: `reminder-browser-denied-${event.id}`,
-        autoClose: 2600,
-        className: "custom-toast",
-      });
-    } else {
-      toast.success("Reminder saved.", {
-        toastId: `reminder-add-${event.id}-${timing}`,
-        autoClose: 1800,
+      const permission = await requestBrowserNotificationPermission().catch(() => "denied");
+      if (permission === "denied") {
+        toast.info("Reminder saved. Browser notifications are blocked in your settings.", {
+          toastId: `reminder-browser-denied-${event.id}`,
+          autoClose: 2600,
+          className: "custom-toast",
+        });
+      } else {
+        toast.success("Reminder saved.", {
+          toastId: `reminder-add-${event.id}-${timing}`,
+          autoClose: 1800,
+          className: "custom-toast",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to toggle reminder:", error);
+      toast.error("An unexpected error occurred while saving the reminder.", {
+        toastId: `reminder-error-${event.id}`,
         className: "custom-toast",
       });
     }
@@ -131,7 +148,8 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
               disabled={isDisabled}
               aria-pressed={isActive}
               title={isDisabled ? "Past events cannot have reminders" : timing.label}
-              className={`${baseButtonClass} ${
+              // 🔥 FIX 2: Added 'disabled:pointer-events-none' to prevent ghost hover states
+              className={`${baseButtonClass} disabled:pointer-events-none ${
                 isActive
                   ? "border-indigo-300 bg-indigo-600 text-white shadow-sm dark:border-indigo-500"
                   : "border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:text-indigo-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-indigo-500 dark:hover:text-white"

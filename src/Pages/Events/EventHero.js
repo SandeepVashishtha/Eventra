@@ -4,9 +4,10 @@ import { Award, Calendar, Clock, Code2, Sparkles, TrendingUp, Trash2, Users } fr
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
-import CountUp from "react-countup";
+import CountUpLib from "react-countup";
 import { darkTheme } from "../../components/styles/theme";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import { SkeletonBlock } from "../../components/common/SkeletonLoaders";
+const CountUp = CountUpLib.default || CountUpLib;
 
 // 🔥 THE FIX: Single, clean declarations placed in the correct order 🔥
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
@@ -86,6 +87,19 @@ export default function EventHero({
     // Note: Assuming saveRecentSearch is handled upstream or passed correctly in full context
   };
 
+  useEffect(() => {
+    // Preload hero background image for better LCP
+    const preloadLink = document.createElement("link");
+    preloadLink.rel = "preload";
+    preloadLink.as = "image";
+    preloadLink.href = "/assets/eventbg.png";
+
+    document.head.appendChild(preloadLink);
+
+    return () => {
+      document.head.removeChild(preloadLink);
+    };
+  }, []);
   const clearSearchHistory = useCallback(() => {
     persistSearchHistory([]);
   }, [persistSearchHistory]);
@@ -165,7 +179,22 @@ export default function EventHero({
                     text-left shadow-2xl backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10
                   `}
                   onMouseDown={(e) => e.preventDefault()}
-                >
+                >{searchQuery.trim().length > 0 && searchQuery.trim().length < 3 && (
+  <div className="border-b border-slate-100 dark:border-slate-800 p-4">
+    <p className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${darkTheme.textSecondary}`}>
+      <Sparkles className="h-3.5 w-3.5" />
+      Searching...
+    </p>
+    <div className="flex flex-col gap-2">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="flex items-center gap-3 px-2 py-1.5">
+          <SkeletonBlock className="h-4 w-4 rounded" />
+          <SkeletonBlock className={`h-4 rounded ${i % 2 === 0 ? "w-3/4" : "w-1/2"}`} />
+        </div>
+      ))}
+    </div>
+  </div>
+)}
                   {searchHistory.length > 0 && (
                     <div className="border-b border-slate-100 dark:border-slate-800 p-4">
                       <div className="mb-3 flex items-center justify-between gap-3">
