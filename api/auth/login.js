@@ -103,10 +103,10 @@ async function handler(req, res) {
     loginRateLimiter.evictStale();
 
     if (!loginRateLimiter.check(clientIp)) {
-      return corsResponse(res, 429, {
+      return corsResponse(req, res, 429, {
         error: "Too many login attempts. Please try again later.",
         retryAfter: 60,
-      }, req);
+      });
     }
 
     // -----------------------------------------------------------------------
