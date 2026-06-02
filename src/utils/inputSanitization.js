@@ -1,3 +1,4 @@
+/* eslint-disable-next-line no-console */
 /**
  * Input Sanitization Utilities
  *
@@ -20,28 +21,8 @@ export const sanitizeSearchQuery = (query = '') => {
   // Trim whitespace
   let sanitized = query.trim();
 
-  // Remove/reject NoSQL injection operators
-  const dangerousPatterns = [
-    /\$/g, // NoSQL operators start with $
-    /\{/g, // Object notation
-    /\}/g,
-    /\[/g, // Array notation
-    /\]/g,
-    /;/g, // Statement terminators
-    /'/g, // SQL/NoSQL quotes
-    /`/g, // Backticks
-    /\|/g, // Pipes for command execution
-    /\\/g, // Escape characters
-    /\n/g, // Newlines
-    /\r/g, // Carriage returns
-    /</g,  // HTML tags / XSS
-    />/g,
-  ];
-
-  // Remove dangerous characters
-  dangerousPatterns.forEach(pattern => {
-    sanitized = sanitized.replace(pattern, '');
-  });
+  // Remove dangerous characters in a single pass
+  sanitized = sanitized.replace(/[${}\[\];'`|\\\n\r<>]/g, '');
 
   // Ensure max length to prevent ReDoS attacks
   const MAX_QUERY_LENGTH = 200;
@@ -92,6 +73,7 @@ export const validateSearchQuery = (query = '') => {
 export const prepareSafeSearchQuery = (rawQuery = '') => {
   const validation = validateSearchQuery(rawQuery);
   if (!validation.isValid) {
+    /* eslint-disable-next-line no-console */
     console.warn(`[Security] Invalid search query: ${validation.error}`);
     return '';
   }

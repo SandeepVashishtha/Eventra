@@ -653,12 +653,12 @@ const BrandMark = ({ compact = false }) => (
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
   {
-    name: "Event Tools",
+    name: "Events",
     icon: <Calendar className="w-5 h-5" />,
     subItems: [
       { name: "Explore Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
       { name: "Event Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
-      { name: "Saved Events",   href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
+      { name: "Bookmarks",      href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
       { name: "Reminders",      href: "/reminders", icon: <Bell className="w-5 h-5" /> },
     ],
   },
@@ -668,10 +668,10 @@ const NAV_ITEMS = [
     name: "Community",
     icon: <Users className="w-5 h-5" />,
     subItems: [
-      { name: "Leaderboard", href: "/leaderBoard", icon: <Trophy className="w-5 h-5" /> },
+      { name: "Leaderboard", href: "/leaderboard", icon: <Trophy className="w-5 h-5" /> },
       { name: "Contributors", href: "/contributors", icon: <Users className="w-5 h-5" /> },
       { name: "Contributors Guide", href: "/contributorguide", icon: <Book className="w-5 h-5" /> },
-      { name: "Community Events", href: "/communityEvent", icon: <Users className="w-5 h-5" /> },
+      { name: "Community Events", href: "/community-event", icon: <Users className="w-5 h-5" /> },
     ],
   },
   {
@@ -797,14 +797,16 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setShowCommandPalette((prev) => !prev);
-      }
+    const handleToggle = () => setShowCommandPalette((prev) => !prev);
+    const handleClose = () => setShowCommandPalette(false);
+
+    window.addEventListener("toggleCommandPalette", handleToggle);
+    window.addEventListener("closeCommandPalette", handleClose);
+
+    return () => {
+      window.removeEventListener("toggleCommandPalette", handleToggle);
+      window.removeEventListener("closeCommandPalette", handleClose);
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const drawerRef = useRef(null);
@@ -813,6 +815,9 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const touchStartXRef = useRef(null);
   const touchCurrentXRef = useRef(null);
   const navRef = useRef(null);
+  
+  // 🔥 FIX: Track mounted state for async logout safety
+  const isMounted = useRef(true);
 
   const { user, isAuthenticated, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -820,6 +825,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const location = useLocation();
 
   const { primary: primaryLine, secondary: secondaryLine } = getUserDisplayNames(user);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const closeAllMenus = () => {
     setShowProfileDropdown(false);
@@ -907,15 +918,25 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     setShowLogoutModal(true);
     setShowProfileDropdown(false);
   };
-  const handleConfirmLogout = () => {
-    setShowLogoutModal(false);
-    logout();
-    toast.success("You have been logged out successfully.", {
-      className: "custom-toast",
-      autoClose: 3000,
-    });
-    navigate("/");
+
+  // 🔥 FIX: Made handler async and added unmount safety guards
+  const handleConfirmLogout = async () => {
+    if (isMounted.current) {
+      setShowLogoutModal(false);
+    }
+    
+    // Await logout to ensure backend token/context clears before navigation
+    await logout();
+    
+    if (isMounted.current) {
+      toast.success("You have been logged out successfully.", {
+        className: "custom-toast",
+        autoClose: 3000,
+      });
+      navigate("/");
+    }
   };
+  
   const handleCancelLogout = () => setShowLogoutModal(false);
 
   return (
