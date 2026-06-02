@@ -55,7 +55,7 @@
     "preview": "vite preview",
     "validate-env": "node scripts/validate-env.js",
     "test": "npm run test:unit",
-    "test:unit": "node --test tests/eventPaginationUtils.test.mjs tests/routeSearchUtils.test.mjs tests/userNameUtils.test.mjs tests/relativeTime.test.mjs tests/safeJsonParse.test.mjs tests/registerUtils.test.mjs tests/bookmarkUtils.test.mjs tests/auth.test.mjs tests/passwordResetEndpoint.test.mjs tests/eventDraftUtils.test.mjs tests/exportCsv.test.mjs tests/githubProxy.test.mjs tests/hackathonFilterUtils.test.mjs tests/loginEndpoint.test.mjs tests/logoutEndpoint.test.mjs tests/colorTokens.test.mjs tests/themeConsistency.test.mjs tests/sseMultiplexer.test.mjs tests/cspReporting.test.mjs tests/readTimeUtils.test.mjs tests/secureStorage.test.mjs tests/conflictDetection.test.mjs tests/spatialSeatSelectorAccessibility.test.mjs",
+    "test:unit": "node --test tests/eventPaginationUtils.test.mjs tests/routeSearchUtils.test.mjs tests/userNameUtils.test.mjs tests/relativeTime.test.mjs tests/safeJsonParse.test.mjs tests/registerUtils.test.mjs tests/bookmarkUtils.test.mjs tests/auth.test.mjs tests/passwordResetEndpoint.test.mjs tests/eventDraftUtils.test.mjs tests/exportCsv.test.mjs tests/githubProxy.test.mjs tests/hackathonFilterUtils.test.mjs tests/loginEndpoint.test.mjs tests/logoutEndpoint.test.mjs tests/colorTokens.test.mjs tests/themeConsistency.test.mjs tests/sseMultiplexer.test.mjs tests/cspReporting.test.mjs tests/readTimeUtils.test.mjs tests/secureStorage.test.mjs tests/conflictDetection.test.mjs tests/eventRecommendationsResponsive.test.mjs tests/spatialSeatSelectorAccessibility.test.mjs",
     "test:e2e": "playwright test",
     "lint": "eslint src --max-warnings=-1",
     "lint:fix": "eslint src --fix",

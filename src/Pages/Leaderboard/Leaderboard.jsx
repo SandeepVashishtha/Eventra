@@ -372,32 +372,29 @@ export default function LeaderBoard() {
 
     const preparedContributors = prepareLeaderboardEntries(streamContributors);
 
-    setContributors((prev) => {
-      setStreaks((prevStreaks) => {
-        const updatedStreaks = { ...prevStreaks };
-        const prevRanks = new Map(prev.map((c, idx) => [c.username, idx + 1]));
+    // Compute streaks BEFORE calling any setState
+    const prevRanks = new Map(contributors.map((c, idx) => [c.username, idx + 1]));
+    const updatedStreaks = { ...streaks };
 
-        preparedContributors.forEach((c, newIdx) => {
-          const username = c.username;
-          const newRank = newIdx + 1;
-          const prevRank = prevRanks.get(username);
-          const currentStreak = prevStreaks[username] || { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+    preparedContributors.forEach((c, newIdx) => {
+      const username = c.username;
+      const newRank = newIdx + 1;
+      const prevRank = prevRanks.get(username);
+      const currentStreak = streaks[username] || { consecutiveUp: 0, onFire: false, rankDifference: 0 };
 
-          if (prevRank !== undefined) {
-            const rankDifference = prevRank - newRank;
-            let consecutiveUp = rankDifference > 0 ? currentStreak.consecutiveUp + 1 : rankDifference < 0 ? 0 : currentStreak.consecutiveUp;
-            const onFire = rankDifference >= 3 || consecutiveUp >= 3;
-
-            updatedStreaks[username] = { consecutiveUp, onFire, rankDifference };
-          } else {
-            updatedStreaks[username] = { consecutiveUp: 0, onFire: false, rankDifference: 0 };
-          }
-        });
-
-        return updatedStreaks;
-      });
-      return preparedContributors;
+      if (prevRank !== undefined) {
+        const rankDifference = prevRank - newRank;
+        const consecutiveUp = rankDifference > 0 ? currentStreak.consecutiveUp + 1 : rankDifference < 0 ? 0 : currentStreak.consecutiveUp;
+        const onFire = rankDifference >= 3 || consecutiveUp >= 3;
+        updatedStreaks[username] = { consecutiveUp, onFire, rankDifference };
+      } else {
+        updatedStreaks[username] = { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+      }
     });
+
+    // Now call each setState separately and cleanly
+    setStreaks(updatedStreaks);
+    setContributors(preparedContributors);
 
     setLastUpdated(`Live: ${formatLastUpdated(lastSynced)}`);
 
