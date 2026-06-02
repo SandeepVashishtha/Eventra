@@ -2,8 +2,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { users } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { createRateLimiter } from "../middleware/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
+import { createRateLimiter } from "../lib/rateLimit.js";
 
 // Pre-compute a dummy bcrypt hash at module load time (same cost factor used in signup.js).
 // When a login attempt references a username or email that does not exist, we still run
@@ -17,6 +19,12 @@ const DUMMY_HASH_PROMISE = bcrypt.hash("__eventra_dummy_constant__", 12);
 // ---------------------------------------------------------------------------
 
 const JWT_SECRET = getJwtSecret();
+
+// ---------------------------------------------------------------------------
+// Rate Limiting (IP-based, 5 attempts per minute)
+// ---------------------------------------------------------------------------
+
+const loginRateLimiter = createRateLimiter(60_000, 5);
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
@@ -69,7 +77,7 @@ const findUserByUsernameOrEmail = (usernameOrEmail) => {
 // Login Handler
 // ---------------------------------------------------------------------------
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return res.status(200).set(buildCorsHeaders(req)).end();
@@ -82,6 +90,24 @@ export default async function handler(req, res) {
 
   try {
     const { usernameOrEmail, password } = req.body;
+
+    // -----------------------------------------------------------------------
+    // Rate Limiting (brute-force protection)
+    // -----------------------------------------------------------------------
+
+    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+      || req.headers?.["x-real-ip"]
+      || req.socket?.remoteAddress
+      || "unknown";
+
+    loginRateLimiter.evictStale();
+
+    if (!loginRateLimiter.check(clientIp)) {
+      return corsResponse(res, 429, {
+        error: "Too many login attempts. Please try again later.",
+        retryAfter: 60,
+      }, req);
+    }
 
     // -----------------------------------------------------------------------
     // Input Validation
@@ -184,6 +210,9 @@ export default async function handler(req, res) {
       // Ignore write errors on test response objects
     }
 
+    // Reset rate limit on successful login so a legitimate user is not penalised
+    loginRateLimiter.reset(clientIp);
+
     return corsResponse(req, res, 200, {
       message: "Login successful",
       token,
@@ -204,4 +233,11 @@ export default async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
+const loginRateLimiter = createRateLimiter({
+  max: 5,
+  windowMs: 15 * 60 * 1000,
+  message: "Too many authentication attempts. Please try again later.",
+});
+
+export default loginRateLimiter(handler);
 export { users };

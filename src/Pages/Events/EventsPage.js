@@ -14,6 +14,7 @@ import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import { EventTimeline } from "../../components/EventTimeline";
 import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
@@ -321,6 +322,13 @@ const EventsPage = () => {
             </div>
           )}
         </SectionErrorBoundary>
+
+        {/* Interactive Event Timeline Planner Section */}
+        <div className="mt-12 sm:mt-16">
+          <SectionErrorBoundary label="Event Timeline Planner">
+            <EventTimeline />
+          </SectionErrorBoundary>
+        </div>
       </div>
 
       <EventCTA />

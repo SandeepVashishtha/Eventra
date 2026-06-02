@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-presence"; // Wait, it's framer-motion in original
 import { motion as motionBase, AnimatePresence as AnimatePresenceBase } from "framer-motion";
 import { toast } from "react-toastify";
 import { 
@@ -22,13 +21,6 @@ import DraftRestoreModal from "./common/EventCreation/DraftRestoreModal";
 import { LoadingButton } from "./ui/LoadingButton";
 import { categories } from "../constants/eventDefaults";
 import { formatDate, formatTime } from "../utils/eventCreationUtils";
-
-// Animation Variants
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
-};
 
 const EventCreation = () => {
   const [currentStep, setCurrentStep] = useState("form");
@@ -211,7 +203,7 @@ const EventCreation = () => {
                   )}
                   <div className="absolute top-4 left-4">
                     <span className="px-4 py-1.5 bg-indigo-600 text-white text-sm font-bold rounded-full shadow-lg">
-                      {formData.category ? categories.find(c => c.id === formData.category)?.label : "General"}
+                      {formData.category ? categories.find(c => (c.id === formData.category || c.value === formData.category))?.label : "General"}
                     </span>
                   </div>
                 </div>
@@ -237,7 +229,7 @@ const EventCreation = () => {
                       <Calendar className="w-6 h-6 text-indigo-500 mt-1" />
                       <div>
                         <p className="text-sm text-gray-500">Date & Time</p>
-                        <p className="font-bold text-gray-900 dark:text-white">{formatDate(formData.date)}</p>
+                        <p className="font-bold text-gray-900 dark:text-white">{formatDate(formData.date || formData.startDate)}</p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">{formatTime(formData.startTime)} - {formatTime(formData.endTime)}</p>
                       </div>
                     </div>
@@ -248,7 +240,7 @@ const EventCreation = () => {
                         <p className="font-bold text-gray-900 dark:text-white">
                           {formData.isVirtual ? "Virtual Event" : formData.location.name}
                         </p>
-                        {!formData.isVirtual && <p className="text-sm text-gray-600 dark:text-gray-400">{formData.location.city}</p>}
+                        {!formData.isVirtual && <p className="text-sm text-gray-600 dark:text-gray-400">{formData.location.city || formData.location.address}</p>}
                       </div>
                     </div>
                   </div>
