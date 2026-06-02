@@ -118,29 +118,55 @@ export default function UserDashboard() {
 
   const safeData = Array.isArray(MOCK_DATA) ? MOCK_DATA : [];
 
-  const stats = useMemo(() => ({
-    eventsTotal: MOCK_DATA.filter(d => d.type === "Event").length,
-    eventsCreated: MOCK_DATA.filter(d => d.type === "Event" && d.participationType === "Hosted").length,
-    eventsJoined: MOCK_DATA.filter(d => d.type === "Event" && d.participationType === "Registered").length,
-    hackathonsTotal: MOCK_DATA.filter(d => d.type === "Hackathon").length,
-    hackathonsHosted: MOCK_DATA.filter(d => d.type === "Hackathon" && d.participationType === "Hosted").length,
-    hackathonsJoined: MOCK_DATA.filter(d => d.type === "Hackathon" && d.participationType === "Registered").length,
-    projectsTotal: MOCK_DATA.filter(d => d.type === "Project").length,
-    projectsDone: MOCK_DATA.filter(d => d.type === "Project" && d.projectStatus === "Done").length,
-    projectsActive: MOCK_DATA.filter(d => d.type === "Project" && d.projectStatus !== "Done").length,
-  }), [MOCK_DATA]);
+  const derivedData = useMemo(() => {
+    let eventsTotal = 0;
+    let eventsCreated = 0;
+    let eventsJoined = 0;
+    let hackathonsTotal = 0;
+    let hackathonsHosted = 0;
+    let hackathonsJoined = 0;
+    let projectsTotal = 0;
+    let projectsDone = 0;
+    let projectsActive = 0;
+    const upcomingEvents = [];
+    const upcomingHackathons = [];
+    const activeProjects = [];
 
-  const upcomingEvents = useMemo(() =>
-    safeData.filter(d => d && d.type === "Event" && d.status === "Upcoming"),
-  [MOCK_DATA]);
+    for (const d of MOCK_DATA) {
+      if (d && d.type === "Event") {
+        eventsTotal++;
+        if (d.participationType === "Hosted") eventsCreated++;
+        if (d.participationType === "Registered") eventsJoined++;
+        if (d.status === "Upcoming") upcomingEvents.push(d);
+      } else if (d && d.type === "Hackathon") {
+        hackathonsTotal++;
+        if (d.participationType === "Hosted") hackathonsHosted++;
+        if (d.participationType === "Registered") hackathonsJoined++;
+        if (d.status === "Upcoming") upcomingHackathons.push(d);
+      } else if (d && d.type === "Project") {
+        projectsTotal++;
+        if (d.projectStatus !== "Done") {
+          projectsActive++;
+          activeProjects.push(d);
+        } else {
+          projectsDone++;
+        }
+      }
+    }
 
-  const upcomingHackathons = useMemo(() =>
-    safeData.filter(d => d && d.type === "Hackathon" && d.status === "Upcoming"),
-  [MOCK_DATA]);
+    return {
+      stats: {
+        eventsTotal, eventsCreated, eventsJoined,
+        hackathonsTotal, hackathonsHosted, hackathonsJoined,
+        projectsTotal, projectsDone, projectsActive,
+      },
+      upcomingEvents,
+      upcomingHackathons,
+      activeProjects,
+    };
+  }, [MOCK_DATA]);
 
-  const activeProjects = useMemo(() =>
-    safeData.filter(d => d && d.type === "Project" && d.projectStatus !== "Done"),
-  [MOCK_DATA]);
+  const { stats, upcomingEvents, upcomingHackathons, activeProjects } = derivedData;
 
   const filteredData = useMemo(() =>
     MOCK_DATA.filter(item => {
