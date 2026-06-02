@@ -196,47 +196,38 @@ const useEventListing = () => {
 
   const filteredEvents = useMemo(() => {
     const now = new Date();
-    const searchedEvents = getRouteSearchResults(
-      events,
-      debouncedSearchQuery,
-      [
-        "title",
-        "description",
-        "location",
-        "venue",
-        "category",
-        "type",
-        "eventMode",
-        "status",
-        "date",
-        "startDate",
-      ],
-      {
-        threshold: 0.35,
-        includeScore: true,
-      },
-    );
+    
+    // 1. Search (typo-tolerant fuzzy search with ranking)
+    let processedEvents = debouncedSearchQuery.trim()
+      ? getRouteSearchResults(
+          events,
+          debouncedSearchQuery,
+          [
+            { name: "title", weight: 0.8 },
+            { name: "category", weight: 0.5 },
+            { name: "tags", weight: 0.4 },
+            { name: "location.name", weight: 0.3 },
+            { name: "location.city", weight: 0.3 },
+            { name: "description", weight: 0.1 },
+          ]
+        )
+      : [...events];
 
-    const basicFiltered = searchedEvents.filter((event) => {
-      // Filter by Type/Status
-      const eventDate = new Date(event.date || event.startDate);
-      if (filterType === "upcoming") {
-        return eventDate >= now;
-      }
-      if (filterType === "past") {
-        return eventDate < now;
-      }
-      if (filterType === "conference") {
-        return event.type?.toLowerCase() === "conference" || event.category?.toLowerCase() === "conference";
-      }
-      if (filterType === "workshop") {
-        return event.type?.toLowerCase() === "workshop" || event.category?.toLowerCase() === "workshop";
-      }
+    // 2. Category/Status Tabs Filtering
+    if (filterType !== "all") {
+      processedEvents = processedEvents.filter((event) => {
+        const eventDate = new Date(event.date || event.startDate);
+        if (filterType === "upcoming") return eventDate >= now;
+        if (filterType === "past") return eventDate < now;
+        
+        const type = event.type?.toLowerCase() || "";
+        const category = event.category?.toLowerCase() || "";
+        return type === filterType || category === filterType;
+      });
+    }
 
-      return true; // "all"
-    });
-
-    return applyAdvancedFilters(basicFiltered, advancedFilters);
+    // 3. Advanced Filters (Sidebar)
+    return applyAdvancedFilters(processedEvents, advancedFilters);
   }, [events, filterType, debouncedSearchQuery, advancedFilters]);
 
   const sortedEvents = useMemo(() => {
