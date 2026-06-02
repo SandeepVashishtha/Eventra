@@ -203,14 +203,6 @@ API.interceptors.request.use((config) => {
   }
   
   const method = config.method?.toUpperCase();
-  if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-    if (!config.headers['Idempotency-Key'] && !config.headers['X-Idempotency-Key']) {
-      const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID 
-        ? crypto.randomUUID() 
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-      config.headers['Idempotency-Key'] = generateId();
-    }
-  }
   
   return config;
 });
