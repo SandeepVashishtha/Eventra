@@ -42,7 +42,8 @@
     "react-router-dom": "^7.15.1",
     "react-toastify": "^11.1.0",
     "recharts": "^3.8.1",
-    "vite": "8.0.14"
+    "vite": "8.0.14",
+    "zustand": "^5.0.14"
   },
   "scripts": {
     "dev": "vite",
@@ -54,7 +55,7 @@
     "preview": "vite preview",
     "validate-env": "node scripts/validate-env.js",
     "test": "npm run test:unit",
-    "test:unit": "node tests/eventPaginationUtils.test.mjs && node tests/routeSearchUtils.test.mjs && node tests/userNameUtils.test.mjs && node tests/relativeTime.test.mjs && node tests/safeJsonParse.test.mjs && node tests/registerUtils.test.mjs && node tests/bookmarkUtils.test.mjs && node tests/auth.test.mjs && node tests/passwordResetEndpoint.test.mjs && node tests/eventDraftUtils.test.mjs && node tests/exportCsv.test.mjs && node tests/githubProxy.test.mjs && node tests/hackathonFilterUtils.test.mjs && node tests/loginEndpoint.test.mjs && node tests/logoutEndpoint.test.mjs && node tests/colorTokens.test.mjs && node tests/themeConsistency.test.mjs && node tests/sseMultiplexer.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/cspReporting.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/readTimeUtils.test.mjs && node --loader ./tests/loaders/jsExtension.mjs tests/secureStorage.test.mjs && node tests/conflictDetection.test.mjs && node tests/eventAvailabilityUtils.test.mjs",
+    "test:unit": "node --test tests/eventPaginationUtils.test.mjs tests/routeSearchUtils.test.mjs tests/userNameUtils.test.mjs tests/relativeTime.test.mjs tests/safeJsonParse.test.mjs tests/registerUtils.test.mjs tests/bookmarkUtils.test.mjs tests/auth.test.mjs tests/passwordResetEndpoint.test.mjs tests/eventDraftUtils.test.mjs tests/exportCsv.test.mjs tests/githubProxy.test.mjs tests/hackathonFilterUtils.test.mjs tests/loginEndpoint.test.mjs tests/logoutEndpoint.test.mjs tests/colorTokens.test.mjs tests/themeConsistency.test.mjs tests/sseMultiplexer.test.mjs tests/cspReporting.test.mjs tests/readTimeUtils.test.mjs tests/secureStorage.test.mjs tests/conflictDetection.test.mjs tests/eventAvailabilityUtils.test.mjs",
     "test:e2e": "playwright test",
     "lint": "eslint src --max-warnings=-1",
     "lint:fix": "eslint src --fix",

@@ -133,18 +133,6 @@ const cryptoSupported = isCryptoAvailable();
 
 // In-memory cache for pending writes to prevent race conditions during async encryption
 const pendingWrites = new Map();
-const writeVersions = new Map();
-let clearVersion = 0;
-
-const nextWriteVersion = (key) => {
-  const version = (writeVersions.get(key) || 0) + 1;
-  writeVersions.set(key, version);
-  return version;
-};
-
-const isCurrentWrite = (key, version, clearSnapshot) =>
-  clearVersion === clearSnapshot && writeVersions.get(key) === version;
-
 
 /**
  * syncSecureStorage
@@ -171,51 +159,33 @@ export const syncSecureStorage = {
    * @param {string} value
    * @returns {boolean} true on success, false on storage failure
    */
-    setItem: (key, value) => {
-    const valueToStore = String(value);
-    const version = nextWriteVersion(key);
-    const clearSnapshot = clearVersion;
-
+  setItem: (key, value) => {
     try {
-      // Synchronous storage preflight. This makes quota/localStorage failures
-      // visible to callers immediately instead of surfacing later from the
-      // async encryption pipeline.
-      const probeKey = `__eventra_secure_storage_probe_${key}`;
-      localStorage.setItem(probeKey, "1");
-      localStorage.removeItem(probeKey);
-
-            if (!cryptoSupported) {
-        localStorage.setItem(key, valueToStore);
+      if (!cryptoSupported) {
+        localStorage.setItem(key, value);
         return true;
       }
 
-      // Keep both syncSecureStorage.getItem() and direct localStorage reads
-      // consistent while encryption is pending.
-      pendingWrites.set(key, valueToStore);
-      localStorage.setItem(key, valueToStore);
+      // Track the pending value in-memory for immediate consistency in getItemAsync
+      pendingWrites.set(key, value);
 
-      encryptValue(valueToStore)
+      encryptValue(value)
         .then((encrypted) => {
-          if (!isCurrentWrite(key, version, clearSnapshot)) return;
+          // Only commit to persistent storage once encrypted
           localStorage.setItem(key, encrypted);
         })
         .catch((err) => {
-          console.error("[secureStorage] Encryption failed, falling back to plaintext:", err);
-
-          if (!isCurrentWrite(key, version, clearSnapshot)) return;
-          localStorage.setItem(key, valueToStore);
+          console.error('[secureStorage] Encryption failed, falling back to plaintext:', err);
+          localStorage.setItem(key, value);
         })
         .finally(() => {
-          if (writeVersions.get(key) === version) {
-            pendingWrites.delete(key);
-          }
+          pendingWrites.delete(key);
         });
 
       return true;
     } catch (error) {
-      console.error("[secureStorage] setItem failed:", error);
+      console.error('[secureStorage] setItem failed:', error);
       pendingWrites.delete(key);
-      writeVersions.delete(key);
       return false;
     }
   },
@@ -280,25 +250,26 @@ export const syncSecureStorage = {
    * Removes the encrypted blob stored under the given key.
    * @param {string} key
    */
-    removeItem: (key) => {
+  removeItem: (key) => {
     try {
-      nextWriteVersion(key);
       pendingWrites.delete(key);
       localStorage.removeItem(key);
     } catch (error) {
-      console.error("[secureStorage] removeItem failed:", error);
+      console.error('[secureStorage] removeItem failed:', error);
     }
   },
-  
-   clear: () => {
+
+  /**
+   * Clears all localStorage data for the current origin.
+   * Use with caution: this removes ALL keys, not just Eventra's.
+   */
+  clear: () => {
     try {
-      clearVersion += 1;
       pendingWrites.clear();
-      writeVersions.clear();
       localStorage.clear();
       _keyPromise = null;
     } catch (error) {
-      console.error("[secureStorage] clear failed:", error);
+      console.error('[secureStorage] clear failed:', error);
     }
   },
 

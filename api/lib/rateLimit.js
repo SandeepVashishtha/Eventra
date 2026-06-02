@@ -33,7 +33,7 @@ export const createRateLimiter = (windowMs = 60_000, maxRequests = 10) => {
     const entry = store.get(key);
 
     if (!entry || now - entry.windowStart >= windowMs) {
-      store.set(key, { count: 1, windowStart: now, maxRequests });
+      store.set(key, { count: 1, windowStart: now });
       return true;
     }
 

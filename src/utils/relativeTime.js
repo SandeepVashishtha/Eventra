@@ -1,10 +1,5 @@
 export function getRelativeTime(dateInput) {
-  if (!dateInput) return null;
-  
-  if (typeof dateInput !== "string" && !(dateInput instanceof Date)) {
-    return null;
-  }
-
+  if (!dateInput || typeof dateInput === 'number') return null;
   const now = new Date();
   const date = new Date(dateInput);
 
@@ -45,10 +40,6 @@ export function getRelativeTime(dateInput) {
 
 export function getSmartDateLabel(dateInput, timeInput = "") {
   if (!dateInput) return "TBD";
-  
-  if (typeof dateInput !== "string" && !(dateInput instanceof Date)) {
-    return "TBD";
-  }
 
   const parsed = new Date(dateInput);
   if (isNaN(parsed.getTime())) return "TBD";

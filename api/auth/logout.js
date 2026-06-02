@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "./jwt-config.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
+import { verifyAuth } from "../middleware/auth.js";
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
@@ -154,7 +155,7 @@ const authenticateToken = (token) => {
 // Logout Handler
 // ---------------------------------------------------------------------------
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return res.status(200).set(buildCorsHeaders(req)).end();
@@ -167,7 +168,7 @@ export default async function handler(req, res) {
 
   try {
     // -----------------------------------------------------------------------
-    // Extract and validate token from Authorization header
+    // Extract token from Authorization header (req.user populated by verifyAuth)
     // -----------------------------------------------------------------------
 
     const authHeader = req.headers?.authorization || req.headers?.Authorization;
@@ -176,18 +177,6 @@ export default async function handler(req, res) {
     if (!token) {
       return corsResponse(req, res, 401, { 
         error: "Authentication required. No token provided." 
-      });
-    }
-
-    // -----------------------------------------------------------------------
-    // Verify token is valid
-    // -----------------------------------------------------------------------
-
-    const authResult = authenticateToken(token);
-    
-    if (!authResult.valid) {
-      return corsResponse(req, res, 401, { 
-        error: authResult.error 
       });
     }
 
@@ -223,6 +212,8 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default verifyAuth(handler);
 
 // ---------------------------------------------------------------------------
 // Export utility functions for testing

@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { users } from "./signup.js";
+import { users, usersByUsername } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { createRateLimiter as createRateLimiterMiddleware } from "../middleware/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
@@ -58,17 +59,13 @@ const validateLoginInput = (usernameOrEmail, password) => {
 const findUserByUsernameOrEmail = (usernameOrEmail) => {
   const normalizedInput = usernameOrEmail.trim().toLowerCase();
   
-  // Search through all users
-  for (const [key, user] of users.entries()) {
-    if (
-      user.email === normalizedInput ||
-      user.username === normalizedInput ||
-      user.email === usernameOrEmail.trim() ||
-      user.username === usernameOrEmail.trim()
-    ) {
-      return user;
-    }
-  }
+  // O(1) lookup: try email key first (primary key), then username index
+  const byEmail = users.get(normalizedInput);
+  if (byEmail) return byEmail;
+  
+  const byUsername = usersByUsername.get(normalizedInput);
+  if (byUsername) return byUsername;
+  
   return null;
 };
 
@@ -91,35 +88,32 @@ async function handler(req, res) {
     const { usernameOrEmail, password } = req.body;
 
     // -----------------------------------------------------------------------
+    // Rate Limiting (brute-force protection)
+    // -----------------------------------------------------------------------
+
+    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+      || req.headers?.["x-real-ip"]
+      || req.socket?.remoteAddress
+      || "unknown";
+
+    loginRateLimiter.evictStale();
+
+    if (!loginRateLimiter.check(clientIp)) {
+      return corsResponse(req, res, 429, {
+        error: "Too many login attempts. Please try again later.",
+        retryAfter: 60,
+      });
+    }
+
+    // -----------------------------------------------------------------------
     // Input Validation
     // -----------------------------------------------------------------------
 
     const validationErrors = validateLoginInput(usernameOrEmail, password);
     if (validationErrors.length > 0) {
-      return corsResponse(req, res, 400, {
-        error: validationErrors.join(", "),
+      return corsResponse(req, res, 400, { 
+        error: validationErrors.join(", ") 
       });
-    }
-
-    // -----------------------------------------------------------------------
-    // Rate Limiting (brute-force protection)
-    // -----------------------------------------------------------------------
-
-        const clientIp =
-      req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || null;
-
-    if (clientIp) {
-      loginRateLimiter.evictStale();
-
-      if (!loginRateLimiter.check(clientIp)) {
-        return corsResponse(req, res, 429, {
-          success: false,
-          message: "Too many authentication attempts. Please try again later.",
-        });
-      }
     }
 
     // -----------------------------------------------------------------------
@@ -212,6 +206,8 @@ async function handler(req, res) {
       // Ignore write errors on test response objects
     }
 
+    // Reset rate limit on successful login so a legitimate user is not penalised
+    loginRateLimiter.reset(clientIp);
 
     return corsResponse(req, res, 200, {
       message: "Login successful",
@@ -228,5 +224,16 @@ async function handler(req, res) {
   }
 }
 
-export default handler;
+// ---------------------------------------------------------------------------
+// Export users map for sharing with signup.js (development purposes)
+// In production, replace with actual database
+// ---------------------------------------------------------------------------
+
+const loginRateLimiterMiddleware = createRateLimiterMiddleware({
+  max: 5,
+  windowMs: 15 * 60 * 1000,
+  message: "Too many authentication attempts. Please try again later.",
+});
+
+export default loginRateLimiterMiddleware(handler);
 export { users };
