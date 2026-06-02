@@ -1,4 +1,5 @@
 import { getClientIp } from "./lib/getClientIp.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
 
 const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
 

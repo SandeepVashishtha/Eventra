@@ -323,6 +323,9 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const restoreSession = useCallback(() => {
     if (!sessionData) return null;
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+      window.dispatchEvent(new CustomEvent("eventra-session-restored"));
+    }
     return sessionData;
   }, [sessionData]);
 
