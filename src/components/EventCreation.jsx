@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { motion as motionBase, AnimatePresence as AnimatePresenceBase } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import { 
-  ArrowRight, 
-  Pencil, 
-  CheckCircle, 
-  AlertCircle,
-  Calendar,
-  Users,
-  MapPin,
-  Ticket as TicketIcon
-} from "lucide-react";
+import { ArrowRight, Pencil, CheckCircle, AlertCircle, Calendar, Users, MapPin, Ticket as TicketIcon } from "lucide-react";
 
 import { useEventForm } from "../hooks/useEventForm";
 import EventBasicInfo from "./common/EventCreation/EventBasicInfo";
@@ -80,9 +71,9 @@ const EventCreation = () => {
           onDiscard={handleDiscardDraft} 
         />
 
-        <AnimatePresenceBase mode="wait">
+        <AnimatePresence mode="wait">
           {currentStep === "form" ? (
-            <motionBase
+            <motion.div
               key="form"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -173,9 +164,9 @@ const EventCreation = () => {
                   </p>
                 </div>
               </form>
-            </motionBase>
+            </motion.div>
           ) : (
-            <motionBase
+            <motion.div
               key="preview"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -291,9 +282,9 @@ const EventCreation = () => {
                   )}
                 </div>
               </div>
-            </motionBase>
+            </motion.div>
           )}
-        </AnimatePresenceBase>
+        </AnimatePresence>
       </div>
     </div>
   );
