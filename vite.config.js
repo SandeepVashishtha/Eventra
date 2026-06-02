@@ -42,23 +42,6 @@ export default defineConfig(({ mode }) => {
       },
     },
 
-    define: {
-      "process.env.NODE_ENV": JSON.stringify(mode),
-      "process.env.PUBLIC_URL": JSON.stringify(""),
-      "process.env.REACT_APP_API_URL": JSON.stringify(
-        env.REACT_APP_API_URL || env.VITE_API_URL || "/api"
-      ),
-      "process.env.REACT_APP_GITHUB_REPO": JSON.stringify(
-        env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra"
-      ),
-      "process.env.REACT_APP_PUBLIC_URL": JSON.stringify(
-        env.REACT_APP_PUBLIC_URL || "https://eventra.sandeepvashishtha.tech"
-      ),
-      "process.env.REACT_APP_VAPID_PUBLIC_KEY": JSON.stringify(
-        env.REACT_APP_VAPID_PUBLIC_KEY || ""
-      ),
-      "process.env.REACT_APP_CSP_REPORT_URI": JSON.stringify(env.REACT_APP_CSP_REPORT_URI || ""),
-    },
 
     server: {
       port: 3000,
