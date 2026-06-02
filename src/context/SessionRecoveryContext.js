@@ -126,23 +126,21 @@ const isCryptoAvailable = () =>
 // Session key management — unchanged from the original implementation
 // ---------------------------------------------------------------------------
 
+// In-memory only — never written to sessionStorage or localStorage
+let _inMemorySessionKey = null;
+
 const getOrCreateSessionKey = () => {
-  if (typeof window === "undefined" || !window.sessionStorage) {
-    return null;
-  }
+  if (typeof window === "undefined") return null;
   try {
-    let key = sessionStorage.getItem(RECOVERY_KEY_NAME);
-    if (!key) {
-      // Generate 32 random bytes and encode as hex for use as the PBKDF2 password
+    if (!_inMemorySessionKey) {
       const raw = crypto.getRandomValues(new Uint8Array(32));
-      key = Array.from(raw)
+      _inMemorySessionKey = Array.from(raw)
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
-      sessionStorage.setItem(RECOVERY_KEY_NAME, key);
     }
-    return key;
+    return _inMemorySessionKey;
   } catch (e) {
-    logger.error("Failed to manage session-bound recovery key:", e);
+    logger.error("Failed to generate in-memory session key:", e);
     return null;
   }
 };
