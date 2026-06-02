@@ -1,17 +1,19 @@
-import { useRef, useState, useEffect } from "react";
-
+import { useRef, useState, useEffect, useCallback } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-
 import { ChevronDown } from "lucide-react";
 import { NAV_ITEMS } from "./constants/navItems";
-
-
+import { prefetchRoute } from "../../utils/prefetchUtils";
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
   const navRef = useRef(null);
 
   const [openGroup, setOpenGroup] = useState(null);
+
+  const handlePrefetch = (href) => {
+    if (href === "/events") prefetchRoute(() => import("../../Pages/Events/ExploreEvents"), "explore");
+    if (href === "/saved-events") prefetchRoute(() => import("../../Pages/SavedEventsPage"), "saved");
+  };
 
 
   useEffect(() => {
@@ -190,6 +192,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             key={item.name}
             to={item.href}
             onClick={onClick}
+            onMouseEnter={() => handlePrefetch(item.href)}
             className={({ isActive }) =>
               getNavLinkClasses(isActive)
             }
