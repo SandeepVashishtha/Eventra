@@ -248,6 +248,7 @@ const EventsPage = () => {
   const clearSearchAndFilters = () => {
     listing.setSearchQuery("");
     listing.setFilterType("all");
+    listing.setCategoryFilter("all");
     listing.setSortType("Newest");
     listing.setAdvancedFilters(getDefaultFilters());
     setLocalSearchInput("");
@@ -272,6 +273,8 @@ const EventsPage = () => {
           <EventFiltersToolbar
             filterType={listing.filterType}
             onFilterChange={listing.setFilterType}
+            categoryFilter={listing.categoryFilter}
+            onCategoryChange={listing.setCategoryFilter}
             sortType={listing.sortType}
             onSortChange={listing.setSortType}
             viewMode={listing.viewMode}
@@ -284,6 +287,7 @@ const EventsPage = () => {
             onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
             priceStats={listing.priceStats}
             dateRangeStats={listing.dateRangeStats}
+            onResetFilters={clearSearchAndFilters}
           />
         </div>
 
@@ -295,6 +299,8 @@ const EventsPage = () => {
           }}
           filterType={listing.filterType}
           setFilterType={listing.setFilterType}
+          categoryFilter={listing.categoryFilter}
+          setCategoryFilter={listing.setCategoryFilter}
           sortType={listing.sortType}
           setSortType={listing.setSortType}
           viewMode={listing.viewMode}
