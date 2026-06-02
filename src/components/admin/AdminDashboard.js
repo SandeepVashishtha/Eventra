@@ -247,6 +247,7 @@ const AdminDashboard = () => {
   }, [location.pathname]);
 
   if (!isAdmin) {
+    if (!user) return <Navigate to="/login" replace />;
     return <Navigate to="/unauthorized" replace />;
   }
   /* Stats */
