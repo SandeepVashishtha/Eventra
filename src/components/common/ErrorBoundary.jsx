@@ -8,9 +8,34 @@ import { logError } from "../../utils/errorLogger";
 function generateErrorId() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let id = "EV-";
-  for (let i = 0; i < 7; i++) {
-    id += chars[Math.floor(Math.random() * chars.length)];
+
+  for (let i = 0; i < 6; i++) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length));
   }
+
+  return id;
+}
+
+const SENSITIVE_URL_PARAMS = new Set([
+  "token", "code", "state", "key", "secret", "reset",
+  "id_token", "access_token", "refresh_token", "otp",
+  "password", "auth", "api_key",
+]);
+
+/** Strip sensitive query parameters from a URL before displaying or logging */
+function sanitizeUrl(url) {
+  try {
+    const parsed = new URL(url);
+    for (const param of parsed.searchParams.keys()) {
+      if (SENSITIVE_URL_PARAMS.has(param.toLowerCase())) {
+        parsed.searchParams.set(param, "***");
+      }
+    }
+    return parsed.href;
+  } catch {
+    return url;
+  }
+}
   return id;
 }
 
@@ -37,7 +62,7 @@ function saveAppStateSnapshot() {
   try {
     const snapshot = {
       timestamp: new Date().toISOString(),
-      url: window.location.href,
+      url: sanitizeUrl(window.location.href),
       localStorage: (() => {
         const snap = {};
         for (let i = 0; i < localStorage.length; i++) {
@@ -69,7 +94,7 @@ function persistErrorLog(errorId, error, errorInfo) {
     const log = {
       errorId,
       timestamp: new Date().toISOString(),
-      url: window.location.href,
+      url: sanitizeUrl(window.location.href),
       userAgent: navigator.userAgent,
       message: error ? error.toString() : "Unknown error",
       stack: error?.stack || "",
@@ -127,7 +152,7 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
   return `=== EVENTRA DIAGNOSTIC REPORT ===
 Error ID      : ${errorId}
 Timestamp     : ${new Date().toISOString()}
-URL           : ${window.location.href}
+URL           : ${sanitizeUrl(window.location.href)}
 User-Agent    : ${navigator.userAgent}
 Screen Size   : ${window.innerWidth}x${window.innerHeight}
 Device Pixel  : ${window.devicePixelRatio}
@@ -203,24 +228,6 @@ class ErrorBoundary extends React.Component {
     setTimeout(() => window.location.reload(), 300);
   };
 
-  handleCopyReport = async () => {
-    const { error, errorInfo } = this.state;
-
-    const safeError =
-      error?.toString()?.trim() || "Unknown error";
-
-    const safeStack =
-      error?.stack?.trim() || "No stack";
-
-    const safeComponentStack =
-      errorInfo?.componentStack?.trim() || "Unavailable";
-
-    let safeLocalStorage = "{}";
-
-    try {
-      safeLocalStorage = JSON.stringify(localStorage, null, 2) || "{}";
-    } catch (err) {
-      safeLocalStorage = "Unable to read localStorage";
   handleTryAgain = () => {
     const { retryCount } = this.state;
     if (retryCount >= 3) {
@@ -519,7 +526,7 @@ class ErrorBoundary extends React.Component {
             <div className="eb-meta-grid">
               <div className="eb-meta-item">
                 <span className="eb-meta-label">URL</span>
-                <span className="eb-meta-value">{window.location.href}</span>
+                <span className="eb-meta-value">{sanitizeUrl(window.location.href)}</span>
               </div>
               <div className="eb-meta-item">
                 <span className="eb-meta-label">Timestamp</span>

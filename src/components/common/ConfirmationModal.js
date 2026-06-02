@@ -30,27 +30,24 @@ const ConfirmationModal = ({
 
     const prevOverflow = document.body.style.overflow;
     previouslyFocusedElementRef.current = document.activeElement;
+
     document.body.style.overflow = "hidden";
+    cancelButtonRef.current?.focus();
 
-    // Focus cancel button or modal contents on open
-    setTimeout(() => {
-      cancelButtonRef.current?.focus();
-    }, 0);
-
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
         onClose();
         return;
       }
 
-      if (e.key !== "Tab") return;
+      if (event.key !== "Tab") return;
 
       const focusableElements = Array.from(
         modalRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) || []
       ).filter((element) => !element.hasAttribute("disabled"));
 
       if (focusableElements.length === 0) {
-        e.preventDefault();
+        event.preventDefault();
         modalRef.current?.focus();
         return;
       }
@@ -59,16 +56,26 @@ const ConfirmationModal = ({
       const lastFocusableElement = focusableElements[focusableElements.length - 1];
       const activeElement = document.activeElement;
 
-      if (e.shiftKey && activeElement === firstFocusableElement) {
-        e.preventDefault();
+      if (event.shiftKey && activeElement === firstFocusableElement) {
+        event.preventDefault();
         lastFocusableElement.focus();
-      } else if (!e.shiftKey && activeElement === lastFocusableElement) {
-        e.preventDefault();
+        return;
+      }
+
+      if (!event.shiftKey && activeElement === lastFocusableElement) {
+        event.preventDefault();
+        firstFocusableElement.focus();
+        return;
+      }
+
+      if (!modalRef.current?.contains(activeElement)) {
+        event.preventDefault();
         firstFocusableElement.focus();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = prevOverflow;
