@@ -574,7 +574,12 @@ export const NotificationProvider = ({ children }) => {
     }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [token, fetchNotifications, fetchAchievements, isPageVisible]);
+  }, [token, fetchNotifications, fetchAchievements, notifications, isPageVisible]);
+
+  const notificationsRef = useRef(notifications);
+  useEffect(() => {
+  notificationsRef.current = notifications;
+}, [notifications]);
 
   // Catch-up fetch: when the tab becomes visible after being hidden, immediately
   // fetch notifications so the user sees fresh data without waiting up to
