@@ -105,3 +105,17 @@ export const sanitizeInputText = (text = '') => {
 
   return text.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
 };
+
+/**
+ * Strip all HTML tags from a text string.
+ * Faster than full DOMPurify when only raw text is needed.
+ *
+ * @param {string} text - Raw input text
+ * @returns {string} - Text with HTML tags stripped
+ */
+export const stripHtmlTags = (text = '') => {
+  if (typeof text !== 'string') {
+    return '';
+  }
+  return text.replace(/<[^>]*>?/gm, '');
+};
