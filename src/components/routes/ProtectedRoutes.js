@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 import { Route } from "react-router-dom";
 
 import ProtectedRoute from "../auth/ProtectedRoute";
@@ -21,14 +21,24 @@ const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
 const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
 
+// 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
   <ErrorBoundary
     variant="section"
     boundaryName={boundaryName}
     title={`${boundaryName} needs a reset`}
   >
-    {children}
+    <Suspense fallback={<div className="flex justify-center items-center min-h-[50vh] text-gray-500 animate-pulse">Loading {boundaryName}...</div>}>
+      {children}
+    </Suspense>
   </ErrorBoundary>
+);
+
+// 🔥 FIX: Added helper for naked auth routes
+const withAuthSuspense = (children) => (
+  <Suspense fallback={<div className="flex justify-center items-center min-h-screen text-gray-500 animate-pulse">Loading...</div>}>
+    {children}
+  </Suspense>
 );
 
 export const getProtectedRoutes = () => [
@@ -46,28 +56,29 @@ export const getProtectedRoutes = () => [
     path="/admin"
     element={
       <ProtectedRoute
-  requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
-  redirectTo="/login"
->
+        requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
+        redirectTo="/login"
+      >
         {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
       </ProtectedRoute>
     }
   />,
- <Route
-  key="/host-hackathon"
-  path="/host-hackathon"
-  element={
-    <ProtectedRoute
-      requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
-      requiredScopes={["hackathon:write"]}
-      validateContext={({ user }) =>
-        user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
-      }
-    >
-      {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
-    </ProtectedRoute>
-  }
-/>,
+  <Route
+    key="/host-hackathon"
+    path="/host-hackathon"
+    element={
+      <ProtectedRoute
+        requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
+        requiredScopes={["hackathon:write"]}
+        // 🔥 FIX: Prevented fatal destructuring crash if context is undefined
+        validateContext={(context) =>
+          context?.user?.roles?.includes(ROLES.ADMIN) || context?.user?.roles?.includes(ROLES.ORGANIZER)
+        }
+      >
+        {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
+      </ProtectedRoute>
+    }
+  />,
   <Route
     key="/dashboard"
     path="/dashboard"
@@ -82,7 +93,8 @@ export const getProtectedRoutes = () => [
     path="/dashboard/profile"
     element={
       <ProtectedRoute>
-        <UserProfile />
+        {/* 🔥 FIX: Wrapped previously naked component to prevent full-app crashes */}
+        {withModuleBoundary(<UserProfile />, "User Profile")}
       </ProtectedRoute>
     }
   />,
@@ -109,7 +121,8 @@ export const getProtectedRoutes = () => [
     path="/profile"
     element={
       <ProtectedRoute>
-        <UserProfile />
+        {/* 🔥 FIX: Wrapped previously naked component */}
+        {withModuleBoundary(<UserProfile />, "User Profile")}
       </ProtectedRoute>
     }
   />,
@@ -127,7 +140,8 @@ export const getProtectedRoutes = () => [
     path="/settings/notifications"
     element={
       <ProtectedRoute>
-        <NotificationSettings />
+        {/* 🔥 FIX: Wrapped previously naked component */}
+        {withModuleBoundary(<NotificationSettings />, "Notification Settings")}
       </ProtectedRoute>
     }
   />,
@@ -157,8 +171,9 @@ export const getProtectedRoutes = () => [
 ];
 
 export const getAuthRoutes = () => [
-  <Route key="/login" path="/login" element={<AuthPage />} />,
-  <Route key="/signup" path="/signup" element={<AuthPage />} />,
-  <Route key="/unauthorized" path="/unauthorized" element={<Unauthorized />} />,
-  <Route key="/password-reset" path="/password-reset" element={<PasswordReset />} />,
+  // 🔥 FIX: Safely suspended lazy-loaded auth routes
+  <Route key="/login" path="/login" element={withAuthSuspense(<AuthPage />)} />,
+  <Route key="/signup" path="/signup" element={withAuthSuspense(<AuthPage />)} />,
+  <Route key="/unauthorized" path="/unauthorized" element={withAuthSuspense(<Unauthorized />)} />,
+  <Route key="/password-reset" path="/password-reset" element={withAuthSuspense(<PasswordReset />)} />,
 ];
