@@ -10,6 +10,7 @@ import {
   parseTimeToMinutes,
 } from "../utils/eventCreationUtils";
 import { logger } from "../utils/logger";
+import { useAuth } from "../context/AuthContext";
 
 // 🎯 Constants for better maintainability
 const MAX_CAPACITY = 100000;
@@ -24,6 +25,8 @@ const DEBOUNCE_DELAY = 1000;
  * Handles form state, validation, draft persistence, and submission.
  */
 export const useEventForm = () => {
+  const { user } = useAuth();
+  const scopedDraftKey = `${DRAFT_KEY}_${user?.id || "guest"}`;
   // 📊 State Management
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
@@ -68,7 +71,7 @@ export const useEventForm = () => {
   useEffect(() => {
     const checkForDraft = () => {
       try {
-        const saved = localStorage.getItem(DRAFT_KEY);
+        const saved = localStorage.getItem(scopedDraftKey);
         if (saved) {
           setShowRestoreModal(true);
         }
@@ -96,7 +99,7 @@ export const useEventForm = () => {
         const saveable = { ...formDataRef.current };
         delete saveable.banner;
         delete saveable.bannerPreview;
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+        localStorage.setItem(scopedDraftKey, JSON.stringify(saveable));
       } catch (error) {
         logger.error("Failed to save draft:", error);
       }
@@ -180,7 +183,7 @@ export const useEventForm = () => {
   const resetForm = useCallback(() => {
     setFormData(initialFormData);
     setErrors({});
-    localStorage.removeItem(DRAFT_KEY);
+    localStorage.removeItem(scopedDraftKey);
   }, []);
 
   const handleInputChange = useCallback((e) => {
@@ -262,7 +265,7 @@ export const useEventForm = () => {
 
   const handleRestoreDraft = useCallback(() => {
     try {
-      const saved = localStorage.getItem(DRAFT_KEY);
+      const saved = localStorage.getItem(scopedDraftKey);
       if (saved) {
         setFormData((prev) => ({ ...prev, ...JSON.parse(saved) }));
         toast.success("Draft restored!");
@@ -275,7 +278,7 @@ export const useEventForm = () => {
   }, []);
 
   const handleDiscardDraft = useCallback(() => {
-    localStorage.removeItem(DRAFT_KEY);
+    localStorage.removeItem(scopedDraftKey);
     setShowRestoreModal(false);
   }, []);
 
