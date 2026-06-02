@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ZoomIn,
@@ -510,86 +510,18 @@ const SpatialSeatSelector = ({
                 </text>
 
                 {/* Render Interactive Chair elements */}
-                {(elementSeatPositions.get(el.id) || []).map((seat) => {
-                  const isOccupied = el.assignedAttendees[seat.index];
-                  const isSelected = isSeatSelected(el.id, seat.index);
-                  const seatLabel =
-                    (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
-                  const seatTier = el.tier || (isVIP ? "VIP Front Row" : "General Seating");
-
-                  // Glow effect for selected seat or active highlight
-                  const glowClass = isSelected ? "ssp-seat-glowing" : "";
-
-                  return (
-                    <g
-                      key={`seat-${el.id}-${seat.index}`}
-                      className={`ssp-interactive-seat ${glowClass}`}
-                      onClick={() => handleSeatClick(el, seat, seat.index)}
-                      onMouseEnter={(e) => {
-                        const bbox = e.currentTarget.getBoundingClientRect();
-                        const vrect = containerRef.current.getBoundingClientRect();
-                        setHoveredSeat({
-                          el,
-                          seatIdx: seat.index,
-                          label: seatLabel,
-                          tier: seatTier,
-                          occupiedBy: isOccupied || null,
-                          x: bbox.left - vrect.left + bbox.width / 2,
-                          y: bbox.top - vrect.top - 10,
-                        });
-                      }}
-                      onMouseLeave={() => setHoveredSeat(null)}
-                      style={{ cursor: isOccupied ? "not-allowed" : "pointer" }}
-                    >
-                      {/* 2.5D Chair base drop shadow */}
-                      <circle cx={seat.x} cy={seat.y + 3} r={11} fill="rgba(0, 0, 0, 0.45)" />
-
-                      {/* Main Interactive Seat circle */}
-                      <circle
-                        cx={seat.x}
-                        cy={seat.y}
-                        r={11}
-                        fill={
-                          isSelected
-                            ? "url(#ssp-selected)"
-                            : isOccupied
-                              ? "#27272a"
-                              : isVIP
-                                ? "url(#ssp-vip-avail)"
-                                : "url(#ssp-gen-avail)"
-                        }
-                        stroke={
-                          isSelected
-                            ? "#67e8f9"
-                            : isOccupied
-                              ? "#18181b"
-                              : isVIP
-                                ? "#f59e0b"
-                                : "#6366f1"
-                        }
-                        strokeWidth={1.5}
-                        style={{
-                          transition:
-                            "fill 0.25s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-                        }}
-                      />
-
-                      {/* RADAR pulsing overlay loop animation inside dashboard view */}
-                      {readOnly && isSelected && (
-                        <circle
-                          cx={seat.x}
-                          cy={seat.y}
-                          r={28}
-                          fill="none"
-                          stroke="#22d3ee"
-                          strokeWidth={2}
-                          className="ssp-radar-pulse"
-                          pointerEvents="none"
-                        />
-                      )}
-                    </g>
-                  );
-                })}
+                {(elementSeatPositions.get(el.id) || []).map((seat) => (
+                  <MemoizedSeat
+                    key={`seat-${el.id}-${seat.index}`}
+                    el={el}
+                    seat={seat}
+                    isSelected={isSeatSelected(el.id, seat.index)}
+                    readOnly={readOnly}
+                    onSelect={handleSeatClick}
+                    onHover={setHoveredSeat}
+                    containerRef={containerRef}
+                  />
+                ))}
               </g>
             );
           })}
@@ -699,3 +631,74 @@ const SpatialSeatSelector = ({
 };
 
 export default SpatialSeatSelector;
+
+// ── Optimized Seat Component ────────────────────────────────────────────────
+
+const Seat = ({ el, seat, isSelected, readOnly, onSelect, onHover, containerRef }) => {
+  const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
+  const isOccupied = el.assignedAttendees[seat.index];
+  const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
+  const seatTier = el.tier || (isVIP ? "VIP Front Row" : "General Seating");
+
+  return (
+    <g
+      className={`ssp-interactive-seat ${isSelected ? "ssp-seat-glowing" : ""}`}
+      onClick={() => onSelect(el, seat, seat.index)}
+      onMouseEnter={(e) => {
+        const bbox = e.currentTarget.getBoundingClientRect();
+        const vrect = containerRef.current.getBoundingClientRect();
+        onHover({
+          el,
+          seatIdx: seat.index,
+          label: seatLabel,
+          tier: seatTier,
+          occupiedBy: isOccupied || null,
+          x: bbox.left - vrect.left + bbox.width / 2,
+          y: bbox.top - vrect.top - 10,
+        });
+      }}
+      onMouseLeave={() => onHover(null)}
+      style={{ cursor: isOccupied ? "not-allowed" : "pointer" }}
+    >
+      <circle cx={seat.x} cy={seat.y + 3} r={11} fill="rgba(0, 0, 0, 0.45)" />
+      <circle
+        cx={seat.x}
+        cy={seat.y}
+        r={11}
+        fill={
+          isSelected
+            ? "url(#ssp-selected)"
+            : isOccupied
+              ? "#27272a"
+              : isVIP
+                ? "url(#ssp-vip-avail)"
+                : "url(#ssp-gen-avail)"
+        }
+        stroke={
+          isSelected
+            ? "#67e8f9"
+            : isOccupied
+              ? "#18181b"
+              : isVIP
+                ? "#f59e0b"
+                : "#6366f1"
+        }
+        strokeWidth={1.5}
+      />
+      {readOnly && isSelected && (
+        <circle
+          cx={seat.x}
+          cy={seat.y}
+          r={28}
+          fill="none"
+          stroke="#22d3ee"
+          strokeWidth={2}
+          className="ssp-radar-pulse"
+          pointerEvents="none"
+        />
+      )}
+    </g>
+  );
+};
+
+const MemoizedSeat = memo(Seat);
