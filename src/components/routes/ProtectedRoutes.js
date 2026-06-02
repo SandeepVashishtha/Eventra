@@ -52,21 +52,21 @@ export const getProtectedRoutes = () => [
       </ProtectedRoute>
     }
   />,
-  <Route
-    key="/host-hackathon"
-    path="/host-hackathon"
-    element={
-      <ProtectedRoute
-        requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
-        requiredScopes={["hackathon:write"]}
-        validateContext={({ user }) =>
-          user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
-        }
-      >
-        {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
-      </ProtectedRoute>
-    }
-  />,
+ <Route
+  key="/host-hackathon"
+  path="/host-hackathon"
+  element={
+    <ProtectedRoute
+      requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
+      requiredScopes={["hackathon:write"]}
+      validateContext={({ user }) =>
+        user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
+      }
+    >
+      {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
+    </ProtectedRoute>
+  }
+/>,
   <Route
     key="/dashboard"
     path="/dashboard"
