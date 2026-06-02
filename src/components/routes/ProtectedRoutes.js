@@ -44,10 +44,9 @@ export const getProtectedRoutes = () => [
     path="/admin"
     element={
       <ProtectedRoute
-        requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
-        requiredScopes={["admin:all"]}
-        validateContext={({ user }) => user?.status !== "Suspended"}
-      >
+  requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
+  redirectTo="/login"
+>
         {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
       </ProtectedRoute>
     }
