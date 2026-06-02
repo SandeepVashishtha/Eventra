@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Users, Clock, TrendingUp, Activity, CheckCircle2, Play, Zap } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -148,7 +148,7 @@ const [activeTab, setActiveTab] = useState('analytics');
    * Unified Analytical State Consumer pipeline.
    * Maps ingested data contract structure cleanly to the UI state.
    */
-  const processIncomingCheckin = (checkinPayload) => {
+  const processIncomingCheckin = useCallback((checkinPayload) => {
     const { meta, ...cleanCheckinData } = checkinPayload;
     
     // Fallback/Default metadata processing for standard payloads
@@ -180,12 +180,12 @@ const [activeTab, setActiveTab] = useState('analytics');
     // 5. Fire Feedback Notifications Interceptors
     if (cleanCheckinData.status === "Flagged") {
       toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${cleanCheckinData.name}`);
-    } else if (cleanCheckinData.id.includes("manual")) {
+    } else if (String(cleanCheckinData.id).includes("manual")) {
       toast.success(`🚀 Simulator: Successfully injected real-time check-in record for ${cleanCheckinData.name}!`);
     } else {
       toast.info(`🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`);
     }
-  };
+  }, []);
 
   // Processing real-time production SSE streams via data consumer pipeline
   useEffect(() => {
@@ -194,7 +194,7 @@ const [activeTab, setActiveTab] = useState('analytics');
     lastStreamCheckinRef.current = latest;
 
     processIncomingCheckin(latest);
-  }, [streamCheckins]);
+  }, [streamCheckins, processIncomingCheckin]);
 
   // Automated background interval simulation logic loop
   useEffect(() => {
