@@ -1,6 +1,6 @@
+import { Ticket } from "lucide-react";
 import React from "react";
 import { motion } from "framer-motion";
-import { TicketIcon } from "@heroicons/react/24/solid";
 import { Plus } from "lucide-react";
 import CharacterCounter from "../../../common/CharacterCounter";
 
@@ -68,7 +68,7 @@ const TicketTiersSection = ({
     >
 
     <div className="flex items-center gap-2 mb-4">
-  <TicketIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+  <Ticket className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
   <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
     Ticket Tiers
   </h3>

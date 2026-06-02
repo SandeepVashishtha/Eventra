@@ -145,7 +145,7 @@ export default async function handler(req, res) {
   try {
     const contributorsUrl = `https://api.github.com/repos/${GITHUB_REPO}/contributors`;
     const [contributorsRes, firstPagePrs] = await Promise.all([
-      fetch(contributorsUrl, { headers }),
+      fetchWithTimeout(contributorsUrl, { headers }, 10000),
       fetchPrPage(1, headers),
     ]);
 
@@ -212,5 +212,8 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("[Leaderboard API] Aggregation Error:", error);
     return res.status(500).json({ error: "Failed to compile leaderboard data" });
+  }
+}
+iled to compile leaderboard data" });
   }
 }
