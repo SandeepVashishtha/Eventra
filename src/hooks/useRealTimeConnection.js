@@ -14,12 +14,13 @@ export const SSE_STATUS = {
  * exhaustion (exceeding the HTTP/1.1 6-connection domain limit) by sharing a
  * single physical EventSource connection across all open tabs.
  *
- * @param {string} path - Endpoint path, e.g. "/stream/leaderboard" or "/stream/analytics"
+ * @param {string} path - Endpoint path, e.g. "/stream/leaderboard"
  * @param {object} [options]
+ * @param {string[]} [options.events=[]] - Array of custom event names to listen for
  * @param {function} [options.onMessage] - Called with (parsedData, eventType) on each event
  * @param {boolean} [options.enabled=true]  - Set false to disable the connection
  */
-export default function useRealTimeConnection(path, { onMessage, enabled = true } = {}) {
+export default function useRealTimeConnection(path, { events = [], onMessage, enabled = true } = {}) {
   const [status, setStatus] = useState(SSE_STATUS.IDLE);
   
   // Stable reference to callback ensures the connection does not restart on prop changes
@@ -27,6 +28,9 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
+
+  // 🔥 FIX 1: Deep compare events array so inline arrays don't cause infinite reconnect loops
+  const eventsKey = JSON.stringify(events);
 
   useEffect(() => {
     if (!enabled) {
@@ -44,13 +48,17 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
       }
     };
 
+    // 🔥 FIX 2: Parse the stable events array and pass it to the multiplexer 
+    // so it knows to bind source.addEventListener for these custom events.
+    const parsedEvents = JSON.parse(eventsKey);
+    
     // Register subscription with sseMultiplexer
-    const unsubscribe = sseMultiplexer.subscribe(path, handleMessage, handleStatus);
+    const unsubscribe = sseMultiplexer.subscribe(path, handleMessage, handleStatus, parsedEvents);
 
     return () => {
       unsubscribe();
     };
-  }, [path, enabled]);
+  }, [path, enabled, eventsKey]);
 
   const reconnect = useCallback(() => {
     sseMultiplexer.reconnect(path);
