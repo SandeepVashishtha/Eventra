@@ -61,6 +61,10 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
   const teardown = useCallback(() => {
     clearTimeout(retryTimer.current);
     if (sourceRef.current) {
+      // 🔥 FIX 1B: Explicitly strip listeners before closing to stop duplicate native tracking loops
+      sourceRef.current.onopen = null;
+      sourceRef.current.onmessage = null;
+      sourceRef.current.onerror = null;
       sourceRef.current.close();
       sourceRef.current = null;
     }
@@ -78,7 +82,8 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
       setStatus(SSE_STATUS.CONNECTED);
     };
 
-    source.onmessage = (evt) => {
+    // Shared message processor for standard and custom events
+    const processMessage = (evt) => {
       try {
         const data = JSON.parse(evt.data);
         onMessageRef.current?.(data, evt.type);
@@ -88,11 +93,28 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
       }
     };
 
+    source.onmessage = processMessage;
+
+    // 🔥 FIX 2: Intercept Custom Server-Sent Named Events
+    // Native EventSource ignores .onmessage if the server transmits an explicit 'event: name' tag.
+    // Overriding the default addEventListener allows us to process custom streams dynamically.
+    const nativeAddEventListener = source.addEventListener.bind(source);
+    source.addEventListener = (type, listener, options) => {
+      if (type !== "open" && type !== "message" && type !== "error") {
+        nativeAddEventListener(type, processMessage, options);
+      } else {
+        nativeAddEventListener(type, listener, options);
+      }
+    };
+
     source.onerror = () => {
       // EventSource fires onerror on any failure (network drop, 4xx, 5xx).
       // We close it manually so our backoff timer controls reconnection timing.
-      source.close();
-      sourceRef.current = null;
+      
+      // 🔥 FIX 1A: We must immediately strip the listeners and close the reference here.
+      // Otherwise, the browser background thread automatically starts its own hidden retry stream
+      // in parallel with our manual setTimeout loop, causing connection leakage and server DDOS spikes.
+      teardown();
 
       const delay = computeBackoff(attemptRef.current);
       attemptRef.current += 1;
