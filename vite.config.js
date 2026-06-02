@@ -42,8 +42,6 @@ export default defineConfig(({ mode }) => {
       },
     },
 
-
-
     server: {
       port: 3000,
       open: false,
