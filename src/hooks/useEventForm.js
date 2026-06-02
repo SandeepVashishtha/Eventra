@@ -188,11 +188,33 @@ export const useEventForm = () => {
 
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-    // Clear error when user types
+    if (name.startsWith("location.coordinates.")) {
+      const coordField = name.split(".")[2];
+      setFormData((prev) => ({
+        ...prev,
+        location: {
+          ...prev.location,
+          coordinates: {
+            ...prev.location.coordinates,
+            [coordField]: value,
+          },
+        },
+      }));
+    } else if (name.startsWith("location.")) {
+      const locationField = name.split(".")[1];
+      setFormData((prev) => ({
+        ...prev,
+        location: {
+          ...prev.location,
+          [locationField]: value,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+    }
     if (errors[name]) {
       setErrors((prev) => {
         const newErrs = { ...prev };
@@ -267,8 +289,8 @@ export const useEventForm = () => {
     try {
       const saved = localStorage.getItem(scopedDraftKey);
       if (saved) {
-        setFormData((prev) => ({ ...prev, ...JSON.parse(saved) }));
-        toast.success("Draft restored!");
+        setFormData((prev) => ({ ...prev, ...JSON.parse(saved), banner: null, bannerPreview: null }));
+        toast.success("Draft restored successfully!");
       }
     } catch (error) {
       logger.error("Failed to restore draft:", error);
@@ -293,6 +315,43 @@ export const useEventForm = () => {
       return Boolean(value) !== Boolean(initialFormData[key]);
     });
   }, [formData]);
+
+  const handleImageUpload = useCallback((e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      setErrors((prev) => ({ ...prev, banner: "Please upload a valid image file (JPG, PNG, GIF, or WebP)" }));
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, banner: "Image size should be less than 5MB" }));
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFormData((prev) => ({ ...prev, banner: file, bannerPreview: event.target.result }));
+      setErrors((prev) => ({ ...prev, banner: "" }));
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  // Browser guard for unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   return {
     formData,
@@ -321,5 +380,6 @@ export const useEventForm = () => {
     handleRestoreDraft,
     handleDiscardDraft,
     hasUnsavedChanges,
+    handleImageUpload,
   };
 };
