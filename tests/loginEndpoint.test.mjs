@@ -377,3 +377,4 @@ console.log("Running login endpoint tests...");
 }
 
 console.log("\n✅ All login endpoint tests passed!");
+console.log("\n✅ All login endpoint tests passed!");

@@ -29,4 +29,4 @@ export function checkRateLimit(ip) {
   entry.count += 1;
   return true;
 }
-}
+

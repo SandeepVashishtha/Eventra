@@ -64,6 +64,9 @@ export const createRateLimiter = ({
         existing && existing.resetAt > now
           ? { count: existing.count + 1, resetAt: existing.resetAt }
           : { count: 1, resetAt: now + windowMs };
+      const bucket = existing && existing.resetAt > now
+        ? { count: existing.count + 1, resetAt: existing.resetAt }
+        : { count: 1, resetAt: now + windowMs };
 
       store.set(ip, bucket);
 
