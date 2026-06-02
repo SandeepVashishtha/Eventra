@@ -396,6 +396,7 @@ const useOfflineSync = () => {
     window.addEventListener("online", handleOnline);
     window.addEventListener("eventra-background-sync", handleSyncRequested);
     window.addEventListener("eventra-offline-queue-updated", handleSyncRequested);
+    window.addEventListener("eventra-session-restored", handleSyncRequested);
     navigator.serviceWorker?.addEventListener?.("message", handleServiceWorkerMessage);
 
     let idleId = null;
@@ -417,6 +418,7 @@ const useOfflineSync = () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("eventra-background-sync", handleSyncRequested);
       window.removeEventListener("eventra-offline-queue-updated", handleSyncRequested);
+      window.removeEventListener("eventra-session-restored", handleSyncRequested);
       navigator.serviceWorker?.removeEventListener?.("message", handleServiceWorkerMessage);
       // Abort any in-progress conflict resolution waiter so its event
       // listener is removed and the sync loop exits cleanly on unmount.
