@@ -6,6 +6,8 @@ import { useTheme } from "../../context/ThemeContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
+import ProfileMenu from "./ProfileMenu";
+import AuthButtons from "./AuthButtons";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 
@@ -101,7 +103,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           {/* Right Controls & Actions Container */}
           <div className="flex items-center gap-2 xl:gap-4 shrink-0">
             {/* Desktop Auth/Profile Buttons */}
-            <div className="hidden xl:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-3">
               {authenticated ? (
                 <ProfileMenu user={user} logout={logout} />
               ) : (
@@ -110,7 +112,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </div>
 
             {/* Vertical Divider - Hidden on mobile/tablet */}
-            <div className="hidden xl:block h-6 w-px bg-gray-200 dark:bg-gray-800" aria-hidden="true" />
+            <div className="hidden lg:block h-6 w-px bg-gray-200 dark:bg-gray-800" aria-hidden="true" />
 
             {/* Utility Controls (Theme, Cursor) */}
             <div className="hidden sm:flex items-center gap-2 xl:gap-3">
@@ -128,7 +130,15 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             </div>
 
-            <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
+            <MobileNavbar
+              isOpen={isMobileMenuOpen}
+              setIsOpen={setIsMobileMenuOpen}
+              isAuthenticated={authenticated}
+              user={user}
+              logout={logout}
+              cursorEnabled={cursorEnabled}
+              toggleCursor={toggleCursor}
+            />
           </div>
         </div>
         <div className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
