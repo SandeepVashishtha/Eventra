@@ -40,9 +40,10 @@ function saveAppStateSnapshot() {
       url: window.location.href,
       localStorage: (() => {
         const snap = {};
+        const ALLOWED = ["my_events_", "bookmarks_", "eventra_theme", "eventra_language", "eventra_preferences"];
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
-          if (k && !k.includes("token") && !k.includes("password")) {
+          if (k && ALLOWED.some((safe) => k.startsWith(safe))) {
             snap[k] = localStorage.getItem(k)?.slice(0, 100);
           }
         }
@@ -50,9 +51,10 @@ function saveAppStateSnapshot() {
       })(),
       sessionStorage: (() => {
         const snap = {};
+        const ALLOWED = ["my_events_", "bookmarks_", "eventra_theme", "eventra_language", "eventra_preferences"];
         for (let i = 0; i < sessionStorage.length; i++) {
           const k = sessionStorage.key(i);
-          if (k && !k.includes("token") && !k.includes("password")) {
+          if (k && ALLOWED.some((safe) => k.startsWith(safe))) {
             snap[k] = sessionStorage.getItem(k)?.slice(0, 100);
           }
         }
