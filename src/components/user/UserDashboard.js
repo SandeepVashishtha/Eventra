@@ -331,6 +331,8 @@ export default function UserDashboard() {
                       </div>
                       {upcomingEvents.length === 0 ? (
                         <EmptyState
+                          compact={true}
+                          icon={<Calendar size={32} className="text-indigo-500" />}
                           title="No Upcoming Events"
                           message="You haven't registered or joined any events yet. Check out the Events tab to find one!"
                         />
@@ -346,7 +348,7 @@ export default function UserDashboard() {
                         ))
                       )}
                     </motion.section>
-
+ 
                     {/* Upcoming Hackathons */}
                     <motion.section custom={3} variants={fadeUp(prefersReducedMotion)} className="ud-card">
                       <div className="ud-card-head">
@@ -356,6 +358,8 @@ export default function UserDashboard() {
                       </div>
                       {upcomingHackathons.length === 0 ? (
                         <EmptyState
+                          compact={true}
+                          icon={<Trophy size={32} className="text-pink-500" />}
                           title="No Active Hackathons"
                           message="There are currently no upcoming hackathons in your schedule."
                         />
@@ -371,7 +375,7 @@ export default function UserDashboard() {
                         ))
                       )}
                     </motion.section>
-
+ 
                     {/* Active Projects */}
                     <motion.section custom={4} variants={fadeUp(prefersReducedMotion)} className="ud-card">
                       <div className="ud-card-head">
@@ -381,6 +385,8 @@ export default function UserDashboard() {
                       </div>
                       {activeProjects.length === 0 ? (
                         <EmptyState
+                          compact={true}
+                          icon={<FolderOpen size={32} className="text-purple-500" />}
                           title="No Active Projects"
                           message="All your tracked development projects are currently completed or inactive."
                         />
