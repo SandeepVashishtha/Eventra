@@ -451,3 +451,4 @@ console.log("Running signup endpoint tests...");
 }
 
 console.log("\n✅ All signup endpoint tests passed!");
+console.log("\n✅ All signup endpoint tests passed!");

@@ -1,7 +1,7 @@
+import { Star, MessageSquare } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, FileText, MessageSquare, AlertCircle } from "lucide-react";
-import { FiStar, FiMessageSquare } from "react-icons/fi";
+import { User, Mail, FileText, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import SEOHead from "../../components/SEOHead";
 
@@ -277,7 +277,7 @@ const ContactUsInner = () => {
                     data-aos-delay="300"
                   >
                     <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiMessageSquare className="w-7 h-7 text-white" aria-hidden="true" />
+                      <MessageSquare className="w-7 h-7 text-white" aria-hidden="true" />
                     </div>
                     <div className="overflow-hidden max-w-full">
                       <p className="font-semibold text-white">Quick Response</p>
@@ -294,7 +294,7 @@ const ContactUsInner = () => {
                     data-aos-delay="400"
                   >
                     <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiStar className="w-7 h-7 text-white" />
+                      <Star className="w-7 h-7 text-white" />
                     </div>
                     <div className="overflow-hidden max-w-full">
                       <p className="font-semibold text-white">

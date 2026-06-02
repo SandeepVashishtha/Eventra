@@ -1,13 +1,6 @@
+import { Plus, Trash2, PlusCircle, Save, ArrowUp, ArrowDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  FiPlus,
-  FiTrash2,
-  FiPlusCircle,
-  FiSave,
-  FiArrowUp,
-  FiArrowDown,
-} from "react-icons/fi";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import SurveyAnalytics from "../../components/admin/SurveyAnalytics";
@@ -244,7 +237,7 @@ const SurveyEngine = () => {
               onClick={handleSaveSurvey}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
              aria-label="button">
-              <FiSave className="w-5 h-5" />
+              <Save className="w-5 h-5" />
               Publish Survey
             </button>
           </div>
@@ -395,7 +388,7 @@ const SurveyEngine = () => {
                             }`}
                             title="Move question up"
                           >
-                            <FiArrowUp className="w-4 h-4" />
+                            <ArrowUp className="w-4 h-4" />
                           </button>
                           
                           <button
@@ -408,7 +401,7 @@ const SurveyEngine = () => {
                             }`}
                             title="Move question down"
                           >
-                            <FiArrowDown className="w-4 h-4" />
+                            <ArrowDown className="w-4 h-4" />
                           </button>
                           
                           <button
@@ -423,7 +416,7 @@ const SurveyEngine = () => {
                             className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer ml-1"
                             title="Remove question"
                           >
-                            <FiTrash2 className="w-5 h-5" />
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
@@ -461,7 +454,7 @@ const SurveyEngine = () => {
                                   onClick={() => setConfirmModal({ open: true, type: "option", questionId: question.id, optionIndex: optIdx }) }
                                   className="text-slate-400 hover:text-red-500 p-1 self-start"
                                 >
-                                  <FiTrash2 className="w-4 h-4" />
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </motion.div>
                             ))}
@@ -470,7 +463,7 @@ const SurveyEngine = () => {
                             onClick={() => addOption(question.id)}
                             className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 mt-2"
                           >
-                            <FiPlusCircle className="w-4 h-4" />
+                            <PlusCircle className="w-4 h-4" />
                             Add Option
                           </button>
                         </div>
@@ -514,7 +507,7 @@ const SurveyEngine = () => {
                       onClick={() => addQuestion(type.value)}
                       className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 hover:shadow-md transition-all active:scale-98"
                     >
-                      <FiPlus className="w-5 h-5" />
+                      <Plus className="w-5 h-5" />
                       {type.label}
                     </button>
                   ))}
