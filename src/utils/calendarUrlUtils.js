@@ -179,3 +179,15 @@ export const getOutlookCalendarUrl = (event, timezone) => {
     `&location=${encodeURIComponent(event.location || '')}`,
   ].join('');
 };
+
+/**
+ * Extracts a virtual meeting link (Zoom, Teams, Google Meet) from a text string.
+ *
+ * @param {string} text - The event description or location string
+ * @returns {string|null} - The URL if found, else null
+ */
+export const extractMeetingLink = (text = '') => {
+  if (typeof text !== 'string') return null;
+  const match = text.match(/https:\/\/(us02web\.zoom\.us|teams\.microsoft\.com|meet\.google\.com)\/[^\s]+/i);
+  return match ? match[0] : null;
+};

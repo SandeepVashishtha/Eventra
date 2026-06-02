@@ -3,9 +3,15 @@
 
 /* Neon Revolving Navbar Border */
 @keyframes neonRevolve {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 .neon-navbar-border {
   position: absolute;
@@ -19,9 +25,15 @@
 
 /* Neon Animated Logo */
 @keyframes neonLogoShift {
-  0%   { background-position: 0% 50%;   }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%;   }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 .neon-logo {
   font-weight: 800;
@@ -29,14 +41,23 @@
   background: none !important;
   -webkit-text-fill-color: initial !important;
   filter: none !important;
-  background: linear-gradient(90deg, #6f2ae6, #5558d6, #30bfbf, #b522b5, #b4750a, #494a8f, #702ee1);
+  background: linear-gradient(
+    90deg,
+    var(--primary-color),
+    var(--secondary-color),
+    var(--evt-success),
+    var(--evt-brand-accent),
+    var(--warning-text),
+    var(--secondary-color),
+    var(--primary-color)
+  );
   background-size: 300% 300%;
   animation: neonLogoShift 10s ease infinite;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  filter: drop-shadow(0 0 6px rgba(99,102,241,0.6));
+  filter: drop-shadow(0 0 6px var(--glow-color));
 }
 
 main {
@@ -48,7 +69,7 @@ main {
    GLOBAL COMPONENT & SOCIAL LINKS
    ========================================================================== */
 .social-links a {
-  color: white;
+  color: var(--evt-color-white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -58,7 +79,7 @@ main {
 
 .social-links a:visited,
 .social-links a:active {
-  color: white;
+  color: var(--evt-color-white);
 }
 
 .social-links a:hover {
@@ -69,7 +90,9 @@ main {
    PRODUCTION FOOTER STYLES (With Enhanced Hover States & Theme Fixes)
    ========================================================================== */
 .site-footer {
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 /* Social link rounded container polish and elevation rules */
@@ -80,7 +103,7 @@ main {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 9999px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px 0 var(--evt-shadow-subtle);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   touch-action: manipulation;
 }
@@ -88,16 +111,16 @@ main {
 /* FIX: Smooth background, text, and border color shifts on hover */
 .footer-social-btn:hover {
   transform: translateY(-4px) !important;
-  background-color: #74b9ff !important; /* Elegant brand blue background */
-  color: #ffffff !important;            /* Changes the internal icon color to white */
-  border-color: #74b9ff !important;     /* Changes border color to match */
-  box-shadow: 0 10px 15px -3px rgba(116, 185, 255, 0.4) !important; /* Soft glowing blue shadow */
+  background-color: var(--evt-footer-accent) !important; /* Elegant brand blue background */
+  color: var(--evt-color-white) !important; /* Changes the internal icon color to white */
+  border-color: var(--evt-footer-accent) !important; /* Changes border color to match */
+  box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--evt-footer-accent) 40%, transparent) !important; /* Soft glowing blue shadow */
 }
 
 /* Accessible focus rings to optimize for Lighthouse audit compliance */
 .footer-nav-link:focus-visible,
 .footer-social-btn:focus-visible {
-  outline: 2px solid #74b9ff;
+  outline: 2px solid var(--evt-footer-accent);
   outline-offset: 4px;
 }
 
@@ -109,11 +132,11 @@ main {
 }
 
 .footer-newsletter-input:disabled {
-  background-color: rgba(243, 244, 246, 1); /* Light mode disabled gray */
+  background-color: var(--evt-neutral-soft); /* Light mode disabled gray */
 }
 
 .dark .footer-newsletter-input:disabled {
-  background-color: rgba(39, 39, 42, 1); /* Dark mode zinc disabled gray */
+  background-color: var(--evt-neutral-soft); /* Dark mode disabled gray */
 }
 
 /* ==========================================================================
@@ -124,7 +147,7 @@ main {
   background: var(--bg-gradient);
   color: var(--text-color);
   min-height: 100vh;
-  color: white;
+  color: var(--evt-color-white);
 }
 
 .events-section .container {
@@ -192,7 +215,7 @@ main {
 .filter-controls button.active,
 .view-controls button.active {
   background: var(--color-primary);
-  color: white;
+  color: var(--evt-color-white);
   border-color: var(--color-primary);
 }
 
@@ -223,7 +246,7 @@ main {
 
 .event-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 24px -10px var(--evt-shadow-medium);
   border-color: var(--color-primary);
 }
 
@@ -257,13 +280,13 @@ main {
 }
 
 .status-badge.upcoming {
-  background: linear-gradient(45deg, #4ade80, #22c55e);
-  color: white;
+  background: linear-gradient(45deg, var(--success-text), var(--evt-success));
+  color: var(--evt-color-white);
 }
 
 .status-badge.past {
-  background: linear-gradient(45deg, #6b7280, #9ca3af);
-  color: white;
+  background: linear-gradient(45deg, var(--evt-neutral), var(--evt-text-muted));
+  color: var(--evt-color-white);
 }
 
 .event-content {
@@ -356,7 +379,7 @@ main {
 
 .btn-primary {
   background: var(--color-primary);
-  color: white;
+  color: var(--evt-color-white);
   border: 1px solid var(--color-primary);
 }
 
@@ -364,8 +387,8 @@ main {
   background: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-  color: white;
+  box-shadow: 0 4px 12px var(--glow-color);
+  color: var(--evt-color-white);
 }
 
 .btn-secondary {
@@ -392,18 +415,18 @@ main {
   transform: translateY(-1px);
 }
 .dark .btn-outline {
-  background: #374151;
-  color: #f3f4f6;
-  border-color: #6b7280;
+  background: var(--evt-neutral-strong);
+  color: var(--text-color);
+  border-color: var(--evt-neutral);
 }
 
 .dark .btn-outline:hover {
-  background: #4b5563;
+  background: var(--evt-neutral);
 }
 
 .no-events {
   text-align: center;
-  color: white;
+  color: var(--evt-color-white);
   padding: 3rem;
 }
 
@@ -446,7 +469,7 @@ main {
 
 .hackathon-tabs button.active {
   background: var(--color-primary);
-  color: white;
+  color: var(--evt-color-white);
   border-color: var(--color-primary);
 }
 
@@ -456,7 +479,7 @@ main {
   gap: 2rem;
 }
 
-@media(max-width: 768px) {
+@media (max-width: 768px) {
   .hackathon-grid {
     gap: 1rem;
   }
@@ -478,7 +501,7 @@ main {
 
 .hackathon-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 24px -10px var(--evt-shadow-medium);
   border-color: var(--color-primary);
 }
 
@@ -502,20 +525,19 @@ main {
 }
 
 .status-indicator.live {
-  background: #22c55e;
+  background: var(--evt-success);
   animation: pulse 2s infinite;
 }
 
 .status-indicator.upcoming {
-  background: #f59e0b;
+  background: var(--evt-warning);
 }
 
 .status-indicator.completed {
-  background: #6b7280;
+  background: var(--evt-neutral);
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -527,8 +549,8 @@ main {
 }
 
 .hackathon-prize {
-  background: linear-gradient(45deg, #ffd700, #ffed4e);
-  color: black;
+  background: linear-gradient(45deg, var(--warning-border), var(--warning-text));
+  color: var(--evt-color-black);
   padding: 0.5rem 1rem;
   border-radius: 15px;
   font-weight: bold;
@@ -568,18 +590,18 @@ main {
 }
 
 .difficulty.beginner {
-  background: #22c55e;
-  color: white;
+  background: var(--evt-success);
+  color: var(--evt-color-white);
 }
 
 .difficulty.intermediate {
-  background: #f59e0b;
-  color: white;
+  background: var(--evt-warning);
+  color: var(--evt-color-white);
 }
 
 .difficulty.advanced {
-  background: #ef4444;
-  color: white;
+  background: var(--evt-danger);
+  color: var(--evt-color-white);
 }
 
 .live-stats {
@@ -588,7 +610,7 @@ main {
   gap: 1rem;
   margin-bottom: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--evt-color-white) 10%, transparent);
   border-radius: 15px;
 }
 
@@ -600,7 +622,7 @@ main {
   display: block;
   font-size: var(--font-h3);
   font-weight: bold;
-  color: #4ade80;
+  color: var(--success-text);
 }
 
 .stat-label {
@@ -613,17 +635,17 @@ main {
   text-align: center;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid color-mix(in srgb, var(--evt-color-white) 20%, transparent);
 }
 
 .time-value {
   font-size: var(--font-h5);
   font-weight: bold;
-  color: #fbbf24;
+  color: var(--warning-border);
 }
 
 .winner-announcement {
-  background: rgba(255, 215, 0, 0.2);
+  background: color-mix(in srgb, var(--warning-border) 20%, transparent);
   padding: 1rem;
   border-radius: 15px;
   margin-bottom: 1rem;
@@ -632,7 +654,7 @@ main {
 
 .winner-name {
   font-weight: bold;
-  color: #ffd700;
+  color: var(--warning-border);
 }
 
 .tech-stack {
@@ -653,7 +675,7 @@ main {
 }
 
 .tech-tag {
-  background: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--evt-color-white) 20%, transparent);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
   font-size: var(--font-h6);
@@ -753,13 +775,13 @@ main {
 .filter-select:focus,
 .sort-select:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px var(--glow-color);
 }
 .dark .filter-select,
 .dark .sort-select {
-  background: rgba(31, 41, 55, 0.9);
-  color: #f9fafb;
-  border-color: rgba(255,255,255,0.2);
+  background: color-mix(in srgb, var(--evt-neutral-soft) 90%, transparent);
+  color: var(--text-color);
+  border-color: color-mix(in srgb, var(--evt-color-white) 20%, transparent);
 }
 
 .filter-select option,
@@ -790,7 +812,7 @@ main {
 
 .project-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 24px -10px var(--evt-shadow-medium);
   border-color: var(--color-primary);
 }
 
@@ -877,18 +899,18 @@ main {
 }
 
 .difficulty-badge.beginner {
-  background: #22c55e;
-  color: white;
+  background: var(--evt-success);
+  color: var(--evt-color-white);
 }
 
 .difficulty-badge.intermediate {
-  background: #f59e0b;
-  color: white;
+  background: var(--evt-warning);
+  color: var(--evt-color-white);
 }
 
 .difficulty-badge.advanced {
-  background: #ef4444;
-  color: white;
+  background: var(--evt-danger);
+  color: var(--evt-color-white);
 }
 
 .contributors {
@@ -919,9 +941,9 @@ main {
 }
 
 .contributor.main {
-  background: rgba(59, 130, 246, 0.15);
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
   color: var(--color-primary);
-  border-color: rgba(59, 130, 246, 0.3);
+  border-color: color-mix(in srgb, var(--primary-color) 30%, transparent);
   font-weight: bold;
 }
 
@@ -959,7 +981,6 @@ main {
    RESPONSIVE LAYOUT MEDIA QUERIES
    ========================================================================== */
 @media (max-width: 768px) {
-
   .events-grid,
   .hackathon-grid,
   .projects-grid {
@@ -1032,7 +1053,6 @@ main {
 }
 
 @media (max-width: 480px) {
-
   .events-grid,
   .hackathon-grid,
   .projects-grid,
@@ -1086,7 +1106,7 @@ main {
 }
 
 .mission-text-column .sub-heading {
-  color: #9ca3af;
+  color: var(--evt-text-muted);
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.15em;
@@ -1095,34 +1115,33 @@ main {
 }
 
 .mission-text-column .main-heading {
-  
   font-size: 3rem;
   font-weight: 700;
   margin-bottom: 24px;
 }
 .mission-text-column .main-heading {
-  color: #111827;
+  color: var(--evt-text-heading);
 }
 
 .dark .mission-text-column .main-heading {
-  color: #ffffff;
+  color: var(--evt-text-heading);
 }
 
 :is(.dark) .mission-text-column .main-heading {
-  color: #ffffff;
+  color: var(--evt-text-heading);
 }
 
 .mission-text-column .desc-text {
-  color: #4b5563;
+  color: var(--evt-neutral-strong);
   font-size: 1.05rem;
   line-height: 1.6;
   margin-bottom: 20px;
 }
 .dark .mission-text-column .desc-text {
-  color: #d1d5db;
+  color: var(--text-color-light);
 }
 :is(.dark) .mission-text-column .desc-text {
-  color: #8a99ad;
+  color: var(--evt-text-muted);
 }
 
 .eventra-animation-container {
@@ -1139,10 +1158,14 @@ main {
   position: relative;
   width: 260px;
   height: 150px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(248, 250, 252, 0.4));
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--evt-color-white) 80%, transparent),
+    color-mix(in srgb, var(--surface-muted) 40%, transparent)
+  );
+  border: 1px solid color-mix(in srgb, var(--evt-border-subtle) 80%, transparent);
   border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 30px var(--evt-shadow-subtle);
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   display: flex;
@@ -1156,31 +1179,34 @@ main {
 }
 
 :is(.dark) .eventra-brand-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--evt-color-white) 10%, transparent),
+    color-mix(in srgb, var(--evt-color-white) 2%, transparent)
+  );
+  border: 1px solid var(--evt-border-subtle);
 }
 
 .eventra-brand-card h1 {
   font-size: 3rem;
   font-weight: 700;
   letter-spacing: 0.05em;
-  
 }
 .eventra-brand-card h1 {
-  color: #111827;
+  color: var(--evt-text-heading);
 }
 
 .dark .eventra-brand-card h1 {
-  color: #ffffff;
+  color: var(--evt-text-heading);
 }
 
 :is(.dark) .eventra-brand-card h1 {
-  color: #ffffff;
+  color: var(--evt-text-heading);
 }
 
 .eventra-brand-card span {
   font-size: 0.65rem;
-  color: #6b7280;
+  color: var(--evt-neutral);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   margin-top: 4px;
@@ -1192,7 +1218,7 @@ main {
   width: 240px;
   height: 140px;
   padding: 24px;
-  background: #ffffff;
+  background: var(--card-bg-color);
   border-radius: 20px;
   display: flex;
   align-items: center;
@@ -1200,14 +1226,16 @@ main {
   z-index: 10;
   opacity: 0;
   transform: translate(0, 0) scale(0.6);
-  transition: transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease;
+  transition:
+    transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.6s ease;
 }
 .dark .eventra-sub-card {
-  background: #1f2937;
+  background: var(--evt-neutral-soft);
 }
 
 :is(.dark) .eventra-sub-card {
-  background: #1f2937;
+  background: var(--evt-neutral-soft);
 }
 
 .card-content {
@@ -1224,18 +1252,18 @@ main {
 }
 
 .eventra-sub-card p {
-  color: #4b5563;
+  color: var(--evt-neutral-strong);
   font-size: 0.95rem;
   line-height: 1.4;
   font-weight: 500;
   text-align: left;
 }
 .dark .eventra-sub-card p {
-  color: #d1d5db;
+  color: var(--text-color-light);
 }
 
 :is(.dark) .eventra-sub-card p {
-  color: #9ca3af;
+  color: var(--evt-text-muted);
 }
 
 /* ==========================================================================
@@ -1244,49 +1272,49 @@ main {
 
 /* Top Left Card - Blue/Grey Glow Profile */
 .card-tl {
-  border-bottom: 3px solid #3b82f6;
+  border-bottom: 3px solid var(--evt-brand-primary-strong);
 }
 
 .eventra-animation-container.open .card-tl {
   transform: translate(-140px, -90px) scale(1);
   opacity: 1;
-  box-shadow: 0 15px 35px rgba(59, 130, 246, 0.2);
-  transition-delay: 0.0s;
+  box-shadow: 0 15px 35px var(--glow-color);
+  transition-delay: 0s;
 }
 
 /* Top Right Card - Mint/Green Glow Profile */
 .card-tr {
-  border-bottom: 3px solid #10b981;
+  border-bottom: 3px solid var(--evt-success);
 }
 
 .eventra-animation-container.open .card-tr {
   transform: translate(140px, -90px) scale(1);
   opacity: 1;
-  box-shadow: 0 15px 35px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 15px 35px color-mix(in srgb, var(--evt-success) 20%, transparent);
   transition-delay: 0.1s;
 }
 
 /* Bottom Left Card - Soft Lavender/Purple Glow Profile */
 .card-bl {
-  border-bottom: 3px solid #8b5cf6;
+  border-bottom: 3px solid var(--evt-brand-accent);
 }
 
 .eventra-animation-container.open .card-bl {
   transform: translate(-140px, 90px) scale(1);
   opacity: 1;
-  box-shadow: 0 15px 35px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 15px 35px color-mix(in srgb, var(--evt-brand-accent) 20%, transparent);
   transition-delay: 0.2s;
 }
 
 /* Bottom Right Card - Warm Tan/Orange Glow Profile */
 .card-br {
-  border-bottom: 3px solid #f97316;
+  border-bottom: 3px solid var(--warning-text);
 }
 
 .eventra-animation-container.open .card-br {
   transform: translate(140px, 90px) scale(1);
   opacity: 1;
-  box-shadow: 0 15px 35px rgba(249, 115, 22, 0.2);
+  box-shadow: 0 15px 35px color-mix(in srgb, var(--warning-text) 20%, transparent);
   transition-delay: 0.3s;
 }
 

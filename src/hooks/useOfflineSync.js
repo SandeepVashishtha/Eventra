@@ -13,6 +13,15 @@ const BASE_BACKOFF_MS = 1_000;
 const useOfflineSync = () => {
   const { token, user } = useAuth();
   const isSyncing = useRef(false);
+  const isLockPending = useRef(false); // 🔥 FIX: Protects against asynchronous race conditions during Web Lock acquisition
+  const conflictControllerRef = useRef(new AbortController());
+
+  // Clean up controller on full unmount
+  useEffect(() => {
+    return () => {
+      conflictControllerRef.current.abort();
+    };
+  }, []);
 
   useEffect(() => {
   /**
@@ -54,7 +63,7 @@ const useOfflineSync = () => {
    */
   const resolveConflict = (item, serverState, signal) => {
     return new Promise((resolve) => {
-      // 🔥 FIX 1: Immediately resolve if the signal is already aborted. 
+      // Immediately resolve if the signal is already aborted. 
       // addEventListener won't fire retroactively on an aborted signal, causing a 60s hang.
       if (signal?.aborted) {
         return resolve({ resolution: "server" });
@@ -101,7 +110,7 @@ const useOfflineSync = () => {
     });
   };
 
-    const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false) => {
+    const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false, signal = null, idempotencyKey = null) => {
       if (attempt > 0) {
         const baseDelayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
         const jitterMs = Math.random() * 500;
@@ -113,6 +122,7 @@ const useOfflineSync = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
       if (forceOverride) headers['X-Override-Conflict'] = 'true';
+      if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
 
       const { response, data } = await fetchWithTimeout(
         url,
@@ -120,6 +130,7 @@ const useOfflineSync = () => {
           method: 'POST',
           headers,
           body: JSON.stringify(payload),
+          signal // 🔥 FIX: Passed signal so network request aborts if component unmounts mid-sync
         },
         10000
       );
@@ -144,8 +155,11 @@ const useOfflineSync = () => {
     };
 
     // AbortController used to cancel any in-progress resolveConflict() wait
-    // when the useEffect is cleaned up (component unmount or token change).
-    const conflictController = new AbortController();
+    // We use the stable ref to prevent it from being prematurely aborted during re-renders
+    if (conflictControllerRef.current.signal.aborted) {
+      conflictControllerRef.current = new AbortController();
+    }
+    const conflictController = conflictControllerRef.current;
 
     const executeSync = async () => {
       const queue = await getQueueIndexedDB();
@@ -207,7 +221,7 @@ const useOfflineSync = () => {
         let droppedCount = 0;
 
         for (const item of validatedQueue) {
-          // 🔥 FIX 2: Halt the zombie loop immediately if the session changed or component unmounted.
+          // Halt the zombie loop immediately if the session changed or component unmounted.
           // This prevents making requests with stale tokens and protects IndexedDB from being falsely overwritten below.
           if (conflictController.signal.aborted) {
             logger.warn("[useOfflineSync] Sync aborted due to session change. Halting queue processing.");
@@ -229,7 +243,10 @@ const useOfflineSync = () => {
               url,
               item.payload,
               token,
-              0
+              0,
+              false,
+              conflictController.signal, 
+              item.id // Pass idempotency key
             );
 
             // Handle Conflict loop — pass the abort signal so the waiter
@@ -239,10 +256,10 @@ const useOfflineSync = () => {
 
               if (resolution.resolution === "local") {
                 // Retry with force flag
-                res = await postWithBackoff(url, item.payload, token, 0, true);
+                res = await postWithBackoff(url, item.payload, token, 0, true, conflictController.signal, item.id);
               } else if (resolution.resolution === "merge") {
                 // Post merged content
-                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true);
+                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true, conflictController.signal, item.id);
               } else {
                 // Discard local (treated as handled success so we proceed)
                 res = { status: "success" };
@@ -333,30 +350,48 @@ const useOfflineSync = () => {
     };
 
     const handleOnline = async () => {
-      if (isSyncing.current) {
+      // 🔥 FIX: Check both sync state and pending lock state to prevent multiple queuing
+      if (isSyncing.current || isLockPending.current) {
         return;
       }
+      isLockPending.current = true;
 
-      // Check if navigator.locks is supported natively (modern browsers)
-      if (typeof navigator?.locks?.request === "function") {
-        try {
-          await navigator.locks.request("eventra_offline_sync_lock", { ifAvailable: true }, async (lock) => {
-            if (!lock) {
-              logger.log("[useOfflineSync] Sync lock is held by another tab via Web Locks. Skipping.");
-              return;
-            }
-            await executeSync();
-          });
-        } catch (err) {
-          logger.warn("[useOfflineSync] Web Locks request failed, falling back to LocalStorage lock:", err);
+      try {
+        // Check if navigator.locks is supported natively (modern browsers)
+        if (typeof navigator?.locks?.request === "function") {
+          try {
+            await navigator.locks.request("eventra_offline_sync_lock", { ifAvailable: true }, async (lock) => {
+              if (!lock) {
+                logger.log("[useOfflineSync] Sync lock is held by another tab via Web Locks. Skipping.");
+                return;
+              }
+              await executeSync();
+            });
+          } catch (err) {
+            logger.warn("[useOfflineSync] Web Locks request failed, falling back to LocalStorage lock:", err);
+            await executeSyncWithLocalLock();
+          }
+        } else {
           await executeSyncWithLocalLock();
         }
-      } else {
-        await executeSyncWithLocalLock();
+      } finally {
+        isLockPending.current = false;
+      }
+    };
+
+    // 🔥 FIX: Safely define the missing functions introduced by the master branch to prevent ReferenceErrors
+    const handleSyncRequested = () => void handleOnline();
+    const handleServiceWorkerMessage = (event) => {
+      if (event?.data?.type === 'SYNC_REQUESTED') {
+        void handleOnline();
       }
     };
 
     window.addEventListener("online", handleOnline);
+    window.addEventListener("eventra-background-sync", handleSyncRequested);
+    window.addEventListener("eventra-offline-queue-updated", handleSyncRequested);
+    window.addEventListener("eventra-session-restored", handleSyncRequested);
+    navigator.serviceWorker?.addEventListener?.("message", handleServiceWorkerMessage);
 
     let idleId = null;
     let timeoutId = null;
@@ -375,9 +410,15 @@ const useOfflineSync = () => {
 
     return () => {
       window.removeEventListener("online", handleOnline);
+      window.removeEventListener("eventra-background-sync", handleSyncRequested);
+      window.removeEventListener("eventra-offline-queue-updated", handleSyncRequested);
+      window.removeEventListener("eventra-session-restored", handleSyncRequested);
+      navigator.serviceWorker?.removeEventListener?.("message", handleServiceWorkerMessage);
+      
       // Abort any in-progress conflict resolution waiter so its event
       // listener is removed and the sync loop exits cleanly on unmount.
       conflictController.abort();
+      
       if (idleId !== null) {
         window.cancelIdleCallback(idleId);
       }
@@ -385,7 +426,7 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, [token, user]);
+  }, [token, user?.id]);
 };
 
 export default useOfflineSync;
