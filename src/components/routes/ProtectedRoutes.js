@@ -19,6 +19,7 @@ const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
+const NetworkingLounge = lazy(() => import("../events/NetworkingLounge"));
 
 const withModuleBoundary = (children, boundaryName) => (
   <ErrorBoundary
@@ -91,6 +92,15 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         {withModuleBoundary(<MatchmakingHub />, "Matchmaking Hub")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/networking-lounge"
+    path="/networking-lounge"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<NetworkingLounge />, "Networking Lounge")}
       </ProtectedRoute>
     }
   />,
