@@ -42,8 +42,21 @@ const SYSTEM_PROMPT =
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 10;
 const rateLimitMap = new Map();
+let lastEvictionAt = 0;
+
+const evictStaleEntries = () => {
+  const now = Date.now();
+  if (now - lastEvictionAt < RATE_LIMIT_WINDOW_MS) return;
+  lastEvictionAt = now;
+  for (const [key, entry] of rateLimitMap.entries()) {
+    if (now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+      rateLimitMap.delete(key);
+    }
+  }
+};
 
 const checkRateLimit = (userId) => {
+  evictStaleEntries();
   const now = Date.now();
   const entry = rateLimitMap.get(userId);
 
