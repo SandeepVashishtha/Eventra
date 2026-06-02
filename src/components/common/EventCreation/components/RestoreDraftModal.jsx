@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function RestoreDraftModal({ isOpen, onRestore, onDiscard }) {
+export default function RestoreDraftModal({ isOpen, onRestore, onDiscard, message }) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -20,7 +20,7 @@ export default function RestoreDraftModal({ isOpen, onRestore, onDiscard }) {
               Restore Draft?
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              A previously saved event draft was found. Would you like to restore it?
+              {message || "A previously saved event draft was found. Would you like to restore it?"}
             </p>
             <div className="flex justify-end gap-3">
               <button

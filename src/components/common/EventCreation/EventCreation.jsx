@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download, Calendar, Globe, Link2, Plus } from "lucide-react";
@@ -79,6 +80,10 @@ const EventCreation = () => {
   const [newTag, setNewTag] = useState("");
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [restoreDraftMessage, setRestoreDraftMessage] = useState(
+    "A previously saved event draft was found. Would you like to restore it?"
+  );
+  const location = useLocation();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -281,13 +286,19 @@ const EventCreation = () => {
 
   useEffect(() => {
     const saved = localStorage.getItem(DRAFT_KEY);
+    const isDuplicateDraft = location.state?.duplicateDraft;
 
     if (saved) {
       setShowRestoreModal(true);
+      if (isDuplicateDraft) {
+        setRestoreDraftMessage(
+          "A duplicated event draft is ready. Would you like to restore it and continue editing?"
+        );
+      }
     }
 
     setIsDraftLoaded(true);
-  }, []);
+  }, [location.state]);
 
   const handleRestoreDraft = () => {
     try {
@@ -390,6 +401,7 @@ const EventCreation = () => {
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
         onDiscard={handleDiscardDraft}
+        message={restoreDraftMessage}
       />
       {showRestoreModal && (
         <div
