@@ -1,3 +1,5 @@
+import assert from 'node:assert/strict';
+import { beforeEach, describe, it } from 'node:test';
 import {
   saveFeedback,
   getEventFeedback,
@@ -9,7 +11,43 @@ import {
   deleteFeedback,
   exportFeedbackAsCSV,
   clearAllFeedback,
-} from '../../utils/feedbackUtils';
+} from '../src/utils/feedbackUtils.js';
+
+const storage = new Map();
+globalThis.localStorage = {
+  getItem(key) {
+    return storage.has(key) ? storage.get(key) : null;
+  },
+  setItem(key, value) {
+    storage.set(key, String(value));
+  },
+  removeItem(key) {
+    storage.delete(key);
+  },
+  clear() {
+    storage.clear();
+  },
+};
+
+const expect = (actual) => ({
+  toBe(expected) {
+    assert.strictEqual(actual, expected);
+  },
+  toContain(expected) {
+    assert.ok(actual.includes(expected));
+  },
+  toHaveLength(expected) {
+    assert.strictEqual(actual.length, expected);
+  },
+  toBeNull() {
+    assert.strictEqual(actual, null);
+  },
+  not: {
+    toBeNull() {
+      assert.notStrictEqual(actual, null);
+    },
+  },
+});
 
 describe('Feedback Utils', () => {
   const testEventId = 'test-event-123';

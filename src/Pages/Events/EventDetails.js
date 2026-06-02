@@ -1,5 +1,5 @@
 import "./EventDetails.print.css";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
@@ -22,13 +22,14 @@ import ShareMenu from "../../components/common/ShareMenu";
 import ShareModal from "../../components/common/ShareModal";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
-import { safeParseJson } from "../../utils/jsonUtils";
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 
 const EventDetails = () => {
   const { eventId } = useParams();
   const { user } = useAuth();
+  const { addRecentlyViewed } = useRecentlyViewed();
 
   const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
 
@@ -42,11 +43,18 @@ const EventDetails = () => {
 
   const { isRegistered } = useMyEvents();
 
+  const latestRequestIdRef = useRef(0);
+
   const loadEvent = useCallback(async () => {
+    const requestId = ++latestRequestIdRef.current;
+    const isLatestRequest = () => latestRequestIdRef.current === requestId;
+
     setFetchLoading(true);
     setFetchError(null);
+
     try {
       const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+      if (!isLatestRequest()) return;
       if (res.ok && res.data) {
         const raw = res.data?.data ?? res.data;
         setEvent({ ...raw, status: getEventStatus(raw) });
@@ -54,6 +62,7 @@ const EventDetails = () => {
         throw new Error(res.data?.message || `Event not found (${res.status})`);
       }
     } catch {
+      if (!isLatestRequest()) return;
       // Fall back to bundled mock data when the API is unreachable
       const fallback = mockEvents.find((item) => String(item.id) === eventId);
       if (fallback) {
@@ -62,7 +71,9 @@ const EventDetails = () => {
         setFetchError("Event not found.");
       }
     } finally {
-      setFetchLoading(false);
+      if (isLatestRequest()) {
+        setFetchLoading(false);
+      }
     }
   }, [eventId]);
 
@@ -70,22 +81,11 @@ const EventDetails = () => {
     loadEvent();
   }, [loadEvent]);
 
-  // Safely handle localStorage with try-catch
+  // Safely handle localStorage cache updates via hook
   useEffect(() => {
     if (!event) return;
-
-    try {
-      const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
-      const updatedEvents = [
-        event,
-        ...viewedEvents.filter((item) => item.id !== event.id),
-      ].slice(0, 6);
-
-      localStorage.setItem("recentlyViewedEvents", JSON.stringify(updatedEvents));
-    } catch {
-      // localStorage unavailable — not critical
-    }
-  }, [event]);
+    addRecentlyViewed(event);
+  }, [event, addRecentlyViewed]);
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -234,9 +234,28 @@ const EventDetails = () => {
                           onClick={async () => {
                             try {
                               setExportingRegistrants(true);
-                              const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-                              const registrants = response.data?.data || response.data || [];
-                              exportToCSV(registrants, `${event.title}_registrants`);
+                              let allRegistrants = [];
+                              let page = 1;
+                              const limit = 500;
+                              let hasMore = true;
+                              
+                              while (hasMore) {
+                                const url = `${API_ENDPOINTS.EVENTS.REGISTRANTS(eventId)}?page=${page}&limit=${limit}`;
+                                const response = await apiUtils.get(url);
+                                const data = response.data?.data || response.data || [];
+                                const totalPages = response.data?.totalPages || 1;
+                                
+                                if (Array.isArray(data)) {
+                                  allRegistrants.push(...data);
+                                }
+                                
+                                if (page >= totalPages || data.length < limit) {
+                                  hasMore = false;
+                                } else {
+                                  page++;
+                                }
+                              }
+                              exportToCSV(allRegistrants, `${event.title}_registrants`);
                             } catch (error) {
                               toast.error("Failed to fetch registrants");
                             } finally {
@@ -253,9 +272,28 @@ const EventDetails = () => {
                           onClick={async () => {
                             try {
                               setExportingRegistrants(true);
-                              const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-                              const registrants = response.data?.data || response.data || [];
-                              exportToJSON(registrants, `${event.title}_registrants`);
+                              let allRegistrants = [];
+                              let page = 1;
+                              const limit = 500;
+                              let hasMore = true;
+                              
+                              while (hasMore) {
+                                const url = `${API_ENDPOINTS.EVENTS.REGISTRANTS(eventId)}?page=${page}&limit=${limit}`;
+                                const response = await apiUtils.get(url);
+                                const data = response.data?.data || response.data || [];
+                                const totalPages = response.data?.totalPages || 1;
+                                
+                                if (Array.isArray(data)) {
+                                  allRegistrants.push(...data);
+                                }
+                                
+                                if (page >= totalPages || data.length < limit) {
+                                  hasMore = false;
+                                } else {
+                                  page++;
+                                }
+                              }
+                              exportToJSON(allRegistrants, `${event.title}_registrants`);
                             } catch (error) {
                               toast.error("Failed to fetch registrants");
                             } finally {

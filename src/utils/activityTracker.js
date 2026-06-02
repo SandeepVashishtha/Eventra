@@ -50,3 +50,12 @@ export const trackUserInterest = (interest) => {
   interestQueue.push(interest);
   processInterestQueue();
 };
+
+export const clearActivityHistory = () => {
+  try {
+    localStorage.removeItem("eventra_user_profile");
+    interestQueue = [];
+  } catch (error) {
+    console.error("Failed to clear activity history:", error);
+  }
+};

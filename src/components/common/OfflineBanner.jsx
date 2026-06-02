@@ -31,14 +31,25 @@ export default function OfflineBanner() {
       setVisible(true);
     };
 
+    const handleQueueProcessed = (e) => {
+      const { succeeded, dropped, remaining } = e.detail;
+      setQueueCount(remaining);
+      if (remaining === 0) {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => setVisible(false), 4000);
+      }
+    };
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     window.addEventListener("eventra-offline-queue-updated", handleQueueUpdated);
+    window.addEventListener("eventra-offline-queue-processed", handleQueueProcessed);
 
     return () => {
-      clearTimeout(timer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("eventra-offline-queue-updated", handleQueueUpdated);
+      window.removeEventListener("eventra-offline-queue-processed", handleQueueProcessed);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
