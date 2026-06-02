@@ -238,7 +238,6 @@ async function handler(req, res) {
       id: newUser.id,
       email: newUser.email,
       roles: newUser.roles,
-      permissions: newUser.permissions,
     };
 
     const token = jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
