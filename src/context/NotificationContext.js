@@ -386,10 +386,14 @@ export const NotificationProvider = ({ children }) => {
 
     if (!isMounted.current) return;
 
-    const unread = notifications.filter((n) => !n.isRead);
-    if (unread.length === 0) return;
+    let hasUnread = false;
+    setNotifications((prev) => {
+      hasUnread = prev.some((n) => !n.isRead);
+      if (!hasUnread) return prev;
+      return prev.map((n) => ({ ...n, isRead: true }));
+    });
 
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    if (!hasUnread) return;
 
     const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
     if (!isValidEndpoint(endpoint)) return;
@@ -404,7 +408,7 @@ export const NotificationProvider = ({ children }) => {
         fetchNotifications();
       }
     }
-  }, [token, fetchNotifications, notifications]);
+  }, [token, fetchNotifications]);
 
   const subscribeToPush = useCallback(async () => {
     const permission = await requestPushPermission();
@@ -462,6 +466,7 @@ export const NotificationProvider = ({ children }) => {
         subscribed: true,
         subscribedAt: new Date().toISOString(),
       };
+
      try {
   // Read old value BEFORE overwriting
   const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
@@ -478,6 +483,19 @@ export const NotificationProvider = ({ children }) => {
         );
 
         window.localStorage.removeItem(PUSH_SUBSCRIPTION_KEY);
+
+
+      // Migrate: check for legacy subscription object with sensitive keys BEFORE overwriting.
+      const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
+      if (existing) {
+        try {
+          const parsed = JSON.parse(existing);
+          if (parsed?.keys) {
+            // Old format with sensitive keys detected — will be replaced by safe record below
+            console.info("[NotificationContext] Migrating legacy push subscription record.");
+          }
+        } catch { /* non-fatal */ }
+
       }
     } catch {
       // Ignore invalid legacy data
@@ -493,6 +511,12 @@ export const NotificationProvider = ({ children }) => {
 } catch {
   // Non-fatal — subscription still works
 }
+
+      try {
+        window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
+      } catch {
+        // Non-fatal — the subscription is still active; local status just won't persist
+      }
 
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
       if (token && isValidEndpoint(endpoint)) {

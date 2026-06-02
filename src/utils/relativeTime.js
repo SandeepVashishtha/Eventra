@@ -1,5 +1,5 @@
 export function getRelativeTime(dateInput) {
-  if (!dateInput) return null;
+  if (!dateInput || typeof dateInput === 'number') return null;
   const now = new Date();
   const date = new Date(dateInput);
 

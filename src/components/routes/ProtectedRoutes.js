@@ -34,13 +34,7 @@ export const getProtectedRoutes = () => [
     key="/create-event"
     path="/create-event"
     element={
-      <ProtectedRoute
-        requiredPermissions={[PERMISSIONS.CREATE_EVENT]}
-        requiredScopes={["event:write"]}
-        validateContext={({ user }) =>
-          user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
-        }
-      >
+      <ProtectedRoute redirectTo="/login">
         {withModuleBoundary(<EventCreation />, "Event creation")}
       </ProtectedRoute>
     }
@@ -50,29 +44,28 @@ export const getProtectedRoutes = () => [
     path="/admin"
     element={
       <ProtectedRoute
-        requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
-        requiredScopes={["admin:all"]}
-        validateContext={({ user }) => user?.status !== "Suspended"}
-      >
+  requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
+  redirectTo="/login"
+>
         {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
       </ProtectedRoute>
     }
   />,
-  <Route
-    key="/host-hackathon"
-    path="/host-hackathon"
-    element={
-      <ProtectedRoute
-        requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
-        requiredScopes={["hackathon:write"]}
-        validateContext={({ user }) =>
-          user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
-        }
-      >
-        {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
-      </ProtectedRoute>
-    }
-  />,
+ <Route
+  key="/host-hackathon"
+  path="/host-hackathon"
+  element={
+    <ProtectedRoute
+      requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
+      requiredScopes={["hackathon:write"]}
+      validateContext={({ user }) =>
+        user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
+      }
+    >
+      {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
+    </ProtectedRoute>
+  }
+/>,
   <Route
     key="/dashboard"
     path="/dashboard"
