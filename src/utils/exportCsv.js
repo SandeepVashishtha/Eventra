@@ -18,11 +18,11 @@
  * Escapes a single CSV field value so it is safe for use in a CSV file.
  *
  * Rules applied:
- *  1. CSV-injection guard: values starting with a formula trigger character
- *     (=, +, -, @, Tab \t, Carriage Return \r) are prefixed with a single
- *     quote so spreadsheets render them as plain text.
- *  2. Double-quote escaping: any " inside the value is doubled ("") per RFC 4180.
- *  3. The field is always wrapped in double quotes.
+ * 1. CSV-injection guard: values starting with a formula trigger character
+ * (=, +, -, @, Tab \t, Carriage Return \r) are prefixed with a single
+ * quote so spreadsheets render them as plain text.
+ * 2. Double-quote escaping: any " inside the value is doubled ("") per RFC 4180.
+ * 3. The field is always wrapped in double quotes.
  *
  * @param {*} field - Raw field value (will be coerced to string)
  * @returns {string} Quoted, escaped CSV field
@@ -43,24 +43,24 @@ const sanitizeCSVField = (field) => {
  * Bug fixes applied in this version
  * ──────────────────────────────────
  * 1. Blob URL never revoked (memory leak):
- *    The previous implementation used setTimeout(..., 100) to revoke the
- *    object URL. If the user navigated away or closed the tab before the
- *    100 ms timer fired, URL.revokeObjectURL() was never called, leaking
- *    the allocated Blob memory for the lifetime of the process.
+ * The previous implementation used setTimeout(..., 100) to revoke the
+ * object URL. If the user navigated away or closed the tab before the
+ * 100 ms timer fired, URL.revokeObjectURL() was never called, leaking
+ * the allocated Blob memory for the lifetime of the process.
  *
- *    Fix: revokeObjectURL() is now called synchronously in the finally block,
- *    immediately after link.click(). The download is already queued by the
- *    browser before this line runs — the URL does not need to remain alive
- *    after click() returns.
+ * Fix: revokeObjectURL() is now called synchronously in the finally block,
+ * immediately after link.click(). The download is already queued by the
+ * browser before this line runs — the URL does not need to remain alive
+ * after click() returns.
  *
  * 2. Unsafe filename:
- *    The previous implementation accepted the filename argument without
- *    sanitization. A caller passing a filename containing path separators
- *    or shell metacharacters (e.g. "../../../etc/passwd.csv") could produce
- *    unexpected download names across operating systems.
+ * The previous implementation accepted the filename argument without
+ * sanitization. A caller passing a filename containing path separators
+ * or shell metacharacters (e.g. "../../../etc/passwd.csv") could produce
+ * unexpected download names across operating systems.
  *
- *    Fix: The filename is sanitized by stripping all OS path-separator and
- *    reserved characters (/ \ : * ? " < > |) before it is used.
+ * Fix: The filename is sanitized by stripping all OS path-separator and
+ * reserved characters (/ \ : * ? " < > |) before it is used.
  *
  * @param {Array<object>} attendees - List of attendee objects to export
  * @param {string} [filename]       - Desired download filename (will be sanitized)
@@ -108,7 +108,15 @@ export const exportAttendeesToCSV = (
     // browser when click() returns. No setTimeout needed; the deferred
     // approach used previously caused the URL to leak if the tab closed
     // within the 100 ms window before the timer could fire.
-    window.URL.revokeObjectURL(url);
+    //
+    // 🔥 CRITICAL HOTFIX: The assumption in the comment above is fundamentally incorrect.
+    // While link.click() is synchronous, the browser's background download manager 
+    // initialization is ASYNCHRONOUS. Revoking immediately destroys the file pointer 
+    // before Firefox/Safari can read it, causing a "Failed - Network error". 
+    // Deferring via setTimeout is absolutely mandatory for cross-browser stability.
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+    }, 200);
   }
 };
 
@@ -164,6 +172,10 @@ export const exportSurveyToCSV = (
     link.click();
   } finally {
     document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    
+    // 🔥 CRITICAL HOTFIX: Reintroduced setTimeout to prevent Firefox/Safari download failure race condition.
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+    }, 200);
   }
 };
