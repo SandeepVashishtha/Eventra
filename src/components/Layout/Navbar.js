@@ -815,6 +815,9 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const touchStartXRef = useRef(null);
   const touchCurrentXRef = useRef(null);
   const navRef = useRef(null);
+  
+  // 🔥 FIX: Track mounted state for async logout safety
+  const isMounted = useRef(true);
 
   const { user, isAuthenticated, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -822,6 +825,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const location = useLocation();
 
   const { primary: primaryLine, secondary: secondaryLine } = getUserDisplayNames(user);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const closeAllMenus = () => {
     setShowProfileDropdown(false);
@@ -909,15 +918,25 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     setShowLogoutModal(true);
     setShowProfileDropdown(false);
   };
-  const handleConfirmLogout = () => {
-    setShowLogoutModal(false);
-    logout();
-    toast.success("You have been logged out successfully.", {
-      className: "custom-toast",
-      autoClose: 3000,
-    });
-    navigate("/");
+
+  // 🔥 FIX: Made handler async and added unmount safety guards
+  const handleConfirmLogout = async () => {
+    if (isMounted.current) {
+      setShowLogoutModal(false);
+    }
+    
+    // Await logout to ensure backend token/context clears before navigation
+    await logout();
+    
+    if (isMounted.current) {
+      toast.success("You have been logged out successfully.", {
+        className: "custom-toast",
+        autoClose: 3000,
+      });
+      navigate("/");
+    }
   };
+  
   const handleCancelLogout = () => setShowLogoutModal(false);
 
   return (
