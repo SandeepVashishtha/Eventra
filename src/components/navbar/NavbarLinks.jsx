@@ -4,7 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { NAV_ITEMS } from "./constants/navItems";
 import { prefetchRoute } from "../../utils/prefetchUtils";
 
-const NavbarLinks = ({ vertical = false, onClick }) => {
+const NavbarLinks = ({ vertical = false, mobile = false, onClick, onLinkClick }) => {
   const location = useLocation();
   const navRef = useRef(null);
 
@@ -17,11 +17,12 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
 
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpenGroup(null);
   }, [location.pathname]);
 
   useEffect(() => {
-    if (vertical) return undefined;
+    if (vertical || mobile) return undefined;
 
     const handlePointerDown = (event) => {
       if (navRef.current && !navRef.current.contains(event.target)) {
@@ -42,7 +43,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [vertical]);
+  }, [vertical, mobile]);
 
   const getNavLinkClasses = (active) => {
     return vertical
@@ -66,7 +67,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           ? "flex-col items-start w-full gap-2"
           : "items-center gap-0.5 xl:gap-1 mx-0.5 xl:mx-1 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
       }`}
-      aria-label={vertical ? "Mobile primary links" : "Primary links"}
+      aria-label={vertical || mobile ? "Mobile primary links" : "Primary links"}
     >
       {NAV_ITEMS.map((item) => {
         const isSubItemActive = item.subItems?.some(
@@ -79,8 +80,8 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           return (
             <div
               key={item.name}
-              className={`relative group/nav flex items-center shrink-0 ${
-                vertical ? "w-full flex-col items-start" : "flex-none"
+              className={`relative flex w-full flex-col shrink-0 ${
+                vertical ? "items-stretch" : "items-center"
               }`}
             >
               <div className="flex w-full items-center">
@@ -113,12 +114,8 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                       )
                     }
                     onKeyDown={(event) => {
-                      if (
-                        event.key === "Enter" ||
-                        event.key === " "
-                      ) {
+                      if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-
                         setOpenGroup((current) =>
                           current === item.name ? null : item.name
                         );
@@ -138,10 +135,8 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     }`}
                   >
                     <ChevronDown
-                      className={`w-4 h-4 opacity-70 transition-transform duration-200 ${
-                        isOpen
-                          ? "rotate-180"
-                          : "group-hover/nav:rotate-180"
+                      className={`w-4 h-4 opacity-80 transition-transform duration-200 ${
+                        isOpen ? "rotate-180" : ""
                       }`}
                     />
                   </button>
@@ -161,15 +156,15 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                           : "hidden group-hover/nav:block"
                       } absolute top-full left-0 bg-navbar shadow-premium-md rounded-md p-2 min-w-55 z-50 border border-border mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
                 }
-                role={!vertical ? "menu" : undefined}
+                role="menu"
                 aria-label={`${item.name} submenu`}
               >
                 {item.subItems.map((sub) => (
                   <NavLink
                     key={sub.name}
                     to={sub.href}
-                    onClick={onClick}
-                    role={!vertical ? "menuitem" : undefined}
+                    onClick={handleLinkClick}
+                    role="menuitem"
                     className={({ isActive }) =>
                       `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-md p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
                         isActive

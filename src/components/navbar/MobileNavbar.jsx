@@ -1,4 +1,4 @@
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import MobileDrawer from "./MobileDrawer";
 
 const MobileNavbar = ({ isOpen, setIsOpen, isAuthenticated, user, logout }) => {
@@ -14,10 +14,11 @@ const MobileNavbar = ({ isOpen, setIsOpen, isAuthenticated, user, logout }) => {
         aria-controls="mobile-navigation-drawer"
         title={isOpen ? "Close menu" : "Open menu"}
       >
-        <Menu
-          className="h-6 w-6 transition-transform duration-200"
-          aria-hidden="true"
-        />
+        {isOpen ? (
+          <X className="h-6 w-6 transition-transform duration-200" aria-hidden="true" />
+        ) : (
+          <Menu className="h-6 w-6 transition-transform duration-200" aria-hidden="true" />
+        )}
       </button>
 
       <MobileDrawer

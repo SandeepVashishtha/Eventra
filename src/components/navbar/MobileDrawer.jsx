@@ -99,36 +99,38 @@ const MobileDrawer = ({
           </button>
         </div>
 
-        <div className="flex h-[calc(100%-73px)] flex-col overflow-y-auto px-4 py-5">
+        <div className="mobile-drawer-scroll flex-1 min-h-0 overflow-y-auto px-4 py-5">
           <NavbarLinks
             vertical
             onClick={closeMenu}
+            isAuthenticated={isAuthenticated}
+            user={user}
           />
 
           <div className="mt-6 border-t border-border pt-4">
             {isAuthenticated ? (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 <Link
                   to="/dashboard"
                   onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`mobile-drawer-link flex min-h-[48px] w-full justify-start items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-semibold transition-all duration-200 ${
                     isActive("/dashboard")
                       ? "border-primary bg-bg-secondary text-text"
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  Dashboard
+                  <span>Dashboard</span>
                 </Link>
                 <Link
                   to="/dashboard/profile"
                   onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`mobile-drawer-link flex min-h-[48px] w-full justify-start items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-semibold transition-all duration-200 ${
                     isActive("/dashboard/profile")
                       ? "border-primary bg-bg-secondary text-text"
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  View Profile
+                  <span>View Profile</span>
                 </Link>
                 <Link
                   to="/about"
@@ -167,7 +169,7 @@ const MobileDrawer = ({
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col gap-4 mt-4">
+              <div className="flex flex-col gap-3 mt-4">
                 <Link
                   to="/about"
                   onClick={closeMenu}
