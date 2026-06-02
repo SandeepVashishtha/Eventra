@@ -24,10 +24,19 @@ import {
   initialFormData,
   todayString,
 } from "../../../constants/eventDefaults";
+import {
+  ArrowRightIcon,
+  CalendarIcon,
+  UsersIcon,
+  ClipboardDocumentListIcon,
+  TagIcon,
+  CheckCircleIcon,
+} from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
 import { validateCoordinates } from "../../../utils/eventCreationUtils";
 import { validateForm } from "../../../utils/eventFormValidation";
+import { parseTimeToMinutes, validateCoordinates } from "../../../utils/eventCreationUtils";
 
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -35,6 +44,15 @@ const EventCreation = () => {
   const [currentStep, setCurrentStep] = useState(CREATION_STEPS.FORM);
 
   const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
+  const {
+    handleSubmit: submitEventForm,
+    isSubmitting,
+    error: submitError,
+    success: submitSuccess,
+  } = useFormSubmit(async (eventData) => {
+    // Auth is handled by the HttpOnly session cookie — apiUtils sends it
+    // automatically via withCredentials. Never read tokens from sessionStorage;
+    // setToken was removed as part of the HttpOnly cookie migration.
     if (!API_ENDPOINTS.EVENTS.CREATE) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return;
@@ -123,7 +141,47 @@ const EventCreation = () => {
       if (errors.banner) {
         setErrors((prev) => ({ ...prev, banner: "" }));
       }
+
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setErrors((prev) => ({
+        ...prev,
+        banner: "Please upload a valid image file (JPG, PNG, GIF, or WebP)",
+      }));
+
+      e.target.value = "";
+      return;
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({
+        ...prev,
+        banner: "Image size should be less than 5MB",
+      }));
+
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      setFormData((prev) => ({
+        ...prev,
+        banner: file,
+        bannerPreview: event.target.result,
+      }));
+
+      setErrors((prev) => ({
+        ...prev,
+        banner: "",
+      }));
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const addTag = () => {
@@ -151,6 +209,9 @@ const EventCreation = () => {
         setErrors(newErrors);
 
         if (Object.keys(newErrors).length > 0) {
+        const isValid = validateForm();
+
+        if (!isValid) {
           toast.error("Please fix the form errors before continuing.");
           return;
         }
@@ -164,6 +225,7 @@ const EventCreation = () => {
       }
     } catch (error) {
       logger.error("Error progressing to next step:", error);
+
       toast.error("Unable to continue to the next step.");
     }
   };
@@ -171,10 +233,7 @@ const EventCreation = () => {
   const createEvent = () => {
     try {
       let coordinates = null;
-      if (
-        formData.location?.coordinates?.latitude &&
-        formData.location?.coordinates?.longitude
-      ) {
+      if (formData.location?.coordinates?.latitude && formData.location?.coordinates?.longitude) {
         coordinates = validateCoordinates(
           formData.location?.coordinates?.latitude,
           formData.location?.coordinates?.longitude
@@ -357,6 +416,81 @@ const EventCreation = () => {
         onRestore={handleRestoreDraft}
         onDiscard={handleDiscardDraft}
       />
+      {showRestoreModal && (
+        <div
+          className="
+      fixed inset-0 z-50
+      flex items-center justify-center
+      bg-black/50
+      px-4
+    "
+        >
+          <div
+            className="
+        w-full max-w-md
+        bg-white dark:bg-gray-900
+        rounded-3xl
+        p-8
+        shadow-2xl
+        border border-gray-200
+        dark:border-gray-700
+      "
+          >
+            <h2
+              className="
+          text-2xl font-bold
+          text-gray-900 dark:text-white
+          mb-3
+        "
+            >
+              Restore Draft?
+            </h2>
+
+            <p
+              className="
+          text-gray-600 dark:text-gray-400
+          mb-6
+        "
+            >
+              A previously saved event draft was found. Would you like to restore it?
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleDiscardDraft}
+                className="
+            px-4 py-2
+            rounded-xl
+            border border-gray-300
+            dark:border-gray-700
+            hover:bg-gray-100
+            dark:hover:bg-gray-800
+            transition
+          "
+                aria-label="button"
+              >
+                Discard
+              </button>
+
+              <button
+                onClick={handleRestoreDraft}
+                className="
+            px-5 py-2
+            rounded-xl
+            bg-indigo-600
+            hover:bg-indigo-700
+            text-white
+            font-medium
+            transition
+          "
+                aria-label="button"
+              >
+                Restore Draft
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {currentStep === CREATION_STEPS.FORM ? (
         <>
@@ -419,6 +553,322 @@ const EventCreation = () => {
                 prefersReducedMotion={prefersReducedMotion}
                 todayString={todayString}
               />
+              {/* Event Duration Type */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+              >
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <Calendar className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+                  Event Duration
+                </label>
+                <div className="flex gap-6">
+                  {/* Single-day Event Option */}
+                  <label className="flex items-center text-gray-700 dark:text-white gap-2">
+                    <input
+                      type="radio"
+                      name="eventType"
+                      checked={!formData.isMultiDay}
+                      onChange={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          isMultiDay: false,
+                          startDate: "",
+                          endDate: "",
+                          date: "",
+                          startTime: "",
+                          endTime: "",
+                        }));
+                        setErrors({});
+                      }}
+                    />
+                    Single-day Event
+                  </label>
+
+                  {/* Multi-day Event Option */}
+                  <label className="flex items-center text-gray-700 dark:text-white gap-2">
+                    <input
+                      type="radio"
+                      name="eventType"
+                      checked={formData.isMultiDay}
+                      onChange={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          isMultiDay: true,
+                          date: "",
+                          startDate: "",
+                          endDate: "",
+                          startTime: "",
+                          endTime: "",
+                        }));
+                        setErrors({});
+                      }}
+                    />
+                    Multi-day Event
+                  </label>
+                </div>
+              </motion.div>
+
+              {/* Date and Time Fields */}
+              {formData.isMultiDay ? (
+                // 🔹 Multi-day Event
+                <motion.div
+                  className="grid grid-cols-1 sm:grid-cols-4 gap-4"
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.5,
+                    delay: prefersReducedMotion ? 0 : 0.1,
+                  }}
+                >
+                  {/* Start Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Start Date <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={formData.startDate}
+                      onChange={handleInputChange}
+                      min={todayString}
+                      className={`w-full border ${
+                        errors.startDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.startDate && (
+                      <span className="text-red-500 text-sm mt-1 block">{errors.startDate}</span>
+                    )}
+                  </div>
+
+                  {/* End Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      End Date <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="endDate"
+                      value={formData.endDate}
+                      onChange={handleInputChange}
+                      min={formData.startDate || todayString}
+                      className={`w-full border ${
+                        errors.endDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.endDate && (
+                      <span className="text-red-500 text-sm mt-1 block">{errors.endDate}</span>
+                    )}
+                  </div>
+
+                  {/* Start Time */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Start Time <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      name="startTime"
+                      value={formData.startTime}
+                      onChange={handleInputChange}
+                      className={`w-full border ${
+                        errors.startTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.startTime && (
+                      <span className="text-red-500 text-sm mt-1 block">{errors.startTime}</span>
+                    )}
+                  </div>
+
+                  {/* End Time */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      End Time <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      name="endTime"
+                      value={formData.endTime}
+                      onChange={handleInputChange}
+                      className={`w-full border ${
+                        errors.endTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.endTime && (
+                      <span className="text-red-500 text-sm mt-1 block">{errors.endTime}</span>
+                    )}
+                  </div>
+                </motion.div>
+              ) : (
+                // 🔸 Single-day Event
+                <motion.div
+                  className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.5,
+                    delay: prefersReducedMotion ? 0 : 0.1,
+                  }}
+                >
+                  {/* Event Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Event Date <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleInputChange}
+                      min={todayString}
+                      className={`w-full border ${
+                        errors.date ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.date && (
+                      <span className="text-red-500 text-sm mt-1 block">{errors.date}</span>
+                    )}
+                  </div>
+
+                  {/* Start Time */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Start Time <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      name="startTime"
+                      value={formData.startTime}
+                      onChange={handleInputChange}
+                      className={`w-full border ${
+                        errors.startTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.startTime && (
+                      <span className="text-red-500 text-sm mt-1 block">{errors.startTime}</span>
+                    )}
+                  </div>
+
+                  {/* End Time */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      End Time <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      name="endTime"
+                      value={formData.endTime}
+                      onChange={handleInputChange}
+                      className={`w-full border ${
+                        errors.endTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.endTime && (
+                      <span className="text-red-500 text-sm mt-1 block">{errors.endTime}</span>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Virtual Event Checkbox */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+              >
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    name="isVirtual"
+                    checked={formData.isVirtual}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                  />
+                  <Globe className="w-5 h-5 text-indigo-500 inline-block" />
+                  This is a virtual event
+                </label>
+              </motion.div>
+
+              {/* Virtual Link or Location */}
+              {formData.isVirtual ? (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <Link2 className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+                    Virtual Event Link <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    name="virtualLink"
+                    value={formData.virtualLink}
+                    onChange={handleInputChange}
+                    placeholder="https://zoom.us/j/..."
+                    className={`w-full border ${
+                      errors.virtualLink ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                  />
+                  {errors.virtualLink && (
+                    <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>
+                  )}
+                </motion.div>
+              ) : (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <MapPin className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+                      Location Name <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="location.name"
+                      value={formData.location.name}
+                      onChange={handleInputChange}
+                      placeholder="Convention Center, Community Hall, etc."
+                      className={`w-full border ${
+                        errors.location ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                    />
+                    {errors.location && (
+                      <span className="text-red-500 text-sm mt-1">{errors.location}</span>
+                    )}
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{
+                      duration: prefersReducedMotion ? 0 : 0.5,
+                      delay: prefersReducedMotion ? 0 : 0.1,
+                    }}
+                  >
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <Map className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      name="location.address"
+                      value={formData.location.address}
+                      onChange={handleInputChange}
+                      placeholder="123 Main St, City, State ZIP"
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300"
+                    />
+                  </motion.div>
 
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 <input
@@ -509,6 +959,72 @@ const EventCreation = () => {
                 onAdd={addTag}
                 onRemove={removeTag}
               />
+              {/* Tags Section */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 1.0 }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <TagIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Tags
+                  </label>
+                </div>
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    placeholder="Add a tag"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addTag();
+                      }
+                    }}
+                    className="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={addTag}
+                    className="
+        flex items-center justify-center gap-2
+        px-4 py-2
+        rounded-3xl font-semibold
+        text-white
+        bg-black
+        shadow-md hover:shadow-lg
+        hover:bg-zinc-800
+        transform hover:scale-[1.03] active:scale-[0.97]
+        transition-all duration-300
+        focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 text-sm
+      "
+                    aria-label="button"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium"
+                    >
+                      #{tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-bold"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
 
               <motion.button
                 type="button"
