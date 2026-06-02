@@ -80,7 +80,7 @@ const useRecentlyViewed = () => {
           const fresh = Array.isArray(parsed) ? parsed.filter(isEntryFresh) : [];
           setRecentlyViewed(fresh);
         } else {
-          return [];
+          setRecentlyViewed([]);
         }
       }
     };
@@ -103,7 +103,7 @@ const useRecentlyViewed = () => {
       const entry = toRecentlyViewedEntry(event);
       return [entry, ...filtered].slice(0, MAX_ITEMS);
     });
-  }, [setRecentlyViewed]);
+  }, []);
 
   /**
    * Remove a single event from the history.
@@ -111,19 +111,19 @@ const useRecentlyViewed = () => {
    */
   const removeRecentlyViewed = useCallback((eventId) => {
     setRecentlyViewed((prev) => prev.filter((e) => e.id !== eventId));
-  }, [setRecentlyViewed]);
+  }, []);
 
   /**
    * Clear the entire recently viewed history from state and localStorage.
    */
   const clearHistory = useCallback(() => {
-    return [];
+    setRecentlyViewed([]);
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (err) {
       logger.error('Failed to clear recently viewed events:', err);
     }
-  }, [setRecentlyViewed]);
+  }, []);
 
   return {
     recentlyViewed,
