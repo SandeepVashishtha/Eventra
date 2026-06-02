@@ -61,7 +61,7 @@ const ProtectedRoute = ({
   // SECURITY: Check required permissions against JWT claims.
   // Permissions must be verified server-side for critical operations.
   if (requiredPermissions.length > 0) {
-    const hasRequiredPermission = requiredPermissions.some(permission => hasPermission(permission));
+    const hasRequiredPermission = requiredPermissions.every(permission => hasPermission(permission));
     if (!hasRequiredPermission) {
       return <Navigate to="/unauthorized" replace state={{ from: location }} />;
     }
