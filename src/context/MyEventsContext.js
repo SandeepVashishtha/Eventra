@@ -161,6 +161,10 @@ export const MyEventsProvider = ({ children }) => {
    */
   const removeRegistration = useCallback((eventId) => {
     setMyEvents((prev) => prev.filter((r) => r.eventId !== eventId));
+    // Trigger automatic promotion from the waitlist
+    import("../utils/waitlistUtils.js").then(({ promoteNextUser }) => {
+      promoteNextUser(eventId);
+    });
   }, []);
 
   /**
@@ -171,6 +175,12 @@ export const MyEventsProvider = ({ children }) => {
     [myEvents],
   );
 
+  // Waitlist Operations
+  const [waitlistUpdated, setWaitlistUpdated] = useState(0);
+  const triggerWaitlistUpdate = useCallback(() => {
+    setWaitlistUpdated((prev) => prev + 1);
+  }, []);
+
   return (
     <MyEventsContext.Provider
       value={{
@@ -179,6 +189,8 @@ export const MyEventsProvider = ({ children }) => {
         removeRegistration,
         isRegistered,
         loading,
+        waitlistUpdated,
+        triggerWaitlistUpdate,
       }}
     >
       {children}

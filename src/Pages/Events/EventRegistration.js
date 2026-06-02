@@ -58,6 +58,7 @@ const EventRegistration = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [waitlistPosition, setWaitlistPosition] = useState(-1);
   const isSubmittingRef = useRef(false);
 
   // Conflict detection state
@@ -310,9 +311,28 @@ const EventRegistration = () => {
     setSubmitting(true);
 
     const isEventFull = event ? event.attendees >= event.maxAttendees : false;
-    const endpoint = isEventFull
-      ? `/api/events/${eventId}/waitlist`
-      : API_ENDPOINTS.EVENTS?.REGISTER
+
+    if (isEventFull) {
+      try {
+        const { joinWaitlist, getQueuePosition } = await import("../../utils/waitlistUtils");
+        await joinWaitlist(eventId, user, { ...formData, eventTitle: event?.title || "the event" });
+        const pos = getQueuePosition(eventId, user.id);
+        setWaitlistPosition(pos);
+        setRegistered(true);
+        toast.success("Successfully joined waitlist!");
+        clearSession();
+        return;
+      } catch (err) {
+        toast.error(err.message || "Failed to join waitlist.");
+        return;
+      } finally {
+        registrationLocks.delete(eventId);
+        isSubmittingRef.current = false;
+        setSubmitting(false);
+      }
+    }
+
+    const endpoint = API_ENDPOINTS.EVENTS?.REGISTER
         ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
         : `/api/events/${eventId}/register`;
 
@@ -420,9 +440,16 @@ const EventRegistration = () => {
 
     const isFull = await checkEventCapacity(eventId, event);
     if (isFull) {
-  toast.error("This event is sold out. Please choose another event.");
-  return;
-}
+      const { getGlobalWaitlist } = await import("../../utils/waitlistUtils");
+      const records = getGlobalWaitlist();
+      const onWaitlist = records.some(
+        (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
+      );
+      if (onWaitlist) {
+        toast.error("You are already on the waitlist for this event.");
+        return;
+      }
+    }
 
     if (await checkAndHandleConflicts()) return;
 
@@ -525,10 +552,12 @@ const EventRegistration = () => {
           </motion.div>
 
           <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-linear-to-t from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 mb-2">
-            Registration Confirmed!
+            {isEventFull ? "Added to Waitlist!" : "Registration Confirmed!"}
           </h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-            You&apos;re all set! Your registration details have been saved successfully.
+            {isEventFull 
+              ? `You are in position #${waitlistPosition} of the queue. We will notify you if a spot opens up.`
+              : "You're all set! Your registration details have been saved successfully."}
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
