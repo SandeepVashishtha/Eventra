@@ -1,9 +1,11 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { users } from "./signup.js";
+import { users, usersByUsername } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { createRateLimiter } from "../lib/rateLimit.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
+
 
 // Pre-compute a dummy bcrypt hash at module load time (same cost factor used in signup.js).
 // When a login attempt references a username or email that does not exist, we still run
@@ -17,6 +19,12 @@ const DUMMY_HASH_PROMISE = bcrypt.hash("__eventra_dummy_constant__", 12);
 // ---------------------------------------------------------------------------
 
 const JWT_SECRET = getJwtSecret();
+
+// ---------------------------------------------------------------------------
+// Rate Limiting (IP-based, 5 attempts per minute)
+// ---------------------------------------------------------------------------
+
+const loginRateLimiter = createRateLimiter(60_000, 5);
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
@@ -51,17 +59,13 @@ const validateLoginInput = (usernameOrEmail, password) => {
 const findUserByUsernameOrEmail = (usernameOrEmail) => {
   const normalizedInput = usernameOrEmail.trim().toLowerCase();
   
-  // Search through all users
-  for (const [key, user] of users.entries()) {
-    if (
-      user.email === normalizedInput ||
-      user.username === normalizedInput ||
-      user.email === usernameOrEmail.trim() ||
-      user.username === usernameOrEmail.trim()
-    ) {
-      return user;
-    }
-  }
+  // O(1) lookup: try email key first (primary key), then username index
+  const byEmail = users.get(normalizedInput);
+  if (byEmail) return byEmail;
+  
+  const byUsername = usersByUsername.get(normalizedInput);
+  if (byUsername) return byUsername;
+  
   return null;
 };
 
@@ -69,7 +73,7 @@ const findUserByUsernameOrEmail = (usernameOrEmail) => {
 // Login Handler
 // ---------------------------------------------------------------------------
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return res.status(200).set(buildCorsHeaders(req)).end();
@@ -81,16 +85,39 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (!req.body || typeof req.body !== "object") {
+      return corsResponse(req, res, 400, { error: "Request body is required" });
+    }
+
     const { usernameOrEmail, password } = req.body;
 
     // -----------------------------------------------------------------------
     // Input Validation
+    // Run before rate-limit so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
     const validationErrors = validateLoginInput(usernameOrEmail, password);
     if (validationErrors.length > 0) {
       return corsResponse(req, res, 400, { 
         error: validationErrors.join(", ") 
+      });
+    }
+
+    // -----------------------------------------------------------------------
+    // Rate Limiting (brute-force protection)
+    // -----------------------------------------------------------------------
+
+    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+      || req.headers?.["x-real-ip"]
+      || req.socket?.remoteAddress
+      || "unknown";
+
+    loginRateLimiter.evictStale();
+
+    if (!loginRateLimiter.check(clientIp)) {
+      return corsResponse(req, res, 429, {
+        error: "Too many login attempts. Please try again later.",
+        retryAfter: 60,
       });
     }
 
@@ -184,6 +211,9 @@ export default async function handler(req, res) {
       // Ignore write errors on test response objects
     }
 
+    // Reset rate limit on successful login so a legitimate user is not penalised
+    loginRateLimiter.reset(clientIp);
+
     return corsResponse(req, res, 200, {
       message: "Login successful",
       token,
@@ -204,4 +234,5 @@ export default async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
+export default handler;
 export { users };

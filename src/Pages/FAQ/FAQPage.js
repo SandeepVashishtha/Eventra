@@ -150,7 +150,9 @@ function FAQSectionInner() {
     try {
       const saved = localStorage.getItem("eventra_faq_ratings");
       if (saved) return JSON.parse(saved);
-    } catch {}
+    } catch (e) {
+      logger.error("Failed to load FAQ ratings", e);
+    }
 
     const initial = {};
     faqs.forEach((faq, idx) => {
@@ -187,7 +189,9 @@ function FAQSectionInner() {
 
       try {
         localStorage.setItem("eventra_faq_ratings", JSON.stringify(updated));
-      } catch {}
+      } catch (err) {
+        logger.error("Failed to save FAQ ratings", err);
+      }
       return updated;
     });
   };
@@ -328,7 +332,18 @@ function FAQSectionInner() {
           -webkit-backdrop-filter: blur(10px);
           width: 100%;
           box-sizing: border-box;
+          
+         display: flex;
+          flex-direction: column;
+          align-items: center;
           transition: transform 0.5s ease, opacity 0.5s ease, padding 0.5s ease, background 0.5s ease;
+        }
+
+        .faq-heading-inner {
+          max-width: 760px;
+          width: 100%;
+          padding: 0 20px;
+          box-sizing: border-box;
         }
 
         .faq-heading-block.is-fixed {
@@ -360,10 +375,13 @@ function FAQSectionInner() {
           display: flex;
           flex-direction: column;
           align-items: center;
+          
           padding: 32px max(20px, env(safe-area-inset-right) + 88px) 0 20px;
+          max-width: 100%;
+          box-sizing: border-box;
         }
 
-        @media (max-width: 640px) {
+       @media (max-width: 640px) {
           .faq-cards-container {
             padding-right: 20px;
           }
@@ -527,81 +545,80 @@ function FAQSectionInner() {
           className={`faq-heading-block${isHeaderFixed ? " is-fixed" : ""}`}
           style={isHeaderFixed ? { top: headerTop } : {}}
         >
-          <h2>Frequently Asked Questions</h2>
-          <p className="mb-6">
-            Everything you need to know about using Eventra, from getting started to hosting your
-            own events.
-          </p>
-
-          <div className="search-wrap">
-            <Search className="search-icon w-4 h-4" />
-
-            <input
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setShowSuggestions(true);
-              }}
-              onFocus={() => setShowSuggestions(true)}
-              placeholder="Search FAQs..."
-              className="search-input"
-            />
-
-            {searchTerm && (
-              <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setShowSuggestions(false);
+        
+        
+        
+        
+       <div className="faq-heading-inner">
+            <h2>Frequently Asked Questions</h2>
+            <p className="mb-6">
+              Everything you need to know about using Eventra, from getting started to hosting your
+              own events.
+            </p>
+            <div className="search-wrap">
+              <Search className="search-icon w-4 h-4" />
+              <input
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setShowSuggestions(true);
                 }}
-                className="clear-btn"
-              >
-                <X size={14} />
-              </button>
-            )}
-
-            {/* Suggestions */}
-            {showSuggestions && suggestions.length > 0 && (
-              <div className="suggestions">
-                {suggestions.map((s, i) => (
-                  <div
-                    key={i}
-                    className="suggestion-item"
-                    onClick={() => {
-                      setSearchTerm(s.question);
-                      setShowSuggestions(false);
-                    }}
-                  >
-                    💡 {s.question}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* CATEGORY FILTER */}
-          <div className="flex gap-2 justify-center mt-4 flex-wrap">
-            {["All", "General", "Hackathons", "Account"].map((c) => (
-              <button
-                key={c}
-                onClick={() => setSelectedCategory(c)}
-                className={`btn px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${
-                  selectedCategory === c
-                    ? "bg-indigo-600 text-white border-indigo-600 shadow-md"
-                    : "bg-white/70 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+                onFocus={() => setShowSuggestions(true)}
+                placeholder="Search FAQs..."
+                className="search-input"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setShowSuggestions(false);
+                  }}
+                  className="clear-btn"
+                >
+                  <X size={14} />
+                </button>
+              )}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="suggestions">
+                  {suggestions.map((s, i) => (
+                    <div
+                      key={i}
+                      className="suggestion-item"
+                      onClick={() => {
+                        setSearchTerm(s.question);
+                        setShowSuggestions(false);
+                      }}
+                    >
+                      💡 {s.question}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* CATEGORY FILTER */}
+            <div className="flex gap-2 justify-center mt-4 flex-wrap">
+              {["All", "General", "Hackathons", "Account"].map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setSelectedCategory(c)}
+                  className={`btn px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${
+                    selectedCategory === c
+                      ? "bg-indigo-600 text-white border-indigo-600 shadow-md"
+                      : "bg-white/70 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-
         {/* spacer */}
         {isHeaderFixed && <div style={{ height: headerHeight }} />}
 
         <div className="faq-cards-container">
           {filteredFaqs.length === 0 ? (
-            <div className="max-w-[820px] w-full mx-auto mt-8 mb-16 text-center p-12 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md animate-pulse">
+            <div className="max-w-205 w-full mx-auto mt-8 mb-16 text-center p-12 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md animate-pulse">
               <div className="inline-flex p-4 rounded-full bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 mb-4">
                 <HelpCircle className="w-8 h-8" />
               </div>

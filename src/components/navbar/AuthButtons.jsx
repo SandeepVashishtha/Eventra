@@ -2,6 +2,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, Info, HelpCircle, LogIn } from "lucide-react";
 
+const prefetchLogin = () => import("../../Pages/Auth/Login");
+const prefetchSignup = () => import("../../Pages/Auth/Signup");
+
 const AuthButtons = () => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
@@ -82,6 +85,7 @@ const AuthButtons = () => {
               to="/login"
               role="menuitem"
               onClick={closeMenu}
+              onMouseEnter={() => prefetchLogin()}
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:bg-bg transition-colors"
             >
               <LogIn className="w-4 h-4" />
@@ -93,6 +97,7 @@ const AuthButtons = () => {
 
       <Link
         to="/signup"
+        onMouseEnter={() => prefetchSignup()}
         className="px-4 py-2 rounded-full text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-colors whitespace-nowrap shadow-none"
       >
         Get Started
