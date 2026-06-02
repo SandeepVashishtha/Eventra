@@ -153,7 +153,4 @@ async function handler(req, res) {
 
 export default verifyAuth(handler);
 
-  }
-}
 
-export default verifyAuth(handler);
