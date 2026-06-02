@@ -11,7 +11,7 @@
 // ---------------------------------------------------------------------------
 
 import { verifyAuth } from "./middleware/auth.js";
-import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js"; // #5410
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_SENDS = 5;
