@@ -97,9 +97,16 @@ export const addEventToGoogleCalendar = (event) => {
     description: event.description || '',
     location: event.location || '',
     startDate: event.date || event.startDate,
-    endDate: eventEndDate,
+    endDate: (() => {
+      if (!startTime) return eventEndDate;
+      const { overflowDays } = calculateEndTime(startTime);
+      if (overflowDays === 0) return eventEndDate;
+      const d = new Date(event.date || event.startDate);
+      d.setDate(d.getDate() + overflowDays);
+      return d.toISOString().split('T')[0];
+    })(),
     startTime: startTime,
-    endTime: startTime ? calculateEndTime(startTime) : null
+    endTime: startTime ? calculateEndTime(startTime).time : null
   });
 };
 
@@ -111,16 +118,15 @@ export const addEventToGoogleCalendar = (event) => {
  */
 const calculateEndTime = (startTime, durationHours = 2) => {
   const [hours, minutes] = startTime.split(':').map(Number);
-  
-  // Create a date object to handle hour/minute calculations
-  const date = new Date();
-  date.setHours(hours, minutes, 0);
-  
-  // Add duration hours
-  date.setHours(date.getHours() + durationHours);
-  
-  // Format to HH:MM
-  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  const totalMinutes = hours * 60 + minutes + durationHours * 60;
+  const endHours = Math.floor(totalMinutes / 60) % 24;
+  const endMinutes = totalMinutes % 60;
+  const overflowDays = Math.floor(totalMinutes / (60 * 24));
+
+  return {
+    time: `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`,
+    overflowDays,
+  };
 };
 
 /**
