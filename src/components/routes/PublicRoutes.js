@@ -33,6 +33,7 @@ const FeedbackPage = lazy(() => import("../../Pages/Feedback/FeedbackPage"));
 const BookmarkedEvents = lazy(() => import("../../Pages/Events/BookmarkedEvents"));
 const RemindersPage = lazy(() => import("../../Pages/Events/RemindersPage"));
 const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
+const OptimizedImage = lazy(() => import("../common/OptimizedImage"));
 
 const withModuleBoundary = (children, boundaryName) => (
   <ErrorBoundary
@@ -72,6 +73,6 @@ export const getPublicRoutes = () => [
 <Route key="/bookmarks" path="/bookmarks" element={withModuleBoundary(<BookmarkedEvents />, "Bookmarks")} />,
 <Route key="/reminders" path="/reminders" element={withModuleBoundary(<RemindersPage />, "Reminders")} />,
 <Route key="/calendar" path="/calendar" element={withModuleBoundary(<MyCalendar />, "Calendar")} />,
+<Route key="/image-test" path="/image-test" element={<OptimizedImage src="https://images.unsplash.com/photo-1540575861501-7c90b707a27d" alt="Test" />} />,
 <Route key="/submit-project" path="/submit-project" element={withModuleBoundary(<SubmitProject />, "Submit Project")} />,
-
   <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,];
