@@ -2,7 +2,7 @@
 // Self-Healing Offline Queue Utility (IndexedDB backed with LocalStorage Backup)
 // ---------------------------------------------------------------------------
 import { safeJsonParse } from "./safeJsonParse.js";
-import { logger } from "../utils/logger";
+import { logger } from "./logger.js";
 
 const QUEUE_KEY = "eventra_offline_queue";
 const DB_NAME = "eventra_offline_db";

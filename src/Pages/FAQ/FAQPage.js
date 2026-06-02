@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import {
   Sparkles,
   Calendar,
@@ -10,10 +10,10 @@ import {
   Globe,
   Search,
   HelpCircle,
-  X
+  X,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SEOHead from "../../components/SEOHead";
 
 // Centralized FAQ entries classified under General, Hackathons, or Account categories
 const faqs = [
@@ -102,7 +102,19 @@ const faqs = [
 const NAVBAR_HEIGHT = 65;
 
 export default function FAQSection() {
-  useDocumentTitle("Eventra | FAQ");
+  return (
+    <>
+      <SEOHead
+        title="FAQ"
+        description="Frequently asked questions about Eventra — get answers about events, hackathons, registration, and community."
+        url={window.location.href}
+      />
+      <FAQSectionInner />
+    </>
+  );
+}
+
+function FAQSectionInner() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -110,25 +122,28 @@ export default function FAQSection() {
   // Search Suggestions State
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const filteredFaqs = faqs.filter((faq) => {
-    const matchesCategory =
-      selectedCategory === "All" ||
-      faq.tab?.toLowerCase() === selectedCategory.toLowerCase();
+  const filteredFaqs = useMemo(() => {
+    return faqs.filter((faq) => {
+      const matchesCategory =
+        selectedCategory === "All" || faq.tab?.toLowerCase() === selectedCategory.toLowerCase();
 
-    const query = searchTerm.toLowerCase().trim();
-    const matchesSearch =
-      !query ||
-      faq.question.toLowerCase().includes(query) ||
-      faq.answer.toLowerCase().includes(query) ||
-      faq.category.toLowerCase().includes(query);
+      const query = searchTerm.toLowerCase().trim();
+      const matchesSearch =
+        !query ||
+        faq.question.toLowerCase().includes(query) ||
+        faq.answer.toLowerCase().includes(query) ||
+        faq.category.toLowerCase().includes(query);
 
-    return matchesCategory && matchesSearch;
-  });
+      return matchesCategory && matchesSearch;
+    });
+  }, [searchTerm, selectedCategory]);
 
-  const suggestions = faqs.filter(faq => {
-    const q = searchTerm.toLowerCase().trim();
-    return q.length >= 2 && faq.question.toLowerCase().includes(q);
-  }).slice(0, 5);
+  const suggestions = faqs
+    .filter((faq) => {
+      const q = searchTerm.toLowerCase().trim();
+      return q.length >= 2 && faq.question.toLowerCase().includes(q);
+    })
+    .slice(0, 5);
 
   // Helpfulness Ratings State
   const [ratings, setRatings] = useState(() => {
@@ -136,20 +151,20 @@ export default function FAQSection() {
       const saved = localStorage.getItem("eventra_faq_ratings");
       if (saved) return JSON.parse(saved);
     } catch (e) {
-      console.error(e);
+      logger.error("Failed to load FAQ ratings", e);
     }
-    
+
     const initial = {};
     faqs.forEach((faq, idx) => {
-      const yes = 12 + (idx * 9) % 38;
-      const no = 1 + (idx * 2) % 6;
+      const yes = 12 + ((idx * 9) % 38);
+      const no = 1 + ((idx * 2) % 6);
       initial[faq.question] = { yes, no, voted: null };
     });
     return initial;
   });
 
   const handleVote = (question, voteType) => {
-    setRatings(prev => {
+    setRatings((prev) => {
       const current = prev[question] || { yes: 10, no: 2, voted: null };
       let newYes = current.yes;
       let newNo = current.no;
@@ -162,20 +177,20 @@ export default function FAQSection() {
       } else {
         if (current.voted === "yes") newYes = Math.max(0, newYes - 1);
         if (current.voted === "no") newNo = Math.max(0, newNo - 1);
-        
+
         if (voteType === "yes") newYes += 1;
         if (voteType === "no") newNo += 1;
       }
 
       const updated = {
         ...prev,
-        [question]: { yes: newYes, no: newNo, voted: newVoted }
+        [question]: { yes: newYes, no: newNo, voted: newVoted },
       };
-      
+
       try {
         localStorage.setItem("eventra_faq_ratings", JSON.stringify(updated));
       } catch (err) {
-        console.error(err);
+        logger.error("Failed to save FAQ ratings", err);
       }
       return updated;
     });
@@ -194,9 +209,7 @@ export default function FAQSection() {
 
   useEffect(() => {
     wrapperRefs.current = [];
-    setCardStyles(
-      filteredFaqs.map(() => ({ transform: "scale(1)", filter: "none" }))
-    );
+    setCardStyles(filteredFaqs.map(() => ({ transform: "scale(1)", filter: "none" })));
   }, [searchTerm, selectedCategory, filteredFaqs]);
 
   useEffect(() => {
@@ -241,10 +254,7 @@ export default function FAQSection() {
           const scrollProgress = viewportCenter - rect.top;
 
           if (scrollProgress > 0) {
-            const factor = Math.min(
-              scrollProgress / window.innerHeight,
-              1
-            );
+            const factor = Math.min(scrollProgress / window.innerHeight, 1);
 
             const scale = 1 - factor * 0.04;
             const blur = factor * 2;
@@ -318,10 +328,8 @@ export default function FAQSection() {
         .faq-heading-block {
           text-align: center;
           padding: 60px 20px 32px;
-          background: var(--heading-bg);
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
-          z-index: 90;
           width: 100%;
           box-sizing: border-box;
           transition: transform 0.5s ease, opacity 0.5s ease, padding 0.5s ease, background 0.5s ease;
@@ -331,8 +339,9 @@ export default function FAQSection() {
           position: fixed;
           left: 0;
           right: 0;
+          z-index: 90;
           border-bottom: 1px solid var(--heading-border);
-          padding: 20px 20px 16px;
+          padding: 10px 20px 16px;
         }
 
         .faq-heading-block h2 {
@@ -355,7 +364,13 @@ export default function FAQSection() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 32px 20px 0;
+          padding: 32px max(20px, env(safe-area-inset-right) + 88px) 0 20px;
+        }
+
+        @media (max-width: 640px) {
+          .faq-cards-container {
+            padding-right: 20px;
+          }
         }
 
         .card-pin-wrapper {
@@ -433,12 +448,84 @@ export default function FAQSection() {
           height: 50vh;
           pointer-events: none;
         }
+
+        .search-wrap {
+          position: relative;
+          width: 100%;
+          max-width: 520px;
+          margin: 20px auto 0;
+        }
+
+        .search-input {
+          width: 100%;
+          padding: 12px 44px 12px 44px;
+          border-radius: 14px;
+          border: 1px solid #e5e7eb;
+          background: rgba(255,255,255,0.8);
+          font-size: 14px;
+          outline: none;
+          transition: all 0.2s ease;
+          backdrop-filter: blur(10px);
+        }
+
+        .dark .search-input {
+          background: rgba(15,23,42,0.6);
+          border-color: rgba(255,255,255,0.1);
+          color: white;
+        }
+
+        .search-icon {
+          position: absolute;
+          left: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: white;
+        }
+
+        .clear-btn {
+          position: absolute;
+          right: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          padding: 6px;
+          border-radius: 8px;
+          background: transparent;
+          cursor: pointer;
+        }
+
+        .clear-btn:hover {
+          background: rgba(0,0,0,0.05);
+        }
+
+        .suggestions {
+          position: absolute;
+          top: 110%;
+          width: 100%;
+          background: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 14px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+          z-index: 60;
+          overflow: hidden;
+        }
+
+        .dark .suggestions {
+          background: #0f172a;
+          border-color: rgba(255,255,255,0.1);
+        }
+
+        .suggestion-item {
+          padding: 10px 12px;
+          font-size: 13px;
+          cursor: pointer;
+        }
+
+        .suggestion-item:hover {
+          background: rgba(99,102,241,0.08);
+        }
       `}</style>
 
-      <div
-        className="faq-section-root text-slate-900 dark:text-gray-100"
-        ref={sectionRef}
-      >
+      <div className="faq-section-root text-slate-900 dark:text-gray-100" ref={sectionRef}>
         <div
           ref={headerRef}
           className={`faq-heading-block${isHeaderFixed ? " is-fixed" : ""}`}
@@ -446,84 +533,79 @@ export default function FAQSection() {
         >
           <h2>Frequently Asked Questions</h2>
           <p className="mb-6">
-            Everything you need to know about using Eventra, from getting
-            started to hosting your own events.
+            Everything you need to know about using Eventra, from getting started to hosting your
+            own events.
           </p>
 
-          <div className="max-w-2xl mx-auto mt-6 flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative w-full md:w-3/5">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
-              <input
-                type="text"
-                placeholder="Search hackathons, bookmarks, accounts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 250)}
-                aria-label="Search FAQs"
-                className="w-full pl-11 pr-10 py-2.5 text-sm rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/80 backdrop-blur-md text-slate-900 dark:text-gray-100 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => {
-                    setSearchTerm("");
-                    setShowSuggestions(false);
-                  }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer"
-                  aria-label="Clear search"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
+          <div className="search-wrap">
+            <Search className="search-icon w-4 h-4" />
 
-              {/* Suggestions Dropdown Overlay */}
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute left-0 right-0 mt-2 bg-white/95 dark:bg-slate-950/95 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto backdrop-blur-xs text-left">
-                  {suggestions.map((sug, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        setSearchTerm(sug.question);
-                        setShowSuggestions(false);
-                      }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-xs font-semibold text-slate-700 dark:text-slate-350 border-b border-slate-100 dark:border-slate-800 last:border-0 cursor-pointer"
-                    >
-                      💡 {sug.question}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <input
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              placeholder="Search FAQs..."
+              className="search-input"
+            />
 
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              {["All", "General", "Hackathons", "Account"].map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  aria-pressed={selectedCategory === category}
-                  className={`px-4 py-2 text-xs font-bold rounded-full transition-all duration-300 ${
-                    selectedCategory === category
-                      ? "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-500/10"
-                      : "bg-slate-100/80 text-slate-600 hover:bg-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:hover:bg-slate-800/80"
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
+            {searchTerm && (
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setShowSuggestions(false);
+                }}
+                className="clear-btn"
+              >
+                <X size={14} />
+              </button>
+            )}
+
+            {/* Suggestions */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="suggestions">
+                {suggestions.map((s, i) => (
+                  <div
+                    key={i}
+                    className="suggestion-item"
+                    onClick={() => {
+                      setSearchTerm(s.question);
+                      setShowSuggestions(false);
+                    }}
+                  >
+                    💡 {s.question}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* CATEGORY FILTER */}
+          <div className="flex gap-2 justify-center mt-4 flex-wrap">
+            {["All", "General", "Hackathons", "Account"].map((c) => (
+              <button
+                key={c}
+                onClick={() => setSelectedCategory(c)}
+                className={`btn px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${
+                  selectedCategory === c
+                    ? "bg-indigo-600 text-white border-indigo-600 shadow-md"
+                    : "bg-white/70 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
           </div>
         </div>
 
-        {isHeaderFixed && (
-          <div
-            className="faq-heading-spacer"
-            style={{ height: headerHeight }}
-          />
-        )}
+        {/* spacer */}
+        {isHeaderFixed && <div style={{ height: headerHeight }} />}
 
         <div className="faq-cards-container">
           {filteredFaqs.length === 0 ? (
-            <div className="max-w-[820px] w-full mx-auto mt-8 mb-16 text-center p-12 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md animate-pulse">
+            <div className="max-w-205 w-full mx-auto mt-8 mb-16 text-center p-12 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md animate-pulse">
               <div className="inline-flex p-4 rounded-full bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 mb-4">
                 <HelpCircle className="w-8 h-8" />
               </div>
@@ -531,7 +613,8 @@ export default function FAQSection() {
                 No matching FAQs found
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6 leading-relaxed">
-                We couldn't find any questions matching "{searchTerm}" under the {selectedCategory} category. Try broadening your keywords.
+                We couldn&apos;t find any questions matching &quot;{searchTerm}&quot; under the {selectedCategory}{" "}
+                category. Try broadening your keywords.
               </p>
               <button
                 onClick={() => {
@@ -562,7 +645,7 @@ export default function FAQSection() {
                   </div>
                   <h3>{faq.question}</h3>
                   <p>{faq.answer}</p>
-                  
+
                   {/* Helpfulness Rating Widget */}
                   <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row gap-3 items-center justify-between">
                     <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">

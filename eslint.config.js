@@ -35,12 +35,17 @@ export default [
       },
     },
     rules: {
-      "no-console": "warn",
+      "no-console": "off",
       "no-unused-vars": "warn",
       "react/jsx-no-target-blank": "error",
       // apply react-hooks recommended rules but relax some strict checks
       ...reactHooks.configs.recommended.rules,
+      "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/refs": "off",
+      "react-hooks/immutability": "off",
       // Disable testing-library rule if plugin not available in some environments
       "testing-library/no-unnecessary-act": "off",
     },

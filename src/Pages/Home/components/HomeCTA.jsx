@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 export default function CTASection() {
   return (
-    <div className="bg-gradient-to-b from-white to-slate-50 dark:from-slate-950 dark:to-slate-950 py-16 sm:py-24 px-4 sm:px-6 lg:px-8 border-t border-slate-200/50 dark:border-slate-800/80">
+    <div className="bg-gradient-to-b from-white to-slate-50 dark:from-slate-950 dark:to-slate-950 py-16 sm:py-24 px-4 sm:px-6 lg:px-8 border-t border-slate-200/50 dark:border-slate-800/80 overflow-hidden">
       {/* Main CTA Section */}
       <section className="relative max-w-6xl mx-auto py-16 sm:py-20 px-6 sm:px-12 rounded-3xl overflow-hidden bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-slate-950/40 border border-slate-200/80 dark:border-slate-800/80 shadow-xl shadow-indigo-500/5">
         {/* Soft Background Orbs */}

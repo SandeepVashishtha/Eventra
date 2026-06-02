@@ -27,10 +27,19 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
   const eventHasPassed = useMemo(() => isPastEvent(event), [event]);
 
   useEffect(() => {
+    // Initial sync
     setEventReminders(getEventReminders(event.id));
 
     return subscribeToReminderChanges(() => {
-      setEventReminders(getEventReminders(event.id));
+      // 🔥 FIX 1: Prevent O(N) Render Storms
+      // Only update the state if the array data for THIS specific event actually changed.
+      setEventReminders((prevReminders) => {
+        const newReminders = getEventReminders(event.id);
+        if (JSON.stringify(prevReminders) === JSON.stringify(newReminders)) {
+          return prevReminders; // Bails out of the React render cycle
+        }
+        return newReminders;
+      });
     });
   }, [event.id]);
 
@@ -139,7 +148,8 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
               disabled={isDisabled}
               aria-pressed={isActive}
               title={isDisabled ? "Past events cannot have reminders" : timing.label}
-              className={`${baseButtonClass} ${
+              // 🔥 FIX 2: Added 'disabled:pointer-events-none' to prevent ghost hover states
+              className={`${baseButtonClass} disabled:pointer-events-none ${
                 isActive
                   ? "border-indigo-300 bg-indigo-600 text-white shadow-sm dark:border-indigo-500"
                   : "border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:text-indigo-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-indigo-500 dark:hover:text-white"
