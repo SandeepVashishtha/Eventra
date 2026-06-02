@@ -1,19 +1,24 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Wifi, WifiOff } from "lucide-react";
+import { getQueue } from "../../utils/offlineQueue";
 import "./OfflineBanner.css";
 
 export default function OfflineBanner() {
   const [status, setStatus] = useState(navigator.onLine ? "online" : "offline");
   const [visible, setVisible] = useState(!navigator.onLine);
+  const [queueCount, setQueueCount] = useState(0);
+  const timerRef = useRef(null);
 
   useEffect(() => {
+    let timer;
+
     const handleOnline = () => {
       setStatus("online");
       setVisible(true);
-      const timer = setTimeout(() => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
         setVisible(false);
       }, 4000);
-      return () => clearTimeout(timer);
     };
 
     const handleOffline = () => {
@@ -21,12 +26,31 @@ export default function OfflineBanner() {
       setVisible(true);
     };
 
+    const handleQueueUpdated = () => {
+      setQueueCount(getQueue().length);
+      setVisible(true);
+    };
+
+    const handleQueueProcessed = (e) => {
+      const { succeeded, dropped, remaining } = e.detail;
+      setQueueCount(remaining);
+      if (remaining === 0) {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => setVisible(false), 4000);
+      }
+    };
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+    window.addEventListener("eventra-offline-queue-updated", handleQueueUpdated);
+    window.addEventListener("eventra-offline-queue-processed", handleQueueProcessed);
 
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("eventra-offline-queue-updated", handleQueueUpdated);
+      window.removeEventListener("eventra-offline-queue-processed", handleQueueProcessed);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
 
@@ -38,12 +62,16 @@ export default function OfflineBanner() {
         {status === "offline" ? (
           <>
             <WifiOff className="offline-banner-icon animate-pulse text-rose-400" size={16} />
-            <span>Operating offline. Form submissions will cache in IndexedDB secure draft store.</span>
+            <span>
+              Operating offline. {queueCount > 0 ? `${queueCount} action(s) queued for sync.` : "Form submissions will be queued."}
+            </span>
           </>
         ) : (
           <>
             <Wifi className="offline-banner-icon text-emerald-400" size={16} />
-            <span>Connection restored! Synchronizing your offline draft queue...</span>
+            <span>
+              Connection restored! {queueCount > 0 ? `Synchronizing ${queueCount} queued action(s)...` : "Offline cache is ready."}
+            </span>
           </>
         )}
       </div>

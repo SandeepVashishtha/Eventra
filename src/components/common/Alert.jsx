@@ -50,7 +50,6 @@ const Alert = ({
     <div
       className={`flex items-start gap-4 rounded-lg border p-4 ${config.container} ${className}`}
       role="alert"
-      aria-live="polite"
     >
       <div className="flex-shrink-0">
         <Icon className={`h-5 w-5 ${config.iconColor}`} aria-hidden="true" />

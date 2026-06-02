@@ -20,7 +20,9 @@ export function exportToCSV(data, filename) {
   }
   
   const csvString = csvRows.join('\n');
-  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  // Add UTF-8 BOM so Microsoft Excel correctly detects UTF-8 encoding
+  // and displays non-ASCII characters (Hindi, accented, emoji) properly.
+  const blob = new Blob(['\uFEFF', csvString], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   
   const link = document.createElement("a");
@@ -30,6 +32,10 @@ export function exportToCSV(data, filename) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+
+  // 🔥 FIX: Free up browser memory after download triggers
+  // (100ms delay ensures the browser starts the download before the blob is destroyed)
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 export function exportToJSON(data, filename) {
@@ -44,4 +50,7 @@ export function exportToJSON(data, filename) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+
+  // 🔥 FIX: Free up browser memory after download triggers
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }

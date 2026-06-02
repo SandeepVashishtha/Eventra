@@ -1,6 +1,6 @@
+import { ChevronDown } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FiChevronDown } from "react-icons/fi";
 import useReducedMotion from "../hooks/useReducedMotion";
 
 const Dropdown = ({
@@ -15,7 +15,6 @@ const Dropdown = ({
   const [activeIndex, setActiveIndex] = useState(0);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
-  const listboxId = useId();
   const labelId = useId();
   const allOptions = [placeholder, ...options];
   const selectedIndex = allOptions.findIndex((opt) => opt === value);
@@ -102,22 +101,6 @@ const Dropdown = ({
     }
   };
 
-  const handleTriggerKeyDown = (event) => {
-    if (event.key === "Escape") {
-      setOpen(false);
-    }
-  };
-
-  const handleOptionKeyDown = (event, opt) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      handleSelect(opt);
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      setOpen(false);
-    }
-  };
-
   return (
     <div className="relative w-full sm:w-64" ref={dropdownRef}>
       {label && (
@@ -140,14 +123,6 @@ const Dropdown = ({
         aria-controls={listboxId}
         aria-labelledby={label ? `${labelId} ${listboxId}-value` : undefined}
         aria-label={!label ? placeholder : undefined}
-      <button
-        type="button"
-        className="flex w-full items-center justify-between px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
-        onClick={() => setOpen((prev) => !prev)}
-        onKeyDown={handleTriggerKeyDown}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={listboxId}
       >
         <span
           id={`${listboxId}-value`}
@@ -159,8 +134,7 @@ const Dropdown = ({
         >
           {value || placeholder}
         </span>
-        <FiChevronDown className="text-gray-400 dark:text-gray-500" aria-hidden="true" />
-        <FiChevronDown
+        <ChevronDown
           className={`text-gray-400 dark:text-gray-500 transition-transform ${
             open ? "rotate-180" : ""
           }`}
@@ -178,13 +152,11 @@ const Dropdown = ({
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: 0.2 }}
-            role="listbox"
+            transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
             tabIndex={-1}
             aria-labelledby={label ? labelId : undefined}
             aria-activedescendant={`${listboxId}-option-${currentActiveIndex}`}
             onKeyDown={handleListboxKeyDown}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
           >
             {allOptions.map((opt, index) => (
               <li
@@ -201,21 +173,8 @@ const Dropdown = ({
                     ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
                     : ""
                 }`}
-                role="option"
-                aria-selected={value === opt || (!value && opt === placeholder)}
               >
-                <button
-                  type="button"
-                  onClick={() => handleSelect(opt)}
-                  onKeyDown={(event) => handleOptionKeyDown(event, opt)}
-                  className={`w-full px-4 py-2 text-left text-sm cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 focus:bg-indigo-50 dark:focus:bg-gray-700 focus:outline-none text-gray-700 dark:text-gray-100 ${
-                    value === opt
-                      ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
-                      : ""
-                  }`}
-                >
-                  {opt}
-                </button>
+                {opt}
               </li>
             ))}
           </motion.ul>
