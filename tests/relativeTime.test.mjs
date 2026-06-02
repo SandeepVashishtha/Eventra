@@ -21,4 +21,15 @@ const smartFuture = getSmartDateLabel(tomorrow.toISOString());
 const smartPast = getSmartDateLabel(yesterday.toISOString());
 assert.ok(smartFuture.includes("Tomorrow") || !smartFuture.includes("TBD"), "tomorrow date has proper label");
 
+// Leap year date formatted properly
+assert.ok(getSmartDateLabel("2028-02-29T12:00:00Z").includes("Feb 29, 2028"), "leap year date formatted properly");
+
+// Extreme past/future tests
+const yearsAgo = new Date(now.getTime() - 1000 * 60 * 60 * 24 * 365 * 10);
+assert.ok(getSmartDateLabel(yearsAgo.toISOString()) !== "TBD", "decade ago date formatted properly");
+
+// Non-string arguments checking
+assert.equal(getRelativeTime(123456789), null, "number input returns null");
+assert.equal(getSmartDateLabel(undefined), "TBD", "undefined input returns TBD");
+
 console.log("relativeTime edge case tests passed ✓");
