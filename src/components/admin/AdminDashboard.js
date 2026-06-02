@@ -20,6 +20,7 @@ import {
   ChevronDown,
   QrCode,
   ChevronLeft,
+  Clock,
 } from "lucide-react";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
 import {
@@ -123,6 +124,85 @@ const AdminDashboard = () => {
 
   const [confirmModal, setConfirmModal] = useState({ open: false, type: "", id: null });
   const [showExportDropdown, setShowExportDropdown] = useState(false);
+
+  const [selectedWaitlistEvent, setSelectedWaitlistEvent] = useState(null);
+  const [waitlistUsers, setWaitlistUsers] = useState([]);
+
+  const loadWaitlist = useCallback((eventId) => {
+    import("../../utils/waitlistUtils.js").then(({ getEventWaitlist }) => {
+      setWaitlistUsers(getEventWaitlist(eventId));
+    });
+  }, []);
+
+  const openWaitlistModal = (event) => {
+    setSelectedWaitlistEvent(event);
+    loadWaitlist(event.id);
+  };
+
+  const handleRemoveFromWaitlist = async (userId) => {
+    if (!selectedWaitlistEvent) return;
+    if (window.confirm("Are you sure you want to remove this user from the waitlist?")) {
+      try {
+        const { organizerRemoveUser } = await import("../../utils/waitlistUtils.js");
+        await organizerRemoveUser(selectedWaitlistEvent.id, userId);
+        toast.success("User removed from waitlist.");
+        loadWaitlist(selectedWaitlistEvent.id);
+      } catch (err) {
+        toast.error(err.message || "Failed to remove user.");
+      }
+    }
+  };
+
+  const handleIncreaseCapacity = async () => {
+    if (!selectedWaitlistEvent) return;
+    const newCapStr = window.prompt("Enter new capacity for this event:", (Number(selectedWaitlistEvent.maxAttendees) || 0) + 10);
+    if (!newCapStr) return;
+    const newCap = parseInt(newCapStr, 10);
+    if (isNaN(newCap) || newCap <= (selectedWaitlistEvent.maxAttendees || 0)) {
+      toast.error("Please enter a valid capacity greater than current capacity.");
+      return;
+    }
+
+    try {
+      const { handleCapacityIncrease } = await import("../../utils/waitlistUtils.js");
+      
+      const updatedEvent = {
+        ...selectedWaitlistEvent,
+        maxAttendees: newCap,
+        attendees: selectedWaitlistEvent.attendees
+      };
+      
+      const promotedCount = await handleCapacityIncrease(updatedEvent, newCap);
+      
+      const cacheKey = `event_detail_${selectedWaitlistEvent.id}`;
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) {
+        const parsed = safeJsonParse(raw, null);
+        if (parsed?.event) {
+          parsed.event.maxAttendees = newCap;
+          parsed.event.attendees = (Number(parsed.event.attendees) || 0) + promotedCount;
+          localStorage.setItem(cacheKey, JSON.stringify(parsed));
+        }
+      }
+      
+      setSelectedWaitlistEvent(prev => ({
+        ...prev,
+        maxAttendees: newCap,
+        attendees: (Number(prev.attendees) || 0) + promotedCount
+      }));
+
+      loadEvents(eventsPage, searchEvent);
+
+      if (promotedCount > 0) {
+        toast.success(`Capacity increased to ${newCap}. Promoted ${promotedCount} user(s) from waitlist!`);
+      } else {
+        toast.success(`Capacity increased to ${newCap}. No users to promote.`);
+      }
+      loadWaitlist(selectedWaitlistEvent.id);
+    } catch (err) {
+      toast.error(err.message || "Failed to update capacity.");
+    }
+  };
 
   const firstName = user?.firstName || user?.username || "Admin";
 
@@ -540,6 +620,9 @@ const AdminDashboard = () => {
                               <td><StatusBadge status={ev.status || "Upcoming"} /></td>
                               <td>
                                 <div className="ad-action-btns">
+                                  <button className="ad-icon-action" title="Waitlist" onClick={() => openWaitlistModal(ev)} style={{ color: "#f59e0b" }}>
+                                    <Clock size={14} />
+                                  </button>
                                   {hasPermission(PERMISSIONS.EDIT_EVENT) && (
                                     <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}><Edit2 size={14} /></button>
                                   )}
@@ -642,6 +725,74 @@ const AdminDashboard = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Waitlist Management Modal */}
+      {selectedWaitlistEvent && (
+        <div className="ad-modal-overlay" onClick={() => setSelectedWaitlistEvent(null)}>
+          <motion.div
+            className="ad-modal" style={{ maxWidth: "600px", width: "90%" }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4 border-b pb-2">
+              <h3 className="ad-modal-title" style={{ margin: 0 }}>
+                Waitlist for {selectedWaitlistEvent.title}
+              </h3>
+              <button onClick={() => setSelectedWaitlistEvent(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            
+            <div className="mb-4 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
+              <span className="text-xs font-semibold text-slate-650 dark:text-slate-400">
+                Capacity: {selectedWaitlistEvent.attendees} / {selectedWaitlistEvent.maxAttendees} registered
+              </span>
+              <button
+                onClick={handleIncreaseCapacity}
+                className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition cursor-pointer"
+              >
+                Increase Capacity
+              </button>
+            </div>
+
+            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+              {waitlistUsers.length === 0 ? (
+                <p className="text-center py-6 text-sm text-gray-500">No users on the waitlist for this event.</p>
+              ) : (
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b dark:border-gray-800 text-slate-500 dark:text-slate-400 font-semibold">
+                      <th className="py-2">Pos</th>
+                      <th className="py-2">User</th>
+                      <th className="py-2">Email</th>
+                      <th className="py-2">Joined At</th>
+                      <th className="py-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {waitlistUsers.map((w, index) => (
+                      <tr key={w.userId} className="border-b dark:border-gray-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-850/50">
+                        <td className="py-2 font-bold text-amber-600 dark:text-amber-400">{index + 1}</td>
+                        <td className="py-2">{w.userName}</td>
+                        <td className="py-2 text-slate-500">{w.userEmail || "—"}</td>
+                        <td className="py-2 text-slate-500">{new Date(w.joinedAt).toLocaleTimeString()}</td>
+                        <td className="py-2">
+                          <button
+                            onClick={() => handleRemoveFromWaitlist(w.userId)}
+                            className="text-red-500 hover:underline font-semibold cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

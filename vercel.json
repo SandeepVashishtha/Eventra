@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run lint && GENERATE_SOURCEMAP=false npm run build",
   "outputDirectory": "build",
-  "framework": "create-react-app",
+  "framework": "vite",
   "env": {
     "REACT_APP_API_URL": "/api"
   },
@@ -91,6 +91,15 @@
         {
           "key": "Access-Control-Allow-Headers",
           "value": "Content-Type, Authorization"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     },
