@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
+import { ChevronDown, ChevronUp, MapPin, RotateCcw } from "lucide-react";
 import CategoryFilter from "./CategoryFilter";
 import ModeFilter from "./ModeFilter";
 import StatusFilter from "./StatusFilter";
@@ -9,8 +9,10 @@ import {
   EVENT_CATEGORIES,
   EVENT_MODES,
   EVENT_STATUS_OPTIONS,
+  FILTER_PRESETS,
   hasActiveFilters,
   getDefaultFilters,
+  normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 
 /**
@@ -29,6 +31,7 @@ const AdvancedFilterPanel = ({
     category: true,
     mode: true,
     status: true,
+    location: false,
     price: false,
     date: false,
   });
@@ -52,6 +55,10 @@ const AdvancedFilterPanel = ({
     onFiltersChange({ ...filters, statuses });
   };
 
+  const handleLocationChange = (event) => {
+    onFiltersChange({ ...filters, location: event.target.value });
+  };
+
   const handlePriceChange = (priceRange) => {
     onFiltersChange({
       ...filters,
@@ -72,6 +79,15 @@ const AdvancedFilterPanel = ({
 
   const handleClearAll = () => {
     onFiltersChange(getDefaultFilters());
+  };
+
+  const handlePresetApply = (presetFilters) => {
+    onFiltersChange(
+      normalizeAdvancedFilters({
+        ...filters,
+        ...presetFilters,
+      }),
+    );
   };
 
   const hasFilters = hasActiveFilters(filters);
@@ -123,6 +139,24 @@ const AdvancedFilterPanel = ({
       {/* Filters Panel */}
       {isOpen && (
         <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-4 sm:px-6 space-y-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+              Presets
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {FILTER_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => handlePresetApply(preset.filters)}
+                  className="px-3 py-1.5 text-xs font-medium rounded-full border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Category Filter Section */}
           <div>
             <button
@@ -194,6 +228,40 @@ const AdvancedFilterPanel = ({
                   selectedStatuses={filters.statuses || []}
                   onStatusChange={handleStatusChange}
                 />
+              </div>
+            )}
+          </div>
+
+          {/* Location Filter Section */}
+          <div>
+            <button
+              onClick={() => toggleSection("location")}
+              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+            >
+              <span>Location</span>
+              <ChevronDown
+                size={16}
+                className={`transition-transform ${
+                  expandedSections.location ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            {expandedSections.location && (
+              <div className="mt-3">
+                <label htmlFor="event-location-filter" className="sr-only">
+                  Filter by location
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <input
+                    id="event-location-filter"
+                    type="text"
+                    value={filters.location || ""}
+                    onChange={handleLocationChange}
+                    placeholder="City, venue, or region"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                  />
+                </div>
               </div>
             )}
           </div>

@@ -834,6 +834,41 @@ Authorization: Bearer <token>
 
 - Related event registrations are automatically cleaned up by the backend before the event is deleted.
 
+---
+
+## Stream Event Updates (SSE)
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/events/stream` |
+
+Opens a Server-Sent Events stream connection for event updates.
+
+### Authentication
+Public. No authentication required.
+
+### Purpose
+- This endpoint currently establishes a basic SSE connection.
+- It sends an initial connected event to confirm the stream is active.
+- It prepares the backend for future real-time event broadcasts.
+- *Note: Full real-time event create/update/register broadcasting is not yet implemented.*
+
+### Response Media Type
+`text/event-stream`
+
+### Manual Test Command
+```bash
+curl -N http://localhost:8080/api/events/stream
+```
+
+### Example Stream Output
+```text
+event:connected
+data:Stream connected successfully
+```
+
+#### Backend Implementation PR
+[SandeepVashishtha/Eventra-Backend#BACKEND_PR_NUMBER](https://github.com/SandeepVashishtha/Eventra-Backend/pull/BACKEND_PR_NUMBER)
 
 ---
 
@@ -984,6 +1019,43 @@ Not required. Public endpoint.
 
 ---
 
+## Upvote Project
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/projects/{id}/upvote` |
+
+Increments the upvote count for a project by 1 and returns the updated project details.
+
+### Authentication
+Requires a valid Bearer JWT in the `Authorization` header. Any authenticated user can upvote.
+
+### Success Response
+Status: `200 OK`
+
+#### Response Example:
+
+```json
+{
+  "id": 1,
+  "title": "Manual Test Project",
+  "description": "Project detail API manual verification",
+  "category": "Web Development",
+  "thumbnailUrl": "https://example.com/project.png",
+  "githubUrl": "https://github.com/example/project",
+  "upvotes": 1
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `401 Unauthorized` | JWT token is missing, invalid, or expired |
+| `404 Not Found` | Project not found with the given ID |
+
+---
+
 ## Get Project Categories
 
 | Method | Endpoint |
@@ -1019,6 +1091,59 @@ Status: `200 OK`
 - This endpoint is public and does not require JWT authentication.
 - This PR only documents the project categories endpoint.
 - Other Projects APIs will be documented separately when implemented.
+
+---
+
+# Hackathon APIs
+
+## Get Hackathon By ID
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/hackathons/{id}` |
+
+Returns complete details for a single hackathon by its ID.
+
+*This documentation update corresponds to the backend implementation for GET /api/hackathons/{id}.*
+
+### Authentication
+Not required. Public endpoint.
+
+### Example Request
+
+```bash
+GET /api/hackathons/1
+```
+
+### Successful Response (200)
+
+```json
+{
+  "id": 1,
+  "title": "CodeSprint 2026",
+  "description": "A beginner-friendly hackathon for building full-stack projects.",
+  "organizer": "Eventra Team",
+  "startDate": "2026-07-10T00:00:00",
+  "endDate": "2026-07-12T00:00:00",
+  "location": "Bhopal",
+  "mode": "Offline",
+  "prizePool": "50000",
+  "registrationDeadline": "2026-07-05T00:00:00",
+  "imageUrl": "https://example.com/hackathon.png"
+}
+```
+
+### Error Response (404)
+
+```json
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "Hackathon not found with id: 999",
+  "path": "/api/hackathons/999",
+  "timestamp": "2026-06-02T02:41:32.8274901"
+}
+```
 
 ---
 
