@@ -37,22 +37,33 @@ class MockBlob {
 }
 global.Blob = MockBlob;
 
-// Mock navigator.sendBeacon
+// ✅ FIX: Node 22 has read-only navigator getter → use defineProperty
 let beaconSent = null;
-global.navigator = {
-  sendBeacon(url, blob) {
-    beaconSent = { url, blob };
-    return true;
-  }
-};
 
-// Import functions dynamically so NODE_ENV changes are active during evaluation
-const { initCspReporting, teardownCspReporting } = await import("../src/utils/cspReporting.js");
+Object.defineProperty(globalThis, "navigator", {
+  value: {
+    sendBeacon(url, blob) {
+      beaconSent = { url, blob };
+      return true;
+    }
+  },
+  configurable: true
+});
+
+// Import module after mocks + env setup
+const { initCspReporting, teardownCspReporting } = await import(
+  "../src/utils/cspReporting.js"
+);
 
 // Test 1: initCspReporting registers event listener
 assert.equal(listeners["securitypolicyviolation"], undefined, "no listener before init");
+
 initCspReporting();
-assert.ok(typeof listeners["securitypolicyviolation"] === "function", "listener registered after init");
+
+assert.ok(
+  typeof listeners["securitypolicyviolation"] === "function",
+  "listener registered after init"
+);
 
 // Test 2: triggering the listener in development
 const mockCspEvent = {
@@ -71,42 +82,44 @@ listeners["securitypolicyviolation"](mockCspEvent);
 
 // Verify dev warning was logged
 assert.ok(loggedWarning !== null, "console.warn was called in dev environment");
-assert.equal(loggedWarning[0], "[CSP Violation]", "first arg is tag");
-assert.equal(loggedWarning[1], "Directive: style-src-elem", "second arg is directive info");
+assert.equal(loggedWarning[0], "[CSP Violation]");
+assert.equal(loggedWarning[1], "Directive: style-src-elem");
 
 // Verify beacon was dispatched
 assert.ok(beaconSent !== null, "sendBeacon was called");
-assert.equal(beaconSent.url, "https://example.com/csp-report", "beacon sent to correct reportUri");
-assert.ok(beaconSent.blob instanceof MockBlob, "beacon sent valid Blob");
+assert.equal(beaconSent.url, "https://example.com/csp-report");
+assert.ok(beaconSent.blob instanceof MockBlob);
+
 const parsedReport = JSON.parse(beaconSent.blob.content[0]);
-assert.deepEqual(
-  parsedReport["csp-report"],
-  {
-    "document-uri": "http://localhost/test",
-    "violated-directive": "style-src",
-    "effective-directive": "style-src-elem",
-    "original-policy": "default-src 'none'",
-    "blocked-uri": "inline",
-    "source-file": "main.js",
-    "line-number": 10,
-    "column-number": 5,
-    "status-code": 200
-  },
-  "constructed CSP report matches expectations"
-);
+
+assert.deepEqual(parsedReport["csp-report"], {
+  "document-uri": "http://localhost/test",
+  "violated-directive": "style-src",
+  "effective-directive": "style-src-elem",
+  "original-policy": "default-src 'none'",
+  "blocked-uri": "inline",
+  "source-file": "main.js",
+  "line-number": 10,
+  "column-number": 5,
+  "status-code": 200
+});
 
 // Test 3: teardownCspReporting removes listener
 teardownCspReporting();
-assert.equal(listeners["securitypolicyviolation"], undefined, "listener unregistered after teardown");
+
+assert.equal(listeners["securitypolicyviolation"], undefined);
 
 // Restore originals
 process.env.NODE_ENV = originalNodeEnv;
+
 if (originalReportUri === undefined) {
   delete process.env.REACT_APP_CSP_REPORT_URI;
 } else {
   process.env.REACT_APP_CSP_REPORT_URI = originalReportUri;
 }
+
 console.warn = originalConsoleWarn;
+
 delete global.document;
 delete global.navigator;
 delete global.Blob;

@@ -192,13 +192,11 @@ const FooterLinks = () => (
 const Footer = () => {
   return (
     <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-      
-      <div className="mt-10 max-w-full mx-auto px-6 py-20 grid lg:grid-cols-3 gap-x-12 gap-y-12 bg-gradient-to-t from-slate-50 dark:from-slate-900"> 
-      //<div className="mt-10 max-w-full mx-auto px-6 py-20 grid lg:grid-cols-3 gap-x-12 gap-y-12 bg-gradient-to-t from-slate-50 dark:from-slate-900">
-        
+
+      <div className="mt-10 max-w-full mx-auto px-6 py-20 grid lg:grid-cols-3 gap-x-12 gap-y-12 bg-gradient-to-t from-slate-50 dark:from-slate-900">
+
         {/* BRAND */}
         <div className="lg:col-span-1 flex flex-col gap-6 items-center">
-          
           <div className="flex items-center gap-3">
             <img src="/favicon.png" alt="Eventra logo" className="w-10 h-10" />
             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
@@ -223,7 +221,7 @@ const Footer = () => {
       {/* BOTTOM BAR */}
       <div className="border-t border-slate-200 dark:border-slate-800">
         <div className="max-w-full mx-auto px-6 py-8 flex flex-col justify-center items-center gap-1 text-sm text-slate-500 h-[100px]">
-          
+
           <p>© {new Date().getFullYear()} Eventra</p>
 
           <div className="flex gap-3">
