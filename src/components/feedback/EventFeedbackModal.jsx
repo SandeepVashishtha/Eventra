@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, CheckCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
 import StarRating from './StarRating';
@@ -18,13 +18,13 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
   const [isEditing, setIsEditing] = useState(false);
 
   const FEEDBACK_TAGS = [
-    'Great Speaker',
     'Well Organized',
+    'Great Speaker',
     'Networking',
-    'Good Food',
+    'Hands-on',
+    'Beginner Friendly',
+    'Too Fast',
     'Too Long',
-    'Better Venue',
-    'Needs More Time',
   ];
 
   // Load existing feedback if editing
