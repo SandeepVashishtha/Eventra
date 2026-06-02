@@ -7,7 +7,7 @@ import {
   LogOut, User, Plus, Search, X
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect, Component } from "react";
+import { useState, useEffect, useMemo, Component } from "react";
 import { useAuth } from "../../context/AuthContext";
 import StatusBadge from "../common/StatusBadge";
 import EventsTab from "./EventsTab";
@@ -116,7 +116,9 @@ export default function UserDashboard() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const stats = {
+  const safeData = Array.isArray(MOCK_DATA) ? MOCK_DATA : [];
+
+  const stats = useMemo(() => ({
     eventsTotal: MOCK_DATA.filter(d => d.type === "Event").length,
     eventsCreated: MOCK_DATA.filter(d => d.type === "Event" && d.participationType === "Hosted").length,
     eventsJoined: MOCK_DATA.filter(d => d.type === "Event" && d.participationType === "Registered").length,
@@ -126,26 +128,35 @@ export default function UserDashboard() {
     projectsTotal: MOCK_DATA.filter(d => d.type === "Project").length,
     projectsDone: MOCK_DATA.filter(d => d.type === "Project" && d.projectStatus === "Done").length,
     projectsActive: MOCK_DATA.filter(d => d.type === "Project" && d.projectStatus !== "Done").length,
-  };
+  }), [MOCK_DATA]);
 
-  const safeData = Array.isArray(MOCK_DATA) ? MOCK_DATA : [];
-  const upcomingEvents = safeData.filter(d => d && d.type === "Event" && d.status === "Upcoming");
-  const upcomingHackathons = safeData.filter(d => d && d.type === "Hackathon" && d.status === "Upcoming");
-  const activeProjects = safeData.filter(d => d && d.type === "Project" && d.projectStatus !== "Done");
+  const upcomingEvents = useMemo(() =>
+    safeData.filter(d => d && d.type === "Event" && d.status === "Upcoming"),
+  [MOCK_DATA]);
 
-  const filteredData = MOCK_DATA.filter(item => {
-    const matchSearch = (item.title || "").toLowerCase().includes(searchQuery.toLowerCase());
-    const matchType = filterType === "All" || item.type === filterType;
-    const matchStatus = filterStatus === "All"
-      || item.status === filterStatus
-      || item.projectStatus === filterStatus;
-    return matchSearch && matchType && matchStatus;
-  }).sort((a, b) => {
-    if (!a.date && !b.date) return 0;
-    if (!a.date) return 1;
-    if (!b.date) return -1;
-    return new Date(b.date) - new Date(a.date);
-  });
+  const upcomingHackathons = useMemo(() =>
+    safeData.filter(d => d && d.type === "Hackathon" && d.status === "Upcoming"),
+  [MOCK_DATA]);
+
+  const activeProjects = useMemo(() =>
+    safeData.filter(d => d && d.type === "Project" && d.projectStatus !== "Done"),
+  [MOCK_DATA]);
+
+  const filteredData = useMemo(() =>
+    MOCK_DATA.filter(item => {
+      const matchSearch = (item.title || "").toLowerCase().includes(searchQuery.toLowerCase());
+      const matchType = filterType === "All" || item.type === filterType;
+      const matchStatus = filterStatus === "All"
+        || item.status === filterStatus
+        || item.projectStatus === filterStatus;
+      return matchSearch && matchType && matchStatus;
+    }).sort((a, b) => {
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return new Date(b.date) - new Date(a.date);
+    }),
+  [MOCK_DATA, searchQuery, filterType, filterStatus]);
 
   const notifications = [
     { id: 1, text: "React Conference 2025 registration opens soon", time: "2h ago", unread: true },

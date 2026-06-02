@@ -11,6 +11,7 @@
 // ---------------------------------------------------------------------------
 
 import { verifyAuth } from "./middleware/auth.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_SENDS = 5;
@@ -100,7 +101,7 @@ async function handler(req, res) {
   });
 
   try {
-    const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+    const response = await fetchWithTimeout("https://api.emailjs.com/api/v1.0/email/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -114,7 +115,7 @@ async function handler(req, res) {
           event_date: eventDateStr,
         },
       }),
-    });
+    }, 8000);
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
@@ -130,3 +131,5 @@ async function handler(req, res) {
 }
 
 export default verifyAuth(handler);
+;
+

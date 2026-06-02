@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom"; // <-- 1. Added this import
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import "./index.css";
 import App from "./App";
@@ -25,6 +25,13 @@ if (process.env.NODE_ENV === "production") {
   serviceWorkerRegistration.unregister();
 }
 
+const router = createBrowserRouter([
+  {
+    path: "*",
+    element: <App />
+  }
+]);
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
@@ -34,9 +41,7 @@ root.render(
   <HelmetProvider>
     <ThemeProvider>
       <RealTimeProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <RouterProvider router={router} />
       </RealTimeProvider>
     </ThemeProvider>
   </HelmetProvider>

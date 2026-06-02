@@ -1,3 +1,4 @@
+import { Code2, RefreshCw, Compass, ChevronDown, X } from "lucide-react";
 import TeamMatchmaking from "./components/TeamMatchmaking";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -5,7 +6,6 @@ import { Link } from "react-router-dom";
 import { fetchHackathons } from "../../services/hackathonService";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
-import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
@@ -31,7 +31,7 @@ const Tag = ({ tag, onRemove }) => (
       onClick={() => onRemove(tag)}
       className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
     >
-      <FiX className="w-3 h-3" />
+      <X className="w-3 h-3" />
     </button>
   </motion.div>
 );
@@ -98,7 +98,7 @@ const CustomDropdown = ({
           {displayText}
         </span>
 
-        <FiChevronDown className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
+        <ChevronDown className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
       </button>
 
       {open &&
@@ -224,8 +224,8 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
   }, []);
 
   const positionClass = `
-    ${isScrollVisible ? "bottom-40" : "bottom-24"} 
-    ${isChatbotOpen ? "left-6" : "right-6"}
+    ${isScrollVisible ? "bottom-[calc(2.5rem+var(--safe-area-bottom))] sm:bottom-40" : "bottom-[calc(1rem+var(--safe-area-bottom))] sm:bottom-24"}
+    ${isChatbotOpen ? "left-[calc(1rem+var(--safe-area-left))] sm:left-6" : "right-[calc(1rem+var(--safe-area-right))] sm:right-6"}
   `;
 
   const containerVariants = {
@@ -282,7 +282,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
   }), [hackathons]);
 
   const searchedHackathons = debouncedSearchQuery
-    ? fuse.search(debouncedSearchQuery).map((result) => result.item)
+    ? fuse.search(debouncedSearchQuery.trim()).map((result) => result.item)
     : hackathons;
 
   const filteredHackathons = filterHackathons(searchedHackathons, {
@@ -460,8 +460,9 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                   <button
                     onClick={resetFilters}
                     className="text-xs text-primary hover:opacity-90 font-semibold border border-primary/20 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all"
-                   aria-label="button">
-                    ✕ Clear filters
+                    aria-label="Clear hackathon filters"
+                  >
+                    Clear filters
                   </button>
                 )}
             </div>
@@ -687,7 +688,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                   }}
                   className="flex justify-center items-center w-20 h-20 rounded-full bg-bg dark:bg-bg shadow-sm mx-auto border border-border"
                 >
-                  <FiCode className="h-10 w-10 text-primary" />
+                  <Code2 className="h-10 w-10 text-primary" />
                 </motion.div>
 
                 <h3 className="mt-6 text-2xl font-bold text-slate-900 dark:text-gray-100">
@@ -711,7 +712,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                     onClick={resetFilters}
                     className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-primary hover:opacity-90 shadow-lg transition-all"
                   >
-                    <FiRotateCw className="w-4 h-4" />
+                    <RefreshCw className="w-4 h-4" />
                     Reset Filters
                   </motion.button>
 
@@ -722,7 +723,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                     className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-bg hover:bg-card-bg shadow-md transition-all"
                   >
                     Explore Hackathons
-                    <FiCompass className="w-4 h-4" />
+                    <Compass className="w-4 h-4" />
                   </motion.button>
                 </div>
               </div>
@@ -732,7 +733,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
         </SectionErrorBoundary>
       </div>
       <HackathonCTA></HackathonCTA>
-      <BackToTopButton />
+      <BackToTopButton positionClass={positionClass} />
     </div>
   );
 };

@@ -1,16 +1,6 @@
+import { Github, ExternalLinkAlt, CodeBranch, MapMarkerAlt, Building, UserFriends, Medal, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
-import {
-  FaGithub,
-  FaExternalLinkAlt,
-  FaCodeBranch,
-  FaMapMarkerAlt,
-  FaBuilding,
-  FaUserFriends,
-  FaMedal,
-  FaChevronLeft,
-  FaChevronRight,
-} from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { throttleProfileFetch } from "../../../components/Contributors";
@@ -321,7 +311,7 @@ const Contributors = () => {
             disabled={loading || currentIndex === 0}
            aria-label="Previous slide">
             {/* UPDATED: Arrow icon color */}
-            <FaChevronLeft className="text-gray-900 dark:text-white text-xl" />
+            <ChevronLeft className="text-gray-900 dark:text-white text-xl" />
           </button>
 
           <button
@@ -332,7 +322,7 @@ const Contributors = () => {
             aria-label="Next slide"
           >
             {/* UPDATED: Arrow icon color */}
-            <FaChevronRight className="text-gray-900 dark:text-white text-xl" />
+            <ChevronRight className="text-gray-900 dark:text-white text-xl" />
           </button>
 
           {/* Carousel Content */}
@@ -508,7 +498,7 @@ const Contributors = () => {
               className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>View All Contributors</span>
-              <FaExternalLinkAlt className="text-sm" />
+              <ExternalLinkAlt className="text-sm" />
             </Link>
             <Link
               to="/ContributorGuide"
@@ -516,7 +506,7 @@ const Contributors = () => {
               className="inline-flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out ml-10"
             >
               <span>Guide</span>
-              <FaExternalLinkAlt className="text-sm" />
+              <ExternalLinkAlt className="text-sm" />
             </Link>
           </div>
         </div>
