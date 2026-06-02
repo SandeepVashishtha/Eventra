@@ -1,6 +1,6 @@
+import { ChevronDown } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FiChevronDown } from "react-icons/fi";
 import useReducedMotion from "../hooks/useReducedMotion";
 
 const Dropdown = ({
@@ -134,7 +134,7 @@ const Dropdown = ({
         >
           {value || placeholder}
         </span>
-        <FiChevronDown
+        <ChevronDown
           className={`text-gray-400 dark:text-gray-500 transition-transform ${
             open ? "rotate-180" : ""
           }`}

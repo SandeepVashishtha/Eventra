@@ -118,7 +118,7 @@ describe("useKeyboardShortcuts", () => {
     ["g", "r", "/reminders"],
     ["g", "k", "/hackathons"],
     ["g", "p", "/projects"],
-    ["g", "a", "/leaderBoard"],
+    ["g", "a", "/leaderboard"],
     ["g", "f", "/faq"],
     ["g", "d", "/dashboard"],
   ];

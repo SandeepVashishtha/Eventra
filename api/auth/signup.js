@@ -1,7 +1,9 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { createRateLimiter } from "../middleware/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
+import { createRateLimiter } from "../lib/rateLimit.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
@@ -34,6 +36,12 @@ const users = new Map();
 // ---------------------------------------------------------------------------
 
 const JWT_SECRET = getJwtSecret();
+
+// ---------------------------------------------------------------------------
+// Rate Limiting (IP-based, 3 signups per minute)
+// ---------------------------------------------------------------------------
+
+const signupRateLimiter = createRateLimiter(60_000, 3);
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
@@ -111,7 +119,7 @@ const DEFAULT_PERMISSIONS = [
 // Signup Handler
 // ---------------------------------------------------------------------------
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return res.status(200).set(buildCorsHeaders(req)).end();
@@ -124,6 +132,24 @@ export default async function handler(req, res) {
 
   try {
     const { firstName, lastName, email, password, confirmPassword } = req.body;
+
+    // -----------------------------------------------------------------------
+    // Rate Limiting (signup spam protection)
+    // -----------------------------------------------------------------------
+
+    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+      || req.headers?.["x-real-ip"]
+      || req.socket?.remoteAddress
+      || "unknown";
+
+    signupRateLimiter.evictStale();
+
+    if (!signupRateLimiter.check(clientIp)) {
+      return corsResponse(res, 429, {
+        error: "Too many signup attempts. Please try again later.",
+        retryAfter: 60,
+      }, req);
+    }
 
     // -----------------------------------------------------------------------
     // Input Validation
@@ -265,4 +291,11 @@ export default async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
+const signupRateLimiter = createRateLimiter({
+  max: 5,
+  windowMs: 15 * 60 * 1000,
+  message: "Too many authentication attempts. Please try again later.",
+});
+
+export default signupRateLimiter(handler);
 export { users };
