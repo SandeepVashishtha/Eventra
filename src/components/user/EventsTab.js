@@ -176,7 +176,10 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
               {tag}
             </span>
           ))}
-        </div>      <div className="px-6 py-4 flex gap-3 bg-linear-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
+        </div>
+      )}
+
+      <div className="px-6 py-4 flex gap-3 bg-linear-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
         {showCancel ? (
           <>
             <button
@@ -265,8 +268,6 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
         </button>
       </div>
     </motion.div>
-  );
-};iv>
   );
 };
 
