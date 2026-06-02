@@ -133,25 +133,11 @@ async function handler(req, res) {
   }
 
   try {
-    const { firstName, lastName, email, password, confirmPassword } = req.body;
-
-    // -----------------------------------------------------------------------
-    // Rate Limiting (signup spam protection)
-    // -----------------------------------------------------------------------
-
-    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
-
-    signupRateLimiter.evictStale();
-
-    if (!signupRateLimiter.check(clientIp)) {
-      return corsResponse(req, res, 429, {
-        error: "Too many signup attempts. Please try again later.",
-        retryAfter: 60,
-      });
+    if (!req.body || typeof req.body !== "object") {
+      return corsResponse(req, res, 400, { error: "Request body is required" });
     }
+
+    const { firstName, lastName, email, password, confirmPassword } = req.body;
 
     // -----------------------------------------------------------------------
     // Input Validation
@@ -198,6 +184,25 @@ async function handler(req, res) {
 
     if (users.has(normalizedEmail)) {
       return corsResponse(req, res, 409, { error: "An account with this email already exists" });
+    }
+
+    // -----------------------------------------------------------------------
+    // Rate Limiting (signup spam protection)
+    // Run after input validation so malformed requests don't burn the budget.
+    // -----------------------------------------------------------------------
+
+    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+      || req.headers?.["x-real-ip"]
+      || req.socket?.remoteAddress
+      || "unknown";
+
+    signupRateLimiter.evictStale();
+
+    if (!signupRateLimiter.check(clientIp)) {
+      return corsResponse(req, res, 429, {
+        error: "Too many signup attempts. Please try again later.",
+        retryAfter: 60,
+      });
     }
 
     // -----------------------------------------------------------------------
