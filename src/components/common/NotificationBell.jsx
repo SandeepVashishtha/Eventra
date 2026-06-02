@@ -32,7 +32,7 @@ const NotificationBell = () => {
           <div className="notification-header">
             <h4>Notifications</h4>
 
-            <button onClick={markAllAsRead} aria-label="button">
+            <button onClick={markAllAsRead} aria-label="Mark all notifications as read">
               Mark all read
             </button>
           </div>
