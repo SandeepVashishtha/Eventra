@@ -17,8 +17,12 @@ const _listeners = {};
 global.window = {
   localStorage: {
     getItem: (key) => (key in _lsStore ? _lsStore[key] : null),
-    setItem: (key, val) => { _lsStore[key] = String(val); },
-    removeItem: (key) => { delete _lsStore[key]; },
+    setItem: (key, val) => {
+      _lsStore[key] = String(val);
+    },
+    removeItem: (key) => {
+      delete _lsStore[key];
+    },
   },
   addEventListener: (event, cb) => {
     if (!_listeners[event]) _listeners[event] = [];
@@ -65,8 +69,8 @@ function futureEvent(offsetMinutes = 120) {
   return {
     id: "evt-1",
     title: "Test Event",
-    date: d.toISOString().split("T")[0],   // YYYY-MM-DD
-    time: d.toTimeString().slice(0, 5),    // HH:MM
+    date: d.toISOString().split("T")[0], // YYYY-MM-DD
+    time: d.toTimeString().slice(0, 5), // HH:MM
     location: "Berlin",
   };
 }
@@ -85,11 +89,7 @@ assert.equal(
   "evt-42::15m",
   "getReminderId returns a colon-separated composite key"
 );
-assert.equal(
-  getReminderId(99, "1h"),
-  "99::1h",
-  "getReminderId coerces numeric eventId to string"
-);
+assert.equal(getReminderId(99, "1h"), "99::1h", "getReminderId coerces numeric eventId to string");
 
 // ── isPastEvent ──────────────────────────────────────────────────────────────
 const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -106,11 +106,7 @@ assert.equal(
   "isPastEvent returns false for an event 6 hours in the future"
 );
 
-assert.equal(
-  isPastEvent({}),
-  true,
-  "isPastEvent returns true when event has no date"
-);
+assert.equal(isPastEvent({}), true, "isPastEvent returns true when event has no date");
 
 // ── getReminderTriggerTime ────────────────────────────────────────────────────
 const futureEvt = futureEvent(120);
@@ -182,5 +178,23 @@ addReminder(evtR, "15m");
 assert.equal(hasReminder(evtR.id, "15m"), true, "reminder exists before removal");
 removeReminder(evtR.id, "15m");
 assert.equal(hasReminder(evtR.id, "15m"), false, "reminder absent after removeReminder");
+
+// ── timezone-aware reminders ───────────────────────────────────────────────────
+const timezoneEvt = {
+  id: "evt-tz",
+  title: "Kolkata Event",
+  date: "2026-06-01",
+  time: "10:00 AM",
+  timezone: "Asia/Kolkata",
+};
+const tzTrigger = getReminderTriggerTime(timezoneEvt, "1h");
+// 10:00 AM Asia/Kolkata is 04:30 AM UTC.
+// 1 hour before is 03:30 AM UTC (2026-06-01T03:30:00Z)
+const expectedTzTrigger = new Date(Date.UTC(2026, 5, 1, 3, 30, 0, 0)); // 5 = June
+assert.equal(
+  tzTrigger.getTime(),
+  expectedTzTrigger.getTime(),
+  "getReminderTriggerTime calculates correct timezone-aware trigger time"
+);
 
 console.log("All reminderUtils tests passed ✓");

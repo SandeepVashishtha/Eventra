@@ -12,6 +12,55 @@ const isLoadingState = (state) => state === "loading" || state === "validating";
 
 const mergeDescribedBy = (...ids) => ids.filter(Boolean).join(" ") || undefined;
 
+const getFirstValidElement = (node) => {
+  if (Array.isArray(node)) {
+    for (const n of node) {
+      const found = getFirstValidElement(n);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (!React.isValidElement(node)) return null;
+  if (node.type === React.Fragment) {
+    return getFirstValidElement(node.props.children);
+  }
+  return node;
+};
+
+const enhanceChildren = (node, propsToInject) => {
+  let enhanced = false;
+
+  const traverse = (childNode) => {
+    if (enhanced) return childNode;
+    
+    if (Array.isArray(childNode)) {
+      return React.Children.map(childNode, traverse);
+    }
+
+    if (!React.isValidElement(childNode)) {
+      return childNode;
+    }
+
+    if (childNode.type === React.Fragment) {
+      return React.createElement(
+        React.Fragment,
+        { key: childNode.key },
+        React.Children.map(childNode.props.children, traverse)
+      );
+    }
+
+    enhanced = true;
+    return React.cloneElement(childNode, {
+      ...propsToInject,
+      className: joinClasses(propsToInject.className, childNode.props.className),
+    });
+  };
+
+  return Array.isArray(node)
+    ? React.Children.map(node, traverse)
+    : traverse(node);
+};
+
 /**
  * Wraps a label, input, status icon, helper text, and validation message.
  *
@@ -42,13 +91,13 @@ const mergeDescribedBy = (...ids) => ids.filter(Boolean).join(" ") || undefined;
  *
  * @example
  * <FormFieldWrapper
- *   id="email"
- *   label="Email"
- *   required
- *   validationState="error"
- *   message="Email is already registered"
+ * id="email"
+ * label="Email"
+ * required
+ * validationState="error"
+ * message="Email is already registered"
  * >
- *   <input type="email" />
+ * <input type="email" />
  * </FormFieldWrapper>
  */
 const FormFieldWrapper = ({
@@ -69,7 +118,7 @@ const FormFieldWrapper = ({
   messageClassName = "",
   showStatusIcon = true,
 }) => {
-  const child = React.isValidElement(children) ? React.Children.only(children) : null;
+  const child = getFirstValidElement(children);
   const fieldName = name || child?.props?.name || child?.props?.id || "field";
   const fieldId = id || child?.props?.id || fieldName;
   const helperId = hasMessage(helperText) ? `${fieldId}-helper` : undefined;
@@ -83,7 +132,7 @@ const FormFieldWrapper = ({
   const loading = isLoadingState(validationState);
 
   const enhancedChild = child
-    ? React.cloneElement(child, {
+    ? enhanceChildren(children, {
         id: fieldId,
         name: child.props.name || fieldName,
         "aria-describedby": describedBy,
@@ -93,7 +142,8 @@ const FormFieldWrapper = ({
         className: joinClasses(
           "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500",
           invalid && "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-400",
-          validationState === "success" && "border-green-500 focus:border-green-500 focus:ring-green-500/20 dark:border-green-400",
+          // 🔥 FIX 1: Support both success AND valid states for the styling
+          (validationState === "success" || validationState === "valid") && "border-green-500 focus:border-green-500 focus:ring-green-500/20 dark:border-green-400",
           loading && "border-blue-500 dark:border-blue-400",
           prefix && "pl-10",
           (showStatusIcon || suffix) && "pr-10",
@@ -122,7 +172,7 @@ const FormFieldWrapper = ({
               *
             </span>
           )}
-          {required && <span className="sr-only"> required</span>}
+          {/* 🔥 FIX 2: Removed redundant sr-only required span to prevent screen reader stutter. aria-required handles this. */}
         </label>
       )}
 
