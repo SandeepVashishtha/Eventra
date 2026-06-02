@@ -386,10 +386,14 @@ export const NotificationProvider = ({ children }) => {
 
     if (!isMounted.current) return;
 
-    const unread = notifications.filter((n) => !n.isRead);
-    if (unread.length === 0) return;
+    let hasUnread = false;
+    setNotifications((prev) => {
+      hasUnread = prev.some((n) => !n.isRead);
+      if (!hasUnread) return prev;
+      return prev.map((n) => ({ ...n, isRead: true }));
+    });
 
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    if (!hasUnread) return;
 
     const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
     if (!isValidEndpoint(endpoint)) return;
@@ -404,7 +408,7 @@ export const NotificationProvider = ({ children }) => {
         fetchNotifications();
       }
     }
-  }, [token, fetchNotifications, notifications]);
+  }, [token, fetchNotifications]);
 
   const subscribeToPush = useCallback(async () => {
     const permission = await requestPushPermission();
@@ -462,24 +466,23 @@ export const NotificationProvider = ({ children }) => {
         subscribed: true,
         subscribedAt: new Date().toISOString(),
       };
-      try {
-        window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-      } catch {
-        // Non-fatal — the subscription is still active; local status just won't persist
-      }
 
-      // Migrate: remove any existing full subscription object that may have been
-      // stored by a previous version of this code before this fix was applied.
-      // This runs once per subscribe() call and is a no-op if the key is absent.
+      // Migrate: check for legacy subscription object with sensitive keys BEFORE overwriting.
       const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
       if (existing) {
         try {
           const parsed = JSON.parse(existing);
           if (parsed?.keys) {
-            // Old format with sensitive keys — replace with the safe record
-            window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
+            // Old format with sensitive keys detected — will be replaced by safe record below
+            console.info("[NotificationContext] Migrating legacy push subscription record.");
           }
         } catch { /* non-fatal */ }
+      }
+
+      try {
+        window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
+      } catch {
+        // Non-fatal — the subscription is still active; local status just won't persist
       }
 
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
