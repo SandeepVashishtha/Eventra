@@ -386,10 +386,14 @@ export const NotificationProvider = ({ children }) => {
 
     if (!isMounted.current) return;
 
-    const unread = notifications.filter((n) => !n.isRead);
-    if (unread.length === 0) return;
+    let hasUnread = false;
+    setNotifications((prev) => {
+      hasUnread = prev.some((n) => !n.isRead);
+      if (!hasUnread) return prev;
+      return prev.map((n) => ({ ...n, isRead: true }));
+    });
 
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    if (!hasUnread) return;
 
     const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
     if (!isValidEndpoint(endpoint)) return;
@@ -404,7 +408,7 @@ export const NotificationProvider = ({ children }) => {
         fetchNotifications();
       }
     }
-  }, [token, fetchNotifications, notifications]);
+  }, [token, fetchNotifications]);
 
   const subscribeToPush = useCallback(async () => {
     const permission = await requestPushPermission();
