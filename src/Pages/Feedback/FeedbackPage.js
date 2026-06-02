@@ -198,10 +198,7 @@ const CustomFloatingSelect = ({
 
   return (
     <div className="relative mt-6" ref={dropdownRef}>
-      <div className="relative">
-        {selectedIcon && (
-          <selectedIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
-        )}
+      <div className="relative">        
 
         <button
           type="button"
@@ -379,9 +376,6 @@ const FeedbackPage = () => {
 
     setErrors(newErrors);
 
-    // Log for debugging
-    if (Object.keys(newErrors).length > 0) {
-    }
 
     return Object.keys(newErrors).length === 0;
   };
@@ -574,7 +568,7 @@ const FeedbackPage = () => {
                   value={formData.name}
                   onChange={handleChange}
                   error={errors.name}
-                  icon={FiUser}
+                  icon={User}
                   required={true}
                 />
 
@@ -585,7 +579,7 @@ const FeedbackPage = () => {
                   value={formData.email}
                   onChange={handleChange}
                   error={errors.email}
-                  icon={FiMail}
+                  icon={Mail}
                   required={true}
                 />
 
@@ -596,7 +590,6 @@ const FeedbackPage = () => {
                   onChange={handleSelectChange}
                   options={feedbackTypes}
                   error={errors.feedbackType}
-                  icon={FiMessageSquare}
                   required={true}
                 />
 

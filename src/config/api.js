@@ -203,14 +203,6 @@ API.interceptors.request.use((config) => {
   }
   
   const method = config.method?.toUpperCase();
-  if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-    if (!config.headers['Idempotency-Key'] && !config.headers['X-Idempotency-Key']) {
-      const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID 
-        ? crypto.randomUUID() 
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-      config.headers['Idempotency-Key'] = generateId();
-    }
-  }
   
   return config;
 });
@@ -226,7 +218,7 @@ API.interceptors.response.use(
     }
 
     const retryCount = config._retryCount || 0;
-    const isNonMutating = config.method?.toUpperCase() === 'GET';
+    const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
     const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
     
     // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
@@ -266,6 +258,7 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+    AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
 
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
