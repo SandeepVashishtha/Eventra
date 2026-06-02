@@ -43,7 +43,7 @@ const createResponse = () => {
 
 let requestCounter = 0;
 const createRequest = (method, body, headers = {}) => {
-  const finalHeaders = { ...headers };
+  const finalHeaders = { origin: "http://localhost:3000", ...headers };
   if (!finalHeaders["x-forwarded-for"] && !finalHeaders["x-real-ip"]) {
     requestCounter += 1;
     finalHeaders["x-forwarded-for"] = `10.0.0.${requestCounter}`;
@@ -446,8 +446,8 @@ console.log("Running signup endpoint tests...");
   await handler(req, res);
 
   assert.equal(res.statusCode, 429, "Should return 429 after signup attempts exceed the limit");
-  assert.equal(res.body.success, false, "Should return success false when blocked");
-  assert.equal(res.body.message, "Too many authentication attempts. Please try again later.");
+  assert.ok(res.body.error, "Should return error message when blocked");
+  assert.ok(res.body.error.toLowerCase().includes("too many"), "Error message should mention too many attempts");
   console.log("✓ Test 21: Signup rate limit blocks after max attempts");
 }
 

@@ -46,6 +46,18 @@ export const createRateLimiter = ({
   message = DEFAULT_LIMIT_MESSAGE,
 } = {}) => {
   const store = new Map();
+  let lastEvictionAt = 0;
+
+  const evictStale = () => {
+    const now = Date.now();
+    if (now - lastEvictionAt < windowMs) return;
+    lastEvictionAt = now;
+    for (const [key, entry] of store.entries()) {
+      if (now - entry.resetAt >= 0) {
+        store.delete(key);
+      }
+    }
+  };
 
   return (handler) => {
     return async (req, res) => {
@@ -58,6 +70,7 @@ export const createRateLimiter = ({
         return handler(req, res);
       }
 
+      evictStale();
       const now = Date.now();
       const existing = store.get(ip);
       const bucket = existing && existing.resetAt > now

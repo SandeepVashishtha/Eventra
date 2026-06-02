@@ -46,7 +46,7 @@ const createResponse = () => {
 
 let requestCounter = 0;
 const createRequest = (method, body, headers = {}) => {
-  const finalHeaders = { ...headers };
+  const finalHeaders = { origin: "http://localhost:3000", ...headers };
   if (!finalHeaders["x-forwarded-for"] && !finalHeaders["x-real-ip"]) {
     requestCounter += 1;
     finalHeaders["x-forwarded-for"] = `10.0.0.${requestCounter}`;
@@ -283,7 +283,7 @@ console.log("Running login endpoint tests...");
   const res = createResponse();
   await handler(req, res);
 
-  assert.ok(res.headers["Access-Control-Allow-Origin"], "Should have CORS Allow-Origin header");
+    assert.ok(res.headers["Access-Control-Allow-Origin"], "Should have CORS Allow-Origin header");
   assert.ok(res.headers["Access-Control-Allow-Credentials"], "Should have CORS Allow-Credentials header");
   console.log("✓ Test 13: CORS headers are set");
 }
