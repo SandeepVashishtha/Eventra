@@ -2,11 +2,27 @@ import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
-  Lightbulb, Code2, GitBranch, BookOpen, Users, CheckCircle,
-  Trophy, Clock, Star, ArrowRight, Search, Filter, ExternalLink,
-  Trophy, Clock, Star, ArrowRight, Search, ExternalLink,
-  Calendar, Award, MessageCircle, Zap, Target, Globe,
-  Copy, Bell, WifiOff
+  Lightbulb,
+  Code2,
+  GitBranch,
+  BookOpen,
+  Users,
+  CheckCircle,
+  Trophy,
+  Clock,
+  Star,
+  ArrowRight,
+  Search,
+  ExternalLink,
+  Calendar,
+  Award,
+  MessageCircle,
+  Zap,
+  Target,
+  Globe,
+  Copy,
+  Bell,
+  WifiOff,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -388,9 +404,14 @@ const GSSoCContribution = () => {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
   // Countdown
-  const timeLeft = useCountdown("2024-06-15T23:59:59", () => {
-    addToast("🎉 GSSoC program has ended! Check final rankings soon.", "success");
-  });
+  const GSSOC_END_DATE = "2026-08-15T23:59:59";
+
+const timeLeft = useCountdown(
+  GSSOC_END_DATE,
+  () => {
+    addToast("🎉 GSSoC program has ended!", "success");
+  }
+);
   
   // Persist state changes
   useEffect(() => { localStorage.setItem("gssoc.search", searchQuery); }, [searchQuery]);
