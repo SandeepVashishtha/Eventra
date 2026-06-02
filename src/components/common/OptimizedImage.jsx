@@ -28,18 +28,20 @@ const OptimizedImage = ({
       className={`relative overflow-hidden ${className}`}
       style={{ aspectRatio }}
     >
-      <img
-        src={getOptimizedImageUrl(src)}
-        srcSet={generateSrcSet(src)}
-        sizes="(max-width: 768px) 100vw, 800px"
-        alt={alt}
-        loading={priority ? "eager" : "lazy"}
-        onLoad={() => setIsLoaded(true)}
-        onError={() => setHasError(true)}
-        className={`w-full h-full object-cover transition-all duration-500 ${
-          isLoaded ? "opacity-100 blur-0" : "opacity-0 blur-xl"
-        }`}
-      />
+      <picture>
+        <source type="image/avif" srcSet={generateSrcSet(src, "avif")} sizes="(max-width: 768px) 100vw, 800px" />
+        <source type="image/webp" srcSet={generateSrcSet(src, "webp")} sizes="(max-width: 768px) 100vw, 800px" />
+        <img
+          src={getOptimizedImageUrl(src, { format: "auto" })}
+          alt={alt}
+          loading={priority ? "eager" : "lazy"}
+          onLoad={() => setIsLoaded(true)}
+          onError={() => setHasError(true)}
+          className={`w-full h-full object-cover transition-all duration-500 ${
+            isLoaded ? "opacity-100 blur-0" : "opacity-0 blur-xl"
+          }`}
+        />
+      </picture>
       {!isLoaded && (
         <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse" />
       )}
