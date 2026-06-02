@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 
 const ScrollProgressBar = () => {
+  // 🔥 FIX 1: Remove state entirely. Use a ref to directly mutate the DOM.
+  // This stops React from re-rendering the component 60 times a second on scroll.
   const progressBarRef = useRef(null);
 
   useEffect(() => {
@@ -26,26 +28,27 @@ const ScrollProgressBar = () => {
       }
 
       const progress = (scrollTop / scrollableHeight) * 100;
-      
+
       // Directly manipulate the DOM for zero-render performance
       progressBarRef.current.style.width = `${progress}%`;
       ticking = false;
     };
 
     const handleUpdate = () => {
-      // Throttle DOM writes to the screen's refresh rate
+      // 🔥 FIX 2: Use requestAnimationFrame to throttle DOM writes 
+      // to the screen's refresh rate
       if (!ticking) {
         rafId = window.requestAnimationFrame(updateProgress);
         ticking = true;
       }
     };
 
-    // Passive listeners for scroll and window resizing
+    // 🔥 FIX 3: Mark listeners as passive for scroll performance
     window.addEventListener("scroll", handleUpdate, { passive: true });
     window.addEventListener("resize", handleUpdate, { passive: true });
 
-    // 🔥 FIX: Track internal layout shifts (accordions, lazy images) 
-    // to ensure the math stays perfectly synced even if the user isn't scrolling
+    // 🔥 FIX 4: Track internal layout shifts (accordions, lazy images) 
+    // to ensure the math stays perfectly synced
     const resizeObserver = new ResizeObserver(() => {
       handleUpdate();
     });
@@ -58,7 +61,7 @@ const ScrollProgressBar = () => {
       window.removeEventListener("scroll", handleUpdate);
       window.removeEventListener("resize", handleUpdate);
       resizeObserver.disconnect();
-      // 🔥 FIX: Prevent unmounted memory leaks by cancelling pending frames
+      // 🔥 FIX 5: Prevent memory leaks by cancelling pending frames
       if (rafId) {
         window.cancelAnimationFrame(rafId);
       }
@@ -66,7 +69,7 @@ const ScrollProgressBar = () => {
   }, []);
 
   return (
-    // 🔥 FIX: Added pointer-events-none so it doesn't intercept clicks
+    // 🔥 FIX 6: Added pointer-events-none so it doesn't intercept clicks
     <div className="fixed top-0 left-0 w-full h-1 z-[9999] bg-transparent pointer-events-none">
       <div
         ref={progressBarRef}
