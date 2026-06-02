@@ -6,11 +6,8 @@ const ScrollToTop = () => {
   const { pathname, hash } = useLocation();
 
   useEffect(() => {
-    // 🔥 FIX: SSR Guard to prevent ReferenceError in testing/server environments
-    if (typeof window === "undefined") return;
-
-    // Disable browser automatic scroll restoration
-    if ("scrollRestoration" in window.history) {
+    // 🔥 FIX: Cleaner SSR Guard from master branch
+    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
     }
   }, []);
@@ -20,28 +17,37 @@ const ScrollToTop = () => {
 
     // 🔥 FIX: Check if a hash fragment exists in the URL
     if (hash) {
-      // Remove the '#' to get the raw ID
       const elementId = hash.replace("#", "");
-      const element = document.getElementById(elementId);
       
-      if (element) {
-        // Scroll to the specific element instead of the top of the page
-        if (window.lenis) {
-          window.lenis.scrollTo(element);
-        } else {
-          element.scrollIntoView({ behavior: "smooth" });
-        }
-        return; // Exit early so we don't scroll to 0,0
+      if (elementId) {
+        // 🔥 FIX: Race Condition Guard.
+        // Defer execution until the next frame to ensure React has fully painted 
+        // the newly mounted page's DOM elements before we search for the ID.
+        window.requestAnimationFrame(() => {
+          const element = document.getElementById(elementId);
+          
+          if (element) {
+            // 🔥 FIX: Strict type check from master to prevent Lenis initialization crashes
+            if (window.lenis && typeof window.lenis.scrollTo === "function") {
+              window.lenis.scrollTo(element);
+            } else {
+              element.scrollIntoView({ behavior: "smooth" });
+            }
+          }
+        });
+        
+        return; // Exit early so we don't execute the scroll to 0,0 below
       }
     }
 
     // Default behavior: Scroll to top on standard route change without a hash
-    if (window.lenis) {
+    // 🔥 FIX: Strict type check from master
+    if (window.lenis && typeof window.lenis.scrollTo === "function") {
       window.lenis.scrollTo(0, { immediate: true });
     } else {
       window.scrollTo(0, 0);
     }
-  }, [pathname, hash]); // 🔥 FIX: Added hash to dependency array so in-page anchor clicks trigger the scroll
+  }, [pathname, hash]); // Hash dependency ensures in-page anchor clicks trigger the scroll
 
   return null;
 };
