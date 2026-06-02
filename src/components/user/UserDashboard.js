@@ -128,19 +128,19 @@ export default function UserDashboard() {
     projectsTotal: MOCK_DATA.filter(d => d.type === "Project").length,
     projectsDone: MOCK_DATA.filter(d => d.type === "Project" && d.projectStatus === "Done").length,
     projectsActive: MOCK_DATA.filter(d => d.type === "Project" && d.projectStatus !== "Done").length,
-  }), [MOCK_DATA]);
+  }), []);
 
   const upcomingEvents = useMemo(() =>
     safeData.filter(d => d && d.type === "Event" && d.status === "Upcoming"),
-  [MOCK_DATA]);
+  [safeData]);
 
   const upcomingHackathons = useMemo(() =>
     safeData.filter(d => d && d.type === "Hackathon" && d.status === "Upcoming"),
-  [MOCK_DATA]);
+  [safeData]);
 
   const activeProjects = useMemo(() =>
     safeData.filter(d => d && d.type === "Project" && d.projectStatus !== "Done"),
-  [MOCK_DATA]);
+  [safeData]);
 
   const filteredData = useMemo(() =>
     MOCK_DATA.filter(item => {
@@ -156,7 +156,7 @@ export default function UserDashboard() {
       if (!b.date) return -1;
       return new Date(b.date) - new Date(a.date);
     }),
-  [MOCK_DATA, searchQuery, filterType, filterStatus]);
+  [searchQuery, filterType, filterStatus]);
 
   const notifications = [
     { id: 1, text: "React Conference 2025 registration opens soon", time: "2h ago", unread: true },
