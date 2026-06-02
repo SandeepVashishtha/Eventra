@@ -94,9 +94,10 @@ export const addBookmarkedEvent = (event) => {
 
   if (nextBookmarks.length > MAX_BOOKMARKS) {
     // Sort oldest-first and drop the last (oldest) entry to stay within limit
-    nextBookmarks = [...nextBookmarks].sort(
-      (a, b) => new Date(a.bookmarkedAt).getTime() - new Date(b.bookmarkedAt).getTime(),
-    );
+    nextBookmarks = [...nextBookmarks].sort((a, b) => {
+      const timeDiff = new Date(a.bookmarkedAt).getTime() - new Date(b.bookmarkedAt).getTime();
+      return timeDiff !== 0 ? timeDiff : String(a.id).localeCompare(String(b.id));
+    });
     nextBookmarks.shift();
     // Re-sort newest-first for consistent read order
     nextBookmarks.sort(
