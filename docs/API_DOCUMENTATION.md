@@ -865,12 +865,6 @@ curl -N http://localhost:8080/api/events/stream
 ```text
 event:connected
 data:Stream connected successfully
-```
-
-#### Backend Implementation PR
-[SandeepVashishtha/Eventra-Backend#BACKEND_PR_NUMBER](https://github.com/SandeepVashishtha/Eventra-Backend/pull/BACKEND_PR_NUMBER)
-
----
 
 # Project APIs
 
@@ -1133,8 +1127,6 @@ Returns a JSON array of hackathon objects. Returns `[]` if no hackathons exist.
 ]
 ```
 
-#### Backend Implementation PR
-[SandeepVashishtha/Eventra-Backend#BACKEND_PR_NUMBER](https://github.com/SandeepVashishtha/Eventra-Backend/pull/BACKEND_PR_NUMBER)
 ## Get Hackathon By ID
 
 | Method | Endpoint |
