@@ -145,10 +145,10 @@ async function handler(req, res) {
     signupRateLimiter.evictStale();
 
     if (!signupRateLimiter.check(clientIp)) {
-      return corsResponse(res, 429, {
+      return corsResponse(req, res, 429, {
         error: "Too many signup attempts. Please try again later.",
         retryAfter: 60,
-      }, req);
+      });
     }
 
     // -----------------------------------------------------------------------
