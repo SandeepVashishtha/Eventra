@@ -90,6 +90,16 @@ export const NotificationProvider = ({ children }) => {
   const activeTokenRef = useRef(token);
   const hasCompletedInitialFetch = useRef(false);
 
+  // Keep a ref in sync with preferences so savePreferences can read the
+  // current value without listing preferences as a useCallback dependency.
+  // listing preferences would create a new savePreferences reference on every
+  // preference change, which would in turn invalidate the context value useMemo
+  // and force every useNotification() consumer to re-render.
+  const preferencesRef = useRef(preferences);
+  useEffect(() => {
+    preferencesRef.current = preferences;
+  }, [preferences]);
+
   // ---------------------------------------------------------------------------
   // Bounded seen-notification Set
   //
@@ -202,8 +212,13 @@ export const NotificationProvider = ({ children }) => {
   }, [updatePushStatus]);
 
   const savePreferences = useCallback(
-    async (nextPreferences = preferences) => {
-      const normalized = writeNotificationPreferences(nextPreferences);
+    // When called without an argument the caller wants to persist the current
+    // preferences. Reading from preferencesRef.current avoids including
+    // preferences in the dependency array, which would create a new callback
+    // reference on every preference change and invalidate the context value memo.
+    async (nextPreferences) => {
+      const resolved = nextPreferences !== undefined ? nextPreferences : preferencesRef.current;
+      const normalized = writeNotificationPreferences(resolved);
       setPreferences(normalized);
 
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PREFERENCES;
@@ -219,7 +234,7 @@ export const NotificationProvider = ({ children }) => {
         return { savedRemotely: false, preferences: normalized, error };
       }
     },
-    [preferences, token]
+    [token] // preferences removed — read via preferencesRef to keep callback stable
   );
 
   const requestPushPermission = useCallback(async () => {
@@ -577,29 +592,56 @@ export const NotificationProvider = ({ children }) => {
     fetchNotifications({ isBackground: true });
   }, [isPageVisible, token, fetchNotifications]);
 
+  // Memoize the context value so that a change to one piece of state only
+  // causes consumers that read that specific value to re-render.  Without this
+  // every setNotifications / setUnreadCount / setPushStatus call (including the
+  // 60-second polling tick) creates a new plain object reference, which React
+  // Context treats as a change and propagates to every useNotification() caller
+  // regardless of which fields they actually use.
+  const contextValue = useMemo(
+    () => ({
+      notifications,
+      groupedNotifications,
+      achievements,
+      unreadCount,
+      loading,
+      preferences,
+      pushStatus,
+      defaultPreferences: DEFAULT_NOTIFICATION_PREFERENCES,
+      fetchNotifications,
+      fetchAchievements,
+      markAsRead,
+      markAllAsRead,
+      updatePreferences,
+      savePreferences,
+      requestPushPermission,
+      subscribeToPush,
+      unsubscribeFromPush,
+      showBrowserNotification,
+    }),
+    [
+      notifications,
+      groupedNotifications,
+      achievements,
+      unreadCount,
+      loading,
+      preferences,
+      pushStatus,
+      fetchNotifications,
+      fetchAchievements,
+      markAsRead,
+      markAllAsRead,
+      updatePreferences,
+      savePreferences,
+      requestPushPermission,
+      subscribeToPush,
+      unsubscribeFromPush,
+      showBrowserNotification,
+    ]
+  );
+
   return (
-    <NotificationContext.Provider
-      value={{
-        notifications,
-        groupedNotifications,
-        achievements,
-        unreadCount,
-        loading,
-        preferences,
-        pushStatus,
-        defaultPreferences: DEFAULT_NOTIFICATION_PREFERENCES,
-        fetchNotifications,
-        fetchAchievements,
-        markAsRead,
-        markAllAsRead,
-        updatePreferences,
-        savePreferences,
-        requestPushPermission,
-        subscribeToPush,
-        unsubscribeFromPush,
-        showBrowserNotification,
-      }}
-    >
+    <NotificationContext.Provider value={contextValue}>
       {children}
     </NotificationContext.Provider>
   );

@@ -1,11 +1,18 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Bell, CheckCheck, Settings } from "lucide-react";
 import { useNotification } from "../../context/NotificationContext";
 import { NOTIFICATION_CATEGORIES } from "../../utils/notificationPreferences";
 import { getRelativeTime } from "../../utils/relativeTime";
 
-export default function NotificationBell() {
+// React.memo prevents re-renders from unrelated context state changes.
+// NotificationBell only cares about groupedNotifications, notifications,
+// unreadCount, markAsRead, markAllAsRead, and preferences; but because
+// NotificationContext uses a single context, any change to pushStatus or
+// loading (e.g. the 60-second poll) would re-render this component without
+// memo.  The props are always an empty object (no props accepted), so memo
+// effectively makes re-renders context-value-change-driven only.
+function NotificationBell() {
   const {
     groupedNotifications,
     notifications,
@@ -120,3 +127,5 @@ export default function NotificationBell() {
     </div>
   );
 }
+
+export default memo(NotificationBell);
