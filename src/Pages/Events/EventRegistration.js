@@ -100,11 +100,11 @@ const EventRegistration = () => {
     suggestions: [],
   });
 
-  const validationRules = {
+  const validationRules = useMemo(() => ({
     fullName: validate.fullName,
     email: validate.email,
     phone: validate.phone,
-  };
+  }), []);
 
   const {
     values: formData,
@@ -173,11 +173,6 @@ const EventRegistration = () => {
       }
 
       try {
-        // BACKEND FIX: Fetch authoritative event data from the backend API,
-        // not from local mock JSON. This ensures:
-        // - Users see real event details, pricing, and availability
-        // - Registration state matches backend state
-        // - No mismatch between mock data and production backend
         const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
 
         if (response.status === 200 && response.data) {
@@ -190,10 +185,8 @@ const EventRegistration = () => {
           applyLoadedEvent(fetchedEvent);
           saveCachedEventDetail(fetchedEvent);
 
-          // Pre-fill form if user is authenticated
           prefillAuthenticatedUser();
         }
-//      } catch {
       } catch (error) {
         if (isCancelled) return;
         console.error("Failed to load event details:", error);
@@ -212,7 +205,6 @@ const EventRegistration = () => {
           return;
         }
 
-        // Try fallback to hackathonsData as a last resort
         const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
         if (foundMock) {
           applyLoadedEvent({
@@ -237,7 +229,7 @@ const EventRegistration = () => {
     };
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
-  const checkEventCapacity = async (id, currentEvent) => {
+  const checkEventCapacity = useCallback(async (id, currentEvent) => {
     try {
       const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(id));
       if (freshRes.status === 200) {
@@ -245,13 +237,12 @@ const EventRegistration = () => {
         return freshEvent.attendees >= freshEvent.maxAttendees;
       }
     } catch {
-      // If the re-fetch fails, fall back to the cached snapshot
       return currentEvent.attendees >= currentEvent.maxAttendees;
     }
     return false;
-  };
+  }, []);
 
-  const checkAndHandleConflicts = async () => {
+  const checkAndHandleConflicts = useCallback(async () => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
     if (conflictCheck.hasConflict) {
       try {
@@ -273,52 +264,10 @@ const EventRegistration = () => {
       return true;
     }
     return false;
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!isAuthenticated() || !user?.id) {
-      toast.error("Please log in to register for events.");
-      navigate("/login", {
-        state: { from: registrationPath },
-      });
-      return;
-    }
-
-    if (!validateAll()) {
-      toast.error("Please fill in all required fields correctly");
-      return;
-    }
-
-    // Prevent concurrent submissions for the same event
-    if (isSubmittingRef.current) {
-      toast.error("Registration already in progress. Please wait.");
-      return;
-    }
-
-    // Check if another registration is in progress for this event
-    if (registrationLocks.has(eventId)) {
-      toast.error("Another registration is in progress for this event. Please wait.");
-      return;
-    }
-
-    // Quick UX hint based on the latest visible event snapshot.
-    const isFull = await checkEventCapacity(eventId, event);
-    if (isFull) {
-      toast.info("This event is full. You will be added to the waitlist.");
-    }
-
-    // Check for scheduling conflicts
-    if (await checkAndHandleConflicts()) return;
-
-    // Proceed with registration if no conflicts
-    proceedWithRegistration();
-  };
+  }, [event, myEvents]);
 
   // Proceed with registration after conflict check or user confirmation
-  const proceedWithRegistration = async () => {
+  const proceedWithRegistration = useCallback(async () => {
     if (!isAuthenticated() || !user?.id) {
       toast.error("Please log in to register for events.");
       navigate("/login", {
@@ -327,10 +276,8 @@ const EventRegistration = () => {
       return;
     }
 
-    // Close modal if open
     setShowConflictModal(false);
 
-    // Set lock and submission state
     registrationLocks.set(eventId, true);
     isSubmittingRef.current = true;
     setSubmitting(true);
@@ -351,12 +298,9 @@ const EventRegistration = () => {
           eventId: parseInt(eventId),
           userId: user.id,
         },
-        // Registration is authenticated server-side; send the active token
-        // explicitly instead of relying only on global storage lookup.
         token
       );
 
-      // Axios resolves for 2xx — treat as success
       setRegistered(true);
       toast.success("Registration successful!");
       addRegistration(event, formData);
@@ -367,8 +311,6 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        // Offline sync fallback keeps the full registration intent intact so
-        // it can be replayed without asking the user to submit the form again.
         const payload = {
           ...formData,
           eventId: parseInt(eventId),
@@ -403,7 +345,6 @@ const EventRegistration = () => {
       if (isAlreadyRegistered) {
         setRegistered(true);
         toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
-        // ── Save to My Events ──
         addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
@@ -412,54 +353,67 @@ const EventRegistration = () => {
 
       toast.error(failureMessage);
     } finally {
-      // Release lock and reset submission state
       registrationLocks.delete(eventId);
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
-  };
+  }, [eventId, event, formData, isAuthenticated, user, token, navigate, registrationPath, addRegistration, clearSession]);
+
+  // Handle form submission
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+
+    if (!isAuthenticated() || !user?.id) {
+      toast.error("Please log in to register for events.");
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return;
+    }
+
+    if (!validateAll()) {
+      toast.error("Please fill in all required fields correctly");
+      return;
+    }
+
+    if (isSubmittingRef.current) {
+      toast.error("Registration already in progress. Please wait.");
+      return;
+    }
+
+    if (registrationLocks.has(eventId)) {
+      toast.error("Another registration is in progress for this event. Please wait.");
+      return;
+    }
+
+    const isFull = await checkEventCapacity(eventId, event);
+    if (isFull) {
+      toast.info("This event is full. You will be added to the waitlist.");
+    }
+
+    if (await checkAndHandleConflicts()) return;
+
+    proceedWithRegistration();
+  }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
 
   // Handle conflict modal actions
-  const handleConflictCancel = () => {
+  const handleConflictCancel = useCallback(() => {
     setShowConflictModal(false);
     toast.info("Registration cancelled due to scheduling conflict.");
-  };
+  }, []);
 
-  const handleConflictProceed = () => {
+  const handleConflictProceed = useCallback(() => {
     proceedWithRegistration();
-  };
+  }, [proceedWithRegistration]);
 
-  const handleSelectAlternative = (alternativeEvent) => {
+  const handleSelectAlternative = useCallback((alternativeEvent) => {
     setShowConflictModal(false);
     navigate(`/events/${alternativeEvent.id}/register`);
     toast.info(`Redirecting to ${alternativeEvent.title}`);
-  };
+  }, [navigate]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
-        <Loader2 className="w-8 h-8 animate-spin text-black" />
-      </div>
-    );
-  }
-
-  if (!event) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Event Not Found</h2>
-        <Link
-          to="/events"
-          className="text-black hover:text-gray-700 dark:text-white flex items-center gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Events
-        </Link>
-      </div>
-    );
-  }
-
-  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
-  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+  const isEventFull = useMemo(() => event ? event.attendees >= event.maxAttendees : false, [event]);
+  const isPastEvent = useMemo(() => getEventStatus(event) === "past" || getEventStatus(event) === "ended", [event]);
 
   if (isPastEvent) {
     return (
