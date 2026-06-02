@@ -1,11 +1,6 @@
+import { Star, MessageSquare, Send, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  FiStar,
-  FiMessageSquare,
-  FiSend,
-  FiCheckCircle,
-} from "react-icons/fi";
 
 import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -104,7 +99,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                     className="focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md p-0.5"
                     aria-label={`Rate ${star} Star${star > 1 ? "s" : ""}`}
                   >
-                    <FiStar
+                    <Star
                       className={`w-8 h-8 transition-colors duration-150 ${
                         star <= (hoveredRating || rating)
                           ? "text-yellow-400 fill-current"
@@ -134,7 +129,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                 Comments & Suggestions <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <FiMessageSquare className="absolute left-3.5 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
+                <MessageSquare className="absolute left-3.5 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
                 <textarea
                   id="feedback-comments"
                   rows={4}
@@ -165,7 +160,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                 </>
               ) : (
                 <>
-                  <FiSend className="w-4 h-4" />
+                  <Send className="w-4 h-4" />
                   Submit Feedback
                 </>
               )}
@@ -179,7 +174,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
             className="text-center py-6 space-y-4"
           >
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
-              <FiCheckCircle className="w-10 h-10" />
+              <CheckCircle className="w-10 h-10" />
             </div>
             <div>
               <h4 className="text-lg font-bold text-slate-900 dark:text-white">

@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { safeGetItem, safeSetItem, safeRemoveItem } from "../utils/safeStorage.js";
 
+import { useState, useEffect, useCallback, useRef } from "react";
 
 /**
  * A custom React hook that manages bookmarked events for a user,
@@ -56,13 +57,28 @@ const useBookmarks = (userId = "guest") => {
     }
   });
 
+  const storageKeyRef = useRef(storageKey);
+  storageKeyRef.current = storageKey;
+
   useEffect(() => {
     try {
       safeSetItem(storageKey, JSON.stringify(bookmarks));
+      localStorage.setItem(storageKeyRef.current, JSON.stringify(bookmarks));
     } catch {
       // localStorage full — fail silently; in-memory state remains correct
     }
-  }, [bookmarks, storageKey]);
+  }, [bookmarks]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) { setBookmarks([]); return; }
+      const parsed = JSON.parse(stored);
+      setBookmarks(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setBookmarks([]);
+    }
+  }, [storageKey]);
 
   /**
    * Toggles bookmark state for an event.
@@ -112,8 +128,14 @@ const useBookmarks = (userId = "guest") => {
     setBookmarks([]);
     try { safeRemoveItem(storageKey); } catch { /* non-fatal */ }
   }, [storageKey]);
+  }, []);
 
-  return { bookmarks, toggleBookmark, isBookmarked, clearBookmarks };
+  return {
+    bookmarks,
+    toggleBookmark,
+    isBookmarked,
+    clearBookmarks,
+  };
 };
 
 export default useBookmarks;

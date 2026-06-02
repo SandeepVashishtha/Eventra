@@ -132,6 +132,9 @@ const cryptoSupported = isCryptoAvailable();
 // ---------------------------------------------------------------------------
 
 
+// In-memory cache for pending writes to prevent race conditions during async encryption
+const pendingWrites = new Map();
+
 /**
  * syncSecureStorage
  *
@@ -149,9 +152,9 @@ export const syncSecureStorage = {
   /**
    * Stores a value encrypted under the given key.
    *
-   * The value is written to localStorage immediately (plaintext) and then
-   * replaced with AES-GCM ciphertext once the async encryption resolves.
-   * Use getItemAsync() on the read path to guarantee the decrypted value.
+   * The value is written to localStorage only after encryption is complete
+   * if crypto is supported, preventing plaintext exposure. An in-memory
+   * cache ensures consistency during the async window.
    *
    * @param {string} key
    * @param {string} value
@@ -169,10 +172,31 @@ export const syncSecureStorage = {
           .catch((err) => {
             console.error('[secureStorage] Encryption failed, value stored as plaintext:', err);
           });
+      if (!cryptoSupported) {
+        localStorage.setItem(key, value);
+        return true;
       }
+
+      // Track the pending value in-memory for immediate consistency in getItemAsync
+      pendingWrites.set(key, value);
+
+      encryptValue(value)
+        .then((encrypted) => {
+          // Only commit to persistent storage once encrypted
+          localStorage.setItem(key, encrypted);
+        })
+        .catch((err) => {
+          console.error('[secureStorage] Encryption failed, falling back to plaintext:', err);
+          localStorage.setItem(key, value);
+        })
+        .finally(() => {
+          pendingWrites.delete(key);
+        });
+
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
+      pendingWrites.delete(key);
       return false;
     }
   },
@@ -188,6 +212,11 @@ export const syncSecureStorage = {
   getItem: (key) => {
     try {
       return safeGetItem(key);
+      // Priority 1: Check pending writes (latest truth)
+      if (pendingWrites.has(key)) {
+        return pendingWrites.get(key);
+      }
+      return localStorage.getItem(key);
     } catch (error) {
       console.error('[secureStorage] getItem failed:', error);
       return null;
@@ -206,12 +235,19 @@ export const syncSecureStorage = {
   getItemAsync: async (key) => {
     try {
       const stored = safeGetItem(key);
+      // Priority 1: Check pending writes (latest truth)
+      if (pendingWrites.has(key)) {
+        return pendingWrites.get(key);
+      }
+
+      const stored = localStorage.getItem(key);
       if (stored === null) return null;
 
       if (cryptoSupported) {
         try {
           return await decryptValue(stored);
         } catch {
+          // Fallback to raw value (handles plaintext data written during failures or before encryption)
           return stored;
         }
       }

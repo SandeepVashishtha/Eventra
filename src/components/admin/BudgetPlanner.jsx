@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { exportToCSV, exportToJSON } from '../../utils/exportUtils';
 import { Sparkles } from 'lucide-react';
 
@@ -27,7 +27,7 @@ const breakEvenData = [
 const CATEGORY_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444'];
 
 const BudgetPlanner = () => {
-  const [budget, setBudget] = useState(initialBudget);
+  const [budget] = useState(initialBudget);
 
   const handleExportCSV = () => {
     const data = [{ ...budget }];
@@ -43,8 +43,6 @@ const BudgetPlanner = () => {
     // Placeholder for AI optimizer – currently just shows a toast
     alert('AI optimizer is not yet implemented.');
   };
-
-  const totalCosts = Object.values(budget.costs).reduce((a, b) => a + b, 0);
 
   return (
     <section className="p-6 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800">

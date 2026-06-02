@@ -37,6 +37,7 @@ const useLocalStorage = (key, initialValue) => {
   }
   });
 
+  
   const setValue = useCallback(
     (value) => {
       try {
@@ -44,9 +45,12 @@ const useLocalStorage = (key, initialValue) => {
           const newValue = value instanceof Function ? value(currentVal) : value;
           safeSetItem(key, JSON.stringify(newValue));
 
-          // 🔥 FIX: Mark as internal before dispatching so listener skips it
-          isInternalWrite.current = true;
-          window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+          queueMicrotask(() => {
+            window.localStorage.setItem(key, JSON.stringify(newValue));
+            isInternalWrite.current = true;
+            window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+          });
+
           return newValue;
         });
       } catch (error) {

@@ -160,13 +160,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     }, optionsRef.current.debounceMs);
   }, [validateField, clearValidationTimer]);
 
-  // Cancel the pending debounce timer when the hook unmounts to prevent
-  // setState calls on an unmounted component.
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
+  // Cleanup handled by the unified clearValidationTimer effect above
 
   // Handle blur — run validation immediately without waiting for the debounce.
   const handleBlur = useCallback((e) => {
