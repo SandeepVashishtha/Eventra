@@ -17,6 +17,14 @@ import {
   initialFormData,
   todayString,
 } from "../../../constants/eventDefaults";
+import {
+  ArrowRightIcon,
+  CalendarIcon,
+  UsersIcon,
+  ClipboardDocumentListIcon,
+  TagIcon,
+  CheckCircleIcon,
+} from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import {
   Calendar,
@@ -32,18 +40,19 @@ import {
   Plus,
 } from "lucide-react";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
-import {
-  parseTimeToMinutes,
-  validateCoordinates,
-} from "../../../utils/eventCreationUtils";
-
+import { parseTimeToMinutes, validateCoordinates } from "../../../utils/eventCreationUtils";
 
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
-  
+
   const [currentStep, setCurrentStep] = useState(CREATION_STEPS.FORM);
 
-  const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
+  const {
+    handleSubmit: submitEventForm,
+    isSubmitting,
+    error: submitError,
+    success: submitSuccess,
+  } = useFormSubmit(async (eventData) => {
     // Auth is handled by the HttpOnly session cookie — apiUtils sends it
     // automatically via withCredentials. Never read tokens from sessionStorage;
     // setToken was removed as part of the HttpOnly cookie migration.
@@ -237,33 +246,49 @@ const EventCreation = () => {
     }
   };
 
-
-
-
-
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors((prev) => ({
-          ...prev,
-          banner: "Image size should be less than 5MB",
-        }));
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormData((prev) => ({
-          ...prev,
-          banner: file,
-          bannerPreview: event.target.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-      if (errors.banner) {
-        setErrors((prev) => ({ ...prev, banner: "" }));
-      }
+
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setErrors((prev) => ({
+        ...prev,
+        banner: "Please upload a valid image file (JPG, PNG, GIF, or WebP)",
+      }));
+
+      e.target.value = "";
+      return;
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({
+        ...prev,
+        banner: "Image size should be less than 5MB",
+      }));
+
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      setFormData((prev) => ({
+        ...prev,
+        banner: file,
+        bannerPreview: event.target.result,
+      }));
+
+      setErrors((prev) => ({
+        ...prev,
+        banner: "",
+      }));
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const addTag = () => {
@@ -284,37 +309,34 @@ const EventCreation = () => {
     }));
   };
 
-    const handleNext = () => {
-  try {
-    if (currentStep === CREATION_STEPS.FORM) {
-      const isValid = validateForm();
+  const handleNext = () => {
+    try {
+      if (currentStep === CREATION_STEPS.FORM) {
+        const isValid = validateForm();
 
-      if (!isValid) {
-        toast.error("Please fix the form errors before continuing.");
-        return;
+        if (!isValid) {
+          toast.error("Please fix the form errors before continuing.");
+          return;
+        }
+
+        setCurrentStep(CREATION_STEPS.PREVIEW);
+
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
       }
+    } catch (error) {
+      logger.error("Error progressing to next step:", error);
 
-      setCurrentStep(CREATION_STEPS.PREVIEW);
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
+      toast.error("Unable to continue to the next step.");
     }
-  } catch (error) {
-    logger.error("Error progressing to next step:", error);
-
-    toast.error("Unable to continue to the next step.");
-  }
-};
+  };
 
   const createEvent = () => {
     try {
       let coordinates = null;
-      if (
-        formData.location?.coordinates?.latitude &&
-        formData.location?.coordinates?.longitude
-      ) {
+      if (formData.location?.coordinates?.latitude && formData.location?.coordinates?.longitude) {
         coordinates = validateCoordinates(
           formData.location?.coordinates?.latitude,
           formData.location?.coordinates?.longitude
@@ -542,7 +564,8 @@ const EventCreation = () => {
             dark:hover:bg-gray-800
             transition
           "
-               aria-label="button">
+                aria-label="button"
+              >
                 Discard
               </button>
 
@@ -557,7 +580,8 @@ const EventCreation = () => {
             font-medium
             transition
           "
-               aria-label="button">
+                aria-label="button"
+              >
                 Restore Draft
               </button>
             </div>
@@ -746,7 +770,10 @@ const EventCreation = () => {
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.5,
+                    delay: prefersReducedMotion ? 0 : 0.1,
+                  }}
                 >
                   {/* Start Date */}
                   <div>
@@ -833,7 +860,10 @@ const EventCreation = () => {
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.5,
+                    delay: prefersReducedMotion ? 0 : 0.1,
+                  }}
                 >
                   {/* Event Date */}
                   <div>
@@ -972,7 +1002,10 @@ const EventCreation = () => {
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
+                    transition={{
+                      duration: prefersReducedMotion ? 0 : 0.5,
+                      delay: prefersReducedMotion ? 0 : 0.1,
+                    }}
                   >
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       <Map className="w-5 h-5 text-indigo-500 inline-block mr-2" />
@@ -1189,7 +1222,8 @@ const EventCreation = () => {
         transition-all duration-300
         focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 text-sm
       "
-                   aria-label="button">
+                    aria-label="button"
+                  >
                     <Plus className="w-4 h-4" />
                     Add
                   </button>
