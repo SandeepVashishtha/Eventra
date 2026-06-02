@@ -1,3 +1,5 @@
+import { ArrowRightIcon, LightBulbIcon, FolderOpenIcon, CodeBracketIcon, CheckCircleIcon, ArrowUpTrayIcon, ClipboardDocumentCheckIcon, // Icons for form fields
+  UserGroupIcon, EnvelopeIcon, LinkIcon, RectangleGroupIcon, CpuChipIcon, BookmarkIcon, UsersIcon, ClockIcon, UserPlusIcon, PhotoIcon, ArchiveBoxIcon, DocumentTextIcon, PencilSquareIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -5,30 +7,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { sanitizeInputText } from "../../utils/inputSanitization";
-import {
-  ArrowRightIcon,
-  LightBulbIcon,
-  FolderOpenIcon,
-  CodeBracketIcon,
-  CheckCircleIcon,
-  ArrowUpTrayIcon,
-  ClipboardDocumentCheckIcon,
-  // Icons for form fields
-  UserGroupIcon,
-  EnvelopeIcon,
-  LinkIcon,
-  RectangleGroupIcon,
-  CpuChipIcon,
-  BookmarkIcon,
-  UsersIcon,
-  ClockIcon,
-  UserPlusIcon,
-  PhotoIcon,
-  ArchiveBoxIcon,
-  DocumentTextIcon,
-  PencilSquareIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/solid";
 
 const SubmitProject = () => {
   const navigate = useNavigate();
@@ -375,7 +353,7 @@ const handleSubmit = async (e) => {
     ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -385,11 +363,11 @@ const handleSubmit = async (e) => {
         data-aos-once="true"
       >
         {/* UPDATED: Text colors */}
-        <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-700 dark:text-indigo-400 mb-4">
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-primary mb-4">
           Submit Your Project
         </h1>
-        <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
-          "Fill in the details below to showcase your project."
+        <p className="text-xs sm:text-base text-text-light">
+          &quot;Fill in the details below to showcase your project.&quot;
         </p>
       </motion.div>
       {/* Guidelines Section */}
@@ -397,18 +375,18 @@ const handleSubmit = async (e) => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
+        className="w-full max-w-4xl bg-card-bg border border-border shadow-lg rounded-2xl p-6 mb-10"
         data-aos="fade-up"
         data-aos-delay="200"
       >
         <div className="flex items-center gap-2 mb-4">
           {/* UPDATED: Icon and title colors */}
-          <LightBulbIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-2xl font-bold text-indigo-900 dark:text-gray-100">
+          <LightBulbIcon className="w-6 h-6 text-primary" />
+          <h2 className="text-2xl font-bold text-text">
             Project Submission Guidelines
           </h2>
         </div>
-        <ul className="list-disc pl-6 space-y-3 text-gray-700 dark:text-gray-300 text-sm sm:text-base">
+        <ul className="list-disc pl-6 space-y-3 text-text-light text-sm sm:text-base">
           <li>
             Fill out <span className="font-medium">all mandatory fields</span>{" "}
             marked with an asterisk (*) to ensure your project is valid for
@@ -459,7 +437,7 @@ const handleSubmit = async (e) => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
+        className="w-full max-w-4xl bg-card-bg shadow-xl rounded-2xl p-8 border border-border"
         data-aos="fade-up"
         data-aos-delay="400"
       >
@@ -472,8 +450,8 @@ const handleSubmit = async (e) => {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.05 }}
             >
-              <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <field.icon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
+              <label className="flex items-center text-sm font-medium text-text-light mb-1">
+                <field.icon className="w-5 h-5 mr-2 text-primary" />
                 {field.label}
                 {requiredFields.includes(field.name) && (
                   <span className="text-red-500 ml-1">*</span>
@@ -487,8 +465,8 @@ const handleSubmit = async (e) => {
                   onClick={() => fileInputRef.current?.click()}
                   className={`w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
                     isDragging
-                      ? "border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/20"
-                      : "border-gray-300 hover:border-indigo-500 hover:bg-slate-50/50 dark:border-gray-650 dark:hover:border-indigo-400 dark:hover:bg-slate-800/10"
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary hover:bg-bg/50"
                   }`}
                 >
                   <input
@@ -499,7 +477,7 @@ const handleSubmit = async (e) => {
                     onChange={handleFileChange}
                   />
                   {formData.projectImage ? (
-                    <div className="relative w-full max-w-[200px] aspect-square flex items-center justify-center rounded-lg border border-gray-250 dark:border-gray-700 overflow-hidden bg-gray-50/50 dark:bg-gray-900 group">
+                    <div className="relative w-full max-w-[200px] aspect-square flex items-center justify-center rounded-lg border border-border overflow-hidden bg-bg group">
                       <img
                         src={formData.projectImage}
                         alt="Project Preview"
@@ -516,11 +494,11 @@ const handleSubmit = async (e) => {
                     </div>
                   ) : (
                     <div className="text-center space-y-2 pointer-events-none">
-                      <ArrowUpTrayIcon className={`w-8 h-8 mx-auto text-indigo-500 transition-transform duration-300 ${isDragging ? "animate-bounce" : ""}`} />
-                      <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                        Drag and drop your project logo here, or <span className="text-indigo-650 dark:text-indigo-400 underline decoration-wavy">browse</span>
+                      <ArrowUpTrayIcon className={`w-8 h-8 mx-auto text-primary transition-transform duration-300 ${isDragging ? "animate-bounce" : ""}`} />
+                      <div className="text-sm font-semibold text-text">
+                        Drag and drop your project logo here, or <span className="text-primary underline decoration-wavy">browse</span>
                       </div>
-                      <div className="text-xs text-slate-400 dark:text-slate-500">
+                      <div className="text-xs text-text-light/60">
                         Supports PNG, JPG, JPEG, SVG up to 5MB
                       </div>
                     </div>
@@ -534,7 +512,7 @@ const handleSubmit = async (e) => {
                   onChange={handleChange}
                   placeholder={field.placeholder}
                   ref={inputRefs[field.name]}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
+                  className="w-full border border-border rounded-lg p-3 bg-bg text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
                 />
               )}
               {errors[field.name] && (
@@ -550,8 +528,8 @@ const handleSubmit = async (e) => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              <DocumentTextIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
+            <label className="flex items-center text-sm font-medium text-text-light mb-1">
+              <DocumentTextIcon className="w-5 h-5 mr-2 text-primary" />
               Project Description <span className="text-red-500 ml-1">*</span>
             </label>
             <textarea
@@ -561,7 +539,7 @@ const handleSubmit = async (e) => {
               ref={inputRefs.description}
               rows="4"
               placeholder="Briefly describe your project, its purpose, and features."
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
+              className="w-full border border-border rounded-lg p-3 bg-bg text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
             />
             {errors.description && (
               <p className="text-red-500 text-xs mt-1">{errors.description}</p>
@@ -573,8 +551,8 @@ const handleSubmit = async (e) => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              <PencilSquareIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
+            <label className="flex items-center text-sm font-medium text-text-light mb-1">
+              <PencilSquareIcon className="w-5 h-5 mr-2 text-primary" />
               Additional Notes
             </label>
             <textarea
@@ -583,7 +561,7 @@ const handleSubmit = async (e) => {
               onChange={handleChange}
               rows="3"
               placeholder="Any other information for the reviewers"
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
+              className="w-full border border-border rounded-lg p-3 bg-bg text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
             />
           </motion.div>
           <motion.button
@@ -591,7 +569,7 @@ const handleSubmit = async (e) => {
             disabled={isSubmitting}
             whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
             whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
-            className="w-full flex items-center justify-center gap-2 text-white font-semibold p-3 rounded-xl shadow-lg transition-all duration-300 bg-black hover:bg-zinc-800 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 text-white font-semibold p-3 rounded-xl shadow-lg transition-all duration-300 bg-primary hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSubmitting ? "Submitting..." : "Submit Project"}
             {!isSubmitting && <ArrowRightIcon className="w-5 h-5" />}
@@ -619,15 +597,15 @@ const handleSubmit = async (e) => {
           <motion.div
             key={index}
             whileHover={{ scale: 1.05 }}
-            className="bg-gradient-to-b from-white via-white to-slate-50  border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800 border  dark:border-gray-700 rounded-2xl  p-6 text-center flex flex-col items-center"
+            className="bg-card-bg border border-border shadow-xl rounded-2xl p-6 text-center flex flex-col items-center"
             data-aos="zoom-in"
             data-aos-delay={1500 + index * 100}
           >
-            <stat.icon className="w-10 h-10 text-black mb-3" />
-            <h3 className="text-3xl font-bold text-black">
+            <stat.icon className="w-10 h-10 text-primary mb-3" />
+            <h3 className="text-3xl font-bold">
               {stat.number}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-text-light mt-2">
               {stat.label}
             </p>
           </motion.div>
@@ -638,7 +616,7 @@ const handleSubmit = async (e) => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="w-full max-w-5xl mt-10 text-center bg-black border border-black rounded-2xl p-10 shadow-2xl"
+        className="w-full max-w-5xl mt-10 text-center bg-card-bg border border-border rounded-2xl p-10 shadow-2xl"
         data-aos="fade-up"
         data-aos-delay="1900"
       >
@@ -648,16 +626,16 @@ const handleSubmit = async (e) => {
             Ready to Launch Your Next Idea?
           </h2>
         </div>
-        <p className="text-gray-300 mb-6 text-lg">
+        <p className="text-text-light mb-6 text-lg">
           Showcase your innovative projects to the community and track your
           progress easily.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
           <motion.button
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
+            whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
+            whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
+            className="inline-flex items-center justify-center gap-2 bg-primary text-white px-8 py-3 rounded-xl shadow-lg hover:opacity-90 transition-all duration-300"
           >
             <ArrowUpTrayIcon className="w-5 h-5" /> Submit Another Project
           </motion.button>
@@ -666,7 +644,7 @@ const handleSubmit = async (e) => {
             href="/projects"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
+            className="inline-flex items-center justify-center gap-2 bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
           >
             <ClipboardDocumentCheckIcon className="w-5 h-5" />
             Explore Projects

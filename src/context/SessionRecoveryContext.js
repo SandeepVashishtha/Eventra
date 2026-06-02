@@ -126,23 +126,21 @@ const isCryptoAvailable = () =>
 // Session key management — unchanged from the original implementation
 // ---------------------------------------------------------------------------
 
+// In-memory only — never written to sessionStorage or localStorage
+let _inMemorySessionKey = null;
+
 const getOrCreateSessionKey = () => {
-  if (typeof window === "undefined" || !window.sessionStorage) {
-    return null;
-  }
+  if (typeof window === "undefined") return null;
   try {
-    let key = sessionStorage.getItem(RECOVERY_KEY_NAME);
-    if (!key) {
-      // Generate 32 random bytes and encode as hex for use as the PBKDF2 password
+    if (!_inMemorySessionKey) {
       const raw = crypto.getRandomValues(new Uint8Array(32));
-      key = Array.from(raw)
+      _inMemorySessionKey = Array.from(raw)
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
-      sessionStorage.setItem(RECOVERY_KEY_NAME, key);
     }
-    return key;
+    return _inMemorySessionKey;
   } catch (e) {
-    logger.error("Failed to manage session-bound recovery key:", e);
+    logger.error("Failed to generate in-memory session key:", e);
     return null;
   }
 };
@@ -173,13 +171,11 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const updateActivity = useCallback(() => {
     const now = Date.now();
-    lastActivityRef.current = now;
-
-    if (!activityTimeoutRef.current) {
-      activityTimeoutRef.current = setTimeout(() => {
-        setLastActivity(lastActivityRef.current);
-        activityTimeoutRef.current = null;
-      }, 1000);
+    // 🔥 FIX: Throttle to max once per second to prevent CPU thrashing from mousemove/scroll
+    if (now - lastActivityRef.current > 1000) {
+      lastActivityRef.current = now;
+      // 🔥 FIX: Synchronize React state so context consumers get accurate data
+      setLastActivity(now);
     }
   }, []);
 
@@ -205,7 +201,9 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   useEffect(() => {
     const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click"];
-    events.forEach((event) => window.addEventListener(event, updateActivity));
+    // 🔥 FIX: Added { passive: true } to further optimize scroll performance
+    events.forEach((event) => window.addEventListener(event, updateActivity, { passive: true }));
+
     return () => {
       events.forEach((event) => window.removeEventListener(event, updateActivity));
     };
@@ -323,6 +321,9 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const restoreSession = useCallback(() => {
     if (!sessionData) return null;
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+      window.dispatchEvent(new CustomEvent("eventra-session-restored"));
+    }
     return sessionData;
   }, [sessionData]);
 
@@ -342,9 +343,11 @@ export const SessionRecoveryProvider = ({ children }) => {
   }, [hasSession, clearSession]);
 
   useEffect(() => {
+    const saveTimeout = saveTimeoutRef.current;
+    const activityTimeout = activityTimeoutRef.current;
     return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      if (activityTimeoutRef.current) clearTimeout(activityTimeoutRef.current);
+      if (saveTimeout) clearTimeout(saveTimeout);
+      if (activityTimeout) clearTimeout(activityTimeout);
     };
   }, []);
 

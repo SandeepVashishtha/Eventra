@@ -124,6 +124,13 @@ export default function Chatbot() {
     }
   }, [messages, isMinimized, isOpen, isTyping]);
 
+  const handleClose = useCallback(() => {
+    clearReplyTimer();
+    setIsTyping(false);
+    setIsOpen(false);
+    setIsMinimized(false);
+  }, [clearReplyTimer]);
+
   // Listen for Escape key to close the chatbot (accessibility)
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -135,7 +142,7 @@ export default function Chatbot() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [handleClose, isOpen]);
 
   const wasOpenRef = useRef(false);
   const wasMinimizedRef = useRef(false);
@@ -169,7 +176,9 @@ export default function Chatbot() {
   }, [messages]);
 
   const sendMessage = (messageText = draft) => {
-    const cleanMessage = messageText.trim();
+    // 🔥 FIX: Guard against React Synthetic Events to prevent fatal .trim() crashes
+    const safeText = typeof messageText === "string" ? messageText : draft;
+    const cleanMessage = safeText.trim();
     if (!cleanMessage || isTyping) return;
 
     // Append User Message, pruning the oldest entries when the cap is exceeded.
@@ -198,13 +207,6 @@ export default function Chatbot() {
     setIsMinimized(false);
   };
 
-  const handleClose = () => {
-    clearReplyTimer();
-    setIsTyping(false);
-    setIsOpen(false);
-    setIsMinimized(false);
-  };
-
   const handleMinimize = () => setIsMinimized((v) => !v);
 
   // ── Unified single portal rendering ─────────────────────────────────────────
@@ -218,7 +220,7 @@ export default function Chatbot() {
             <div
               className="
                 fixed bottom-6 right-6 z-[100]
-                hidden sm:flex               /* hide strip on mobile, show FAB instead */
+                hidden sm:flex              /* hide strip on mobile, show FAB instead */
                 items-center justify-between gap-3
                 w-72 rounded-2xl
                 border border-slate-700

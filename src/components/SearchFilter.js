@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import useDebounce from "../hooks/useDebounce";
 import "./styles/components.css";
@@ -105,17 +105,30 @@ const SearchFilter = () => {
     },
   ];
 
-  const filteredEvents = mockEvents.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-                         event.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
-      const normalizedLocation = event.location
-        ?.toString()
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-');
+  // 🔥 FIX: Safe date formatter to prevent RangeError crashes if event data is malformed
+  const safeFormatDate = (dateStr) => {
+    if (!dateStr) return "TBD";
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? "TBD" : d.toLocaleDateString();
+  };
 
-      const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
+  const filteredEvents = mockEvents.filter(event => {
+    const safeSearchTerm = (debouncedSearchTerm || "").toLowerCase();
+    
+    // 🔥 FIX: Added fallback empty strings to prevent TypeError crashes if event data is incomplete
+    const matchesSearch = 
+      (event.title || "").toLowerCase().includes(safeSearchTerm) ||
+      (event.description || "").toLowerCase().includes(safeSearchTerm);
+      
+    const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
+    
+    const normalizedLocation = event.location
+      ?.toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-');
+
+    const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
     const matchesPrice = priceFilter === 'all' || event.price === priceFilter;
     
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
@@ -146,7 +159,8 @@ const SearchFilter = () => {
         className="search-bar"
       >
         <div className="search-input-wrapper">
-          <span className="search-icon">🔍</span>
+          {/* 🔥 FIX: Added aria-hidden to prevent screen reader noise */}
+          <span className="search-icon" aria-hidden="true">🔍</span>
           <input
             id="search-events"
             type="text"
@@ -234,7 +248,8 @@ const SearchFilter = () => {
             className="event-card-search"
           >
             <div className="event-image-large">
-              <div className="event-emoji">{event.image}</div>
+              {/* 🔥 FIX: Added aria-hidden to decorative emoji */}
+              <div className="event-emoji" aria-hidden="true">{event.image}</div>
               <div className="event-badges">
                 <span className={`price-badge ${event.price}`}>
                   {event.price === "free" ? "FREE" : "PAID"}
@@ -246,13 +261,15 @@ const SearchFilter = () => {
               <p className="event-description">{event.description}</p>
               <div className="event-meta" aria-label="Event details">
                 <span className="event-date">
-                  <span role="img" aria-label="Date" className="mr-1">📅</span> {new Date(event.date).toLocaleDateString()}
+                  <span role="img" aria-hidden="true" className="mr-1">📅</span> 
+                  {/* 🔥 FIX: Safely parse date */}
+                  {safeFormatDate(event.date)}
                 </span>
                 <span className="event-location">
-                  <span role="img" aria-label="Location" className="mr-1">📍</span> {event.location}
+                  <span role="img" aria-hidden="true" className="mr-1">📍</span> {event.location}
                 </span>
                 <span className="event-attendees">
-                  <span role="img" aria-label="Attendees" className="mr-1">👥</span> {event.attendees}
+                  <span role="img" aria-hidden="true" className="mr-1">👥</span> {event.attendees}
                 </span>
               </div>
               <div className="event-rating" aria-label={`Rating: ${event.rating} out of 5 stars`}>
@@ -274,7 +291,8 @@ const SearchFilter = () => {
           animate={{ opacity: 1 }}
           className="no-results"
         >
-          <div className="no-results-icon">😞</div>
+          {/* 🔥 FIX: Added aria-hidden to decorative emoji */}
+          <div className="no-results-icon" aria-hidden="true">😞</div>
           <h3>No events found</h3>
           <p>Try adjusting your search criteria</p>
         </motion.div>

@@ -33,6 +33,17 @@ const EventConflictModal = ({
   const previousFocusRef = useRef(null);
   const userTimezone = getUserTimezone();
 
+  // 🔥 FIX: Added scroll lock to prevent background page from scrolling behind the modal
+  useEffect(() => {
+    if (isOpen) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen) {
       previousFocusRef.current = document.activeElement;
@@ -115,6 +126,17 @@ const EventConflictModal = ({
     };
   }, [isOpen]);
 
+  // 🔥 FIX: Safe date formatter to prevent RangeError crashes if event data is malformed
+  const safeFormatDate = (dateStr) => {
+    if (!dateStr) return "TBD";
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? "TBD" : d.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -153,7 +175,7 @@ const EventConflictModal = ({
                 Scheduling Conflict Detected
               </h2>
               <p className="mt-1 text-gray-600 dark:text-gray-400">
-                This event overlaps with one or more events you've already registered for.
+                This event overlaps with one or more events you&apos;ve already registered for.
               </p>
               <span className="mt-2 inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                 <Globe className="w-3 h-3" />
@@ -168,18 +190,15 @@ const EventConflictModal = ({
           {/* New Event Details */}
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
             <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-              Event You're Trying to Register For
+              Event You&apos;re Trying to Register For
             </h3>
             <div className="text-blue-800 dark:text-blue-200">
               <p className="font-medium text-lg">{newEvent?.title}</p>
               <div className="flex flex-wrap gap-4 mt-2 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
-                  {new Date(newEvent?.date).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
+                  {/* 🔥 FIX: Safely parse date */}
+                  {safeFormatDate(newEvent?.date)}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
@@ -209,11 +228,8 @@ const EventConflictModal = ({
                   <div className="flex flex-wrap gap-4 mt-2 text-sm text-red-700 dark:text-red-300">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {new Date(event.date).toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      {/* 🔥 FIX: Safely parse date */}
+                      {safeFormatDate(event.date)}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
@@ -252,11 +268,8 @@ const EventConflictModal = ({
                         <div className="flex flex-wrap gap-4 mt-2 text-sm text-green-700 dark:text-green-300">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
-                            {new Date(event.date).toLocaleDateString('en-US', {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
+                            {/* 🔥 FIX: Safely parse date */}
+                            {safeFormatDate(event.date)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
