@@ -1,6 +1,6 @@
 import { CalendarIcon, MapPinIcon, ClockIcon, UserGroupIcon, TrophyIcon, BuildingLibraryIcon, ShareIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { getServerTime } from "../../utils/timeSync";
@@ -158,10 +158,11 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
     winner: hackathon?.winner || "",
   };
 
-  const status =
-    normalizedHackathon.startDate && normalizedHackathon.endDate
+  const status = useMemo(() => {
+    return normalizedHackathon.startDate && normalizedHackathon.endDate
       ? computeStatus(normalizedHackathon.startDate, normalizedHackathon.endDate)
       : normalizedHackathon.status || "upcoming";
+  }, [normalizedHackathon.startDate, normalizedHackathon.endDate, normalizedHackathon.status]);
   const style = statusStyles[status] || statusStyles.upcoming;
   const sharingData = generateEventSharingData({
     ...normalizedHackathon,
