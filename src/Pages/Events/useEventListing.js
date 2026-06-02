@@ -126,8 +126,6 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-      logger.error("Failed to fetch events:", error);
-
       if (process.env.NODE_ENV === "development") {
         const normalizedMockEvents = mockEvents.map(normalizeEvent);
         setEvents(normalizedMockEvents);
@@ -196,17 +194,21 @@ const useEventListing = () => {
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
   const filteredEvents = useMemo(() => {
-    let filtered = events;
-
-    // 1. Search Bar: Real-time text filter matching Title or Description (case-insensitive)
-    if (debouncedSearchQuery.trim()) {
-      const query = debouncedSearchQuery.toLowerCase().trim();
-      filtered = events.filter((event) => {
-        const titleMatch = event.title?.toLowerCase().includes(query) ?? false;
-        const descMatch = event.description?.toLowerCase().includes(query) ?? false;
-        return titleMatch || descMatch;
-      });
-    }
+    // 1. Search (typo-tolerant fuzzy search with ranking from PR #5461)
+    let filtered = debouncedSearchQuery.trim()
+      ? getRouteSearchResults(
+          events,
+          debouncedSearchQuery,
+          [
+            { name: "title", weight: 0.8 },
+            { name: "category", weight: 0.5 },
+            { name: "tags", weight: 0.4 },
+            { name: "location.name", weight: 0.3 },
+            { name: "location.city", weight: 0.3 },
+            { name: "description", weight: 0.1 },
+          ]
+        )
+      : [...events];
 
     // 2. Status Timing Filter ('Live Now', 'Upcoming', 'Past Events') based on current system date
     filtered = filtered.filter((event) => {
