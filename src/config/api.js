@@ -226,7 +226,7 @@ API.interceptors.response.use(
     }
 
     const retryCount = config._retryCount || 0;
-    const isNonMutating = config.method?.toUpperCase() === 'GET';
+    const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
     const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
     
     // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
