@@ -1,5 +1,6 @@
 import axios from "axios";
 import { ENV } from "./env";
+import { syncServerTimeFromHeader } from "../utils/timeSync";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -205,7 +206,13 @@ API.interceptors.request.use((config) => {
 });
 
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
+    if (headerValue) {
+      syncServerTimeFromHeader(headerValue);
+    }
+    return response;
+  },
   async (error) => {
     const config = error.config || {};
     const status = error?.response?.status;
