@@ -41,7 +41,7 @@ const ensureServiceWorkerRegistration = async () => {
 
   try {
     return await navigator.serviceWorker.register("/service-worker.js");
-  } catch {
+  } catch (error) {
     return null;
   }
 };
@@ -468,7 +468,7 @@ export const NotificationProvider = ({ children }) => {
       };
       try {
         window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-      } catch {
+      } catch (error) {
         // Non-fatal — the subscription is still active; local status just won't persist
       }
 
@@ -483,7 +483,7 @@ export const NotificationProvider = ({ children }) => {
             // Old format with sensitive keys — replace with the safe record
             window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
           }
-        } catch { /* non-fatal */ }
+        } catch (error) { /* non-fatal */ }
       }
 
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
