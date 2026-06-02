@@ -51,8 +51,9 @@ export default function CollaborationMap() {
       `}</style>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center space-y-4 mb-12">
-          <span className="text-xs uppercase tracking-[0.25em] text-indigo-400 font-bold bg-indigo-500/10 px-3.5 py-1.5 rounded-full border border-indigo-500/20">
+        {/* Header Block with fixed responsive spacing */}
+        <div className="text-center space-y-6 mb-12">
+          <span className="inline-block text-xs uppercase tracking-[0.25em] text-indigo-400 font-bold bg-indigo-500/10 px-3.5 py-1.5 rounded-full border border-indigo-500/20">
             Global Network
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">

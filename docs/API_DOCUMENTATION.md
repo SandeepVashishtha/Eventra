@@ -1094,6 +1094,59 @@ Status: `200 OK`
 
 ---
 
+# Hackathon APIs
+
+## Get Hackathon By ID
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/hackathons/{id}` |
+
+Returns complete details for a single hackathon by its ID.
+
+*This documentation update corresponds to the backend implementation for GET /api/hackathons/{id}.*
+
+### Authentication
+Not required. Public endpoint.
+
+### Example Request
+
+```bash
+GET /api/hackathons/1
+```
+
+### Successful Response (200)
+
+```json
+{
+  "id": 1,
+  "title": "CodeSprint 2026",
+  "description": "A beginner-friendly hackathon for building full-stack projects.",
+  "organizer": "Eventra Team",
+  "startDate": "2026-07-10T00:00:00",
+  "endDate": "2026-07-12T00:00:00",
+  "location": "Bhopal",
+  "mode": "Offline",
+  "prizePool": "50000",
+  "registrationDeadline": "2026-07-05T00:00:00",
+  "imageUrl": "https://example.com/hackathon.png"
+}
+```
+
+### Error Response (404)
+
+```json
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "Hackathon not found with id: 999",
+  "path": "/api/hackathons/999",
+  "timestamp": "2026-06-02T02:41:32.8274901"
+}
+```
+
+---
+
 # Structured Error Responses
 
 The backend returns standardized JSON error responses for better frontend integration and debugging.

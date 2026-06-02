@@ -1,6 +1,8 @@
 import { getClientIp } from "./lib/getClientIp.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
+import { buildCorsHeaders } from "./auth/cors.js";
 
-const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
+const GITHUB_REPO = process.env.GITHUB_REPO || "SandeepVashishtha/Eventra";
 
 const POINTS = {
   gssoclevel1: 3,
@@ -115,6 +117,9 @@ const aggregatePrs = (prs, contributorsInfo) => {
 };
 
 export default async function handler(req, res) {
+  const corsHeaders = buildCorsHeaders(req);
+  res.set(corsHeaders);
+
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
@@ -214,6 +219,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Failed to compile leaderboard data" });
   }
 }
-iled to compile leaderboard data" });
-  }
-}
+
