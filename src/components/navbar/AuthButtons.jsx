@@ -5,14 +5,14 @@ const AuthButtons = () => {
     <div className="flex items-center justify-center gap-3">
       <Link
         to="/login"
-        className="px-4 py-2 rounded-lg text-sm font-semibold bg-blue-300 text-black hover:bg-blue-400 dark:text-white dark:bg-blue-800 dark:hover:text-white transition-colors whitespace-nowrap"
+        className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-black hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
       >
         Sign In
       </Link>
 
       <Link
         to="/signup"
-        className="px-4 py-2 bg-yellow-200 text-black rounded-lg text-sm font-semibold hover:bg-yellow-300 dark:bg-amber-800 dark:text-white dark:hover:bg-amber-900 transition-colors whitespace-nowrap"
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors whitespace-nowrap shadow-xs"
       >
         Get Started
       </Link>

@@ -78,12 +78,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className="sticky top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
+        className="sticky top-0 left-0 w-full h-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-850 z-[200] transition-all duration-300"
       >
-        <div className="h-full px-4 flex items-center justify-between gap-4">
+        <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           <Link to="/" aria-label="Eventra home logo template" className="flex items-center shrink-0 min-w-0">
-            <div className="flex min-w-0 items-center gap-2 xl:gap-3">
-              <div className="flex h-10 w-10 xl:h-11 xl:w-11 flex-none items-center justify-center overflow-hidden rounded-xl bg-gray-100 p-1 shadow-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+            <div className="flex min-w-0 items-center gap-2.5 xl:gap-3">
+              <div className="flex h-10 w-10 xl:h-11 xl:w-11 flex-none items-center justify-center overflow-hidden rounded-xl bg-gray-50 p-1.5 shadow-xs ring-1 ring-gray-100 dark:bg-gray-800 dark:ring-gray-700">
                 <img
                   src="/favicon.png"
                   alt="Eventra Brand Logo"
@@ -95,26 +95,39 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </div>
           </Link>
 
-          {/* Desktop Links should be in the middle of the navbar */}
-          <DesktopNavbar isAuthenticated={authenticated} user={user} logout={logout} />
+          {/* Desktop Links centered in the middle of the navbar */}
+          <DesktopNavbar />
 
-          {/* Right Controls Container */}
+          {/* Right Controls & Actions Container */}
           <div className="flex items-center gap-2 xl:gap-4 shrink-0">
-          {/* Hide these on mobile */}
-          <div className="hidden sm:flex items-center gap-2 xl:gap-4">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
-              aria-pressed={isDarkMode}
-              className="theme-toggle relative flex items-center justify-center w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-800 text-black dark:text-white shadow-md hover:scale-110 hover:shadow-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-            >
-              <div className="transition-transform duration-500">
-                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </div>
-            </button>
-            <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+            {/* Desktop Auth/Profile Buttons */}
+            <div className="hidden xl:flex items-center gap-3">
+              {authenticated ? (
+                <ProfileMenu user={user} logout={logout} />
+              ) : (
+                <AuthButtons />
+              )}
             </div>
+
+            {/* Vertical Divider - Hidden on mobile/tablet */}
+            <div className="hidden xl:block h-6 w-px bg-gray-200 dark:bg-gray-800" aria-hidden="true" />
+
+            {/* Utility Controls (Theme, Cursor) */}
+            <div className="hidden sm:flex items-center gap-2 xl:gap-3">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
+                aria-pressed={isDarkMode}
+                className="theme-toggle relative flex items-center justify-center w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white shadow-xs hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <div className="transition-transform duration-500">
+                  {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                </div>
+              </button>
+              <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+            </div>
+
             <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
           </div>
         </div>

@@ -55,10 +55,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             ? "text-black dark:text-white border-black dark:border-white font-semibold bg-gray-100 dark:bg-gray-800"
             : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50"
         }`
-      : `flex gap-1 items-center text-xs xl:text-sm font-medium transition-all duration-200 px-1.5 xl:px-2 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 focus-visible:rounded-lg ${
+      : `flex gap-2 items-center text-sm font-medium transition-all duration-200 px-3 py-1.5 rounded-full whitespace-nowrap focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
           active
-            ? "text-black dark:text-white border-black dark:border-white font-semibold"
-            : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent hover:border-gray-300 dark:hover:border-gray-600"
+            ? "text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20 font-semibold"
+            : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-50/60 dark:hover:bg-gray-800/40"
         }`;
   };
 
@@ -68,7 +68,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
-          : "items-center gap-1.5 xl:gap-3 mx-1 xl:mx-3 min-w-0 flex-nowrap"
+          : "items-center gap-1.5 lg:gap-2.5 xl:gap-4.5 mx-1 xl:mx-3 min-w-0 flex-nowrap"
       }`}
       aria-label={vertical ? "Mobile primary links" : "Primary links"}
     >
@@ -87,7 +87,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                 vertical ? "w-full flex-col items-start" : "flex-none"
               }`}
             >
-              <div className="flex w-full items-center">
+              <div className="flex w-full items-center gap-0.5">
                 <NavLink
                   to={item.href}
                   onClick={onClick}
@@ -104,7 +104,9 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     getNavLinkClasses(isActive || isSubItemActive)
                   }
                 >
-                  {item.icon}
+                  <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">
+                    {item.icon}
+                  </span>
                   <span>{item.name}</span>
                 </NavLink>
 
@@ -135,14 +137,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     aria-label={`${
                       isOpen ? "Collapse" : "Expand"
                     } ${item.name} submenu`}
-                    className={`ml-auto inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
-                      isSubItemActive
-                        ? "text-black dark:text-white"
-                        : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white"
-                    }`}
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400`}
                   >
                     <ChevronDown
-                      className={`w-4 h-4 opacity-70 transition-transform duration-200 ${
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
                         isOpen
                           ? "rotate-180"
                           : "group-hover/nav:rotate-180"
@@ -163,7 +161,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                         isOpen
                           ? "block"
                           : "hidden group-hover/nav:block"
-                      } absolute top-full left-0 bg-white dark:bg-gray-800 shadow-lg rounded-md p-2 min-w-55 z-50 border border-gray-100 dark:border-gray-700 mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
+                      } absolute top-full left-0 bg-white dark:bg-gray-800 shadow-xl rounded-xl p-2 min-w-55 z-50 border border-gray-100 dark:border-gray-700 mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
                 }
                 role={!vertical ? "menu" : undefined}
                 aria-label={`${item.name} submenu`}
@@ -175,14 +173,14 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     onClick={onClick}
                     role={!vertical ? "menuitem" : undefined}
                     className={({ isActive }) =>
-                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-md p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 focus-visible:rounded-lg ${
+                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
                         isActive
-                          ? "bg-gray-100 dark:bg-gray-700 text-black dark:text-white font-semibold"
-                          : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                          ? "bg-gray-50 dark:bg-gray-700/80 text-black dark:text-white font-semibold"
+                          : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white hover:bg-gray-50/80 dark:hover:bg-gray-700/50"
                       }`
                     }
                   >
-                    {sub.icon}
+                    <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">{sub.icon}</span>
                     <span>{sub.name}</span>
                   </NavLink>
                 ))}
@@ -200,7 +198,9 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
               getNavLinkClasses(isActive)
             }
           >
-            {item.icon}
+            <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">
+              {item.icon}
+            </span>
             <span>{item.name}</span>
           </NavLink>
         );
