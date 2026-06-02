@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
@@ -10,8 +11,6 @@ import {
   X,
   Ticket,
   Trash2,
-  Filter,
-  ArrowUpDown,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -107,9 +106,9 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
       layout
     >
       <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-        <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-full opacity-20 group-hover:animate-pulse" />
-        <div className="absolute top-1/2 -left-2 w-4 h-4 bg-gradient-to-br from-pink-400 to-red-500 rounded-full opacity-20 group-hover:animate-bounce" />
-        <div className="absolute bottom-4 right-1/4 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full opacity-20 group-hover:animate-ping" />
+        <div className="absolute -top-4 -right-4 w-8 h-8 bg-linear-to-br from-gray-500 to-gray-700 rounded-full opacity-20 group-hover:animate-pulse" />
+        <div className="absolute top-1/2 -left-2 w-4 h-4 bg-linear-to-br from-pink-400 to-red-500 rounded-full opacity-20 group-hover:animate-bounce" />
+        <div className="absolute bottom-4 right-1/4 w-6 h-6 bg-linear-to-br from-yellow-400 to-orange-500 rounded-full opacity-20 group-hover:animate-ping" />
       </div>
 
       {event?.image && (
@@ -119,39 +118,39 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
             alt={event.title}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
         </div>
       )}
 
       {event?.description && (
-        <div className="px-6 py-4 border-b border-gray-200/60 dark:border-gray-700/50 bg-gradient-to-r from-transparent to-indigo-50/30 dark:to-indigo-950/30">
+        <div className="px-6 py-4 border-b border-gray-200/60 dark:border-gray-700/50 bg-linear-to-r from-transparent to-indigo-50/30 dark:to-indigo-950/30">
           <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 leading-relaxed">
             {event.description}
           </p>
         </div>
       )}
 
-      <div className="px-6 py-5 grid grid-cols-2 gap-4 text-gray-700 dark:text-gray-300 text-sm bg-gradient-to-br from-gray-50/50 to-indigo-50/30 dark:from-gray-800/50 dark:to-indigo-950/30">
+      <div className="px-6 py-5 grid grid-cols-2 gap-4 text-gray-700 dark:text-gray-300 text-sm bg-linear-to-br from-gray-50/50 to-indigo-50/30 dark:from-gray-800/50 dark:to-indigo-950/30">
         <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300">
-          <div className="p-1.5 bg-pink-100 dark:bg-pink-900/30 rounded-lg flex-shrink-0">
+          <div className="p-1.5 bg-pink-100 dark:bg-pink-900/30 rounded-lg shrink-0">
             <MapPin size={14} className="text-pink-500" />
           </div>
           <span className="truncate font-medium">{event?.location || "—"}</span>
         </div>
         <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300">
-          <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
+          <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg shrink-0">
             <Clock size={14} className="text-blue-500" />
           </div>
           <span className="font-medium">{event?.time || "—"}</span>
         </div>
         <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300">
-          <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg flex-shrink-0">
+          <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg shrink-0">
             <Tag size={14} className="text-green-500" />
           </div>
           <span className="font-medium capitalize">{event?.type || "—"}</span>
         </div>
         <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300">
-          <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex-shrink-0">
+          <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg shrink-0">
             <Calendar size={14} className="text-indigo-500" />
           </div>
           <span className="font-medium">{shortDate}</span>
@@ -178,14 +177,14 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
         </div>
       )}
 
-      <div className="px-6 py-4 flex gap-3 bg-gradient-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
+      <div className="px-6 py-4 flex gap-3 bg-linear-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
         {showCancel ? (
           <>
             <button
               className="group/btn flex-1"
               onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
             >
-              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Trash2 size={13} className="relative" />
                 <span className="relative">Cancel</span>
               </div>
@@ -194,7 +193,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
               className="group/btn flex-1"
               onClick={() => onViewTicket?.(event)}
             >
-              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Ticket size={13} className="relative" />
                 <span className="relative">Ticket</span>
               </div>
@@ -389,6 +388,22 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
               />
             )}
           </div>
+          
+          {/* 🔥 FIX 2: Relocated Rogue "Clear History" button to its proper logical location */}
+          {recentSearches.length > 0 && (
+            <button
+              onClick={() => {
+                localStorage.removeItem(
+                  "recentSearches"
+                );
+
+                setRecentSearches([]);
+              }}
+              className="text-sm text-red-500 hover:underline mt-2"
+            >
+              Clear History
+            </button>
+          )}
 
           <StyledDropdown
             label=""
@@ -501,8 +516,9 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         </>
       )}
 
+      {/* 🔥 FIX 1: Portaled the modal out of the Framer Motion stacking context trap */}
       <AnimatePresence>
-        {cancelTarget && (
+        {cancelTarget && ReactDOM.createPortal(
           <motion.div
             className="my-events-dialog-backdrop"
             initial={{ opacity: 0 }}
@@ -510,18 +526,6 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             exit={{ opacity: 0 }}
             onClick={handleCancelDismiss}
           >
-            <button
-              onClick={() => {
-                localStorage.removeItem(
-                  "recentSearches"
-                );
-
-                setRecentSearches([]);
-              }}
-              className="text-sm text-red-500 hover:underline mt-2"
-            >
-              Clear History
-            </button>
             <motion.div
               className="my-events-dialog"
               initial={{ scale: 0.95, opacity: 0 }}
@@ -542,7 +546,8 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                 </button>
               </div>
             </motion.div>
-          </motion.div>
+          </motion.div>,
+          document.body
         )}
       </AnimatePresence>
     </motion.div>

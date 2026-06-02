@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { X, Download, ShieldCheck, Calendar, MapPin, Clock, User, Mail, Award, Loader2, RefreshCw, FileText, Sparkles, Map } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import "./EventTicket.css";
 import { useMyEvents } from "../../context/MyEventsContext";
 import SpatialSeatSelector from "../events/SpatialSeatSelector";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 
 const EventTicket = ({ event, user, onClose }) => {
   const ticketRef = useRef(null);
@@ -29,7 +29,7 @@ const EventTicket = ({ event, user, onClose }) => {
     return `${eventPart}-${userPart}-${randomPart}`;
   };
 
-  const serialNumber = useRef(generateSerial());
+  const [serialNumber] = useState(() => generateSerial());
 
   // Dynamic category themes
   const getThemeColors = () => {
@@ -186,7 +186,7 @@ const EventTicket = ({ event, user, onClose }) => {
             onClick={onClose} 
             className="ud-ticket-action-btn close-btn"
             title="Close Ticket"
-          >
+           aria-label="button">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -215,12 +215,13 @@ const EventTicket = ({ event, user, onClose }) => {
               />
 
               {/* Header Banner */}
-              <div className={`ud-ticket-header bg-gradient-to-r ${theme.primary}`}>
+              <div className={`ud-ticket-header bg-linear-to-r ${theme.primary}`}>
                 {event.image && (
-                  <img 
-                    src={event.image} 
-                    alt={event.title} 
+                  <img
+                    src={event.image}
+                    alt={event.title}
                     className="ud-ticket-header-img"
+                    loading="lazy"
                     crossOrigin="anonymous"
                     onError={(e) => { e.target.style.display = 'none'; }}
                   />
@@ -333,7 +334,7 @@ const EventTicket = ({ event, user, onClose }) => {
                   <div className="ud-ticket-qr-border">
                     <QRCode 
                       value={JSON.stringify({
-                        ticketId: serialNumber.current,
+                        ticketId: serialNumber,
                         eventId: event.id,
                         eventName: event.title,
                         userId: user?.id || "anonymous",
@@ -348,7 +349,7 @@ const EventTicket = ({ event, user, onClose }) => {
                 </div>
                 
                 <div className="ud-ticket-stub-details">
-                  <div className="ud-ticket-serial">{serialNumber.current}</div>
+                  <div className="ud-ticket-serial">{serialNumber}</div>
                   <div className="ud-ticket-status">
                     <ShieldCheck size={14} className="text-emerald-400 animate-pulse" />
                     <span>SECURE VALID PASS</span>
@@ -359,7 +360,7 @@ const EventTicket = ({ event, user, onClose }) => {
 
             {/* Back of Card (Schedule, Guidelines, Interactive Map) */}
             <div className="ud-ticket-card-face ud-ticket-card-back">
-              <div className={`ud-ticket-back-header bg-gradient-to-r ${theme.primary}`}>
+              <div className={`ud-ticket-back-header bg-linear-to-r ${theme.primary}`}>
                 <div className="ud-ticket-logo-overlay">
                   <span className="ud-ticket-logo-dot" />
                   <span className="ud-ticket-logo-text">Eventra Info</span>
@@ -402,7 +403,7 @@ const EventTicket = ({ event, user, onClose }) => {
                 </div>
 
                 <div className="ud-ticket-back-footer mt-auto pt-4 border-t border-white/5 flex flex-col items-center gap-2">
-                  <div className="ud-ticket-serial text-center text-xs opacity-75">{serialNumber.current}</div>
+                  <div className="ud-ticket-serial text-center text-xs opacity-75">{serialNumber}</div>
                   <div className="text-[10px] text-zinc-500 uppercase tracking-widest text-center">
                     Powered by Eventra Engine
                   </div>

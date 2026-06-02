@@ -1,3 +1,4 @@
+import "./helpers/authTestEnv.mjs";
 import assert from "node:assert/strict";
 import jwt from "jsonwebtoken";
 
@@ -5,7 +6,7 @@ import jwt from "jsonwebtoken";
 // JWT Configuration
 // ---------------------------------------------------------------------------
 
-const JWT_SECRET = process.env.JWT_SECRET || "test-jwt-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // ---------------------------------------------------------------------------
 // Token Blacklist (mirrors api/auth/logout.js)

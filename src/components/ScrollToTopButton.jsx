@@ -20,10 +20,17 @@ export default function ScrollToTopButton() {
     };
   }, []);
 
-  // Position based on chatbot state
   const positionClass = isChatbotOpen 
-    ? "bottom-24 left-6"  // When chatbot is open - bottom left
-    : "bottom-6 right-6 sm:bottom-24 sm:right-6"; // When chatbot is closed - bottom right
+    ? "bottom-[calc(1rem+var(--safe-area-bottom))] left-[calc(1rem+var(--safe-area-left))] sm:bottom-24 sm:left-6"
+    : "bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] sm:bottom-24 sm:right-6";
 
   return <BackToTopButton threshold={50} positionClass={positionClass} />;
 }
+// Accessible landmark container router focus shifting utility helper
+export const shiftLandmarkFocus = (elementId) => {
+  const container = document.getElementById(elementId);
+  if (container) {
+    container.setAttribute("tabindex", "-1");
+    container.focus();
+  }
+};

@@ -1,5 +1,5 @@
 // src/pages/CommunityEventsPage.jsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
@@ -110,7 +110,7 @@ const CommunityEvent = () => {
     <div
       className={`
         relative overflow-hidden
-        bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white 
+        bg-linear-to-b from-blue-50 via-indigo-50/30 to-white 
         dark:from-slate-950 dark:via-slate-900 dark:to-black
         ${darkTheme.textPrimary}
         min-h-[80vh]

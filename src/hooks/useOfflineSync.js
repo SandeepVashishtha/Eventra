@@ -13,6 +13,14 @@ const BASE_BACKOFF_MS = 1_000;
 const useOfflineSync = () => {
   const { token, user } = useAuth();
   const isSyncing = useRef(false);
+  const conflictControllerRef = useRef(new AbortController());
+
+  // Clean up controller on full unmount
+  useEffect(() => {
+    return () => {
+      conflictControllerRef.current.abort();
+    };
+  }, []);
 
   useEffect(() => {
   /**
@@ -95,8 +103,8 @@ const useOfflineSync = () => {
     });
   };
 
-
-    const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false) => {
+    // 🔥 FIX: Added 'signal' and 'idempotencyKey' parameters
+    const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false, signal = null, idempotencyKey = null) => {
       if (attempt > 0) {
         const baseDelayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
         const jitterMs = Math.random() * 500;
@@ -108,6 +116,7 @@ const useOfflineSync = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
       if (forceOverride) headers['X-Override-Conflict'] = 'true';
+      if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
 
       const { response, data } = await fetchWithTimeout(
         url,
@@ -115,6 +124,7 @@ const useOfflineSync = () => {
           method: 'POST',
           headers,
           body: JSON.stringify(payload),
+          signal, // 🔥 FIX: Attach signal to terminate fetch on unmount
         },
         10000
       );
@@ -139,8 +149,11 @@ const useOfflineSync = () => {
     };
 
     // AbortController used to cancel any in-progress resolveConflict() wait
-    // when the useEffect is cleaned up (component unmount or token change).
-    const conflictController = new AbortController();
+    // We use the stable ref to prevent it from being prematurely aborted during re-renders
+    if (conflictControllerRef.current.signal.aborted) {
+      conflictControllerRef.current = new AbortController();
+    }
+    const conflictController = conflictControllerRef.current;
 
     const executeSync = async () => {
       const queue = await getQueueIndexedDB();
@@ -207,6 +220,12 @@ const useOfflineSync = () => {
         let droppedCount = 0;
 
         for (const item of validatedQueue) {
+          // 🔥 FIX: Prevent the zombie loop. If the user logs out mid-sync, halt execution immediately.
+          if (conflictController.signal.aborted) {
+            logger.log("[useOfflineSync] Sync aborted mid-execution.");
+            break; 
+          }
+
           const retries = item.retryCount ?? 0;
 
           if (retries >= MAX_RETRIES) {
@@ -222,7 +241,10 @@ const useOfflineSync = () => {
               url,
               item.payload,
               token,
-              0
+              0,
+              false,
+              conflictController.signal, // 🔥 FIX: Pass signal
+              item.id // Pass idempotency key
             );
 
             // Handle Conflict loop — pass the abort signal so the waiter
@@ -232,10 +254,10 @@ const useOfflineSync = () => {
 
               if (resolution.resolution === "local") {
                 // Retry with force flag
-                res = await postWithBackoff(url, item.payload, token, 0, true);
+                res = await postWithBackoff(url, item.payload, token, 0, true, conflictController.signal, item.id);
               } else if (resolution.resolution === "merge") {
                 // Post merged content
-                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true);
+                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true, conflictController.signal, item.id);
               } else {
                 // Discard local (treated as handled success so we proceed)
                 res = { status: "success" };
@@ -248,6 +270,11 @@ const useOfflineSync = () => {
               failedQueue.push({ ...item, retryCount: retries + 1 });
             }
           } catch (error) {
+            // Do not treat AbortError as a failure that bumps the retry count
+            if (error.name === 'AbortError' || conflictController.signal.aborted) {
+              failedQueue.push(item); // Keep item as is without incrementing retry
+              break; // Halt the loop
+            }
             logger.error("[useOfflineSync] Sync failed for queued item:", error);
             failedQueue.push({ ...item, retryCount: retries + 1 });
           }
@@ -255,17 +282,20 @@ const useOfflineSync = () => {
 
         if (failedQueue.length > 0) {
           await setQueue(failedQueue);
-          toast.warning(
-            `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
-          );
+          // Only show toast if we didn't abort completely
+          if (!conflictController.signal.aborted) {
+            toast.warning(
+              `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
+            );
+          }
         } else {
           await clearQueue();
-          if (successCount > 0) {
+          if (successCount > 0 && !conflictController.signal.aborted) {
             toast.success("All offline actions successfully synchronized!");
           }
         }
 
-        if (droppedCount > 0) {
+        if (droppedCount > 0 && !conflictController.signal.aborted) {
           toast.error(
             `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
           );
@@ -325,8 +355,12 @@ const useOfflineSync = () => {
       }
     };
 
-    const handleOnline = async () => {
+    const handleSyncRequested = async () => {
       if (isSyncing.current) {
+        return;
+      }
+
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
         return;
       }
 
@@ -349,7 +383,21 @@ const useOfflineSync = () => {
       }
     };
 
+    const handleOnline = async () => {
+      await handleSyncRequested();
+    };
+
+    const handleServiceWorkerMessage = (event) => {
+      if (event?.data?.type === "EVENTRA_BACKGROUND_SYNC") {
+        void handleSyncRequested();
+      }
+    };
+
     window.addEventListener("online", handleOnline);
+    window.addEventListener("eventra-background-sync", handleSyncRequested);
+    window.addEventListener("eventra-offline-queue-updated", handleSyncRequested);
+    window.addEventListener("eventra-session-restored", handleSyncRequested);
+    navigator.serviceWorker?.addEventListener?.("message", handleServiceWorkerMessage);
 
     let idleId = null;
     let timeoutId = null;
@@ -368,6 +416,10 @@ const useOfflineSync = () => {
 
     return () => {
       window.removeEventListener("online", handleOnline);
+      window.removeEventListener("eventra-background-sync", handleSyncRequested);
+      window.removeEventListener("eventra-offline-queue-updated", handleSyncRequested);
+      window.removeEventListener("eventra-session-restored", handleSyncRequested);
+      navigator.serviceWorker?.removeEventListener?.("message", handleServiceWorkerMessage);
       // Abort any in-progress conflict resolution waiter so its event
       // listener is removed and the sync loop exits cleanly on unmount.
       conflictController.abort();
@@ -378,7 +430,7 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, [token, user]);
+  }, [token, user?.id]);
 };
 
 export default useOfflineSync;
