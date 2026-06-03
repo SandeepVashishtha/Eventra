@@ -3,7 +3,8 @@ import { getPublicErrorMessage, FORM_ERRORS } from "../../utils/errorMessages";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { API_ENDPOINTS } from "../../config/api";
+import { projectService } from "../../services/projectService";
 import { getUserFullName } from "../../utils/userNameUtils.mjs";
 import "./ProjectSubmission.css";
 
@@ -86,15 +87,11 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
     setSuccess("");
 
     try {
-      const response = await apiUtils.post(
-        API_ENDPOINTS.PROJECTS.SUBMIT,
-        formData,
-        {
-          headers: {
-            Authorization: token
-          }
+      const response = await projectService.submitProject(formData, {
+        headers: {
+          Authorization: token
         }
-      );
+      });
 
       const result = response.data;
       setSuccess(

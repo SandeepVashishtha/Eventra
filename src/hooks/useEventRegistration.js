@@ -6,7 +6,8 @@ import { getEventStatus } from "../../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { API_ENDPOINTS } from "../../config/api";
+import { eventService } from "../../services/eventService";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { validate } from "../../validation";
 import {
@@ -143,7 +144,7 @@ const useEventRegistration = (eventIdParam) => {
       }
 
       try {
-        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+        const response = await eventService.getEventDetails(eventId);
 
         if (response.status === 200 && response.data) {
           if (isCancelled) return;
@@ -201,7 +202,7 @@ const useEventRegistration = (eventIdParam) => {
 
   const checkEventCapacity = useCallback(async (id, currentEvent) => {
     try {
-      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(id));
+      const freshRes = await eventService.getEventDetails(id);
       if (freshRes.status === 200) {
         const freshEvent = freshRes.data;
         return freshEvent.attendees >= freshEvent.maxAttendees;
@@ -218,7 +219,7 @@ const useEventRegistration = (eventIdParam) => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
     if (conflictCheck.hasConflict) {
       try {
-        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+        const res = await eventService.getAllEvents();
         const realEvents = res.status === 200 ? res.data : [];
         const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
         setConflictData({
@@ -254,24 +255,20 @@ const useEventRegistration = (eventIdParam) => {
     isSubmittingRef.current = true;
     setSubmitting(true);
 
-    const isEventFull = event ? event.attendees >= event.maxAttendees : false;
-    const endpoint = isEventFull
-      ? `/api/events/${eventId}/waitlist`
-      : API_ENDPOINTS.EVENTS?.REGISTER
-        ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
-        : `/api/events/${eventId}/register`;
+    const payload = {
+      ...formData,
+      priority: formData.priority,
+      eventId: parseInt(eventId),
+      userId: user.id,
+    };
 
     try {
-      await apiUtils.post(
-        endpoint,
-        {
-          ...formData,
-          priority: formData.priority,
-          eventId: parseInt(eventId),
-          userId: user.id,
-        },
-        token
-      );
+      const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+      if (isEventFull) {
+        await eventService.waitlistForEvent(eventId, payload);
+      } else {
+        await eventService.registerForEvent(eventId, payload);
+      }
 
       setRegistered(true);
       toast.success("Registration successful!");

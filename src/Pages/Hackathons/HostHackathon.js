@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { useAuth } from "../../context/AuthContext";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { API_ENDPOINTS } from "../../config/api";
+import { hostHackathon } from "../../services/hackathonService";
 import { sanitizeInputText } from "../../utils/inputSanitization";
 
 const HostHackathon = () => {
@@ -161,8 +162,7 @@ const HostHackathon = () => {
 
     setIsSubmitting(true);
     try {
-      await apiUtils.post(
-        API_ENDPOINTS.HACKATHONS.HOST,
+      await hostHackathon(
         {
           ...formData,
           // Sanitize description and other text inputs

@@ -20,3 +20,7 @@ export const fetchHackathons = async () => {
   
   return mockHackathons;
 };
+
+export const hostHackathon = async (hackathonData, config) => {
+  return apiUtils.post(API_ENDPOINTS.HACKATHONS.HOST, hackathonData, config);
+};

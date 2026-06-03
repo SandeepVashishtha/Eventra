@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from '../../hooks/useReducedMotion';
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { authService } from "../../services/authService";
 import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -209,7 +209,7 @@ const Signup = () => {
     setSubmitStatus(null);
 
     try {
-      const response = await apiUtils.post(API_ENDPOINTS.AUTH.REGISTER, {
+      const response = await authService.register({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),

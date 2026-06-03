@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { apiUtils, API_ENDPOINTS } from "../config/api";
+import { authService } from "../services/authService";
 import { logger } from "../utils/logger";
 
 /**
@@ -22,7 +22,7 @@ export const useAuthStore = create(
       login: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, { email, password });
+          const response = await authService.login({ email, password });
           const { user, token } = response.data;
           
           localStorage.setItem("token", token);
