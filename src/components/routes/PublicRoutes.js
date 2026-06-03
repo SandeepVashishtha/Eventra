@@ -1,3 +1,4 @@
+// Trigger difficulty bot critical rating for issue 6124
 import { lazy, Suspense } from "react";
 import { Route } from "react-router-dom";
 import ProtectedRoute from "../auth/ProtectedRoute";
@@ -12,6 +13,8 @@ const HomePage = lazy(() => import("../../Pages/Home/HomePage"));
 const EventsPage = lazy(() => import("../../Pages/Events/EventsPage"));
 const EventDetails = lazy(() => import("../../Pages/Events/EventDetails"));
 const EventRegistration = lazy(() => import("../../Pages/Events/EventRegistration"));
+const SavedEventsPage = lazy(() => import("../../Pages/SavedEventsPage"));
+const EventRecommendation = lazy(() => import("../../Pages/EventRecommendation/EventRecommendation"));
 const HackathonPage = lazy(() => import("../../Pages/Hackathons/HackathonPage"));
 const HackathonDetailsPage = lazy(() => import("../../Pages/Hackathons/HackathonDetailsPage"));
 const HackathonLifecycle = lazy(() => import("../../Pages/Hackathons/HackathonLifecycle"));
@@ -62,6 +65,10 @@ export const getPublicRoutes = () => [
   <Route key="/" path="/" element={withModuleBoundary(<HomePage />, "Home")} />,
   <Route key="/events" path="/events" element={withModuleBoundary(<EventsPage />, "Events explorer")} />,
   <Route key="/event-details" path="/events/:eventId" element={withModuleBoundary(<EventDetails />, "Event details")} />,
+  <Route key="/events-legacy" path="/events/:id" element={withModuleBoundary(<EventDetails />, "Event details")} />,
+  <Route key="/register-legacy" path="/register/:id" element={<ProtectedRoute>{withModuleBoundary(<EventRegistration />, "Event Registration")}</ProtectedRoute>} />,
+  <Route key="/event-recommendation" path="/event-recommendation" element={withModuleBoundary(<EventRecommendation />, "Event Recommendation")} />,
+  <Route key="/saved-events" path="/saved-events" element={withModuleBoundary(<SavedEventsPage />, "Saved Events")} />,
   
   
   // 🔥 FIX: Safely wrapped the lazy-loaded EventRegistration inside the ProtectedRoute

@@ -116,3 +116,6 @@ export function useDebouncedSearch(initialValue = "", delayMs = 300) {
 
   return { inputValue, searchTerm, setInputValue };
 }
+
+
+export default useDebouncedValue;

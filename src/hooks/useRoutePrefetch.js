@@ -26,7 +26,8 @@ export const useRoutePrefetch = (config = {}) => {
     // Define prefetch strategies based on current path
     if (path === "/") {
       // On home, prefetch major entry points
-      prefetch(() => import("../Pages/Events/EventsPage"), "events");
+
+
     } else if (path === "/explore" || path === "/events") {
       // On explore, prefetch event details and registration
       prefetch(() => import("../Pages/Events/EventDetails"), "details");
@@ -36,3 +37,6 @@ export const useRoutePrefetch = (config = {}) => {
 
   return { prefetchManual: prefetch };
 };
+
+
+export default useRoutePrefetch;

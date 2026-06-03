@@ -59,3 +59,6 @@ export function useScrollProgress() {
 
   return progress;
 }
+
+
+export default useScrollProgress;

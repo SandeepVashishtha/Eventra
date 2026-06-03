@@ -68,3 +68,6 @@ export function useFormSubmit(submitFn, offlineOptions = {}) {
 
   return { handleSubmit, isSubmitting, error, success };
 }
+
+
+export default useFormSubmit;
