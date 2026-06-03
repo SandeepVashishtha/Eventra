@@ -23,6 +23,7 @@ import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
+import Breadcrumbs from "./components/common/Breadcrumbs";
 import { 
   AuthFormSkeleton, 
   ExploreEventsSkeleton, 
@@ -166,6 +167,8 @@ function App() {
                 <Suspense fallback={null}>
                   <OnboardingChecklist />
                 </Suspense>
+
+                <Breadcrumbs />
 
                 <main
                   id="main-content"
