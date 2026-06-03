@@ -5,26 +5,17 @@ import { pathToFileURL } from "node:url";
 
 const testsDir = path.resolve("tests");
 const loaderUrl = pathToFileURL(path.resolve("tests/loaders/jsExtension.mjs")).href;
-
-const nonUtilityTests = new Set([
-  "animatedCounter.test.mjs",
-  "appShellIntegrity.test.mjs",
-  "backToTopButtonIntegrity.test.mjs",
-  "contributorsCarousel.test.mjs",
-  "errorBoundaryIntegrity.test.mjs",
-  "eventCreationAuth.test.mjs",
-  "eventDetails.test.mjs",
-  "floorPlanAccessibility.test.mjs",
-  "globalErrorHandler.test.mjs",
-  "highlightMatch.contract.test.mjs",
-  "packageJsonIntegrity.test.mjs",
-]);
+const unitTestFilePattern = /(?:\.test|\.edge\.test|-edge\.test)\.mjs$/;
 
 const testFiles = readdirSync(testsDir)
-  .filter((fileName) => fileName.endsWith(".mjs"))
-  .filter((fileName) => !nonUtilityTests.has(fileName))
+  .filter((fileName) => unitTestFilePattern.test(fileName))
   .sort((a, b) => a.localeCompare(b))
   .map((fileName) => path.join(testsDir, fileName));
+
+const failedTests = [];
+
+console.log(`Discovered ${testFiles.length} unit test files.`);
+console.log("Excluded from this runner: tests/e2e/*.spec.js (run with npm run test:e2e) and non-Node .js test files.");
 
 for (const testFile of testFiles) {
   const relativeTestFile = path.relative(process.cwd(), testFile);
@@ -43,8 +34,16 @@ for (const testFile of testFiles) {
   );
 
   if (result.status !== 0) {
-    process.exit(result.status ?? 1);
+    failedTests.push(relativeTestFile);
   }
 }
 
 console.log(`\nRan ${testFiles.length} unit test files.`);
+
+if (failedTests.length > 0) {
+  console.error(`\n${failedTests.length} unit test file(s) failed:`);
+  for (const testFile of failedTests) {
+    console.error(`- ${testFile}`);
+  }
+  process.exit(1);
+}

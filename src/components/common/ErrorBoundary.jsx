@@ -45,7 +45,11 @@ function attemptStateRecovery() {
   try {
     const savedState = sessionStorage.getItem("eventra_component_state_backup");
     if (savedState) {
-      window.__EVENTRA_RECOVERED_STATE__ = JSON.parse(savedState);
+      const parsed = JSON.parse(savedState, (key, value) => {
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') return undefined;
+        return value;
+      });
+      window.__EVENTRA_RECOVERED_STATE__ = parsed;
       sessionStorage.removeItem("eventra_component_state_backup");
       return true;
     }
