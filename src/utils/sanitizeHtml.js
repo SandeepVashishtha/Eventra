@@ -31,14 +31,12 @@ const ALLOWED_ATTR = [
  * - ALLOWED_TAGS: strict whitelist
  * - ALLOWED_ATTR: strict attribute whitelist
  * - ALLOW_DATA_ATTR: false prevents data-* exfiltration
- * - FORCE_BODY: ensures well-formed fragment output
  * - RETURN_TRUSTED_TYPE: false keeps return value as string
  */
 const PURIFY_CONFIG = {
   ALLOWED_TAGS,
   ALLOWED_ATTR,
   ALLOW_DATA_ATTR: false,
-  FORCE_BODY: true,
 };
 
 /**
