@@ -181,7 +181,8 @@ const ContributorsInner = () => {
       }
 
       const enhanced = await Promise.all(
-        allContributors.map(async (c) => {
+        allContributors.map(async (c, idx) => {
+          await new Promise((resolve) => setTimeout(resolve, idx * PROFILE_FETCH_DELAY_MS));
           const profile = await fetchGitHubProfile(c.login);
           return {
             ...c,

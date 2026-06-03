@@ -26,17 +26,12 @@ Explain in 3 concise bullet points why this event matches the user.
 
     const data = await response.json();
 
-    if (!response.ok) {
-      console.error("[aiRecommendationService] Server error:", data);
-      return "Unable to generate AI insights. The service is currently unavailable.";
-    }
-
     return (
       data.choices?.[0]?.message?.content ||
       "No AI response generated."
     );
   } catch (error) {
-    console.error("[aiRecommendationService] Network/Parsing error:", error);
-    return "Unable to connect to the recommendation service.";
+    console.error("[aiRecommendationService] Request failed:", error);
+    return "Unable to generate AI insights. The service is currently unavailable.";
   }
 };
