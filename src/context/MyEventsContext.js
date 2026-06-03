@@ -16,18 +16,18 @@
  *
  * Shape of each persisted record:
  * {
- *   eventId      : number  — matches eventsMockData id (or real API id)
- *   registeredAt : string  — ISO timestamp of when the user registered
- *   eventSummary : object  — minimal event metadata (id, title, date, location)
+ *   eventId      : number — matches eventsMockData id (or real API id)
+ *   registeredAt : string — ISO timestamp of when the user registered
+ *   eventSummary : object — minimal event metadata (id, title, date, location)
  * }
  *
  * Shape of each in-memory record (superset of persisted):
  * {
  *   eventId      : number
  *   registeredAt : string
- *   formData     : object  — full form submission (session-only, not persisted)
- *   eventSummary : object  — minimal event metadata
- *   event        : object  — full event snapshot (session-only, not persisted)
+ *   formData     : object — full form submission (session-only, not persisted)
+ *   eventSummary : object — minimal event metadata
+ *   event        : object — full event snapshot (session-only, not persisted)
  * }
  *
  * Usage (any component):
@@ -38,7 +38,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
 import { safeJsonParse } from "../utils/safeJsonParse";
-import { saveToOfflineCache, getFromOfflineCache } from "../utils/indexedDB";
 
 const MyEventsContext = createContext(null);
 
@@ -64,31 +63,41 @@ const toEventSummary = (event) => ({
 // Persisted record shape — strips all PII before writing to localStorage.
 // formData and the full event object are intentionally excluded.
 // ---------------------------------------------------------------------------
-const toPersistedRecord = (eventId, registeredAt, event, registrationId, qrToken) => ({
+// 🔥 FIX 1: Removed qrToken to prevent XSS JWT leak to localStorage
+const toPersistedRecord = (eventId, registeredAt, event, registrationId) => ({
   eventId,
   registeredAt,
   registrationId,
-  qrToken,
   eventSummary: toEventSummary(event),
 });
 
 // ---------------------------------------------------------------------------
-// IndexedDB helpers
+// localStorage helpers
 // ---------------------------------------------------------------------------
 
-const loadFromIDB = async (userId) => {
+const loadFromStorage = (userId) => {
   if (!userId) return [];
-  const data = await getFromOfflineCache(storageKey(userId), []);
-  return Array.isArray(data) ? data : [];
+  try {
+    const raw = localStorage.getItem(storageKey(userId));
+    const parsed = safeJsonParse(raw, []);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 };
 
-const saveToIDB = async (userId, records) => {
+const saveToStorage = (userId, records) => {
   if (!userId) return;
   // Only persist the minimal, PII-free shape — strip formData and full event
+  // 🔥 FIX 1 cont: Removed r.qrToken from the serialization payload
   const persisted = records.map((r) =>
-    toPersistedRecord(r.eventId, r.registeredAt, r.event || r.eventSummary, r.registrationId, r.qrToken),
+    toPersistedRecord(r.eventId, r.registeredAt, r.event || r.eventSummary, r.registrationId),
   );
-  await saveToOfflineCache(storageKey(userId), persisted);
+  try {
+    localStorage.setItem(storageKey(userId), JSON.stringify(persisted));
+  } catch {
+    // localStorage might be full — fail silently
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -99,46 +108,31 @@ export const MyEventsProvider = ({ children }) => {
   const { user } = useAuth();
   const userId = user?.id || user?.email || null;
 
-  // Async init — loads persisted records from IndexedDB
-  const [myEvents, setMyEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Lazy init — loads persisted (PII-free) records immediately from localStorage.
+  // formData is absent from persisted records; it is available only for
+  // registrations added during the current session.
+  const [myEvents, setMyEvents] = useState(() => loadFromStorage(userId));
+  const [loading] = useState(false);
 
   // Guard ref — skips the first save on load to prevent overwriting valid data
   const isInitialLoad = useRef(true);
 
-  // Reload from IndexedDB whenever the logged-in user changes
+  // Reload from localStorage whenever the logged-in user changes
   useEffect(() => {
-    let mounted = true;
-    if (!userId) {
-      setMyEvents([]);
-      setLoading(false);
-      return;
-    }
-    
-    setLoading(true);
-    loadFromIDB(userId).then(data => {
-      if (mounted) {
-        setMyEvents(data);
-        setLoading(false);
-        // Important: allow saves *after* initial load resolves
-        setTimeout(() => {
-          isInitialLoad.current = false;
-        }, 50);
-      }
-    });
-
-    return () => { mounted = false; };
+    isInitialLoad.current = true;
+    setMyEvents(loadFromStorage(userId));
   }, [userId]);
 
-  // Persist to IndexedDB whenever myEvents changes — PII-free records only
+  // Persist to localStorage whenever myEvents changes — PII-free records only
   useEffect(() => {
     if (isInitialLoad.current) {
+      isInitialLoad.current = false;
       return;
     }
-    if (userId !== null && !loading) {
-      saveToIDB(userId, myEvents);
+    if (userId !== null) {
+      saveToStorage(userId, myEvents);
     }
-  }, [myEvents, userId, loading]);
+  }, [myEvents, userId]);
 
   /**
    * addRegistration — call this after a successful event registration.
@@ -175,9 +169,14 @@ export const MyEventsProvider = ({ children }) => {
   const removeRegistration = useCallback((eventId) => {
     setMyEvents((prev) => prev.filter((r) => r.eventId !== eventId));
     // Trigger automatic promotion from the waitlist
-    import("../utils/waitlistUtils.js").then(({ promoteNextUser }) => {
-      promoteNextUser(eventId);
-    });
+    // 🔥 FIX 2: Added .catch() boundary to prevent fatal unhandled promise rejections on network failure
+    import("../utils/waitlistUtils.js")
+      .then(({ promoteNextUser }) => {
+        promoteNextUser(eventId);
+      })
+      .catch((error) => {
+        console.error("Failed to load waitlist promotion module:", error);
+      });
   }, []);
 
   /**
