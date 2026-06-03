@@ -56,12 +56,20 @@ const evictStaleEntries = () => {
   }
 };
 
+const MAX_RATE_LIMIT_ENTRIES = 5000;
+
 const checkRateLimit = (userId) => {
   evictStaleEntries();
   const now = Date.now();
   const entry = rateLimitMap.get(userId);
 
   if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    if (!entry && rateLimitMap.size >= MAX_RATE_LIMIT_ENTRIES) {
+      const oldestKey = rateLimitMap.keys().next().value;
+      if (oldestKey !== undefined) {
+        rateLimitMap.delete(oldestKey);
+      }
+    }
     rateLimitMap.set(userId, { count: 1, windowStart: now });
     return true;
   }
