@@ -77,10 +77,6 @@ const EventConflictModal = ({
     };
   }, [isOpen, onCancel]);
 
-  // Focus trapping is now handled by useFocusTrap above.
-  // The hook handles Tab wrapping and Escape key automatically.
-  }, [isOpen]);
-
   // 🔥 FIX: Safe date formatter to prevent RangeError crashes if event data is malformed
   const safeFormatDate = (dateStr) => {
     if (!dateStr) return "TBD";
