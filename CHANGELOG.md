@@ -63,6 +63,7 @@ and this project adheres to Semantic Versioning.
 - Calendar integrations
 - AI-powered event recommendations
 - Improved release documentation readability and maintainability
+- Fixed duplicate character counter rendering in Event Creation description field
 
 ### Phase Validation Checklist
 - Build production bundles to verify bundle size before release.

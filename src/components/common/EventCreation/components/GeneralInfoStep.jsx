@@ -167,18 +167,6 @@ const GeneralInfoStep = ({
           <ClipboardList className="w-5 h-5 text-indigo-500 inline-block mr-2" />
           Description <span className="text-red-600">*</span>
         </label>
-        <p
-          className={`text-sm text-right mt-1 ${
-            formData.description.length > 450
-              ? "text-red-500"
-              : formData.description.length > 350
-              ? "text-yellow-500"
-              : "text-gray-400"
-          }`}
-        >
-          {formData.description.length}/500 characters
-        </p>
-
         {/* Character counter + error row */}
         <div className="flex justify-between items-start mt-1">
           <div className="flex-1">
