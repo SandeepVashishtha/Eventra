@@ -283,10 +283,11 @@ async function handler(req, res) {
       // Ignore write errors on test response objects
     }
 
+    // The JWT is delivered exclusively via the HttpOnly Set-Cookie header set
+    // above. Including it in the JSON body would expose it to JavaScript,
+    // defeating the XSS-theft protection that HttpOnly provides.
     return corsResponse(req, res, 201, {
       message: "Account created successfully",
-      token,
-      tokenType: "Bearer",
       ...userResponse,
     });
 
