@@ -40,12 +40,6 @@ const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
 const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
-// Placeholder imports - these pages are not yet implemented
-// const Login = lazy(() => import("./Pages/auth/Login"));
-// const Signup = lazy(() => import("./Pages/auth/Signup"));
-// const Profile = lazy(() => import("./Pages/user/Profile"));
-// const Dashboard = lazy(() => import("./Pages/dashboard/Dashboard"));
-// const AdminPanel = lazy(() => import("./Pages/Admin/AdminPanel"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
