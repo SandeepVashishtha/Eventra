@@ -30,6 +30,22 @@ class SectionErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     const { label = "Unknown Section" } = this.props;
     logError(error, errorInfo, { section: label });
+
+    // Persist section-level failures separately so they can be reviewed
+    // even after a page reload (the main ErrorBoundary only stores top-level crashes).
+    try {
+      const key = "eventra_section_errors";
+      const existing = JSON.parse(localStorage.getItem(key) || "[]");
+      existing.unshift({
+        section: label,
+        message: error?.message || String(error),
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+      });
+      localStorage.setItem(key, JSON.stringify(existing.slice(0, 15)));
+    } catch (_) {
+      // Never crash inside the error boundary
+    }
   }
 
   handleReset() {

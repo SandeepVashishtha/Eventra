@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Input } from '../../components/common/Input';
 import { exportToCSV } from '../../utils/exportUtils';
 import { verifyCertificate } from '../../utils/certificateUtils';
@@ -21,12 +21,12 @@ export const CertificateVerifier = () => {
   const [result, setResult] = useState(null);
 
   const handleSearch = async () => {
-    try {
-      const data = await verifyCertificate(uid.trim());
+    const { success, data, error } = await verifyCertificate(uid.trim());
+    if (success) {
       setResult(data);
       toast.success('Certificate verified!');
-    } catch (e) {
-      toast.error('Verification failed');
+    } else {
+      toast.error(error || 'Verification failed');
       setResult(null);
     }
   };

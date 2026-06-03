@@ -2,7 +2,12 @@ import { safeJsonParse } from "./safeJsonParse.js";
 
 const STORAGE_KEY = "event_creation_draft";
 
+const isStorageAvailable = () => {
+  return typeof window !== "undefined" && !!window.localStorage;
+};
+
 export const saveDraft = (formData) => {
+  if (!isStorageAvailable()) return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
   } catch (error) {
@@ -11,9 +16,9 @@ export const saveDraft = (formData) => {
 };
 
 export const getDraft = () => {
+  if (!isStorageAvailable()) return null;
   try {
     const draft = localStorage.getItem(STORAGE_KEY);
-
     return draft ? safeJsonParse(draft, {}) : null;
   } catch (error) {
     console.error("Error loading draft:", error);
@@ -22,6 +27,7 @@ export const getDraft = () => {
 };
 
 export const clearDraft = () => {
+  if (!isStorageAvailable()) return;
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
