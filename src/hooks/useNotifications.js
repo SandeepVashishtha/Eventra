@@ -105,3 +105,5 @@ export const useNotifications = () => {
     requestPermission,
   };
 };
+
+export default useNotifications;
