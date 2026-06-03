@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     error: null,
   });
 
-  const isMountedRef = useRef(false);
+  const isMountedRef = useRef(true);
   const needsExpiryCleanupRef = useRef(false);
   const expiryToastShownRef = useRef(false);
 
