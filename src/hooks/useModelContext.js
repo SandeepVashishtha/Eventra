@@ -57,3 +57,6 @@ export const useModelContext = () => {
     }
   }, []);
 };
+
+
+export default useModelContext;

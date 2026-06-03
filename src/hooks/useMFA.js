@@ -40,3 +40,6 @@ export const useMFA = () => {
     verifyAndEnable
   };
 };
+
+
+export default useMFA;
