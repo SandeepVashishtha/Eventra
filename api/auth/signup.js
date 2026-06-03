@@ -1,9 +1,9 @@
-import bcrypt from "bcryptjs";
+﻿import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
-import { createRateLimiter as createRateLimiterMiddleware } from "../middleware/rateLimiter.js";
-import { buildCorsHeaders, corsResponse } from "./cors.js";
 
+import { buildCorsHeaders, corsResponse } from "./cors.js";
+import { createRateLimiter } from "../lib/rateLimit.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
@@ -133,25 +133,11 @@ async function handler(req, res) {
   }
 
   try {
-    const { firstName, lastName, email, password, confirmPassword } = req.body;
-
-    // -----------------------------------------------------------------------
-    // Rate Limiting (signup spam protection)
-    // -----------------------------------------------------------------------
-
-    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
-
-    signupRateLimiter.evictStale();
-
-    if (!signupRateLimiter.check(clientIp)) {
-      return corsResponse(req, res, 429, {
-        error: "Too many signup attempts. Please try again later.",
-        retryAfter: 60,
-      });
+    if (!req.body || typeof req.body !== "object") {
+      return corsResponse(req, res, 400, { error: "Request body is required" });
     }
+
+    const { firstName, lastName, email, password, confirmPassword } = req.body;
 
     // -----------------------------------------------------------------------
     // Input Validation
@@ -198,6 +184,25 @@ async function handler(req, res) {
 
     if (users.has(normalizedEmail)) {
       return corsResponse(req, res, 409, { error: "An account with this email already exists" });
+    }
+
+    // -----------------------------------------------------------------------
+    // Rate Limiting (signup spam protection)
+    // Run after input validation so malformed requests don't burn the budget.
+    // -----------------------------------------------------------------------
+
+    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+      || req.headers?.["x-real-ip"]
+      || req.socket?.remoteAddress
+      || "unknown";
+
+    signupRateLimiter.evictStale();
+
+    if (!signupRateLimiter.check(clientIp)) {
+      return corsResponse(req, res, 429, {
+        error: "Too many signup attempts. Please try again later.",
+        retryAfter: 60,
+      });
     }
 
     // -----------------------------------------------------------------------
@@ -278,10 +283,11 @@ async function handler(req, res) {
       // Ignore write errors on test response objects
     }
 
+    // The JWT is delivered exclusively via the HttpOnly Set-Cookie header set
+    // above. Including it in the JSON body would expose it to JavaScript,
+    // defeating the XSS-theft protection that HttpOnly provides.
     return corsResponse(req, res, 201, {
       message: "Account created successfully",
-      token,
-      tokenType: "Bearer",
       ...userResponse,
     });
 
@@ -296,16 +302,12 @@ async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
-
 export default handler;
+
 export { users };
 
-const signupRateLimiterMiddleware = createRateLimiterMiddleware({
-  max: 5,
-  windowMs: 15 * 60 * 1000,
-  message: "Too many authentication attempts. Please try again later.",
-});
+export { usersById, usersByUsername };
 
-export default signupRateLimiterMiddleware(handler);
-export { users, usersById, usersByUsername };
+
+
 
