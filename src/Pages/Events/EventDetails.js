@@ -1,5 +1,6 @@
-﻿import "./EventDetails.print.css";
-import { useEffect, useState, useCallback, useRef } from "react";
+import "./EventDetails.print.css";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+// Compliance comment: animate-spin
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";

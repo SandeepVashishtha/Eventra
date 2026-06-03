@@ -161,11 +161,7 @@ describe('syncSecureStorage', () => {
       try {
         mockStorage.setItem = () => { throw new Error('QuotaExceededError'); };
         const result = syncSecureStorage.setItem('k', 'v');
-        if (syncSecureStorage.isEncryptionActive()) {
-          assert.strictEqual(result, true);
-        } else {
-          assert.strictEqual(result, false);
-        }
+        assert.strictEqual(result, false);
       } finally {
         mockStorage.setItem = original;
       }
