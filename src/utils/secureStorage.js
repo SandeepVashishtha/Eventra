@@ -9,42 +9,60 @@ const IV_LENGTH = 12;
 const PBKDF2_ITERATIONS = 100_000;
 
 // ---------------------------------------------------------------------------
-// Per-browser random salt — generated once on first use, persisted in
-// localStorage under a dedicated key so it survives page reloads.
+// Per-browser random material — two independent 256-bit random values, each
+// generated once on first use and persisted in localStorage.
 //
-// WHY: A static, deterministic salt (e.g. derived from window.location.origin)
-// allows any attacker who knows the origin to precompute the PBKDF2 output
-// and therefore the AES-GCM key. Using a randomly-generated, per-browser salt
-// means the derived key is unique to each user's browser instance and cannot
-// be precomputed without access to the stored salt.
+// KEY MATERIAL (eventra:key-material) — used as the PBKDF2 "password".
+//   The previous implementation used window.location.origin here, which is a
+//   fully public value. Any attacker who knows the deployed origin (e.g.
+//   https://eventra.sandeepvashishtha.in) could precompute PBKDF2 offline for
+//   any salt they read from localStorage. Replacing the origin with a random
+//   secret means an attacker needs to read this value from the browser's
+//   localStorage before they can derive the key — raising the bar from
+//   "anyone who knows the URL" to "anyone who can read this user's localStorage".
+//
+// SALT (eventra:key-salt) — used as the PBKDF2 salt.
+//   Per PBKDF2 spec the salt prevents identical passwords from producing the
+//   same key across different users/sessions. Keeping it random and per-browser
+//   ensures two Eventra instances never share a key even if they somehow end up
+//   with the same key-material value.
+//
+// Together: AES key = PBKDF2(password=random256, salt=random256, iter=100k)
+//   An attacker who cannot read localStorage cannot derive the key regardless
+//   of how much compute they have. An XSS attacker who CAN read localStorage
+//   still faces 100k PBKDF2 iterations to reconstruct the key — this is the
+//   best achievable protection for a purely client-side encryption scheme.
 // ---------------------------------------------------------------------------
-const SALT_STORAGE_KEY = 'eventra:key-salt';
-const SALT_BYTE_LENGTH = 32; // 256-bit random salt
 
-const getOrCreateSalt = () => {
+const MATERIAL_STORAGE_KEY = 'eventra:key-material';
+const SALT_STORAGE_KEY = 'eventra:key-salt';
+const SECRET_BYTE_LENGTH = 32; // 256-bit
+
+/** Generate or restore a random 256-bit secret from localStorage. */
+const getOrCreateSecret = (storageKey) => {
   try {
-    const stored = localStorage.getItem(SALT_STORAGE_KEY);
+    const stored = localStorage.getItem(storageKey);
     if (stored) {
-      // Restore the previously persisted salt
       return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
     }
   } catch {
-    // localStorage may be unavailable — fall through to generate
+    // localStorage unavailable — fall through to generate a session-scoped value
   }
 
-  // First run: generate a cryptographically random salt and persist it
-  const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTE_LENGTH));
+  const secret = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
   try {
-    localStorage.setItem(SALT_STORAGE_KEY, btoa(String.fromCharCode(...salt)));
+    localStorage.setItem(storageKey, btoa(String.fromCharCode(...secret)));
   } catch {
-    // If persistence fails, the salt will be regenerated on the next load.
-    // This is a graceful degradation — encryption still works this session.
+    // Persistence failure: this session's encryption will work, but the key
+    // will not survive a page reload. Graceful degradation.
   }
-  return salt;
+  return secret;
 };
 
-// Initialise the salt eagerly so all calls to getDerivedKey() use the same value
-const DERIVED_KEY_SALT = getOrCreateSalt();
+// Both values are initialised eagerly at module load so every call to
+// getDerivedKey() within a page session operates on the same key.
+const DERIVED_KEY_MATERIAL = getOrCreateSecret(MATERIAL_STORAGE_KEY);
+const DERIVED_KEY_SALT     = getOrCreateSecret(SALT_STORAGE_KEY);
 
 let _keyPromise = null;
 
@@ -52,21 +70,22 @@ const getDerivedKey = () => {
   if (_keyPromise) return _keyPromise;
 
   _keyPromise = (async () => {
-    const encoder = new TextEncoder();
+    // Import the random per-browser key material as the PBKDF2 "password".
+    // This replaces the previous window.location.origin usage, which was a
+    // public value that allowed any attacker who knew the origin to precompute
+    // PBKDF2 offline once they obtained the salt.
     const keyMaterial = await crypto.subtle.importKey(
       'raw',
-      encoder.encode(window.location.origin),
+      DERIVED_KEY_MATERIAL,
       'PBKDF2',
       false,
       ['deriveKey'],
     );
 
-    const salt = DERIVED_KEY_SALT;
-
     return crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt,
+        salt: DERIVED_KEY_SALT,
         iterations: PBKDF2_ITERATIONS,
         hash: 'SHA-256',
       },
@@ -252,6 +271,7 @@ export const syncSecureStorage = {
    */
   removeItem: (key) => {
     try {
+      pendingWrites.delete(key);
       localStorage.removeItem(key);
     } catch (error) {
       console.error('[secureStorage] removeItem failed:', error);
@@ -264,6 +284,7 @@ export const syncSecureStorage = {
    */
   clear: () => {
     try {
+      pendingWrites.clear();
       localStorage.clear();
       _keyPromise = null;
     } catch (error) {

@@ -6,6 +6,27 @@ Modern event and hackathon platform for communities, organizers, and contributor
 [![React](https://img.shields.io/badge/React-19.x-blue.svg)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.x-646CFF.svg)](https://vitejs.dev/)
 
+---
+
+> [!IMPORTANT]
+> ## Project Status Notice
+>
+> Due to time constraints and other commitments, **I ([@SandeepVashishtha](https://github.com/SandeepVashishtha)) will no longer be actively contributing to or managing this project** going forward. I sincerely apologize for any inconvenience this may cause to contributors and users.
+>
+> **The project will NOT be archived** - it remains open and active, especially for **GSSoC 2026** participants and the broader open-source community.
+>
+> There are mentors currently involved, and the project can continue to grow with community support. However, **we are looking for 2-3 dedicated volunteers to step up as maintainers** to help review PRs, triage issues, and guide contributors.
+>
+> ### Interested in becoming a maintainer?
+>
+> If you are passionate about this project and willing to take on a maintainer role, please reach out by:
+> - Opening an issue titled **"Maintainer Volunteer - [Your Name]"**
+> - Or contacting via the existing community channels
+>
+> Your contributions and leadership would mean a lot to this project and the community around it. 🙏
+
+---
+
 ## Overview
 
 Eventra is an open-source frontend application built with React and Vite. It supports event discovery, registration, dashboards, hackathons, collaboration features, feedback flows, and role-based access experiences.
@@ -96,11 +117,12 @@ Use `.env.example` as the source of truth.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `REACT_APP_API_URL` | Yes | Backend API base URL |
+| `REACT_APP_API_URL` | Yes | Backend API base URL used by client requests and SSE streams |
 | `REACT_APP_GITHUB_REPO` | No | Public repo identifier used in metadata |
 | `REACT_APP_PUBLIC_URL` | No | Canonical public app URL |
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public web-push key |
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
+| `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN, used only in production |
 
 Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variables because they are exposed to the client bundle.
 

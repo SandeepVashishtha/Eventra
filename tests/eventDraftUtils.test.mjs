@@ -50,5 +50,5 @@ saveDraft(null);
 assert.equal(getDraft(), null);
 
 // Edge Case: Gracefully handling corrupted/non-JSON storage strings
-store["eventra_event_draft"] = "{malformed-json";
+store["event_creation_draft"] = "{malformed-json";
 assert.equal(getDraft(), null, "should return null for corrupted draft storage");
