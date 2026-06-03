@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate, Navigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import {
   Users,
   Calendar,
@@ -43,6 +43,7 @@ import {
   deleteAdminEvent,
   fetchAdminStats,
 } from "../../services/adminService";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -304,6 +305,14 @@ const AdminDashboard = () => {
 
   const handleConfirmDelete = async () => {
     const { type, id } = confirmModal;
+    setConfirmModal({ open: false, type: "", id: null });
+
+    if (type === "logout") {
+      logout();
+      navigate("/login", { replace: true });
+      return;
+    }
+
     try {
       if (type === "user") {
         await deleteAdminUser(id);
@@ -320,7 +329,6 @@ const AdminDashboard = () => {
     } catch (error) {
       toast.error(error.message || `Failed to delete ${type}.`);
     }
-    setConfirmModal({ open: false, type: "", id: null });
   };
 
   const confirmDelete = (type, id) => setConfirmModal({ open: true, type, id });

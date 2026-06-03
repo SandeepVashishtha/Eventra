@@ -261,6 +261,23 @@ const SpatialSeatSelector = ({
     return map;
   }, [elements, getSeatPositions]);
 
+  // Compute flat list of all seats across all elements for cross-table navigation
+  const allSeats = useMemo(() => {
+    const list = [];
+    elements.forEach((el) => {
+      if (el.seatsCount > 0) {
+        const positions = elementSeatPositions.get(el.id) || [];
+        positions.forEach((seat) => {
+          list.push({
+            ...seat,
+            elementId: el.id,
+          });
+        });
+      }
+    });
+    return list;
+  }, [elements, elementSeatPositions]);
+
   // Auto-center and zoom to highlighted seat in read-only dashboard view
   useEffect(() => {
     if (readOnly && selectedSeat && elements.length > 0) {
@@ -515,7 +532,7 @@ const SpatialSeatSelector = ({
                     key={`seat-${el.id}-${seat.index}`}
                     el={el}
                     seat={seat}
-                    seats={elementSeatPositions.get(el.id) || []}
+                    allSeats={allSeats}
                     isSelected={isSeatSelected(el.id, seat.index)}
                     readOnly={readOnly}
                     onSelect={handleSeatClick}
@@ -635,7 +652,7 @@ export default SpatialSeatSelector;
 
 // ── Optimized Seat Component ────────────────────────────────────────────────
 
-const Seat = ({ el, seat, seats, isSelected, readOnly, onSelect, onHover, containerRef }) => {
+const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, containerRef }) => {
   const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
   const isOccupied = el.assignedAttendees[seat.index];
   const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
@@ -667,8 +684,8 @@ const Seat = ({ el, seat, seats, isSelected, readOnly, onSelect, onHover, contai
       let bestSeat = null;
       let minScore = Infinity;
 
-      (seats || []).forEach((s) => {
-        if (s.index === seat.index) return;
+      (allSeats || []).forEach((s) => {
+        if (s.elementId === el.id && s.index === seat.index) return;
         const dx = s.x - seat.x;
         const dy = s.y - seat.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -688,7 +705,7 @@ const Seat = ({ el, seat, seats, isSelected, readOnly, onSelect, onHover, contai
       });
 
       if (bestSeat) {
-        const nextSeatEl = document.getElementById(`seat-element-${el.id}-${bestSeat.index}`);
+        const nextSeatEl = document.getElementById(`seat-element-${bestSeat.elementId}-${bestSeat.index}`);
         if (nextSeatEl) {
           nextSeatEl.focus();
         }
