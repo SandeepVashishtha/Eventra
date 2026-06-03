@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, Download, Trash2 } from 'lucide-react';
 import {
@@ -17,6 +17,14 @@ import {
   saveFeedback,
 } from '../../utils/feedbackUtils';
 
+// Demo event definition moved outside the component for a stable reference
+const demoEvent = {
+  id: 'demo-event-001',
+  title: 'React Best Practices Workshop',
+  date: new Date(Date.now() - 86400000).toISOString(), // Yesterday (past event)
+  description: 'Learn advanced React patterns and hooks',
+};
+
 /**
  * FeedbackSystemDemo
  * Demonstration page for the post-event feedback system
@@ -30,24 +38,16 @@ const FeedbackSystemDemo = () => {
   const [feedback, setFeedback] = useState([]);
   const [stats, setStats] = useState(null);
 
-  // Demo event
-  const demoEvent = {
-    id: 'demo-event-001',
-    title: 'React Best Practices Workshop',
-    date: new Date(Date.now() - 86400000).toISOString(), // Yesterday (past event)
-    description: 'Learn advanced React patterns and hooks',
-  };
-
-  useEffect(() => {
-    loadFeedback();
-  }, []);
-
-  const loadFeedback = () => {
+  const loadFeedback = useCallback(() => {
     const allFeedback = getEventFeedback(demoEvent.id);
     const averageStats = getAverageRating(demoEvent.id);
     setFeedback(allFeedback);
     setStats(averageStats);
-  };
+  }, []);
+
+  useEffect(() => {
+    loadFeedback();
+  }, [loadFeedback]);
 
   const generateDemoUserId = () => {
     const bytes = new Uint32Array(1);

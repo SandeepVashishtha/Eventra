@@ -121,6 +121,7 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
+  const { isLoading } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
@@ -145,7 +146,7 @@ const EventsPage = () => {
 
     try {
       savedFilters = JSON.parse(
-        window.localStorage.getItem(FILTER_STORAGE_KEY) || "{}"
+        window.sessionStorage.getItem(FILTER_STORAGE_KEY) || "{}"
       );
     } catch {
       savedFilters = {};
@@ -197,7 +198,7 @@ const EventsPage = () => {
     setSearchParams(params, { replace: true });
 
     try {
-      window.localStorage.setItem(
+      window.sessionStorage.setItem(
         FILTER_STORAGE_KEY,
         JSON.stringify({
           searchQuery: listing.searchQuery,
@@ -209,7 +210,7 @@ const EventsPage = () => {
         })
       );
     } catch {
-      // localStorage can be unavailable in private browsing or embedded views.
+      // sessionStorage can be unavailable in private browsing or embedded views.
     }
   }, [
     listing.currentPage,
@@ -248,7 +249,7 @@ const EventsPage = () => {
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
-    if (!listing.isLoading && routeSearchQuery) {
+    if (!isLoading && routeSearchQuery) {
       setTimeout(() => {
         cardSectionRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -256,7 +257,7 @@ const EventsPage = () => {
         });
       }, 100);
     }
-  }, [listing.isLoading, routeSearchQuery]);
+  }, [isLoading, routeSearchQuery]);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -328,7 +329,7 @@ const EventsPage = () => {
 
         <SectionErrorBoundary label="Events">
      {renderCardSection(
-  listing.isLoading,
+  isLoading,
   listing.loadError,
   listing.fetchEvents,
   listing.paginatedEvents,

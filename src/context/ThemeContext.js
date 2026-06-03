@@ -38,8 +38,24 @@ const safeStorage = {
   },
 };
 
+const getSystemTheme = () =>
+  typeof window !== "undefined" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+
+const getInitialTheme = () => {
+  const stored = safeStorage.getItem("theme");
+  if (stored === "light" || stored === "dark" || stored === "system") {
+    return stored;
+  }
+  return "system";
+};
+
 export const ThemeProvider = ({ children }) => {
-  const [theme, setThemeState] = useState(() => getInitialTheme());
+
+  export const ThemeProvider = ({ children }) => {
+    const [theme, setThemeState] = useState(() => getInitialTheme());
 
   // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {
@@ -198,7 +214,17 @@ export const ThemeProvider = ({ children }) => {
       reducedMotion,
       setReducedMotion,
     }),
-    [theme, resolvedTheme, setTheme, toggleTheme, activeThemeId, isCustomizerOpen, customHsl, reducedMotion]
+    [
+      theme,
+      resolvedTheme,
+      isDarkMode,
+      setTheme,
+      toggleTheme,
+      activeThemeId,
+      isCustomizerOpen,
+      customHsl,
+      reducedMotion,
+    ]
   );
 
   return (

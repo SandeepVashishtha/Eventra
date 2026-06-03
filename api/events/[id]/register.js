@@ -31,6 +31,18 @@ async function handler(req, res) {
     return corsResponse(req, res, 400, { error: "Full name and email are required" });
   }
 
+  // Prevent DoS via unbounded memory allocation by capping lengths
+  if (
+    fullName.length > 100 ||
+    email.length > 200 ||
+    (phone && phone.length > 30) ||
+    (organization && organization.length > 150) ||
+    (designation && designation.length > 150) ||
+    (additionalInfo && additionalInfo.length > 1000)
+  ) {
+    return corsResponse(req, res, 400, { error: "One or more fields exceed the maximum allowed length" });
+  }
+
   // Check duplicate registration
   const existingReg = Array.from(registrations.values()).find(
     r => String(r.userId) === String(user.id) && parseInt(r.eventId) === eventId && r.attendanceStatus !== "Cancelled"

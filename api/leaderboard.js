@@ -1,5 +1,4 @@
 import { getClientIp } from "./lib/getClientIp.js";
-import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
 import { buildCorsHeaders } from "./auth/cors.js";
 
 const GITHUB_REPO = process.env.GITHUB_REPO || "SandeepVashishtha/Eventra";
@@ -17,11 +16,19 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 5;
 const ipRateLimitMap = new Map();
 
+const MAX_RATE_LIMIT_ENTRIES = 5000;
+
 const isRateLimited = (ip) => {
   const now = Date.now();
   const entry = ipRateLimitMap.get(ip);
 
   if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    if (!entry && ipRateLimitMap.size >= MAX_RATE_LIMIT_ENTRIES) {
+      const oldestKey = ipRateLimitMap.keys().next().value;
+      if (oldestKey !== undefined) {
+        ipRateLimitMap.delete(oldestKey);
+      }
+    }
     ipRateLimitMap.set(ip, { count: 1, windowStart: now });
     return false;
   }
@@ -51,6 +58,59 @@ const CACHE_TTL_MS = 5 * 60_000;
 let cachedLeaderboard = null;
 let cacheTimestamp = 0;
 
+// ETag store for conditional GitHub API requests
+// Maps URL -> { etag: string, data: any, timestamp: number }
+const eTagStore = new Map();
+let lastETagEvictionAt = 0;
+
+const evictStaleETags = () => {
+  const now = Date.now();
+  if (now - lastETagEvictionAt < CACHE_TTL_MS) return;
+  lastETagEvictionAt = now;
+  for (const [key, entry] of eTagStore.entries()) {
+    if (now - entry.timestamp >= CACHE_TTL_MS) {
+      eTagStore.delete(key);
+    }
+  }
+};
+
+const fetchWithConditional = async (url, headers, timeoutMs = 10000) => {
+  evictStaleETags();
+  const cached = eTagStore.get(url);
+  const conditionalHeaders = { ...headers };
+
+  if (cached?.etag) {
+    conditionalHeaders["If-None-Match"] = cached.etag;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const response = await fetch(url, { headers: conditionalHeaders, signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (response.status === 304) {
+      return { status: 304, data: cached.data, etag: cached.etag };
+    }
+
+    if (!response.ok) {
+      return { status: response.status, data: null, etag: null };
+    }
+
+    const etag = response.headers.get("etag");
+    const data = await response.json();
+
+    if (etag) {
+      eTagStore.set(url, { etag, data, timestamp: Date.now() });
+    }
+
+    return { status: response.status, data, etag };
+  } catch (error) {
+    console.warn(`[Leaderboard API] conditional fetch error for ${url}:`, error);
+    return { status: 0, data: null, etag: null };
+  }
+};
+
 const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 const calculatePrPoints = (labels) => {
@@ -64,19 +124,19 @@ const calculatePrPoints = (labels) => {
 
 const fetchPrPage = async (page, headers) => {
   const url = `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`;
-  try {
-    const response = await fetch(url, { headers });
-    if (!response.ok) {
-      console.warn(`[Leaderboard API] PR page ${page} failed with status: ${response.status}`);
-      return [];
-    }
+  const result = await fetchWithConditional(url, headers);
 
-    const data = await response.json();
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.warn(`[Leaderboard API] PR page ${page} fetch error:`, error);
-    return [];
+  if (result.status === 0 || result.status >= 400) {
+    console.warn(`[Leaderboard API] PR page ${page} failed with status: ${result.status}`);
+    return { prs: [], hasMore: false };
   }
+
+  if (result.status === 304) {
+    return { prs: Array.isArray(result.data) ? result.data : [], hasMore: result.data?.length === 100 };
+  }
+
+  const prs = Array.isArray(result.data) ? result.data : [];
+  return { prs, hasMore: prs.length === 100 };
 };
 
 const aggregatePrs = (prs, contributorsInfo) => {
@@ -149,31 +209,29 @@ export default async function handler(req, res) {
 
   try {
     const contributorsUrl = `https://api.github.com/repos/${GITHUB_REPO}/contributors`;
-    const [contributorsRes, firstPagePrs] = await Promise.all([
-      fetchWithTimeout(contributorsUrl, { headers }, 10000),
-      fetchPrPage(1, headers),
-    ]);
+    const contributorsRes = await fetchWithConditional(contributorsUrl, headers);
 
-    if (!contributorsRes.ok) {
+    if (contributorsRes.status === 0 || contributorsRes.status >= 400) {
       throw new Error(`Failed to fetch contributors: ${contributorsRes.status}`);
     }
 
-    const contributorsData = await contributorsRes.json();
+    const contributorsData = contributorsRes.data;
     const contributorsInfo = {};
 
     if (Array.isArray(contributorsData)) {
-      contributorsData.forEach((contributor) => {
+      for (const contributor of contributorsData) {
         contributorsInfo[contributor.login] = {
           name: contributor.name || contributor.login,
           avatar: contributor.avatar_url,
           profile: contributor.html_url,
         };
-      });
+      }
     }
 
+    const { prs: firstPagePrs, hasMore } = await fetchPrPage(1, headers);
     let allPrs = [...firstPagePrs];
 
-    if (firstPagePrs.length === 100) {
+    if (hasMore) {
       const remainingPageNumbers = Array.from(
         { length: MAX_PAGES - 1 },
         (_, index) => index + 2,
@@ -184,8 +242,9 @@ export default async function handler(req, res) {
       );
 
       for (const result of remainingResults) {
-        if (result.status === "fulfilled" && result.value.length > 0) {
-          allPrs.push(...result.value);
+        if (result.status === "fulfilled" && result.value.prs.length > 0) {
+          allPrs.push(...result.value.prs);
+          if (!result.value.hasMore) break;
         }
       }
     }

@@ -13,7 +13,8 @@ export const generateCompatibilityScore = (userA, userB) => {
   const skillsA = userA.skills || [];
   const skillsB = userB.skills || [];
   
-  const commonSkills = skillsA.filter(s => skillsB.includes(s));
+  const skillsBSet = new Set(skillsB);
+  const commonSkills = skillsA.filter(s => skillsBSet.has(s));
   score += commonSkills.length * 10;
   
   if (userA.industry === userB.industry) score += 15;

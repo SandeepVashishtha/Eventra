@@ -54,18 +54,29 @@ export default function UserProfile() {
 
   /* Load profile from localStorage (same source as EditProfile) */
   useEffect(() => {
-    const saved = syncSecureStorage.getItem("user");
-    let merged = user || {};
-    if (saved) {
+    let active = true;
+    const loadProfileData = async () => {
+      let merged = user || {};
       try {
-        merged = { ...user, ...JSON.parse(saved) };
+        const [saved] = await Promise.all([
+          syncSecureStorage.getItemAsync("user"),
+          new Promise((resolve) => setTimeout(resolve, 600))
+        ]);
+        if (saved && active) {
+          merged = { ...user, ...JSON.parse(saved) };
+        }
       } catch (error) {
         console.error('Error parsing user profile from localStorage:', error);
       }
-    }
-    setProfile(merged);
-    const t = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(t);
+      if (active) {
+        setProfile(merged);
+        setLoading(false);
+      }
+    };
+    loadProfileData();
+    return () => {
+      active = false;
+    };
   }, [user]);
 
   /* Derived helpers */

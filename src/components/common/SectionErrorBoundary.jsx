@@ -1,5 +1,6 @@
 import React from "react";
 import { logError } from "../../utils/errorLogger";
+import { safeParseJson } from "../../utils/jsonUtils";
 
 /**
  * SectionErrorBoundary
@@ -35,7 +36,7 @@ class SectionErrorBoundary extends React.Component {
     // even after a page reload (the main ErrorBoundary only stores top-level crashes).
     try {
       const key = "eventra_section_errors";
-      const existing = JSON.parse(localStorage.getItem(key) || "[]");
+      const existing = safeParseJson(localStorage.getItem(key), []);
       existing.unshift({
         section: label,
         message: error?.message || String(error),
