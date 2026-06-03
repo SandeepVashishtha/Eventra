@@ -1,16 +1,19 @@
 // ---------------------------------------------------------------------------
 // Shared sliding-window rate limiter (in-memory, per-key).
-// For production use, replace with Redis-based implementation.
+// Uses timestamp sliding window to prevent boundary bursts:
+// each request is tracked individually and counted only if it falls within
+// the rolling window. For production use, replace with Redis-based
+// implementation for distributed enforcement.
 // ---------------------------------------------------------------------------
 
 /**
  * Create a rate limiter instance with the given window and max requests.
  *
  * @param {number} windowMs  — sliding window in milliseconds (default 60s)
- * @param {number} maxRequests — max requests per window per key (default 10)
+ * @param {number} maxRequests — max requests per window per key (default 5)
  * @returns {{ check: (key: string) => boolean, evictStale: () => void, reset: (key: string) => void }}
  */
-export const createRateLimiter = (windowMs = 60_000, maxRequests = 10) => {
+export const createRateLimiter = (windowMs = 60_000, maxRequests = 5) => {
   const store = new Map();
   let lastEvictionAt = 0;
 
@@ -18,30 +21,33 @@ export const createRateLimiter = (windowMs = 60_000, maxRequests = 10) => {
     const now = Date.now();
     if (now - lastEvictionAt < windowMs) return;
     lastEvictionAt = now;
-    for (const [key, entry] of store.entries()) {
-      if (now - entry.windowStart >= windowMs) {
+    const cutoff = now - windowMs;
+    for (const [key, timestamps] of store.entries()) {
+      const valid = timestamps.filter((t) => t > cutoff);
+      if (valid.length === 0) {
         store.delete(key);
+      } else {
+        store.set(key, valid);
       }
     }
   };
 
   /**
    * Returns true if the request is allowed, false if rate-limited.
+   * Uses sliding window of timestamps per key.
    */
   const check = (key) => {
     const now = Date.now();
-    const entry = store.get(key);
+    const cutoff = now - windowMs;
+    const timestamps = store.get(key) || [];
+    const validTimestamps = timestamps.filter((t) => t > cutoff);
 
-    if (!entry || now - entry.windowStart >= windowMs) {
-      store.set(key, { count: 1, windowStart: now });
-      return true;
-    }
-
-    if (entry.count >= maxRequests) {
+    if (validTimestamps.length >= maxRequests) {
       return false;
     }
 
-    entry.count += 1;
+    validTimestamps.push(now);
+    store.set(key, validTimestamps);
     return true;
   };
 
