@@ -1,6 +1,31 @@
+/**
+ * @fileoverview useLocalStorage - Cross-tab synchronized localStorage hook
+ * @module hooks/useLocalStorage
+ */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
 import { logger } from "../utils/logger";
+
+/**
+ * A custom React hook that provides synchronized localStorage state
+ * management with cross-tab update support.
+ *
+ * Automatically syncs state across browser tabs using storage events.
+ * Prevents self-triggered updates using an internal write flag.
+ *
+ * @param {string} key - The localStorage key to read/write.
+ * @param {*} initialValue - Default value if key doesn't exist.
+ *
+ * @returns {[*, Function, Function]} Tuple of:
+ *   - storedValue: Current value from localStorage
+ *   - setValue: Update the stored value
+ *   - removeValue: Remove the key from localStorage
+ *
+ * @example
+ * const [theme, setTheme, removeTheme] = useLocalStorage("theme", "light");
+ * setTheme("dark");
+ * removeTheme();
+ */
 
 const useLocalStorage = (key, initialValue) => {
   const initialValueRef = useRef(initialValue);
