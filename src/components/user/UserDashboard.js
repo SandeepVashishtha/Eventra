@@ -116,8 +116,6 @@ export default function UserDashboard() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const safeData = Array.isArray(MOCK_DATA) ? MOCK_DATA : [];
-
   const derivedData = useMemo(() => {
     let eventsTotal = 0;
     let eventsCreated = 0;
@@ -164,7 +162,7 @@ export default function UserDashboard() {
       upcomingHackathons,
       activeProjects,
     };
-  }, [MOCK_DATA]);
+  }, []);
 
   const { stats, upcomingEvents, upcomingHackathons, activeProjects } = derivedData;
 
@@ -182,7 +180,7 @@ export default function UserDashboard() {
       if (!b.date) return -1;
       return new Date(b.date) - new Date(a.date);
     }),
-  [MOCK_DATA, searchQuery, filterType, filterStatus]);
+  [searchQuery, filterType, filterStatus]);
 
   const notifications = [
     { id: 1, text: "React Conference 2025 registration opens soon", time: "2h ago", unread: true },

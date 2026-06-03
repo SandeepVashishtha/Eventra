@@ -13,13 +13,6 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 
 export const ThemeContext = createContext(null);
 
-const getSystemTheme = () =>
-  typeof window !== "undefined" &&
-  typeof window.matchMedia === "function" &&
-  window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-
 const safeStorage = {
   getItem(key, fallback = null) {
     try {
@@ -44,8 +37,6 @@ const safeStorage = {
     }
   },
 };
-
-const getInitialTheme = () => safeStorage.getItem("theme", "system");
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setThemeState] = useState(() => getInitialTheme());
@@ -187,7 +178,7 @@ export const ThemeProvider = ({ children }) => {
     };
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
+  }, [setTheme]);
 
   const value = useMemo(
     () => ({
