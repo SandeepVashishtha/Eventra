@@ -11,6 +11,7 @@ import {
   X,
   Ticket,
   Trash2,
+  Activity,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -208,7 +209,12 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
             </button>
           </>
         ) : (
-          <div className="flex-1" />
+          <Link to={`/events/${event?.id}/analytics`} className="group/btn flex-1">
+            <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <Activity size={13} className="relative" />
+              <span className="relative">Analytics</span>
+            </div>
+          </Link>
         )}
         <Link to={`/events/${event?.id}`} className="group/btn flex-1">
           <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
