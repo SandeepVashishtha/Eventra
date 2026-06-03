@@ -133,8 +133,11 @@ const TeamMatchmaking = () => {
     const missingSkills = [];
     
     if (teamSkills.length > 0) {
+      const loweredUserSkills = userSkills.map(s => s.toLowerCase());
       teamSkills.forEach(skill => {
-        if (userSkills.some(us => us.includes(skill) || skill.includes(us))) {
+        const lowered = skill.toLowerCase();
+        const isMatch = loweredUserSkills.some(us => us.includes(lowered) || lowered.includes(us));
+        if (isMatch) {
           matchedSkills.push(skill);
         } else {
           missingSkills.push(skill);
