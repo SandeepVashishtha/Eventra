@@ -192,7 +192,7 @@ async function handler(req, res) {
     // Run after input validation so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
-    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+    const clientIp = req.headers?.["x-vercel-forwarded-for"]
       || req.headers?.["x-real-ip"]
       || req.socket?.remoteAddress
       || "unknown";
@@ -305,4 +305,7 @@ async function handler(req, res) {
 
 export default handler;
 
-export { users, usersById, usersByUsername };
+export { users };
+
+export { usersById, usersByUsername };
+
