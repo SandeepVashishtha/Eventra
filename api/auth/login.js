@@ -108,10 +108,10 @@ async function handler(req, res) {
     // -----------------------------------------------------------------------
 
     const clientIp =
-  req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-  || req.headers?.["x-real-ip"]
-  || req.socket?.remoteAddress
-  || null;
+      req.headers?.[\"x-vercel-forwarded-for\"]
+      || req.headers?.[\"x-real-ip\"]
+      || req.socket?.remoteAddress
+      || null;
 
 if (clientIp) {
   loginRateLimiter.evictStale();
@@ -241,3 +241,4 @@ if (clientIp) {
 
 export default handler;
 export { users };
+
