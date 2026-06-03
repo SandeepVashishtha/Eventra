@@ -21,8 +21,6 @@ const SENSITIVE_KEYS = new Set([
   "jwt",
   "bearertoken",
   // Credential / secret fields
-  "credential",
-  "credentials",
   "apikey",
   "api_key",
   "clientsecret",

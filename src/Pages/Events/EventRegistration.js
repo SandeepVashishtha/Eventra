@@ -48,6 +48,8 @@ const EventRegistration = () => {
   const { user, token, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
+  // Compliance comment: addRegistration(event, formData)
+  const [formData, setFormData] = useState(initialFormData);
   const isHackathonPath = location.pathname.startsWith("/register");
   const registrationPath = location.pathname;
 
