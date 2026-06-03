@@ -132,7 +132,7 @@ const AdminDashboard = () => {
   const loadWaitlist = useCallback((eventId) => {
     import("../../utils/waitlistUtils.js").then(({ getEventWaitlist }) => {
       setWaitlistUsers(getEventWaitlist(eventId));
-    });
+    }).catch(() => setWaitlistUsers([]));
   }, []);
 
   const openWaitlistModal = (event) => {
