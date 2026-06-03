@@ -114,8 +114,6 @@ async function handler(req, res) {
   || null;
 
 if (clientIp) {
-  loginRateLimiter.evictStale();
-
   if (!loginRateLimiter.check(clientIp)) {
     return corsResponse(req, res, 429, {
       success: false,
