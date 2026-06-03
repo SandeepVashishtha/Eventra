@@ -119,7 +119,8 @@ async function handler(req, res) {
     return res.status(400).json({ error: "Invalid GitHub API path" });
   }
 
-  const url = new URL(normalizedPath, "https://api.github.com");
+  const url = new URL("https://api.github.com");
+  url.pathname = normalizedPath;
   Object.entries(queryParams).forEach(([key, value]) => {
     if (!ALLOWED_QUERY_PARAMS.has(key)) return;
     if (Array.isArray(value)) {
