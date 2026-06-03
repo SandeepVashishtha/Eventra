@@ -80,7 +80,7 @@ const CalendarSyncSettings = () => {
       <div className="mt-12 p-6 bg-indigo-50 dark:bg-indigo-900/10 rounded-3xl border border-indigo-100 dark:border-indigo-800/30">
         <h4 className="font-bold text-indigo-900 dark:text-indigo-300 mb-2">Pro Tip: iCal Subscriptions</h4>
         <p className="text-sm text-indigo-700/80 dark:text-indigo-400/80 leading-relaxed">
-          Don't want to use OAuth? You can also subscribe to your personalized Eventra iCal feed. This provides a one-way sync to any calendar app that supports URL-based subscriptions.
+          Don&apos;t want to use OAuth? You can also subscribe to your personalized Eventra iCal feed. This provides a one-way sync to any calendar app that supports URL-based subscriptions.
         </p>
         <button className="mt-4 text-sm font-black text-indigo-600 dark:text-indigo-400 hover:underline">Copy iCal URL</button>
       </div>
