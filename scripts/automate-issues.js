@@ -201,52 +201,55 @@ for (const issue of issues) {
   console.log(`📄 File: ${issue.filePath}`);
 
   try {
-    // 1. Check if the file exists
-    if (!fs.existsSync(fullFilePath)) {
-      throw new Error(`File does not exist: ${issue.filePath}`);
-    }
-
-    // 2. Read file and preserve original line ending style
-    const rawContent = fs.readFileSync(fullFilePath, 'utf8');
-
-    const usesCRLF = rawContent.includes('\r\n');
-
-    const normalizedContent = rawContent.replace(/\r\n/g, '\n');
-    const normalizedSearch = issue.searchContent.replace(/\r\n/g, '\n');
-    const normalizedReplacement = issue.replacementContent.replace(/\r\n/g, '\n');
-
-    // 3. Verify exact matching of the search string
-    if (!normalizedContent.includes(normalizedSearch)) {
-      throw new Error(`Target search content not found in file! Check syntax or line endings.`);
-    }
-
-    // 4. State Isolation: Return safely to master branch and clear uncommitted artifacts
+    // 1. State Isolation: Return safely to master branch and clear uncommitted artifacts FIRST
     try {
       console.log('🔄 Safely resetting environment state...');
-      // Force switch to master, discarding uncommitted modifications to tracked files
       runCmd('git checkout -f master'); 
-      // Clean up any remaining untracked artifacts or half-baked file states
       runCmd('git reset --hard HEAD');   
     } catch (stateError) {
       throw new Error(`State reset failed. Cannot safely return to master branch: ${stateError.message}`);
     }
 
-    // 5. Delete branch if it already exists to avoid branch namespace conflicts
+    // 2. Delete branch if it already exists to avoid branch namespace conflicts
     try {
       runCmd(`git branch -D ${issue.branchName}`);
     } catch (e) {
       // Ignore if branch doesn't exist
     }
 
-    // 5b. Create and checkout the dedicated branch for this issue cleanly off fresh master
+    // 3. Create and checkout the dedicated branch for this issue cleanly off fresh master
     console.log(`🌿 Creating and switching to branch: ${issue.branchName}`);
     runCmd(`git checkout -b ${issue.branchName}`);
 
-    // 6. Perform replacement on normalized strings
-    let newContent = normalizedContent.replace(
-      normalizedSearch,
-      normalizedReplacement
-    );
+    // 4. Verify file path exists AFTER branch switching
+    if (!fs.existsSync(fullFilePath)) {
+      throw new Error(`File does not exist: ${issue.filePath}`);
+    }
+
+    // 5. Read file cleanly from the active branch environment
+    const rawContent = fs.readFileSync(fullFilePath, 'utf8');
+    const usesCRLF = rawContent.includes('\r\n');
+
+    const normalizedContent = rawContent.replace(/\r\n/g, '\n');
+
+    // 5.1 Dynamic Regex Construction for flexible whitespace matching
+    const escapedSearch = issue.searchContent
+      .replace(/\r\n/g, '\n')
+      .trim()
+      .replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') // Escapes regex tokens safely
+      .replace(/\s+/g, '\\s+');
+
+    // ADD THE 'g' FLAG HERE to match correctly across repeated file layouts
+    const searchRegex = new RegExp(escapedSearch, 'g'); 
+
+    // 5.2 Reliable Structural Verification Check
+    if (!searchRegex.test(normalizedContent)) {
+      throw new Error(`Target search content structure not found in file! Check syntax.`);
+    }
+
+    // 6. Confidently replace the matched content layout
+    const targetReplacement = issue.replacementContent.replace(/\r\n/g, '\n');
+    let newContent = normalizedContent.replace(searchRegex, targetReplacement);
     
     // Restore original line ending style before writing
     if (usesCRLF) {
