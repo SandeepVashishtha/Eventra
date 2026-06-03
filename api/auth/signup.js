@@ -7,6 +7,7 @@ import path from "path";
 import os from "os";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
+import { getClientIp } from "../lib/getClientIp.js";
 
 
 // ---------------------------------------------------------------------------
@@ -232,10 +233,7 @@ async function handler(req, res) {
     // Run after input validation so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
-    const clientIp = req.headers?.["x-vercel-forwarded-for"]
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
+    const clientIp = getClientIp(req);
 
     if (!signupRateLimiter.check(clientIp)) {
       return corsResponse(req, res, 429, {

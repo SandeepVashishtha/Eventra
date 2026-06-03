@@ -202,12 +202,16 @@ export const syncSecureStorage = {
    * @param {string} value
    * @returns {Promise<boolean>} true on success, false on storage failure
    */
-  setItem: async (key, value) => {
+  setItem: (key, value) => {
     try {
       localStorage.setItem(key + PLAINTEXT_SUFFIX, value);
       pendingWrites.set(key, value);
-      await writeWithEncryption(key, value);
-      pendingWrites.delete(key);
+      writeWithEncryption(key, value).then(() => {
+        pendingWrites.delete(key);
+      }).catch((error) => {
+        console.error('[secureStorage] background writeWithEncryption failed:', error);
+        pendingWrites.delete(key);
+      });
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
