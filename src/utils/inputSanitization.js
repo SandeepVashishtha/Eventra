@@ -18,36 +18,26 @@ export const sanitizeSearchQuery = (query = '') => {
     return '';
   }
 
-  // Trim whitespace
+  const MAX_QUERY_LENGTH = 200;
+
   let sanitized = query.trim();
 
-  // Remove/reject NoSQL injection operators
-  const dangerousPatterns = [
-    /\$/g, // NoSQL operators start with $
-    /\{/g, // Object notation
-    /\}/g,
-    /\[/g, // Array notation
-    /\]/g,
-    /;/g, // Statement terminators
-    /'/g, // SQL/NoSQL quotes
-    /`/g, // Backticks
-    /\|/g, // Pipes for command execution
-    /\\/g, // Escape characters
-    /\n/g, // Newlines
-    /\r/g, // Carriage returns
-    /</g,  // HTML tags / XSS
-    />/g,
-  ];
-
-  // Remove dangerous characters
-  dangerousPatterns.forEach(pattern => {
-    sanitized = sanitized.replace(pattern, '');
-  });
+  sanitized = sanitized
+    // Drop executable blocks before stripping tag characters so their payloads
+    // cannot survive as searchable text.
+    .replace(/<\s*(script|style)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, ' ')
+    .replace(/<\s*\/?\s*(script|style)\b[^>]*>?/gi, ' ')
+    .replace(/<\s*(img|iframe|object|embed|svg|math|link|meta)\b[^>]*>?/gi, ' ')
+    .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s<>]+)/gi, ' ')
+    .replace(/\b(?:java|vb)script\s*:/gi, ' ')
+    .replace(/\b(?:alert|confirm|prompt)\s*\([^)]*\)/gi, ' ')
+    .replace(/[${}\[\];'`|\\/\n\r<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   // Ensure max length to prevent ReDoS attacks
-  const MAX_QUERY_LENGTH = 200;
   if (sanitized.length > MAX_QUERY_LENGTH) {
-    sanitized = sanitized.substring(0, MAX_QUERY_LENGTH);
+    sanitized = sanitized.substring(0, MAX_QUERY_LENGTH).trim();
   }
 
   return sanitized;
@@ -124,4 +114,18 @@ export const sanitizeInputText = (text = '') => {
   };
 
   return text.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
+};
+
+/**
+ * Strip all HTML tags from a text string.
+ * Faster than full DOMPurify when only raw text is needed.
+ *
+ * @param {string} text - Raw input text
+ * @returns {string} - Text with HTML tags stripped
+ */
+export const stripHtmlTags = (text = '') => {
+  if (typeof text !== 'string') {
+    return '';
+  }
+  return text.replace(/<[^>]*>?/gm, '');
 };

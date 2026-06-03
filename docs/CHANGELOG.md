@@ -63,6 +63,8 @@ and this project adheres to Semantic Versioning.
 - Calendar integrations
 - AI-powered event recommendations
 - Improved release documentation readability and maintainability
+- Fixed authorization bypass in ticket token generation via dynamic memory recovery.
+- Fixed cross-event ticket validation via request body eventId override.
 
 ### Phase Validation Checklist
 - Build production bundles to verify bundle size before release.
