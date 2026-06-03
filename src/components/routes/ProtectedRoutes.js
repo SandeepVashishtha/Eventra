@@ -22,6 +22,8 @@ const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"
 const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
 const UIInventoryEmptyState = lazy(() => import("../admin/UIInventoryEmptyState"));
 const UIInventory = lazy(() => import("../admin/UIInventory"));
+const MFASetup = lazy(() => import("../../Pages/Auth/MFASetup"));
+const AuditLogs = lazy(() => import("../../Pages/Admin/AuditLogs"));
 
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
