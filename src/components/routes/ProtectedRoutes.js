@@ -21,7 +21,7 @@ const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
 const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
 const UIInventory = lazy(() => import("../admin/UIInventory"));
-
+const SponsorDashboard = lazy(() => import("../../Pages/Sponsors/SponsorDashboard"));
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
   <ErrorBoundary
@@ -168,6 +168,15 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         {withModuleBoundary(<CollaborativeFloorPlan />, "Floor Plan Designer")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/sponsor/dashboard"
+    path="/sponsor/dashboard"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<SponsorDashboard />, "Sponsor Dashboard")}
       </ProtectedRoute>
     }
   />,
