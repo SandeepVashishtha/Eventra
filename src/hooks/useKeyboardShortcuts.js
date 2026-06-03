@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from "react";
+﻿import { useEffect, useCallback, useRef } from "react";
 
 /**
  * useKeyboardShortcuts Hook
@@ -59,3 +59,5 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 };
+
+export default useKeyboardShortcuts;
