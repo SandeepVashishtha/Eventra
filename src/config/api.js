@@ -20,7 +20,7 @@ const normalizeApiBaseUrl = (value = "") => {
   }
 };
 
-const isDev = process.env.NODE_ENV === "development";
+const isDev = import.meta.env.MODE === "development";
 
 const resolveEnvApiBaseUrl = () => {
   const envUrl = ENV.API_URL;
@@ -28,7 +28,7 @@ const resolveEnvApiBaseUrl = () => {
     return normalizeApiBaseUrl(envUrl);
   }
   if (!isDev) {
-    console.warn(`VITE_API_URL environment variable is missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
+    console.warn(`VITE_API_URL environment variable is missing in ${import.meta.env.MODE}. Defaulting to relative API requests.`);
     return "";
   }
   return "http://localhost:8080";

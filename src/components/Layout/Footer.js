@@ -87,8 +87,9 @@ const Newsletter = () => {
 
   return (
     <div
-      className="w-full max-w-md rounded-2xl border bg-white/60 p-3 shadow-md sm:p-4 backdrop-blur-md"
-      style={{ borderColor: 'rgba(2,6,23,0.06)' }}
+      className="w-full max-w-md rounded-2xl border p-3 shadow-md sm:p-4 backdrop-blur-md
+        bg-white/60 border-black/[0.06]
+        dark:bg-slate-800/80 dark:border-white/10"
     >
       <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
         Stay updated
@@ -110,13 +111,20 @@ const Newsletter = () => {
             type="email"
             placeholder="Enter email"
             aria-label="Newsletter email"
-            className="footer-newsletter-input w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-indigo-400 hover:bg-indigo-50/40 hover:shadow-[0_8px_24px_rgba(99,102,241,0.14)] focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-indigo-400 dark:hover:bg-slate-900 dark:focus:bg-slate-950"
+            className="footer-newsletter-input w-full rounded-lg border py-2.5 pl-10 pr-3 text-sm outline-none transition-all duration-200
+              border-slate-300 bg-white text-slate-900 placeholder:text-slate-400
+              hover:border-indigo-400 hover:bg-indigo-50/40 hover:shadow-[0_8px_24px_rgba(99,102,241,0.14)]
+              focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/15
+              dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500
+              dark:hover:border-indigo-400 dark:hover:bg-slate-800
+              dark:focus:bg-slate-900 dark:focus:border-indigo-400"
           />
         </div>
 
         <button
           disabled={loading}
-          className="footer-newsletter-btn shrink-0 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition-shadow hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-200"
+          className="footer-newsletter-btn shrink-0 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition-shadow hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-200
+            dark:bg-sky-500 dark:hover:bg-sky-400 dark:focus-visible:ring-sky-400"
           style={{ boxShadow: '0 8px 28px rgba(224,233,242,0.18)' }}
         >
           {loading ? "..." : "Subscribe"}
@@ -136,9 +144,10 @@ const Social = () => (
       <ExternalLink
         key={name}
         href={href}
-        className="footer-social-btn rounded-full bg-white/80 p-2 text-slate-700 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-200"
+        className="footer-social-btn rounded-full p-2 text-slate-700 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-200
+          bg-white/80 shadow-[0_6px_18px_rgba(2,6,23,0.04)]
+          dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 dark:shadow-[0_6px_18px_rgba(0,0,0,0.25)]"
         aria-label={name}
-        style={{ boxShadow: '0 6px 18px rgba(2,6,23,0.04)' }}
       >
         <Icon size={16} />
       </ExternalLink>
@@ -159,11 +168,15 @@ const FooterLinks = () => (
             <li key={name}>
               <Link
                 to={href}
-                className="footer-nav-link group flex min-h-8 items-center gap-3 rounded-lg text-sm text-slate-600 transition-all duration-500 ease-out hover:translate-x-0.5 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-300 dark:hover:text-indigo-300 sm:min-h-9 sm:hover:translate-x-1"
+                className="footer-nav-link group flex min-h-8 items-center gap-3 rounded-lg text-sm transition-all duration-500 ease-out
+                  text-slate-600 hover:translate-x-0.5 hover:text-indigo-600
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+                  dark:text-slate-300 dark:hover:text-indigo-300
+                  sm:min-h-9 sm:hover:translate-x-1"
               >
                 <Icon
                   size={15}
-                  className="shrink-0 text-slate-400 transition-all duration-500 ease-out group-hover:scale-110 group-hover:text-indigo-500"
+                  className="shrink-0 text-slate-400 transition-all duration-500 ease-out group-hover:scale-110 group-hover:text-indigo-500 dark:text-slate-500 dark:group-hover:text-indigo-400"
                 />
                 <span className="min-w-0 break-words">{name}</span>
               </Link>
@@ -178,8 +191,9 @@ const FooterLinks = () => (
 const Footer = () => {
   return (
     <footer
-      className="site-footer"
-      style={{ background: 'linear-gradient(180deg, #E0E9F2 0%, #F7FBFF 100%)' }}
+      className="site-footer
+        [background:linear-gradient(180deg,#E0E9F2_0%,#F7FBFF_100%)]
+        dark:[background:linear-gradient(180deg,var(--evt-surface-page-alt)_0%,var(--evt-surface-page)_100%)]"
     >
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-12 lg:px-8">
         <div className="flex min-w-0 flex-col gap-4">
@@ -190,7 +204,7 @@ const Footer = () => {
             </h2>
           </div>
 
-          <p className="max-w-md text-sm leading-6 text-slate-600">
+          <p className="max-w-md text-sm leading-6 text-slate-600 dark:text-slate-400">
             Open-source event management for technical communities - discover, collaborate, and grow together.
           </p>
 
@@ -206,11 +220,23 @@ const Footer = () => {
       <div className="mt-6">
         <div className="mx-auto w-full max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-sm text-slate-600">&copy; {new Date().getFullYear()} Eventra. All rights reserved.</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              &copy; {new Date().getFullYear()} Eventra. All rights reserved.
+            </p>
 
             <div className="flex gap-6">
-              <Link to="/privacy" className="text-sm text-slate-600 hover:text-slate-900">Privacy</Link>
-              <Link to="/terms" className="text-sm text-slate-600 hover:text-slate-900">Terms</Link>
+              <Link
+                to="/privacy"
+                className="text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+              >
+                Privacy
+              </Link>
+              <Link
+                to="/terms"
+                className="text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+              >
+                Terms
+              </Link>
             </div>
           </div>
         </div>

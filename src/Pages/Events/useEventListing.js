@@ -126,7 +126,7 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
+      if (import.meta.env.MODE === "development") {
         const normalizedMockEvents = mockEvents.map(normalizeEvent);
         setEvents(normalizedMockEvents);
         setPagination({

@@ -23,7 +23,7 @@ const useCalendarEvents = () => {
       const apiEvents = Array.isArray(response.data) ? response.data : [];
       setEvents(normalizeEvents(apiEvents));
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
+      if (import.meta.env.MODE === "development") {
         console.warn("Failed to fetch events. Falling back to mock data.", error);
         setLoadError(error?.message || "Failed to load events.");
         setEvents(normalizeEvents(mockEvents));

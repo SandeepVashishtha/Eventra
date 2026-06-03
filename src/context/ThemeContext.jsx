@@ -32,57 +32,54 @@ const safeStorage = {
   setItem(key, value) {
     try {
       window.localStorage?.setItem(key, value);
-    } catch {
-      // Storage can be blocked in private browsing or embedded contexts.
-    }
+    } catch {}
   },
   removeItem(key) {
     try {
       window.localStorage?.removeItem(key);
-    } catch {
-      // Non-fatal: theme state still updates in memory.
-    }
+    } catch {}
   },
 };
 
 const getInitialTheme = () => safeStorage.getItem("theme", "system");
 
 export const ThemeProvider = ({ children }) => {
-  const [theme] = useState("light");
+  //  FIX: theme ab dynamic hai, hardcoded "light" nahi
+  const [theme, setThemeState] = useState(() => getInitialTheme());
 
-  // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {
     return safeStorage.getItem("activeThemeId", "default");
   });
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
-  // Custom HSL state
   const [customHsl, setCustomHsl] = useState(() => {
     const saved = safeStorage.getItem("customHsl");
-
-    return safeJsonParse(
-      saved,
-      {
-        h: 220,
-        s: 90,
-        l: 56,
-        active: false,
-      },
-    );
+    return safeJsonParse(saved, { h: 220, s: 90, l: 56, active: false });
   });
 
-  // Reduced motion state
   const prefersReduced = useReducedMotion();
   const [reducedMotion, setReducedMotion] = useState(() => {
     const saved = safeStorage.getItem("reducedMotion");
     return saved !== null ? saved === "true" : prefersReduced;
   });
 
-  const resolvedTheme = "light";
-  const setTheme = useCallback(() => {}, []);
-  const toggleTheme = useCallback(() => {}, []);
+  //  FIX: resolvedTheme ab system preference bhi handle karta hai
+  const resolvedTheme = theme === "system" ? getSystemTheme() : theme;
 
-  // Apply themes, custom HSL variable overrides, and sync storage
+  //  FIX: setTheme ab actually theme update karta hai
+  const setTheme = useCallback((newTheme) => {
+    setThemeState(newTheme);
+  }, []);
+
+  //  FIX: toggleTheme ab dark/light switch karta hai
+  const toggleTheme = useCallback(() => {
+    setThemeState((prev) => {
+      const resolved = prev === "system" ? getSystemTheme() : prev;
+      return resolved === "dark" ? "light" : "dark";
+    });
+  }, []);
+
+  // Apply theme class to <html> and sync storage
   useEffect(() => {
     if (!activeThemeId) return;
 
@@ -97,16 +94,19 @@ export const ThemeProvider = ({ children }) => {
       safeStorage.setItem("theme", theme);
     }
 
-    // Apply active skin theme colors
     const activeTheme = THEMES[activeThemeId] || THEMES.default;
-    const themeColors = activeTheme.colors.light || activeTheme.colors.dark;
+    //  FIX: dark/light theme colors sahi se apply hoti hain
+    const themeColors =
+      resolvedTheme === "dark"
+        ? activeTheme.colors.dark || activeTheme.colors.light
+        : activeTheme.colors.light || activeTheme.colors.dark;
+
     if (themeColors) {
       Object.entries(themeColors).forEach(([variable, val]) => {
         root.style.setProperty(variable, val);
       });
     }
 
-    // Apply HSL customization overrides if active
     if (customHsl && customHsl.active) {
       const pColor = `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l}%)`;
       root.style.setProperty("--primary-color", pColor);
@@ -121,19 +121,14 @@ export const ThemeProvider = ({ children }) => {
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
-      let themeColor = "#ffffff";
+      let themeColor = resolvedTheme === "dark" ? "#090e1a" : "#ffffff";
       if (customHsl && customHsl.active) {
         themeColor = `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l}%)`;
-      } else {
-        const isDark = document.documentElement.classList.contains("dark") || 
-                       window.matchMedia("(prefers-color-scheme: dark)").matches;
-        themeColor = isDark ? "#090e1a" : "#ffffff";
       }
       metaTheme.setAttribute("content", themeColor);
     }
-  }, [activeThemeId, customHsl]);
+  }, [theme, resolvedTheme, activeThemeId, customHsl]);
 
-  // Sync OS-level reduced motion preference changes
   useEffect(() => {
     const saved = safeStorage.getItem("reducedMotion");
     if (saved === null) {
@@ -141,13 +136,10 @@ export const ThemeProvider = ({ children }) => {
     }
   }, [prefersReduced]);
 
-  // Handle global CSS override for transitions and animations
   useEffect(() => {
     safeStorage.setItem("reducedMotion", reducedMotion);
-
     const styleId = "reduced-motion-override";
     let styleEl = document.getElementById(styleId);
-
     if (reducedMotion) {
       if (!styleEl) {
         styleEl = document.createElement("style");
@@ -167,10 +159,8 @@ export const ThemeProvider = ({ children }) => {
     }
   }, [reducedMotion]);
 
-  // Detect system dark theme preference changes
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
       if (!safeStorage.getItem("theme")) {
@@ -185,12 +175,12 @@ export const ThemeProvider = ({ children }) => {
     () => ({
       theme,
       resolvedTheme,
-      isDarkMode: false,
+      //  FIX: isDarkMode ab sahi value return karta hai
+      isDarkMode: resolvedTheme === "dark",
       setTheme,
+      toggleTheme,
       isCustomizerOpen,
       setIsCustomizerOpen,
-
-      toggleTheme,
       activeThemeId,
       setActiveThemeId,
       THEMES,

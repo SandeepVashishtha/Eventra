@@ -1,6 +1,6 @@
 export async function verifyCertificate(uid) {
   if (!uid) throw new Error('UID is required');
-  const apiBaseUrl = process.env.REACT_APP_API_URL || process.env.VITE_API_URL || '';
+  const apiBaseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL || '';
   const response = await fetch(`${apiBaseUrl}/api/verify-certificate/${uid}`);
   if (!response.ok) {
     const error = await response.text();

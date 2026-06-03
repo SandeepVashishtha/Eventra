@@ -29,7 +29,7 @@ export const isValidShareUrl = (url) => {
     const allowedOrigins = new Set();
     if (typeof window !== "undefined") allowedOrigins.add(window.location.origin);
 
-    const configuredPublicUrl = process.env.REACT_APP_PUBLIC_URL;
+    const configuredPublicUrl = import.meta.env.VITE_PUBLIC_URL;
     if (configuredPublicUrl) {
       try {
         allowedOrigins.add(new URL(configuredPublicUrl).origin);
@@ -108,7 +108,7 @@ export const generateSharingUrl = (shareData, platform) => {
  */
 export const generateEventSharingData = (event, baseUrl = null) => {
   // Determine the correct base URL for sharing
-  const deployedDomain = process.env.REACT_APP_PUBLIC_URL || "eventra.sandeepvashishtha.tech";
+  const deployedDomain = import.meta.env.VITE_PUBLIC_URL || "eventra.sandeepvashishtha.tech";
 
   // If baseUrl is provided, use it, otherwise detect
   if (!baseUrl) {
@@ -122,7 +122,7 @@ export const generateEventSharingData = (event, baseUrl = null) => {
         baseUrl = window.location.origin;
       }
     } else {
-      baseUrl = process.env.REACT_APP_PUBLIC_URL || `https://${deployedDomain}`; // Fallback for SSR/Node
+      baseUrl = import.meta.env.VITE_PUBLIC_URL || `https://${deployedDomain}`; // Fallback for SSR/Node
     }
   }
 

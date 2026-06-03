@@ -20,7 +20,7 @@ import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
-import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import { 
@@ -38,12 +38,12 @@ const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"))
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
-const ExploreEvents = lazy(() => import("./Pages/Events/ExploreEvents"));
-const Login = lazy(() => import("./Pages/Auth/Login"));
-const Signup = lazy(() => import("./Pages/Auth/Signup"));
-const Profile = lazy(() => import("./Pages/User/Profile"));
-const Dashboard = lazy(() => import("./Pages/Dashboard/Dashboard"));
-const AdminPanel = lazy(() => import("./Pages/Admin/AdminPanel"));
+const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+const Login = lazy(() => import("./components/auth/Login"));
+const Signup = lazy(() => import("./components/auth/Signup"));
+const Profile = lazy(() => import("./components/user/UserProfile"));
+const Dashboard = lazy(() => import("./components/user/UserDashboard"));
+const AdminPanel = lazy(() => import("./components/user/UserDashboard"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));

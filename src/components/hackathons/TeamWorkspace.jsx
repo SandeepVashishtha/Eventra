@@ -99,7 +99,7 @@ const TeamWorkspace = () => {
     try {
       console.log(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
       // Simulating connection. In production, this matches react env SSE endpoints.
-      // E.g. const sseUrl = process.env.REACT_APP_API_URL || "/api/hackathons/team/sync";
+      // E.g. const sseUrl = import.meta.env.VITE_API_URL || "/api/hackathons/team/sync";
       sseSource = new EventSource("/api/hackathons/team/sync-simulated-error");
 
       sseSource.onopen = () => {

@@ -20,7 +20,7 @@ import {
   fetchPullRequests,
 } from "../../../utils/githubApiClient";
 
-const repoPath = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
+const repoPath = import.meta.env.VITE_GITHUB_REPO || "SandeepVashishtha/Eventra";
 const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
 
 const LS_KEY = "eventra:repoStats";

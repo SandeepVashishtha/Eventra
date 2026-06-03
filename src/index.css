@@ -7,6 +7,13 @@
 @config "../tailwind.config.cjs";
 
 @custom-variant dark (&:where(.dark, .dark *));
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark !important;
+}
+
 
 @theme {
   --font-size-body: 16px;
@@ -1125,4 +1132,5 @@ html:not(.dark) ::placeholder {
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
   }
 }
+
 
