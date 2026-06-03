@@ -746,6 +746,4 @@ export const PasswordField = ({ id, label, value, onChange, error, strength, req
   );
 };
 
-
-
 export default Signup;
