@@ -29,7 +29,6 @@ import AppRoutes from "./components/AppRoutes";
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 
-
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
 const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
@@ -47,13 +46,7 @@ const OfflineSyncManager = () => {
 
 function App() {
   const location = useLocation();
-  const isDashboardOrAdmin =
-    location.pathname === "/dashboard" || location.pathname === "/admin";
-  const pageLoader = (
-    <div className="flex items-center justify-center min-h-screen text-gray-500">
-      Loading page...
-    </div>
-  );
+  const isDashboardOrAdmin = location.pathname === "/dashboard" || location.pathname === "/admin";
   const [cursorEnabled, setCursorEnabled] = useState(() => {
     try {
       return localStorage.getItem("cursor") !== "off";
@@ -174,9 +167,7 @@ function App() {
                 </SectionErrorBoundary>
 
                 <SectionErrorBoundary label="Footer">
-                  <Suspense fallback={null}>
-                    {!isDashboardOrAdmin && <Footer />}
-                  </Suspense>
+                  <Suspense fallback={null}>{!isDashboardOrAdmin && <Footer />}</Suspense>
                 </SectionErrorBoundary>
 
                 <Suspense fallback={null}>
