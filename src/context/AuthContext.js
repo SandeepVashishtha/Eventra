@@ -57,7 +57,12 @@ export const AuthProvider = ({ children }) => {
   const clearExpiredSession = useCallback(() => {
     // 🔥 FIX: Check if a user was actually logged in before blasting them with an "Expired" toast.
     // Anonymous users (who trigger a 401 on mount) shouldn't see this.
-    const hadPreviousSession = !!localStorage.getItem("user");
+    let hadPreviousSession = false;
+    try {
+      hadPreviousSession = !!localStorage.getItem("user");
+    } catch {
+      // localStorage unavailable (private browsing, quota exceeded, etc.)
+    }
 
     console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
     clearSession();
