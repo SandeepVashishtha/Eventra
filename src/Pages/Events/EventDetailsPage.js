@@ -1,5 +1,4 @@
 import "./EventDetails.print.css";
-import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
@@ -10,6 +9,8 @@ import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from 
 import { toast } from "react-toastify";
 import { getEventStatus } from "../../utils/eventUtils";
 import { logError } from "../../utils/errorLogger";
+import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
 // Note: eventsMockData.json is NOT statically imported here.
 // It is loaded dynamically (and only in development/fallback mode) so that
 // the mock JSON is not bundled into the production build.
@@ -17,13 +18,48 @@ import { logError } from "../../utils/errorLogger";
 const EventDetailsPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const { addRecentlyViewed } = useRecentlyViewed();
   const latestRequestIdRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [event, setEvent] = useState(null);
   const [, setError] = useState(null);
   const [cacheInfo, setCacheInfo] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  const { user } = useAuth();
+  const { isRegistered, waitlistUpdated, triggerWaitlistUpdate } = useMyEvents();
+  const userId = user?.id || user?.email || null;
+  const [queuePosition, setQueuePosition] = useState(-1);
+  const [waitlistCount, setWaitlistCount] = useState(0);
+
+  useEffect(() => {
+    if (userId && event) {
+      import("../../utils/waitlistUtils").then(({ getQueuePosition }) => {
+        setQueuePosition(getQueuePosition(event.id, userId));
+      });
+    } else {
+      setQueuePosition(-1);
+    }
+  }, [userId, event, waitlistUpdated]);
+
+  useEffect(() => {
+    if (event) {
+      import("../../utils/waitlistUtils").then(({ getEventWaitlist }) => {
+        setWaitlistCount(getEventWaitlist(event.id).length);
+      });
+    }
+  }, [event, waitlistUpdated]);
+
+  const handleLeaveWaitlist = async () => {
+    if (!userId || !event) return;
+    try {
+      const { leaveWaitlist } = await import("../../utils/waitlistUtils");
+      await leaveWaitlist(event.id, userId);
+      toast.success("Successfully left the waitlist.");
+      triggerWaitlistUpdate();
+    } catch (err) {
+      toast.error(err.message || "Failed to leave waitlist.");
+    }
+  };
 
   const shareUrl = event ? `${window.location.origin}/events/${event.id}` : "";
   const shareText = event ? `Check out this event: ${event.title}` : "";
@@ -142,7 +178,7 @@ const EventDetailsPage = () => {
   if (loading) {
     return (
       <main
-        className="flex min-h-svh items-center justify-center bg-white safe-area-x dark:bg-black"
+        className="flex min-h-svh items-center justify-center bg-bg safe-area-x"
         role="status"
         aria-live="polite"
         aria-busy="true"
@@ -157,7 +193,7 @@ const EventDetailsPage = () => {
 
   if (!event) {
     return (
-      <main className="flex min-h-svh items-center justify-center bg-white safe-area-x py-10 dark:bg-slate-950">
+      <main className="flex min-h-svh items-center justify-center bg-bg safe-area-x py-10">
         <div className="max-w-sm text-center">
           <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white sm:text-4xl">
             Event Not Found
@@ -182,9 +218,9 @@ const EventDetailsPage = () => {
 
   return (
     <>
-      <div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
+      <div className="min-h-screen mt-16 bg-bg">
         {/* Back Button */}
-        <header className="sticky top-20 md:top-24 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
+        <header className="sticky top-20 md:top-24 z-40 bg-navbar/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <button
               type="button"
@@ -244,7 +280,7 @@ const EventDetailsPage = () => {
                 </div>
               </div>
 
-              <section className="mb-5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:mb-8 sm:p-6">
+              <section className="mb-5 rounded-2xl border border-gray-200 bg-card-bg p-4 shadow-sm dark:border-gray-700 dark:bg-card-bg sm:mb-8 sm:p-6">
                 <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-2xl">
                   About This Event
                 </h2>
@@ -263,7 +299,7 @@ const EventDetailsPage = () => {
             >
               {!isPastEvent && <CountdownTimer date={event.date} time={event.time} />}
 
-              <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-6">
+              <div className="rounded-2xl border border-gray-200 bg-card-bg p-4 shadow-sm dark:border-gray-700 dark:bg-card-bg sm:p-6">
                 <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
                   Event Details
                 </h3>
@@ -287,12 +323,19 @@ const EventDetailsPage = () => {
                     <MapPin size={16} className="shrink-0 text-pink-500" />
                     <span className="min-w-0 break-words">{event.location}</span>
                   </div>
-                  <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
                     <Users size={16} className="shrink-0 text-green-500" />
                     <span>
                       {Number(event.attendees) || 0} / {Number(event.maxAttendees) || 0} registered
+                      {event.attendees >= event.maxAttendees && " (Sold Out)"}
                     </span>
                   </div>
+                  {waitlistCount > 0 && (
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Clock size={16} className="shrink-0 text-amber-500" />
+                      <span className="text-amber-650 dark:text-amber-400 font-medium">{waitlistCount} user(s) on waitlist</span>
+                    </div>
+                  )}
                   <div className="flex min-w-0 items-center gap-3">
                     <Tag size={16} className="shrink-0 text-yellow-500" />
                     <span className="capitalize">{event.type || event.category || "event"}</span>
@@ -301,16 +344,34 @@ const EventDetailsPage = () => {
               </div>
 
               {!isPastEvent && (
-                <Link
-                  to={`/events/${event.id}/register`}
-                  className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
-                >
-                  Register Now
-                </Link>
+                isRegistered(event.id) ? (
+                  <div className="w-full text-center py-3 bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 rounded-2xl font-semibold">
+                    You are registered!
+                  </div>
+                ) : queuePosition > 0 ? (
+                  <div className="flex flex-col gap-3 w-full">
+                    <div className="w-full text-center py-3 bg-amber-50 dark:bg-amber-950/20 text-amber-650 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-2xl font-semibold">
+                      On Waitlist (Position #{queuePosition})
+                    </div>
+                    <button
+                      onClick={handleLeaveWaitlist}
+                      className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl border border-red-300 text-red-650 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/20 px-4 py-3 text-sm font-semibold transition-all duration-300 cursor-pointer"
+                    >
+                      Leave Waitlist
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    to={`/events/${event.id}/register`}
+                    className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
+                  >
+                    {event.attendees >= event.maxAttendees ? "Join Waitlist" : "Register Now"}
+                  </Link>
+                )
               )}
 
               {/* Share Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-card-bg rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <Share2 size={16} className="text-indigo-500" />
                   Share this Event
