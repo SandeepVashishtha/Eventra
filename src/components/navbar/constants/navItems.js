@@ -34,6 +34,11 @@ export const NAV_ITEMS = [
     icon: <FolderKanban className="w-5 h-5" />,
   },
   {
+    name: "Networking",
+    href: "/networking",
+    icon: <Users className="w-5 h-5" />,
+  },
+  {
     name: "Saved",
     href: "/saved-events",
     icon: <Bookmark className="w-5 h-5" />,

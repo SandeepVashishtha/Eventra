@@ -57,7 +57,13 @@ const useBookmarks = (userId = "guest") => {
   const storageKeyRef = useRef(storageKey);
   storageKeyRef.current = storageKey;
 
+  const isInitialLoad = useRef(true);
+
   useEffect(() => {
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
     try {
       localStorage.setItem(storageKeyRef.current, JSON.stringify(bookmarks));
     } catch {
@@ -123,5 +129,13 @@ const useBookmarks = (userId = "guest") => {
   const clearBookmarks = useCallback(() => {
     setBookmarks([]);
   }, []);
+
+  return {
+    bookmarks,
+    toggleBookmark,
+    isBookmarked,
+    clearBookmarks,
+  };
+};
 
 export default useBookmarks;
