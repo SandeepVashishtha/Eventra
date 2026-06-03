@@ -47,6 +47,7 @@ export const useFormValidation = (
   // Refs for debouncing and caching
   const timeoutRefs = useRef({});
   const validationCacheRef = useRef({});
+  const isMountedRef = useRef(true);
 
   /**
    * Clear debounce timeout for a field
@@ -64,10 +65,12 @@ export const useFormValidation = (
   const validateField = useCallback(
     async (fieldName, value, allValues) => {
       if (!validationRules[fieldName]) {
-        setValidationState((prev) => ({
-          ...prev,
-          [fieldName]: "idle",
-        }));
+        if (isMountedRef.current) {
+          setValidationState((prev) => ({
+            ...prev,
+            [fieldName]: "idle",
+          }));
+        }
         return null;
       }
 
@@ -100,10 +103,12 @@ export const useFormValidation = (
             typeof validationResult?.then === "function" || validator?.async;
 
           if (isAsyncValidation) {
-            setValidationState((prev) => ({
-              ...prev,
-              [fieldName]: "validating",
-            }));
+            if (isMountedRef.current) {
+              setValidationState((prev) => ({
+                ...prev,
+                [fieldName]: "validating",
+              }));
+            }
 
             const validationStartedAt = Date.now();
             validationResult = await Promise.race([
@@ -148,25 +153,29 @@ export const useFormValidation = (
           if (finalError) break; // Stop at first error
         } catch (err) {
           finalError = err.message || "Validation error";
-          setValidationState((prev) => ({
-            ...prev,
-            [fieldName]: "error",
-          }));
+          if (isMountedRef.current) {
+            setValidationState((prev) => ({
+              ...prev,
+              [fieldName]: "error",
+            }));
+          }
           break;
         }
       }
 
       // Update validation state
-      if (!finalError) {
-        setValidationState((prev) => ({
-          ...prev,
-          [fieldName]: "success",
-        }));
-      } else {
-        setValidationState((prev) => ({
-          ...prev,
-          [fieldName]: "error",
-        }));
+      if (isMountedRef.current) {
+        if (!finalError) {
+          setValidationState((prev) => ({
+            ...prev,
+            [fieldName]: "success",
+          }));
+        } else {
+          setValidationState((prev) => ({
+            ...prev,
+            [fieldName]: "error",
+          }));
+        }
       }
 
       // Cache the result
@@ -209,7 +218,7 @@ export const useFormValidation = (
             validator?.constructor?.name === "AsyncFunction",
         );
 
-        if (mayValidateAsync) {
+        if (mayValidateAsync && isMountedRef.current) {
           setValidationState((prev) => ({ ...prev, [name]: "validating" }));
         }
 
@@ -218,7 +227,9 @@ export const useFormValidation = (
             ...values,
             [name]: fieldValue,
           });
-          setErrors((prev) => ({ ...prev, [name]: error }));
+          if (isMountedRef.current) {
+            setErrors((prev) => ({ ...prev, [name]: error }));
+          }
         }, debounceMs);
       }
     },
@@ -235,7 +246,9 @@ export const useFormValidation = (
 
       if (validationRules[name] && validateOnBlur) {
         const error = await validateField(name, value, values);
-        setErrors((prev) => ({ ...prev, [name]: error }));
+        if (isMountedRef.current) {
+          setErrors((prev) => ({ ...prev, [name]: error }));
+        }
       }
     },
     [validationRules, values, validateField, validateOnBlur],
@@ -311,11 +324,13 @@ export const useFormValidation = (
 
       try {
         const isValid = await validateAll();
-        if (isValid) {
+        if (isValid && isMountedRef.current) {
           await onSubmit(values);
         }
       } finally {
-        setIsSubmitting(false);
+        if (isMountedRef.current) {
+          setIsSubmitting(false);
+        }
       }
     },
     [validateAll, values],
@@ -343,9 +358,12 @@ export const useFormValidation = (
    * Cleanup on unmount
    */
   useEffect(() => {
+    isMountedRef.current = true;
+    const currentTimeouts = timeoutRefs.current;
     return () => {
-      Object.keys(timeoutRefs.current).forEach((fieldName) => {
-        clearFieldTimeout(fieldName);
+      isMountedRef.current = false;
+      Object.keys(currentTimeouts).forEach((fieldName) => {
+        clearTimeout(currentTimeouts[fieldName]);
       });
     };
   }, [clearFieldTimeout]);

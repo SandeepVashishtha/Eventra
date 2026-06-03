@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Star, Users, BarChart3 } from 'lucide-react';
 import {
   getAverageRating,
   getRecommendationStats,
   getTagStats,
+  getRatingBreakdown,
 } from '../../utils/feedbackUtils';
 
 /**
@@ -14,12 +15,14 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
   const [averageRating, setAverageRating] = useState(null);
   const [recommendationStats, setRecommendationStats] = useState(null);
   const [tagStats, setTagStats] = useState(null);
+  const [ratingBreakdown, setRatingBreakdown] = useState(null);
 
   useEffect(() => {
     if (eventId) {
       setAverageRating(getAverageRating(eventId));
       setRecommendationStats(getRecommendationStats(eventId));
       setTagStats(getTagStats(eventId));
+      setRatingBreakdown(getRatingBreakdown(eventId));
     }
   }, [eventId]);
 
@@ -83,8 +86,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
             {/* Rating Distribution */}
             <div className="space-y-2">
               {[5, 4, 3, 2, 1].map((stars) => {
-                // Simple calculation for demo
-                const count = Math.floor((averageRating.count / 5) * (Math.random() + 0.5));
+                const count = ratingBreakdown ? ratingBreakdown[stars] : 0;
                 const percentage = averageRating.count > 0
                   ? Math.round((count / averageRating.count) * 100)
                   : 0;

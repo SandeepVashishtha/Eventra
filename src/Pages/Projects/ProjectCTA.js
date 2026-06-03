@@ -48,8 +48,8 @@ const ProjectCTA = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.8 }}
         >
-          "Share your innovative projects, collaborate with peers, and get
-          recognized."
+          &quot;Share your innovative projects, collaborate with peers, and get
+          recognized.&quot;
         </motion.p>
 
         {/* Buttons */}
@@ -79,7 +79,6 @@ const ProjectCTA = () => {
             <Link
               to="https://github.com/SandeepVashishtha/Eventra/issues"
               target="_blank" rel="noopener noreferrer"
-              rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300 dark:hover:bg-slate-800 font-semibold px-8 py-4 rounded-lg shadow-lg transition-all duration-300"
               data-aos="zoom-in"
               data-aos-delay="600"

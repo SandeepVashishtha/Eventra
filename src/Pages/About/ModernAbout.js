@@ -3,6 +3,7 @@ import { motion, useInView } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import CountUpLib from "react-countup";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
@@ -66,16 +67,7 @@ const values = [
 
 export default function ModernAbout() {
   useDocumentTitle("Eventra | About");
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    const handleChange = (e) => setPrefersReducedMotion(e.matches);
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
+  const prefersReducedMotion = useReducedMotion();
 
   const anim = (variants) => ({
     initial: "hidden",
