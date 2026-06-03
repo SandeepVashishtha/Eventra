@@ -10,6 +10,7 @@ import {
   parseTimeToMinutes,
 } from "../utils/eventCreationUtils";
 import { logger } from "../utils/logger";
+import { useAuth } from "../context/AuthContext";
 
 // 🎯 Constants for better maintainability
 const MAX_CAPACITY = 100000;
@@ -24,6 +25,8 @@ const DEBOUNCE_DELAY = 1000;
  * Handles form state, validation, draft persistence, and submission.
  */
 export const useEventForm = () => {
+  const { user } = useAuth();
+  const scopedDraftKey = `${DRAFT_KEY}_${user?.id || "guest"}`;
   // 📊 State Management
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
@@ -68,7 +71,7 @@ export const useEventForm = () => {
   useEffect(() => {
     const checkForDraft = () => {
       try {
-        const saved = localStorage.getItem(DRAFT_KEY);
+        const saved = localStorage.getItem(scopedDraftKey);
         if (saved) {
           setShowRestoreModal(true);
         }
@@ -96,7 +99,7 @@ export const useEventForm = () => {
         const saveable = { ...formDataRef.current };
         delete saveable.banner;
         delete saveable.bannerPreview;
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+        localStorage.setItem(scopedDraftKey, JSON.stringify(saveable));
       } catch (error) {
         logger.error("Failed to save draft:", error);
       }
@@ -180,16 +183,38 @@ export const useEventForm = () => {
   const resetForm = useCallback(() => {
     setFormData(initialFormData);
     setErrors({});
-    localStorage.removeItem(DRAFT_KEY);
+    localStorage.removeItem(scopedDraftKey);
   }, []);
 
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-    // Clear error when user types
+    if (name.startsWith("location.coordinates.")) {
+      const coordField = name.split(".")[2];
+      setFormData((prev) => ({
+        ...prev,
+        location: {
+          ...prev.location,
+          coordinates: {
+            ...prev.location.coordinates,
+            [coordField]: value,
+          },
+        },
+      }));
+    } else if (name.startsWith("location.")) {
+      const locationField = name.split(".")[1];
+      setFormData((prev) => ({
+        ...prev,
+        location: {
+          ...prev.location,
+          [locationField]: value,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+    }
     if (errors[name]) {
       setErrors((prev) => {
         const newErrs = { ...prev };
@@ -262,10 +287,10 @@ export const useEventForm = () => {
 
   const handleRestoreDraft = useCallback(() => {
     try {
-      const saved = localStorage.getItem(DRAFT_KEY);
+      const saved = localStorage.getItem(scopedDraftKey);
       if (saved) {
-        setFormData((prev) => ({ ...prev, ...JSON.parse(saved) }));
-        toast.success("Draft restored!");
+        setFormData((prev) => ({ ...prev, ...JSON.parse(saved), banner: null, bannerPreview: null }));
+        toast.success("Draft restored successfully!");
       }
     } catch (error) {
       logger.error("Failed to restore draft:", error);
@@ -275,7 +300,7 @@ export const useEventForm = () => {
   }, []);
 
   const handleDiscardDraft = useCallback(() => {
-    localStorage.removeItem(DRAFT_KEY);
+    localStorage.removeItem(scopedDraftKey);
     setShowRestoreModal(false);
   }, []);
 
@@ -290,6 +315,43 @@ export const useEventForm = () => {
       return Boolean(value) !== Boolean(initialFormData[key]);
     });
   }, [formData]);
+
+  const handleImageUpload = useCallback((e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      setErrors((prev) => ({ ...prev, banner: "Please upload a valid image file (JPG, PNG, GIF, or WebP)" }));
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, banner: "Image size should be less than 5MB" }));
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFormData((prev) => ({ ...prev, banner: file, bannerPreview: event.target.result }));
+      setErrors((prev) => ({ ...prev, banner: "" }));
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  // Browser guard for unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   return {
     formData,
@@ -318,5 +380,6 @@ export const useEventForm = () => {
     handleRestoreDraft,
     handleDiscardDraft,
     hasUnsavedChanges,
+    handleImageUpload,
   };
 };

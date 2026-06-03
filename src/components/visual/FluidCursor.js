@@ -56,6 +56,7 @@ const FluidCursor = ({ enabled = true }) => {
     return () => mediaQuery.removeListener(updateViewportState);
   }, []);
 
+  // 🔥 FIX 3: Added prefersReducedMotion to the dependency array
   useEffect(() => {
     if (!enabled || isMobileViewport || prefersReducedMotion) {
       return undefined;
@@ -1154,7 +1155,6 @@ const FluidCursor = ({ enabled = true }) => {
       };
     }
 
-
     function updatePointerDownData(pointer, id, posX, posY) {
       pointer.id = id;
       pointer.down = true;
@@ -1196,12 +1196,16 @@ const FluidCursor = ({ enabled = true }) => {
     // Uses document.elementFromPoint to see through the pointer-events-none canvas
     // and detect the actual DOM element beneath it.
     function isExcludedZone(clientX, clientY, target) {
-      if (target && (target.closest("nav") !== null || target.closest("footer") !== null || target.closest("a") !== null || target.closest("button") !== null)) {
-        return true;
+      if (target && typeof target.closest === 'function') {
+        if (target.closest("nav") !== null || target.closest("footer") !== null || target.closest("a") !== null || target.closest("button") !== null) {
+          return true;
+        }
       }
-      const el = document.elementFromPoint(clientX, clientY);
-      if (!el) return false;
-      return el.closest("nav") !== null || el.closest("footer") !== null;
+      // 🔥 FIX 2: Removed document.elementFromPoint to prevent massive Layout Thrashing.
+      // Since the canvas is pointer-events-none, window.onmousemove already receives 
+      // the true underlying DOM element as e.target. Calling elementFromPoint 60x a second
+      // forces synchronous layout recalculations and tanks rendering FPS.
+      return false;
     }
 
     // Skip click splat when mouse is over navbar or footer
@@ -1270,8 +1274,18 @@ const FluidCursor = ({ enabled = true }) => {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
+      
+      // 🔥 FIX 1: Prevent WebGL Context Exhaustion (Memory Leak)
+      // We must explicitly ask the browser to destroy the active WebGL context.
+      // Otherwise, toggling the cursor leaves orphaned contexts in memory until the browser crashes.
+      if (gl) {
+        const loseContextExt = gl.getExtension('WEBGL_lose_context');
+        if (loseContextExt) {
+          loseContextExt.loseContext();
+        }
+      }
     };
-  }, [enabled, isMobileViewport]);
+  }, [enabled, isMobileViewport, prefersReducedMotion]);
 
   if (!enabled || isMobileViewport || prefersReducedMotion) {
     return null;

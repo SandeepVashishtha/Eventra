@@ -167,6 +167,7 @@ const MyCalendar = () => {
       .sort((a, b) => new Date(a.event.date) - new Date(b.event.date));
   };
 
+  const today = new Date();
   const selectedEvents = getSelectedDateEvents();
   const timelineEvents = getFilteredAllEvents();
 
@@ -352,9 +353,9 @@ const MyCalendar = () => {
                           const dayEvents = getEventsForDate(day);
                           const selected = isSelected(day);
                           const isToday =
-                            new Date().getDate() === day &&
-                            new Date().getMonth() === currentMonth &&
-                            new Date().getFullYear() === currentYear;
+                            today.getDate() === day &&
+                            today.getMonth() === currentMonth &&
+                            today.getFullYear() === currentYear;
 
                           return (
                             <button

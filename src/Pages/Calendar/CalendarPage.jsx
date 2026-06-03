@@ -26,6 +26,8 @@ import { Link } from "react-router-dom";
 import { darkTheme } from "../../components/styles/theme";
 import { getEventStatus } from "../../utils/eventUtils";
 import useCalendarEvents from "./useCalendarEvents";
+import { SkeletonBlock } from "../../components/common/SkeletonLoaders";
+import EmptyState from "../../components/common/EmptyState";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./CalendarPage.css";
 
@@ -349,18 +351,30 @@ const CalendarPage = () => {
                 {selectedEvents.length} event{selectedEvents.length === 1 ? "" : "s"}
               </div>
             </div>
-
             <div className="mt-6 space-y-4">
               {isLoading ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                  Loading events for this day...
-                </div>
+                <>
+                  <div className="sr-only" role="status" aria-live="polite">
+                    Loading events for this day...
+                  </div>
+                  <div className="space-y-4" aria-hidden="true">
+                    {[...Array(2)].map((_, i) => (
+                      <div key={i} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 animate-pulse">
+                        <SkeletonBlock className="h-5 w-3/4 mb-3" />
+                        <SkeletonBlock className="h-4 w-1/2" />
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : null}
 
               {!isLoading && selectedEvents.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                  No upcoming events scheduled for this day.
-                </div>
+                <EmptyState
+                  compact={true}
+                  icon={<CalendarDays size={32} className="text-slate-400 dark:text-slate-500" />}
+                  title="No events scheduled"
+                  message="No upcoming events scheduled for this day."
+                />
               ) : null}
 
               {!isLoading && selectedEvents.length > 0

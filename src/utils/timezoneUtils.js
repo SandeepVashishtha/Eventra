@@ -192,3 +192,16 @@ export const parseEventDateTimeLocal = (dateStr, timeStr) => {
 
   return new Date(year, month - 1, day, hours, minutes);
 };
+
+/**
+ * Check if a given date is in Daylight Saving Time (DST).
+ *
+ * @param {Date} [date=new Date()]
+ * @returns {boolean}
+ */
+export const isDST = (date = new Date()) => {
+  if (!(date instanceof Date) || isNaN(date.getTime())) return false;
+  const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
+  const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
+  return Math.max(jan, jul) !== date.getTimezoneOffset();
+};
