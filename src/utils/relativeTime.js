@@ -1,7 +1,7 @@
 const RELATIVE_TIME_FALLBACK = "—";
 
 export function getRelativeTime(dateInput) {
-<<<<<<< HEAD
+
   if (dateInput === null || dateInput === undefined) {
     return RELATIVE_TIME_FALLBACK;
   }
@@ -10,9 +10,9 @@ export function getRelativeTime(dateInput) {
     return RELATIVE_TIME_FALLBACK;
   }
 
-=======
+
   if (!dateInput || typeof dateInput === 'number') return null;
->>>>>>> upstream/master
+
   const now = new Date();
   const date = new Date(dateInput);
 
