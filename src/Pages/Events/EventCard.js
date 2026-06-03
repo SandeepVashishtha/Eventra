@@ -22,7 +22,6 @@ import { toast } from "react-toastify";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import LazyImage from "../../components/common/LazyImage";
 import ShareModal from "../../components/common/ShareModal";
-import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -78,13 +77,6 @@ const EventCard = ({ event }) => {
   const isUserRegistered = isRegistered(event.id);
 
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
-  const eventSharingData = generateEventSharingData({
-    ...event,
-    title: event.title,
-    description: event.description,
-    date: event.date,
-    id: event.id,
-  });
 
   const handleCopyLink = (e) => {
     e.preventDefault();
@@ -138,18 +130,18 @@ const EventCard = ({ event }) => {
       toastId: `bookmark-${event.id}`,
       autoClose: 1800,
       className: "custom-toast",
-    });
-  }, [computedStatus, event, isBookmarked]);
+   });
+}, [computedStatus, event, isBookmarked]);
 
   return (
     <article
       data-aos="zoom-in"
       data-aos-duration="800"
       aria-labelledby={titleId}
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 hover:z-50 hover:shadow-2xl hover:-translate-y-2 overflow-hidden border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
     >
       {/* Action buttons */}
-      <div className="absolute top-[5.5rem] right-3 z-[200] flex space-x-1.5 items-center">
+      <div className="absolute top-3 right-3 z-200 flex space-x-1.5 items-center">
         <div className="relative flex items-center">
           <motion.button
             whileHover={{ scale: 1.12 }}
@@ -162,7 +154,7 @@ const EventCard = ({ event }) => {
             aria-pressed={isBookmarked}
             className={`rounded-full p-2 shadow cursor-pointer border transition-all duration-300 relative flex items-center justify-center ${
               isBookmarked
-                ? "border-indigo-400 dark:border-indigo-500 text-white bg-gradient-to-r from-indigo-500 to-indigo-600 shadow-[0_0_12px_rgba(99,102,241,0.45)]"
+                ? "border-indigo-400 dark:border-indigo-500 text-white bg-linear-to-r from-indigo-500 to-indigo-600 shadow-[0_0_12px_rgba(99,102,241,0.45)]"
                 : "border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 bg-white/90 dark:bg-gray-900/90 hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 hover:shadow-[0_0_12px_rgba(99,102,241,0.35)]"
             }`}
           >
@@ -176,7 +168,7 @@ const EventCard = ({ event }) => {
               {isBookmarked ? (
                 <BookmarkCheck size={14} className="stroke-[2.5]" />
               ) : (
-                <Bookmark size={14} className="stroke-[2]" />
+                <Bookmark size={14} className="stroke-2" />
               )}
             </motion.div>
           </motion.button>
@@ -188,7 +180,7 @@ const EventCard = ({ event }) => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 4, scale: 0.95 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
-                className="absolute bottom-full right-0 mb-2 px-2.5 py-1 text-[10px] font-bold text-white bg-slate-900 dark:bg-slate-950 border border-slate-800 rounded-lg shadow-xl whitespace-nowrap pointer-events-none z-[300]"
+                className="absolute bottom-full right-0 mb-2 px-2.5 py-1 text-[10px] font-bold text-white bg-slate-900 dark:bg-slate-950 border border-slate-800 rounded-lg shadow-xl whitespace-nowrap pointer-events-none z-300"
               >
                 {isBookmarked ? "Remove Bookmark" : "Save to Bookmarks"}
               </motion.div>
@@ -258,12 +250,12 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Header */}
-      <div className="flex items-center px-5 py-4 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800 rounded-t-3xl">
-        <div className="p-2 bg-gradient-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-inner flex-shrink-0">
+      <div className="flex items-center px-5 py-4 gap-4 bg-linear-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800 rounded-t-3xl">
+        <div className="p-2 bg-linear-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-inner shrink-0">
           {randomIcon}
         </div>
 
-        <h3 id={titleId} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1">
+        <h3 id={titleId} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1">
           {event.title}
         </h3>
         <div className="ml-auto flex items-center gap-2">
@@ -304,7 +296,7 @@ const EventCard = ({ event }) => {
           height={160}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
       </div>
 
       {/* Description */}
@@ -317,8 +309,8 @@ const EventCard = ({ event }) => {
       {/* Info Grid */}
       <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
         {/* Location */}
-        <div className="flex items-start gap-2">
-          <MapPin size={14} className="text-pink-500 flex-shrink-0" />
+        <div className="flex items-start gap-2 sm:col-span-2">
+          <MapPin size={14} className="text-pink-500 shrink-0" />
           <div className="flex flex-col min-w-0">
             <span className="truncate">{event.location}</span>
             <span className="text-[11px] text-gray-500 dark:text-gray-400">
@@ -329,13 +321,13 @@ const EventCard = ({ event }) => {
 
         {/* Event Type */}
         <div className="flex items-center gap-2">
-          <Tag size={14} className="text-green-500 flex-shrink-0" aria-hidden="true" />
+          <Tag size={14} className="text-green-500 shrink-0" aria-hidden="true" />
           <span className="truncate">{event.type}</span>
         </div>
 
         {/* Event Date */}
         <div className="flex items-start gap-2">
-          <Calendar size={14} className="text-indigo-500 flex-shrink-0 mt-0.5" />
+          <Calendar size={14} className="text-indigo-500 shrink-0 mt-0.5" />
           <div className="flex flex-col">
             <span className="truncate">
               {getSmartDateLabel(event.date, event.time)}
@@ -405,14 +397,14 @@ const EventCard = ({ event }) => {
             Event Ended
           </div>
         ) : (
-          <Link to={`/events/${event.id}/register`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 text-white px-4 py-3 text-sm font-semibold shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl">
+          <Link to={`/events/${event.id}/register`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-linear-to-r from-indigo-600 via-indigo-700 to-slate-900 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 text-white px-4 py-3 text-sm font-semibold shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl">
             <span>
               Register Now
             </span>
           </Link>
         )}
 
-        <Link to={`/events/${event.id}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-white/80 dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 px-4 py-3 text-sm font-semibold shadow-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-800 dark:hover:text-white hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
+        <Link to={`/events/${event.id}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-50/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-3 text-sm font-semibold shadow-md hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
           <span>
             View Details
           </span>
