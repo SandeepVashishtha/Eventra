@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useEffect } from 'react';
 
 import { AuthProvider, useAuth } from './AuthContext';
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
@@ -42,6 +43,16 @@ const AuthConsumer = () => {
 
 const renderConsumer = () =>
   render(<AuthProvider><AuthConsumer /></AuthProvider>);
+
+const AuthValueProbe = ({ compute, onResult }) => {
+  const auth = useAuth();
+
+  useEffect(() => {
+    onResult(compute(auth));
+  }, [auth, compute, onResult]);
+
+  return null;
+};
 
 describe('AuthContext', () => {
   beforeEach(() => {
@@ -206,16 +217,14 @@ describe('AuthContext', () => {
         'user',
         JSON.stringify({ email: 'admin@example.com', roles: ['ADMIN'] })
       );
+      const onResult = jest.fn();
 
-      let roleResult;
-      const RoleChecker = () => {
-        const { hasRole } = useAuth();
-        roleResult = hasRole('ADMIN');
-        return null;
-      };
-
-      render(<AuthProvider><RoleChecker /></AuthProvider>);
-      await waitFor(() => expect(roleResult).toBe(true));
+      render(
+        <AuthProvider>
+          <AuthValueProbe compute={({ hasRole }) => hasRole('ADMIN')} onResult={onResult} />
+        </AuthProvider>
+      );
+      await waitFor(() => expect(onResult).toHaveBeenLastCalledWith(true));
     });
 
     it('returns false for a role the user does not have', async () => {
@@ -224,16 +233,14 @@ describe('AuthContext', () => {
         'user',
         JSON.stringify({ email: 'user@example.com', roles: ['ATTENDEE'] })
       );
+      const onResult = jest.fn();
 
-      let roleResult;
-      const RoleChecker = () => {
-        const { hasRole } = useAuth();
-        roleResult = hasRole('ADMIN');
-        return null;
-      };
-
-      render(<AuthProvider><RoleChecker /></AuthProvider>);
-      await waitFor(() => expect(roleResult).toBe(false));
+      render(
+        <AuthProvider>
+          <AuthValueProbe compute={({ hasRole }) => hasRole('ADMIN')} onResult={onResult} />
+        </AuthProvider>
+      );
+      await waitFor(() => expect(onResult).toHaveBeenLastCalledWith(false));
     });
   });
 
@@ -245,28 +252,25 @@ describe('AuthContext', () => {
         JSON.stringify({ email: 'user@example.com', roles: ['ATTENDEE'] })
       );
       isTokenValid.mockReturnValue(true);
+      const onResult = jest.fn();
 
-      let result;
-      const Checker = () => {
-        const { isAuthenticated } = useAuth();
-        result = isAuthenticated();
-        return null;
-      };
-
-      render(<AuthProvider><Checker /></AuthProvider>);
-      await waitFor(() => expect(result).toBe(true));
+      render(
+        <AuthProvider>
+          <AuthValueProbe compute={({ isAuthenticated }) => isAuthenticated()} onResult={onResult} />
+        </AuthProvider>
+      );
+      await waitFor(() => expect(onResult).toHaveBeenLastCalledWith(true));
     });
 
     it('returns false when there is no user', async () => {
-      let result;
-      const Checker = () => {
-        const { isAuthenticated } = useAuth();
-        result = isAuthenticated();
-        return null;
-      };
+      const onResult = jest.fn();
 
-      render(<AuthProvider><Checker /></AuthProvider>);
-      await waitFor(() => expect(result).toBe(false));
+      render(
+        <AuthProvider>
+          <AuthValueProbe compute={({ isAuthenticated }) => isAuthenticated()} onResult={onResult} />
+        </AuthProvider>
+      );
+      await waitFor(() => expect(onResult).toHaveBeenLastCalledWith(false));
     });
   });
 
@@ -329,42 +333,49 @@ describe('AuthContext', () => {
 
     it('isAdmin returns true for ADMIN role', async () => {
       setupUser(['ADMIN']);
-      let result;
-      const C = () => { const { isAdmin } = useAuth(); result = isAdmin(); return null; };
-      render(<AuthProvider><C /></AuthProvider>);
-      await waitFor(() => expect(result).toBe(true));
+      const onResult = jest.fn();
+      render(
+        <AuthProvider>
+          <AuthValueProbe compute={({ isAdmin }) => isAdmin()} onResult={onResult} />
+        </AuthProvider>
+      );
+      await waitFor(() => expect(onResult).toHaveBeenLastCalledWith(true));
     });
 
     it('isOrganizer returns true for ORGANIZER role', async () => {
       setupUser(['ORGANIZER']);
-      let result;
-      const C = () => { const { isOrganizer } = useAuth(); result = isOrganizer(); return null; };
-      render(<AuthProvider><C /></AuthProvider>);
-      await waitFor(() => expect(result).toBe(true));
+      const onResult = jest.fn();
+      render(
+        <AuthProvider>
+          <AuthValueProbe compute={({ isOrganizer }) => isOrganizer()} onResult={onResult} />
+        </AuthProvider>
+      );
+      await waitFor(() => expect(onResult).toHaveBeenLastCalledWith(true));
     });
 
     it('hasAnyRole returns true if user has at least one matching role', async () => {
       setupUser(['ATTENDEE']);
-      let result;
-      const C = () => {
-        const { hasAnyRole } = useAuth();
-        result = hasAnyRole('ADMIN', 'ATTENDEE');
-        return null;
-      };
-      render(<AuthProvider><C /></AuthProvider>);
-      await waitFor(() => expect(result).toBe(true));
+      const onResult = jest.fn();
+      render(
+        <AuthProvider>
+          <AuthValueProbe
+            compute={({ hasAnyRole }) => hasAnyRole('ADMIN', 'ATTENDEE')}
+            onResult={onResult}
+          />
+        </AuthProvider>
+      );
+      await waitFor(() => expect(onResult).toHaveBeenLastCalledWith(true));
     });
 
     it('EVENT_MANAGER role is normalised to ORGANIZER on restore', async () => {
       setupUser(['EVENT_MANAGER']);
-      let result;
-      const C = () => {
-        const { isOrganizer } = useAuth();
-        result = isOrganizer();
-        return null;
-      };
-      render(<AuthProvider><C /></AuthProvider>);
-      await waitFor(() => expect(result).toBe(true));
+      const onResult = jest.fn();
+      render(
+        <AuthProvider>
+          <AuthValueProbe compute={({ isOrganizer }) => isOrganizer()} onResult={onResult} />
+        </AuthProvider>
+      );
+      await waitFor(() => expect(onResult).toHaveBeenLastCalledWith(true));
     });
   });
 });

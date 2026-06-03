@@ -44,3 +44,5 @@ clearProfileCache();
 assert.equal(profileCacheSize(), 0);
 
 console.log("githubProfileCache tests passed ✓");
+process.exit(0);
+
