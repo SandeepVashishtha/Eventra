@@ -40,12 +40,17 @@ const getLocationParts = (location) =>
     .split(/\s+/)
     .filter((part) => part.length > 1 && part !== "online");
 
-const eventMatchesArea = (event, preferredLocation) => {
-  const eventLocation = normalizeText(event?.location);
-  const preferredParts = getLocationParts(preferredLocation);
+const createLocationMatcher = (preferredLocation) => {
+  const parts = getLocationParts(preferredLocation);
+  if (parts.length === 0) return () => false;
+  return (eventLocation) =>
+    eventLocation && parts.some((part) => eventLocation.includes(part));
+};
 
-  if (!eventLocation || preferredParts.length === 0) return false;
-  return preferredParts.some((part) => eventLocation.includes(part));
+const buildLocationIndex = (preferredLocation) => {
+  const parts = getLocationParts(preferredLocation);
+  if (parts.length === 0) return null;
+  return { parts, test: (loc) => parts.some((part) => loc.includes(part)) };
 };
 
 const getPopularityScore = (event) => {
@@ -226,7 +231,8 @@ export const calculateRecommendationScore = (
     "Similar to events in your activity history",
   );
 
-  const localTrending = eventMatchesArea(event, interactionProfile.location);
+  const matchesArea = createLocationMatcher(interactionProfile.location);
+  const localTrending = matchesArea(normalizeText(event?.location));
   if (localTrending) {
     addScore("Trending near you", Math.min(getPopularityScore(event) + 6, 15), "Popular in your area");
   } else if (event.trending || getPopularityScore(event) >= 8) {
@@ -242,15 +248,17 @@ export const calculateRecommendationScore = (
   };
 };
 
-export const getTrendingEventsForArea = (events = [], location = "", limit = 4) =>
-  [...events]
-    .filter((event) => eventMatchesArea(event, location) || event.eventMode === "online")
+export const getTrendingEventsForArea = (events = [], location = "", limit = 4) => {
+  const matchesArea = createLocationMatcher(location);
+  return [...events]
+    .filter((event) => matchesArea(normalizeText(event?.location)) || event.eventMode === "online")
     .map((event) => ({
       ...event,
       trendingScore: Math.round(getPopularityScore(event) * 10),
     }))
     .sort((a, b) => b.trendingScore - a.trendingScore)
     .slice(0, limit);
+};
 
 export const buildPersonalizedRecommendations = ({
   events = [],
