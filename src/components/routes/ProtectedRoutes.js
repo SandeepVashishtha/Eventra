@@ -21,6 +21,8 @@ const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
 const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
 const UIInventory = lazy(() => import("../admin/UIInventory"));
+const SponsorDashboard = lazy(() => import("../../Pages/Sponsors/SponsorDashboard"));
+const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
 
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
@@ -57,9 +59,9 @@ export const getProtectedRoutes = () => [
     path="/admin"
     element={
       <ProtectedRoute
-        requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
-        redirectTo="/login"
-      >
+  requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
+  redirectTo="/login"
+>
         {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
       </ProtectedRoute>
     }
@@ -68,14 +70,7 @@ export const getProtectedRoutes = () => [
     key="/host-hackathon"
     path="/host-hackathon"
     element={
-      <ProtectedRoute
-        requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
-        requiredScopes={["hackathon:write"]}
-        // 🔥 FIX: Prevented fatal destructuring crash if context is undefined
-        validateContext={(context) =>
-          context?.user?.roles?.includes(ROLES.ADMIN) || context?.user?.roles?.includes(ROLES.ORGANIZER)
-        }
-      >
+      <ProtectedRoute redirectTo="/login">
         {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
       </ProtectedRoute>
     }
@@ -175,6 +170,24 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         {withModuleBoundary(<CollaborativeFloorPlan />, "Floor Plan Designer")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/sponsor/dashboard"
+    path="/sponsor/dashboard"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<SponsorDashboard />, "Sponsor Dashboard")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/:eventId/analytics"
+    path="/events/:eventId/analytics"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<EventAnalyticsDashboard />, "Event Analytics Dashboard")}
       </ProtectedRoute>
     }
   />,

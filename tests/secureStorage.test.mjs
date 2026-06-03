@@ -100,6 +100,7 @@ Object.defineProperty(global, 'crypto', { value: new CryptoStub(), writable: tru
 
 // Dynamic import so shims take effect before module initialization
 const { syncSecureStorage } = await import('../src/utils/secureStorage.js');
+assert.ok(syncSecureStorage, 'secureStorage module imports without duplicate declaration errors');
 
 // ---------------------------------------------------------------------------
 // Helper: build a full session user object matching AuthContext's shape

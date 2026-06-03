@@ -56,7 +56,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             const seatsCountVal = updates.seatsCount;
             const freshAssigned = {};
             Object.keys(el.assignedAttendees).forEach((k) => {
-              if (parseInt(k) < seatsCountVal) {
+              if (parseInt(k, 10) < seatsCountVal) {
                 freshAssigned[k] = el.assignedAttendees[k];
               }
             });

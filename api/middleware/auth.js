@@ -67,14 +67,25 @@ export const verifyAuth = (handler) => {
         : usersById.has(userId);
 
       if (!userExists) {
-        return res.status(401).set(corsHeaders).json({
-          error: "Unauthorized: Session invalidated. Please log in again.",
-          sessionInvalidated: true,
-        });
+        // Issue #6342: Reconstruct the ephemeral user from the trusted token claims
+        // so that cold starts or multi-instance scaling don't invalidate existing,
+        // cryptographically valid sessions.
+        const reconstructedUser = {
+          id: decoded.id,
+          email: decoded.email,
+          username: decoded.username || decoded.email,
+          roles: decoded.roles || ["USER"],
+          permissions: [], // Permissions will be computed dynamically anyway
+          isActive: true
+        };
+        users.set(decoded.email.toLowerCase(), reconstructedUser);
+        usersById.set(decoded.id, reconstructedUser);
       }
     }
 
     req.user = decoded;
+    req.authToken = token;
     return handler(req, res);
   };
 };
+

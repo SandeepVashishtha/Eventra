@@ -63,7 +63,7 @@ async function handler(req, res) {
     const attendeeUser = usersById.get(decodedToken.userId) || {};
     reg = {
       registrationId,
-      eventId: parseInt(eventId),
+      eventId: parseInt(decodedToken.eventId),
       userId: decodedToken.userId || "unknown",
       userName: attendeeUser.fullName || `${attendeeUser.firstName || ""} ${attendeeUser.lastName || ""}`.trim() || "Attendee",
       email: attendeeUser.email || "guest@eventra.com",
@@ -113,6 +113,7 @@ async function handler(req, res) {
       status: "Duplicate Attempt"
     };
     scanLogs.push(duplicateLog);
+    if (scanLogs.length > 10000) scanLogs.shift();
 
     return corsResponse(req, res, 200, {
       valid: true,

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { ENV } from "./env";
 import { syncServerTimeFromHeader } from "../utils/timeSync";
+import { getCSRFToken } from "../utils/csrfToken";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -202,9 +203,15 @@ API.interceptors.request.use((config) => {
   if (isDev) {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
-  
+
   const method = config.method?.toUpperCase();
-  
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    const token = getCSRFToken();
+    if (token) {
+      config.headers["X-CSRF-Token"] = token;
+    }
+  }
+
   return config;
 });
 
