@@ -1,5 +1,5 @@
 export function getRelativeTime(dateInput) {
-  if (!dateInput) return null;
+  if (!dateInput || typeof dateInput === 'number') return null;
   const now = new Date();
   const date = new Date(dateInput);
 
@@ -19,7 +19,12 @@ export function getRelativeTime(dateInput) {
       return `${Math.abs(diffHour)} hour${Math.abs(diffHour) !== 1 ? "s" : ""} ago`;
     if (Math.abs(diffDay) === 1) return "Yesterday";
     if (Math.abs(diffDay) < 30) return `${Math.abs(diffDay)} days ago`;
-    return null;
+    return new Date(dateInput).toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   }
 
   if (diffSec < 60) return "Starting soon";
@@ -52,3 +57,17 @@ export function getSmartDateLabel(dateInput, timeInput = "") {
 }
 
 // RELIABILITY ENHANCEMENT: Added automated Jest unit test coverage for past/future date offsets and singular/plural formats.
+
+export function isPast(dateInput) {
+  if (!dateInput) return false;
+  const parsed = new Date(dateInput);
+  if (isNaN(parsed.getTime())) return false;
+  return parsed.getTime() < Date.now();
+}
+
+export function isFuture(dateInput) {
+  if (!dateInput) return false;
+  const parsed = new Date(dateInput);
+  if (isNaN(parsed.getTime())) return false;
+  return parsed.getTime() > Date.now();
+}
