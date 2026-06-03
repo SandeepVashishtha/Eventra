@@ -121,6 +121,7 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
+  const { isLoading } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
@@ -248,7 +249,7 @@ const EventsPage = () => {
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
-    if (!listing.isLoading && routeSearchQuery) {
+    if (!isLoading && routeSearchQuery) {
       setTimeout(() => {
         cardSectionRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -256,7 +257,7 @@ const EventsPage = () => {
         });
       }, 100);
     }
-  }, [listing.isLoading, routeSearchQuery]);
+  }, [isLoading, routeSearchQuery]);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -328,7 +329,7 @@ const EventsPage = () => {
 
         <SectionErrorBoundary label="Events">
      {renderCardSection(
-  listing.isLoading,
+  isLoading,
   listing.loadError,
   listing.fetchEvents,
   listing.paginatedEvents,
