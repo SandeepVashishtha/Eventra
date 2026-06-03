@@ -1,4 +1,6 @@
- /**
+import React from "react";
+
+/**
  * A theme-aware loading spinner component.
  * @param {{
  * text?: string,
@@ -37,4 +39,4 @@ const Loading = ({
   );
 };
 
-export default Loading;
+export default React.memo(Loading);

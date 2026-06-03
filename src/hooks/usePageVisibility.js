@@ -16,12 +16,12 @@ import { useState, useEffect } from "react";
  *
  * @returns {boolean} Whether the page is currently visible
  */
-const usePageVisibility = () => {
-  const getVisibility = () => {
-    if (typeof document === "undefined") return true;
-    return document.visibilityState !== "hidden";
-  };
+const getVisibility = () => {
+  if (typeof document === "undefined") return true;
+  return document.visibilityState !== "hidden";
+};
 
+const usePageVisibility = () => {
   const [isVisible, setIsVisible] = useState(getVisibility);
 
   useEffect(() => {
