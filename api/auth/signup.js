@@ -304,6 +304,4 @@ async function handler(req, res) {
 
 export default handler;
 
-export { users };
-
-export { usersById, usersByUsername };
+export { users, usersById, usersByUsername };
