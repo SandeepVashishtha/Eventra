@@ -168,15 +168,27 @@ async function handler(req, res) {
 
   try {
     // -----------------------------------------------------------------------
-    // Extract token from Authorization header (req.user populated by verifyAuth)
+    // Extract token from req.authToken (populated by verifyAuth middleware)
+    // Falls back to Authorization header extraction for direct API callers.
     // -----------------------------------------------------------------------
 
-    const authHeader = req.headers?.authorization || req.headers?.Authorization;
-    const token = extractToken(authHeader);
+    const token = req.authToken || (() => {
+      const authHeader = req.headers?.authorization || req.headers?.Authorization;
+      return extractToken(authHeader);
+    })();
 
     if (!token) {
       return corsResponse(req, res, 401, { 
         error: "Authentication required. No token provided." 
+      });
+    }
+
+    // Validate that the token matches the authenticated user (defense-in-depth)
+    const decoded = jwt.verify(token, getJwtSecret());
+
+    if (decoded.id !== req.user.id || decoded.email !== req.user.email) {
+      return corsResponse(req, res, 401, {
+        error: "Token does not match authenticated session.",
       });
     }
 
