@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { X, Download, ShieldCheck, Calendar, MapPin, Clock, User, Mail, Award, Loader2, RefreshCw, FileText, Sparkles, Map } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -8,6 +8,7 @@ import "./EventTicket.css";
 import { useMyEvents } from "../../context/MyEventsContext";
 import SpatialSeatSelector from "../events/SpatialSeatSelector";
 import { AnimatePresence } from "framer-motion";
+import { apiUtils } from "../../config/api";
 
 const EventTicket = ({ event, user, onClose }) => {
   const ticketRef = useRef(null);
@@ -21,6 +22,10 @@ const EventTicket = ({ event, user, onClose }) => {
   const registration = myEvents.find((r) => r.eventId === event.id);
   const selectedSeat = registration?.formData?.selectedSeat;
 
+  const [qrToken, setQrToken] = useState(registration?.qrToken || "");
+  const [loadingToken, setLoadingToken] = useState(false);
+  const [tokenError, setTokenError] = useState(false);
+
   // Generate a mock ticket serial code based on event and user details
   const generateSerial = () => {
     const eventPart = (event?.title || "EVT").slice(0, 3).toUpperCase();
@@ -29,7 +34,34 @@ const EventTicket = ({ event, user, onClose }) => {
     return `${eventPart}-${userPart}-${randomPart}`;
   };
 
-  const serialNumber = useRef(generateSerial());
+  const [serialNumber] = useState(() => registration?.registrationId || generateSerial());
+
+  useEffect(() => {
+    if (qrToken) return;
+
+    const regId = registration?.registrationId || serialNumber;
+    setLoadingToken(true);
+    setTokenError(false);
+
+    apiUtils.post("/api/tickets/token", {
+      registrationId: regId,
+      eventId: event.id
+    })
+    .then((res) => {
+      if (res.data?.token) {
+        setQrToken(res.data.token);
+      } else {
+        setTokenError(true);
+      }
+    })
+    .catch((err) => {
+      console.error("[EventTicket] Failed to load secure ticket token:", err);
+      setTokenError(true);
+    })
+    .finally(() => {
+      setLoadingToken(false);
+    });
+  }, [registration, event.id, qrToken, serialNumber]);
 
   // Dynamic category themes
   const getThemeColors = () => {
@@ -215,7 +247,7 @@ const EventTicket = ({ event, user, onClose }) => {
               />
 
               {/* Header Banner */}
-              <div className={`ud-ticket-header bg-gradient-to-r ${theme.primary}`}>
+              <div className={`ud-ticket-header bg-linear-to-r ${theme.primary}`}>
                 {event.image && (
                   <img
                     src={event.image}
@@ -331,25 +363,27 @@ const EventTicket = ({ event, user, onClose }) => {
               {/* QR Stub Footer */}
               <div className="ud-ticket-footer">
                 <div className="ud-ticket-qr-wrap">
-                  <div className="ud-ticket-qr-border">
-                    <QRCode 
-                      value={JSON.stringify({
-                        ticketId: serialNumber.current,
-                        eventId: event.id,
-                        eventName: event.title,
-                        userId: user?.id || "anonymous",
-                        userName: user?.fullName || "Guest"
-                      })} 
-                      size={90} 
-                      bgColor="transparent" 
-                      fgColor="#ffffff"
-                      className="ud-ticket-qr"
-                    />
+                  <div className="ud-ticket-qr-border flex items-center justify-center bg-zinc-950/20 dark:bg-white/5 rounded-xl border border-white/10" style={{ width: 110, height: 110 }}>
+                    {loadingToken ? (
+                      <Loader2 className="w-6 h-6 animate-spin text-white opacity-70" />
+                    ) : tokenError ? (
+                      <div className="text-[10px] text-rose-500 dark:text-rose-400 font-bold text-center px-1">
+                        Secure QR Unavailable
+                      </div>
+                    ) : (
+                      <QRCode 
+                        value={qrToken || registration?.qrToken || registration?.registrationId || serialNumber} 
+                        size={90} 
+                        bgColor="transparent" 
+                        fgColor="#ffffff"
+                        className="ud-ticket-qr"
+                      />
+                    )}
                   </div>
                 </div>
                 
                 <div className="ud-ticket-stub-details">
-                  <div className="ud-ticket-serial">{serialNumber.current}</div>
+                  <div className="ud-ticket-serial">{serialNumber}</div>
                   <div className="ud-ticket-status">
                     <ShieldCheck size={14} className="text-emerald-400 animate-pulse" />
                     <span>SECURE VALID PASS</span>
@@ -360,7 +394,7 @@ const EventTicket = ({ event, user, onClose }) => {
 
             {/* Back of Card (Schedule, Guidelines, Interactive Map) */}
             <div className="ud-ticket-card-face ud-ticket-card-back">
-              <div className={`ud-ticket-back-header bg-gradient-to-r ${theme.primary}`}>
+              <div className={`ud-ticket-back-header bg-linear-to-r ${theme.primary}`}>
                 <div className="ud-ticket-logo-overlay">
                   <span className="ud-ticket-logo-dot" />
                   <span className="ud-ticket-logo-text">Eventra Info</span>
@@ -403,7 +437,7 @@ const EventTicket = ({ event, user, onClose }) => {
                 </div>
 
                 <div className="ud-ticket-back-footer mt-auto pt-4 border-t border-white/5 flex flex-col items-center gap-2">
-                  <div className="ud-ticket-serial text-center text-xs opacity-75">{serialNumber.current}</div>
+                  <div className="ud-ticket-serial text-center text-xs opacity-75">{serialNumber}</div>
                   <div className="text-[10px] text-zinc-500 uppercase tracking-widest text-center">
                     Powered by Eventra Engine
                   </div>
