@@ -10,11 +10,30 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
 
   const [openGroup, setOpenGroup] = useState(null);
 
-  const handlePrefetch = (href) => {
-    if (href === "/events") prefetchRoute(() => import("../../Pages/Events/ExploreEvents"), "explore");
-    if (href === "/saved-events") prefetchRoute(() => import("../../Pages/SavedEventsPage"), "saved");
+  const handleNavbarLinkClick = (href, e) => {
+    if (href === "/events") {
+      try {
+        window.sessionStorage.removeItem("eventra:event-filters:v1");
+      } catch (err) {
+        // Ignored
+      }
+    } else if (href === "/hackathons") {
+      try {
+        window.sessionStorage.removeItem("eventra:hackathon-filters:v1");
+      } catch (err) {
+        // Ignored
+      }
+    }
+    if (onClick) {
+      onClick(e);
+    }
   };
 
+  const handlePrefetch = (href) => {
+    // Note: ExploreEvents and SavedEventsPage imports commented out - pages not yet created
+    // if (href === "/events") prefetchRoute(() => import("../../Pages/Events/ExploreEvents"), "explore");
+    // if (href === "/saved-events") prefetchRoute(() => import("../../Pages/SavedEventsPage"), "saved");
+  };
 
   useEffect(() => {
     setOpenGroup(null);
@@ -53,7 +72,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             ? "text-text border-primary font-semibold bg-bg-secondary"
             : "text-text-light hover:text-text border-transparent hover:bg-bg"
         }`
-      : `flex gap-1.5 items-center text-[12px] xl:text-[13px] font-medium uppercase tracking-[0.03em] transition-all duration-200 px-1.5 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
+      : `flex gap-1.5 items-center text-[12px] lg:text-[13px] font-medium uppercase tracking-[0.03em] transition-all duration-200 px-1.5 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
           active
             ? "text-text border-primary"
             : "text-text-light hover:text-text border-transparent hover:border-border"
@@ -66,7 +85,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
-          : "items-center gap-0.5 xl:gap-1 mx-0.5 xl:mx-1 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
+          : "items-center gap-0.5 lg:gap-1 mx-0.5 lg:mx-1 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
       }`}
       aria-label={vertical ? "Mobile primary links" : "Primary links"}
     >
@@ -83,12 +102,12 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
               key={item.name}
               className={`relative group/nav flex items-center shrink-0 ${
                 vertical ? "w-full flex-col items-start" : "flex-none"
-              } ${!vertical && secondaryItemNames.includes(item.name) ? "hidden xl:flex" : ""}`}
+              } ${!vertical && secondaryItemNames.includes(item.name) ? "hidden lg:flex" : ""}`}
             >
               <div className="flex w-full items-center gap-0.5">
                 <NavLink
                   to={item.href}
-                  onClick={onClick}
+                  onClick={(e) => handleNavbarLinkClick(item.href, e)}
                   aria-haspopup={!vertical ? "menu" : undefined}
                   aria-expanded={!vertical ? isOpen : undefined}
                   aria-controls={
@@ -173,13 +192,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                   <NavLink
                     key={sub.name}
                     to={sub.href}
-                    onClick={onClick}
+                    onClick={(e) => handleNavbarLinkClick(sub.href, e)}
                     role={!vertical ? "menuitem" : undefined}
                     className={({ isActive }) =>
-                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
+                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
                         isActive
-                          ? "bg-gray-50 dark:bg-gray-700/80 text-black dark:text-white font-semibold"
-                          : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white hover:bg-gray-50/80 dark:hover:bg-gray-700/50"
+                          ? "bg-bg-secondary text-text font-semibold"
+                          : "text-text-light hover:text-text hover:bg-bg"
                       }`
                     }
                   >
@@ -196,7 +215,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           <NavLink
             key={item.name}
             to={item.href}
-            onClick={onClick}
+            onClick={(e) => handleNavbarLinkClick(item.href, e)}
             onMouseEnter={() => handlePrefetch(item.href)}
             className={({ isActive }) =>
               getNavLinkClasses(isActive, secondaryItemNames.includes(item.name))
@@ -209,8 +228,6 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           </NavLink>
         );
       })}
-
-
     </nav>
   );
 };

@@ -1,3 +1,5 @@
+import { eventOwnership } from "../db/store.js";
+
 const ROLE_PERMISSIONS = {
   SUPER_ADMIN: [
     "events:view",
@@ -101,4 +103,26 @@ const getPermissionsForRoles = (roles) => {
   return Array.from(permissionsSet);
 };
 
-export { ROLE_PERMISSIONS, getPermissionsForRoles };
+const isAuthorizedForEvent = (user, eventId) => {
+  if (!user || !user.roles) return false;
+  
+  const roles = user.roles.map((r) => r.toUpperCase());
+  if (roles.includes("SUPER_ADMIN") || roles.includes("ADMIN")) return true;
+
+  if (roles.includes("ORGANIZER") || roles.includes("EVENT_MANAGER")) {
+    const eventIdStr = String(eventId);
+    const ownerId = eventOwnership.get(eventIdStr);
+
+    if (!ownerId) {
+      // Lazy initialization for mocks: first organizer to access claims ownership
+      eventOwnership.set(eventIdStr, user.id);
+      return true;
+    }
+
+    return ownerId === user.id;
+  }
+
+  return false;
+};
+
+export { ROLE_PERMISSIONS, getPermissionsForRoles, isAuthorizedForEvent };
