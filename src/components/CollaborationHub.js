@@ -41,7 +41,12 @@ const CollaborationHub = () => {
   };
 
   const [collaborationOpportunities, setCollaborationOpportunities] = useState(() => {
-    const saved = localStorage.getItem('eventra_collaboration_opportunities');
+    let saved;
+    try {
+      saved = localStorage.getItem('eventra_collaboration_opportunities');
+    } catch {
+      // localStorage unavailable (private browsing, quota exceeded, etc.)
+    }
     if (saved) {
       try {
         return JSON.parse(saved);
