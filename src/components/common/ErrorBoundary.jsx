@@ -71,7 +71,7 @@ function saveAppStateSnapshot() {
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
           if (k && ALLOWED.some((safe) => k.startsWith(safe))) {
-            snap[k] = localStorage.getItem(k)?.slice(0, 100);
+            try { snap[k] = localStorage.getItem(k)?.slice(0, 100); } catch {}
           }
         }
         return snap;
@@ -129,7 +129,7 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (k && !k.includes("token") && !k.includes("password")) {
-          snap[k] = localStorage.getItem(k)?.slice(0, 200);
+          try { snap[k] = localStorage.getItem(k)?.slice(0, 200); } catch {}
         }
       }
       return JSON.stringify(snap, null, 2);
@@ -144,7 +144,7 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
       for (let i = 0; i < sessionStorage.length; i++) {
         const k = sessionStorage.key(i);
         if (k && !k.includes("token") && !k.includes("password")) {
-          snap[k] = sessionStorage.getItem(k)?.slice(0, 200);
+          try { snap[k] = sessionStorage.getItem(k)?.slice(0, 200); } catch {}
         }
       }
       return JSON.stringify(snap, null, 2);
@@ -319,7 +319,7 @@ class ErrorBoundary extends React.Component {
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
           if (k && !k.includes("token") && !k.includes("password")) {
-            snap[k] = localStorage.getItem(k)?.slice(0, 200);
+            try { snap[k] = localStorage.getItem(k)?.slice(0, 200); } catch {}
           }
         }
         return JSON.stringify(snap, null, 2);
