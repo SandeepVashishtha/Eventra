@@ -16,11 +16,19 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 5;
 const ipRateLimitMap = new Map();
 
+const MAX_RATE_LIMIT_ENTRIES = 5000;
+
 const isRateLimited = (ip) => {
   const now = Date.now();
   const entry = ipRateLimitMap.get(ip);
 
   if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    if (!entry && ipRateLimitMap.size >= MAX_RATE_LIMIT_ENTRIES) {
+      const oldestKey = ipRateLimitMap.keys().next().value;
+      if (oldestKey !== undefined) {
+        ipRateLimitMap.delete(oldestKey);
+      }
+    }
     ipRateLimitMap.set(ip, { count: 1, windowStart: now });
     return false;
   }

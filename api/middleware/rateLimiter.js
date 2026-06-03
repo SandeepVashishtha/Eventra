@@ -45,6 +45,11 @@ export const createRateLimiter = ({
   max = 5,
   message = DEFAULT_LIMIT_MESSAGE,
 } = {}) => {
+  // Sliding window: stores an array of timestamps per key.
+  // On each request, expired entries are filtered out, then the remaining
+  // count is compared against the limit. This eliminates the boundary burst
+  // issue inherent to fixed-window (where 2*max requests could pass in
+  // consecutive windows around the boundary).
   const store = new Map();
   let lastEvictionAt = 0;
 
@@ -55,6 +60,23 @@ export const createRateLimiter = ({
     for (const [key, entry] of store.entries()) {
       if (now - entry.resetAt >= 0) {
         store.delete(key);
+      }
+    }
+  };
+
+  // Periodic cleanup to prevent memory leaks from stale keys
+  let lastCleanupAt = 0;
+  const evictStale = () => {
+    const now = Date.now();
+    if (now - lastCleanupAt < windowMs) return;
+    lastCleanupAt = now;
+    const cutoff = now - windowMs;
+    for (const [key, timestamps] of store.entries()) {
+      const valid = timestamps.filter((t) => t > cutoff);
+      if (valid.length === 0) {
+        store.delete(key);
+      } else {
+        store.set(key, valid);
       }
     }
   };
@@ -72,27 +94,34 @@ export const createRateLimiter = ({
 
       evictStale();
       const now = Date.now();
-      const existing = store.get(ip);
-      const bucket = existing && existing.resetAt > now
-        ? { count: existing.count + 1, resetAt: existing.resetAt }
-        : { count: 1, resetAt: now + windowMs };
+      const cutoff = now - windowMs;
+      const existing = store.get(ip) || [];
+      const validTimestamps = existing.filter((t) => t > cutoff);
 
-      store.set(ip, bucket);
-
-      const remaining = Math.max(max - bucket.count, 0);
-      const setHeader = resolveHeaderSetter(res);
-      setHeader("RateLimit-Limit", String(max));
-      setHeader("RateLimit-Remaining", String(remaining));
-      setHeader("RateLimit-Reset", String(Math.ceil((bucket.resetAt - now) / 1000)));
-
-      if (bucket.count > max) {
-        const body = {
+      if (validTimestamps.length >= max) {
+        evictStale();
+        const resetEpoch = Math.ceil((validTimestamps[0] + windowMs) / 1000);
+        const remaining = 0;
+        const setHeader = resolveHeaderSetter(res);
+        setHeader("RateLimit-Limit", String(max));
+        setHeader("RateLimit-Remaining", String(remaining));
+        setHeader("RateLimit-Reset", String(resetEpoch));
+        return res.status(429).json({
           success: false,
           message,
           error: message,
-        };
-        return res.status(429).json(body);
+        });
       }
+
+      validTimestamps.push(now);
+      store.set(ip, validTimestamps);
+
+      const remaining = max - validTimestamps.length;
+      const resetEpoch = Math.ceil((validTimestamps[0] + windowMs) / 1000);
+      const setHeader = resolveHeaderSetter(res);
+      setHeader("RateLimit-Limit", String(max));
+      setHeader("RateLimit-Remaining", String(remaining));
+      setHeader("RateLimit-Reset", String(resetEpoch));
 
       return handler(req, res);
     };

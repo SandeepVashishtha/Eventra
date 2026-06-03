@@ -52,7 +52,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "number" ? parseInt(value) || 0 : value,
+      [name]: type === "number" ? parseInt(value, 10) || 0 : value,
     }));
   };
 

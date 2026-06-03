@@ -4,6 +4,7 @@ import { registrations, scanLogs } from "../db/store.js";
 import { usersById } from "../auth/signup.js";
 import { buildCorsHeaders, corsResponse } from "../auth/cors.js";
 import { getJwtSecret } from "../auth/jwt-config.js";
+import { isAuthorizedForEvent } from "../lib/permissions.js";
 
 async function handler(req, res) {
   // Handle CORS preflight
@@ -30,6 +31,11 @@ async function handler(req, res) {
 
   if (!ticketId || !eventId) {
     return corsResponse(req, res, 400, { error: "Missing ticketId or eventId in request body" });
+  }
+
+  // Issue #6343: Verify that this organizer actually owns this eventId
+  if (!isAuthorizedForEvent(user, eventId)) {
+    return corsResponse(req, res, 403, { error: "Forbidden: You are not authorized to manage this event" });
   }
 
   let registrationId = ticketId;
@@ -94,6 +100,7 @@ async function handler(req, res) {
       status: "Duplicate Attempt"
     };
     scanLogs.push(duplicateLog);
+    if (scanLogs.length > 10000) scanLogs.shift();
 
     return corsResponse(req, res, 409, { error: "Attendee is already checked in" });
   }
@@ -116,6 +123,7 @@ async function handler(req, res) {
     status: "Checked In"
   };
   scanLogs.push(checkInLog);
+  if (scanLogs.length > 10000) scanLogs.shift();
 
   return corsResponse(req, res, 200, {
     success: true,

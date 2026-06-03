@@ -26,7 +26,6 @@ export const useRoutePrefetch = (config = {}) => {
     // Define prefetch strategies based on current path
     if (path === "/") {
       // On home, prefetch major entry points
-      // Note: ExploreEvents and Auth pages may not exist yet
       prefetch(() => import("../Pages/Events/EventsPage"), "events");
     } else if (path === "/explore" || path === "/events") {
       // On explore, prefetch event details and registration

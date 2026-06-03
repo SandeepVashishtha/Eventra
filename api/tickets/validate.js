@@ -113,6 +113,7 @@ async function handler(req, res) {
       status: "Duplicate Attempt"
     };
     scanLogs.push(duplicateLog);
+    if (scanLogs.length > 10000) scanLogs.shift();
 
     return corsResponse(req, res, 200, {
       valid: true,
