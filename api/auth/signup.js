@@ -2,6 +2,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 
+import fs from "fs";
+import path from "path";
+import os from "os";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
 
@@ -33,6 +36,37 @@ if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
 const users = new Map();
 const usersById = new Map();
 const usersByUsername = new Map();
+
+const DB_PATH = path.join(os.tmpdir(), "eventra_users_db.json");
+
+const loadDatabaseFallback = () => {
+  try {
+    if (fs.existsSync(DB_PATH)) {
+      const data = JSON.parse(fs.readFileSync(DB_PATH, "utf-8"));
+      for (const user of data) {
+        users.set(user.email.toLowerCase(), user);
+        usersById.set(user.id, user);
+        if (user.username) {
+          usersByUsername.set(user.username.toLowerCase(), user);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load database fallback:", err);
+  }
+};
+
+const saveDatabaseFallback = () => {
+  try {
+    const data = Array.from(users.values());
+    fs.writeFileSync(DB_PATH, JSON.stringify(data));
+  } catch (err) {
+    console.error("Failed to save database fallback:", err);
+  }
+};
+
+// Hydrate on module load
+loadDatabaseFallback();
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
@@ -233,14 +267,15 @@ async function handler(req, res) {
       updatedAt: createdAt,
       emailVerified: false,
       isActive: true,
-    };
-
-    // Store user (in production, save to database)
+    };    // Store user (in production, save to database)
     users.set(normalizedEmail, newUser);
     usersById.set(userId, newUser);
     if (newUser.username) {
       usersByUsername.set(newUser.username.toLowerCase(), newUser);
     }
+    
+    // Persist to local fallback to survive cold starts
+    saveDatabaseFallback();
 
     // -----------------------------------------------------------------------
     // Generate JWT token
