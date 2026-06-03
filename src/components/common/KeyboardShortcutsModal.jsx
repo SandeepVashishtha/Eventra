@@ -175,7 +175,7 @@ const ShortcutRow = ({ action, keys, isPressed }) => (
 );
 
 const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
-  const trapRef = useFocusTrap(isOpen);
+  const { containerRef: trapRef } = useFocusTrap(isOpen, onClose);
   const { isTopmost } = useModalStack(isOpen);
   const [pressedKeys, setPressedKeys] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
