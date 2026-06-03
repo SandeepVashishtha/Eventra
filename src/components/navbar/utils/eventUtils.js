@@ -1,15 +1,13 @@
 export const normalizeStatusString = (status) => {
-  if (!status) return null;
+  if (!status || typeof status !== 'string') return null;
 
-  const normalized = status.toLowerCase();
+  const normalized = status.trim().toLowerCase();
 
   const statusMap = {
     upcoming: "upcoming",
-
     live: "live",
     ongoing: "live",
     "in progress": "live",
-
     completed: "completed",
     ended: "completed",
     past: "completed",
@@ -20,9 +18,17 @@ export const normalizeStatusString = (status) => {
 };
 
 export const computeEventStatus = (event) => {
-  const now = new Date();
+  if (!event || !event.date) {
+    return "upcoming";
+  }
 
+  const now = new Date();
   const eventDate = new Date(event.date);
+
+  // Prevent silent logic failures on malformed backend dates
+  if (isNaN(eventDate.getTime())) {
+    return "upcoming"; 
+  }
 
   // Treat the full event day as active
   const endOfDay = new Date(eventDate);
