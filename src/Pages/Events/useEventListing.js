@@ -3,11 +3,21 @@ import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
+import {
+  applyAdvancedFilters,
+  getDateRange,
+  getDefaultFilters,
+  getPriceStats,
+  normalizeAdvancedFilters,
+} from "../../utils/advancedFilterUtils";
+import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
+import { logger } from "../../utils/logger";
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
 const SORT_MAPPING = {
   Newest: "date,desc",
+  Upcoming: "date,asc",
   Oldest: "date,asc",
   "Title A-Z": "title,asc",
   "Title Z-A": "title,desc",
@@ -23,6 +33,7 @@ const normalizeEvent = (event) => ({
 const useEventListing = () => {
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
@@ -33,10 +44,7 @@ const useEventListing = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
 
-  const [advancedFilters, setAdvancedFilters] = useState({
-    category: "",
-    status: "",
-  });
+  const [advancedFilters, setAdvancedFiltersState] = useState(getDefaultFilters);
 
   const [pagination, setPagination] = useState({
     totalPages: 1,
@@ -62,12 +70,16 @@ const useEventListing = () => {
       params.append("status", filterType.toUpperCase());
     }
 
-    if (advancedFilters?.category) {
-      params.append("category", advancedFilters.category);
+    if (advancedFilters?.categories?.length) {
+      advancedFilters.categories.forEach((category) => {
+        params.append("category", category);
+      });
     }
 
-    if (advancedFilters?.status) {
-      params.append("status", advancedFilters.status.toUpperCase());
+    if (advancedFilters?.statuses?.length) {
+      advancedFilters.statuses.forEach((status) => {
+        params.append("status", status.toUpperCase());
+      });
     }
 
     const sortValue = SORT_MAPPING[sortType];
@@ -114,8 +126,6 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-      console.error("Failed to fetch events:", error);
-
       if (process.env.NODE_ENV === "development") {
         const normalizedMockEvents = mockEvents.map(normalizeEvent);
         setEvents(normalizedMockEvents);
@@ -176,23 +186,102 @@ const useEventListing = () => {
     setCurrentPage(page);
   };
 
-  // fix: filter past events from Upcoming Events section (fixes #3343)
-  // Previously this returned all events with no date filtering applied.
-  const filteredEvents = useMemo(() => {
-    const now = new Date();
-    return events.filter((event) => {
-      const eventDate = new Date(event.date || event.startDate);
-      if (filterType === "upcoming") {
-        return eventDate >= now;
-      }
-      if (filterType === "past") {
-        return eventDate < now;
-      }
-      return true; // "all"
-    });
-  }, [events, filterType]);
+  const setAdvancedFilters = useCallback((filters) => {
+    setAdvancedFiltersState(normalizeAdvancedFilters(filters));
+  }, []);
 
-  const paginatedEvents = useMemo(() => filteredEvents, [filteredEvents]);
+  const priceStats = useMemo(() => getPriceStats(events), [events]);
+  const dateRangeStats = useMemo(() => getDateRange(events), [events]);
+
+  const filteredEvents = useMemo(() => {
+    const query = debouncedSearchQuery.trim() ? debouncedSearchQuery.toLowerCase().trim() : "";
+    const target = categoryFilter && categoryFilter !== "all" ? categoryFilter.toLowerCase() : null;
+
+    // Single-pass filter: apply search, status, and category in one traversal,
+    // then pass the result through advanced filters. Eliminates 3 intermediate arrays.
+    const preFiltered = events.filter((event) => {
+      // 1. Search Bar
+      if (query) {
+        const titleMatch = event.title?.toLowerCase().includes(query) ?? false;
+        const descMatch = event.description?.toLowerCase().includes(query) ?? false;
+        if (!titleMatch && !descMatch) return false;
+      }
+    // 1. Search (typo-tolerant fuzzy search with ranking from PR #5461)
+    let filtered = debouncedSearchQuery.trim()
+      ? getRouteSearchResults(
+          events,
+          debouncedSearchQuery,
+          [
+            { name: "title", weight: 0.8 },
+            { name: "category", weight: 0.5 },
+            { name: "tags", weight: 0.4 },
+            { name: "location.name", weight: 0.3 },
+            { name: "location.city", weight: 0.3 },
+            { name: "description", weight: 0.1 },
+          ]
+        )
+      : [...events];
+
+      // 2. Status Timing Filter
+      const status = getEventStatus(event);
+      if (filterType === "live" && status !== "live") return false;
+      if (filterType === "upcoming" && status !== "upcoming") return false;
+      if (filterType === "past" && status !== "past" && status !== "ended") return false;
+
+      // 3. Category Filter
+      if (target) {
+        const cat = event.category?.toLowerCase() || "";
+        const type = event.type?.toLowerCase() || "";
+
+        if (target === "hackathon" || target === "hackathons") {
+          if (type !== "hackathon" && !cat.includes("hackathon")) return false;
+        } else if (target === "tech talks" || target === "tech-talks" || target === "conference") {
+          const isMatch = type === "conference" || type === "summit" ||
+            cat.includes("tech") || cat.includes("conference") || cat.includes("summit");
+          if (!isMatch) return false;
+        } else if (target === "cultural" || target === "networking" || target === "cultural & networking") {
+          const isMatch = cat.includes("networking") || cat.includes("cultural") || cat.includes("community");
+          if (!isMatch) return false;
+        } else {
+          const normalizedTarget = target.replace(/[^a-z0-9]+/g, "");
+          const normalizedCat = cat.replace(/[^a-z0-9]+/g, "");
+          const normalizedType = type.replace(/[^a-z0-9]+/g, "");
+          const isMatch = normalizedCat.includes(normalizedTarget) ||
+            normalizedType.includes(normalizedTarget) ||
+            normalizedTarget.includes(normalizedCat) ||
+            normalizedTarget.includes(normalizedType);
+          if (!isMatch) return false;
+        }
+      }
+
+      return true;
+    });
+
+    // 4. Advanced Filters fallback
+    return applyAdvancedFilters(preFiltered, advancedFilters);
+  }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
+
+  const sortedEvents = useMemo(() => {
+    return [...filteredEvents].sort((a, b) => {
+      const dateA = new Date(a.date || a.startDate);
+      const dateB = new Date(b.date || b.startDate);
+
+      if (sortType === "Upcoming") {
+        return dateA - dateB; // Earliest first
+      }
+      // Default: Newest (Latest first)
+      return dateB - dateA;
+    });
+  }, [filteredEvents, sortType]);
+
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * eventsPerPage;
+    return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
+  }, [sortedEvents, currentPage, eventsPerPage]);
+
+  // Derive pagination totals based on the filtered dataset
+  const totalElements = pagination.totalPages > 1 ? pagination.totalElements : sortedEvents.length;
+  const totalPages = pagination.totalPages > 1 ? pagination.totalPages : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
 
   return {
     currentPage,
@@ -200,18 +289,22 @@ const useEventListing = () => {
     fetchEvents,
     filteredEvents,
     filterType,
+    categoryFilter,
     loadError,
     isLoading,
     paginatedEvents,
     searchQuery,
     sortType,
-    totalPages: pagination.totalPages,
-    totalElements: pagination.totalElements,
+    totalPages,
+    totalElements,
     viewMode,
     advancedFilters,
     isAdvancedFiltersOpen,
+    priceStats,
+    dateRangeStats,
     setEventsPerPage,
     setFilterType,
+    setCategoryFilter,
     setSafePage,
     setSearchQuery,
     setSortType,
