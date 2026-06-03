@@ -19,7 +19,12 @@ globalThis.localStorage = {
   }
 };
 
+globalThis.window = {
+  localStorage: globalThis.localStorage
+};
+
 import { saveDraft, getDraft, clearDraft } from "../src/utils/eventDraftUtils.js";
+
 
 // Test getDraft when empty
 assert.equal(getDraft(), null);
