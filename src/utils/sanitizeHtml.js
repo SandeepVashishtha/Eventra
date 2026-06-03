@@ -37,7 +37,16 @@ const PURIFY_CONFIG = {
   ALLOWED_TAGS,
   ALLOWED_ATTR,
   ALLOW_DATA_ATTR: false,
+  ADD_ATTR: ["target"],
 };
+
+// Force all links to open in a new tab securely
+DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+  if ("target" in node) {
+    node.setAttribute("target", "_blank");
+    node.setAttribute("rel", "noopener noreferrer");
+  }
+});
 
 /**
  * Sanitise untrusted HTML before rendering via dangerouslySetInnerHTML.
