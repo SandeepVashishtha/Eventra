@@ -1,3 +1,5 @@
+import { Trophy, Award, Star, Zap } from "lucide-react";
+
 /**
  * Pure utility functions for leaderboard data processing.
  *
@@ -16,7 +18,6 @@
  * test without mounting a React component.
  */
 
-import { FaTrophy, FaAward, FaStar, FaCode } from "react-icons/fa";
 
 // ─── Scoring constants ────────────────────────────────────────────────────────
 
@@ -61,6 +62,9 @@ export function normalizeLabel(label = "") {
  * @returns {number}
  */
 export function calculatePrPoints(labels) {
+  // 🔥 FIX: Prevent fatal TypeError crash if API omits the labels array
+  if (!Array.isArray(labels)) return DEFAULT_MERGED_PR_POINTS;
+
   const levelPoints = labels.reduce((total, label) => {
     const normalized = normalizeLabel(label);
     return total + (LABEL_POINTS[normalized] || 0);
@@ -79,10 +83,10 @@ export function calculatePrPoints(labels) {
 export function applyAchievementBonus(contributor) {
   for (const { minPrs, bonus } of ACHIEVEMENT_THRESHOLDS) {
     if (contributor.prs >= minPrs) {
-      contributor.points += bonus;
-      return;
+      return { ...contributor, points: contributor.points + bonus };
     }
   }
+  return contributor;
 }
 
 // ─── Filtering ────────────────────────────────────────────────────────────────
@@ -97,7 +101,16 @@ export function applyAchievementBonus(contributor) {
  * @returns {Array}
  */
 export function filterContributors(contributors, search, activeCategory) {
-  const q = search.trim().toLowerCase();
+  // 🔥 FIX: Prevent fatal TypeError crash if search is null/undefined
+  const q = (search || "").trim().toLowerCase();
+
+  // 🔥 FIX: Hoisted the threshold calculation OUTSIDE the filter loop.
+  // Previously, this math was executing on every single iteration of the filter, 
+  // causing a massive O(N) performance bottleneck on large contributor datasets.
+  let monthlyThreshold = 0;
+  if (activeCategory === "monthly" && contributors.length > 0) {
+    monthlyThreshold = contributors[Math.floor(contributors.length * 0.4)]?.points || 0;
+  }
 
   return contributors.filter((c) => {
     const matchSearch =
@@ -108,11 +121,7 @@ export function filterContributors(contributors, search, activeCategory) {
     if (!matchSearch) return false;
 
     if (activeCategory === "monthly") {
-      const threshold =
-        contributors.length > 0
-          ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
-          : 0;
-      return c.points >= threshold;
+      return c.points >= monthlyThreshold;
     }
 
     if (activeCategory === "mentors") {
@@ -198,45 +207,46 @@ export function computeLeaderboardStats(contributors) {
   let totalPoints = 0;
 
   for (const c of contributors) {
-    totalPRs    += c.prs;
-    totalPoints += c.points;
+    totalPRs    += (c.prs || 0);
+    totalPoints += (c.points || 0);
   }
 
   return {
     totalContributors: contributors.length,
-    flooredTotalPRs:    totalPRs,
-    flooredTotalPoints: totalPoints,
+    flooredTotalPRs: Math.floor(totalPRs),
+    flooredTotalPoints: Math.floor(totalPoints),
   };
 }
+
 export const getAchievementBadge = (rank) => {
   if (rank === 1) {
     return {
       label: "Diamond Tier",
       color: "from-sky-300 via-indigo-400 to-pink-300 text-indigo-950 border-indigo-300/40 shadow-[0_0_12px_rgba(99,102,241,0.4)]",
-      icon: FaTrophy
+      icon: Trophy,
+      description: "Rank 1 - Top contributor"
     };
   }
   if (rank === 2 || rank === 3) {
     return {
       label: "Platinum Tier",
       color: "from-teal-300 via-emerald-400 to-cyan-300 text-emerald-950 border-teal-300/40 shadow-[0_0_12px_rgba(20,184,166,0.3)]",
-      icon: FaAward
+      icon: Award,
+      description: "Rank 2-3 - Elite contributor"
     };
   }
   if (rank >= 4 && rank <= 10) {
     return {
       label: "Gold Tier",
       color: "from-yellow-300 via-amber-400 to-yellow-500 text-amber-950 border-yellow-300/40 shadow-[0_0_8px_rgba(234,179,8,0.25)]",
-      icon: FaStar
+      icon: Star,
+      description: "Rank 4-10 - Gold contributor"
     };
   }
   return {
-    label: "Silver Tier",
-    color: "from-slate-100 via-zinc-200 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/50 dark:border-slate-700/20",
-    icon: FaCode
+    label: "Bronze Tier",
+    color: "from-orange-200 via-orange-300 to-red-400 text-orange-950 border-orange-300/40 shadow-[0_0_6px_rgba(217,119,6,0.2)]",
+    icon: Zap,
+    description: "Rank 11+ - Contributor"
   };
-};
-
-export const calculatePointsMultiplier = (points, rate) => {
-  return points * (rate > 0 ? rate : 1.0);
 };

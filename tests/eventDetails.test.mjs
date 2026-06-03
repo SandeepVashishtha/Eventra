@@ -195,3 +195,5 @@ describe('EventDetails — API fetch logic unit tests', () => {
     const eventId = '999';
     const fallback = mockEvents.find((item) => String(item.id) === eventId);
     assert.strictEqual(fallback, undefined, 'Fallback must return undefined for unknown id');
+  });
+});
