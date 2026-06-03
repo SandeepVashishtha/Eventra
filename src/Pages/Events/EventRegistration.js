@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
@@ -20,8 +19,6 @@ import {
   Phone,
   User,
 } from "lucide-react";
-import { getGoogleCalendarUrl, getOutlookCalendarUrl } from "../../utils/calendarUrlUtils";
-import useEventRegistration from "../../hooks/useEventRegistration";
 import {
   isCapacityConflictError,
   isEventAtCapacity,
@@ -54,7 +51,6 @@ const EventRegistration = () => {
   const registrationPath = location.pathname;
 
   const [event, setEvent] = useState(null);
-  const [availability, setAvailability] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -75,54 +71,12 @@ const EventRegistration = () => {
   }), []);
 
   const {
-    event,
-    loading,
-    submitting,
-    registered,
-    isEventFull,
-    isPastEvent,
-    formData,
+    values: formData,
     errors,
     touched,
-    isFormValid,
+    isValid: isFormValid,
     handleChange,
     handleBlur,
-    showConflictModal,
-    conflictData,
-    handleSubmit,
-    handleConflictCancel,
-    handleConflictProceed,
-    handleSelectAlternative,
-    myEvents,
-  } = useEventRegistration();
-
-  const isHackathonPath = window.location.pathname.startsWith("/register");
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-      </div>
-    );
-  }
-
-  if (!event) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Event Not Found</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
-          The event you are looking for does not exist or has been removed.
-        </p>
-        <Link
-          to="/events"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Events
-        </Link>
-      </div>
-    );
-  }
     validateAll,
     setValues,
   } = useFormValidation(
@@ -239,36 +193,34 @@ const EventRegistration = () => {
     };
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
-  const refreshEventAvailability = async (id) => {
-  try {
-    const response = await apiUtils.get(API_ENDPOINTS.EVENTS.AVAILABILITY(id));
+  const refreshEventAvailability = useCallback(async (id) => {
+    try {
+      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.AVAILABILITY(id));
 
-    if (response.status === 200 && response.data) {
-      const normalized = normalizeEventAvailability(response.data);
+      if (response.status === 200 && response.data) {
+        const normalized = normalizeEventAvailability(response.data);
 
-      setAvailability(normalized);
-      setEvent((prev) =>
-        prev ? mergeAvailabilityIntoEvent(prev, response.data) : prev
-      );
+        setEvent((prev) =>
+          prev ? mergeAvailabilityIntoEvent(prev, response.data) : prev
+        );
 
-      return normalized;
+        return normalized;
+      }
+    } catch (error) {
+      logger.error("Failed to refresh event availability", error);
     }
-  } catch (error) {
-    logger.error("Failed to refresh event availability", error);
-  }
+    return null;
+  }, []);
 
-  return null;
-};
-  
-  const checkEventCapacity = async (id, currentEvent) => {
-  const latestAvailability = await refreshEventAvailability(id);
+  const checkEventCapacity = useCallback(async (id, currentEvent) => {
+    const latestAvailability = await refreshEventAvailability(id);
 
-  if (latestAvailability) {
-    return latestAvailability.isFull;
-  }
+    if (latestAvailability) {
+      return latestAvailability.isFull;
+    }
 
-  return isEventAtCapacity(currentEvent);
-};
+    return isEventAtCapacity(currentEvent);
+  }, [refreshEventAvailability]);
 
   const checkAndHandleConflicts = useCallback(async () => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
@@ -480,6 +432,32 @@ const EventRegistration = () => {
 
   const isEventFull = useMemo(() => event ? event.attendees >= event.maxAttendees : false, [event]);
   const isPastEvent = useMemo(() => getEventStatus(event) === "past" || getEventStatus(event) === "ended", [event]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Event Not Found</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+          The event you are looking for does not exist or has been removed.
+        </p>
+        <Link
+          to="/events"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Events
+        </Link>
+      </div>
+    );
+  }
 
   if (isPastEvent) {
     return (
