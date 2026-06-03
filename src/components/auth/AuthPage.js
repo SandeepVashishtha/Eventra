@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { AlertCircle, X as XIcon } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,24 +18,35 @@ const AuthPage = () => {
   const isLogin = location.pathname === '/login';
   const sessionExpired = location.state?.sessionExpired === true;
   const from = location.state?.from;
-  const redirectPath =
+  
+  // 🔥 FIX 1A: Derived the raw path
+  const rawRedirectPath =
     typeof from === "string"
       ? from
       : from?.pathname
         ? `${from.pathname}${from.search || ""}${from.hash || ""}`
         : "/dashboard";
+        
   const [showExpiredBanner, setShowExpiredBanner] = useState(sessionExpired);
   
   useDocumentTitle(isLogin ? "Login | Eventra" : "Sign Up | Eventra");
 
   useEffect(() => {
     if (isAuthenticated()) {
-      navigate(redirectPath, { replace: true });
-    }
-  }, [navigate, isAuthenticated, redirectPath]);
+      // 🔥 FIX 1B: The Infinite Redirect Guard
+      // Prevents redirecting authenticated users back into an auth-loop.
+      const safeRedirectPath = 
+        rawRedirectPath.includes('/login') || rawRedirectPath.includes('/register')
+          ? '/dashboard' 
+          : rawRedirectPath;
 
-  // Animation variants
-  const formVariants = {
+      navigate(safeRedirectPath, { replace: true });
+    }
+  }, [navigate, isAuthenticated, rawRedirectPath]);
+
+  // 🔥 FIX 2: Memoized Animation Variants
+  // Hoisted into useMemo to prevent unnecessary re-instantiation and layout thrashing.
+  const formVariants = useMemo(() => ({
     hidden: (isLoginView) => ({
       x: isLoginView ? -50 : 50,
       opacity: 0,
@@ -59,7 +70,7 @@ const AuthPage = () => {
         duration: prefersReducedMotion ? 0 : 0.2,
       },
     }),
-  };
+  }), [prefersReducedMotion]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">

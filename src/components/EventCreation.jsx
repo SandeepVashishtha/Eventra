@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import { 
-  ArrowRight, 
-  Pencil, 
-  CheckCircle, 
-  AlertCircle,
-  Calendar,
-  Users,
-  MapPin,
-  Ticket as TicketIcon
-} from "lucide-react";
+import { ArrowRight, Pencil, CheckCircle, AlertCircle, Calendar, Users, MapPin, Ticket as TicketIcon } from "lucide-react";
 
 import { useEventForm } from "../hooks/useEventForm";
 import EventBasicInfo from "./common/EventCreation/EventBasicInfo";
@@ -82,7 +73,7 @@ const EventCreation = () => {
 
         <AnimatePresence mode="wait">
           {currentStep === "form" ? (
-            <motion
+            <motion.div
               key="form"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -98,7 +89,16 @@ const EventCreation = () => {
                 </p>
               </div>
 
-              <form onSubmit={handlePreview} className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 space-y-10 border border-gray-100 dark:border-gray-700">
+              <form 
+                onSubmit={handlePreview} 
+                // 🔥 FIX: Prevent the Enter key from prematurely submitting the form and throwing errors (except inside textareas or native buttons)
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
+                    e.preventDefault();
+                  }
+                }}
+                className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 space-y-10 border border-gray-100 dark:border-gray-700"
+              >
                 <section>
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">1</span>
@@ -125,6 +125,7 @@ const EventCreation = () => {
                     setNewTag={setNewTag} 
                     addTag={addTag} 
                     removeTag={removeTag} 
+                    isUploading={isUploading} // 🔥 FIX: Passed the actual uploading state so the component knows when to show spinners
                     setIsUploading={setIsUploading} 
                   />
                 </section>
@@ -173,9 +174,9 @@ const EventCreation = () => {
                   </p>
                 </div>
               </form>
-            </motion>
+            </motion.div>
           ) : (
-            <motion
+            <motion.div
               key="preview"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -214,7 +215,8 @@ const EventCreation = () => {
                       {formData.title}
                     </h2>
                     <div className="flex flex-wrap gap-2">
-                      {formData.tags.map(tag => (
+                      {/* 🔥 FIX: Added fallback array to prevent .map TypeError crashes if data is missing */}
+                      {(formData.tags || []).map(tag => (
                         <span key={tag} className="text-indigo-600 dark:text-indigo-400 text-sm font-medium">#{tag}</span>
                       ))}
                     </div>
@@ -238,9 +240,10 @@ const EventCreation = () => {
                       <div>
                         <p className="text-sm text-gray-500">Location</p>
                         <p className="font-bold text-gray-900 dark:text-white">
-                          {formData.isVirtual ? "Virtual Event" : formData.location.name}
+                          {/* 🔥 FIX: Added optional chaining and fallback to prevent Cannot read property 'name' crashes */}
+                          {formData.isVirtual ? "Virtual Event" : formData.location?.name || "TBD"}
                         </p>
-                        {!formData.isVirtual && <p className="text-sm text-gray-600 dark:text-gray-400">{formData.location.city || formData.location.address}</p>}
+                        {!formData.isVirtual && <p className="text-sm text-gray-600 dark:text-gray-400">{formData.location?.city || formData.location?.address}</p>}
                       </div>
                     </div>
                   </div>
@@ -251,7 +254,8 @@ const EventCreation = () => {
                       <TicketIcon className="w-5 h-5 text-indigo-500" /> Ticket Tiers
                     </h3>
                     <div className="space-y-3">
-                      {formData.ticketTiers.map((tier, i) => (
+                      {/* 🔥 FIX: Added fallback array to prevent .map TypeError crashes if data is missing */}
+                      {(formData.ticketTiers || []).map((tier, i) => (
                         <div key={i} className="flex justify-between items-center p-4 border border-gray-100 dark:border-gray-700 rounded-xl">
                           <div>
                             <p className="font-bold text-gray-900 dark:text-white">{tier.name}</p>
@@ -268,6 +272,7 @@ const EventCreation = () => {
 
                   <div className="flex flex-col sm:flex-row gap-4 pt-4">
                     <button
+                      type="button" // 🔥 FIX: Ensure this button doesn't trigger a form submit just in case
                       onClick={() => setCurrentStep("form")}
                       className="flex-1 py-4 border-2 border-gray-200 dark:border-gray-700 hover:border-indigo-600 text-gray-600 dark:text-gray-300 font-bold rounded-2xl transition-all flex items-center justify-center gap-2"
                     >
@@ -291,7 +296,7 @@ const EventCreation = () => {
                   )}
                 </div>
               </div>
-            </motion>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
