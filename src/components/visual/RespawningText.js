@@ -25,17 +25,19 @@ import { useReducedMotion } from '../../hooks/useReducedMotion';
  *
  * @example
  * <RespawningText
- *   texts={["Build Events", "Connect Communities", "Track Analytics"]}
- *   typingSpeed={100}
- *   deletingSpeed={80}
- *   pauseTime={3000}
+ * texts={["Build Events", "Connect Communities", "Track Analytics"]}
+ * typingSpeed={100}
+ * deletingSpeed={80}
+ * pauseTime={3000}
  * />
  */
 const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deletingSpeed = 100, pauseTime = 2000 }) => {
   const [currentText, setCurrentText] = useState("");
   const [textIndex, setTextIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
-  useReducedMotion();
+  
+  // 🔥 FIX: Actually capture the return value of the hook to prevent ReferenceError
+  const prefersReducedMotion = useReducedMotion();
 
   // 🔥 FIX 2: Accessibility Fast-Fail
   // If the user requires reduced motion, immediately render the first string in full
