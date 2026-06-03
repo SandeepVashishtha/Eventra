@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
@@ -21,7 +20,7 @@ import {
   User,
 } from "lucide-react";
 
-import useEventRegistration from "../../hooks/useEventRegistration";
+
 import {
   isCapacityConflictError,
   isEventAtCapacity,
@@ -53,6 +52,14 @@ const EventRegistration = () => {
   const registrationPath = location.pathname;
 
 
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [registered, setRegistered] = useState(false);
+  const [waitlistPosition, setWaitlistPosition] = useState(-1);
+  const isSubmittingRef = useRef(false);
+
+
   // Conflict detection state
 
 
@@ -67,57 +74,27 @@ const EventRegistration = () => {
   }), []);
 
   const {
-    event,
-    loading,
-    submitting,
-    registered,
-    isEventFull,
-    isPastEvent,
-    formData,
+    values: formData,
     errors,
     touched,
-    isFormValid,
+    isValid: isFormValid,
     handleChange,
     handleBlur,
-
-
-    handleSubmit,
-    handleConflictCancel,
-    handleConflictProceed,
-    handleSelectAlternative,
-    myEvents,
-  } = useEventRegistration();
-
-
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-      </div>
-    );
-  }
-
-  if (!event) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Event Not Found</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
-          The event you are looking for does not exist or has been removed.
-        </p>
-        <Link
-          to="/events"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Events
-        </Link>
-      </div>
-    );
-  }
     validateAll,
     setValues,
-
+  } = useFormValidation(
+    {
+      fullName: "",
+      email: "",
+      phone: "",
+      organization: "",
+      designation: "",
+      additionalInfo: "",
+      priority: "Medium",
+    },
+    validationRules,
+    { debounceMs: 300 }
+  );
 
   // Load event data from backend API
   useEffect(() => {
@@ -218,8 +195,272 @@ const EventRegistration = () => {
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
 
+  const refreshEventAvailability = useCallback(async (id) => {
+    try {
+      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.AVAILABILITY(id));
+
+      if (response.status === 200 && response.data) {
+        const normalized = normalizeEventAvailability(response.data);
+
+        setEvent((prev) =>
+          prev ? mergeAvailabilityIntoEvent(prev, response.data) : prev
+        );
+
+        return normalized;
+      }
+    } catch (error) {
+      logger.error("Failed to refresh event availability", error);
+    }
+    return null;
+  }, []);
+
+  const checkEventCapacity = useCallback(async (id, currentEvent) => {
+    const latestAvailability = await refreshEventAvailability(id);
+
+    if (latestAvailability) {
+      return latestAvailability.isFull;
+    }
+
+    return isEventAtCapacity(currentEvent);
+  }, [refreshEventAvailability]);
+
+  const checkAndHandleConflicts = useCallback(async () => {
+    const conflictCheck = checkRegistrationConflict(event, myEvents);
+    if (conflictCheck.hasConflict) {
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+        const realEvents = res.status === 200 ? res.data : [];
+        const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
+        setConflictData({
+          conflicts: conflictCheck.conflicts,
+          suggestions,
+        });
+      } catch (err) {
+        logger.error("Failed to fetch alternative events", err);
+        setConflictData({
+          conflicts: conflictCheck.conflicts,
+          suggestions: [],
+        });
+      }
+      setShowConflictModal(true);
+      return true;
+    }
+    return false;
+  }, [event, myEvents]);
+
+  // Proceed with registration after conflict check or user confirmation
+  const proceedWithRegistration = useCallback(async () => {
+    if (!isAuthenticated() || !user?.id) {
+      toast.error("Please log in to register for events.");
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return;
+    }
+
+    setShowConflictModal(false);
+
+    registrationLocks.set(eventId, true);
+    isSubmittingRef.current = true;
+    setSubmitting(true);
+
+    const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+
+    if (isEventFull) {
+      try {
+        const { joinWaitlist, getQueuePosition } = await import("../../utils/waitlistUtils");
+        await joinWaitlist(eventId, user, { ...formData, eventTitle: event?.title || "the event" });
+        const pos = getQueuePosition(eventId, user.id);
+        setWaitlistPosition(pos);
+        setRegistered(true);
+        toast.success("Successfully joined waitlist!");
+        clearSession();
+        return;
+      } catch (err) {
+        toast.error(err.message || "Failed to join waitlist.");
+        return;
+      } finally {
+        registrationLocks.delete(eventId);
+        isSubmittingRef.current = false;
+        setSubmitting(false);
+      }
+    }
+
+    const endpoint = API_ENDPOINTS.EVENTS?.REGISTER
+        ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
+        : `/api/events/${eventId}/register`;
+
+    try {
+      const response = await apiUtils.post(
+        endpoint,
+        {
+          ...formData,
+          priority: formData.priority,
+          eventId: parseInt(eventId),
+          userId: user.id,
+        },
+        token
+      );
+
+      const regData = response.data || {};
+      const registrationId = regData.registrationId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-${Date.now()}`);
+      const qrToken = regData.qrToken || "";
+
+      setRegistered(true);
+      toast.success("Registration successful!");
+      addRegistration(event, formData, registrationId, qrToken);
+      clearSession();
+        } catch (error) {
+      const failureMessage = getRegistrationFailureMessage(error);
+
+      if (isCapacityConflictError(error)) {
+        await refreshEventAvailability(eventId);
+      }
+
+      const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
+      const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
+
+      if (isOfflineFailure) {
+        const payload = {
+          ...formData,
+          eventId: parseInt(eventId),
+          userId: user.id,
+        };
+
+        const success = await pushToQueue(
+          {
+            actionType: isEventFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            endpoint,
+            eventId: parseInt(eventId),
+            payload,
+          },
+          user.id
+        );
+
+        if (success) {
+          setRegistered(true);
+          const offlineRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-offline-${Date.now()}`;
+          addRegistration(event, formData, offlineRegId, "");
+          clearSession();
+          toast.warning("Network error. Registration queued and will sync when you are online.", {
+            autoClose: 4000,
+          });
+        } else {
+          toast.error(
+            "Offline registration queue is full. Please reconnect to the internet to register."
+          );
+        }
+        return;
+      }
+
+      if (isAlreadyRegistered) {
+        setRegistered(true);
+        toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
+        const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
+        addRegistration(event, formData, existingRegId, "");
+        clearSession();
+        toast.info(failureMessage);
+        return;
+      }
+
+      toast.error(failureMessage);
+    } finally {
+      registrationLocks.delete(eventId);
+      isSubmittingRef.current = false;
+      setSubmitting(false);
+    }
+  }, [eventId, event, formData, isAuthenticated, user, token, navigate, registrationPath, addRegistration, clearSession]);
+
+  // Handle form submission
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+
+    if (!isAuthenticated() || !user?.id) {
+      toast.error("Please log in to register for events.");
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return;
+    }
+
+    if (!validateAll()) {
+      toast.error("Please fill in all required fields correctly");
+      return;
+    }
+
+    if (isSubmittingRef.current) {
+      toast.error("Registration already in progress. Please wait.");
+      return;
+    }
+
+    if (registrationLocks.has(eventId)) {
+      toast.error("Another registration is in progress for this event. Please wait.");
+      return;
+    }
+
+    const isFull = await checkEventCapacity(eventId, event);
+    if (isFull) {
+      const { getGlobalWaitlist } = await import("../../utils/waitlistUtils");
+      const records = getGlobalWaitlist();
+      const onWaitlist = records.some(
+        (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
+      );
+      if (onWaitlist) {
+        toast.error("You are already on the waitlist for this event.");
+        return;
+      }
+    }
+
+    if (await checkAndHandleConflicts()) return;
+
+    proceedWithRegistration();
+  }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
+
+  // Handle conflict modal actions
+  const handleConflictCancel = useCallback(() => {
+    setShowConflictModal(false);
+    toast.info("Registration cancelled due to scheduling conflict.");
+  }, []);
+
+  const handleConflictProceed = useCallback(() => {
+    proceedWithRegistration();
+  }, [proceedWithRegistration]);
+
+  const handleSelectAlternative = useCallback((alternativeEvent) => {
+    setShowConflictModal(false);
+    navigate(`/events/${alternativeEvent.id}/register`);
+    toast.info(`Redirecting to ${alternativeEvent.title}`);
+  }, [navigate]);
+
+  const isEventFull = useMemo(() => event ? event.attendees >= event.maxAttendees : false, [event]);
+  const isPastEvent = useMemo(() => getEventStatus(event) === "past" || getEventStatus(event) === "ended", [event]);
 
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Event Not Found</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+          The event you are looking for does not exist or has been removed.
+        </p>
+        <Link
+          to="/events"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Events
+        </Link>
+      </div>
+    );
+  }
 
   if (isPastEvent) {
     return (
