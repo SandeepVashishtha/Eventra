@@ -2,9 +2,6 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 
-import fs from "fs";
-import path from "path";
-import os from "os";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
 import { getClientIp } from "../lib/getClientIp.js";
@@ -44,37 +41,6 @@ const users = new Map();
 const usersById = new Map();
 const usersByUsername = new Map();
 
-const DB_PATH = path.join(os.tmpdir(), "eventra_users_db.json");
-
-const loadDatabaseFallback = () => {
-  try {
-    if (fs.existsSync(DB_PATH)) {
-      const data = JSON.parse(fs.readFileSync(DB_PATH, "utf-8"));
-      for (const user of data) {
-        users.set(user.email.toLowerCase(), user);
-        usersById.set(user.id, user);
-        if (user.username) {
-          usersByUsername.set(user.username.toLowerCase(), user);
-        }
-      }
-    }
-  } catch (err) {
-    console.error("Failed to load database fallback:", err);
-  }
-};
-
-const saveDatabaseFallback = () => {
-  try {
-    const data = Array.from(users.values());
-    fs.writeFileSync(DB_PATH, JSON.stringify(data));
-  } catch (err) {
-    console.error("Failed to save database fallback:", err);
-  }
-};
-
-// Hydrate on module load
-loadDatabaseFallback();
-
 // ---------------------------------------------------------------------------
 // JWT Configuration
 // ---------------------------------------------------------------------------
@@ -107,7 +73,7 @@ const validateName = (name) => {
 const validatePassword = (password) => {
   if (!password) return { valid: false, message: "Password is required" };
   if (password.length < 8) return { valid: false, message: "Password must be at least 8 characters long" };
-  
+
   // Check password strength (must meet all 5 criteria)
   const criteria = [
     { test: /.{8,}/, name: "8+ characters" },
@@ -116,7 +82,7 @@ const validatePassword = (password) => {
     { test: /\d/, name: "number" },
     { test: /[!@#$%^&*(),.?":{}|<>]/, name: "special character" },
   ];
-  
+
   const metCriteria = criteria.filter(c => c.test.test(password));
   if (metCriteria.length < 5) {
     return {
@@ -124,7 +90,7 @@ const validatePassword = (password) => {
       message: "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character"
     };
   }
-  
+
   return { valid: true };
 };
 
@@ -283,15 +249,12 @@ async function handler(req, res) {
       updatedAt: createdAt,
       emailVerified: false,
       isActive: true,
-    };    // Store user (in production, save to database)
+    };    // Store user (in production, replace with a persistent database write)
     users.set(normalizedEmail, newUser);
     usersById.set(userId, newUser);
     if (newUser.username) {
       usersByUsername.set(newUser.username.toLowerCase(), newUser);
     }
-    
-    // Persist to local fallback to survive cold starts
-    saveDatabaseFallback();
 
     // -----------------------------------------------------------------------
     // Generate JWT token
