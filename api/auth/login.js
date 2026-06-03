@@ -32,17 +32,17 @@ const loginRateLimiter = createRateLimiter(60_000, 5);
 
 const validateLoginInput = (usernameOrEmail, password) => {
   const errors = [];
-  
+
   if (!usernameOrEmail || !usernameOrEmail.trim()) {
     errors.push("Username or email is required");
   }
-  
+
   if (!password) {
     errors.push("Password is required");
   } else if (password.length > 100) {
     errors.push("Password exceeds maximum allowed length");
   }
-  
+
   return errors;
 };
 
@@ -60,14 +60,14 @@ const validateLoginInput = (usernameOrEmail, password) => {
 
 const findUserByUsernameOrEmail = (usernameOrEmail) => {
   const normalizedInput = usernameOrEmail.trim().toLowerCase();
-  
+
   // O(1) lookup: try email key first (primary key), then username index
   const byEmail = users.get(normalizedInput);
   if (byEmail) return byEmail;
-  
+
   const byUsername = usersByUsername.get(normalizedInput);
   if (byUsername) return byUsername;
-  
+
   return null;
 };
 
@@ -100,8 +100,8 @@ async function handler(req, res) {
 
     const validationErrors = validateLoginInput(usernameOrEmail, password);
     if (validationErrors.length > 0) {
-      return corsResponse(req, res, 400, { 
-        error: validationErrors.join(", ") 
+      return corsResponse(req, res, 400, {
+        error: validationErrors.join(", ")
       });
     }
 
@@ -120,19 +120,19 @@ async function handler(req, res) {
     // -----------------------------------------------------------------------
 
     const clientIp =
-      req.headers?.[\"x-vercel-forwarded-for\"]
-      || req.headers?.[\"x-real-ip\"]
+      req.headers?.['x-vercel-forwarded-for']
+      || req.headers?.['x-real-ip']
       || req.socket?.remoteAddress
       || null;
 
-if (clientIp) {
-  if (!loginRateLimiter.check(clientIp)) {
-    return corsResponse(req, res, 429, {
-      success: false,
-      message: "Too many authentication attempts. Please try again later.",
-    });
-  }
-}
+    if (clientIp) {
+      if (!loginRateLimiter.check(clientIp)) {
+        return corsResponse(req, res, 429, {
+          success: false,
+          message: "Too many authentication attempts. Please try again later.",
+        });
+      }
+    }
 
     // -----------------------------------------------------------------------
     // Find user by username or email
@@ -190,7 +190,7 @@ if (clientIp) {
 
     // Normalize role for response (use first role as primary)
     const primaryRole = roles[0] || "ATTENDEE";
-    
+
     // Normalize EVENT_MANAGER to ORGANIZER for frontend compatibility
     const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
 
@@ -238,8 +238,8 @@ if (clientIp) {
 
   } catch (error) {
     console.error("Login Error:", error);
-    return corsResponse(req, res, 500, { 
-      error: "Internal server error. Please try again later." 
+    return corsResponse(req, res, 500, {
+      error: "Internal server error. Please try again later."
     });
   }
 }
@@ -251,4 +251,3 @@ if (clientIp) {
 
 export default handler;
 export { users };
-
