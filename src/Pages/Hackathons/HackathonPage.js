@@ -224,8 +224,8 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
   }, []);
 
   const positionClass = `
-    ${isScrollVisible ? "bottom-40" : "bottom-24"} 
-    ${isChatbotOpen ? "left-6" : "right-6"}
+    ${isScrollVisible ? "bottom-[calc(2.5rem+var(--safe-area-bottom))] sm:bottom-40" : "bottom-[calc(1rem+var(--safe-area-bottom))] sm:bottom-24"}
+    ${isChatbotOpen ? "left-[calc(1rem+var(--safe-area-left))] sm:left-6" : "right-[calc(1rem+var(--safe-area-right))] sm:right-6"}
   `;
 
   const containerVariants = {
@@ -282,7 +282,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
   }), [hackathons]);
 
   const searchedHackathons = debouncedSearchQuery
-    ? fuse.search(debouncedSearchQuery).map((result) => result.item)
+    ? fuse.search(debouncedSearchQuery.trim()).map((result) => result.item)
     : hackathons;
 
   const filteredHackathons = filterHackathons(searchedHackathons, {
@@ -733,7 +733,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
         </SectionErrorBoundary>
       </div>
       <HackathonCTA></HackathonCTA>
-      <BackToTopButton />
+      <BackToTopButton positionClass={positionClass} />
     </div>
   );
 };

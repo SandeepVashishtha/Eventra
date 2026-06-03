@@ -4,11 +4,19 @@ import { logError } from "./errorLogger";
 const GITHUB_HOST = "github.com";
 
 export const buildGitHubProxyUrl = (path, queryParams = {}) => {
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const params = new URLSearchParams({ path: normalizedPath });
+  // 🔥 FIX 1: Prevent Protocol-Relative SSRF Bypass (e.g. "//evil.com")
+  // Remove ALL leading slashes, then explicitly prepend exactly one.
+  const sanitizedPath = `/${path.replace(/^\/+/, '')}`;
+  const params = new URLSearchParams({ path: sanitizedPath });
 
   Object.entries(queryParams).forEach(([key, value]) => {
     if (value === undefined || value === null || value === "") return;
+    
+    // 🔥 FIX 2: Prevent Parameter Pollution
+    // Block attackers from passing a malicious "path" key in the query string
+    // which would overwrite our secure sanitized path.
+    if (key.toLowerCase() === "path") return;
+    
     params.set(key, String(value));
   });
 
@@ -32,7 +40,7 @@ export const fetchGitHubJson = async (path, queryParams = {}, options = {}) => {
     return data;
   } catch (error) {
     let message = "Failed to fetch data from GitHub";
-    let severity = "warn";
+    //let severity = "warn";
 
     if (error instanceof FetchError) {
       if (error.status === 403) {
