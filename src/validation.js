@@ -44,7 +44,8 @@ export const validate = {
     return EMAIL_REGEX.test(val) || "Invalid email format";
   },
 
-  password: (val) => val.length >= 8 || "Password must be at least 8 characters",
+  password: (val) =>
+    (val && val.length >= 8) || "Password must be at least 8 characters",
 
   required: (val) => (val && val.trim() !== "") || "This field is required",
 
