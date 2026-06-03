@@ -1,4 +1,4 @@
-﻿import {
+import {
   createContext,
   useCallback,
   useContext,
@@ -41,7 +41,7 @@ const ensureServiceWorkerRegistration = async () => {
 
   try {
     return await navigator.serviceWorker.register("/service-worker.js");
-  } catch {
+  } catch (error) {
     return null;
   }
 };
@@ -90,6 +90,17 @@ export const NotificationProvider = ({ children }) => {
   const activeTokenRef = useRef(token);
   const hasCompletedInitialFetch = useRef(false);
 
+  // Keep a ref in sync with isPageVisible so the polling interval callback
+  // can read the latest visibility without requiring isPageVisible in the
+  // effect dependency array.  Adding isPageVisible as a dep would re-run the
+  // entire polling effect — including initData() — on every tab-restore, which
+  // causes an unwanted loading spinner and a double-fetch (initData already
+  // fetches, and the separate catch-up effect below also fetches).
+  const isPageVisibleRef = useRef(isPageVisible);
+  useEffect(() => {
+    isPageVisibleRef.current = isPageVisible;
+  }, [isPageVisible]);
+
   // ---------------------------------------------------------------------------
   // Bounded seen-notification Set
   //
@@ -101,7 +112,7 @@ export const NotificationProvider = ({ children }) => {
   //
   // MAX_SEEN_IDS caps the Set. When the cap is reached the insertion helper
   // evicts the oldest entry (Sets preserve insertion order, so the first value
-  // is the oldest) before adding the new one â€” a constant-time O(1) eviction.
+  // is the oldest) before adding the new one — a constant-time O(1) eviction.
   // ---------------------------------------------------------------------------
   const MAX_SEEN_IDS = 500;
   const seenNotificationIds = useRef(new Set());
@@ -386,10 +397,14 @@ export const NotificationProvider = ({ children }) => {
 
     if (!isMounted.current) return;
 
-    const unread = notifications.filter((n) => !n.isRead);
-    if (unread.length === 0) return;
+    let hasUnread = false;
+    setNotifications((prev) => {
+      hasUnread = prev.some((n) => !n.isRead);
+      if (!hasUnread) return prev;
+      return prev.map((n) => ({ ...n, isRead: true }));
+    });
 
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    if (!hasUnread) return;
 
     const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
     if (!isValidEndpoint(endpoint)) return;
@@ -404,7 +419,7 @@ export const NotificationProvider = ({ children }) => {
         fetchNotifications();
       }
     }
-  }, [token, fetchNotifications, notifications]);
+  }, [token, fetchNotifications]);
 
   const subscribeToPush = useCallback(async () => {
     const permission = await requestPushPermission();
@@ -448,7 +463,7 @@ export const NotificationProvider = ({ children }) => {
 
       // Store only non-sensitive subscription metadata locally.
       //
-      // The full Web Push subscription object includes keys.p256dh and keys.auth â€”
+      // The full Web Push subscription object includes keys.p256dh and keys.auth —
       // a 128-bit symmetric secret used to encrypt push payloads. Storing it in
       // plaintext localStorage exposes it to any XSS payload or malicious browser
       // extension that can read localStorage, allowing arbitrary push notifications
@@ -462,24 +477,24 @@ export const NotificationProvider = ({ children }) => {
         subscribed: true,
         subscribedAt: new Date().toISOString(),
       };
-      try {
-        window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-      } catch {
-        // Non-fatal â€” the subscription is still active; local status just won't persist
-      }
 
-      // Migrate: remove any existing full subscription object that may have been
-      // stored by a previous version of this code before this fix was applied.
-      // This runs once per subscribe() call and is a no-op if the key is absent.
-      const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
-      if (existing) {
-        try {
-          const parsed = JSON.parse(existing);
-          if (parsed?.keys) {
-            // Old format with sensitive keys â€” replace with the safe record
-            window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
+      // Migrate any legacy push subscription object that included sensitive keys.
+      // If no legacy object exists, this still writes the safe status record.
+      try {
+        const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
+        if (existing) {
+          try {
+            const parsed = JSON.parse(existing);
+            if (parsed?.keys) {
+              console.info("[NotificationContext] Migrating legacy push subscription record.");
+            }
+          } catch {
+            // Ignore invalid legacy data and continue with the safe record.
           }
-        } catch { /* non-fatal */ }
+        }
+        window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
+      } catch (error) {
+        // Non-fatal — the subscription is still active; local status just won't persist.
       }
 
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
@@ -551,18 +566,20 @@ export const NotificationProvider = ({ children }) => {
     initData();
 
     // Visibility-aware polling: skip the network call when the tab is hidden.
-    // The setInterval still fires on schedule so the cadence is maintained, but
-    // the fetch is gated on isPageVisible. When the tab becomes visible again,
-    // a separate useEffect (below) fires an immediate catch-up fetch so no
-    // notifications are missed.
+    // isPageVisibleRef.current is always current (kept in sync by a dedicated
+    // useEffect above) so the callback never reads a stale value, and
+    // isPageVisible does NOT need to be in this effect's dependency array.
+    // Excluding it prevents the effect from re-running on every tab-restore,
+    // which would call initData() again (loading flash) and duplicate the
+    // catch-up fetch that the visibility useEffect below already handles.
     const intervalId = setInterval(() => {
-      if (isMounted.current && activeTokenRef.current === requestToken && isPageVisible) {
+      if (isMounted.current && activeTokenRef.current === requestToken && isPageVisibleRef.current) {
         fetchNotifications({ isBackground: true });
       }
     }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [token, fetchNotifications, fetchAchievements, isPageVisible]);
+  }, [token, fetchNotifications, fetchAchievements]); // isPageVisible intentionally excluded — handled via ref
 
   // Catch-up fetch: when the tab becomes visible after being hidden, immediately
   // fetch notifications so the user sees fresh data without waiting up to
@@ -602,4 +619,3 @@ export const NotificationProvider = ({ children }) => {
 };
 
 export const useNotification = () => useContext(NotificationContext);
-

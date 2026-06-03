@@ -1,11 +1,11 @@
-import bcrypt from "bcryptjs";
+﻿import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { users } from "./signup.js";
+import { users, usersByUsername } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
-import { createRateLimiter } from "../middleware/rateLimiter.js";
+import { createRateLimiter } from "../lib/rateLimit.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
-import { createRateLimiter } from "../lib/rateLimit.js";
+
 
 // Pre-compute a dummy bcrypt hash at module load time (same cost factor used in signup.js).
 // When a login attempt references a username or email that does not exist, we still run
@@ -59,17 +59,13 @@ const validateLoginInput = (usernameOrEmail, password) => {
 const findUserByUsernameOrEmail = (usernameOrEmail) => {
   const normalizedInput = usernameOrEmail.trim().toLowerCase();
   
-  // Search through all users
-  for (const [key, user] of users.entries()) {
-    if (
-      user.email === normalizedInput ||
-      user.username === normalizedInput ||
-      user.email === usernameOrEmail.trim() ||
-      user.username === usernameOrEmail.trim()
-    ) {
-      return user;
-    }
-  }
+  // O(1) lookup: try email key first (primary key), then username index
+  const byEmail = users.get(normalizedInput);
+  if (byEmail) return byEmail;
+  
+  const byUsername = usersByUsername.get(normalizedInput);
+  if (byUsername) return byUsername;
+  
   return null;
 };
 
@@ -89,28 +85,15 @@ async function handler(req, res) {
   }
 
   try {
+    if (!req.body || typeof req.body !== "object") {
+      return corsResponse(req, res, 400, { error: "Request body is required" });
+    }
+
     const { usernameOrEmail, password } = req.body;
 
     // -----------------------------------------------------------------------
-    // Rate Limiting (brute-force protection)
-    // -----------------------------------------------------------------------
-
-    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
-
-    loginRateLimiter.evictStale();
-
-    if (!loginRateLimiter.check(clientIp)) {
-      return corsResponse(res, 429, {
-        error: "Too many login attempts. Please try again later.",
-        retryAfter: 60,
-      }, req);
-    }
-
-    // -----------------------------------------------------------------------
     // Input Validation
+    // Run before rate-limit so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
     const validationErrors = validateLoginInput(usernameOrEmail, password);
@@ -119,6 +102,27 @@ async function handler(req, res) {
         error: validationErrors.join(", ") 
       });
     }
+
+    // -----------------------------------------------------------------------
+    // Rate Limiting (brute-force protection)
+    // -----------------------------------------------------------------------
+
+    const clientIp =
+  req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+  || req.headers?.["x-real-ip"]
+  || req.socket?.remoteAddress
+  || null;
+
+if (clientIp) {
+  loginRateLimiter.evictStale();
+
+  if (!loginRateLimiter.check(clientIp)) {
+    return corsResponse(req, res, 429, {
+      success: false,
+      message: "Too many authentication attempts. Please try again later.",
+    });
+  }
+}
 
     // -----------------------------------------------------------------------
     // Find user by username or email
@@ -211,12 +215,14 @@ async function handler(req, res) {
     }
 
     // Reset rate limit on successful login so a legitimate user is not penalised
-    loginRateLimiter.reset(clientIp);
 
+    // The JWT is delivered exclusively via the HttpOnly Set-Cookie header set
+    // above. Including it in the JSON body would expose it to JavaScript
+    // (document.cookie / response.json()), allowing XSS to steal the session
+    // token even when HttpOnly is correctly configured. The frontend reads the
+    // cookie automatically via withCredentials on every subsequent request.
     return corsResponse(req, res, 200, {
       message: "Login successful",
-      token,
-      tokenType: "Bearer",
       ...userResponse,
     });
 
@@ -233,11 +239,9 @@ async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
-const loginRateLimiter = createRateLimiter({
-  max: 5,
-  windowMs: 15 * 60 * 1000,
-  message: "Too many authentication attempts. Please try again later.",
-});
-
-export default loginRateLimiter(handler);
+export default handler;
 export { users };
+
+
+
+
