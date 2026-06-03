@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate, Navigate, useLocation } from "react-router-dom";
+import { useNavigate, Navigate, useLocation, Link } from "react-router-dom";
 import {
   Users,
   Calendar,
@@ -132,7 +132,7 @@ const AdminDashboard = () => {
   const loadWaitlist = useCallback((eventId) => {
     import("../../utils/waitlistUtils.js").then(({ getEventWaitlist }) => {
       setWaitlistUsers(getEventWaitlist(eventId));
-    });
+    }).catch(() => setWaitlistUsers([]));
   }, []);
 
   const openWaitlistModal = (event) => {

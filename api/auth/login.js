@@ -5,6 +5,7 @@ import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
+import { getClientIp } from "../lib/getClientIp.js";
 
 
 // Pre-compute a dummy bcrypt hash at module load time (same cost factor used in signup.js).
@@ -119,20 +120,21 @@ async function handler(req, res) {
     // Rate Limiting (brute-force protection)
     // -----------------------------------------------------------------------
 
+    const clientIp = getClientIp(req);
     const clientIp =
       req.headers?.['x-vercel-forwarded-for']
       || req.headers?.['x-real-ip']
       || req.socket?.remoteAddress
       || null;
 
-    if (clientIp) {
-      if (!loginRateLimiter.check(clientIp)) {
-        return corsResponse(req, res, 429, {
-          success: false,
-          message: "Too many authentication attempts. Please try again later.",
-        });
-      }
-    }
+if (clientIp && clientIp !== "unknown") {
+  if (!loginRateLimiter.check(clientIp)) {
+    return corsResponse(req, res, 429, {
+      success: false,
+      message: "Too many authentication attempts. Please try again later.",
+    });
+  }
+}
 
     // -----------------------------------------------------------------------
     // Find user by username or email
