@@ -2,7 +2,7 @@ import { Code2, RefreshCw, Compass, ChevronDown, X } from "lucide-react";
 import TeamMatchmaking from "./components/TeamMatchmaking";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { fetchHackathons } from "../../services/hackathonService";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
@@ -152,6 +152,8 @@ const CustomDropdown = ({
   );
 };
 
+const HACKATHON_FILTER_STORAGE_KEY = "eventra:hackathon-filters:v1";
+
 const HackathonHub = () => {
   const prefersReducedMotion = useReducedMotion();
   const [hackathons, setHackathons] = useState([]);
@@ -159,6 +161,7 @@ const HackathonHub = () => {
   const [searchQuery, setSearchQuery] = useState("");
 const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
     difficulty: "",
@@ -167,12 +170,73 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
+  const hasHydratedFilters = useRef(false);
 
   useDocumentTitle("Eventra | Hackathons");
 
-  // NEW: State for selected tags
-  const [selectedTags, setSelectedTags] = useState([]);
-  const [availableTags, setAvailableTags] = useState([]);
+  // Initialize state from URL params, falling back to persisted filters
+  useEffect(() => {
+    if (hasHydratedFilters.current) return;
+
+    let savedFilters = {};
+    try {
+      savedFilters = JSON.parse(
+        window.sessionStorage.getItem(HACKATHON_FILTER_STORAGE_KEY) || "{}"
+      );
+    } catch {
+      savedFilters = {};
+    }
+
+    const tab = searchParams.get("tab") || savedFilters.activeTab || "all";
+    const search = searchParams.get("search") || savedFilters.searchQuery || "";
+    const difficulty = searchParams.get("difficulty") || savedFilters.filters?.difficulty || "";
+    const prize = searchParams.get("prize") || savedFilters.filters?.prize || "";
+    const locationVal = searchParams.get("location") || savedFilters.filters?.location || "";
+    const tagsParam = searchParams.get("tags");
+    const tags = tagsParam ? tagsParam.split(",") : (savedFilters.selectedTags || []);
+
+    setActiveTab(tab);
+    setSearchQuery(search);
+    setFilters({ difficulty, prize, location: locationVal });
+    setSelectedTags(tags);
+
+    hasHydratedFilters.current = true;
+    setFiltersHydrated(true);
+  }, [searchParams]);
+
+  // Sync state back to sessionStorage and URL query params
+  useEffect(() => {
+    if (!filtersHydrated) return;
+
+    const params = {};
+    if (activeTab !== "all") params.tab = activeTab;
+    if (debouncedSearchQuery) params.search = debouncedSearchQuery;
+    if (filters.difficulty) params.difficulty = filters.difficulty;
+    if (filters.prize) params.prize = filters.prize;
+    if (filters.location) params.location = filters.location;
+    if (selectedTags.length > 0) params.tags = selectedTags.join(",");
+
+    setSearchParams(params, { replace: true });
+
+    try {
+      window.sessionStorage.setItem(
+        HACKATHON_FILTER_STORAGE_KEY,
+        JSON.stringify({
+          activeTab,
+          searchQuery: debouncedSearchQuery,
+          filters,
+          selectedTags,
+        })
+      );
+    } catch {
+      // Ignored
+    }
+  }, [activeTab, debouncedSearchQuery, filters, selectedTags, filtersHydrated, setSearchParams]);
 
   const cardsSectionRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -181,25 +245,27 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
     cardsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const loadHackathons = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchHackathons();
+      setHackathons(data);
+      const tags = [
+        ...new Set(
+          data.flatMap((hackathon) => hackathon.techStack || []),
+        ),
+      ];
+      setAvailableTags(tags);
+    } catch (err) {
+      setError(err.message || "Failed to load hackathons");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Fetch hackathons and wire page listeners
   useEffect(() => {
-    let isMounted = true;
-    
-    const loadHackathons = async () => {
-      setIsLoading(true);
-      const data = await fetchHackathons();
-      if (isMounted) {
-        setHackathons(data);
-        const tags = [
-          ...new Set(
-            data.flatMap((hackathon) => hackathon.techStack || []),
-          ),
-        ];
-        setAvailableTags(tags);
-        setIsLoading(false);
-      }
-    };
-    
     loadHackathons();
 
     const handleScroll = () => {
@@ -594,7 +660,18 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
         {/* Hackathons Grid */}
         <SectionErrorBoundary label="Hackathons">
         <AnimatePresence mode="wait">
-         {isLoading ? (
+         {error ? (
+            <div className="col-span-full text-center py-16">
+              <p className="text-red-500 text-lg font-semibold mb-2">Failed to load hackathons</p>
+              <p className="text-gray-400 text-sm mb-4">{error}</p>
+              <button
+                onClick={() => { setError(null); loadHackathons(); }}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+              >
+                Retry
+              </button>
+            </div>
+          ) : isLoading ? (
   <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
     {[...Array(6)].map((_, i) => (
       <HackathonCardSkeleton key={`skeleton-${i}`} />

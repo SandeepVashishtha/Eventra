@@ -1,6 +1,7 @@
 import React from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { logger } from "../../utils/logger";
+import { safeParseJson } from "../../utils/jsonUtils";
 
 /**
  * FeatureErrorBoundary
@@ -39,7 +40,7 @@ class FeatureErrorBoundary extends React.Component {
         message: error?.toString(),
         timestamp: new Date().toISOString(),
       };
-      const existing = JSON.parse(localStorage.getItem("eventra_feature_errors") || "[]");
+      const existing = safeParseJson(localStorage.getItem("eventra_feature_errors"), []);
       existing.unshift(entry);
       localStorage.setItem("eventra_feature_errors", JSON.stringify(existing.slice(0, 10)));
     } catch (_) {}

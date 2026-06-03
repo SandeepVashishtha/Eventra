@@ -18,16 +18,26 @@ export const sanitizeSearchQuery = (query = '') => {
     return '';
   }
 
-  // Trim whitespace
+  const MAX_QUERY_LENGTH = 200;
+
   let sanitized = query.trim();
 
-  // Remove dangerous characters in a single pass
-  sanitized = sanitized.replace(/[${}\[\];'`|\\\n\r<>]/g, '');
+  sanitized = sanitized
+    // Drop executable blocks before stripping tag characters so their payloads
+    // cannot survive as searchable text.
+    .replace(/<\s*(script|style)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, ' ')
+    .replace(/<\s*\/?\s*(script|style)\b[^>]*>?/gi, ' ')
+    .replace(/<\s*(img|iframe|object|embed|svg|math|link|meta)\b[^>]*>?/gi, ' ')
+    .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s<>]+)/gi, ' ')
+    .replace(/\b(?:java|vb)script\s*:/gi, ' ')
+    .replace(/\b(?:alert|confirm|prompt)\s*\([^)]*\)/gi, ' ')
+    .replace(/[${}\[\];'`|\\/\n\r<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   // Ensure max length to prevent ReDoS attacks
-  const MAX_QUERY_LENGTH = 200;
   if (sanitized.length > MAX_QUERY_LENGTH) {
-    sanitized = sanitized.substring(0, MAX_QUERY_LENGTH);
+    sanitized = sanitized.substring(0, MAX_QUERY_LENGTH).trim();
   }
 
   return sanitized;

@@ -47,6 +47,8 @@ const evictStale = () => {
 const isValidEmail = (email) =>
   typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 
+const stripHtml = (str) => str.replace(/<[^>]*>?/gm, '');
+
 async function handler(req, res) {
   const corsHeaders = buildCorsHeaders(req);
   res.set(corsHeaders);
@@ -89,9 +91,9 @@ async function handler(req, res) {
     });
   }
 
-  const recipientName = typeof toName === "string" ? toName.slice(0, 100).trim() : "Participant";
-  const eventTitle = typeof eventName === "string" ? eventName.slice(0, 200).trim() : "your event";
-  const eventDateStr = typeof eventDate === "string" ? eventDate.slice(0, 50).trim() : "";
+  const recipientName = typeof toName === "string" ? stripHtml(toName.slice(0, 100)).trim() : "Participant";
+  const eventTitle = typeof eventName === "string" ? stripHtml(eventName.slice(0, 200)).trim() : "your event";
+  const eventDateStr = typeof eventDate === "string" ? stripHtml(eventDate.slice(0, 50)).trim() : "";
 
   console.info("[send-email] confirmation email requested", {
     userId,
