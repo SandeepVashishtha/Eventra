@@ -198,7 +198,17 @@ export const ThemeProvider = ({ children }) => {
       reducedMotion,
       setReducedMotion,
     }),
-    [theme, resolvedTheme, setTheme, toggleTheme, activeThemeId, isCustomizerOpen, customHsl, reducedMotion]
+    [
+      theme,
+      resolvedTheme,
+      isDarkMode,
+      setTheme,
+      toggleTheme,
+      activeThemeId,
+      isCustomizerOpen,
+      customHsl,
+      reducedMotion,
+    ]
   );
 
   return (
