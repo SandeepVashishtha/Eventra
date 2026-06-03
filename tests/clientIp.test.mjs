@@ -4,6 +4,7 @@ import { getClientIp } from "../api/lib/getClientIp.js";
 {
   const ip = getClientIp({
     headers: { "x-real-ip": " 203.0.113.7 " },
+    socket: { remoteAddress: "127.0.0.1" },
   });
   assert.equal(ip, "203.0.113.7");
 }

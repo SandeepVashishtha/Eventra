@@ -8,6 +8,12 @@ import { useAuth } from "../../context/AuthContext";
 import {
   Sparkles, Check, ArrowRight, EyeOff, Eye, User, Mail, Lock, AlertCircle, X
 } from "lucide-react";
+
+const ToggleEyeIcon = ({ visible, className }) => {
+  const Icon = visible ? EyeOff : Eye;
+  return <Icon className={className} />;
+};
+
 const PASSWORD_REQUIREMENTS = [
   { id: 'length', label: 'At least 8 characters', regex: /.{8,}/ },
   { id: 'uppercase', label: 'One uppercase letter', regex: /[A-Z]/ },
