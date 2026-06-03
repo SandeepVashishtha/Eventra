@@ -1,9 +1,22 @@
+const RELATIVE_TIME_FALLBACK = "—";
+
 export function getRelativeTime(dateInput) {
+<<<<<<< HEAD
+  if (dateInput === null || dateInput === undefined) {
+    return RELATIVE_TIME_FALLBACK;
+  }
+
+  if (typeof dateInput === "string" && dateInput.trim() === "") {
+    return RELATIVE_TIME_FALLBACK;
+  }
+
+=======
   if (!dateInput || typeof dateInput === 'number') return null;
+>>>>>>> upstream/master
   const now = new Date();
   const date = new Date(dateInput);
 
-  if (isNaN(date.getTime())) return null;
+  if (Number.isNaN(date.getTime())) return RELATIVE_TIME_FALLBACK;
 
   const diffMs = date - now;
   const diffSec = Math.round(diffMs / 1000);

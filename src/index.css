@@ -1188,3 +1188,47 @@ html:not(.dark) ::placeholder {
   }
 }
 
+/* Chatbot Message Markdown Styles */
+.chatbot-markdown {
+  word-break: break-word;
+}
+.chatbot-markdown p:not(:last-child) {
+  margin-bottom: 0.5rem;
+}
+.chatbot-markdown p {
+  margin: 0;
+}
+.chatbot-markdown ul, .chatbot-markdown ol {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+.chatbot-markdown ul {
+  list-style-type: disc;
+}
+.chatbot-markdown ol {
+  list-style-type: decimal;
+}
+.chatbot-markdown li {
+  margin-bottom: 0.25rem;
+}
+.chatbot-markdown strong {
+  font-weight: 700;
+}
+.chatbot-markdown em {
+  font-style: italic;
+}
+.chatbot-markdown a {
+  color: #3b82f6;
+  text-decoration: underline;
+  font-weight: 600;
+}
+.dark .chatbot-markdown a {
+  color: #60a5fa;
+}
+.chatbot-markdown a:hover {
+  color: #2563eb;
+}
+.dark .chatbot-markdown a:hover {
+  color: #93c5fd;
+}
+

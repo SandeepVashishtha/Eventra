@@ -22,24 +22,10 @@ async function handler(req, res) {
   }
 
   const user = req.user; // populated by verifyAuth middleware
-  let reg = registrations.get(registrationId);
+  const reg = registrations.get(registrationId);
 
-  // Backward compatibility check / Dynamic recovery:
-  // If the registration is not in the serverless in-memory store yet (e.g. from an existing session
-  // or created before a serverless cold start), dynamically seed it in the database.
   if (!reg) {
-    reg = {
-      registrationId,
-      eventId: parseInt(eventId),
-      userId: user.id,
-      userName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Attendee",
-      email: user.email?.toLowerCase(),
-      registeredAt: new Date().toISOString(),
-      checkedInAt: null,
-      checkedInBy: null,
-      attendanceStatus: "Registered"
-    };
-    registrations.set(registrationId, reg);
+    return corsResponse(req, res, 404, { error: "Registration not found" });
   }
 
   // Ensure the requesting user owns the registration (or is an organizer/admin)
