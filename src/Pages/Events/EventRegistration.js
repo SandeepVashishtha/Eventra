@@ -37,6 +37,7 @@ import EventConflictModal from "../../components/EventConflictModal";
 import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 import { SkeletonEventCard } from "../../components/common/SkeletonLoaders";
 import { logger } from "../../utils/logger";
+import { validate } from "../../validation";
 
 const MAX_NOTES_CHARS = 500;
 
