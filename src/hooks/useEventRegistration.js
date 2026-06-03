@@ -16,6 +16,7 @@ import {
 } from "../../utils/offlineEventCache";
 import { pushToQueue } from "../../utils/offlineQueue";
 import { logger } from "../../utils/logger";
+import { logError } from "../../utils/errorLogger";
 import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
 
 const MAX_NOTES_CHARS = 500;
@@ -159,7 +160,7 @@ const useEventRegistration = (eventIdParam) => {
         }
       } catch (error) {
         if (isCancelled) return;
-        console.error("Failed to load event details:", error);
+        logError(error, null, { hook: "useEventRegistration", action: "loadEvent", eventId });
         const cached = getCachedEventDetail(eventId);
         if (cached?.event) {
           applyLoadedEvent({
@@ -226,7 +227,7 @@ const useEventRegistration = (eventIdParam) => {
           suggestions,
         });
       } catch (err) {
-        logger.error("Failed to fetch alternative events", err);
+        logError(err, null, { hook: "useEventRegistration", action: "fetchAlternatives" });
         setConflictData({
           conflicts: conflictCheck.conflicts,
           suggestions: [],
