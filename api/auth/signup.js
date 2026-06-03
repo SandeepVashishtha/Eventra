@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
-import { createRateLimiter } from "../middleware/rateLimiter.js";
+
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
 
@@ -30,6 +30,8 @@ if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
 }
 
 const users = new Map();
+const usersById = new Map();
+const usersByUsername = new Map();
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
@@ -41,7 +43,7 @@ const JWT_SECRET = getJwtSecret();
 // Rate Limiting (IP-based, 3 signups per minute)
 // ---------------------------------------------------------------------------
 
-const signupRateLimiter = createRateLimiter(60_000, 3);
+const signupRateLimiter = createRateLimiter(60_000, 5);
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
@@ -131,25 +133,11 @@ async function handler(req, res) {
   }
 
   try {
-    const { firstName, lastName, email, password, confirmPassword } = req.body;
-
-    // -----------------------------------------------------------------------
-    // Rate Limiting (signup spam protection)
-    // -----------------------------------------------------------------------
-
-    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
-
-    signupRateLimiter.evictStale();
-
-    if (!signupRateLimiter.check(clientIp)) {
-      return corsResponse(res, 429, {
-        error: "Too many signup attempts. Please try again later.",
-        retryAfter: 60,
-      }, req);
+    if (!req.body || typeof req.body !== "object") {
+      return corsResponse(req, res, 400, { error: "Request body is required" });
     }
+
+    const { firstName, lastName, email, password, confirmPassword } = req.body;
 
     // -----------------------------------------------------------------------
     // Input Validation
@@ -199,6 +187,25 @@ async function handler(req, res) {
     }
 
     // -----------------------------------------------------------------------
+    // Rate Limiting (signup spam protection)
+    // Run after input validation so malformed requests don't burn the budget.
+    // -----------------------------------------------------------------------
+
+    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+      || req.headers?.["x-real-ip"]
+      || req.socket?.remoteAddress
+      || "unknown";
+
+    signupRateLimiter.evictStale();
+
+    if (!signupRateLimiter.check(clientIp)) {
+      return corsResponse(req, res, 429, {
+        error: "Too many signup attempts. Please try again later.",
+        retryAfter: 60,
+      });
+    }
+
+    // -----------------------------------------------------------------------
     // Hash password using BCrypt
     // -----------------------------------------------------------------------
 
@@ -229,6 +236,10 @@ async function handler(req, res) {
 
     // Store user (in production, save to database)
     users.set(normalizedEmail, newUser);
+    usersById.set(userId, newUser);
+    if (newUser.username) {
+      usersByUsername.set(newUser.username.toLowerCase(), newUser);
+    }
 
     // -----------------------------------------------------------------------
     // Generate JWT token
@@ -238,7 +249,6 @@ async function handler(req, res) {
       id: newUser.id,
       email: newUser.email,
       roles: newUser.roles,
-      permissions: newUser.permissions,
     };
 
     const token = jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -273,10 +283,11 @@ async function handler(req, res) {
       // Ignore write errors on test response objects
     }
 
+    // The JWT is delivered exclusively via the HttpOnly Set-Cookie header set
+    // above. Including it in the JSON body would expose it to JavaScript,
+    // defeating the XSS-theft protection that HttpOnly provides.
     return corsResponse(req, res, 201, {
       message: "Account created successfully",
-      token,
-      tokenType: "Bearer",
       ...userResponse,
     });
 
@@ -291,11 +302,8 @@ async function handler(req, res) {
 // In production, replace with actual database
 // ---------------------------------------------------------------------------
 
-const signupRateLimiter = createRateLimiter({
-  max: 5,
-  windowMs: 15 * 60 * 1000,
-  message: "Too many authentication attempts. Please try again later.",
-});
+export default handler;
 
-export default signupRateLimiter(handler);
 export { users };
+
+export { usersById, usersByUsername };

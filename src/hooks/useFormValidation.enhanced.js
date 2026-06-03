@@ -359,10 +359,11 @@ export const useFormValidation = (
    */
   useEffect(() => {
     isMountedRef.current = true;
+    const currentTimeouts = timeoutRefs.current;
     return () => {
       isMountedRef.current = false;
-      Object.keys(timeoutRefs.current).forEach((fieldName) => {
-        clearFieldTimeout(fieldName);
+      Object.keys(currentTimeouts).forEach((fieldName) => {
+        clearTimeout(currentTimeouts[fieldName]);
       });
     };
   }, [clearFieldTimeout]);
