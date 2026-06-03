@@ -1,4 +1,5 @@
-import { Github, ExternalLinkAlt, CodeBranch, MapMarkerAlt, Building, UserFriends, Medal, ChevronLeft, ChevronRight } from "lucide-react";
+﻿import { Github, ExternalLinkAlt, CodeBranch, MapMarkerAlt, Building, UserFriends, Medal, ChevronLeft, ChevronRight } from "lucide-react";
+import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import { motion } from "framer-motion";
@@ -19,7 +20,7 @@ const MAX_CONTRIBUTOR_PAGES = 1; // Limit carousel to top contributors
 // triggering GitHub's unauthenticated rate limit of 60 req/hr.
 const BATCH_DELAY_MS = 200;
 // Number of profile requests fired in parallel within each batch.
-// Increasing from 5 → 10 halves the number of serial batch rounds while still
+// Increasing from 5 â†’ 10 halves the number of serial batch rounds while still
 // keeping per-batch concurrency well within rate-limit budgets.
 const PROFILE_BATCH_SIZE = 10;
 
@@ -200,7 +201,7 @@ const Contributors = () => {
       // of PROFILE_BATCH_SIZE (10) to balance throughput against GitHub's
       // unauthenticated rate limit. A short BATCH_DELAY_MS pause is inserted
       // between batches. Promise.allSettled ensures a single failed profile
-      // fetch does not abort the rest — contributors whose profiles fail to
+      // fetch does not abort the rest â€” contributors whose profiles fail to
       // load fall back to the default values from fetchGitHubProfile's catch.
       const settledProfiles = await fetchInBatches(
         allContributors,
@@ -392,17 +393,17 @@ const Contributors = () => {
                       {/* UPDATED: Contribution Badges */}
                       {currentIndex + i === 0 && (
                         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/40 text-gray-900 dark:text-yellow-300">
-                          🥇･ Top Contributor
+                          ðŸ¥‡ï½¥ Top Contributor
                         </span>
                       )}
                       {currentIndex + i === 1 && (
                         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200">
-                          🥈･ Silver Contributor
+                          ðŸ¥ˆï½¥ Silver Contributor
                         </span>
                       )}
                       {currentIndex + i === 2 && (
                         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/40 text-gray-900 dark:text-orange-300">
-                          🥉･ Bronze Contributor
+                          ðŸ¥‰ï½¥ Bronze Contributor
                         </span>
                       )}
                     </div>
@@ -516,3 +517,4 @@ const Contributors = () => {
 };
 
 export default Contributors;
+

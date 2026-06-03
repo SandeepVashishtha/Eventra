@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+﻿import { useState, useCallback, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from '../../hooks/useReducedMotion';
@@ -8,6 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import {
   Sparkles, Check, ArrowRight, EyeOff, Eye, User, Mail, Lock, AlertCircle, X
 } from "lucide-react";
+const ToggleEyeIcon = ({ visible, className }) => visible ? <EyeOff className={className} /> : <Eye className={className} />;
 const PASSWORD_REQUIREMENTS = [
   { id: 'length', label: 'At least 8 characters', regex: /.{8,}/ },
   { id: 'uppercase', label: 'One uppercase letter', regex: /[A-Z]/ },
@@ -304,7 +305,7 @@ setSubmitStatus('success');
                   &quot;Eventra helped me connect with 50+ collaborators for my hackathon project!&quot;
                 </blockquote>
                 <cite className="block mt-2 text-xs text-blue-200 not-italic">
-                  — Priya S., Full-Stack Developer
+                  â€” Priya S., Full-Stack Developer
                 </cite>
               </motion.div>
             </motion.div>
@@ -727,7 +728,7 @@ export const PasswordField = ({ id, label, value, onChange, error, strength, req
                     <Check className="w-3.5 h-3.5" />
                   ) : (
                     <span className="w-3.5 h-3.5 rounded-full border border-current flex items-center justify-center text-[10px]">
-                      •
+                      â€¢
                     </span>
                   )}
                   <span>{req.label}</span>
