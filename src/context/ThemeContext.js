@@ -52,6 +52,7 @@ const getInitialTheme = () => {
   return "system";
 };
 
+// ✅ FIXED: Yahan se duplicate line hata di gayi hai
 export const ThemeProvider = ({ children }) => {
   const [theme, setThemeState] = useState(() => getInitialTheme());
 
