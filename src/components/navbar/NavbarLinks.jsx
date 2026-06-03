@@ -11,7 +11,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   const [openGroup, setOpenGroup] = useState(null);
 
   const handlePrefetch = (href) => {
-    if (href === "/events") prefetchRoute(() => import("../../Pages/Events/ExploreEvents"), "explore");
+    if (href === "/events")prefetchRoute(() => import("../../Pages/Events/EventsPage"), "explore");
     if (href === "/saved-events") prefetchRoute(() => import("../../Pages/SavedEventsPage"), "saved");
   };
 

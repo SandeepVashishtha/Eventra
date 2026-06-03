@@ -39,12 +39,12 @@ const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"))
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
-const ExploreEvents = lazy(() => import("./Pages/Events/ExploreEvents"));
-const Login = lazy(() => import("./Pages/Auth/Login"));
-const Signup = lazy(() => import("./Pages/Auth/Signup"));
-const Profile = lazy(() => import("./Pages/User/Profile"));
-const Dashboard = lazy(() => import("./Pages/Dashboard/Dashboard"));
-const AdminPanel = lazy(() => import("./Pages/Admin/AdminPanel"));
+const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+const Login = lazy(() => import("./components/auth/Login"));
+const Signup = lazy(() => import("./components/auth/Signup"));
+const Profile = lazy(() => import("./components/user/UserProfile"));
+const Dashboard = lazy(() => import("./components/user/UserDashboard"));
+const AdminPanel = lazy(() => import("./components/admin/AdminDashboard"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
