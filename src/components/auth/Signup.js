@@ -40,57 +40,6 @@ const validateName = (name, type) => {
   return "";
 };
 
-const Signup = () => {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [firstNameError, setFirstNameError] = useState("");
-  const [lastNameError, setLastNameError] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [error, setError] = useState("");
-  const [apiError, setApiError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
-  const navigate = useNavigate();
-  const { setAuthSession } = useAuth();
-  const introPoints = [
-    "Create your account to post events, join hackathons, and submit projects.",
-    "Track your activity, registrations, and community engagement from one profile.",
-    "Get quick access to the tools you need to start contributing immediately.",
-  ];
-  
-  
-  
-const validateEmail = (email) => {
-  if (!email?.trim()) return "Email is required";
-  if (!EMAIL_REGEX.test(email)) return "Invalid email format";
-  return "";
-};
-
-const checkPasswordRequirement = (password, requirement) => {
-  return requirement.regex.test(password);
-};
-
-const getPasswordStrength = (password) => {
-  if (!password) return { score: 0, label: '', color: '' };
-  const met = PASSWORD_REQUIREMENTS.filter(req => checkPasswordRequirement(password, req)).length;
-  if (met === 5) return { score: 100, label: 'Strong', color: 'text-green-500' };
-  if (met >= 4) return { score: 75, label: 'Good', color: 'text-yellow-500' };
-  if (met >= 3) return { score: 50, label: 'Fair', color: 'text-orange-500' };
-  return { score: 25, label: 'Weak', color: 'text-red-500' };
-};
-
-// ============ REUSABLE ICON COMPONENTS ============
-const ToggleEyeIcon = ({ visible, className = "" }) => 
-  visible ? <EyeOff className={className} /> : <Eye className={className} />;
-
 // ============ CUSTOM HOOK: useSignupForm ============
 const useSignupForm = () => {
   const [formData, setFormData] = useState({
@@ -101,11 +50,10 @@ const useSignupForm = () => {
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
 
-    if (e.target.name === "email") {
-      setEmailError(validateEmail(e.target.value) ? "" : "Invalid email");
-      setApiError(""); // clear API error only when user fixes their email
-    }
-  }, [errors]);
+  const updateField = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  }, []);
 
   const handleBlur = useCallback((name) => {
     setTouched(prev => ({ ...prev, [name]: true }));
@@ -212,30 +160,22 @@ const Signup = () => {
       const response = await apiUtils.post(API_ENDPOINTS.AUTH.REGISTER, {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        email: formData.email.trim().toLowerCase(),
+        email: formData.email.trim().toLowerCase() || formData.email.trim(),
         password: formData.password,
       });
 
-      if (response.status !== 200 && response.status !== 201) {
-        throw new Error(response.data?.message || `Registration failed (${response.status})`);
+      if (!response.ok || (response.status !== 200 && response.status !== 201)) {
+        const backendMessage = response.data?.message || response.data?.error || '';
+        throw new Error(backendMessage || `Registration failed (${response.status})`);
       }
 
-      
-      
-      if (!response.ok) {
-  const backendMessage = data?.message || data?.error || '';
-  if (backendMessage) {
-    setApiError(`${backendMessage} (${response.status})`);
-  } else {
-    setApiError(`Registration failed (${response.status})`);
-  }
-  return;
-}
+      const data = response.data;
 
-// success case
-if (!data?.token) throw new Error("Authentication token missing");
-setAuthSession(data.token, {
-  id: data.id,
+      // success case
+      if (!data?.token) throw new Error("Authentication token missing");
+
+      setAuthSession(data.token, {
+        id: data.id,
   firstName: data.firstName,
   lastName: data.lastName,
   email: data.email,
@@ -571,14 +511,24 @@ setSubmitStatus('success');
                   fill="none"
                   viewBox="0 0 24 24"
                 >
-                  Sign in instead
-                </Link>
-              </p>
-            </motion.div>
-          </div>
-        </motion.div>
-      </div>
-    </motion.div>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              ) : (
+                "Sign Up"
+              )}
+            </motion.button>
+            <p className="mt-6 text-center text-gray-600 dark:text-gray-400">
+              Already have an account? 
+              <Link to="/signin" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium ml-1">
+                Sign in instead
+              </Link>
+            </p>
+          </motion.div>
+        </div>
+      </motion.div>
+    </div>
+  </motion.div>
   );
 };
 
