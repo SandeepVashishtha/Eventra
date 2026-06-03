@@ -228,7 +228,7 @@ const SearchFilter = () => {
       </motion.div>
 
       {/* Results Count */}
-      <div className="results-count">
+      <div className="results-count" role="status" aria-live="polite">
         <span>{filteredEvents.length} events found</span>
       </div>
 
@@ -277,8 +277,8 @@ const SearchFilter = () => {
                 <span className="rating-value">{event.rating}</span>
               </div>
               <div className="event-actions">
-                <button className="btn-primary">Register Now</button>
-                <button className="btn-outline">Learn More</button>
+                <button className="btn-primary" aria-label={`Register for ${event.title}`}>Register Now</button>
+                <button className="btn-outline" aria-label={`Learn more about ${event.title}`}>Learn More</button>
               </div>
             </div>
           </motion.div>
