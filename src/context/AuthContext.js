@@ -72,8 +72,11 @@ export const AuthProvider = ({ children }) => {
     expiryToastShownRef.current = true;
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",
-      autoClose: 5000,
+      autoClose: 4000,
     });
+    setTimeout(() => {
+      window.location.replace("/login");
+    }, 1500);
   }, [clearSession]);
 
   const setAuthRequestState = useCallback((nextState) => {
