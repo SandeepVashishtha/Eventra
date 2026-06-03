@@ -47,6 +47,7 @@ const Signup = () => {
   const [lastNameError, setLastNameError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [error, setError] = useState("");
+  const [apiError, setApiError] = useState("");
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -70,6 +71,7 @@ const Signup = () => {
 
     if (e.target.name === "email") {
       setEmailError(validateEmail(e.target.value) ? "" : "Invalid email");
+      setApiError(""); // clear API error only when user fixes their email
     }
 
     if (e.target.name === "firstName") {
@@ -92,7 +94,7 @@ const Signup = () => {
       else setLastNameError("");
     }
 
-    if (error) setError("");
+
   };
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
@@ -122,6 +124,30 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // First name validation
+    if (!formData.firstName.trim()) {
+      setFirstNameError("First name is required");
+      return;
+    } else if (formData.firstName.trim().length < 2) {
+      setFirstNameError("First name must be at least 2 characters");
+      return;
+    } else if (formData.firstName.trim().length > 50) {
+      setFirstNameError("First name must be less than 50 characters");
+      return;
+    }
+
+    // Last name validation
+    if (!formData.lastName.trim()) {
+      setLastNameError("Last name is required");
+      return;
+    } else if (formData.lastName.trim().length < 2) {
+      setLastNameError("Last name must be at least 2 characters");
+      return;
+    } else if (formData.lastName.trim().length > 50) {
+      setLastNameError("Last name must be less than 50 characters");
+      return;
+    }
 
     if (!validateEmail(formData.email)) {
       setEmailError("Invalid email format");
@@ -163,9 +189,9 @@ const Signup = () => {
       if (!response.ok) {
         const backendMessage = data?.message || data?.error || '';
         if (backendMessage) {
-          setError(`${backendMessage} (${response.status})`);
+          setApiError(`${backendMessage} (${response.status})`);
         } else {
-          setError(`Registration failed (${response.status})`);
+          setApiError(`Registration failed (${response.status})`);
         }
         return;
       }
@@ -190,7 +216,7 @@ const Signup = () => {
       setSuccess("Account created successfully! Redirecting to dashboard...");
       setTimeout(() => navigate("/dashboard", { replace: true }), 1200);
     } catch (err) {
-      setError(err.message || "Network error. Please try again.");
+      setApiError(err.message || "Network error. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -520,6 +546,11 @@ const Signup = () => {
             {error && (
               <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/40 p-2 rounded-md">
                 {error}
+              </div>
+            )}
+            {apiError && (
+              <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/40 p-2 rounded-md">
+                {apiError}
               </div>
             )}
             {success && (
