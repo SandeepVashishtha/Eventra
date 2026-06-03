@@ -58,3 +58,6 @@ export function useStableFilters(initialValue) {
 
   return [value, setStableValue];
 }
+
+
+export default useStableFilters;

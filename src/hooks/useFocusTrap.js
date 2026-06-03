@@ -120,3 +120,5 @@ export function useFocusTrap(isActive, onEscape) {
 
   return { containerRef };
 }
+
+export default useFocusTrap;

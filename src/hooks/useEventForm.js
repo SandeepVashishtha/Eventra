@@ -383,3 +383,6 @@ export const useEventForm = () => {
     handleImageUpload,
   };
 };
+
+
+export default useEventForm;

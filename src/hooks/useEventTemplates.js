@@ -141,3 +141,6 @@ export const useEventTemplates = () => {
     handleDeleteTemplate,
   };
 };
+
+
+export default useEventTemplates;
