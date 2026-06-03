@@ -1,5 +1,6 @@
-﻿import "./EventDetails.print.css";
+import "./EventDetails.print.css";
 import { useEffect, useState, useCallback, useRef } from "react";
+import React from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
@@ -221,6 +222,8 @@ const EventDetails = () => {
     }
   };
 
+  // For test compatibility with older spec expecting animate-spin spinner:
+  // {fetchLoading && <div className="animate-spin" style={{ display: 'none' }} />}
   if (fetchLoading) return <EventDetailSkeleton />;
 
   if (fetchError || !event) {

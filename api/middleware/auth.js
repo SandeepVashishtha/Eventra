@@ -51,7 +51,8 @@ export const verifyAuth = (handler) => {
 
     if (userId) {
       user = usersById.get(userId);
-    } else if (userEmail) {
+    }
+    if (!user && userEmail) {
       user = users.get(userEmail.toLowerCase());
     }
 

@@ -26,6 +26,14 @@ const createResponse = () => {
       this.headers[name] = value;
       return this;
     },
+    set(nameOrObj, value) {
+      if (typeof nameOrObj === "object") {
+        Object.assign(this.headers, nameOrObj);
+      } else {
+        this.headers[nameOrObj] = value;
+      }
+      return this;
+    },
   };
 };
 

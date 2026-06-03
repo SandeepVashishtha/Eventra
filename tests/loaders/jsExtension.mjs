@@ -10,6 +10,21 @@ import path from "node:path";
 import fs from "node:fs";
 
 export async function resolve(specifier, context, nextResolve) {
+  if (specifier === "react") {
+    const mockReactPath = path.resolve("tests/helpers/mockReact.js");
+    return {
+      url: pathToFileURL(mockReactPath).href,
+      shortCircuit: true
+    };
+  }
+  if (specifier === "idb-keyval") {
+    const mockIdbPath = path.resolve("tests/helpers/mockIdbKeyval.js");
+    return {
+      url: pathToFileURL(mockIdbPath).href,
+      shortCircuit: true
+    };
+  }
+
   // Only patch relative imports that lack an extension
   if (specifier.startsWith(".") && !path.extname(specifier)) {
     const parentDir = path.dirname(fileURLToPath(context.parentURL));

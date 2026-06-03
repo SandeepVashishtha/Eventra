@@ -137,7 +137,7 @@ const getLastNonTrustedIp = (forwardedFor) => {
 
 export function getClientIp(req) {
   const headers = req?.headers;
-  const directIp = req?.socket?.remoteAddress || req?.connection?.remoteAddress || null;
+  const directIp = req?.socket?.remoteAddress || req?.connection?.remoteAddress || "127.0.0.1";
 
   // Vercel sets X-Vercel-Forwarded-For internally — trust it when present.
   // In Vercel deployments the direct connection always comes from a Vercel proxy,

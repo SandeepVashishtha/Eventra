@@ -202,12 +202,20 @@ export const syncSecureStorage = {
    * @param {string} value
    * @returns {Promise<boolean>} true on success, false on storage failure
    */
-  setItem: async (key, value) => {
+  setItem: (key, value) => {
     try {
-      localStorage.setItem(key + PLAINTEXT_SUFFIX, value);
+      try {
+        localStorage.setItem(key + PLAINTEXT_SUFFIX, value);
+      } catch (fallbackError) {
+        if (!cryptoSupported) {
+          throw fallbackError;
+        }
+        console.warn('[secureStorage] Failed to write plaintext fallback:', fallbackError);
+      }
       pendingWrites.set(key, value);
-      await writeWithEncryption(key, value);
-      pendingWrites.delete(key);
+      writeWithEncryption(key, value).then(() => {
+        pendingWrites.delete(key);
+      });
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
