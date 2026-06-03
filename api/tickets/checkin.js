@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { verifyAuth } from "../middleware/auth.js";
 import { registrations, scanLogs } from "../db/store.js";
@@ -20,7 +21,7 @@ async function handler(req, res) {
   const user = req.user; // Organizer
 
   // Ensure only authorized organizers/admins can check in attendees
-  const isOrganizer = (user.roles || []).some(role => 
+  const isOrganizer = (user.roles || []).some(role =>
     ["ORGANIZER", "ADMIN", "SUPER_ADMIN", "EVENT_MANAGER"].includes(role.toUpperCase())
   );
   if (!isOrganizer) {
@@ -90,7 +91,7 @@ async function handler(req, res) {
   if (reg.attendanceStatus === "Checked In") {
     // Log duplicate attempt for auditing
     const duplicateLog = {
-      logId: crypto.randomUUID ? crypto.randomUUID() : `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      logId: crypto.randomUUID(),
       registrationId: reg.registrationId,
       eventId: reg.eventId,
       userId: reg.userId,
@@ -113,7 +114,7 @@ async function handler(req, res) {
 
   // Log successful check-in for auditing/history
   const checkInLog = {
-    logId: crypto.randomUUID ? crypto.randomUUID() : `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    logId: crypto.randomUUID(),
     registrationId: reg.registrationId,
     eventId: reg.eventId,
     userId: reg.userId,
