@@ -62,4 +62,4 @@ jobs:
           done
           
           # Add the correct size label
-          gh pr edit "$PR_URL" --add-label "$LABEL"
+          gh pr edit "$PR_URL" --add-label "$LABEL" || echo "Warning: Could not add label. This is expected for PRs from forks due to token permission limits."
