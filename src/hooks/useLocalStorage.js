@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
+import { logger } from "../utils/logger";
 
 const useLocalStorage = (key, initialValue) => {
   const initialValueRef = useRef(initialValue);
-  initialValueRef.current = initialValue;
+
+  useEffect(()=>{
+    initialValueRef.current = initialValue;
+  },[initialValue]);
 
   // 🔥 FIX: Track when WE fired the event so we don't react to ourselves
   const isInternalWrite = useRef(false);
@@ -14,27 +18,40 @@ const useLocalStorage = (key, initialValue) => {
       const item = window.localStorage.getItem(key);
       return safeJsonParse(item, initialValueRef.current);
     } catch (error) {
-      console.warn(`useLocalStorage: error reading key "${key}":`, error);
+      logger.warn(`useLocalStorage: error reading key "${key}":`, error);
       return initialValueRef.current;
     }
   }, [key]);
 
-  const [storedValue, setStoredValue] = useState(readValue);
+  const [storedValue, setStoredValue] = useState(() => {
+  if (typeof window === "undefined") return initialValue;
 
+  try {
+    const item = window.localStorage.getItem(key);
+    return safeJsonParse(item, initialValue);
+  } catch (error) {
+    console.warn(`useLocalStorage: error reading key "${key}":`, error);
+    return initialValue;
+  }
+  });
+
+  
   const setValue = useCallback(
     (value) => {
       try {
         setStoredValue((currentVal) => {
           const newValue = value instanceof Function ? value(currentVal) : value;
-          window.localStorage.setItem(key, JSON.stringify(newValue));
 
-          // 🔥 FIX: Mark as internal before dispatching so listener skips it
-          isInternalWrite.current = true;
-          window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+          queueMicrotask(() => {
+            window.localStorage.setItem(key, JSON.stringify(newValue));
+            isInternalWrite.current = true;
+            window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+          });
+
           return newValue;
         });
       } catch (error) {
-        console.warn(`useLocalStorage: error setting key "${key}":`, error);
+        logger.warn(`useLocalStorage: error setting key "${key}":`, error);
       }
     },
     [key]
@@ -49,7 +66,7 @@ const useLocalStorage = (key, initialValue) => {
       isInternalWrite.current = true;
       window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
     } catch (error) {
-      console.warn(`useLocalStorage: error removing key "${key}":`, error);
+      logger.warn(`useLocalStorage: error removing key "${key}":`, error);
     }
   }, [key]);
 

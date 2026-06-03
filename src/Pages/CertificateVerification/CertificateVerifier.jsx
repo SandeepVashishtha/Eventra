@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Input } from '../../components/common/Input';
 import { exportToCSV } from '../../utils/exportUtils';
 import { verifyCertificate } from '../../utils/certificateUtils';
@@ -21,12 +21,12 @@ export const CertificateVerifier = () => {
   const [result, setResult] = useState(null);
 
   const handleSearch = async () => {
-    try {
-      const data = await verifyCertificate(uid.trim());
+    const { success, data, error } = await verifyCertificate(uid.trim());
+    if (success) {
       setResult(data);
       toast.success('Certificate verified!');
-    } catch (e) {
-      toast.error('Verification failed');
+    } else {
+      toast.error(error || 'Verification failed');
       setResult(null);
     }
   };
@@ -35,16 +35,19 @@ export const CertificateVerifier = () => {
     <section style={containerStyle} className="glassmorphic">
       <h2 className="text-2xl font-bold mb-4">Certificate Verification</h2>
       <div className="flex gap-2 mb-4">
-        <input
+        <Input
           type="text"
           placeholder="Enter Certificate UID"
           value={uid}
           onChange={(e) => setUid(e.target.value)}
-          className="flex-1 p-2 rounded bg-white/20 text-white"
+          className="flex-1 bg-white/20 text-white placeholder:text-white/70"
+          label="Certificate UID"
         />
         <button
+          type="button"
           onClick={handleSearch}
           className="px-4 py-2 bg-indigo-600 rounded hover:bg-indigo-700 transition"
+          aria-label="Verify certificate"
         >
           Verify
         </button>
