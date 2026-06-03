@@ -335,7 +335,8 @@ export default function Chatbot() {
                 <button
                   type="button"
                   onClick={handleClearConversation}
-                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  disabled={messages.length <= 1}
+                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Clear conversation"
                   aria-label="Clear conversation"
                 >
