@@ -245,3 +245,9 @@ export const getAchievementBadge = (rank) => {
     };
   }
   return {
+    label: "Contributor",
+    color: "from-slate-200 via-slate-300 to-slate-400 text-slate-900 border-slate-300/40",
+    icon: Code,
+    description: "Active community member"
+  };
+};

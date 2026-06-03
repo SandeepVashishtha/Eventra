@@ -1,4 +1,13 @@
-import { Github, ExternalLinkAlt, CodeBranch, MapMarkerAlt, Building, UserFriends, Medal, ChevronLeft, ChevronRight } from "lucide-react";
+import { 
+  FaMedal, 
+  FaCodeBranch, 
+  FaUserFriends, 
+  FaBuilding, 
+  FaMapMarkerAlt, 
+  FaGithub, 
+  FaExternalLinkAlt 
+} from "react-icons/fa";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import { motion } from "framer-motion";
@@ -498,7 +507,7 @@ const Contributors = () => {
               className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>View All Contributors</span>
-              <ExternalLinkAlt className="text-sm" />
+              <FaExternalLinkAlt className="text-sm" />
             </Link>
             <Link
               to="/ContributorGuide"
@@ -506,7 +515,7 @@ const Contributors = () => {
               className="inline-flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out ml-10"
             >
               <span>Guide</span>
-              <ExternalLinkAlt className="text-sm" />
+              <FaExternalLinkAlt className="text-sm" />
             </Link>
           </div>
         </div>

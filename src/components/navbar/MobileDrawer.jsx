@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LogIn, UserPlus, Info, HelpCircle } from "lucide-react";
+import { LogIn, UserPlus, Info, HelpCircle, Sun, Moon, MousePointer } from "lucide-react";
 import NavbarLinks from "./NavbarLinks";
 import { useTheme } from "../../context/ThemeContext";
 

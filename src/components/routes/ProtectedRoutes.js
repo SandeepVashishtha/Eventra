@@ -20,7 +20,7 @@ const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
 const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
-const RBACSettings = lazy(() => import("../admin/RBACSettings"));
+const UIInventoryEmptyState = lazy(() => import("../admin/UIInventoryEmptyState"));
 const UIInventory = lazy(() => import("../admin/UIInventory"));
 
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
@@ -170,6 +170,15 @@ export const getProtectedRoutes = () => [
         ]}
       >
         {withModuleBoundary(<SurveyEngine />, "Survey builder")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/admin/ui-inventory-empty"
+    path="/admin/ui-inventory-empty"
+    element={
+      <ProtectedRoute requiredRoles={[ROLES.ADMIN]}>
+        {withModuleBoundary(<UIInventoryEmptyState />, "UI Inventory Empty")}
       </ProtectedRoute>
     }
   />,
