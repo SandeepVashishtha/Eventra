@@ -438,7 +438,13 @@ export class P2PFileTransferCoordinator {
     };
 
     this.channel.onmessage = async (e) => {
-      const chunkMsg = JSON.parse(e.data);
+      let chunkMsg;
+      try {
+        chunkMsg = JSON.parse(e.data);
+      } catch (err) {
+        console.error("Failed to parse incoming P2P message:", err);
+        return;
+      }
       this.receivedChunks.push(chunkMsg);
 
       const progress = Math.round((this.receivedChunks.length / chunkMsg.totalChunks) * 100);
