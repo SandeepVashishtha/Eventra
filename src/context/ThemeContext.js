@@ -53,8 +53,6 @@ const getInitialTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-
-  export const ThemeProvider = ({ children }) => {
     const [theme, setThemeState] = useState(() => getInitialTheme());
 
   // States to preserve existing codebase drawer flow without breaking
