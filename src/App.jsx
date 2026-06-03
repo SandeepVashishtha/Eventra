@@ -229,10 +229,40 @@ function App() {
                             </ProtectedRoute>
                           } 
                         />
-                        <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
-                        <Route path="/event-recommendation" element={<EventRecommendation />} />
-                        <Route path="/saved-events" element={<SavedEventsPage />} />
-                        <Route path="*" element={<AppRoutes />} />
+                        <Route 
+                          path="/admin" 
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={<DashboardHomeSkeleton />}>
+                                <AdminPanel />
+                              </Suspense>
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/event-recommendation" 
+                          element={
+                            <Suspense fallback={<div>Loading recommendations...</div>}>
+                              <EventRecommendation />
+                            </Suspense>
+                          } 
+                        />
+                        <Route 
+                          path="/saved-events" 
+                          element={
+                            <Suspense fallback={<div>Loading saved events...</div>}>
+                              <SavedEventsPage />
+                            </Suspense>
+                          } 
+                        />
+                        <Route 
+                          path="*" 
+                          element={
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <AppRoutes />
+                            </Suspense>
+                          } 
+                        />
                       </Routes>
                     </ErrorBoundary>
                   </PageTransition>
