@@ -75,6 +75,7 @@ export const verifyAuth = (handler) => {
     }
 
     req.user = decoded;
+    req.authToken = token;
     return handler(req, res);
   };
 };

@@ -56,7 +56,7 @@ async function handler(req, res) {
     const attendeeUser = usersById.get(decodedToken.userId) || {};
     reg = {
       registrationId,
-      eventId: parseInt(eventId),
+      eventId: parseInt(decodedToken.eventId),
       userId: decodedToken.userId || "unknown",
       userName: attendeeUser.fullName || `${attendeeUser.firstName || ""} ${attendeeUser.lastName || ""}`.trim() || "Attendee",
       email: attendeeUser.email || "guest@eventra.com",
@@ -94,6 +94,7 @@ async function handler(req, res) {
       status: "Duplicate Attempt"
     };
     scanLogs.push(duplicateLog);
+    if (scanLogs.length > 10000) scanLogs.shift();
 
     return corsResponse(req, res, 409, { error: "Attendee is already checked in" });
   }
@@ -116,6 +117,7 @@ async function handler(req, res) {
     status: "Checked In"
   };
   scanLogs.push(checkInLog);
+  if (scanLogs.length > 10000) scanLogs.shift();
 
   return corsResponse(req, res, 200, {
     success: true,

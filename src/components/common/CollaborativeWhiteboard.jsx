@@ -214,6 +214,20 @@ export default function CollaborativeWhiteboard() {
           }));
           break;
 
+        case "WHITEBOARD_SHAPE_PREVIEW":
+          setRemoteActiveStrokes((prev) => {
+            const active = prev[msg.id];
+            if (!active) return prev;
+            return {
+              ...prev,
+              [msg.id]: {
+                ...active,
+                end: msg.end,
+              },
+            };
+          });
+          break;
+
         case "WHITEBOARD_STROKE_DRAW":
           setRemoteActiveStrokes((prev) => {
             const active = prev[msg.id];
@@ -250,6 +264,13 @@ export default function CollaborativeWhiteboard() {
             saveHistory(updated);
             return updated;
           });
+          if (msg.id) {
+            setRemoteActiveStrokes((prev) => {
+              const copy = { ...prev };
+              delete copy[msg.id];
+              return copy;
+            });
+          }
           break;
 
         case "WHITEBOARD_CLEAR":
@@ -321,6 +342,25 @@ export default function CollaborativeWhiteboard() {
     } else {
       // Shape tools (line, rect, circle)
       currentPointsRef.current = [coords.x, coords.y]; // Store starting coordinate anchor
+      const newStroke = {
+        tool,
+        color,
+        lineWidth,
+        start: [coords.x, coords.y],
+        end: [coords.x, coords.y],
+      };
+
+      bcRef.current.postMessage({
+        type: "WHITEBOARD_STROKE_START",
+        id: currentStrokeIdRef.current,
+        stroke: newStroke,
+        from: peerId.current,
+      });
+
+      setRemoteActiveStrokes((prev) => ({
+        ...prev,
+        [currentStrokeIdRef.current]: newStroke,
+      }));
     }
   };
 
@@ -362,6 +402,13 @@ export default function CollaborativeWhiteboard() {
         end: [coords.x, coords.y]
       };
 
+      bcRef.current.postMessage({
+        type: "WHITEBOARD_SHAPE_PREVIEW",
+        id: currentStrokeIdRef.current,
+        end: [coords.x, coords.y],
+        from: peerId.current,
+      });
+
       setRemoteActiveStrokes(prev => ({
         ...prev,
         [currentStrokeIdRef.current]: previewStroke
@@ -400,6 +447,7 @@ export default function CollaborativeWhiteboard() {
         if (finished) {
           bcRef.current.postMessage({
             type: "WHITEBOARD_COMPLETE_STROKE",
+            id: currentStrokeIdRef.current,
             stroke: finished,
             from: peerId.current
           });

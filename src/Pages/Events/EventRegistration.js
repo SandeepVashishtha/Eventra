@@ -367,7 +367,19 @@ const EventRegistration = () => {
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
-  }, [eventId, event, formData, isAuthenticated, user, token, navigate, registrationPath, addRegistration, clearSession]);
+  }, [
+    eventId,
+    event,
+    formData,
+    isAuthenticated,
+    user,
+    token,
+    navigate,
+    registrationPath,
+    addRegistration,
+    clearSession,
+    refreshEventAvailability,
+  ]);
 
   // Handle form submission
   const handleSubmit = useCallback(async (e) => {

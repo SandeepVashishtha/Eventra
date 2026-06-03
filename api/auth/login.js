@@ -39,6 +39,8 @@ const validateLoginInput = (usernameOrEmail, password) => {
   
   if (!password) {
     errors.push("Password is required");
+  } else if (password.length > 100) {
+    errors.push("Password exceeds maximum allowed length");
   }
   
   return errors;
