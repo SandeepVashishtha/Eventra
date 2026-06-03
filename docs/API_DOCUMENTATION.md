@@ -865,12 +865,6 @@ curl -N http://localhost:8080/api/events/stream
 ```text
 event:connected
 data:Stream connected successfully
-```
-
-#### Backend Implementation PR
-[SandeepVashishtha/Eventra-Backend#BACKEND_PR_NUMBER](https://github.com/SandeepVashishtha/Eventra-Backend/pull/BACKEND_PR_NUMBER)
-
----
 
 # Project APIs
 
@@ -1091,6 +1085,140 @@ Status: `200 OK`
 - This endpoint is public and does not require JWT authentication.
 - This PR only documents the project categories endpoint.
 - Other Projects APIs will be documented separately when implemented.
+
+---
+
+# Hackathon APIs
+
+## List Hackathons
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/hackathons` |
+
+Fetches the list of available hackathons.
+
+### Authentication
+Public. No authentication required.
+
+### Example Request
+```bash
+curl http://localhost:8080/api/hackathons
+```
+
+### Successful Response (200)
+Returns a JSON array of hackathon objects. Returns `[]` if no hackathons exist.
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Hackathon Name",
+    "description": "Hackathon description",
+    "organizer": "Organizer Name",
+    "startDate": "2026-06-10",
+    "endDate": "2026-06-12",
+    "location": "Bhopal",
+    "mode": "Offline",
+    "prizePool": "50000",
+    "registrationDeadline": "2026-06-05",
+    "imageUrl": "https://example.com/hackathon.png"
+  }
+]
+```
+
+## Get Hackathon By ID
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/hackathons/{id}` |
+
+Returns complete details for a single hackathon by its ID.
+
+*This documentation update corresponds to the backend implementation for GET /api/hackathons/{id}.*
+
+### Authentication
+Not required. Public endpoint.
+
+### Example Request
+
+```bash
+GET /api/hackathons/1
+```
+
+### Successful Response (200)
+
+```json
+{
+  "id": 1,
+  "title": "CodeSprint 2026",
+  "description": "A beginner-friendly hackathon for building full-stack projects.",
+  "organizer": "Eventra Team",
+  "startDate": "2026-07-10T00:00:00",
+  "endDate": "2026-07-12T00:00:00",
+  "location": "Bhopal",
+  "mode": "Offline",
+  "prizePool": "50000",
+  "registrationDeadline": "2026-07-05T00:00:00",
+  "imageUrl": "https://example.com/hackathon.png"
+}
+```
+
+### Error Response (404)
+
+```json
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "Hackathon not found with id: 999",
+  "path": "/api/hackathons/999",
+  "timestamp": "2026-06-02T02:41:32.8274901"
+}
+```
+
+---
+
+# Analytics APIs
+
+## Get Admin Analytics
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/admin/analytics` |
+
+Returns high-level system analytics and dashboard statistics.
+
+*This documentation update corresponds to the backend implementation for GET /api/admin/analytics.*
+
+### Authentication
+
+Requires a valid Bearer JWT in the `Authorization` header. This endpoint is restricted to users with `ADMIN`, `ORGANIZER`, or `SUPER_ADMIN` roles.
+
+### Successful Response (200)
+
+```json
+{
+  "monthlyRegistrations": [
+    { "month": "Jan", "count": 120 },
+    { "month": "Feb", "count": 150 }
+  ],
+  "categoryBreakdown": [
+    { "category": "Technology", "count": 20 },
+    { "category": "Design", "count": 8 }
+  ],
+  "registrationTrend": "up",
+  "topEvents": [
+    { "id": 1, "title": "Tech Conference 2026", "participants": 300 }
+  ]
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `401 Unauthorized` | JWT token is missing, invalid, or expired |
+| `403 Forbidden` | Authenticated user does not have the required administrative role |
 
 ---
 

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import { quickPrompts, getAssistantReply, INITIAL_MESSAGES } from "../config/chatbotKnowledge";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 const ICON_MAP = {
   CalendarDays,
@@ -131,6 +132,12 @@ export default function Chatbot() {
     setIsMinimized(false);
   }, [clearReplyTimer]);
 
+  // Trap keyboard focus inside the chat panel while it's expanded
+  const { containerRef: chatTrapRef } = useFocusTrap(
+    isOpen && !isMinimized,
+    handleClose
+  );
+
   // Listen for Escape key to close the chatbot (accessibility)
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -176,7 +183,9 @@ export default function Chatbot() {
   }, [messages]);
 
   const sendMessage = (messageText = draft) => {
-    const cleanMessage = messageText.trim();
+    // 🔥 FIX: Guard against React Synthetic Events to prevent fatal .trim() crashes
+    const safeText = typeof messageText === "string" ? messageText : draft;
+    const cleanMessage = safeText.trim();
     if (!cleanMessage || isTyping) return;
 
     // Append User Message, pruning the oldest entries when the cap is exceeded.
@@ -218,7 +227,7 @@ export default function Chatbot() {
             <div
               className="
                 fixed bottom-6 right-6 z-[100]
-                hidden sm:flex               /* hide strip on mobile, show FAB instead */
+                hidden sm:flex              /* hide strip on mobile, show FAB instead */
                 items-center justify-between gap-3
                 w-72 rounded-2xl
                 border border-slate-700
@@ -280,6 +289,7 @@ export default function Chatbot() {
       <AnimatePresence>
         {isOpen && !isMinimized && (
           <motion.section
+            ref={chatTrapRef}
             data-chatbot-open
             data-lenis-prevent
             aria-label="Eventra assistant"
@@ -325,7 +335,8 @@ export default function Chatbot() {
                 <button
                   type="button"
                   onClick={handleClearConversation}
-                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  disabled={messages.length <= 1}
+                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Clear conversation"
                   aria-label="Clear conversation"
                 >
@@ -404,7 +415,9 @@ export default function Chatbot() {
                   </motion.div>
                 </div>
               )}
-
+              
+              {/* 🔥 FIX: Added the missing dummy div to act as the scroll target for messagesEndRef */}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Footer controls */}
