@@ -40,6 +40,40 @@ const validateName = (name, type) => {
   return "";
 };
 
+const validateEmail = (email) => {
+  if (!email?.trim()) return "Email is required";
+  if (!EMAIL_REGEX.test(email)) return "Invalid email address";
+  return "";
+};
+
+const checkPasswordRequirement = (value, req) => {
+  return req.regex.test(value);
+};
+
+const getPasswordStrength = (password) => {
+  if (!password) {
+    return { score: 0, label: "Very Weak", color: "text-red-500" };
+  }
+  let metCount = 0;
+  for (const req of PASSWORD_REQUIREMENTS) {
+    if (req.regex.test(password)) {
+      metCount++;
+    }
+  }
+  if (metCount === 5) {
+    return { score: 100, label: "Strong", color: "text-green-500" };
+  } else if (metCount === 4) {
+    return { score: 80, label: "Good", color: "text-green-400" };
+  } else if (metCount === 3) {
+    return { score: 60, label: "Fair", color: "text-yellow-500" };
+  } else if (metCount === 2) {
+    return { score: 40, label: "Weak", color: "text-red-400" };
+  } else {
+    return { score: 20, label: "Very Weak", color: "text-red-500" };
+  }
+};
+
+
 // ============ CUSTOM HOOK: useSignupForm ============
 const useSignupForm = () => {
   const [formData, setFormData] = useState({
@@ -530,6 +564,10 @@ setSubmitStatus('success');
     </div>
   </motion.div>
   );
+};
+
+const ToggleEyeIcon = ({ visible, ...props }) => {
+  return visible ? <EyeOff {...props} /> : <Eye {...props} />;
 };
 
 // ============ REUSABLE FORM FIELD COMPONENT ============
