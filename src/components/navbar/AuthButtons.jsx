@@ -2,8 +2,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, Info, HelpCircle, LogIn } from "lucide-react";
 
-const prefetchLogin = () => import("../../Pages/Auth/Login");
-const prefetchSignup = () => import("../../Pages/Auth/Signup");
+// Note: Auth page imports commented out - pages not yet created
+// const prefetchLogin = () => import("../../Pages/Auth/Login");
+// const prefetchSignup = () => import("../../Pages/Auth/Signup");
 
 const AuthButtons = () => {
   const [isOpen, setIsOpen] = useState(false);

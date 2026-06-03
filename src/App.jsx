@@ -20,7 +20,7 @@ import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
-import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
@@ -39,12 +39,13 @@ const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"))
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
-const ExploreEvents = lazy(() => import("./Pages/Events/ExploreEvents"));
-const Login = lazy(() => import("./Pages/Auth/Login"));
-const Signup = lazy(() => import("./Pages/Auth/Signup"));
-const Profile = lazy(() => import("./Pages/User/Profile"));
-const Dashboard = lazy(() => import("./Pages/Dashboard/Dashboard"));
-const AdminPanel = lazy(() => import("./Pages/Admin/AdminPanel"));
+const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
+// Placeholder imports - these pages are not yet implemented
+// const Login = lazy(() => import("./Pages/auth/Login"));
+// const Signup = lazy(() => import("./Pages/auth/Signup"));
+// const Profile = lazy(() => import("./Pages/user/Profile"));
+// const Dashboard = lazy(() => import("./Pages/dashboard/Dashboard"));
+// const AdminPanel = lazy(() => import("./Pages/Admin/AdminPanel"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
@@ -55,6 +56,7 @@ const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
+
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -191,7 +193,7 @@ function App() {
                           path="/explore" 
                           element={
                             <Suspense fallback={<ExploreEventsSkeleton />}>
-                              <ExploreEvents />
+                              <EventsPage />
                             </Suspense>
                           } 
                         />
@@ -203,33 +205,14 @@ function App() {
                             </Suspense>
                           } 
                         />
-                        <Route 
-                          path="/login" 
-                          element={
-                            <Suspense fallback={<AuthFormSkeleton />}>
-                              <Login />
-                            </Suspense>
-                          } 
-                        />
-                        <Route 
-                          path="/signup" 
-                          element={
-                            <Suspense fallback={<AuthFormSkeleton />}>
-                              <Signup />
-                            </Suspense>
-                          } 
-                        />
-                        <Route 
-                          path="/dashboard" 
-                          element={
-                            <ProtectedRoute>
-                              <Suspense fallback={<DashboardHomeSkeleton />}>
-                                <Dashboard />
-                              </Suspense>
-                            </ProtectedRoute>
-                          } 
-                        />
-                        <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+                        {/* TODO: Implement missing auth/dashboard routes
+                          Pages do not exist:
+                          - ./Pages/auth/Login
+                          - ./Pages/auth/Signup
+                          - ./Pages/dashboard/Dashboard
+                          - ./Pages/Admin/AdminPanel
+                          - ./Pages/user/Profile
+                        */}
                         <Route path="/event-recommendation" element={<EventRecommendation />} />
                         <Route path="/saved-events" element={<SavedEventsPage />} />
                         <Route path="*" element={<AppRoutes />} />
