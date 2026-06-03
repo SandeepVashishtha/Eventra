@@ -24,7 +24,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   }, []);
 
   const handleSearchFocus = useCallback(() => {
-    const searchInput = document.querySelector(
+    const searchInput = navRef.current?.querySelector(
       'input[type="text"], input[type="search"]'
     );
 
@@ -32,7 +32,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   }, []);
 
   const handleNewEvent = useCallback(() => {
-    const createEventBtn = document.querySelector(
+    const createEventBtn = navRef.current?.querySelector(
       '[aria-label*="Create Event"], [aria-label*="create"]'
     );
 
