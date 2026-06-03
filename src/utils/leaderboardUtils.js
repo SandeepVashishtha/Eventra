@@ -243,10 +243,18 @@ export const getAchievementBadge = (rank) => {
       description: "Rank 4-10 - Gold contributor"
     };
   }
+  if (rank >= 11 && rank <= 100) {
+    return {
+      label: "Silver Tier",
+      color: "from-slate-200 via-gray-300 to-slate-400 text-slate-900 border-slate-300/40 shadow-[0_0_6px_rgba(148,163,184,0.2)]",
+      icon: Award,
+      description: "Rank 11-100 - Silver contributor"
+    };
+  }
   return {
     label: "Bronze Tier",
     color: "from-orange-200 via-orange-300 to-red-400 text-orange-950 border-orange-300/40 shadow-[0_0_6px_rgba(217,119,6,0.2)]",
     icon: Zap,
-    description: "Rank 11+ - Contributor"
+    description: "Rank 101+ - Contributor"
   };
 };

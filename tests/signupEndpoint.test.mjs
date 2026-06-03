@@ -1,5 +1,17 @@
 import { AUTH_TEST_ALLOWED_ORIGIN } from "./helpers/authTestEnv.mjs";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+
+// Clear fallback db before importing handler to start with a fresh slate
+const DB_PATH = path.join(os.tmpdir(), "eventra_users_db.json");
+try {
+  if (fs.existsSync(DB_PATH)) {
+    fs.unlinkSync(DB_PATH);
+  }
+} catch (e) {}
+
 const { default: handler } = await import("../api/auth/signup.js");
 
 // ---------------------------------------------------------------------------
