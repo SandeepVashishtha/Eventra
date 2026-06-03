@@ -36,8 +36,6 @@ function sanitizeUrl(url) {
     return url;
   }
 }
-  return id;
-}
 
 /**
  * Attempt to recover component state from sessionStorage
