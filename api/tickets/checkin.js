@@ -56,7 +56,7 @@ async function handler(req, res) {
     const attendeeUser = usersById.get(decodedToken.userId) || {};
     reg = {
       registrationId,
-      eventId: parseInt(eventId),
+      eventId: parseInt(decodedToken.eventId),
       userId: decodedToken.userId || "unknown",
       userName: attendeeUser.fullName || `${attendeeUser.firstName || ""} ${attendeeUser.lastName || ""}`.trim() || "Attendee",
       email: attendeeUser.email || "guest@eventra.com",
