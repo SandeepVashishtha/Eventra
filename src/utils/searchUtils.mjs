@@ -1,5 +1,7 @@
 import Fuse from "fuse.js";
 
+const fuseCache = new WeakMap();
+
 /**
  * Normalizes text for searching: lowercase, remove accents, and strip special chars.
  */
@@ -58,24 +60,29 @@ export const getRouteSearchResults = (items, query, keys, options = {}) => {
     }, item);
   };
 
-  const normalizedQuery = normalizeSearchText(query);
-  const queryTokens = normalizedQuery.split(" ").filter(Boolean);
+   const normalizedQuery = normalizeSearchText(query);
+   const queryTokens = normalizedQuery.split(" ").filter(Boolean);
 
-  const fuse = new Fuse(items, {
-    keys: searchKeys,
-    threshold: 0.4,
-    distance: 100,
-    ignoreLocation: true,
-    findAllMatches: true,
-    includeScore: true,
-    useExtendedSearch: true,
-    ...options,
-  });
+   // Get or create Fuse instance for this items array
+   let fuse = fuseCache.get(items);
+   if (!fuse) {
+     fuse = new Fuse(items, {
+       keys: searchKeys,
+       threshold: 0.4,
+       distance: 100,
+       ignoreLocation: true,
+       findAllMatches: true,
+       includeScore: true,
+       useExtendedSearch: true,
+       ...options,
+     });
+     fuseCache.set(items, fuse);
+   }
 
-  const fuseResults = fuse.search(query).map((result) => ({
-    ...result.item,
-    _searchScore: result.score,
-  }));
+   const fuseResults = fuse.search(query).map((result) => ({
+     ...result.item,
+     _searchScore: result.score,
+   }));
 
   const matchedIds = new Set(fuseResults.map((item) => item.id));
 
