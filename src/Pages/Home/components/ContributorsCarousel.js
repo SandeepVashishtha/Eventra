@@ -386,7 +386,7 @@ const Contributors = () => {
                         {c.name ? c.name : c.login || "Unknown Contributor"}
                       </h3>
                       <p className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-3 flex items-center justify-center gap-1">
-                        <Medal className="text-yellow-500" />{" "}
+                        <FaMedal className="text-yellow-500" />{" "}
                         {c.role}
                       </p>
 
@@ -412,14 +412,14 @@ const Contributors = () => {
                     <div className="grid grid-cols-3 gap-3 text-sm text-gray-900 dark:text-white my-3 w-full">
                       {/* UPDATED: Stat box background and icon colors */}
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                        <CodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
+                        <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
                         <span className="font-semibold">{c.public_repos}</span>
                         <span className="text-xs text-gray-600 dark:text-gray-400">
                           Repos
                         </span>
                       </div>
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                        <UserFriends className="text-gray-900 dark:text-indigo-400 mb-1" />
+                        <FaUserFriends className="text-gray-900 dark:text-indigo-400 mb-1" />
                         <span className="font-semibold">{c.followers}</span>
                         <span className="text-xs text-gray-600 dark:text-gray-400">
                           Followers
@@ -445,12 +445,12 @@ const Contributors = () => {
                     <div className="flex flex-col gap-1 text-xs text-gray-700 dark:text-gray-300 mb-4">
                       {c.company && (
                         <span className="flex items-center gap-1 justify-center">
-                          <Building /> {c.company}
+                          <FaBuilding /> {c.company}
                         </span>
                       )}
                       {c.location && (
                         <span className="flex items-center gap-1 justify-center">
-                          <MapMarkerAlt /> {c.location}
+                          <FaMapMarkerAlt /> {c.location}
                         </span>
                       )}
                     </div>
@@ -463,11 +463,11 @@ const Contributors = () => {
                         className="group inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out transform relative overflow-hidden"
                       >
                         {/* GitHub Icon with animation */}
-                        <Github className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-gray-200" />
+                        <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-gray-200" />
 
                         <span>Profile</span>
 
-                        <ExternalLinkAlt className="text-sm opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
+                        <FaExternalLinkAlt className="text-sm opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
                       </a>
                     </div>
                   </motion.div>
