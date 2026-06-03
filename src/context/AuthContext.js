@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from "../config/api";
+import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler, setAuthToken } from "../config/api";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
 import { syncSecureStorage } from "../utils/secureStorage";
 import { toast } from "react-toastify";
@@ -48,6 +48,7 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
+    setAuthToken(null);
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     syncSecureStorage.removeItem("user");
     return true;
@@ -257,6 +258,7 @@ export const AuthProvider = ({ children }) => {
   const persistSession = useCallback(async (sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
+    setAuthToken(sessionToken);
 
     // The auth token is set exclusively by the server via a Set-Cookie response
     // header with HttpOnly; Secure; SameSite=Strict. Writing the token through
@@ -411,6 +413,7 @@ export const AuthProvider = ({ children }) => {
       login,
       logout,
       setAuthSession,
+      setUser,
       isAuthenticated,
       hasRole,
       hasPermission,

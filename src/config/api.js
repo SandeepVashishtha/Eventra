@@ -105,9 +105,14 @@ const API = axios.create({
 });
 
 let onUnauthorized = null;
+let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
+};
+
+export const setAuthToken = (token) => {
+  _authToken = token;
 };
 
 /**
@@ -204,11 +209,15 @@ API.interceptors.request.use((config) => {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
 
+  if (_authToken && _authToken !== "cookie-managed") {
+    config.headers["Authorization"] = `Bearer ${_authToken}`;
+  }
+
   const method = config.method?.toUpperCase();
   if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-    const token = getCSRFToken();
-    if (token) {
-      config.headers["X-CSRF-Token"] = token;
+    const csrf = getCSRFToken();
+    if (csrf) {
+      config.headers["X-CSRF-Token"] = csrf;
     }
   }
 
