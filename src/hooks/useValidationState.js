@@ -2,7 +2,7 @@
  * Helper hook for managing validation state in forms
  * Works alongside useFormValidation hook for enhanced validation UX
  */
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 /**
  * Hook to determine validation status based on field state
@@ -23,8 +23,9 @@ export const useValidationState = (
 ) => {
   /**
    * Get visual indicator based on validation state
+   * 🔥 FIX: Converted from invoked useCallback to useMemo for proper computed caching
    */
-  const getStatusIndicator = useCallback(() => {
+  const statusIndicator = useMemo(() => {
     switch (validationState) {
       case "validating":
         return "validating"; // Show spinner
@@ -40,7 +41,7 @@ export const useValidationState = (
   /**
    * Get status message for accessibility announcements
    */
-  const getStatusMessage = useCallback(() => {
+  const statusMessage = useMemo(() => {
     switch (validationState) {
       case "validating":
         return `${fieldName} is being validated`;
@@ -56,26 +57,27 @@ export const useValidationState = (
   /**
    * Check if field should show error message
    */
-  const shouldShowError = useCallback(() => {
+  const shouldShowError = useMemo(() => {
     return touched && validationState === "error" && error;
   }, [touched, validationState, error]);
 
   /**
    * Check if validation is in progress
    */
-  const isValidating = useCallback(() => {
+  const isValidating = useMemo(() => {
     return validationState === "validating";
   }, [validationState]);
 
   /**
    * Check if validation passed
    */
-  const isValid = useCallback(() => {
+  const isValid = useMemo(() => {
     return validationState === "success";
   }, [validationState]);
 
   /**
    * Get CSS classes for styling based on validation state
+   * (Kept as useCallback because it accepts an argument and is executed by the consumer)
    */
   const getFieldClassName = useCallback(
     (baseClass = "") => {
@@ -101,8 +103,9 @@ export const useValidationState = (
 
   /**
    * Get ARIA attributes for accessibility
+   * 🔥 FIX: useMemo prevents returning a new object reference on every render, fixing massive form re-renders.
    */
-  const getAriaAttributes = useCallback(() => {
+  const ariaAttributes = useMemo(() => {
     const attributes = {};
 
     if (error && touched) {
@@ -116,7 +119,7 @@ export const useValidationState = (
       attributes["aria-busy"] = "true";
     }
 
-    if (isValid()) {
+    if (isValid) {
       attributes["aria-describedby"] = `${fieldName}-success`;
     }
 
@@ -125,15 +128,15 @@ export const useValidationState = (
 
   return {
     // Status checks
-    statusIndicator: getStatusIndicator(),
-    statusMessage: getStatusMessage(),
-    shouldShowError: shouldShowError(),
-    isValidating: isValidating(),
-    isValid: isValid(),
+    statusIndicator,
+    statusMessage,
+    shouldShowError,
+    isValidating,
+    isValid,
 
     // Styling
     fieldClassName: getFieldClassName,
-    ariaAttributes: getAriaAttributes(),
+    ariaAttributes,
 
     // Direct accessors
     validationState,
