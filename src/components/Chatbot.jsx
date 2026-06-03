@@ -58,7 +58,7 @@ export default function Chatbot() {
     try {
       const lastActive = localStorage.getItem("eventra_chatbot_last_active");
       const twoHours = 2 * 60 * 60 * 1000;
-      if (lastActive && Date.now() - parseInt(lastActive) > twoHours) {
+      if (lastActive && Date.now() - parseInt(lastActive, 10) > twoHours) {
         setMessages(INITIAL_MESSAGES);
       }
       localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
