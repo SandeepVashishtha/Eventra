@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState, useCallback } from "react";
 import { ThemeContext } from "../context/ThemeContext";
 import { toast } from "../utils/toast";
 
@@ -8,7 +8,7 @@ const ToastProvider = () => {
   const [toasts, setToasts] = useState([]);
   const [announcement, setAnnouncement] = useState("");
 
-  const dismissToast = (id) => {
+  const dismissToast = useCallback((id) => {
     if (id == null) {
       setToasts([]);
       toastTimersRef.current.forEach((timer) => clearTimeout(timer));
@@ -22,7 +22,7 @@ const ToastProvider = () => {
       clearTimeout(timer);
       toastTimersRef.current.delete(id);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const timers = toastTimersRef.current;
@@ -37,7 +37,7 @@ const ToastProvider = () => {
         });
         
         // programmatically trigger visually-hidden live region announcement
-        setAnnouncement(incomingToast.message);
+        setAnnouncement(`${incomingToast.message} ${Date.now()}`);
 
         if (incomingToast.autoClose === false) {
           return;
@@ -69,7 +69,7 @@ const ToastProvider = () => {
       timers.forEach((timer) => clearTimeout(timer));
       timers.clear();
     };
-  }, []);
+  }, [dismissToast]);
 
   const palette =
     theme === "dark"
@@ -125,7 +125,7 @@ const ToastProvider = () => {
           border: 0,
         }}
       >
-        {announcement}
+        {announcement.replace(/\d+/g, "")}
       </div>
 
       <div
