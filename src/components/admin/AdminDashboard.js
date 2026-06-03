@@ -32,7 +32,7 @@ import StatusBadge from "../common/StatusBadge";
 import "./AdminDashboard.css";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import TicketScanner from "./TicketScanner";
-import SectionErrorBoundary from "../common/SectionErrorBoundary";
+import ErrorBoundary from "../common/ErrorBoundary";
 import { toast } from "react-toastify";
 
 import { ROLES, PERMISSIONS } from "../../config/roles";
@@ -691,18 +691,18 @@ const AdminDashboard = () => {
                       ))}
                 </motion.div>
                 <div style={{ marginTop: "1.5rem" }}>
-                  <SectionErrorBoundary label="Analytics Dashboard">
+                  <ErrorBoundary level="section" label="Analytics Dashboard">
                     <AnalyticsDashboard />
-                  </SectionErrorBoundary>
+                  </ErrorBoundary>
                 </div>
               </motion.div>
             )}
 
             {activeTab === "scanner" && (
               <motion.div key="scanner" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ad-section">
-                <SectionErrorBoundary label="Ticket Scanner">
+                <ErrorBoundary level="section" label="Ticket Scanner">
                   <TicketScanner />
-                </SectionErrorBoundary>
+                </ErrorBoundary>
               </motion.div>
             )}
           </AnimatePresence>

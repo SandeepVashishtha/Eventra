@@ -16,7 +16,7 @@ import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import useDebounce from "../../hooks/useDebounce";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -658,7 +658,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
         </motion.div>
 
         {/* Hackathons Grid */}
-        <SectionErrorBoundary label="Hackathons">
+        <ErrorBoundary level="section" label="Hackathons">
         <AnimatePresence mode="wait">
          {error ? (
             <div className="col-span-full text-center py-16">
@@ -807,7 +807,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
             </motion.div>
           )}
         </AnimatePresence>
-        </SectionErrorBoundary>
+        </ErrorBoundary>
       </div>
       <HackathonCTA></HackathonCTA>
       <BackToTopButton positionClass={positionClass} />
