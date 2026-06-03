@@ -3,6 +3,7 @@ import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
+import { useStableFilters } from "../../hooks/useStableFilters";
 import {
   applyAdvancedFilters,
   getDateRange,
@@ -44,7 +45,7 @@ const useEventListing = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
 
-  const [advancedFilters, setAdvancedFiltersState] = useState(getDefaultFilters);
+  const [advancedFilters, setAdvancedFiltersState] = useStableFilters(getDefaultFilters); // useStableFilters({})
 
   const [pagination, setPagination] = useState({
     totalPages: 1,

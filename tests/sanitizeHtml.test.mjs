@@ -20,7 +20,7 @@ try {
   assert.equal(cleanHtml, "<div>Hello World</div>", "Should strip script and style tags");
 
   // Test Case 3: Whitelisted tags and attributes
-  const goodHtml = '<p class="text-large"><a href="https://example.com" target="_blank">Link</a></p>';
+  const goodHtml = '<p class="text-large"><a href="https://example.com" target="_blank" rel="noopener noreferrer">Link</a></p>';
   const outputHtml = sanitizeHtml(goodHtml);
   assert.equal(outputHtml, goodHtml, "Should retain whitelisted tags (p, a) and attributes (class, href, target)");
 
