@@ -22,7 +22,7 @@ export const RBACProvider = ({ children }) => {
   // Determine user's combined permissions based on their assigned roles
   const userPermissions = useMemo(() => {
     if (!user || !user.roles) return [];
-    
+
     const permissions = new Set();
     user.roles.forEach(role => {
       const normalizedRole = role.toLowerCase();
@@ -30,7 +30,7 @@ export const RBACProvider = ({ children }) => {
         policies[normalizedRole].forEach(p => permissions.add(p));
       }
     });
-    
+
     return Array.from(permissions);
   }, [user, policies]);
 

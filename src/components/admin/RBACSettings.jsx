@@ -23,10 +23,10 @@ const RBACSettings = () => {
             <Shield className="w-5 h-5 text-indigo-500" /> Current Role Policies
           </h2>
         </div>
-        
+
         <div className="divide-y divide-gray-100 dark:divide-gray-700">
           {Object.entries(policies).map(([role, permissions]) => (
-            <div key={role} className="p-6 flex flex-col md:flex-row md:items-center gap-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+            <div key={role} className="p-6 flex flex-col md:flex-row md:items-center gap-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">   
               <div className="w-48 shrink-0">
                 <span className="inline-block px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-bold text-sm rounded-full uppercase tracking-wider">
                   {role.replace("_", " ")}
