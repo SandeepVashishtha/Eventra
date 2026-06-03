@@ -2,9 +2,9 @@ import { useEffect, useCallback, useRef } from "react";
 
 /**
  * useKeyboardShortcuts Hook
- * 
+ *
  * Centralized manager for keyboard shortcuts.
- * 
+ *
  * @param {Object} shortcuts - Mapping of keys to handlers
  * @param {boolean} disabled - Global disable toggle
  */
@@ -20,9 +20,9 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
 
       // Ignore shortcuts when typing in inputs or textareas
       const activeElement = document.activeElement;
-      const isTyping = 
-        activeElement.tagName === "INPUT" || 
-        activeElement.tagName === "TEXTAREA" || 
+      const isTyping =
+        activeElement.tagName === "INPUT" ||
+        activeElement.tagName === "TEXTAREA" ||
         activeElement.isContentEditable;
 
       const key = event.key;
@@ -32,7 +32,7 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
 
       // Special handling for search ('/') and help ('?')
       // We allow '/' even if not typing if it's explicitly handled
-      
+
       // Build a unique key string for mapping
       let keyString = "";
       if (ctrl) keyString += "ctrl+";
@@ -59,3 +59,5 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 };
+
+export default useKeyboardShortcuts;

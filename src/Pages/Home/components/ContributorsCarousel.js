@@ -1,4 +1,14 @@
-import { Github, ExternalLinkAlt, CodeBranch, MapMarkerAlt, Building, UserFriends, Medal, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Github,
+  ExternalLinkAlt,
+  CodeBranch,
+  MapMarkerAlt,
+  Building,
+  UserFriends,
+  Medal,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import { motion } from "framer-motion";
@@ -77,10 +87,7 @@ const getCachedContributors = () => {
 };
 const cacheContributors = (data) => {
   try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ data, timestamp: Date.now() })
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
   } catch {}
 };
 
@@ -133,15 +140,9 @@ const Contributors = () => {
   const fetchGitHubProfile = useCallback(async (username) => {
     await throttleProfileFetch();
     try {
-      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
-        `/users/${username}`
-      )}`;
+      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/users/${username}`)}`;
 
-      const { data: profile } = await fetchWithTimeout(
-        proxyUrl,
-        {},
-        REQUEST_TIMEOUT
-      );
+      const { data: profile } = await fetchWithTimeout(proxyUrl, {}, REQUEST_TIMEOUT);
 
       return {
         followers: profile.followers || 0,
@@ -164,76 +165,75 @@ const Contributors = () => {
   }, []);
 
   // Fetch contributors
-  const fetchContributors = useCallback(async ({ backgroundRefresh = false } = {}) => {
-    if (!backgroundRefresh) setLoading(true);
-    const cached = getCachedContributors();
-    if (cached.data) {
-      setContributors(cached.data);
-      if (!cached.isStale) {
-        if (!backgroundRefresh) setLoading(false);
-        return;
-      }
-    }
-
-    try {
-      let allContributors = [];
-      let page = 1;
-      let hasMore = true;
-      while (hasMore && page <= MAX_CONTRIBUTOR_PAGES) {
-        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
-          `/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`
-        )}`;
-
-        const { data } = await fetchWithTimeout(
-          proxyUrl,
-          {},
-          REQUEST_TIMEOUT
-        );
-        if (!Array.isArray(data) || data.length === 0) hasMore = false;
-        else {
-          allContributors = [...allContributors, ...data];
-          page++;
+  const fetchContributors = useCallback(
+    async ({ backgroundRefresh = false } = {}) => {
+      if (!backgroundRefresh) setLoading(true);
+      const cached = getCachedContributors();
+      if (cached.data) {
+        setContributors(cached.data);
+        if (!cached.isStale) {
+          if (!backgroundRefresh) setLoading(false);
+          return;
         }
       }
 
-      // Enrich each contributor with profile data fetched in parallel batches
-      // of PROFILE_BATCH_SIZE (10) to balance throughput against GitHub's
-      // unauthenticated rate limit. A short BATCH_DELAY_MS pause is inserted
-      // between batches. Promise.allSettled ensures a single failed profile
-      // fetch does not abort the rest — contributors whose profiles fail to
-      // load fall back to the default values from fetchGitHubProfile's catch.
-      const settledProfiles = await fetchInBatches(
-        allContributors,
-        async (c) => {
-          const profile = await fetchGitHubProfile(c.login);
-          return {
-            ...c,
-            ...profile,
-            role: getRoleByGitHubActivity({ ...c, ...profile }),
-          };
-        },
-        PROFILE_BATCH_SIZE
-      );
+      try {
+        let allContributors = [];
+        let page = 1;
+        let hasMore = true;
+        while (hasMore && page <= MAX_CONTRIBUTOR_PAGES) {
+          const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
+            `/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`
+          )}`;
 
-      const enhanced = settledProfiles
-        .filter((r) => r.status === "fulfilled")
-        .map((r) => r.value);
+          const { data } = await fetchWithTimeout(proxyUrl, {}, REQUEST_TIMEOUT);
+          if (!Array.isArray(data) || data.length === 0) hasMore = false;
+          else {
+            allContributors = [...allContributors, ...data];
+            page++;
+          }
+        }
 
-      enhanced.sort((a, b) => b.contributions - a.contributions);
-      setContributors(enhanced);
-      cacheContributors(enhanced);
-    } catch (error) {
-      //console.error("Failed to fetch contributors:", error);
+        // Enrich each contributor with profile data fetched in parallel batches
+        // of PROFILE_BATCH_SIZE (10) to balance throughput against GitHub's
+        // unauthenticated rate limit. A short BATCH_DELAY_MS pause is inserted
+        // between batches. Promise.allSettled ensures a single failed profile
+        // fetch does not abort the rest — contributors whose profiles fail to
+        // load fall back to the default values from fetchGitHubProfile's catch.
+        const settledProfiles = await fetchInBatches(
+          allContributors,
+          async (c) => {
+            const profile = await fetchGitHubProfile(c.login);
+            return {
+              ...c,
+              ...profile,
+              role: getRoleByGitHubActivity({ ...c, ...profile }),
+            };
+          },
+          PROFILE_BATCH_SIZE
+        );
 
-      if (!backgroundRefresh) setContributors([]);
+        const enhanced = settledProfiles
+          .filter((r) => r.status === "fulfilled")
+          .map((r) => r.value);
 
-      if (error.name === "AbortError") {
-        //console.error("Contributor request timed out");
+        enhanced.sort((a, b) => b.contributions - a.contributions);
+        setContributors(enhanced);
+        cacheContributors(enhanced);
+      } catch (error) {
+        //console.error("Failed to fetch contributors:", error);
+
+        if (!backgroundRefresh) setContributors([]);
+
+        if (error.name === "AbortError") {
+          //console.error("Contributor request timed out");
+        }
+      } finally {
+        if (!backgroundRefresh) setLoading(false);
       }
-    } finally {
-      if (!backgroundRefresh) setLoading(false);
-    }
-  }, [fetchGitHubProfile]);
+    },
+    [fetchGitHubProfile]
+  );
 
   useEffect(() => {
     fetchContributors();
@@ -297,9 +297,7 @@ const Contributors = () => {
           data-aos-once="true"
         >
           Our Amazing {/* UPDATED: Gradient text for dark mode */}
-          <span className="text-gray-900 dark:text-white">
-            Contributors
-          </span>
+          <span className="text-gray-900 dark:text-white">Contributors</span>
         </motion.h2>
 
         <div className="relative p-2 mb-2">
@@ -309,7 +307,8 @@ const Contributors = () => {
             // UPDATED: Arrow button styles
             className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
             disabled={loading || currentIndex === 0}
-           aria-label="Previous slide">
+            aria-label="Previous slide"
+          >
             {/* UPDATED: Arrow icon color */}
             <ChevronLeft className="text-gray-900 dark:text-white text-xl" />
           </button>
@@ -338,9 +337,7 @@ const Contributors = () => {
                     <ContributorCardSkeleton
                       key={c.id}
                       style={{
-                        flex: `0 0 calc((100% - ${
-                          itemsPerView - 1
-                        } * 1.5rem) / ${itemsPerView})`,
+                        flex: `0 0 calc((100% - ${itemsPerView - 1} * 1.5rem) / ${itemsPerView})`,
                       }}
                       className="flex-shrink-0 mb-6"
                     />
@@ -352,9 +349,7 @@ const Contributors = () => {
                     key={c.id}
                     className="relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out flex-shrink-0"
                     style={{
-                      flex: `0 0 calc((100% - ${
-                        itemsPerView - 1
-                      } * 1.5rem) / ${itemsPerView})`,
+                      flex: `0 0 calc((100% - ${itemsPerView - 1} * 1.5rem) / ${itemsPerView})`,
                     }}
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -370,11 +365,18 @@ const Contributors = () => {
                     {/* Avatar */}
                     <div className="absolute top-3 mt-3 left-1/2 -translate-x-1/2">
                       <div className="relative">
-                        <img loading="lazy" decoding="async" width="65" height="65"
-    src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || c.login || "Anon")}&background=random`}
-    alt={`${c.name || c.login || "Contributor"}'s GitHub profile`}
-    className="w-[65px] h-[65px] rounded-full border-4 border-gray-900 dark:border-gray-300 shadow-md relative z-10"
-  />
+                        <img
+                          loading="lazy"
+                          decoding="async"
+                          width="65"
+                          height="65"
+                          src={
+                            c.avatar_url ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || c.login || "Anon")}&background=random`
+                          }
+                          alt={`${c.name || c.login || "Contributor"}'s GitHub profile`}
+                          className="w-[65px] h-[65px] rounded-full border-4 border-gray-900 dark:border-gray-300 shadow-md relative z-10"
+                        />
                         <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>
                       </div>
                     </div>
@@ -385,8 +387,7 @@ const Contributors = () => {
                         {c.name ? c.name : c.login || "Unknown Contributor"}
                       </h3>
                       <p className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-3 flex items-center justify-center gap-1">
-                        <FaMedal className="text-yellow-500" />{" "}
-                        {c.role}
+                        <Medal className="text-yellow-500" /> {c.role}
                       </p>
 
                       {/* UPDATED: Contribution Badges */}
@@ -411,25 +412,19 @@ const Contributors = () => {
                     <div className="grid grid-cols-3 gap-3 text-sm text-gray-900 dark:text-white my-3 w-full">
                       {/* UPDATED: Stat box background and icon colors */}
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                        <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
+                        <CodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
                         <span className="font-semibold">{c.public_repos}</span>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
-                          Repos
-                        </span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">Repos</span>
                       </div>
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                        <FaUserFriends className="text-gray-900 dark:text-indigo-400 mb-1" />
+                        <UserFriends className="text-gray-900 dark:text-indigo-400 mb-1" />
                         <span className="font-semibold">{c.followers}</span>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
-                          Followers
-                        </span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">Followers</span>
                       </div>
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                        <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
+                        <CodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
                         <span className="font-semibold">{c.contributions}</span>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
-                          Contribs
-                        </span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">Contribs</span>
                       </div>
                     </div>
 
@@ -444,12 +439,12 @@ const Contributors = () => {
                     <div className="flex flex-col gap-1 text-xs text-gray-700 dark:text-gray-300 mb-4">
                       {c.company && (
                         <span className="flex items-center gap-1 justify-center">
-                          <FaBuilding /> {c.company}
+                          <Building /> {c.company}
                         </span>
                       )}
                       {c.location && (
                         <span className="flex items-center gap-1 justify-center">
-                          <FaMapMarkerAlt /> {c.location}
+                          <MapMarkerAlt /> {c.location}
                         </span>
                       )}
                     </div>
@@ -458,15 +453,16 @@ const Contributors = () => {
                     <div className="mt-auto w-full">
                       <a
                         href={c.html_url}
-                        target="_blank" rel="noopener noreferrer"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="group inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out transform relative overflow-hidden"
                       >
                         {/* GitHub Icon with animation */}
-                        <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-gray-200" />
+                        <Github className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-gray-200" />
 
                         <span>Profile</span>
 
-                        <FaExternalLinkAlt className="text-sm opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
+                        <ExternalLinkAlt className="text-sm opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
                       </a>
                     </div>
                   </motion.div>

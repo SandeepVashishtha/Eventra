@@ -12,6 +12,7 @@ const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"))
 const UserProfile = lazy(() => import("../user/UserProfile"));
 const EditProfile = lazy(() => import("../user/EditProfile"));
 const Settings = lazy(() => import("../../Pages/Settings"));
+const CalendarSyncSettings = lazy(() => import("../../Pages/Settings/CalendarSyncSettings"));
 const AuthPage = lazy(() => import("../auth/AuthPage"));
 const Unauthorized = lazy(() => import("../auth/Unauthorized"));
 const PasswordReset = lazy(() => import("../auth/PasswordReset"));
@@ -29,7 +30,13 @@ const withModuleBoundary = (children, boundaryName) => (
     boundaryName={boundaryName}
     title={`${boundaryName} needs a reset`}
   >
-    <Suspense fallback={<div className="flex justify-center items-center min-h-[50vh] text-gray-500 animate-pulse">Loading {boundaryName}...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-[50vh] text-gray-500 animate-pulse">
+          Loading {boundaryName}...
+        </div>
+      }
+    >
       {children}
     </Suspense>
   </ErrorBoundary>
@@ -37,7 +44,13 @@ const withModuleBoundary = (children, boundaryName) => (
 
 // 🔥 FIX: Added helper for naked auth routes
 const withAuthSuspense = (children) => (
-  <Suspense fallback={<div className="flex justify-center items-center min-h-screen text-gray-500 animate-pulse">Loading...</div>}>
+  <Suspense
+    fallback={
+      <div className="flex justify-center items-center min-h-screen text-gray-500 animate-pulse">
+        Loading...
+      </div>
+    }
+  >
     {children}
   </Suspense>
 );
@@ -56,10 +69,7 @@ export const getProtectedRoutes = () => [
     key="/admin"
     path="/admin"
     element={
-      <ProtectedRoute
-        requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
-        redirectTo="/login"
-      >
+      <ProtectedRoute requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]} redirectTo="/login">
         {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
       </ProtectedRoute>
     }
@@ -73,7 +83,8 @@ export const getProtectedRoutes = () => [
         requiredScopes={["hackathon:write"]}
         // 🔥 FIX: Prevented fatal destructuring crash if context is undefined
         validateContext={(context) =>
-          context?.user?.roles?.includes(ROLES.ADMIN) || context?.user?.roles?.includes(ROLES.ORGANIZER)
+          context?.user?.roles?.includes(ROLES.ADMIN) ||
+          context?.user?.roles?.includes(ROLES.ORGANIZER)
         }
       >
         {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
@@ -83,11 +94,7 @@ export const getProtectedRoutes = () => [
   <Route
     key="/dashboard"
     path="/dashboard"
-    element={
-      <ProtectedRoute>
-        {withModuleBoundary(<Dashboard />, "User dashboard")}
-      </ProtectedRoute>
-    }
+    element={<ProtectedRoute>{withModuleBoundary(<Dashboard />, "User dashboard")}</ProtectedRoute>}
   />,
   <Route
     key="/dashboard/profile"
@@ -103,18 +110,14 @@ export const getProtectedRoutes = () => [
     key="/networking"
     path="/networking"
     element={
-      <ProtectedRoute>
-        {withModuleBoundary(<MatchmakingHub />, "Matchmaking Hub")}
-      </ProtectedRoute>
+      <ProtectedRoute>{withModuleBoundary(<MatchmakingHub />, "Matchmaking Hub")}</ProtectedRoute>
     }
   />,
   <Route
     key="/profile/edit"
     path="/profile/edit"
     element={
-      <ProtectedRoute>
-        {withModuleBoundary(<EditProfile />, "Profile editor")}
-      </ProtectedRoute>
+      <ProtectedRoute>{withModuleBoundary(<EditProfile />, "Profile editor")}</ProtectedRoute>
     }
   />,
   <Route
@@ -130,11 +133,7 @@ export const getProtectedRoutes = () => [
   <Route
     key="/settings"
     path="/settings"
-    element={
-      <ProtectedRoute>
-        {withModuleBoundary(<Settings />, "Settings")}
-      </ProtectedRoute>
-    }
+    element={<ProtectedRoute>{withModuleBoundary(<Settings />, "Settings")}</ProtectedRoute>}
   />,
   <Route
     key="/settings/notifications"
@@ -147,15 +146,19 @@ export const getProtectedRoutes = () => [
     }
   />,
   <Route
+    key="/settings/calendar"
+    path="/settings/calendar"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<CalendarSyncSettings />, "Calendar Sync")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
     key="/feedback/survey-builder"
     path="/feedback/survey-builder"
     element={
-      <ProtectedRoute
-        requiredPermissions={[
-          PERMISSIONS.HOST_HACKATHON,
-          PERMISSIONS.CREATE_EVENT,
-        ]}
-      >
+      <ProtectedRoute requiredPermissions={[PERMISSIONS.HOST_HACKATHON, PERMISSIONS.CREATE_EVENT]}>
         {withModuleBoundary(<SurveyEngine />, "Survey builder")}
       </ProtectedRoute>
     }
@@ -185,5 +188,9 @@ export const getAuthRoutes = () => [
   <Route key="/login" path="/login" element={withAuthSuspense(<AuthPage />)} />,
   <Route key="/signup" path="/signup" element={withAuthSuspense(<AuthPage />)} />,
   <Route key="/unauthorized" path="/unauthorized" element={withAuthSuspense(<Unauthorized />)} />,
-  <Route key="/password-reset" path="/password-reset" element={withAuthSuspense(<PasswordReset />)} />,
+  <Route
+    key="/password-reset"
+    path="/password-reset"
+    element={withAuthSuspense(<PasswordReset />)}
+  />,
 ];
