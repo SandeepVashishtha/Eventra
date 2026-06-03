@@ -50,7 +50,6 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     syncSecureStorage.removeItem("user");
-    localStorage.removeItem("user");
     return true;
   }, []);
 
@@ -59,7 +58,7 @@ export const AuthProvider = ({ children }) => {
     // Anonymous users (who trigger a 401 on mount) shouldn't see this.
     let hadPreviousSession = false;
     try {
-      hadPreviousSession = !!localStorage.getItem("user");
+      hadPreviousSession = !!syncSecureStorage.getItem("user");
     } catch {
       // localStorage unavailable (private browsing, quota exceeded, etc.)
     }
