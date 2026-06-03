@@ -1,9 +1,9 @@
+import { Star, MessageSquare } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, FileText, MessageSquare, AlertCircle } from "lucide-react";
-import { FiStar, FiMessageSquare } from "react-icons/fi";
+import { User, Mail, FileText, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SEOHead from "../../components/SEOHead";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 const FloatingField = ({
@@ -94,9 +94,8 @@ const FloatingField = ({
   );
 };
 
-const ContactUs = () => {
+const ContactUsInner = () => {
   const prefersReducedMotion = useReducedMotion();
-  useDocumentTitle("Eventra | Contact Us");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -235,7 +234,7 @@ const ContactUs = () => {
                 >
                   Get in Touch
                 </h2>
-                <p className="mb-8 text-lg opacity-90 leading-relaxed">
+                <p className="mb-8 text-lg text-slate-100/95 leading-relaxed">
                   Questions about our events platform? We&apos;re here to help. Reach
                   out and we&apos;ll respond promptly.
                 </p>
@@ -243,11 +242,11 @@ const ContactUs = () => {
                 <div className="space-y-6">
                   {/* Email */}
                   <div
-                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    className="flex items-start gap-4 p-4 bg-white/12 rounded-2xl border border-white/15 shadow-lg shadow-slate-950/20 transition duration-300 ease-in-out hover:bg-white/18 sm:items-center"
                     data-aos="zoom-in"
                     data-aos-delay="200"
                   >
-                    <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
+                    <div className="flex items-center justify-center rounded-full bg-white/20 p-3 shrink-0">
                       <svg
                         className="w-7 h-7 text-white"
                         fill="none"
@@ -263,9 +262,9 @@ const ContactUs = () => {
                         ></path>
                       </svg>
                     </div>
-                    <div className="overflow-hidden break-words max-w-full">
+                    <div className="min-w-0 overflow-hidden break-words max-w-full">
                       <p className="font-semibold text-white">Email Us</p>
-                      <p className="text-sm opacity-80 break-words max-w-full">
+                      <p className="text-sm font-medium text-slate-100/90 break-all max-w-full leading-snug">
                         sandeepvashishtha@outlook.in
                       </p>
                     </div>
@@ -273,16 +272,16 @@ const ContactUs = () => {
 
                   {/* Quick Response */}
                   <div
-                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    className="flex items-start gap-4 p-4 bg-white/12 rounded-2xl border border-white/15 shadow-lg shadow-slate-950/20 transition duration-300 ease-in-out hover:bg-white/18 sm:items-center"
                     data-aos="zoom-in"
                     data-aos-delay="300"
                   >
-                    <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiMessageSquare className="w-7 h-7 text-white" aria-hidden="true" />
+                    <div className="flex items-center justify-center rounded-full bg-white/20 p-3 shrink-0">
+                      <MessageSquare className="w-7 h-7 text-white" aria-hidden="true" />
                     </div>
-                    <div className="overflow-hidden max-w-full">
+                    <div className="min-w-0 overflow-hidden max-w-full">
                       <p className="font-semibold text-white">Quick Response</p>
-                      <p className="text-sm opacity-80">
+                      <p className="text-sm text-slate-100/90 leading-snug">
                         We aim to reply to all inquiries within 24 hours.
                       </p>
                     </div>
@@ -290,18 +289,18 @@ const ContactUs = () => {
 
                   {/* Multiple Channels */}
                   <div
-                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    className="flex items-start gap-4 p-4 bg-white/12 rounded-2xl border border-white/15 shadow-lg shadow-slate-950/20 transition duration-300 ease-in-out hover:bg-white/18 sm:items-center"
                     data-aos="zoom-in"
                     data-aos-delay="400"
                   >
-                    <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiStar className="w-7 h-7 text-white" />
+                    <div className="flex items-center justify-center rounded-full bg-white/20 p-3 shrink-0">
+                      <Star className="w-7 h-7 text-white" />
                     </div>
-                    <div className="overflow-hidden max-w-full">
+                    <div className="min-w-0 overflow-hidden max-w-full">
                       <p className="font-semibold text-white">
                         Multiple Channels
                       </p>
-                      <p className="text-sm opacity-80">
+                      <p className="text-sm text-slate-100/90 leading-snug">
                         Reach us via email, phone, or the contact form.
                       </p>
                     </div>
@@ -420,6 +419,17 @@ const ContactUs = () => {
     </div>
   );
 };
+
+const ContactUs = () => (
+  <>
+    <SEOHead
+      title="Contact Us"
+      description="Get in touch with the Eventra team. We're here to help with questions, feedback, and support."
+      url={window.location.href}
+    />
+    <ContactUsInner />
+  </>
+);
 
 export default ContactUs;
 
