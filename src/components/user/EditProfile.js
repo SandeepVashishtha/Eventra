@@ -84,14 +84,7 @@ const EditProfile = () => {
   const { user, setUser } = useAuth();
 
   // Initialize with fallback progression to prevent undefined fields
-  const [form, setForm] = useState(() => {
-    const saved = syncSecureStorage.getItem("user");
-    const parsed = safeJsonParse(saved, null);
-    if (parsed) {
-      return parsed;
-    }
-    return user ? { ...initialFormState, ...user } : initialFormState;
-  });
+  const [form, setForm] = useState(user ? { ...initialFormState, ...user } : initialFormState);
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -108,12 +101,32 @@ const EditProfile = () => {
     };
   }, []);
 
-  // Keep state synchronized if the auth context updates lazily
+  // Load saved profile or sync with context user
   useEffect(() => {
-    const saved = syncSecureStorage.getItem("user");
-    if (!saved && user) {
-      setForm((prev) => ({ ...prev, ...user }));
-    }
+    let active = true;
+    const loadProfileData = async () => {
+      try {
+        const saved = await syncSecureStorage.getItemAsync("user");
+        if (active) {
+          if (saved) {
+            const parsed = safeJsonParse(saved, null);
+            if (parsed) {
+              setForm(parsed);
+              return;
+            }
+          }
+          if (user) {
+            setForm((prev) => ({ ...prev, ...user }));
+          }
+        }
+      } catch (error) {
+        console.error("Error loading secure user profile:", error);
+      }
+    };
+    loadProfileData();
+    return () => {
+      active = false;
+    };
   }, [user]);
 
   const validate = (nextForm) => {
