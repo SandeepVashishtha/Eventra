@@ -1,4 +1,4 @@
-import {
+﻿import {
   createContext,
   useCallback,
   useContext,
@@ -101,7 +101,7 @@ export const NotificationProvider = ({ children }) => {
   //
   // MAX_SEEN_IDS caps the Set. When the cap is reached the insertion helper
   // evicts the oldest entry (Sets preserve insertion order, so the first value
-  // is the oldest) before adding the new one — a constant-time O(1) eviction.
+  // is the oldest) before adding the new one â€” a constant-time O(1) eviction.
   // ---------------------------------------------------------------------------
   const MAX_SEEN_IDS = 500;
   const seenNotificationIds = useRef(new Set());
@@ -448,7 +448,7 @@ export const NotificationProvider = ({ children }) => {
 
       // Store only non-sensitive subscription metadata locally.
       //
-      // The full Web Push subscription object includes keys.p256dh and keys.auth —
+      // The full Web Push subscription object includes keys.p256dh and keys.auth â€”
       // a 128-bit symmetric secret used to encrypt push payloads. Storing it in
       // plaintext localStorage exposes it to any XSS payload or malicious browser
       // extension that can read localStorage, allowing arbitrary push notifications
@@ -465,7 +465,7 @@ export const NotificationProvider = ({ children }) => {
       try {
         window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
       } catch {
-        // Non-fatal — the subscription is still active; local status just won't persist
+        // Non-fatal â€” the subscription is still active; local status just won't persist
       }
 
       // Migrate: remove any existing full subscription object that may have been
@@ -476,7 +476,7 @@ export const NotificationProvider = ({ children }) => {
         try {
           const parsed = JSON.parse(existing);
           if (parsed?.keys) {
-            // Old format with sensitive keys — replace with the safe record
+            // Old format with sensitive keys â€” replace with the safe record
             window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
           }
         } catch { /* non-fatal */ }
@@ -602,3 +602,4 @@ export const NotificationProvider = ({ children }) => {
 };
 
 export const useNotification = () => useContext(NotificationContext);
+
