@@ -287,7 +287,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
       window.removeEventListener("scroll", handleScroll);
       observer.disconnect();
     };
-  }, []);
+  }, [loadHackathons]);
 
   const positionClass = `
     ${isScrollVisible ? "bottom-[calc(2.5rem+var(--safe-area-bottom))] sm:bottom-40" : "bottom-[calc(1rem+var(--safe-area-bottom))] sm:bottom-24"}
