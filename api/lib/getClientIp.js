@@ -1,5 +1,9 @@
 const IPV4_REGEX = /^(\d{1,3}\.){3}\d{1,3}$/;
-const IPV6_REGEX = /^[0-9a-f:]+$/i;
+// Validates full (8-group) or compressed (::) IPv6 addresses.
+// Does not match link-local zone IDs (e.g. fe80::1%eth0).
+const IPV6_REGEX = /^(?:(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}|(?:[0-9a-f]{1,4}:){1,7}:|(?:[0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|(?:[0-9a-f]{1,4}:){1,5}(?::[0-9a-f]{1,4}){1,2}|(?:[0-9a-f]{1,4}:){1,4}(?::[0-9a-f]{1,4}){1,3}|(?:[0-9a-f]{1,4}:){1,3}(?::[0-9a-f]{1,4}){1,4}|(?:[0-9a-f]{1,4}:){1,2}(?::[0-9a-f]{1,4}){1,5}|[0-9a-f]{1,4}:(?::[0-9a-f]{1,4}){1,6}|:(?::[0-9a-f]{1,4}){1,7}|::)$/i;
+const IPV4_MAPPED_IPV6_REGEX = /^::ffff:(\d{1,3}\.){3}\d{1,3}$/i;
+const IPV4_COMPAT_IPV6_REGEX = /^::(\d{1,3}\.){3}\d{1,3}$/i;
 
 // Trusted proxy IP subnets. When the direct TCP connection comes from one of
 // these addresses, the X-Forwarded-For header is trusted and the rightmost
@@ -15,12 +19,16 @@ const TRUSTED_PROXY_SUBNETS = [
   { ip: "192.168.0.0", prefix: 16 },                // RFC 1918
 ];
 
+const DEFAULT_PREFIX_V4 = 32;
+const DEFAULT_PREFIX_V6 = 128;
+
 const parseTrustedProxies = () => {
   const env = process.env.TRUSTED_PROXY_SUBNETS;
   if (!env) return TRUSTED_PROXY_SUBNETS;
   return env.split(",").map((entry) => {
     const [ip, prefix] = entry.trim().split("/");
-    return { ip, prefix: prefix ? parseInt(prefix, 10) : 32 };
+    const isV6 = IPV6_REGEX.test(ip) || IPV4_MAPPED_IPV6_REGEX.test(ip) || IPV4_COMPAT_IPV6_REGEX.test(ip);
+    return { ip, prefix: prefix ? Number(prefix) : (isV6 ? DEFAULT_PREFIX_V6 : DEFAULT_PREFIX_V4) };
   }).filter((e) => e.ip && isValidIp(e.ip));
 };
 
@@ -33,15 +41,32 @@ const ipToInt = (ip) => {
 };
 
 const ipv6ToBytes = (ip) => {
-  const parts = ip.split(":");
-  const bytes = [];
-  for (const part of parts) {
-    if (part === "") continue;
-    const hex = part.padStart(4, "0");
-    bytes.push(parseInt(hex.slice(0, 2), 16));
-    bytes.push(parseInt(hex.slice(2, 4), 16));
+  // Handle IPv4-mapped/compat IPv6 (e.g. ::ffff:192.168.1.1, ::192.168.1.1)
+  const ipv4Mapped = IPV4_MAPPED_IPV6_REGEX.exec(ip) || IPV4_COMPAT_IPV6_REGEX.exec(ip);
+  if (ipv4Mapped) {
+    const ipv4Part = ip.split(":").pop();
+    const octets = ipv4Part.split(".").map(Number);
+    return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, octets[0], octets[1], octets[2], octets[3]];
   }
-  return bytes;
+
+  const parts = ip.split(":");
+  const groups = parts.filter((p) => p !== "");
+  const emptyIndex = parts.indexOf("");
+
+  let expandedGroups;
+  if (emptyIndex !== -1) {
+    const zeroCount = 8 - groups.length;
+    const before = groups.slice(0, emptyIndex);
+    const after = groups.slice(emptyIndex);
+    expandedGroups = [...before, ...Array(zeroCount).fill("0"), ...after];
+  } else {
+    expandedGroups = groups;
+  }
+
+  return expandedGroups.flatMap((group) => {
+    const hex = group.padStart(4, "0");
+    return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16)];
+  });
 };
 
 const isInSubnet = (ip, subnet) => {
@@ -51,11 +76,13 @@ const isInSubnet = (ip, subnet) => {
     const mask = subnet.prefix === 0 ? 0 : (~0 << (32 - subnet.prefix));
     return (ipInt & mask) === (subnetInt & mask);
   }
-  if (IPV6_REGEX.test(ip) && IPV6_REGEX.test(subnet.ip)) {
+  const isIpV6 = IPV6_REGEX.test(ip) || IPV4_MAPPED_IPV6_REGEX.test(ip) || IPV4_COMPAT_IPV6_REGEX.test(ip);
+  const isSubV6 = IPV6_REGEX.test(subnet.ip) || IPV4_MAPPED_IPV6_REGEX.test(subnet.ip) || IPV4_COMPAT_IPV6_REGEX.test(subnet.ip);
+  if (isIpV6 && isSubV6) {
     const ipBytes = ipv6ToBytes(ip);
     const subBytes = ipv6ToBytes(subnet.ip);
-    const fullBytes = Math.ceil(subnet.prefix / 8);
-    for (let i = 0; i < fullBytes; i++) {
+    const fullBytes = Math.ceil(Math.min(subnet.prefix, 128) / 8);
+    for (let i = 0; i < fullBytes && i < ipBytes.length && i < subBytes.length; i++) {
       if (ipBytes[i] !== subBytes[i]) return false;
     }
     return true;
@@ -78,7 +105,15 @@ const isValidIp = (ip) => {
       return num >= 0 && num <= 255;
     });
   }
-  return IPV6_REGEX.test(trimmed) && trimmed.length >= 2;
+  if (IPV6_REGEX.test(trimmed)) return true;
+  if (IPV4_MAPPED_IPV6_REGEX.test(trimmed)) {
+    const ipv4Part = trimmed.split(":").pop();
+    return ipv4Part.split(".").every((octet) => {
+      const num = parseInt(octet, 10);
+      return num >= 0 && num <= 255;
+    });
+  }
+  return IPV4_COMPAT_IPV6_REGEX.test(trimmed);
 };
 
 const readHeader = (headers, name) => {

@@ -20,7 +20,7 @@ import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
-import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
@@ -33,6 +33,14 @@ const AppRoutes = lazy(() => import("./components/AppRoutes"));
 const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
+const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
+const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
+// Placeholder imports - these pages are not yet implemented
+// const Login = lazy(() => import("./Pages/auth/Login"));
+// const Signup = lazy(() => import("./Pages/auth/Signup"));
+// const Profile = lazy(() => import("./Pages/user/Profile"));
+// const Dashboard = lazy(() => import("./Pages/dashboard/Dashboard"));
+// const AdminPanel = lazy(() => import("./Pages/Admin/AdminPanel"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
@@ -43,6 +51,7 @@ const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
+
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -197,6 +206,30 @@ function App() {
                             </ProtectedRoute>
                           }
                         />
+                        <Route 
+                          path="/explore" 
+                          element={
+                            <Suspense fallback={<ExploreEventsSkeleton />}>
+                              <EventsPage />
+                            </Suspense>
+                          } 
+                        />
+                        <Route 
+                          path="/events/:id" 
+                          element={
+                            <Suspense fallback={<EventDetailSkeleton />}>
+                              <EventDetails />
+                            </Suspense>
+                          } 
+                        />
+                        {/* TODO: Implement missing auth/dashboard routes
+                          Pages do not exist:
+                          - ./Pages/auth/Login
+                          - ./Pages/auth/Signup
+                          - ./Pages/dashboard/Dashboard
+                          - ./Pages/Admin/AdminPanel
+                          - ./Pages/user/Profile
+                        */}
                         <Route path="/event-recommendation" element={<EventRecommendation />} />
                         <Route path="/saved-events" element={<SavedEventsPage />} />
                         <Route path="*" element={<AppRoutes />} />
