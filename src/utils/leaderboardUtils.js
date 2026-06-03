@@ -1,4 +1,4 @@
-import { Trophy, Award, Star, Code } from "lucide-react";
+import { Trophy, Award, Star, Zap } from "lucide-react";
 
 /**
  * Pure utility functions for leaderboard data processing.
@@ -213,8 +213,7 @@ export function computeLeaderboardStats(contributors) {
 
   return {
     totalContributors: contributors.length,
-    // 🔥 FIX: Actually apply Math.floor as implied by the object keys
-    flooredTotalPRs:    Math.floor(totalPRs),
+    flooredTotalPRs: Math.floor(totalPRs),
     flooredTotalPoints: Math.floor(totalPoints),
   };
 }
@@ -245,3 +244,9 @@ export const getAchievementBadge = (rank) => {
     };
   }
   return {
+    label: "Bronze Tier",
+    color: "from-orange-200 via-orange-300 to-red-400 text-orange-950 border-orange-300/40 shadow-[0_0_6px_rgba(217,119,6,0.2)]",
+    icon: Zap,
+    description: "Rank 11+ - Contributor"
+  };
+};
