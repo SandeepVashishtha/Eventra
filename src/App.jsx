@@ -182,49 +182,14 @@ function App() {
                             </ProtectedRoute>
                           }
                         />
-                        <Route 
-                          path="/explore" 
-                          element={
-                            <Suspense fallback={<ExploreEventsSkeleton />}>
-                              <ExploreEvents />
-                            </Suspense>
-                          } 
-                        />
-                        <Route 
-                          path="/events/:id" 
+                        <Route
+                          path="/events/:id"
                           element={
                             <Suspense fallback={<EventDetailSkeleton />}>
                               <EventDetails />
                             </Suspense>
-                          } 
+                          }
                         />
-                        <Route 
-                          path="/login" 
-                          element={
-                            <Suspense fallback={<AuthFormSkeleton />}>
-                              <Login />
-                            </Suspense>
-                          } 
-                        />
-                        <Route 
-                          path="/signup" 
-                          element={
-                            <Suspense fallback={<AuthFormSkeleton />}>
-                              <Signup />
-                            </Suspense>
-                          } 
-                        />
-                        <Route 
-                          path="/dashboard" 
-                          element={
-                            <ProtectedRoute>
-                              <Suspense fallback={<DashboardHomeSkeleton />}>
-                                <Dashboard />
-                              </Suspense>
-                            </ProtectedRoute>
-                          } 
-                        />
-                        <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
                         <Route path="/event-recommendation" element={<EventRecommendation />} />
                         <Route path="/saved-events" element={<SavedEventsPage />} />
                         <Route path="*" element={<AppRoutes />} />

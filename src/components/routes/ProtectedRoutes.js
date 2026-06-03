@@ -22,6 +22,8 @@ const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"
 const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
 const UIInventoryEmptyState = lazy(() => import("../admin/UIInventoryEmptyState"));
 const UIInventory = lazy(() => import("../admin/UIInventory"));
+const MFASetup = lazy(() => import("../../Pages/Auth/MFASetup"));
+const AuditLogs = lazy(() => import("../../Pages/Admin/AuditLogs"));
 
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
@@ -110,11 +112,20 @@ export const getProtectedRoutes = () => [
     }
   />,
   <Route
-    key="/ai-assistant"
-    path="/ai-assistant"
+    key="/auth/mfa"
+    path="/auth/mfa"
     element={
       <ProtectedRoute>
-        {withModuleBoundary(<AIAssistant />, "AI Assistant")}
+        {withModuleBoundary(<MFASetup />, "MFA Setup")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/admin/audit-logs"
+    path="/admin/audit-logs"
+    element={
+      <ProtectedRoute requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}>
+        {withModuleBoundary(<AuditLogs />, "Security Audit Logs")}
       </ProtectedRoute>
     }
   />,
