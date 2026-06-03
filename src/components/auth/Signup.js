@@ -759,4 +759,9 @@ export const PasswordField = ({ id, label, value, onChange, error, strength, req
   );
 };
 
+const ToggleEyeIcon = ({ visible, className }) => {
+  const Icon = visible ? Eye : EyeOff;
+  return <Icon className={className} />;
+};
+
 export default Signup;
