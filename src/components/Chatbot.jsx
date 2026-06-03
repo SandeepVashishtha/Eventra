@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import { quickPrompts, getAssistantReply, INITIAL_MESSAGES } from "../config/chatbotKnowledge";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 const ICON_MAP = {
   CalendarDays,
@@ -130,6 +131,12 @@ export default function Chatbot() {
     setIsOpen(false);
     setIsMinimized(false);
   }, [clearReplyTimer]);
+
+  // Trap keyboard focus inside the chat panel while it's expanded
+  const { containerRef: chatTrapRef } = useFocusTrap(
+    isOpen && !isMinimized,
+    handleClose
+  );
 
   // Listen for Escape key to close the chatbot (accessibility)
   useEffect(() => {
@@ -282,6 +289,7 @@ export default function Chatbot() {
       <AnimatePresence>
         {isOpen && !isMinimized && (
           <motion.section
+            ref={chatTrapRef}
             data-chatbot-open
             data-lenis-prevent
             aria-label="Eventra assistant"
