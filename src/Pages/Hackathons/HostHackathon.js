@@ -36,17 +36,28 @@ const HostHackathon = () => {
   });
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
+  const hackathonNameRef = useRef(null);
+  const organizerNameRef = useRef(null);
+  const emailRef = useRef(null);
+  const locationRef = useRef(null);
+  const startDateRef = useRef(null);
+  const endDateRef = useRef(null);
+  const descriptionRef = useRef(null);
+  const participantLimitRef = useRef(null);
+  const prizeDetailsRef = useRef(null);
+  const websiteRef = useRef(null);
+
   const inputRefs = {
-    hackathonName: useRef(null),
-    organizerName: useRef(null),
-    email: useRef(null),
-    location: useRef(null),
-    startDate: useRef(null),
-    endDate: useRef(null),
-    description: useRef(null),
-    participantLimit: useRef(null),
-    prizeDetails: useRef(null),
-    website: useRef(null),
+    hackathonName: hackathonNameRef,
+    organizerName: organizerNameRef,
+    email: emailRef,
+    location: locationRef,
+    startDate: startDateRef,
+    endDate: endDateRef,
+    description: descriptionRef,
+    participantLimit: participantLimitRef,
+    prizeDetails: prizeDetailsRef,
+    website: websiteRef,
   };
 
   const handleChange = (e) => {
