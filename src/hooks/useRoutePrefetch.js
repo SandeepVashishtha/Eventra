@@ -37,3 +37,6 @@ export const useRoutePrefetch = (config = {}) => {
 
   return { prefetchManual: prefetch };
 };
+
+
+export default useRoutePrefetch;

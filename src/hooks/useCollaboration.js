@@ -56,3 +56,6 @@ export const useCollaboration = (roomId) => {
     broadcastChange
   };
 };
+
+
+export default useCollaboration;

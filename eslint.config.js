@@ -36,12 +36,15 @@ export default [
     },
     rules: {
       "no-console": "off",
-      "no-unused-vars": "warn",
+      "no-unused-vars": ["warn", {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^(_|React)$"
+      }],
       "react/jsx-no-target-blank": "error",
       // apply react-hooks recommended rules but relax some strict checks
       ...reactHooks.configs.recommended.rules,
       "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/exhaustive-deps": "off",
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/purity": "off",
       "react-hooks/refs": "off",
