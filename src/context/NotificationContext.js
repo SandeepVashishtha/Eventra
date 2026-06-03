@@ -41,7 +41,7 @@ const ensureServiceWorkerRegistration = async () => {
 
   try {
     return await navigator.serviceWorker.register("/service-worker.js");
-  } catch {
+  } catch (error) {
     return null;
   }
 };
@@ -89,6 +89,17 @@ export const NotificationProvider = ({ children }) => {
   const isMounted = useRef(true);
   const activeTokenRef = useRef(token);
   const hasCompletedInitialFetch = useRef(false);
+
+  // Keep a ref in sync with isPageVisible so the polling interval callback
+  // can read the latest visibility without requiring isPageVisible in the
+  // effect dependency array.  Adding isPageVisible as a dep would re-run the
+  // entire polling effect — including initData() — on every tab-restore, which
+  // causes an unwanted loading spinner and a double-fetch (initData already
+  // fetches, and the separate catch-up effect below also fetches).
+  const isPageVisibleRef = useRef(isPageVisible);
+  useEffect(() => {
+    isPageVisibleRef.current = isPageVisible;
+  }, [isPageVisible]);
 
   // ---------------------------------------------------------------------------
   // Bounded seen-notification Set
@@ -468,7 +479,7 @@ export const NotificationProvider = ({ children }) => {
       };
       try {
         window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-      } catch {
+      } catch (error) {
         // Non-fatal — the subscription is still active; local status just won't persist
       }
 
@@ -483,7 +494,7 @@ export const NotificationProvider = ({ children }) => {
             // Old format with sensitive keys — replace with the safe record
             window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
           }
-        } catch { /* non-fatal */ }
+        } catch (error) { /* non-fatal */ }
       }
 
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
@@ -555,18 +566,20 @@ export const NotificationProvider = ({ children }) => {
     initData();
 
     // Visibility-aware polling: skip the network call when the tab is hidden.
-    // The setInterval still fires on schedule so the cadence is maintained, but
-    // the fetch is gated on isPageVisible. When the tab becomes visible again,
-    // a separate useEffect (below) fires an immediate catch-up fetch so no
-    // notifications are missed.
+    // isPageVisibleRef.current is always current (kept in sync by a dedicated
+    // useEffect above) so the callback never reads a stale value, and
+    // isPageVisible does NOT need to be in this effect's dependency array.
+    // Excluding it prevents the effect from re-running on every tab-restore,
+    // which would call initData() again (loading flash) and duplicate the
+    // catch-up fetch that the visibility useEffect below already handles.
     const intervalId = setInterval(() => {
-      if (isMounted.current && activeTokenRef.current === requestToken && isPageVisible) {
+      if (isMounted.current && activeTokenRef.current === requestToken && isPageVisibleRef.current) {
         fetchNotifications({ isBackground: true });
       }
     }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [token, fetchNotifications, fetchAchievements, isPageVisible]);
+  }, [token, fetchNotifications, fetchAchievements]); // isPageVisible intentionally excluded — handled via ref
 
   // Catch-up fetch: when the tab becomes visible after being hidden, immediately
   // fetch notifications so the user sees fresh data without waiting up to

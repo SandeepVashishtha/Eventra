@@ -1,7 +1,15 @@
 import { Menu } from "lucide-react";
 import MobileDrawer from "./MobileDrawer";
 
-const MobileNavbar = ({ isOpen, setIsOpen, isAuthenticated, user, logout }) => {
+const MobileNavbar = ({
+  isOpen,
+  setIsOpen,
+  isAuthenticated,
+  user,
+  logout,
+  cursorEnabled,
+  toggleCursor,
+}) => {
   return (
     <>
       <button
@@ -26,6 +34,8 @@ const MobileNavbar = ({ isOpen, setIsOpen, isAuthenticated, user, logout }) => {
         isAuthenticated={isAuthenticated}
         user={user}
         logout={logout}
+        cursorEnabled={cursorEnabled}
+        toggleCursor={toggleCursor}
       />
     </>
   );

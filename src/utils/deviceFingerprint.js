@@ -93,6 +93,22 @@ export const getDeviceFingerprint = () => {
 };
 
 /**
+ * Generates a faster device fingerprint without using GPU canvas rendering.
+ * Useful when performance is critical and high uniqueness isn't required.
+ *
+ * @returns {string} SHA-256 hex string representing the basic device fingerprint.
+ */
+export const getFastFingerprint = () => {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return CryptoJS.SHA256("eventra-fast-fingerprint-fallback").toString();
+  }
+  const screenInfo = `${window.screen?.width || 0}x${window.screen?.height || 0}x${window.screen?.colorDepth || 0}`;
+  const navInfo = `${window.navigator?.userAgent || ""}_${window.navigator?.language || ""}_${window.navigator?.hardwareConcurrency || 0}`;
+  const salt = `eventra:fast-fingerprint:${window.location.origin}`;
+  return CryptoJS.SHA256(`${screenInfo}_${navInfo}_${salt}`).toString();
+};
+
+/**
  * Clears the memoized fingerprint. Intended for use in tests only so each
  * test starts with a fresh computation.
  *
