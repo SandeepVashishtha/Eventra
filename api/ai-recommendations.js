@@ -45,6 +45,23 @@ const RATE_LIMIT_MAX_REQUESTS = 10;
 const rateLimitMap = new Map();
 let lastEvictionAt = 0;
 
+const GLOBAL_RATE_LIMIT_MAX_REQUESTS = 100; // max total requests per minute across all users
+const globalRateLimit = { count: 0, windowStart: Date.now() };
+
+const checkGlobalRateLimit = () => {
+  const now = Date.now();
+  if (now - globalRateLimit.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    globalRateLimit.count = 0;
+    globalRateLimit.windowStart = now;
+  }
+  if (globalRateLimit.count >= GLOBAL_RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+  globalRateLimit.count += 1;
+  return true;
+};
+ 
+
 const evictStaleEntries = () => {
   const now = Date.now();
   if (now - lastEvictionAt < RATE_LIMIT_WINDOW_MS) return;
@@ -56,12 +73,20 @@ const evictStaleEntries = () => {
   }
 };
 
+const MAX_RATE_LIMIT_ENTRIES = 5000;
+
 const checkRateLimit = (userId) => {
   evictStaleEntries();
   const now = Date.now();
   const entry = rateLimitMap.get(userId);
 
   if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    if (!entry && rateLimitMap.size >= MAX_RATE_LIMIT_ENTRIES) {
+      const oldestKey = rateLimitMap.keys().next().value;
+      if (oldestKey !== undefined) {
+        rateLimitMap.delete(oldestKey);
+      }
+    }
     rateLimitMap.set(userId, { count: 1, windowStart: now });
     return true;
   }
@@ -101,6 +126,13 @@ async function handler(req, res) {
   // req.user is set by verifyAuth after successful JWT verification
   const userId = req.user?.id || req.user?.email || "unknown";
 
+  // Prevents coordinated multi-user attacks from exhausting the Groq API quota.
+  if (!checkGlobalRateLimit()) {
+    return res.status(429).json({
+      error: "Service is temporarily busy. Please try again in a moment.",
+    });
+  }
+  
   // Per-user rate limiting
   if (!checkRateLimit(userId)) {
     return res.status(429).json({

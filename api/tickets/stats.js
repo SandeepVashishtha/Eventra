@@ -1,6 +1,7 @@
 import { verifyAuth } from "../middleware/auth.js";
 import { registrations } from "../db/store.js";
 import { buildCorsHeaders, corsResponse } from "../auth/cors.js";
+import { isAuthorizedForEvent } from "../lib/permissions.js";
 
 async function handler(req, res) {
   // Handle CORS preflight
@@ -27,6 +28,11 @@ async function handler(req, res) {
 
   if (!eventId) {
     return corsResponse(req, res, 400, { error: "Missing required parameter: eventId" });
+  }
+
+  // Issue #6344: Verify that this organizer actually owns this eventId
+  if (!isAuthorizedForEvent(user, eventId)) {
+    return corsResponse(req, res, 403, { error: "Forbidden: You are not authorized to access stats for this event" });
   }
 
   // Fetch registrations from database matching eventId and not cancelled

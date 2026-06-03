@@ -198,9 +198,11 @@ export class P2PFileTransferCoordinator {
     this.bc = getSignalingChannel();
     this.isInitiator = false;
     this.onMessageListener = null;
+    this.currentState = null;
   }
 
   updateState(state, progress = 0, speed = "-", peer = null, count = 1) {
+    this.currentState = state;
     if (this.onStateChange) {
       this.onStateChange({
         state, // 'searching', 'connecting', 'transferring', 'completed', 'failed'
@@ -436,7 +438,13 @@ export class P2PFileTransferCoordinator {
     };
 
     this.channel.onmessage = async (e) => {
-      const chunkMsg = JSON.parse(e.data);
+      let chunkMsg;
+      try {
+        chunkMsg = JSON.parse(e.data);
+      } catch (err) {
+        console.error("Failed to parse incoming P2P message:", err);
+        return;
+      }
       this.receivedChunks.push(chunkMsg);
 
       const progress = Math.round((this.receivedChunks.length / chunkMsg.totalChunks) * 100);
@@ -463,6 +471,9 @@ export class P2PFileTransferCoordinator {
     };
 
     this.channel.onclose = () => {
+      if (this.currentState !== "completed") {
+        this.updateState("failed");
+      }
       this.cleanup();
     };
   }

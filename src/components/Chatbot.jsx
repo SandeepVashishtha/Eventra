@@ -20,6 +20,8 @@ import {
 import useLocalStorage from "../hooks/useLocalStorage";
 import { quickPrompts, getAssistantReply, INITIAL_MESSAGES } from "../config/chatbotKnowledge";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { marked } from "marked";
+import { sanitizeMarkdown } from "../utils/sanitizeHtml";
 
 const ICON_MAP = {
   CalendarDays,
@@ -335,7 +337,8 @@ export default function Chatbot() {
                 <button
                   type="button"
                   onClick={handleClearConversation}
-                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  disabled={messages.length <= 1}
+                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Clear conversation"
                   aria-label="Clear conversation"
                 >
@@ -384,7 +387,16 @@ export default function Chatbot() {
                         : "bg-slate-100 dark:bg-slate-800/80 backdrop-blur-sm text-slate-800 dark:text-slate-100 rounded-bl-sm border border-slate-200/30 dark:border-slate-700/20"
                     }`}
                   >
-                    {message.content}
+                    {message.role === "user" ? (
+                      message.content
+                    ) : (
+                      <div
+                        className="chatbot-markdown"
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeMarkdown(message.content, marked.parse)
+                        }}
+                      />
+                    )}
                   </motion.div>
                 </div>
               ))}

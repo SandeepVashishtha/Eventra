@@ -31,15 +31,22 @@ const ALLOWED_ATTR = [
  * - ALLOWED_TAGS: strict whitelist
  * - ALLOWED_ATTR: strict attribute whitelist
  * - ALLOW_DATA_ATTR: false prevents data-* exfiltration
- * - FORCE_BODY: ensures well-formed fragment output
  * - RETURN_TRUSTED_TYPE: false keeps return value as string
  */
 const PURIFY_CONFIG = {
   ALLOWED_TAGS,
   ALLOWED_ATTR,
   ALLOW_DATA_ATTR: false,
-  FORCE_BODY: true,
+  ADD_ATTR: ["target"],
 };
+
+// Force all links to open in a new tab securely
+DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+  if ("target" in node) {
+    node.setAttribute("target", "_blank");
+    node.setAttribute("rel", "noopener noreferrer");
+  }
+});
 
 /**
  * Sanitise untrusted HTML before rendering via dangerouslySetInnerHTML.

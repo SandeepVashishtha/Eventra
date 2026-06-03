@@ -1,4 +1,5 @@
 import { SENTRY_DSN, isSentryEnabled } from "../config/env.js";
+import { safeParseJson } from "./jsonUtils";
 
 // Try to load the real Sentry SDK. If @sentry/browser is not installed
 // (e.g. the dependency was skipped during npm install), every call below
@@ -43,9 +44,9 @@ function buildErrorEntry(error, errorInfo, extra = {}) {
 }
 
 function persistToLocalStorage(entry) {
+  const existing = safeParseJson(localStorage.getItem("eventra_error_log"), []);
+  existing.unshift(entry);
   try {
-    const existing = JSON.parse(localStorage.getItem("eventra_error_log") || "[]");
-    existing.unshift(entry);
     localStorage.setItem("eventra_error_log", JSON.stringify(existing.slice(0, 10)));
   } catch (_) {
   }
@@ -80,13 +81,8 @@ export const logError = (error, errorInfo, extra = {}) => {
   }
 };
 
-export const getErrorLog = () => {
-  try {
-    return JSON.parse(localStorage.getItem("eventra_error_log") || "[]");
-  } catch (_) {
-    return [];
-  }
-};
+export const getErrorLog = () =>
+  safeParseJson(localStorage.getItem("eventra_error_log"), []);
 
 export const clearErrorLog = () => {
   try {
@@ -95,13 +91,8 @@ export const clearErrorLog = () => {
   } catch (_) {}
 };
 
-export const getSectionErrors = () => {
-  try {
-    return JSON.parse(localStorage.getItem("eventra_section_errors") || "[]");
-  } catch (_) {
-    return [];
-  }
-};
+export const getSectionErrors = () =>
+  safeParseJson(localStorage.getItem("eventra_section_errors"), []);
 
 export const clearSectionErrors = () => {
   try {
