@@ -39,3 +39,16 @@ throwError = true;
 saveDraft(draftData);
 assert.equal(getDraft(), null);
 clearDraft();
+
+// Edge Case: Save empty draft data
+throwError = false;
+saveDraft({});
+assert.deepEqual(getDraft(), {});
+
+// Edge Case: Save null/invalid draft data
+saveDraft(null);
+assert.equal(getDraft(), null);
+
+// Edge Case: Gracefully handling corrupted/non-JSON storage strings
+store["eventra_event_draft"] = "{malformed-json";
+assert.equal(getDraft(), null, "should return null for corrupted draft storage");

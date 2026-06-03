@@ -92,7 +92,7 @@ Eventra follows a **client-server, context-driven architecture** with JWT-based 
 |-------|---|---|
 | **Pages** | Feature-specific UIs (Events, Hackathons, Dashboard, etc.) | `src/Pages/*` |
 | **Context API** | Global state management (Auth, Events, Theme, Notifications) | `src/context/*` |
-| **Route Guards** | Permission validation, role checking, protected navigation | `src/components/routes/ProtectedRoute.js` |
+| **Route Guards** | Permission validation, role checking, protected navigation | `src/components/auth/ProtectedRoute.js` |
 | **Components** | Reusable, domain-specific UI elements | `src/components/*` |
 | **Hooks** | Shared logic (Auth, Offline Sync, Filters, Validation) | `src/hooks/*` |
 | **Utils** | Helper functions (JWT decode, Event status, CSV export) | `src/utils/*` |

@@ -1,7 +1,7 @@
+import { ChevronDown, ChevronUp, MessageCircle, Github, Twitter, Youtube, Linkedin, Send } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, useAnimation } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
-import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import useReducedMotion from "../hooks/useReducedMotion.js";
 import {
   Search,
@@ -13,7 +13,6 @@ import {
   Settings,
   BookOpen,
   Mail,
-  MessageCircle,
   CheckCircle,
   Clock,
   AlertCircle,
@@ -25,7 +24,7 @@ import {
   CalendarDays,
   GitMerge,
 } from "lucide-react";
-import { FaDiscord, FaGithub, FaTwitter, FaYoutube, FaLinkedin, FaTelegram } from "react-icons/fa"; // ✅ Community icons
+ // ✅ Community icons
 import { Link } from "react-router-dom"; // ✅ Import for navigation
 
 const categories = [
@@ -57,7 +56,7 @@ const categories = [
     icon: <Award className="w-8 h-8 text-red-500" />,
     title: "Leaderboard",
     description: "Understand points, ranks, and top contributors.",
-    link: "/leaderBoard",
+    link: "/leaderboard",
   },
   {
     icon: <Star className="w-8 h-8 text-pink-500" />,
@@ -93,7 +92,7 @@ const categories = [
     icon: <Calendar className="w-8 h-8 text-cyan-500" />,
     title: "Community Events",
     description: "Join upcoming community-driven meetups and activities.",
-    link: "/communityEvent",
+    link: "/community-event",
   },
   {
     icon: <Star className="w-8 h-8 text-rose-500" />,
@@ -215,37 +214,37 @@ const HelpCenter = () => {
             {
               title: "Discord",
               link: "#discord",
-              icon: <FaDiscord className="w-8 h-8" />,
+              icon: <MessageCircle className="w-8 h-8" />,
               color: "from-gray-700 to-black",
             },
             {
               title: "GitHub Discussions",
               link: "https://github.com/sandeepvashishtha/Eventra",
-              icon: <FaGithub className="w-8 h-8" />,
+              icon: <Github className="w-8 h-8" />,
               color: "from-gray-800 to-gray-600",
             },
             {
               title: "Twitter",
               link: "https://x.com/#",
-              icon: <FaTwitter className="w-8 h-8" />,
+              icon: <Twitter className="w-8 h-8" />,
               color: "from-blue-400 to-cyan-500",
             },
             {
               title: "Telegram",
               link: "https://t.me/eventra",
-              icon: <FaTelegram className="w-8 h-8" />,
+              icon: <Send className="w-8 h-8" />,
               color: "from-gray-700 to-black",
             },
             {
               title: "YouTube",
               link: "#youtube",
-              icon: <FaYoutube className="w-8 h-8" />,
+              icon: <Youtube className="w-8 h-8" />,
               color: "from-red-500 to-orange-500",
             },
             {
               title: "LinkedIn",
               link: "https://www.linkedin.com/in/sandeepvashishtha/",
-              icon: <FaLinkedin className="w-8 h-8" />,
+              icon: <Linkedin className="w-8 h-8" />,
               color: "from-sky-600 to-blue-700",
             },
           ].map((item, idx) => (
@@ -254,7 +253,6 @@ const HelpCenter = () => {
               href={item.link}
               target="_blank" rel="noopener noreferrer"
               className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 flex flex-col items-center text-center transition-transform transform hover:scale-105 hover:shadow-2xl"
-              rel="noopener noreferrer"
             >
               <div
                 className={`w-16 h-16 mb-4 flex items-center justify-center text-white rounded-full bg-gradient-to-br ${item.color} shadow-lg group-hover:rotate-12 transition-transform`}
@@ -547,7 +545,7 @@ const HelpCenter = () => {
             Frequently Asked Questions
           </h2>
           <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">
-            Everything you need to know about using our platform. Can't find what you're looking
+            Everything you need to know about using our platform. Can&apos;t find what you&apos;re looking
             for? Reach out to our community!
           </p>
 
@@ -587,9 +585,9 @@ const HelpCenter = () => {
                     </div>
                     <div className="flex-shrink-0 ml-4">
                       {expandedFAQ === faq.id ? (
-                        <FiChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                       ) : (
-                        <FiChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                       )}
                     </div>
                   </div>

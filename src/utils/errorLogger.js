@@ -1,32 +1,35 @@
-const dsn = process.env.REACT_APP_SENTRY_DSN;
-const isProduction = process.env.NODE_ENV === "production";
-const Sentry = {
-  init: () => {},
-  browserTracingIntegration: () => null,
-  replayIntegration: () => null,
-  withScope: () => {},
-  captureException: () => {},
-};
+import { SENTRY_DSN, isSentryEnabled } from "../config/env.js";
 
-// ── Sentry initialisation (production only) ───────────────────────────────────
-if (isProduction && dsn) {
-  Sentry.init({
-    dsn,
-    tracesSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-    integrations: [
-      Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
-    ],
-  });
+// Try to load the real Sentry SDK. If @sentry/browser is not installed
+// (e.g. the dependency was skipped during npm install), every call below
+// is a no-op — the app continues working without remote error reporting.
+let Sentry = null;
+
+if (isSentryEnabled && typeof window !== "undefined") {
+  try {
+    const SentryModule = require("@sentry/browser");
+    Sentry = SentryModule;
+
+    Sentry.init({
+      dsn: SENTRY_DSN,
+      integrations: [
+        typeof SentryModule.browserTracingIntegration === "function"
+          ? SentryModule.browserTracingIntegration()
+          : null,
+        typeof SentryModule.replayIntegration === "function"
+          ? SentryModule.replayIntegration()
+          : null,
+      ].filter(Boolean),
+      tracesSampleRate: 0.25,
+      replaysSessionSampleRate: 0.1,
+      replaysOnErrorSampleRate: 1.0,
+      environment: process.env.NODE_ENV || "development",
+    });
+  } catch {
+    // Sentry SDK unavailable — local-only logging will still work
+  }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/**
- * Build a structured error entry for persistence and reporting.
- */
 function buildErrorEntry(error, errorInfo, extra = {}) {
   return {
     timestamp: new Date().toISOString(),
@@ -39,27 +42,14 @@ function buildErrorEntry(error, errorInfo, extra = {}) {
   };
 }
 
-/**
- * Persist an error entry to localStorage under `eventra_error_log`.
- * Keeps only the 10 most recent entries and skips sensitive keys.
- * Safe — never throws.
- */
 function persistToLocalStorage(entry) {
   try {
-    const existing = JSON.parse(
-      localStorage.getItem("eventra_error_log") || "[]"
-    );
+    const existing = JSON.parse(localStorage.getItem("eventra_error_log") || "[]");
     existing.unshift(entry);
-    localStorage.setItem(
-      "eventra_error_log",
-      JSON.stringify(existing.slice(0, 10))
-    );
+    localStorage.setItem("eventra_error_log", JSON.stringify(existing.slice(0, 10)));
   } catch (_) {
-    // localStorage unavailable or quota exceeded — fail silently
   }
 }
-
-// ── Public API ────────────────────────────────────────────────────────────────
 
 export const logError = (error, errorInfo, extra = {}) => {
   try {
@@ -73,20 +63,18 @@ export const logError = (error, errorInfo, extra = {}) => {
     }
     console.groupEnd?.();
 
-    const entry = buildErrorEntry(error, errorInfo, extra);
-    persistToLocalStorage(entry);
-
-    if (isProduction && dsn) {
+    if (Sentry) {
       Sentry.withScope((scope) => {
+        if (extra) scope.setExtras(extra);
         if (errorInfo?.componentStack) {
           scope.setExtra("componentStack", errorInfo.componentStack);
         }
-        Object.entries(extra).forEach(([key, value]) => {
-          scope.setExtra(key, value);
-        });
         Sentry.captureException(error);
       });
     }
+
+    const entry = buildErrorEntry(error, errorInfo, extra);
+    persistToLocalStorage(entry);
   } catch (loggerError) {
     console.warn("[Eventra ErrorLogger] Failed to log error:", loggerError);
   }
@@ -104,5 +92,19 @@ export const clearErrorLog = () => {
   try {
     localStorage.removeItem("eventra_error_log");
     localStorage.removeItem("eventra_feature_errors");
+  } catch (_) {}
+};
+
+export const getSectionErrors = () => {
+  try {
+    return JSON.parse(localStorage.getItem("eventra_section_errors") || "[]");
+  } catch (_) {
+    return [];
+  }
+};
+
+export const clearSectionErrors = () => {
+  try {
+    localStorage.removeItem("eventra_section_errors");
   } catch (_) {}
 };

@@ -21,21 +21,27 @@ const isLocalDevelopmentOrigin = (origin) =>
   process.env.NODE_ENV !== "production" &&
   /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
 
+const isOriginAllowed = (origin, allowedOrigins) =>
+  Boolean(origin) &&
+  (allowedOrigins.includes(origin) || isLocalDevelopmentOrigin(origin));
+
 export const buildCorsHeaders = (req = {}) => {
   const requestOrigin = req.headers?.origin || "";
   const allowedOrigins = parseAllowedOrigins();
-  const allowedOrigin =
-    requestOrigin && (allowedOrigins.includes(requestOrigin) || isLocalDevelopmentOrigin(requestOrigin))
-      ? requestOrigin
-      : allowedOrigins[0];
+  const allowedOrigin = isOriginAllowed(requestOrigin, allowedOrigins) ? requestOrigin : null;
 
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
+  const headers = {
     "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Vary": "Origin",
   };
+
+  if (allowedOrigin) {
+    headers["Access-Control-Allow-Origin"] = allowedOrigin;
+  }
+
+  return headers;
 };
 
 export const corsResponse = (req, res, status, data) => {
