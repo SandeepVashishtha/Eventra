@@ -12,7 +12,6 @@ const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"))
 const UserProfile = lazy(() => import("../user/UserProfile"));
 const EditProfile = lazy(() => import("../user/EditProfile"));
 const Settings = lazy(() => import("../../Pages/Settings"));
-const CalendarSyncSettings = lazy(() => import("../../Pages/Settings/CalendarSyncSettings"));
 const AuthPage = lazy(() => import("../auth/AuthPage"));
 const Unauthorized = lazy(() => import("../auth/Unauthorized"));
 const PasswordReset = lazy(() => import("../auth/PasswordReset"));
