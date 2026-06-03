@@ -100,6 +100,7 @@
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-storybook": "10.4.1",
     "globals": "17.6.0",
+    "jsdom": "^29.1.1",
     "lint-staged": "^15.5.1",
     "postcss": "8.5.15",
     "prettier": "^3.2.5",
