@@ -150,7 +150,10 @@ const Newsletter = () => {
       <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
         Get the latest updates, event tips, and community news.
       </p>
-      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+      <form
+  onSubmit={handleSubmit}
+  className="flex flex-col md:flex-row items-stretch gap-3"
+>
         <div className="relative flex-grow">
           <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -170,10 +173,10 @@ const Newsletter = () => {
           />
         </div>
         <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full sm:w-auto px-4 py-2.5 bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-400 rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+  type="submit"
+  disabled={isSubmitting}
+  className="w-full md:w-auto px-4 py-2.5 bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-400 rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+>
           {isSubmitting ? "Subscribing..." : "Subscribe"}
         </button>
       </form>
@@ -197,7 +200,7 @@ const SocialLinksRender = () => (
     <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-3">
       Follow Us
     </h4>
-    <div className="flex flex-wrap gap-3">
+    <div className="flex gap-3 flex-wrap md:flex-nowrap">
       {socialLinks.map((link) => (
         <a
           key={link.name}
@@ -258,13 +261,13 @@ const Footer = () => {
       data-aos-duration="1000"
       data-aos-offset="100"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          <div 
-            className="space-y-4 lg:col-span-2"
-            data-aos="fade-up"
-            data-aos-delay="0"
-          >
+      <div className="max-w-screen-xl mx-auto px-6 lg:px-8 pt-12 pb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-start">
+  <div
+    className="space-y-4"
+    data-aos="fade-up"
+    data-aos-delay="0"
+  >
             <h2
               className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
               style={{ fontFamily: "Anton, sans-serif" }}

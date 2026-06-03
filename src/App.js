@@ -69,13 +69,13 @@ function App() {
           <NotificationProvider />
           <OfflineSyncManager />
           <Router>
-            <div className="App">
+            <div className="App min-h-screen flex flex-col">
               <Navbar
                 cursorEnabled={cursorEnabled}
                 toggleCursor={toggleCursor}
               />
 
-              <main className="relative z-10 min-h-screen bg-white dark:bg-black">
+              <main className="relative z-10 bg-white dark:bg-black">
                 {/* Suspense wrap ... */}
                 <Suspense fallback={<LoadingFallback />}>
                   <PageTransition>
