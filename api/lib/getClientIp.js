@@ -48,7 +48,7 @@ const isInSubnet = (ip, subnet) => {
   if (IPV4_REGEX.test(ip) && IPV4_REGEX.test(subnet.ip)) {
     const ipInt = ipToInt(ip);
     const subnetInt = ipToInt(subnet.ip);
-    const mask = ~0 << (32 - subnet.prefix);
+    const mask = subnet.prefix === 0 ? 0 : (~0 << (32 - subnet.prefix));
     return (ipInt & mask) === (subnetInt & mask);
   }
   if (IPV6_REGEX.test(ip) && IPV6_REGEX.test(subnet.ip)) {

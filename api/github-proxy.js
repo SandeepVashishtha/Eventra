@@ -1,5 +1,6 @@
 import { verifyAuth } from "./middleware/auth.js";
 import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
+import { buildCorsHeaders } from "./auth/cors.js";
 
 const SAFE_GITHUB_PATH_PATTERNS = [
   /^\/repos\/[^/?#]+\/[^/?#]+$/,
@@ -95,6 +96,13 @@ const isSafeGitHubPath = (path) => {
 };
 
 async function handler(req, res) {
+  const corsHeaders = buildCorsHeaders(req);
+  res.set(corsHeaders);
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   // req.user is populated by the verifyAuth wrapper.
   const userId = req.user?.id || req.user?.email;
 
