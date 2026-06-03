@@ -78,6 +78,8 @@ function App() {
     }
   });
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
+  const [showChatbot, setShowChatbot] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
   useLenis();
   useRoutePrefetch(); // Predictive route pre-loading
@@ -97,6 +99,26 @@ function App() {
       // Ignore storage failures in private browsing or restricted contexts.
     }
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowChatbot(true);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     const handleCursorPreference = (event) => {
@@ -239,12 +261,13 @@ function App() {
                 </main>
 
                 <ScrollToTop />
-
-                <SectionErrorBoundary label="Chatbot Assist" silent>
-                  <Suspense fallback={null}>
-                    <Chatbot />
-                  </Suspense>
-                </SectionErrorBoundary>
+                {showChatbot && (
+                  <SectionErrorBoundary label="Chatbot Assist" silent>
+                    <Suspense fallback={null}>
+                      <Chatbot />
+                    </Suspense>
+                  </SectionErrorBoundary>
+                )}
 
                 <SectionErrorBoundary label="Footer">
                   <Suspense fallback={null}>
@@ -266,11 +289,13 @@ function App() {
                   <SessionRecovery />
                 </Suspense>
 
-                <SectionErrorBoundary label="Custom Cursor" silent>
-                  <Suspense fallback={null}>
-                    <FluidCursor enabled={cursorEnabled} />
-                  </Suspense>
-                </SectionErrorBoundary>
+                {isDesktop && (
+                  <SectionErrorBoundary label="Custom Cursor" silent>
+                    <Suspense fallback={null}>
+                      <FluidCursor enabled={cursorEnabled} />
+                    </Suspense>
+                  </SectionErrorBoundary>
+                )}
               </div>
             </SessionRecoveryProvider>
           </MyEventsProvider>
@@ -279,5 +304,4 @@ function App() {
     </ErrorBoundary>
   );
 }
-
 export default App;
