@@ -12,6 +12,31 @@ const { execSync } = require('child_process');
 // Define the absolute root of the repository
 const REPO_ROOT = path.resolve(__dirname, '..');
 
+// Defensive helper to clear local branches safely without destroying custom progress
+function checkAndSafelyDeleteBranch(branchName) {
+  try {
+    // Check if the branch exists locally before doing anything
+    execSync(`git show-ref --verify --quiet refs/heads/${branchName}`, { cwd: REPO_ROOT, stdio: 'ignore' });
+  } catch (error) {
+    // Branch does not exist locally; completely safe to skip deletion phase
+    return true;
+  }
+
+  try {
+    console.log(`⚠️  Existing local branch found for '${branchName}'. Attempting safe removal...`);
+    // Lowercase -d checks if the branch has been fully merged into upstream/HEAD
+    execSync(`git branch -d ${branchName}`, { cwd: REPO_ROOT, stdio: 'ignore' });
+    console.log(`✅ Safely removed existing clean branch: ${branchName}`);
+    return true;
+  } catch (error) {
+    // Git blocked the delete execution because the branch has unique/unmerged commits
+    console.warn(`\n🛑 [SAFETY WARNING] Local branch '${branchName}' has unmerged custom variations or experiments!`);
+    console.warn(`👉 Action: Skipping loop execution for this item to protect your experimental data.`);
+    console.warn(`👉 Fix: If you want to force rewrite, manually clear it out via: git branch -D ${branchName}\n`);
+    return false;
+  }
+}
+
 // Helper to run shell commands synchronously
 function runCmd(cmd) {
   try {
@@ -435,13 +460,20 @@ for (const issue of issues) {
   console.log(`📄 File: ${issue.filePath}`);
 
   try {
-    // 1. Check if the file exists
-    if (!fs.existsSync(fullFilePath)) {
-      throw new Error(`File does not exist: ${issue.filePath}`);
+    // 1. Safety Check: Verify existing branch state cleanly BEFORE running destructive resets
+    const isSafeToProceed = checkAndSafelyDeleteBranch(issue.branchName);
+    if (!isSafeToProceed) {
+      throw new Error(`Skipped due to unmerged custom modifications tracking on existing local branch.`);
     }
 
-    // 2. Read the file content
-    let content = fs.readFileSync(fullFilePath, 'utf8');
+    // 2. State Isolation: Return safely to master branch and clear uncommitted artifacts FIRST
+    try {
+      console.log('🔄 Safely resetting environment state...');
+      runCmd('git checkout -f master'); 
+      runCmd('git reset --hard HEAD');   
+    } catch (stateError) {
+      throw new Error(`State reset failed. Cannot safely return to master branch: ${stateError.message}`);
+    }
 
     // 3. Verify exact matching of the search string (handling carriage return inconsistencies)
     const normalizedContent = content.replace(/\r\n/g, '\n');
