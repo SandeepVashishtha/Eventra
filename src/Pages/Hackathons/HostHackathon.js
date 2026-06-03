@@ -107,7 +107,6 @@ const HostHackathon = () => {
     }
 
     // Date validations
-    const today = new Date().toISOString().split("T")[0];
     if (data.startDate && data.startDate < today) {
       newErrors.startDate = "Start date cannot be in the past!";
     }
