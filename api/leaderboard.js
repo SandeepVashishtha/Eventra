@@ -185,7 +185,7 @@ export default async function handler(req, res) {
 
       for (const result of remainingResults) {
         if (result.status === "fulfilled" && result.value.length > 0) {
-          allPrs = allPrs.concat(result.value);
+          allPrs.push(...result.value);
         }
       }
     }
@@ -219,4 +219,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Failed to compile leaderboard data" });
   }
 }
-
