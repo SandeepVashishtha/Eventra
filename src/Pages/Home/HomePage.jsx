@@ -6,6 +6,7 @@ import HomeCTA from "./components/HomeCTA";
 import RecommendationBanner from "./components/RecommendationBanner";
 import CollaborationNetworkMap from "../../components/visual/CollaborationNetworkMap";
 import CollaborationMap from "../../components/CollaborationMap";
+import FluidCursor from "../../components/visual/FluidCursor";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
@@ -21,6 +22,8 @@ const HomePage = () => {
 
   return (
     <main className="min-h-screen bg-bg">
+      <FluidCursor />
+
       {/* ─── SEO & SOCIAL META TAGS ─────────────────────────────────────── */}
       <Helmet>
         {/* Primary Meta Tags */}

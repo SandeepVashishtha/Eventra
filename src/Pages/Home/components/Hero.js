@@ -178,10 +178,9 @@ const Hero = () => {
     <section
       ref={containerRef}
       aria-label="Hero section"
-      className="relative overflow-hidden border-b border-gray-100 pb-16 text-slate-900 sm:pb-20 md:pb-24"
-      style={{ background: "linear-gradient(180deg, #F8FBFD 0%, #F3F7FA 10%, #EAF1F7 42%, #DAE3ED 100%)" }}
+      className="relative overflow-hidden border-b border-gray-100 dark:border-slate-800 pb-16 text-slate-900 dark:text-slate-100 sm:pb-20 md:pb-24 [background:linear-gradient(180deg,#F8FBFD_0%,#F3F7FA_10%,#EAF1F7_42%,#DAE3ED_100%)] dark:[background:linear-gradient(180deg,#0f172a_0%,#111827_50%,#0f172a_100%)]"
     >
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 dark:opacity-10">
         <div
           style={{
             position: "absolute",
@@ -248,7 +247,7 @@ const Hero = () => {
               style={{ fontFamily: "\"Inter\", system-ui, sans-serif" }}
             >
               <motion.span
-                className="block text-sm font-medium text-gray-500"
+                className="block text-sm font-medium text-gray-500 dark:text-slate-400"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.08 }}
@@ -260,7 +259,7 @@ const Hero = () => {
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={phraseIndex}
-                    className="block text-2xl font-extrabold text-gray-900 sm:text-3xl md:text-4xl lg:text-5xl"
+                    className="block text-2xl font-extrabold text-gray-900 dark:text-white sm:text-3xl md:text-4xl lg:text-5xl"
                     initial={{ opacity: 0, y: 24 }}
                     animate={{
                       opacity: 1,
@@ -283,7 +282,7 @@ const Hero = () => {
 
           <motion.p
             variants={fadeUp}
-            className="mx-auto mb-8 mt-4 max-w-3xl text-base leading-relaxed text-gray-600 sm:mb-10 sm:mt-6 sm:text-lg md:text-lg"
+            className="mx-auto mb-8 mt-4 max-w-3xl text-base leading-relaxed text-gray-600 dark:text-slate-400 sm:mb-10 sm:mt-6 sm:text-lg md:text-lg"
           >
             Connect with developers, learn new skills, and grow your network at curated tech events, hackathons, and
             workshops.
@@ -291,14 +290,14 @@ const Hero = () => {
 
           <motion.div variants={fadeUp} className="mx-auto mb-10 w-full max-w-2xl">
             <div className="relative">
-              <div className="relative rounded-lg border border-gray-200 bg-white shadow-sm">
+              <div className="relative rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
                 <ModernSearchInput
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search events, hackathons, projects..."
                   onFocus={() => searchTerm && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
-                  className="border-0 bg-transparent text-gray-700 placeholder-gray-400 focus:ring-0"
+                  className="border-0 bg-transparent text-gray-700 dark:text-slate-300 placeholder-gray-400 dark:placeholder-slate-500 focus:ring-0"
                 >
                   <AnimatePresence>
                     {showResults && (
@@ -307,7 +306,7 @@ const Hero = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.98 }}
                         transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
-                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg"
+                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg"
                         role="listbox"
                         aria-label="Search results"
                       >
@@ -326,11 +325,11 @@ const Hero = () => {
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: idx * 0.03 }}
                                     onClick={clearSearch}
-                                    className="group flex cursor-pointer items-center gap-3 rounded-lg p-3 text-left no-underline transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/60"
+                                    className="group flex cursor-pointer items-center gap-3 rounded-lg p-3 text-left no-underline transition-colors hover:bg-gray-50 dark:hover:bg-slate-700/60"
                                     role="option"
                                     aria-label={`Open ${result.item.title}`}
                                   >
-                                    <div className="shrink-0 rounded-lg bg-gray-100 p-2 text-gray-700 transition-transform group-hover:scale-105">
+                                    <div className="shrink-0 rounded-lg bg-gray-100 dark:bg-slate-700 p-2 text-gray-700 dark:text-slate-300 transition-transform group-hover:scale-105">
                                       {getResultIcon(result.item.type)}
                                     </div>
                                     <div className="min-w-0 flex-1">
@@ -338,7 +337,7 @@ const Hero = () => {
                                         <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
                                           {result.item.title}
                                         </h4>
-                                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-slate-800 dark:text-gray-300">
+                                        <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:text-gray-300">
                                           {result.item.searchType}
                                         </span>
                                       </div>
@@ -390,12 +389,12 @@ const Hero = () => {
                     key={stat.label}
                     variants={fadeUp}
                     whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                    className="flex flex-col items-center justify-center rounded-md border border-gray-100 bg-white p-4 shadow-sm transition-shadow sm:p-5"
+                    className="flex flex-col items-center justify-center rounded-md border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm transition-shadow sm:p-5"
                   >
-                    <div className="mb-2 rounded-full bg-gray-100 p-2 text-gray-700">
+                    <div className="mb-2 rounded-full bg-gray-100 dark:bg-slate-700 p-2 text-gray-700 dark:text-slate-300">
                       <stat.icon className="h-5 w-5" aria-hidden="true" />
                     </div>
-                    <p className="mb-1 text-2xl font-semibold tabular-nums text-gray-900 sm:text-3xl">
+                    <p className="mb-1 text-2xl font-semibold tabular-nums text-gray-900 dark:text-white sm:text-3xl">
                       {statsReady ? (
                         <CountUp
                           start={0}
@@ -410,7 +409,7 @@ const Hero = () => {
                         </>
                       )}
                     </p>
-                    <p className="text-center text-xs font-medium uppercase tracking-wider text-gray-600 sm:text-sm">
+                    <p className="text-center text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-slate-400 sm:text-sm">
                       {stat.label}
                     </p>
                   </motion.div>

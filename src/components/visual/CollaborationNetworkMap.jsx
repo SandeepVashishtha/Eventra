@@ -304,7 +304,7 @@ export default function CollaborationNetworkMap() {
   );
 
   return (
-    <section className="bg-white py-12 text-slate-900">
+    <section className="bg-white dark:bg-slate-900 py-12 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-6">
         <div className="relative overflow-hidden">
           {/* Header with Controls */}
@@ -332,10 +332,10 @@ export default function CollaborationNetworkMap() {
               </div>
             </div>
 
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
               Global Collaboration Network
             </h2>
-            <p className="max-w-2xl text-slate-600">
+            <p className="max-w-2xl text-slate-600 dark:text-slate-400">
               Real-time collaboration across {stats.totalDevs.toLocaleString()} developers in{" "}
               {stats.regions} regions.
             </p>
@@ -345,14 +345,14 @@ export default function CollaborationNetworkMap() {
               <div className="relative">
                 <Search
                   size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 dark:text-slate-400"
                 />
                 <input
                   type="text"
                   placeholder="Search hubs or technologies..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full md:w-80 rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-700 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full md:w-80 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 py-3 pl-10 pr-4 text-slate-700 dark:text-slate-300 placeholder:text-slate-500 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                   aria-label="Search hubs"
                 />
               </div>
@@ -360,12 +360,12 @@ export default function CollaborationNetworkMap() {
               <div className="relative">
                 <Filter
                   size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 dark:text-slate-400"
                 />
                 <select
                   value={selectedActivity}
                   onChange={(e) => setSelectedActivity(e.target.value)}
-                  className="rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-700 focus:outline-none"
+                  className="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 py-3 pl-10 pr-4 text-slate-700 dark:text-slate-300 focus:outline-none"
                   aria-label="Filter by activity"
                 >
                   {["All", "Critical", "High", "Medium", "Low"].map((a) => (
@@ -376,12 +376,12 @@ export default function CollaborationNetworkMap() {
                 </select>
               </div>
 
-              <label className="flex items-center gap-2 text-slate-700">
+              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
                   checked={showConnections}
                   onChange={(e) => setShowConnections(e.target.checked)}
-                  className=" h-5 w-5 rounded-lg border-slate-300 focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                  className="h-5 w-5 rounded-lg border-slate-300 focus:ring-2 focus:ring-violet-500 cursor-pointer"
                 />
                 <span>Connections</span>
               </label>
@@ -390,47 +390,47 @@ export default function CollaborationNetworkMap() {
 
           {/* Stats Summary */}
           <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:shadow-md p-6 shadow-lg">
               <Users size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
                   {stats.totalDevs.toLocaleString()}
                 </span>
-                <span className="mt-1 block text-sm text-slate-600">Developers</span>
+                <span className="mt-1 block text-sm text-slate-600 dark:text-slate-400">Developers</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:shadow-md p-6 shadow-lg">
               <Code size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
                   {stats.totalProjects}
                 </span>
-                <span className="mt-1 block text-sm text-slate-600">Projects</span>
+                <span className="mt-1 block text-sm text-slate-600 dark:text-slate-400">Projects</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:shadow-md p-6 shadow-lg">
               <GitBranch size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
                   {CONNECTIONS.length}
                 </span>
-                <span className="mt-1 block text-sm text-slate-600">Connections</span>
+                <span className="mt-1 block text-sm text-slate-600 dark:text-slate-400">Connections</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:shadow-md p-6 shadow-lg">
               <TrendingUp size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
                   {stats.activeHubs}/{HUBS.length}
                 </span>
-                <span className="mt-1 block text-sm text-slate-600">Active Hubs</span>
+                <span className="mt-1 block text-sm text-slate-600 dark:text-slate-400">Active Hubs</span>
               </div>
             </div>
           </div>
 
           {/* Map Frame */}
           <div
-            className="relative mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
+            className="relative mt-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
             style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
           >
             <svg
@@ -570,7 +570,7 @@ export default function CollaborationNetworkMap() {
                       y={hub.y + hubSize + 18}
                       textAnchor="middle"
                       className="node-label"
-                      fill="#334155"
+                      fill="currentColor"
                       fontSize="11"
                       fontWeight="500"
                     >
@@ -628,7 +628,7 @@ export default function CollaborationNetworkMap() {
                     <div className="popup-stat">
                       <Users className="stat-icon" />
                       <div>
-                        <span className="mt-1 block text-sm text-slate-600">Developers</span>
+                        <span className="mt-1 block text-sm text-slate-600 dark:text-slate-400">Developers</span>
                         <span className="block text-2xl font-bold text-emerald-400">
                           {(activeHub || pinnedHub).devs.toLocaleString()}
                         </span>
@@ -637,7 +637,7 @@ export default function CollaborationNetworkMap() {
                     <div className="popup-stat">
                       <Code className="stat-icon" />
                       <div>
-                        <span className="mt-1 block text-sm text-slate-600">Projects</span>
+                        <span className="mt-1 block text-sm text-slate-600 dark:text-slate-400">Projects</span>
                         <span className="block text-2xl font-bold text-emerald-400">
                           {(activeHub || pinnedHub).projects}
                         </span>
@@ -681,8 +681,8 @@ export default function CollaborationNetworkMap() {
           </div>
 
           {/* Legend */}
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 text-sm text-slate-600">
-            <h5>Activity Levels</h5>
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 text-sm text-slate-600 dark:text-slate-400">
+            <h5 className="dark:text-slate-400">Activity Levels</h5>
             <div className="flex flex-wrap items-center gap-4">
               {Object.entries(ACTIVITY_LEVELS).map(([key, config]) => (
                 <div key={key} className="flex items-center gap-2">
@@ -697,7 +697,7 @@ export default function CollaborationNetworkMap() {
           </div>
 
           {/* Zoom Indicator */}
-          <div className="absolute bottom-6 right-6 rounded-full bg-white border border-slate-200 px-4 py-2 text-sm text-slate-700 shadow-lg">
+          <div className="absolute bottom-6 right-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 shadow-lg">
             Zoom: {Math.round(zoom * 100)}%
           </div>
         </div>
