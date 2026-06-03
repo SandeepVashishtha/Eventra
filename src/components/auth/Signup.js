@@ -101,12 +101,6 @@ const useSignupForm = () => {
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
 
-    if (e.target.name === "email") {
-      setEmailError(validateEmail(e.target.value) ? "" : "Invalid email");
-      setApiError(""); // clear API error only when user fixes their email
-    }
-  }, [errors]);
-
   const handleBlur = useCallback((name) => {
     setTouched(prev => ({ ...prev, [name]: true }));
     
@@ -541,44 +535,20 @@ setSubmitStatus('success');
                 </motion.button>
               </form>
 
-            {error && (
-              <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/40 p-2 rounded-md">
-                {error}
-              </div>
-            )}
-            {apiError && (
-              <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/40 p-2 rounded-md">
-                {apiError}
-              </div>
-            )}
-            {success && (
-              <div className="text-sm text-green-600 bg-green-50 dark:bg-green-900/40 p-2 rounded-md">
-                {success}
-              </div>
-            )}
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-300 hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
-            >
-              {loading ? (
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
+              <p className="mt-6 text-center text-sm text-gray-500">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="font-semibold text-blue-600 hover:text-blue-500 transition-colors"
                 >
                   Sign in instead
                 </Link>
               </p>
-            </motion.div>
-          </div>
-        </motion.div>
-      </div>
-    </motion.div>
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+    </div>
   );
 };
 
