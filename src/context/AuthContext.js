@@ -255,7 +255,7 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, clearExpiredSession]);
 
-  const persistSession = useCallback((sessionToken, sessionUser) => {
+  const persistSession = useCallback(async (sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
 
@@ -272,7 +272,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // eslint-disable-next-line no-unused-vars
       const { roles, permissions, scopes, ...displayProfile } = sessionUser;
-      syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
+      await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {
       console.error("[AuthContext] Error persisting user profile:", error);
     }

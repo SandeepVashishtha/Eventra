@@ -237,7 +237,7 @@ const EditProfile = () => {
 
     setLoading(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       // 🔥 FIX 1: If user navigated away, stop executing!
       if (!isMounted.current) return;
 
@@ -251,7 +251,7 @@ const EditProfile = () => {
       delete safeStorageUser.avatarBase64;
       
       try {
-        syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
+        await syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
       } catch (e) {
         console.warn("Could not save to secure storage, quota exceeded.");
       }
