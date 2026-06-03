@@ -84,7 +84,7 @@ export const useEventForm = () => {
     
     const timer = setTimeout(checkForDraft, 300);
     return () => clearTimeout(timer);
-  }, []);
+  }, [scopedDraftKey]);
 
   // 💾 Debounced Draft Saving
   useEffect(() => {
@@ -110,7 +110,7 @@ export const useEventForm = () => {
         clearTimeout(saveDraftTimeoutRef.current);
       }
     };
-  }, [formData, isDraftLoaded]);
+  }, [formData, isDraftLoaded, scopedDraftKey]);
 
   // 🔍 Validation Logic
   const validateForm = useCallback(() => {
@@ -184,7 +184,7 @@ export const useEventForm = () => {
     setFormData(initialFormData);
     setErrors({});
     localStorage.removeItem(scopedDraftKey);
-  }, []);
+  }, [scopedDraftKey]);
 
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
@@ -297,12 +297,12 @@ export const useEventForm = () => {
     } finally {
       setShowRestoreModal(false);
     }
-  }, []);
+  }, [scopedDraftKey]);
 
   const handleDiscardDraft = useCallback(() => {
     localStorage.removeItem(scopedDraftKey);
     setShowRestoreModal(false);
-  }, []);
+  }, [scopedDraftKey]);
 
   const hasUnsavedChanges = useMemo(() => {
     return Object.entries(formData).some(([key, value]) => {
