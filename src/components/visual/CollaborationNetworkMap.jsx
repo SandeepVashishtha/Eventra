@@ -275,8 +275,10 @@ export default function CollaborationNetworkMap() {
   );
 
   const getPopupStyle = useCallback((hub) => {
-    let leftPercent = 0;
-    let topPercent = 0;
+    if (!hub) return { left: "0%", top: "0%", transform: "translate(-50%, -100%)" };
+    // SVG viewbox is 1000x500. Calculate absolute percentage.
+    const leftPercent = (hub.x / 1000) * 100;
+    const topPercent = (hub.y / 500) * 100;
     return { left: `${leftPercent}%`, top: `${topPercent}%`, transform: "translate(-50%, -100%)" };
   }, []);
 
@@ -670,11 +672,11 @@ export default function CollaborationNetworkMap() {
 
                     <div
                       className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold
-                      ${(activeHub || pinnedHub).activity === "critical"
+                      ${(activeHub || pinnedHub).activity.toLowerCase() === "critical"
                         ? "bg-red-100 text-red-600"
-                        : (activeHub || pinnedHub).activity === "high"
+                        : (activeHub || pinnedHub).activity.toLowerCase() === "high"
                         ? "bg-orange-100 text-orange-600"
-                        : (activeHub || pinnedHub).activity === "medium"
+                        : (activeHub || pinnedHub).activity.toLowerCase() === "medium"
                         ? "bg-yellow-100 text-yellow-700"
                         : "bg-green-100 text-green-600"
                       }`}
