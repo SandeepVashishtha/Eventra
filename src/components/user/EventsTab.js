@@ -21,6 +21,7 @@ import { safeParseJson } from "../../utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
+import { useOfflineStatus } from "../../hooks/useOfflineStatus";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -88,6 +89,7 @@ const EmptyState = () => {
 
 const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
+  const isOffline = useOfflineStatus();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const status = getEventStatus(event);
   const shortDate = event?.date
@@ -185,6 +187,10 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
             <button
               className="group/btn flex-1"
               onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
+              disabled={isOffline}
+              title={isOffline ? "Action unavailable offline" : "Cancel registration"}
+              aria-disabled={isOffline}
+              style={isOffline ? { opacity: 0.5, cursor: "not-allowed" } : {}}
             >
               <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Trash2 size={13} className="relative" />

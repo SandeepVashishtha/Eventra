@@ -24,6 +24,7 @@ import {
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
+import OfflineIndicator from "../common/OfflineIndicator";
 
 // ✅ FIX 1: Define FeatureErrorBoundary — was used but never defined/imported
 class FeatureErrorBoundary extends Component {
@@ -191,6 +192,7 @@ export default function UserDashboard() {
 
   return (
     <div className="ud-root">
+      <OfflineIndicator />
       {/* Sidebar */}
       <aside className="ud-sidebar">
         <div className="ud-sidebar-brand">
