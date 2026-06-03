@@ -184,14 +184,6 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     }
                   >
                     <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">{sub.icon}</span>
-                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-md p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
-                        isActive
-                          ? "bg-bg-secondary text-text font-semibold"
-                          : "text-text-light hover:text-text hover:bg-bg"
-                      }`
-                    }
-                  >
-                    {vertical ? sub.icon : null}
                     <span>{sub.name}</span>
                   </NavLink>
                 ))}
