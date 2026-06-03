@@ -63,19 +63,21 @@ const EventConflictModal = ({
     };
   }, [isOpen]);
 
+  const onCancelRef = useRef(onCancel);
+  onCancelRef.current = onCancel;
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        onCancel();
+        onCancelRef.current();
       }
     };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-    }
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onCancel]);
+  }, [isOpen]);
+
 
   // 🔥 FIX: Safe date formatter to prevent RangeError crashes if event data is malformed
   const safeFormatDate = (dateStr) => {
