@@ -1,10 +1,6 @@
-import "./helpers/authTestEnv.mjs";
-process.env.ALLOWED_ORIGIN = "http://localhost:3000";
+import { AUTH_TEST_ALLOWED_ORIGIN } from "./helpers/authTestEnv.mjs";
 import assert from "node:assert/strict";
 const { default: handler, users } = await import("../api/auth/login.js");
-
-// Mock allowed origin to test specific CORS headers correctly
-process.env.ALLOWED_ORIGIN = "http://localhost:3000";
 
 // ---------------------------------------------------------------------------
 // Mock Response Helper
@@ -318,12 +314,12 @@ console.log("Running login endpoint tests...");
   const req = createRequest("POST", {
     usernameOrEmail: "john.login@example.com",
     password: "SecurePass123!",
-  }, { origin: "http://localhost:3000" }); // cors.js requires an origin header to reflect it
+  }, { origin: AUTH_TEST_ALLOWED_ORIGIN }); // cors.js requires an origin header to reflect it
   const res = createResponse();
   await handler(req, res);
 
   assert.ok(res.headers["Access-Control-Allow-Origin"], "Should have CORS Allow-Origin header for allowed origin");
-  assert.equal(res.headers["Access-Control-Allow-Origin"], "http://localhost:3000", "Should reflect the request origin");
+  assert.equal(res.headers["Access-Control-Allow-Origin"], AUTH_TEST_ALLOWED_ORIGIN, "Should reflect the request origin");
   assert.ok(res.headers["Access-Control-Allow-Credentials"], "Should have CORS Allow-Credentials header");
   console.log("✓ Test 13: CORS headers are set");
 }

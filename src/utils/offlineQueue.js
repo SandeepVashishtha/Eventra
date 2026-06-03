@@ -353,9 +353,8 @@ export const pushToQueue = async (item, userId = null) => {
     }
     return false;
   }
-
-  // 1. Sync mirror updates immediately (Synchronous fallback)
-  const queue = getQueue();
+  // 1. Check authoritative IndexedDB store for limit enforcement
+  const queue = await getQueueIndexedDB();
   if (queue.length >= 15) {
     logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
     if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {

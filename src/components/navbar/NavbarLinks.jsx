@@ -10,6 +10,25 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
 
   const [openGroup, setOpenGroup] = useState(null);
 
+  const handleNavbarLinkClick = (href, e) => {
+    if (href === "/events") {
+      try {
+        window.sessionStorage.removeItem("eventra:event-filters:v1");
+      } catch (err) {
+        // Ignored
+      }
+    } else if (href === "/hackathons") {
+      try {
+        window.sessionStorage.removeItem("eventra:hackathon-filters:v1");
+      } catch (err) {
+        // Ignored
+      }
+    }
+    if (onClick) {
+      onClick(e);
+    }
+  };
+
   const handlePrefetch = (href) => {
     if (href === "/events") prefetchRoute(() => import("../../Pages/Events/EventsPage"), "explore");
     if (href === "/saved-events") prefetchRoute(() => import("../../Pages/SavedEventsPage"), "saved");
@@ -88,7 +107,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
               <div className="flex w-full items-center gap-0.5">
                 <NavLink
                   to={item.href}
-                  onClick={onClick}
+                  onClick={(e) => handleNavbarLinkClick(item.href, e)}
                   aria-haspopup={!vertical ? "menu" : undefined}
                   aria-expanded={!vertical ? isOpen : undefined}
                   aria-controls={
@@ -173,7 +192,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                   <NavLink
                     key={sub.name}
                     to={sub.href}
-                    onClick={onClick}
+                    onClick={(e) => handleNavbarLinkClick(sub.href, e)}
                     role={!vertical ? "menuitem" : undefined}
                     className={({ isActive }) =>
                       `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
@@ -196,7 +215,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           <NavLink
             key={item.name}
             to={item.href}
-            onClick={onClick}
+            onClick={(e) => handleNavbarLinkClick(item.href, e)}
             onMouseEnter={() => handlePrefetch(item.href)}
             className={({ isActive }) =>
               getNavLinkClasses(isActive, secondaryItemNames.includes(item.name))

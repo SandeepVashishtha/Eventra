@@ -35,7 +35,7 @@ const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deleti
   const [currentText, setCurrentText] = useState("");
   const [textIndex, setTextIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
-  useReducedMotion();
+  const prefersReducedMotion = useReducedMotion();
 
   // 🔥 FIX 2: Accessibility Fast-Fail
   // If the user requires reduced motion, immediately render the first string in full

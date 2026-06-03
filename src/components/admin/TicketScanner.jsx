@@ -20,7 +20,6 @@ import { toast } from "react-toastify";
 import { pushToQueue } from "../../utils/offlineQueue";
 import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "../../services/ticketService";
 import "./TicketScanner.css";
-
 const HISTORY_CACHE_KEY = "eventra_checkins_cache";
 
 export default function TicketScanner() {
@@ -32,7 +31,6 @@ export default function TicketScanner() {
   const [checkinHistory, setCheckinHistory] = useState([]);
   const [events, setEvents] = useState([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-
   const [manualTicketId, setManualTicketId] = useState("");
   const [manualAttendeeName, setManualAttendeeName] = useState("");
   const [manualEventId, setManualEventId] = useState("");
@@ -219,7 +217,7 @@ export default function TicketScanner() {
       }
     }
 
-    if (!ticketData || !ticketData.ticketId) {
+    if (!ticketData || typeof ticketData !== 'object' || !ticketData.ticketId) {
       setScanResult({
         status: "flagged",
         message: "Invalid QR Code format. Ticket is secure and cannot be verified.",
