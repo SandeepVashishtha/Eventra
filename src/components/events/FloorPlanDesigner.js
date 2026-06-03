@@ -18,10 +18,10 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const [announcement, setAnnouncement] = useState("");
-  const announce = (message) => {
+  const announce = useCallback((message) => {
     setAnnouncement("");
     setTimeout(() => { setAnnouncement(message); }, 50);
-  };
+  }, []);
 
   const [zoom, setZoom] = useState(0.8);
   const [panOffset, setPanOffset] = useState({ x: 50, y: 30 });
@@ -45,11 +45,12 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
   useEffect(() => { elementsMapRef.current = new Map(elements.map((el) => [el.id, el])); }, [elements]);
 
-  const updateSelectedElement = (key, value) => {
+  const updateSelectedElement = useCallback((key, value) => {
     const updates = typeof key === "object" ? key : { [key]: value };
+    const currentSelectedId = selectedIdRef.current;
     setElements((prev) =>
       prev.map((el) => {
-        if (el.id === selectedId) {
+        if (el.id === currentSelectedId) {
           let updated = { ...el, ...updates };
           if ("seatsCount" in updates) {
             const seatsCountVal = updates.seatsCount;
@@ -66,7 +67,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         return el;
       })
     );
-  };
+  }, []);
 
   const handleSeatAssign = (seatIndex, attendeeName) => {
     setElements(elements.map(el => {
@@ -171,7 +172,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     announce(`New ${type.replace("-", " ")} added at position X 350, Y 350. Selected.`);
   };
 
-  const handleDeleteSelected = () => setIsDeleteModalOpen(true);
+  const handleDeleteSelected = useCallback(() => setIsDeleteModalOpen(true), []);
 
   const confirmDeleteSelected = () => {
     if (selectedId) {
@@ -256,7 +257,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [elements]);
+  }, [updateSelectedElement, announce, handleDeleteSelected, setSelectedId]);
 
   const handleMouseDown = useCallback((e, elementId = null) => {
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);

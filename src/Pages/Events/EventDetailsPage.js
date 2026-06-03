@@ -9,6 +9,8 @@ import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from 
 import { toast } from "react-toastify";
 import { getEventStatus } from "../../utils/eventUtils";
 import { logError } from "../../utils/errorLogger";
+import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
 // Note: eventsMockData.json is NOT statically imported here.
 // It is loaded dynamically (and only in development/fallback mode) so that
 // the mock JSON is not bundled into the production build.
@@ -22,6 +24,42 @@ const EventDetailsPage = () => {
   const [, setError] = useState(null);
   const [cacheInfo, setCacheInfo] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  const { user } = useAuth();
+  const { isRegistered, waitlistUpdated, triggerWaitlistUpdate } = useMyEvents();
+  const userId = user?.id || user?.email || null;
+  const [queuePosition, setQueuePosition] = useState(-1);
+  const [waitlistCount, setWaitlistCount] = useState(0);
+
+  useEffect(() => {
+    if (userId && event) {
+      import("../../utils/waitlistUtils").then(({ getQueuePosition }) => {
+        setQueuePosition(getQueuePosition(event.id, userId));
+      });
+    } else {
+      setQueuePosition(-1);
+    }
+  }, [userId, event, waitlistUpdated]);
+
+  useEffect(() => {
+    if (event) {
+      import("../../utils/waitlistUtils").then(({ getEventWaitlist }) => {
+        setWaitlistCount(getEventWaitlist(event.id).length);
+      });
+    }
+  }, [event, waitlistUpdated]);
+
+  const handleLeaveWaitlist = async () => {
+    if (!userId || !event) return;
+    try {
+      const { leaveWaitlist } = await import("../../utils/waitlistUtils");
+      await leaveWaitlist(event.id, userId);
+      toast.success("Successfully left the waitlist.");
+      triggerWaitlistUpdate();
+    } catch (err) {
+      toast.error(err.message || "Failed to leave waitlist.");
+    }
+  };
 
   const shareUrl = event ? `${window.location.origin}/events/${event.id}` : "";
   const shareText = event ? `Check out this event: ${event.title}` : "";
@@ -285,12 +323,19 @@ const EventDetailsPage = () => {
                     <MapPin size={16} className="shrink-0 text-pink-500" />
                     <span className="min-w-0 break-words">{event.location}</span>
                   </div>
-                  <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
                     <Users size={16} className="shrink-0 text-green-500" />
                     <span>
                       {Number(event.attendees) || 0} / {Number(event.maxAttendees) || 0} registered
+                      {event.attendees >= event.maxAttendees && " (Sold Out)"}
                     </span>
                   </div>
+                  {waitlistCount > 0 && (
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Clock size={16} className="shrink-0 text-amber-500" />
+                      <span className="text-amber-650 dark:text-amber-400 font-medium">{waitlistCount} user(s) on waitlist</span>
+                    </div>
+                  )}
                   <div className="flex min-w-0 items-center gap-3">
                     <Tag size={16} className="shrink-0 text-yellow-500" />
                     <span className="capitalize">{event.type || event.category || "event"}</span>
@@ -299,12 +344,30 @@ const EventDetailsPage = () => {
               </div>
 
               {!isPastEvent && (
-                <Link
-                  to={`/events/${event.id}/register`}
-                  className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
-                >
-                  Register Now
-                </Link>
+                isRegistered(event.id) ? (
+                  <div className="w-full text-center py-3 bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 rounded-2xl font-semibold">
+                    You are registered!
+                  </div>
+                ) : queuePosition > 0 ? (
+                  <div className="flex flex-col gap-3 w-full">
+                    <div className="w-full text-center py-3 bg-amber-50 dark:bg-amber-950/20 text-amber-650 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-2xl font-semibold">
+                      On Waitlist (Position #{queuePosition})
+                    </div>
+                    <button
+                      onClick={handleLeaveWaitlist}
+                      className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl border border-red-300 text-red-650 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/20 px-4 py-3 text-sm font-semibold transition-all duration-300 cursor-pointer"
+                    >
+                      Leave Waitlist
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    to={`/events/${event.id}/register`}
+                    className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
+                  >
+                    {event.attendees >= event.maxAttendees ? "Join Waitlist" : "Register Now"}
+                  </Link>
+                )
               )}
 
               {/* Share Section */}

@@ -5,6 +5,27 @@
  */
 
 const prefetchMap = new Map();
+const MAX_CONCURRENT_PREFETCHES = 4;
+
+async function asyncPool(iterable, iteratorFn, concurrency) {
+  const results = [];
+  const executing = new Set();
+
+  for (const [index, item] of iterable.entries()) {
+    const promise = Promise.resolve().then(() => iteratorFn(item, index));
+    results.push(promise);
+    executing.add(promise);
+
+    const clean = () => executing.delete(promise);
+    promise.then(clean, clean);
+
+    if (executing.size >= concurrency) {
+      await Promise.race(executing);
+    }
+  }
+
+  return Promise.all(results);
+}
 
 /**
  * Pre-fetches a dynamic import and caches the result.
@@ -26,9 +47,13 @@ export const prefetchRoute = async (importFn, key) => {
 };
 
 /**
- * Pre-fetches multiple routes in parallel.
+ * Pre-fetches multiple routes with a concurrency limit.
  * @param {Array<Object>} routes - Array of { importFn, key } objects
  */
 export const prefetchRoutes = (routes) => {
-  return Promise.all(routes.map(({ importFn, key }) => prefetchRoute(importFn, key)));
+  return asyncPool(
+    routes,
+    ({ importFn, key }) => prefetchRoute(importFn, key),
+    MAX_CONCURRENT_PREFETCHES
+  );
 };

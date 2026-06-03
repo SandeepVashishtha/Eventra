@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
+import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
 import StatusBadge from "../common/StatusBadge";
 import { safeParseJson } from "../../utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
@@ -212,11 +214,105 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
   );
 };
 
+const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const fadeUpVariants = fadeUp(prefersReducedMotion);
+  const { user } = useAuth();
+  const [queuePos, setQueuePos] = useState(-1);
+
+  useEffect(() => {
+    if (user) {
+      import("../../utils/waitlistUtils").then(({ getQueuePosition }) => {
+        setQueuePos(getQueuePosition(event.id, user.id || user.email));
+      });
+    }
+  }, [event.id, user]);
+
+  return (
+    <motion.div
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 flex flex-col z-10 overflow-hidden"
+      custom={index}
+      variants={fadeUpVariants}
+      initial="hidden"
+      animate="visible"
+      layout
+    >
+      {event?.image && (
+        <div className="relative h-48 overflow-hidden">
+          <img
+            src={event.image}
+            alt={event.title}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+          <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
+        </div>
+      )}
+
+      <div className="px-6 py-4 flex-1">
+        <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 truncate mb-1">{event.title}</h4>
+        <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-1.5"><Calendar size={12} /> {event.date}</div>
+          <div className="flex items-center gap-1.5"><MapPin size={12} /> {event.location}</div>
+        </div>
+      </div>
+
+      <div className="px-6 py-3 bg-amber-50/50 dark:bg-amber-950/10 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+          Waitlist Position #{queuePos > 0 ? queuePos : "..."}
+        </span>
+        <button
+          onClick={() => onLeaveWaitlist(event.id)}
+          className="text-xs font-bold text-red-650 hover:text-red-750 dark:text-red-400 dark:hover:text-red-300 transition-colors cursor-pointer"
+        >
+          Leave Waitlist
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const staggerVariants = stagger(prefersReducedMotion);
-  const { myEvents, removeRegistration } = useMyEvents();
+  const { myEvents, removeRegistration, waitlistUpdated, triggerWaitlistUpdate } = useMyEvents();
+  const { user } = useAuth();
+  const [waitlistEvents, setWaitlistEvents] = useState([]);
+
+  useEffect(() => {
+    if (user) {
+      import("../../utils/waitlistUtils.js").then(({ getGlobalWaitlist }) => {
+        const records = getGlobalWaitlist();
+        const userId = user.id || user.email;
+        const userWaitlists = records.filter(r => r.userId === userId && r.status === 'waiting');
+        
+        import("../../Pages/Events/eventsMockData.json").then(({ default: mockEvents }) => {
+          const resolved = userWaitlists.map(w => {
+            const foundEvent = mockEvents.find(e => e.id === w.eventId);
+            if (foundEvent) {
+              return {
+                ...foundEvent,
+                waitlistJoinedAt: w.joinedAt,
+                isWaitlist: true,
+              };
+            }
+            return {
+              id: w.eventId,
+              title: `Event #${w.eventId}`,
+              date: "",
+              time: "",
+              location: "Details unavailable",
+              type: "event",
+              isWaitlist: true,
+            };
+          });
+          setWaitlistEvents(resolved);
+        });
+      });
+    } else {
+      setWaitlistEvents([]);
+    }
+  }, [user, waitlistUpdated]);
 
   const {
     searchTerm: searchQuery,
@@ -508,6 +604,40 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                     event={event}
                     index={index}
                     showCancel={false}
+                  />
+                ))}
+              </motion.div>
+            </section>
+          )}
+
+          {waitlistEvents.length > 0 && (
+            <section className="space-y-4 mt-6">
+              <div className="ud-tab-header">
+                <h3 className="ud-page-title flex items-center gap-2">
+                  <Clock size={18} className="text-amber-500" /> Waitlisted Events
+                </h3>
+                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                  {waitlistEvents.length} event{waitlistEvents.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
+                {waitlistEvents.map((event, index) => (
+                  <WaitlistCard
+                    key={event.id}
+                    event={event}
+                    index={index}
+                    onLeaveWaitlist={async (id) => {
+                      if (window.confirm(`Are you sure you want to leave the waitlist for "${event.title}"?`)) {
+                        try {
+                          const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
+                          await leaveWaitlist(id, user.id || user.email);
+                          toast.success("Left the waitlist successfully.");
+                          triggerWaitlistUpdate();
+                        } catch (err) {
+                          toast.error(err.message || "Failed to leave waitlist.");
+                        }
+                      }
+                    }}
                   />
                 ))}
               </motion.div>
