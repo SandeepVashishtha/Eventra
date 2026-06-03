@@ -14,6 +14,12 @@
   --ud-space-md: 1rem;
   --ud-space-lg: 1.5rem;
   --ud-space-xl: 2rem;
+   /* Theme Colors */
+  --card-bg-color: #ffffff;
+  --border-color: #e5e7eb;
+  --text-color: #111827;
+  --text-color-light: #6b7280;
+  --hover-bg: #f9fafb;
 }
 
 .dark .ud-root {
@@ -21,6 +27,7 @@
   --border-color: rgba(148, 163, 184, 0.18);
   --text-color: #f8fafc;
   --text-color-light: #cbd5e1;
+  --hover-bg: rgba(255, 255, 255, 0.05);
 }
 
 /* Dark mode root */
@@ -92,9 +99,9 @@
 }
 
 .ud-nav-item:hover {
-  background: #f3f4f6;
+  background: var(--hover-bg);
   color: var(--text-color);
-  border-color: #e5e7eb;
+  border-color: var(--border-color);
 }
 
 .dark .ud-nav-item:hover {
@@ -212,8 +219,8 @@
   display: flex;
   align-items: center;
   border-radius: 12px;
-  background: #f9fafb;
-  border: 1.5px solid #e5e7eb;
+  background: var(--card-bg-color);
+  border: 1.5px solid var(--border-color);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -301,7 +308,9 @@
 }
 
 .ud-icon-btn:hover {
-  background: #f3f4f6;
+  
+  background: var(--hover-bg);
+
   color: #6366f1;
   transform: scale(1.05);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
@@ -438,6 +447,8 @@
   flex-direction: column;
   gap: var(--ud-space-lg);
   flex: 1;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 /* ── Section titles ── */
@@ -706,7 +717,7 @@
   transition: background 0.15s;
 }
 
-.ud-list-item:hover { background: #f9fafb; }
+.ud-list-item:hover {  background: var(--hover-bg);; }
 
 .dark .ud-list-item {
   border-color: rgba(148, 163, 184, 0.14);
@@ -961,7 +972,7 @@
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-table thead tr {
-  background: #f9fafb;
+  background: var(--hover-bg);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -1013,7 +1024,7 @@
 
 .ud-table tbody tr:last-child td { border-bottom: none; }
 
-.ud-table tbody tr:hover td { background: #f9fafb; }
+.ud-table tbody tr:hover td { background: var(--hover-bg) ; }
 
 /* removed dark mode override (handled by CSS variables) */
 
@@ -1063,7 +1074,391 @@
 }
 
 /* ============================================================
-   MY EVENTS TAB  — styles appended below existing rules
+   🎟️ PREMIUM EVENT TICKET AND TICKET MODAL STYLING
+   ============================================================ */
+
+/* Modal Backdrop Overlay */
+.ud-ticket-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1.5rem;
+  overflow-y: auto;
+  animation: udFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ud-ticket-modal-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  max-width: 440px;
+  width: 100%;
+  margin: auto;
+}
+
+/* Action Controls Overlay */
+.ud-ticket-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 380px;
+  gap: var(--ud-space-sm);
+  z-index: 10;
+}
+
+.ud-ticket-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ud-space-xs);
+  padding: 0.65rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.ud-ticket-action-btn.download-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+  flex: 1;
+}
+
+.ud-ticket-action-btn.download-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  filter: brightness(1.1);
+}
+
+.ud-ticket-action-btn.download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ud-ticket-action-btn.close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  padding: 0.65rem;
+}
+
+.ud-ticket-action-btn.close-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  transform: rotate(90deg);
+}
+
+/* Capture frame has light padding to contain glowing borders */
+.ud-ticket-capture-frame {
+  padding: 12px;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* The physical-digital card ticket */
+.ud-ticket-card {
+  width: 100%;
+  max-width: 380px;
+  background: rgba(17, 24, 39, 0.95);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 
+              0 0 40px rgba(99, 102, 241, 0.15);
+  color: #f8fafc;
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+/* Graphic header banner */
+.ud-ticket-header {
+  position: relative;
+  height: 140px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #1e1b4b, #311042);
+}
+
+.ud-ticket-header-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.45;
+  filter: saturate(1.2) contrast(1.1);
+}
+
+.ud-ticket-header-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(17, 24, 39, 1) 0%, rgba(17, 24, 39, 0.4) 60%, rgba(17, 24, 39, 0.8) 100%);
+  z-index: 1;
+}
+
+.ud-ticket-logo-overlay {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+}
+
+.ud-ticket-logo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  box-shadow: 0 0 10px #6366f1;
+}
+
+.ud-ticket-logo-text {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: #ffffff;
+}
+
+.ud-ticket-category {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 0.2rem 0.5rem;
+  background: rgba(99, 102, 241, 0.22);
+  border: 1px solid rgba(129, 140, 248, 0.4);
+  border-radius: 6px;
+  color: #c7d2fe;
+  display: flex;
+  align-items: center;
+}
+
+/* Event & Attendee Body */
+.ud-ticket-body {
+  padding: 1.5rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ud-ticket-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.ud-ticket-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-bottom: 1.25rem;
+}
+
+.ud-ticket-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ud-ticket-info-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.ud-ticket-info-value {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.ud-ticket-attendee {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+}
+
+/* Tear Divider Perforation Line */
+.ud-ticket-divider-container {
+  position: relative;
+  height: 24px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  background: transparent;
+}
+
+.ud-ticket-notch {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.85); /* Blends with modal overlay */
+  border-radius: 50%;
+  z-index: 5;
+}
+
+/* Make notches blend in exported image: fallback to solid dark frame background */
+.ud-ticket-capture-frame .ud-ticket-notch {
+  background: #0c0a0f; /* Fixed background to blend in the exported PNG nicely */
+}
+
+.ud-ticket-notch.notch-left {
+  left: 0;
+  transform: translateX(-50%);
+  border-right: 1.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.ud-ticket-notch.notch-right {
+  right: 0;
+  transform: translateX(50%);
+  border-left: 1.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.ud-ticket-perforation {
+  width: 100%;
+  margin: 0 12px;
+  height: 0px;
+  border-top: 2px dashed rgba(255, 255, 255, 0.15);
+}
+
+/* QR Stub Footer */
+.ud-ticket-footer {
+  padding: 1.5rem;
+  background: rgba(10, 10, 15, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.ud-ticket-qr-wrap {
+  background: #ffffff;
+  padding: 0.75rem;
+  border-radius: 16px;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.12);
+  display: inline-flex;
+}
+
+.ud-ticket-qr-border {
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 8px;
+  padding: 4px;
+  color: #111827;
+}
+
+.ud-ticket-qr {
+  display: block;
+}
+
+.ud-ticket-stub-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  text-align: center;
+}
+
+.ud-ticket-serial {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #c7d2fe;
+}
+
+.ud-ticket-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #34d399;
+  text-transform: uppercase;
+}
+
+/* Animations */
+@keyframes udFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Interactive Ticket View Trigger Buttons inside cards */
+.ud-btn-ticket {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
+  border: 1.5px solid rgba(129, 140, 248, 0.25);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: auto;
+}
+
+.ud-btn-ticket:hover {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  transform: translateY(-1.5px);
+}
+
+.ud-btn-ticket:active {
+  transform: translateY(0px);
+}
+
+/* Target details table views */
+.ud-table .ud-btn-ticket {
+  margin-left: 0;
+  padding: 0.3rem 0.6rem;
+}
+
+/* MY EVENTS TAB - styles appended below existing rules
    ============================================================ */
 
 /* ── Sidebar badge (shows count of registered events) ── */
@@ -1294,4 +1689,174 @@
   .ud-stats-grid { grid-template-columns: repeat(4, 1fr); }
   .ud-quick-grid { grid-template-columns: repeat(4, 1fr); }
   .ud-three-col  { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── Integrated Dashboard Footer ── */
+.ud-footer {
+  margin-top: auto;
+  padding: 1.75rem var(--ud-space-xl) 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ud-space-sm);
+  background: transparent;
+}
+
+.ud-footer-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border-color);
+  opacity: 0.8;
+}
+
+.ud-footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ud-space-md);
+}
+
+.ud-footer-copyright {
+  font-size: 0.8rem;
+  color: var(--text-color-light);
+  margin: 0;
+  font-weight: 400;
+}
+
+.ud-footer-links {
+  display: flex;
+  align-items: center;
+  gap: var(--ud-space-lg);
+  flex-wrap: wrap;
+}
+
+.ud-footer-link {
+  font-size: 0.8rem;
+  color: var(--text-color-light);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.ud-footer-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: #6366f1;
+  transition: width 0.25s ease;
+}
+
+.ud-footer-link:hover {
+  color: #6366f1;
+}
+
+.ud-footer-link:hover::after {
+  width: 100%;
+}
+
+.dark .ud-footer-link:hover {
+  color: #a5b4fc;
+}
+
+.dark .ud-footer-link:hover::after {
+  background: #a5b4fc;
+}
+
+@media (max-width: 768px) {
+  .ud-footer {
+    padding: 1.25rem var(--ud-space-lg);
+  }
+  .ud-footer-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--ud-space-xs);
+  }
+  .ud-footer-links {
+    justify-content: center;
+    gap: var(--ud-space-md);
+  }
+}
+/* ── Extra small screens (320px - 480px) mobile-first fixes ── */
+@media (max-width: 380px) {
+  .ud-topbar {
+    padding: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .ud-username {
+    font-size: 1.1rem;
+  }
+
+  .ud-greeting {
+    font-size: 0.72rem;
+  }
+
+  .ud-search {
+    width: 100px;
+  }
+
+  .ud-search-wrap:focus-within {
+    width: 180px;
+  }
+
+  .ud-content {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .ud-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .ud-quick-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+
+  .ud-stat-card {
+    padding: 0.85rem;
+  }
+
+  .ud-stat-value {
+    font-size: 1.4rem;
+  }
+
+  .ud-three-col {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .ud-card {
+    padding: 0.85rem;
+  }
+
+  .ud-topbar-right {
+    gap: 0.35rem;
+  }
+
+  .ud-footer {
+    padding: 1rem 0.75rem;
+  }
+
+  .ud-footer-links {
+    gap: 0.65rem;
+  }
+
+  .ud-notif-panel {
+    width: 260px;
+    right: -40px;
+  }
+
+  .ud-table th,
+  .ud-table td {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.78rem;
+  }
 }

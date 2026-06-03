@@ -1,14 +1,14 @@
 // src/components/auth/PasswordStrengthIndicator.js
-import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import useReducedMotion from '../../hooks/useReducedMotion';
 
 const assessStrength = (password) => {
   const criteria = [
     { label: "At least 8 characters", met: password ? password.length >= 8 : false },
-    { label: "One uppercase letter (A-Z)", met: password ? /[A-Z]/.test(password) : false },
-    { label: "One lowercase letter (a-z)", met: password ? /[a-z]/.test(password) : false },
-    { label: "One number (0-9)", met: password ? /\d/.test(password) : false },
-    { label: "One special symbol (!@#$%^&*)", met: password ? /[!@#$%^&*(),.?":{}|<>]/.test(password) : false }
+    { label: "Contains a number", met: password ? /\d/.test(password) : false },
+    { label: "Contains uppercase letter", met: password ? /[A-Z]/.test(password) : false },
+    { label: "Contains lowercase letter", met: password ? /[a-z]/.test(password) : false },
+    { label: "Contains special character", met: password ? /[!@#$%^&*(),.?":{}|<>]/.test(password) : false }
   ];
 
   const criteriaMet = criteria.filter(c => c.met).length;
@@ -18,70 +18,92 @@ const assessStrength = (password) => {
 
   if (criteriaMet === 5) {
     score = 3;
-    feedback = 'Excellent! Your password meets all security criteria.';
+    feedback = 'Excellent! Your password is secure and meets all criteria.';
+  } else if (criteriaMet === 4) {
+    score = 2;
+    feedback = 'Almost there! Add a special character for full strength.';
   } else if (criteriaMet >= 3) {
     score = 2;
-    feedback = 'Moderate strength. Add more complexity to meet all criteria.';
+    feedback = 'Moderate strength. Add special characters or letters for better security.';
   } else {
     score = 1;
-    feedback = 'Weak. Make sure your password meets the requirements.';
+    feedback = 'Weak password. Follow the validation checklist below.';
   }
   
   return { score, feedback, criteriaMet, criteria };
 };
 
 const PasswordStrengthIndicator = ({ password }) => {
+  const prefersReducedMotion = useReducedMotion();
   const { score, feedback, criteriaMet, criteria } = assessStrength(password);
 
   const getBarColorClass = (currentScore) => {
     switch (currentScore) {
       case 1:
-        return 'bg-red-500';
+        return 'bg-gradient-to-r from-red-500 to-rose-500 shadow-sm shadow-red-500/20';
       case 2:
-        return 'bg-yellow-500';
+        return 'bg-gradient-to-r from-amber-400 to-amber-500 shadow-sm shadow-amber-500/20';
       case 3:
-        return 'bg-green-500';
+        return 'bg-gradient-to-r from-emerald-500 to-green-500 shadow-sm shadow-green-500/20';
       default:
-        return 'bg-gray-400';
+        return 'bg-slate-200 dark:bg-slate-700';
     }
   };
 
   const strengthColorClass = score === 3 
-    ? "text-green-600 dark:text-green-400" 
+    ? "text-emerald-600 dark:text-emerald-400" 
     : score === 2 
-      ? "text-yellow-600 dark:text-yellow-400" 
-      : "text-red-600 dark:text-red-400";
+      ? "text-amber-600 dark:text-amber-400" 
+      : "text-red-500 dark:text-red-400";
+
+  const getStrengthLabel = (currentScore) => {
+    switch (currentScore) {
+      case 1:
+        return 'Weak';
+      case 2:
+        return 'Medium';
+      case 3:
+        return 'Strong';
+      default:
+        return 'Weak';
+    }
+  };
 
   return (
     <AnimatePresence>
       {password && (
         <motion.div
-          className="mt-2 p-3 bg-gray-50/50 dark:bg-gray-800/30 rounded-2xl border border-gray-100 dark:border-gray-700/50"
+          className="mt-3 p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-800/80 backdrop-blur-md"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
         >
-          <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-            <span className="font-medium">Password strength:</span>
-            <span className={`font-semibold ${strengthColorClass}`}>
-              {criteriaMet}/5
+          {/* Header Progress text */}
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-medium text-slate-500 dark:text-slate-400">
+              Password Strength: <span className={`font-extrabold ${strengthColorClass}`}>{getStrengthLabel(score)}</span>
+            </span>
+            <span className={`font-black ${strengthColorClass} px-2 py-0.5 rounded-md bg-slate-100/50 dark:bg-slate-800/40 border border-slate-200/20`}>
+              {criteriaMet}/5 Passed
             </span>
           </div>
 
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-1.5 overflow-hidden">
+          {/* Smooth Dynamic Progress Bar */}
+          <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 mt-2 overflow-hidden relative">
             <motion.div
-              className={`h-full rounded-full ${getBarColorClass(score)}`}
+              className={`h-full rounded-full transition-all duration-500 ${getBarColorClass(score)}`}
               initial={{ width: "0%" }}
               animate={{
                 width: `${(criteriaMet / 5) * 100}%`,
               }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: "easeOut" }}
             />
           </div>
 
+          {/* Feedback Text Description */}
           <motion.p
-            className={`text-xs mt-2 font-medium ${strengthColorClass}`}
+            className={`text-[11px] mt-2 font-medium ${strengthColorClass} leading-relaxed`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.15 }}
@@ -89,17 +111,27 @@ const PasswordStrengthIndicator = ({ password }) => {
             {feedback}
           </motion.p>
 
-          <ul className="mt-2.5 space-y-1 border-t border-gray-100 dark:border-gray-700/50 pt-2">
+          {/* Responsive live 2-column checklist grid */}
+          <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-slate-200/40 dark:border-slate-800/40 pt-3">
             {criteria.map((c, index) => (
-              <li key={index} className="flex items-center gap-2 text-xs">
-                {c.met ? (
-                  <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 font-bold text-[10px]">✓</span>
-                ) : (
-                  <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 font-bold text-[10px]">•</span>
-                )}
-                <span className={c.met ? "text-green-600/90 dark:text-green-400/90" : "text-gray-500 dark:text-gray-400"}>
-                  {c.label}
+              <li
+                key={index}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] transition-all duration-300 ${
+                  c.met
+                    ? "bg-green-500/5 border-green-500/20 text-green-700 dark:text-green-400 shadow-sm shadow-green-500/5"
+                    : "bg-slate-100/30 dark:bg-slate-800/20 border-slate-100/50 dark:border-slate-800/50 text-slate-400 dark:text-slate-500"
+                }`}
+              >
+                <span
+                  className={`flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-black transition-all duration-300 ${
+                    c.met
+                      ? "bg-green-500 text-white scale-110"
+                      : "bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500"
+                  }`}
+                >
+                  {c.met ? "✓" : "•"}
                 </span>
+                <span className="font-semibold truncate">{c.label}</span>
               </li>
             ))}
           </ul>

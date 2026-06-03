@@ -3,7 +3,11 @@ import { motion, useInView } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import CountUp from "react-countup";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
+import CountUpLib from "react-countup";
+import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+
+const CountUp = CountUpLib.default;
 
 // Framer Motion Variants
 const container = {
@@ -63,16 +67,7 @@ const values = [
 
 export default function ModernAbout() {
   useDocumentTitle("Eventra | About");
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    const handleChange = (e) => setPrefersReducedMotion(e.matches);
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
+  const prefersReducedMotion = useReducedMotion();
 
   const anim = (variants) => ({
     initial: "hidden",
@@ -146,32 +141,34 @@ export default function ModernAbout() {
             and experience events with ease.
           </motion.p>
 
-          <motion.div
-            variants={container}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-6"
-          >
-            {stats.map((s) => (
-              <motion.div
-                key={s.label}
-                variants={scaleIn}
-                whileHover={prefersReducedMotion ? {} : { scale: 1.05, y: -4 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-4 sm:p-5 cursor-default"
-              >
-                <h3 className="text-black dark:text-white text-xl sm:text-2xl font-bold mb-1">
-                  {s.value.includes("+") ? (
-                    <CountUp start={0} end={parseInt(s.value)} duration={3} suffix="+" enableScrollSpy scrollSpyOnce />
-                  ) : (
-                    s.value
-                  )}
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400 text-xs">{s.label}</p>
-              </motion.div>
-            ))}
-          </motion.div>
+          <SectionErrorBoundary label="Statistics">
+            <motion.div
+              variants={container}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-6"
+            >
+              {stats.map((s) => (
+                <motion.div
+                  key={s.label}
+                  variants={scaleIn}
+                  whileHover={prefersReducedMotion ? {} : { scale: 1.05, y: -4 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-4 sm:p-5 cursor-default"
+                >
+                  <h3 className="text-black dark:text-white text-xl sm:text-2xl font-bold mb-1">
+                    {s.value.includes("+") ? (
+                      <CountUp start={0} end={parseInt(s.value, 10)} duration={3} suffix="+" enableScrollSpy scrollSpyOnce />
+                    ) : (
+                      s.value
+                    )}
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">{s.label}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </SectionErrorBoundary>
         </div>
       </section>
 
@@ -228,7 +225,7 @@ function MissionSection({ anim, prefersReducedMotion }) {
                 variants={staggerItem}
                 whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="rounded-2xl border p-5 cursor-default bg-gradient-to-b from-white via-white to-slate-50 border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 transition-transform duration-300"
+                className="rounded-2xl border p-5 cursor-default bg-gradient-to-b from-white via-white to-slate-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 border-slate-100 dark:border-gray-700 shadow-xl shadow-slate-100/70 dark:shadow-none transition-transform duration-300"
               >
                 <h4 className="font-bold text-sm text-black dark:text-white mb-2">{v.title}</h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{v.desc}</p>
@@ -262,3 +259,4 @@ function MissionSection({ anim, prefersReducedMotion }) {
     </section>
   );
 }
+

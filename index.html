@@ -1,0 +1,46 @@
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Eventra — Platform for Builders</title>
+		<meta name="description" content="A premium, modern platform for organizing and attending events, hackathons, and projects." />
+
+		<!-- Icons & manifest -->
+		<link rel="icon" href="/favicon.png" />
+		<link rel="apple-touch-icon" href="/Eventra.png" />
+		<link rel="manifest" href="/manifest.json" />
+		<meta name="theme-color" content="#4f46e5" />
+
+		<!-- Social -->
+		<meta property="og:site_name" content="Eventra" />
+		<meta property="og:title" content="Eventra — Platform for Builders" />
+		<meta property="og:description" content="A premium, modern platform for organizing and attending events, hackathons, and projects." />
+		<meta property="og:image" content="/logo_transparent.png" />
+		<meta name="twitter:card" content="summary_large_image" />
+
+		<!-- Prevent flash of wrong theme; runs early from /public -->
+		<script src="/theme-init.js"></script>
+
+		<!-- Performance hints -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+		<!-- Vite will inject dev client & HMR in development automatically -->
+	</head>
+	<body>
+		<a class="skip-to-content" href="#main">Skip to content</a>
+		<div id="root"></div>
+
+		<noscript>
+			<div style="padding:1rem;text-align:center;">
+				<strong>Eventra requires JavaScript to run. Please enable JavaScript in your browser.</strong>
+			</div>
+		</noscript>
+
+		<!-- App entry (Vite) -->
+		<script type="module" src="/src/index.jsx"></script>
+	</body>
+</html>
+

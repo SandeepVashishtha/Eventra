@@ -1,17 +1,23 @@
-import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
-const NavbarLink = ({ navItems }) => {
+const NavbarLink = ({ navItems = [] }) => { // 🔥 FIX: Default prop to prevent map crash
   const location = useLocation(); // get current path
 
   return (
     <div className="hidden md:flex space-x-3">
       {navItems.map((item) => {
-        const isActive = location.pathname === item.href;
+        // 🔥 FIX: Improved active state logic to handle sub-routes (e.g., /events/123)
+        const isActive = 
+          item.href === "/" 
+            ? location.pathname === "/" 
+            : location.pathname.startsWith(item.href);
+
         return (
           <Link
             key={item.name}
             to={item.href}
+            // 🔥 FIX: Added a11y attribute for screen readers
+            aria-current={isActive ? "page" : undefined}
             // UPDATED: Text and hover colors
             className={`relative px-4 py-2.5 text-lg font-medium transition-all duration-300 rounded-lg group
               ${isActive ? "text-indigo-600 dark:text-indigo-400" : "text-gray-700 dark:text-gray-300"} 
