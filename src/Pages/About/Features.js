@@ -46,7 +46,7 @@ const features = [
     enabled: true,
   },
   {
-    icon: <FaChartLine className={ICON_CLASSES} aria-hidden="true" />,
+    icon: <QrCode className={ICON_CLASSES} aria-hidden="true" />,
     title: "Instant QR Check-ins",
     stat: "3 sec check-in",
     description: "Lightning-fast attendee check-ins with QR codes that work offline. Real-time attendance tracking and automated no-show management keep your events running smoothly.",
@@ -55,7 +55,7 @@ const features = [
     enabled: false,
   },
   {
-    icon: <FaChartLine className={ICON_CLASSES} aria-hidden="true" />,
+    icon: <TrendingUp className={ICON_CLASSES} aria-hidden="true" />,
     title: "Live Analytics",
     stat: "15+ metrics",
     description: "Real-time dashboards showing registration trends, attendance patterns, and engagement insights. Make data-driven decisions that lead to consistently better events.",
