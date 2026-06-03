@@ -53,8 +53,8 @@ const BackToTop = ({ threshold = SCROLL_THRESHOLD }) => {
       title="Back to top"
       tabIndex={visible ? 0 : -1}
       className={[
-        "fixed bottom-6 right-6 z-50",
-        "w-12 h-12",
+        "fixed bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-6 sm:right-6",
+        "w-11 h-11 sm:w-12 sm:h-12",
         "rounded-full",
         "bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600",
         "text-white",

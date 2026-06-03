@@ -1,6 +1,6 @@
 const RecommendationBanner = () => {
   return (
-    <section className="px-4 md:px-8 py-8">
+    <section className="px-4 md:px-8 py-8 overflow-hidden">
       <div className="relative max-w-7xl mx-auto">
         <div aria-hidden className="absolute -left-10 -top-10 w-56 h-56 rounded-full bg-[#D7EAF8] opacity-40 blur-3xl -z-10" />
         <div aria-hidden className="absolute -right-8 top-16 w-44 h-44 rounded-full bg-[#E8F5FB] opacity-35 blur-3xl -z-10" />

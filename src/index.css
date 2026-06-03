@@ -9,22 +9,33 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-size-body: 16px;
-  --font-size-body--line-height: 24px;
-  --font-size-nav: 16px;
-  --font-size-nav--line-height: 24px;
-  --font-size-h1: 32px;
-  --font-size-h1--line-height: 40px;
-  --font-size-h2: 28px;
-  --font-size-h2--line-height: 36px;
-  --font-size-h3: 24px;
-  --font-size-h3--line-height: 32px;
-  --font-size-h4: 22px;
-  --font-size-h4--line-height: 28px;
-  --font-size-h5: 20px;
-  --font-size-h5--line-height: 26px;
-  --font-size-h6: 18px;
-  --font-size-h6--line-height: 24px;
+  --text-body: var(--font-body);
+  --text-nav: var(--font-nav);
+
+  --text-h1: var(--font-h1);
+  --text-h1--line-height: var(--lh-heading);
+  --text-h2: var(--font-h2);
+  --text-h2--line-height: var(--lh-heading);
+  --text-h3: var(--font-h3);
+  --text-h3--line-height: var(--lh-heading);
+  --text-h4: var(--font-h4);
+  --text-h4--line-height: var(--lh-heading);
+  --text-h5: var(--font-h5);
+  --text-h5--line-height: var(--lh-heading);
+  --text-h6: var(--font-h6);
+  --text-h6--line-height: var(--lh-heading);
+
+  --text-subtitle-lg: var(--font-subtitle-lg);
+  --text-subtitle-lg--line-height: 1.6;
+  --text-subtitle-md: var(--font-subtitle-md);
+  --text-subtitle-md--line-height: 1.55;
+
+  --text-body-lg: var(--font-body-lg);
+  --text-body-lg--line-height: var(--lh-body);
+  --text-body-md: var(--font-body-md);
+  --text-body-md--line-height: 1.5;
+  --text-body-sm: var(--font-body-sm);
+  --text-body-sm--line-height: 1.4;
 
   --color-bg: var(--bg-color);
   --color-bg-secondary: var(--bg-secondary-color);
@@ -275,6 +286,13 @@ html {
   --font-h4: 1.25rem;
   --font-h5: 1.125rem;
   --font-h6: 1rem;
+
+  --font-subtitle-lg: 1.25rem;
+  --font-subtitle-md: 1.125rem;
+
+  --font-body-lg: 1rem;
+  --font-body-md: 0.875rem;
+  --font-body-sm: 0.75rem;
 
   /* Line Heights */
   --lh-heading: 1.2;
@@ -552,11 +570,50 @@ h4 {
 h5 {
   font-size: var(--font-h5);
   font-weight: var(--fw-medium);
+  line-height: var(--lh-heading);
 }
 
 h6 {
   font-size: var(--font-h6);
   font-weight: var(--fw-medium);
+  line-height: var(--lh-heading);
+}
+
+/* Subtitle styles */
+.text-subtitle-lg {
+  font-size: var(--font-subtitle-lg);
+  line-height: 1.6;
+  font-weight: var(--fw-medium);
+  color: var(--text-color-light);
+}
+
+.text-subtitle-md {
+  font-size: var(--font-subtitle-md);
+  line-height: 1.55;
+  font-weight: var(--fw-medium);
+  color: var(--text-color-light);
+}
+
+/* Body styles */
+.text-body-lg {
+  font-size: var(--font-body-lg);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  color: var(--text-color);
+}
+
+.text-body-md {
+  font-size: var(--font-body-md);
+  line-height: 1.5;
+  font-weight: var(--fw-regular);
+  color: var(--text-color-light);
+}
+
+.text-body-sm {
+  font-size: var(--font-body-sm);
+  line-height: 1.4;
+  font-weight: var(--fw-regular);
+  color: var(--text-color-light);
 }
 
 /* Navigation items */
@@ -693,6 +750,11 @@ code {
     /* 18px */
     --font-h5: 1rem;
     --font-h6: 0.9375rem;
+
+    --font-subtitle-lg: 1.125rem;
+    /* 18px on mobile */
+    --font-subtitle-md: 1rem;
+    /* 16px on mobile */
   }
 
   .container {
@@ -1108,3 +1170,21 @@ html:not(.dark) ::placeholder {
   color: var(--evt-text-muted) !important;
   /* Ensure accessible placeholder contrast */
 }
+
+/* Standardized hover transitions for primary event cards mapped under media query for touch device safety */
+@media (hover: hover) {
+  .event-card-hoverable {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+  }
+  .event-card-hoverable:hover {
+    z-index: 50;
+    transform: translateY(-6px) scale(1.005);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: #a5b4fc !important; /* border-indigo-300 */
+  }
+  .dark .event-card-hoverable:hover {
+    border-color: #4338ca !important; /* border-indigo-700 */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  }
+}
+

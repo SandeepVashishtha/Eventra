@@ -355,7 +355,7 @@ class ErrorBoundary extends React.Component {
             <div className="eb-meta-grid">
               <div className="eb-meta-item">
                 <span className="eb-meta-label">URL</span>
-                <span className="eb-meta-value">{window.location.href}</span>
+                <span className="eb-meta-value">{sanitizeUrl(window.location.href)}</span>
               </div>
               <div className="eb-meta-item">
                 <span className="eb-meta-label">Timestamp</span>

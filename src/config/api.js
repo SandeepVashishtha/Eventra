@@ -1,5 +1,6 @@
 import axios from "axios";
 import { ENV } from "./env";
+import { syncServerTimeFromHeader } from "../utils/timeSync";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -203,20 +204,18 @@ API.interceptors.request.use((config) => {
   }
   
   const method = config.method?.toUpperCase();
-  if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-    if (!config.headers['Idempotency-Key'] && !config.headers['X-Idempotency-Key']) {
-      const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID 
-        ? crypto.randomUUID() 
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-      config.headers['Idempotency-Key'] = generateId();
-    }
-  }
   
   return config;
 });
 
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
+    if (headerValue) {
+      syncServerTimeFromHeader(headerValue);
+    }
+    return response;
+  },
   async (error) => {
     const config = error.config || {};
     const status = error?.response?.status;
@@ -226,18 +225,18 @@ API.interceptors.response.use(
     }
 
     const retryCount = config._retryCount || 0;
-    const isNonMutating = config.method?.toUpperCase() === 'GET';
+    const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
     const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
     
     // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
     // because those can duplicate writes or worsen server-side rate limiting.
-    if (isRetryableMethod && isRetryableStatus && retryCount < MAX_RETRIES) {
+    if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
       config._retryCount = retryCount + 1;
       const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
       if (isDev) {
         console.debug(
-          `[API ${method}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
+          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
         );
       }
 
@@ -266,6 +265,7 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+    AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
 
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
@@ -296,6 +296,18 @@ export const API_ENDPOINTS = {
   USERS: {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
+  },
+  TICKETS: {
+    VALIDATE: buildApiUrl("/api/tickets/validate"),
+    CHECK_IN: buildApiUrl("/api/tickets/checkin"),
+    HISTORY: buildApiUrl("/api/tickets/checkins"),
+  },
+  ADMIN: {
+    USERS: buildApiUrl("/api/admin/users"),
+    USER: (id) => buildApiUrl(`/api/admin/users/${id}`),
+    EVENTS: buildApiUrl("/api/admin/events"),
+    EVENT: (id) => buildApiUrl(`/api/admin/events/${id}`),
+    STATS: buildApiUrl("/api/admin/stats"),
   },
   VALIDATION: {
     EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),

@@ -21,7 +21,15 @@ import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
+import Breadcrumbs from "./components/common/Breadcrumbs";
+import { 
+  AuthFormSkeleton, 
+  ExploreEventsSkeleton, 
+  EventDetailSkeleton,
+  DashboardHomeSkeleton,
+} from "./components/common/SkeletonLoaders";
 
 // Route-level lazy splits - loaded only when route is visited
 const Footer = lazy(() => import("./components/Layout/Footer"));
@@ -30,6 +38,8 @@ const AppRoutes = lazy(() => import("./components/AppRoutes"));
 const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
+const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
+
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
@@ -65,6 +75,7 @@ function App() {
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
   useLenis();
+  useRoutePrefetch(); // Predictive route pre-loading
 
   useKeyboardShortcuts({
     onOpenHelp: () => setShowKeyboardModal(true),
@@ -152,27 +163,37 @@ function App() {
                   <OnboardingChecklist />
                 </Suspense>
 
+                <Breadcrumbs />
+
                 <main
                   id="main-content"
                   className="relative z-10 min-h-[85vh] bg-bg text-text transition-colors duration-300"
                 >
                   <PageTransition>
                     <ErrorBoundary>
-                      <Suspense fallback={pageLoader}>
-                        <Routes location={location} key={location.pathname}>
-                          <Route
-                            path="/register/:id"
-                            element={
-                              <ProtectedRoute>
+                      <Routes location={location} key={location.pathname}>
+                        <Route
+                          path="/register/:id"
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={<AuthFormSkeleton />}>
                                 <EventRegistration />
-                              </ProtectedRoute>
-                            }
-                          />
-                          <Route path="/event-recommendation" element={<EventRecommendation />} />
-                          <Route path="/saved-events" element={<SavedEventsPage />} />
-                          <Route path="*" element={<AppRoutes />} />
-                        </Routes>
-                      </Suspense>
+                              </Suspense>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/events/:id"
+                          element={
+                            <Suspense fallback={<EventDetailSkeleton />}>
+                              <EventDetails />
+                            </Suspense>
+                          }
+                        />
+                        <Route path="/event-recommendation" element={<EventRecommendation />} />
+                        <Route path="/saved-events" element={<SavedEventsPage />} />
+                        <Route path="*" element={<AppRoutes />} />
+                      </Routes>
                     </ErrorBoundary>
                   </PageTransition>
                 </main>

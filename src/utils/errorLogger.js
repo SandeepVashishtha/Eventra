@@ -94,3 +94,17 @@ export const clearErrorLog = () => {
     localStorage.removeItem("eventra_feature_errors");
   } catch (_) {}
 };
+
+export const getSectionErrors = () => {
+  try {
+    return JSON.parse(localStorage.getItem("eventra_section_errors") || "[]");
+  } catch (_) {
+    return [];
+  }
+};
+
+export const clearSectionErrors = () => {
+  try {
+    localStorage.removeItem("eventra_section_errors");
+  } catch (_) {}
+};

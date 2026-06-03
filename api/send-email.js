@@ -11,6 +11,8 @@
 // ---------------------------------------------------------------------------
 
 import { verifyAuth } from "./middleware/auth.js";
+import { buildCorsHeaders } from "./auth/cors.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_SENDS = 5;
@@ -46,14 +48,11 @@ const isValidEmail = (email) =>
   typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 
 async function handler(req, res) {
-  const corsOrigin = process.env.ALLOWED_ORIGIN || "*";
-  res.setHeader("Access-Control-Allow-Origin", corsOrigin);
-  if (corsOrigin !== "*") res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  const corsHeaders = buildCorsHeaders(req);
+  res.set(corsHeaders);
 
   if (req.method === "OPTIONS") {
-    return res.status(200).end();
+    return res.status(204).end();
   }
 
   if (req.method !== "POST") {
@@ -100,7 +99,7 @@ async function handler(req, res) {
   });
 
   try {
-    const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+    const response = await fetchWithTimeout("https://api.emailjs.com/api/v1.0/email/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -114,7 +113,7 @@ async function handler(req, res) {
           event_date: eventDateStr,
         },
       }),
-    });
+    }, 8000);
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
@@ -130,3 +129,5 @@ async function handler(req, res) {
 }
 
 export default verifyAuth(handler);
+
+

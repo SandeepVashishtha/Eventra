@@ -1,82 +1,93 @@
-import { Search, FilterX, Inbox } from "lucide-react";
+import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { Search, FolderOpen, Bookmark, Calendar, FilterX } from "lucide-react";
 
+/**
+ * EmptyState Component
+ * 
+ * Displayed when a listing or results page has no data.
+ * Unified version resolving merge conflicts between interactive features and responsive design.
+ */
 const EmptyState = ({
-  type = "search",
+  icon: Icon,
   title,
+  description,
   message,
+  actionText,
+  actionLink = "/explore",
+  variant = "search",
+  type,
   onClearFilters,
   onBrowseAll,
-  icon,
+  compact = false,
 }) => {
-  const getDefaultConfig = () => {
-    switch (type) {
-      case "search":
-        return {
-          icon: <Search size={48} className="text-gray-400" />,
-          title: "No results found",
-          message: "Try adjusting your search terms or filters to find what you're looking for.",
-        };
-      case "filters":
-        return {
-          icon: <FilterX size={48} className="text-gray-400" />,
-          title: "No events match your filters",
-          message: "Try adjusting your filters or clearing them to see all available events.",
-        };
-      case "bookmarks":
-        return {
-          icon: <Inbox size={48} className="text-gray-400" />,
-          title: "No bookmarked events",
-          message: "Start exploring and bookmark events you're interested in!",
-        };
-      default:
-        return {
-          icon: <Inbox size={48} className="text-gray-400" />,
-          title: "Nothing here yet",
-          message: "Check back later for new content.",
-        };
-    }
+  const navigate = useNavigate();
+  
+  const activeType = type || variant;
+  const activeTitle = title || (activeType === "search" ? "No results found" : "Empty");
+  const activeDescription = message || description || (activeType === "search" ? "Try adjusting your filters or search terms to find what you're looking for." : "");
+
+  const variants = {
+    search: { icon: Search, color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-900/20" },
+    bookmarks: { icon: Bookmark, color: "text-rose-500", bg: "bg-rose-50 dark:bg-rose-900/20" },
+    events: { icon: Calendar, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+    generic: { icon: FolderOpen, color: "text-gray-500", bg: "bg-gray-50 dark:bg-gray-800" }
   };
 
-  const config = {
-    icon: icon || getDefaultConfig().icon,
-    title: title || getDefaultConfig().title,
-    message: message || getDefaultConfig().message,
-  };
+  const config = variants[activeType] || variants.generic;
+  const ActiveIcon = Icon || config.icon;
 
   return (
-    <motion.div
+    <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]"
+      className={`relative overflow-hidden rounded-3xl text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] ${
+        compact ? "p-6" : "p-12 max-w-lg mx-auto"
+      }`}
     >
       {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-gradient-to-tr from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 rounded-full blur-3xl" />
-      </div>
+      {!compact && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-gradient-to-tr from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 rounded-full blur-3xl" />
+        </div>
+      )}
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex flex-col items-center justify-center space-y-6">
         {/* Icon/Illustration */}
-        <div className="flex justify-center mb-6">
-          <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
-            {config.icon}
+        <div className="flex justify-center">
+          <div className={`rounded-full ${compact ? "p-4" : "p-6"} ${config.bg} ${config.color}`}>
+             {typeof ActiveIcon === 'function' ? (
+               <ActiveIcon size={compact ? 32 : 48} strokeWidth={1.5} />
+             ) : (
+               React.cloneElement(ActiveIcon, { size: compact ? 32 : 48 })
+             )}
           </div>
         </div>
 
-        {/* Title */}
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-          {config.title}
-        </h3>
-
-        {/* Message */}
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-          {config.message}
-        </p>
+        {/* Text content */}
+        <div className="space-y-2">
+          <h3 className={`${compact ? "text-lg" : "text-2xl"} font-bold text-gray-900 dark:text-white`}>
+            {activeTitle}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-sm">
+            {activeDescription}
+          </p>
+        </div>
 
         {/* Action Buttons */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          {actionText && (
+            <button
+              onClick={() => navigate(actionLink)}
+              className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-100 dark:shadow-none transition-all active:scale-95"
+            >
+              {actionText}
+            </button>
+          )}
+
           {onClearFilters && (
             <button
               type="button"

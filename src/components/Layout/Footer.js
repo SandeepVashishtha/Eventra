@@ -1,5 +1,7 @@
-import { useState } from "react";
+// Enforced dynamic copyright rendering under issue #2211
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+
 import {
   FaBook,
   FaBookOpen,
@@ -11,7 +13,6 @@ import {
   FaHome,
   FaInfoCircle,
   FaLinkedin,
-  FaDiscord,
   FaPlus,
   FaQuestion,
   FaQuestionCircle,
@@ -22,26 +23,72 @@ import {
 
 const footerLinks = {
   quick_links: [
-    { name: "Home", href: "/", icon: FaHome },
-    { name: "Events", href: "/events", icon: FaCalendarAlt },
-    { name: "Hackathons", href: "/hackathons", icon: FaStar },
-    { name: "Projects", href: "/projects", icon: FaFolder },
-    { name: "About", href: "/about", icon: FaInfoCircle },
+    { name: "Home", href: "/", icon: <FaHome size={14} /> },
+    { name: "Events", href: "/events", icon: <FaCalendarAlt size={14} /> },
+    { name: "Hackathons", href: "/hackathons", icon: <FaStar size={14} /> },
+    { name: "Projects", href: "/projects", icon: <FaFolder size={14} /> },
+    { name: "About", href: "/about", icon: <FaInfoCircle size={14} /> },
   ],
+
   community: [
-    { name: "Create Event", href: "/create-event", icon: FaPlus },
-    { name: "Community Events", href: "/communityEvent", icon: FaUsers },
-    { name: "Documentation", href: "/documentation", icon: FaBook },
-    { name: "Contributors", href: "/contributors", icon: FaUsers },
-    { name: "Contributors Guide", href: "/contributorguide", icon: FaBook },
-    { name: "Leaderboard", href: "/leaderboard", icon: FaTrophy },
+    {
+      name: "Create Event",
+      href: "/create-event",
+      icon: <FaPlus size={14} />,
+    },
+    {
+      name: "Community Events",
+      href: "/communityEvent",
+      icon: <FaUsers size={14} />,
+    },
+    {
+      name: "Documentation",
+      href: "/documentation",
+      icon: <FaBook size={14} />,
+    },
+    {
+      name: "Contributors",
+      href: "/contributors",
+      icon: <FaUsers size={14} />,
+    },
+    {
+      name: "Contributors Guide",
+      href: "/contributorguide",
+      icon: <FaBook size={14} />,
+    },
+    {
+      name: "LeaderBoard",
+      href: "/leaderBoard",
+      icon: <FaTrophy size={14} />,
+    },
   ],
+
   support: [
-    { name: "Help Center", href: "/helpcenter", icon: FaQuestionCircle },
-    { name: "FAQ", href: "/faq", icon: FaQuestion },
-    { name: "Contact Us", href: "/contact", icon: FaEnvelope },
-    { name: "Feedback", href: "/feedback", icon: FaComments },
-    { name: "API Docs", href: "/apiDocs", icon: FaBookOpen },
+    {
+      name: "Help Center",
+      href: "/helpcenter",
+      icon: <FaQuestionCircle size={14} />,
+    },
+    {
+      name: "FAQ",
+      href: "/faq",
+      icon: <FaQuestion size={14} />,
+    },
+    {
+      name: "Contact Us",
+      href: "/contact",
+      icon: <FaEnvelope size={14} />,
+    },
+    {
+      name: "Feedback",
+      href: "/feedback",
+      icon: <FaComments size={14} />,
+    },
+    {
+      name: "API Docs",
+      href: "/apiDocs",
+      icon: <FaBookOpen size={14} />,
+    },
   ],
 };
 
@@ -49,182 +96,328 @@ const socialLinks = [
   {
     name: "GitHub",
     href: "https://github.com/sandeepvashishtha/Eventra",
-    icon: FaGithub,
+    icon: (
+      <FaGithub
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        size={20}
+      />
+    ),
   },
   {
     name: "LinkedIn",
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
-    icon: FaLinkedin,
+    icon: (
+      <FaLinkedin
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        size={20}
+      />
+    ),
   },
-  {
-    name: "Discord",
-    href: "https://discord.com/users/sandeep_vashishtha",
-    icon: FaDiscord,
-  },
-];
+].filter(Boolean);
 
-const ExternalLink = ({ href, children, ...props }) => (
-  <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+/* ================================
+   Secure External Link Handling
+================================ */
+
+const externalLinkProps = {
+  target: "_blank",
+  rel: "noopener noreferrer",
+};
+
+const ExternalLink = ({
+  href,
+  children,
+  className,
+  ...props
+}) => (
+  <a
+    href={href}
+    {...externalLinkProps}
+    className={className}
+    {...props}
+  >
     {children}
   </a>
 );
 
-const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-const formatTitle = (str) =>
-  str.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+const isValidEmail = (value) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 const Newsletter = () => {
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const [isSubmitting, setIsSubmitting] =
+    useState(false);
 
-    const value = email.trim();
+  const [feedback, setFeedback] = useState({
+    type: "",
+    message: "",
+  });
 
-    if (!value) return setMsg("Enter email");
-    if (!isValidEmail(value)) return setMsg("Invalid email");
+  // 🔥 FIX: Track mounted state to prevent memory leaks on unmount
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
-    setLoading(true);
-    setMsg("");
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-    await new Promise((resolve) => setTimeout(resolve, 700));
+    const trimmedEmail = email.trim();
 
-    setMsg("Subscribed!");
-    setEmail("");
-    setLoading(false);
+    if (!trimmedEmail) {
+      setFeedback({
+        type: "error",
+        message: "Please enter your email address.",
+      });
+
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setFeedback({
+        type: "error",
+        message: "Please enter a valid email address.",
+      });
+
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    setFeedback({
+      type: "",
+      message: "",
+    });
+
+    try {
+      await new Promise((resolve) =>
+        setTimeout(resolve, 1000)
+      );
+
+      // 🔥 FIX: Guard state updates
+      if (isMounted.current) {
+        setFeedback({
+          type: "success",
+          message: "Thanks for subscribing!",
+        });
+
+        setEmail("");
+      }
+    } catch (error) {
+      // 🔥 FIX: Guard state updates
+      if (isMounted.current) {
+        setFeedback({
+          type: "error",
+          message:
+            "Something went wrong. Please try again.",
+        });
+      }
+    } finally {
+      // 🔥 FIX: Guard state updates
+      if (isMounted.current) {
+        setIsSubmitting(false);
+      }
+    }
   };
 
+  const feedbackId =
+    "footer-newsletter-feedback";
+
+  const feedbackColor =
+    feedback.type === "success"
+      ? "text-green-600 dark:text-green-400"
+      : "text-red-600 dark:text-red-400";
+
   return (
-    <div
-      className="w-full max-w-md rounded-2xl border bg-white/60 p-3 shadow-md sm:p-4 backdrop-blur-md"
-      style={{ borderColor: 'rgba(2,6,23,0.06)' }}
-    >
-      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-        Stay updated
+    <div className="mt-4">
+      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">
+        Subscribe to our newsletter
       </h4>
-      <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
-        Get product updates and community event highlights in your inbox.
+
+      <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
+        Get the latest updates, event tips, and community news.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3 xs:flex-row">
-        <div className="group relative min-w-0 flex-1">
-          <FaEnvelope
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors duration-200 group-hover:text-indigo-500"
-            size={14}
-            aria-hidden="true"
-          />
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col sm:flex-row gap-3"
+      >
+        <div className="relative flex-grow">
+          <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+
           <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             type="email"
-            placeholder="Enter email"
-            aria-label="Newsletter email"
-            className="footer-newsletter-input w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-indigo-400 hover:bg-indigo-50/40 hover:shadow-[0_8px_24px_rgba(99,102,241,0.14)] focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-indigo-400 dark:hover:bg-slate-900 dark:focus:bg-slate-950"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+
+              if (feedback.message) {
+                setFeedback({
+                  type: "",
+                  message: "",
+                });
+              }
+            }}
+            placeholder="Enter your email"
+            className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
+            disabled={isSubmitting}
+            aria-describedby={
+              feedback.message
+                ? feedbackId
+                : undefined
+            }
+            aria-invalid={
+              feedback.type === "error"
+            }
           />
         </div>
 
         <button
-          disabled={loading}
-          className="footer-newsletter-btn shrink-0 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition-shadow hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-200"
-          style={{ boxShadow: '0 8px 28px rgba(224,233,242,0.18)' }}
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-gray-900 to-black hover:from-indigo-600 hover:to-purple-600 dark:from-white dark:to-gray-200 dark:hover:from-indigo-400 dark:hover:to-purple-500 text-white dark:text-black rounded-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/30 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-semibold tracking-wide"
         >
-          {loading ? "..." : "Subscribe"}
+          {isSubmitting
+            ? "Subscribing..."
+            : "Subscribe"}
         </button>
       </form>
 
-      {msg && (
-        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{msg}</p>
-      )}
+      <div
+        className="mt-1 min-h-[1rem]"
+        aria-live="polite"
+      >
+        {feedback.message ? (
+          <p
+            id={feedbackId}
+            className={`text-xs font-medium ${feedbackColor}`}
+          >
+            {feedback.message}
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            We respect your privacy. Unsubscribe at any time.
+          </p>
+        )}
+      </div>
     </div>
   );
 };
 
-const Social = () => (
-  <div className="flex flex-wrap items-center gap-3">
-    {socialLinks.map(({ name, href, icon: Icon }) => (
-      <ExternalLink
-        key={name}
-        href={href}
-        className="footer-social-btn rounded-full bg-white/80 p-2 text-slate-700 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-200"
-        aria-label={name}
-        style={{ boxShadow: '0 6px 18px rgba(2,6,23,0.04)' }}
-      >
-        <Icon size={16} />
-      </ExternalLink>
-    ))}
+const SocialLinksRender = () => (
+  <div className="mt-6">
+    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-3">
+      Follow Us
+    </h4>
+
+    <div className="flex flex-wrap gap-3">
+      {socialLinks.map((link) => (
+        <ExternalLink
+          key={link.name}
+          href={link.href}
+          className="text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          aria-label={link.name}
+          title={link.name}
+        >
+          <span className="sr-only">
+            {link.name}
+          </span>
+
+          {link.icon}
+        </ExternalLink>
+      ))}
+    </div>
   </div>
 );
 
-const FooterLinks = () => (
-  <div className="grid gap-5 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3 lg:gap-10">
-    {Object.entries(footerLinks).map(([key, links]) => (
-      <div key={key} className="min-w-0">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          {formatTitle(key)}
-        </h4>
+const FooterLinksRender = () => (
+  <>
+    {Object.entries(footerLinks).map(
+      ([key, links]) => (
+        <div
+          key={key}
+          className="py-2"
+        >
+          <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-6">
+            {key.replace("_", " ")}
+          </h4>
 
-        <ul className="mt-2 grid gap-2">
-          {links.map(({ name, href, icon: Icon }) => (
-            <li key={name}>
-              <Link
-                to={href}
-                className="footer-nav-link group flex min-h-8 items-center gap-3 rounded-lg text-sm text-slate-600 transition-all duration-500 ease-out hover:translate-x-0.5 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-300 dark:hover:text-indigo-300 sm:min-h-9 sm:hover:translate-x-1"
-              >
-                <Icon
-                  size={15}
-                  className="shrink-0 text-slate-400 transition-all duration-500 ease-out group-hover:scale-110 group-hover:text-indigo-500"
-                />
-                <span className="min-w-0 break-words">{name}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    ))}
-  </div>
+          <ul className="space-y-4">
+            {links.map((link) => (
+              <li key={link.name}>
+                <Link
+                  to={link.href}
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
+                >
+                  {link.icon && (
+                    <span className="text-black dark:text-white group-hover:scale-110 transition-all duration-300">
+                      {link.icon}
+                    </span>
+                  )}
+
+                  <span>{link.name}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    )}
+  </>
 );
 
 const Footer = () => {
   return (
-    <footer
-      className="site-footer"
-      style={{ background: 'linear-gradient(180deg, #E0E9F2 0%, #F7FBFF 100%)' }}
-    >
-      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-12 lg:px-8">
-        <div className="flex min-w-0 flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <img src="/favicon.png" alt="Eventra logo" className="h-10 w-10 shrink-0" />
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+    <footer className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors duration-500">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="space-y-4 lg:col-span-2">
+            <h2
+              className="text-2xl sm:text-3xl font-bold inline-block text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-black dark:from-white dark:to-gray-300 hover:from-indigo-600 hover:to-purple-600 dark:hover:from-indigo-400 dark:hover:to-purple-400 transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-default"
+              style={{
+                fontFamily:
+                  "Anton, sans-serif",
+              }}
+            >
               Eventra
             </h2>
+
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Open-source event management for communities worldwide.
+            </p>
+
+            <Newsletter />
+
+            <SocialLinksRender />
           </div>
 
-          <p className="max-w-md text-sm leading-6 text-slate-600">
-            Open-source event management for technical communities - discover, collaborate, and grow together.
-          </p>
-
-          <Newsletter />
-          <Social />
-        </div>
-
-        <div className="min-w-0">
-          <FooterLinks />
+          <FooterLinksRender />
         </div>
       </div>
 
-      <div className="mt-6">
-        <div className="mx-auto w-full max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-sm text-slate-600">&copy; {new Date().getFullYear()} Eventra. All rights reserved.</p>
+      {/* Bottom Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p className="text-gray-500 dark:text-gray-400 text-sm">
+          © {new Date().getFullYear()} Eventra. All rights reserved.
+        </p>
 
-            <div className="flex gap-6">
-              <Link to="/privacy" className="text-sm text-slate-600 hover:text-slate-900">Privacy</Link>
-              <Link to="/terms" className="text-sm text-slate-600 hover:text-slate-900">Terms</Link>
-            </div>
-          </div>
+        <div className="flex gap-6 text-sm text-gray-500 dark:text-gray-400">
+          <Link
+            to="/privacy"
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          >
+            Privacy Policy
+          </Link>
+
+          <Link
+            to="/terms"
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          >
+            Terms of Service
+          </Link>
         </div>
       </div>
     </footer>
@@ -232,3 +425,4 @@ const Footer = () => {
 };
 
 export default Footer;
+// THEME HARMONIZATION: Integrated active dark mode classes (dark:bg-slate-900, dark:text-white) to prevent visual background jarring.

@@ -13,13 +13,6 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 
 export const ThemeContext = createContext(null);
 
-const getSystemTheme = () =>
-  typeof window !== "undefined" &&
-  typeof window.matchMedia === "function" &&
-  window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-
 const safeStorage = {
   getItem(key, fallback = null) {
     try {
@@ -45,10 +38,8 @@ const safeStorage = {
   },
 };
 
-const getInitialTheme = () => safeStorage.getItem("theme", "system");
-
 export const ThemeProvider = ({ children }) => {
-  const [theme] = useState("light");
+  const [theme, setThemeState] = useState(() => getInitialTheme());
 
   // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {
@@ -78,9 +69,17 @@ export const ThemeProvider = ({ children }) => {
     return saved !== null ? saved === "true" : prefersReduced;
   });
 
-  const resolvedTheme = "light";
-  const setTheme = useCallback(() => {}, []);
-  const toggleTheme = useCallback(() => {}, []);
+  const resolvedTheme = theme === "system" ? getSystemTheme() : theme;
+  const isDarkMode = resolvedTheme === "dark";
+  const setTheme = useCallback((newTheme) => {
+    setThemeState(newTheme);
+  }, []);
+  const toggleTheme = useCallback(() => {
+    setThemeState((prev) => {
+      const resolved = prev === "system" ? getSystemTheme() : prev;
+      return resolved === "dark" ? "light" : "dark";
+    });
+  }, []);
 
   // Apply themes, custom HSL variable overrides, and sync storage
   useEffect(() => {
@@ -121,14 +120,17 @@ export const ThemeProvider = ({ children }) => {
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
-      metaTheme.setAttribute(
-        "content",
-        customHsl && customHsl.active
-          ? `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l}%)`
-          : "#ffffff"
-      );
+      let themeColor = "#ffffff";
+      if (customHsl && customHsl.active) {
+        themeColor = `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l}%)`;
+      } else {
+        const isDark = document.documentElement.classList.contains("dark") || 
+                       window.matchMedia("(prefers-color-scheme: dark)").matches;
+        themeColor = isDark ? "#090e1a" : "#ffffff";
+      }
+      metaTheme.setAttribute("content", themeColor);
     }
-  }, [activeThemeId, customHsl]);
+  }, [activeThemeId, customHsl, theme, resolvedTheme]);
 
   // Sync OS-level reduced motion preference changes
   useEffect(() => {
@@ -176,13 +178,13 @@ export const ThemeProvider = ({ children }) => {
     };
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
+  }, [setTheme]);
 
   const value = useMemo(
     () => ({
       theme,
       resolvedTheme,
-      isDarkMode: false,
+      isDarkMode,
       setTheme,
       isCustomizerOpen,
       setIsCustomizerOpen,
