@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams } from "react-router-dom";
-import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2 } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2, Check } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -42,7 +42,7 @@ const EventDetails = () => {
   const [fetchError, setFetchError] = useState(null);
 
   const { isRegistered } = useMyEvents();
-
+  const [linkCopied, setLinkCopied] = useState(false);
   const latestRequestIdRef = useRef(0);
 
   const loadEvent = useCallback(async () => {
@@ -113,9 +113,11 @@ const EventDetails = () => {
           textArea.remove();
         }
       }
-      toast.success("Link copied!");
+           toast.success("Event link copied to clipboard!");   
+           setLinkCopied(true);                                
+           setTimeout(() => setLinkCopied(false), 2000);
     } catch (err) {
-      toast.error("Failed to copy link");
+       toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
 
@@ -172,10 +174,16 @@ const EventDetails = () => {
                 <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">{event.title}</h1>
                 <button
                   onClick={handleCopy}
-                  className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-colors"
-                  aria-label="Copy event link"
-                  title="Copy link"
-                >
+                  className={`p-2 rounded-full transition-colors ${linkCopied 
+                    ? "text-green-600 bg-green-50 dark:bg-green-900/30" 
+                    : "ttext-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                  }`}
+               aria-label={linkCopied ? "Link copied!" : "Copy event link"}
+              title={linkCopied ? "Copied!" : "Copy link"}
+              >
+             {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
+
+             
                   <Link2 size={28} />
                 </button>
               </div>
