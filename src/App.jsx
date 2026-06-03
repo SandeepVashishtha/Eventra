@@ -24,7 +24,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
-import { AuthFormSkeleton } from "./components/common/SkeletonLoaders";
+import { AuthFormSkeleton, ExploreEventsSkeleton, EventDetailSkeleton } from "./components/common/SkeletonLoaders";
 
 // Route-level lazy splits - loaded only when route is visited
 const Footer = lazy(() => import("./components/Layout/Footer"));

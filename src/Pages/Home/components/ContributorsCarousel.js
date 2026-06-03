@@ -1,5 +1,4 @@
 import { Github, ExternalLink, GitBranch, MapPin, Building, Users, Medal, ChevronLeft, ChevronRight } from "lucide-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
