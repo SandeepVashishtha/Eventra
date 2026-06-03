@@ -45,6 +45,14 @@ const RATE_LIMIT_MAX_REQUESTS = 10;
 const rateLimitMap = new Map();
 let lastEvictionAt = 0;
 
+// Global rate limit: protects the Groq API quota from coordinated bursts
+// across multiple users. Checked before per-user rate limit so even if
+// every user is within their individual bounds, the endpoint still rejects
+// traffic when the global threshold is exceeded.
+const GLOBAL_RATE_LIMIT_MAX = 60; // requests per window across all users
+let globalRequestCount = 0;
+let globalWindowStart = Date.now();
+
 const evictStaleEntries = () => {
   const now = Date.now();
   if (now - lastEvictionAt < RATE_LIMIT_WINDOW_MS) return;
@@ -54,6 +62,19 @@ const evictStaleEntries = () => {
       rateLimitMap.delete(key);
     }
   }
+};
+
+const checkGlobalRateLimit = () => {
+  const now = Date.now();
+  if (now - globalWindowStart >= RATE_LIMIT_WINDOW_MS) {
+    globalRequestCount = 0;
+    globalWindowStart = now;
+  }
+  if (globalRequestCount >= GLOBAL_RATE_LIMIT_MAX) {
+    return false;
+  }
+  globalRequestCount += 1;
+  return true;
 };
 
 const checkRateLimit = (userId) => {
@@ -100,6 +121,13 @@ async function handler(req, res) {
 
   // req.user is set by verifyAuth after successful JWT verification
   const userId = req.user?.id || req.user?.email || "unknown";
+
+  // Global rate limiting (before per-user check)
+  if (!checkGlobalRateLimit()) {
+    return res.status(429).json({
+      error: "Service is currently experiencing high demand. Please try again shortly.",
+    });
+  }
 
   // Per-user rate limiting
   if (!checkRateLimit(userId)) {
