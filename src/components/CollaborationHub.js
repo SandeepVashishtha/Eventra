@@ -49,7 +49,10 @@ const CollaborationHub = () => {
     }
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(item => item && typeof item === 'object');
+        }
       } catch (e) {
         console.error("Failed to parse collaboration opportunities from localStorage", e);
       }
