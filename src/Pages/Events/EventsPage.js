@@ -152,9 +152,9 @@ const EventsPage = () => {
       savedFilters = {};
     }
 
-    const page = parseInt(searchParams.get("page")) || 1;
+    const page = parseInt(searchParams.get("page"), 10) || 1;
     const perPage =
-      parseInt(searchParams.get("perPage")) || savedFilters.perPage || 6;
+      parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 6;
     const filter =
       searchParams.get("filter") || savedFilters.filterType || "all";
     const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
