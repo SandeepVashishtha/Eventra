@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, AlertTriangle, User, Briefcase, Zap, Code, Plus, ExternalLink, Settings, Rocket } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import WorkspaceBootstrapModal from "../../components/hackathons/WorkspaceBootstrapModal";
+import WorkspaceBootstrapModal from "../../../components/hackathons/WorkspaceBootstrapModal";
 
 const TeamMatchmaking = () => {
   const [showForm, setShowForm] = useState(false);
