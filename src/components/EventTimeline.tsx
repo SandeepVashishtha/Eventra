@@ -26,7 +26,12 @@ export interface Event {
 
 // Helper to convert date ("YYYY-MM-DD") and time ("HH:MM AM/PM") into a Unix timestamp for precise sorting/comparison
 const parseDateTime = (dateStr: string, timeStr: string): number => {
+  // 🔥 FIX: Added safe fallbacks to prevent NaN sorting breaks
+  if (!dateStr) return 0;
+  
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return 0;
+
   let hours = 0;
   let minutes = 0;
 
@@ -53,6 +58,9 @@ export const EventTimeline: React.FC = () => {
 
   // 2. React Hooks to manage state & localStorage synchronization
   const [timeline, setTimeline] = useState<Event[]>(() => {
+    // 🔥 FIX: SSR Guard to prevent ReferenceError crashes in test/server environments
+    if (typeof window === "undefined") return [];
+    
     try {
       const stored = localStorage.getItem("eventra_timeline");
       return stored ? JSON.parse(stored) : [];
@@ -354,11 +362,14 @@ export const EventTimeline: React.FC = () => {
                 <AnimatePresence initial={false}>
                   {sortedTimeline.map((item, index) => {
                     const parsedDate = new Date(item.date);
-                    const formattedDate = parsedDate.toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    });
+                    // 🔥 FIX: Safe date formatting to prevent RangeError crash
+                    const formattedDate = isNaN(parsedDate.getTime()) 
+                      ? "Date TBD" 
+                      : parsedDate.toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        });
 
                     return (
                       <motion.div

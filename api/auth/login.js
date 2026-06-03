@@ -216,10 +216,13 @@ if (clientIp) {
 
     // Reset rate limit on successful login so a legitimate user is not penalised
 
+    // The JWT is delivered exclusively via the HttpOnly Set-Cookie header set
+    // above. Including it in the JSON body would expose it to JavaScript
+    // (document.cookie / response.json()), allowing XSS to steal the session
+    // token even when HttpOnly is correctly configured. The frontend reads the
+    // cookie automatically via withCredentials on every subsequent request.
     return corsResponse(req, res, 200, {
       message: "Login successful",
-      token,
-      tokenType: "Bearer",
       ...userResponse,
     });
 

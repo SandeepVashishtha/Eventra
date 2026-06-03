@@ -92,6 +92,8 @@ sseMultiplexer.isLeader = true;
 sseMultiplexer.reconcileConnections();
 
 const runTests = async () => {
+  process.env.REACT_APP_API_URL = "https://api.example.test";
+
   // Test 1: Local subscription and message delivery
   let receivedData = null;
   let receivedType = null;
@@ -104,6 +106,7 @@ const runTests = async () => {
   sseMultiplexer.reconcileConnections();
   assert.equal(eventSources.length, 1);
   assert.equal(eventSources[0].closed, false);
+  assert.equal(eventSources[0].url, "https://api.example.test/stream/leaderboard");
 
   // Wait for the async connection open simulated by MockEventSource
   await new Promise((resolve) => setTimeout(resolve, 15));
