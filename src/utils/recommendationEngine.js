@@ -61,6 +61,19 @@ const getPopularityScore = (event) => {
   return Math.min((attendees / capacity) * 10, 10);
 };
 
+const _tagCache = new Map();
+
+const _getCachedTags = (event) => {
+  const id = getEventId(event);
+  if (!id) return [];
+  if (_tagCache.has(id)) return _tagCache.get(id);
+  const tags = getEventTags(event);
+  _tagCache.set(id, tags);
+  return tags;
+};
+
+const clearTagCache = () => _tagCache.clear();
+
 const getSimilarityScore = (candidate, interactedEvents) => {
   if (!interactedEvents.length) return 0;
 
@@ -80,7 +93,7 @@ const getSimilarityScore = (candidate, interactedEvents) => {
       score += 5;
     }
 
-    const overlap = getEventTags(event).filter((tag) => candidateTags.has(tag));
+    const overlap = _getCachedTags(event).filter((tag) => candidateTags.has(tag));
     score += Math.min(overlap.length * 3, 12);
 
     return Math.max(bestScore, score);
@@ -270,6 +283,7 @@ export const buildPersonalizedRecommendations = ({
   includeInteracted = false,
   limit = 8,
 } = {}) => {
+  clearTagCache();
   const interactionProfile = buildInteractionProfile({
     registeredEvents,
     bookmarkedEvents,
