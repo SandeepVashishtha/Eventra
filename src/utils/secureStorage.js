@@ -166,41 +166,48 @@ const pendingWrites = new Map();
  * Falls back to plain localStorage when Web Crypto is unavailable
  * (non-HTTPS contexts or very old browsers).
  */
+const PLAINTEXT_SUFFIX = ':plaintext';
+
+/**
+ * Write plaintext immediately so data survives tab close, then
+ * replace with encrypted version asynchronously. If encryption
+ * is not supported or the page closes before it completes, the
+ * plaintext fallback is available on next load.
+ */
+const writeWithEncryption = async (key, value) => {
+  if (!cryptoSupported) {
+    localStorage.setItem(key, value);
+    return;
+  }
+  try {
+    const encrypted = await encryptValue(value);
+    localStorage.setItem(key, encrypted);
+    localStorage.removeItem(key + PLAINTEXT_SUFFIX);
+  } catch (err) {
+    console.error('[secureStorage] Encryption failed:', err);
+    // Plaintext is already in the fallback key — keep it
+  }
+};
+
 export const syncSecureStorage = {
   /**
    * Stores a value encrypted under the given key.
    *
-   * The value is written to localStorage only after encryption is complete
-   * if crypto is supported, preventing plaintext exposure. An in-memory
-   * cache ensures consistency during the async window.
+   * Data is written to localStorage synchronously as a plaintext fallback
+   * before encryption begins. If the page closes before encryption
+   * completes, the plaintext fallback survives. On next load, getItemAsync
+   * prefers the fallback if present.
    *
    * @param {string} key
    * @param {string} value
-   * @returns {boolean} true on success, false on storage failure
+   * @returns {Promise<boolean>} true on success, false on storage failure
    */
-  setItem: (key, value) => {
+  setItem: async (key, value) => {
     try {
-      if (!cryptoSupported) {
-        localStorage.setItem(key, value);
-        return true;
-      }
-
-      // Track the pending value in-memory for immediate consistency in getItemAsync
+      localStorage.setItem(key + PLAINTEXT_SUFFIX, value);
       pendingWrites.set(key, value);
-
-      encryptValue(value)
-        .then((encrypted) => {
-          // Only commit to persistent storage once encrypted
-          localStorage.setItem(key, encrypted);
-        })
-        .catch((err) => {
-          console.error('[secureStorage] Encryption failed, falling back to plaintext:', err);
-          localStorage.setItem(key, value);
-        })
-        .finally(() => {
-          pendingWrites.delete(key);
-        });
-
+      await writeWithEncryption(key, value);
+      pendingWrites.delete(key);
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
@@ -219,10 +226,11 @@ export const syncSecureStorage = {
    */
   getItem: (key) => {
     try {
-      // Priority 1: Check pending writes (latest truth)
       if (pendingWrites.has(key)) {
         return pendingWrites.get(key);
       }
+      const fallback = localStorage.getItem(key + PLAINTEXT_SUFFIX);
+      if (fallback !== null) return fallback;
       return localStorage.getItem(key);
     } catch (error) {
       console.error('[secureStorage] getItem failed:', error);
@@ -233,18 +241,20 @@ export const syncSecureStorage = {
   /**
    * Retrieves and decrypts the value stored under the given key.
    *
-   * Falls back to returning the raw value when decryption fails (handles
-   * data written before encryption was enabled).
+   * Falls back to the plaintext fallback (if available) or to the raw
+   * stored value when decryption fails.
    *
    * @param {string} key
    * @returns {Promise<string|null>}
    */
   getItemAsync: async (key) => {
     try {
-      // Priority 1: Check pending writes (latest truth)
       if (pendingWrites.has(key)) {
         return pendingWrites.get(key);
       }
+
+      const fallback = localStorage.getItem(key + PLAINTEXT_SUFFIX);
+      if (fallback !== null) return fallback;
 
       const stored = localStorage.getItem(key);
       if (stored === null) return null;
@@ -253,7 +263,6 @@ export const syncSecureStorage = {
         try {
           return await decryptValue(stored);
         } catch {
-          // Fallback to raw value (handles plaintext data written during failures or before encryption)
           return stored;
         }
       }
@@ -273,6 +282,7 @@ export const syncSecureStorage = {
     try {
       pendingWrites.delete(key);
       localStorage.removeItem(key);
+      localStorage.removeItem(key + PLAINTEXT_SUFFIX);
     } catch (error) {
       console.error('[secureStorage] removeItem failed:', error);
     }

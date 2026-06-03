@@ -1,3 +1,7 @@
+/**
+ * @fileoverview useFocusTrap - Accessible focus trap hook for dialogs and drawers
+ * @module hooks/useFocusTrap
+ */
 import { useEffect, useRef, useCallback } from 'react';
 
 /**

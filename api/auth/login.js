@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { users, usersByUsername } from "./signup.js";
+import { users, usersByUsername, isUsingInMemoryStore } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
@@ -39,6 +39,8 @@ const validateLoginInput = (usernameOrEmail, password) => {
   
   if (!password) {
     errors.push("Password is required");
+  } else if (password.length > 100) {
+    errors.push("Password exceeds maximum allowed length");
   }
   
   return errors;
@@ -104,14 +106,24 @@ async function handler(req, res) {
     }
 
     // -----------------------------------------------------------------------
+    // Guard: reject logins in production without a persistent store
+    // -----------------------------------------------------------------------
+
+    if (isUsingInMemoryStore()) {
+      return corsResponse(req, res, 503, {
+        error: "Service temporarily unavailable. Authentication is disabled while the server initializes its storage backend. Please try again shortly.",
+      });
+    }
+
+    // -----------------------------------------------------------------------
     // Rate Limiting (brute-force protection)
     // -----------------------------------------------------------------------
 
     const clientIp =
-  req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-  || req.headers?.["x-real-ip"]
-  || req.socket?.remoteAddress
-  || null;
+      req.headers?.[\"x-vercel-forwarded-for\"]
+      || req.headers?.[\"x-real-ip\"]
+      || req.socket?.remoteAddress
+      || null;
 
 if (clientIp) {
   if (!loginRateLimiter.check(clientIp)) {
@@ -239,3 +251,4 @@ if (clientIp) {
 
 export default handler;
 export { users };
+

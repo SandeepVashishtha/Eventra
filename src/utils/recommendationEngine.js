@@ -184,7 +184,8 @@ export const calculateRecommendationScore = (
     addScore("Preferred event type", 10, "Fits your preferred event format");
   }
 
-  const techOverlap = eventTags.filter((tag) => profileTech.includes(tag));
+  const profileTechSet = new Set(profileTech);
+  const techOverlap = eventTags.filter((tag) => profileTechSet.has(tag));
   addScore(
     "Tech stack overlap",
     Math.min(techOverlap.length * 5, 12),
