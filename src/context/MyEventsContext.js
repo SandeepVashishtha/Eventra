@@ -177,7 +177,7 @@ export const MyEventsProvider = ({ children }) => {
     // Trigger automatic promotion from the waitlist
     import("../utils/waitlistUtils.js").then(({ promoteNextUser }) => {
       promoteNextUser(eventId);
-    });
+    }).catch(() => {});
   }, []);
 
   /**

@@ -23,6 +23,34 @@ const NAME_VALIDATION = {
   patternError: "Only letters, spaces, hyphens & apostrophes allowed",
 };
 
+const Signup = () => {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [firstNameError, setFirstNameError] = useState("");
+  const [lastNameError, setLastNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [error, setError] = useState("");
+  const [apiError, setApiError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
+  const navigate = useNavigate();
+  const { setAuthSession } = useAuth();
+  const introPoints = [
+    "Create your account to post events, join hackathons, and submit projects.",
+    "Track your activity, registrations, and community engagement from one profile.",
+    "Get quick access to the tools you need to start contributing immediately.",
+  ];
+
+
 
 
 // ============ UTILITY FUNCTIONS (Outside Component) ============
@@ -39,10 +67,16 @@ const validateEmail = (email) => {
   return "";
 };
 
+  if (e.target.name === "email") {
+      setEmailError(validateEmail(e.target.value) ? "" : "Invalid email");
+      setApiError(""); // clear API error only when user fixes their email
+    }
+
 const checkPasswordRequirement = (password, requirement) => {
   return requirement.regex.test(password);
 };
 
+  
 const getPasswordStrength = (password) => {
   if (!password) return { score: 0, label: '', color: '' };
   const met = PASSWORD_REQUIREMENTS.filter(req => checkPasswordRequirement(password, req)).length;
@@ -60,10 +94,13 @@ const validateName = (name, type) => {
   return "";
 };
 
+
+  };
+
 // ============ REUSABLE ICON COMPONENTS ============
 const ToggleEyeIcon = ({ visible, className = "" }) => 
   visible ? <EyeOff className={className} /> : <Eye className={className} />;
-
+  
 // ============ CUSTOM HOOK: useSignupForm ============
 const useSignupForm = () => {
   const [formData, setFormData] = useState({
@@ -150,10 +187,40 @@ const Signup = () => {
   const passwordStrength = useMemo(() => 
     getPasswordStrength(formData.password), [formData.password]);
 
-  const passwordsMatch = useMemo(() => 
+  
+  
+    const passwordsMatch = useMemo(() => 
     formData.confirmPassword && formData.password === formData.confirmPassword, 
     [formData.password, formData.confirmPassword]);
 
+    // First name validation
+    if (!formData.firstName.trim()) {
+      setFirstNameError("First name is required");
+      return;
+    } else if (formData.firstName.trim().length < 2) {
+      setFirstNameError("First name must be at least 2 characters");
+      return;
+    } else if (formData.firstName.trim().length > 50) {
+      setFirstNameError("First name must be less than 50 characters");
+      return;
+    }
+    // Last name validation
+    if (!formData.lastName.trim()) {
+      setLastNameError("Last name is required");
+      return;
+    } else if (formData.lastName.trim().length < 2) {
+      setLastNameError("Last name must be at least 2 characters");
+      return;
+    } else if (formData.lastName.trim().length > 50) {
+      setLastNameError("Last name must be less than 50 characters");
+      return;
+    }
+    if (!validateEmail(formData.email)) {
+      setEmailError("Invalid email format");
+      return;
+    }
+  
+  
   // Document title effect
   useEffect(() => {
     const originalTitle = document.title;
@@ -193,8 +260,20 @@ const Signup = () => {
         throw new Error(backendMessage || `Registration failed (${response.status})`);
       }
 
-      const data = response.data;
+      
+     const data = response.data;
 
+      if (!data || response.status >= 400) {
+        const backendMessage = data?.message || data?.error || '';
+        if (backendMessage) {
+          setApiError(`${backendMessage} (${response.status})`);
+        } else {
+          setApiError(`Registration failed (${response.status})`);
+        }
+        return;
+      }
+      
+      
       // success case
       if (!data?.token) throw new Error("Authentication token missing");
 
@@ -744,11 +823,6 @@ export const PasswordField = ({ id, label, value, onChange, error, strength, req
       </AnimatePresence>
     </div>
   );
-};
-
-const ToggleEyeIcon = ({ visible, className }) => {
-  const Icon = visible ? Eye : EyeOff;
-  return <Icon className={className} />;
 };
 
 export default Signup;

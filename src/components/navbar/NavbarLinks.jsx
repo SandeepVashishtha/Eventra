@@ -30,6 +30,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   };
 
   const handlePrefetch = (href) => {
+    if (href === "/events")prefetchRoute(() => import("../../Pages/Events/EventsPage"), "explore");
     if (href === "/events") prefetchRoute(() => import("../../Pages/Events/EventsPage"), "explore");
     if (href === "/saved-events") prefetchRoute(() => import("../../Pages/SavedEventsPage"), "saved");
   };

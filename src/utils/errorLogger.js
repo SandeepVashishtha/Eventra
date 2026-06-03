@@ -55,7 +55,7 @@ function persistToLocalStorage(entry) {
 export const logError = (error, errorInfo, extra = {}) => {
   try {
     console.group?.("[Eventra ErrorLogger]");
-    console.error("[GlobalErrorBoundary]", error);
+    console.error("[ErrorLogger]", error);
     if (errorInfo?.componentStack) {
       console.error("[ComponentStack]", errorInfo);
     }
@@ -81,21 +81,29 @@ export const logError = (error, errorInfo, extra = {}) => {
   }
 };
 
+export const persistErrors = (key, entry, maxEntries = 10) => {
+  try {
+    const storageKey = `eventra_${key}`;
+    const existing = safeParseJson(localStorage.getItem(storageKey), []);
+    existing.unshift(entry);
+    localStorage.setItem(storageKey, JSON.stringify(existing.slice(0, maxEntries)));
+  } catch {}
+};
+
+export const getErrors = (key) =>
+  safeParseJson(localStorage.getItem(`eventra_${key}`), []);
+
+export const clearErrors = (key) => {
+  try {
+    localStorage.removeItem(`eventra_${key}`);
+  } catch {}
+};
+
 export const getErrorLog = () =>
   safeParseJson(localStorage.getItem("eventra_error_log"), []);
 
 export const clearErrorLog = () => {
   try {
     localStorage.removeItem("eventra_error_log");
-    localStorage.removeItem("eventra_feature_errors");
-  } catch (_) {}
-};
-
-export const getSectionErrors = () =>
-  safeParseJson(localStorage.getItem("eventra_section_errors"), []);
-
-export const clearSectionErrors = () => {
-  try {
-    localStorage.removeItem("eventra_section_errors");
-  } catch (_) {}
+  } catch {}
 };

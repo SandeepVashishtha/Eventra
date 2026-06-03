@@ -5,6 +5,7 @@ import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
+import { getClientIp } from "../lib/getClientIp.js";
 
 
 // Pre-compute a dummy bcrypt hash at module load time (same cost factor used in signup.js).
@@ -32,17 +33,17 @@ const loginRateLimiter = createRateLimiter(60_000, 5);
 
 const validateLoginInput = (usernameOrEmail, password) => {
   const errors = [];
-  
+
   if (!usernameOrEmail || !usernameOrEmail.trim()) {
     errors.push("Username or email is required");
   }
-  
+
   if (!password) {
     errors.push("Password is required");
   } else if (password.length > 100) {
     errors.push("Password exceeds maximum allowed length");
   }
-  
+
   return errors;
 };
 
@@ -60,14 +61,14 @@ const validateLoginInput = (usernameOrEmail, password) => {
 
 const findUserByUsernameOrEmail = (usernameOrEmail) => {
   const normalizedInput = usernameOrEmail.trim().toLowerCase();
-  
+
   // O(1) lookup: try email key first (primary key), then username index
   const byEmail = users.get(normalizedInput);
   if (byEmail) return byEmail;
-  
+
   const byUsername = usersByUsername.get(normalizedInput);
   if (byUsername) return byUsername;
-  
+
   return null;
 };
 
@@ -100,8 +101,8 @@ async function handler(req, res) {
 
     const validationErrors = validateLoginInput(usernameOrEmail, password);
     if (validationErrors.length > 0) {
-      return corsResponse(req, res, 400, { 
-        error: validationErrors.join(", ") 
+      return corsResponse(req, res, 400, {
+        error: validationErrors.join(", ")
       });
     }
 
@@ -119,13 +120,14 @@ async function handler(req, res) {
     // Rate Limiting (brute-force protection)
     // -----------------------------------------------------------------------
 
+    const clientIp = getClientIp(req);
     const clientIp =
-      req.headers?.[\"x-vercel-forwarded-for\"]
-      || req.headers?.[\"x-real-ip\"]
+      req.headers?.['x-vercel-forwarded-for']
+      || req.headers?.['x-real-ip']
       || req.socket?.remoteAddress
       || null;
 
-if (clientIp) {
+if (clientIp && clientIp !== "unknown") {
   if (!loginRateLimiter.check(clientIp)) {
     return corsResponse(req, res, 429, {
       success: false,
@@ -190,7 +192,7 @@ if (clientIp) {
 
     // Normalize role for response (use first role as primary)
     const primaryRole = roles[0] || "ATTENDEE";
-    
+
     // Normalize EVENT_MANAGER to ORGANIZER for frontend compatibility
     const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
 
@@ -238,8 +240,8 @@ if (clientIp) {
 
   } catch (error) {
     console.error("Login Error:", error);
-    return corsResponse(req, res, 500, { 
-      error: "Internal server error. Please try again later." 
+    return corsResponse(req, res, 500, {
+      error: "Internal server error. Please try again later."
     });
   }
 }
@@ -251,4 +253,3 @@ if (clientIp) {
 
 export default handler;
 export { users };
-
