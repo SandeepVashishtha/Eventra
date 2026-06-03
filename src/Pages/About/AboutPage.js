@@ -1,4 +1,5 @@
 import ModernAbout from "./ModernAbout";
+import AboutCTA from "./AboutCTA";
 
 import SEOHead from "../../components/SEOHead";
 const AboutPage = () => {
