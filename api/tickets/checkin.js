@@ -60,7 +60,7 @@ async function handler(req, res) {
         registrationId,
         eventId: parseInt(eventId),
         userId: decodedToken.userId || "unknown",
-        userName: attendeeUser.fullName || ${attendeeUser.firstName || ""} .trim() || "Attendee",
+        userName: attendeeUser.fullName || `${attendeeUser.firstName || ""} ${attendeeUser.lastName || ""}`.trim() || "Attendee",
         email: attendeeUser.email || "guest@eventra.com",
         registeredAt: new Date().toISOString(),
         checkedInAt: null,
@@ -128,3 +128,4 @@ async function handler(req, res) {
 }
 
 export default verifyAuth(handler);
+

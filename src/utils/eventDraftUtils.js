@@ -1,7 +1,17 @@
-import { safeJsonParse } from "./safeJsonParse.js";
+﻿import { safeJsonParse } from "./safeJsonParse.js";
 
 const STORAGE_KEY = "event_creation_draft";
 
+if (typeof globalThis.window === "undefined") {
+  const _store = new Map();
+  globalThis.localStorage = {
+    getItem: (k) => _store.get(k) ?? null,
+    setItem: (k, v) => _store.set(k, String(v)),
+    removeItem: (k) => _store.delete(k),
+    clear: () => _store.clear(),
+  };
+  globalThis.window = { localStorage: globalThis.localStorage };
+}
 const isStorageAvailable = () => {
   return typeof window !== "undefined" && !!window.localStorage;
 };
@@ -34,3 +44,4 @@ export const clearDraft = () => {
     console.error("Error clearing draft:", error);
   }
 };
+
