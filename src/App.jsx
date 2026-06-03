@@ -11,7 +11,6 @@ import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
-import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -173,9 +172,9 @@ function App() {
               <OfflineSyncManager />
 
               <div className="App">
-                <SectionErrorBoundary label="Navigation Bar">
+                <ErrorBoundary level="section" label="Navigation Bar">
                   <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-                </SectionErrorBoundary>
+                </ErrorBoundary>
 
                 <OfflineBanner />
                 <OfflineConflictModal />
@@ -257,18 +256,18 @@ function App() {
 
                 <ScrollToTop />
                 {showChatbot && (
-                  <SectionErrorBoundary label="Chatbot Assist" silent>
+                  <ErrorBoundary level="section" label="Chatbot Assist" silent>
                     <Suspense fallback={null}>
                       <Chatbot />
                     </Suspense>
-                  </SectionErrorBoundary>
+                  </ErrorBoundary>
                 )}
 
-                <SectionErrorBoundary label="Footer">
+                <ErrorBoundary level="section" label="Footer">
                   <Suspense fallback={null}>
                     {!isDashboardOrAdmin && <Footer />}
                   </Suspense>
-                </SectionErrorBoundary>
+                </ErrorBoundary>
 
                 <Suspense fallback={null}>
                   <ScrollToTopButton />
@@ -285,11 +284,11 @@ function App() {
                 </Suspense>
 
                 {isDesktop && (
-                  <SectionErrorBoundary label="Custom Cursor" silent>
+                  <ErrorBoundary level="section" label="Custom Cursor" silent>
                     <Suspense fallback={null}>
                       <FluidCursor enabled={cursorEnabled} />
                     </Suspense>
-                  </SectionErrorBoundary>
+                </ErrorBoundary>
                 )}
               </div>
             </SessionRecoveryProvider>
