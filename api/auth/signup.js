@@ -234,6 +234,7 @@ async function handler(req, res) {
 
     const clientIp = req.headers?.["x-vercel-forwarded-for"]
       || req.headers?.["x-real-ip"]
+      || req.headers?.["x-forwarded-for"]
       || req.socket?.remoteAddress
       || "unknown";
 

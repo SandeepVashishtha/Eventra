@@ -44,46 +44,35 @@ export const verifyAuth = (handler) => {
       return res.status(401).set(corsHeaders).json({ error: "Unauthorized: Invalid token" });
     }
 
-    // 3. Verify the user referenced by the JWT still exists in the user store.
-    //
-    //    CONTEXT: user records are held in a module-scoped in-memory Map that
-    //    resets on every serverless cold start. A JWT issued before a cold start
-    //    is still cryptographically valid (signature + expiry check pass), but
-    //    the user it references no longer exists in the current instance. Without
-    //    this check, protected endpoints would accept the orphaned token and then
-    //    fail later with confusing errors when they try to look up the user.
-    //
-    //    This check is intentionally lightweight: it only confirms the user
-    //    record is present in the current process. It does NOT replace a
-    //    persistent database — that architectural fix is tracked separately.
-    //    If the users Map is empty (cold start) this returns 401 with a clear
-    //    message so the client can prompt re-authentication.
+    // 3. Verify the user referenced by the JWT still exists in the user store and is active.
     const userEmail = decoded?.email;
     const userId = decoded?.id;
+    let user = null;
 
-    if (userEmail || userId) {
-      const userExists = userEmail
-        ? users.has(userEmail.toLowerCase())
-        : usersById.has(userId);
-
-      if (!userExists) {
-        // Issue #6342: Reconstruct the ephemeral user from the trusted token claims
-        // so that cold starts or multi-instance scaling don't invalidate existing,
-        // cryptographically valid sessions.
-        const reconstructedUser = {
-          id: decoded.id,
-          email: decoded.email,
-          username: decoded.username || decoded.email,
-          roles: decoded.roles || ["USER"],
-          permissions: [], // Permissions will be computed dynamically anyway
-          isActive: true
-        };
-        users.set(decoded.email.toLowerCase(), reconstructedUser);
-        usersById.set(decoded.id, reconstructedUser);
-      }
+    if (userId) {
+      user = usersById.get(userId);
+    } else if (userEmail) {
+      user = users.get(userEmail.toLowerCase());
     }
 
-    req.user = decoded;
+    if (!user) {
+      return res.status(401).set(corsHeaders).json({ error: "Unauthorized: User account does not exist" });
+    }
+
+    if (user.isActive === false) {
+      return res.status(401).set(corsHeaders).json({ error: "Unauthorized: User account is deactivated or suspended" });
+    }
+
+    // Ensure roles and permissions are loaded from the stored user record rather than trusting token payload values.
+    req.user = {
+      id: user.id,
+      email: user.email,
+      username: user.username || user.email,
+      roles: user.roles || ["USER"],
+      permissions: user.permissions || [],
+      isActive: true
+    };
+
     req.authToken = token;
     return handler(req, res);
   };

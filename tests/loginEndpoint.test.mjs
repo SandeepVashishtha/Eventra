@@ -1,6 +1,22 @@
 import { AUTH_TEST_ALLOWED_ORIGIN } from "./helpers/authTestEnv.mjs";
 import assert from "node:assert/strict";
-const { default: handler, users } = await import("../api/auth/login.js");
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+
+const DB_PATH = path.join(os.tmpdir(), "eventra_users_db.json");
+try {
+  if (fs.existsSync(DB_PATH)) {
+    fs.unlinkSync(DB_PATH);
+  }
+} catch (e) {}
+
+const { default: handler } = await import("../api/auth/login.js");
+const { users, usersById, usersByUsername } = await import("../api/auth/signup.js");
+
+if (users) users.clear();
+if (usersById) usersById.clear();
+if (usersByUsername) usersByUsername.clear();
 
 // ---------------------------------------------------------------------------
 // Mock Response Helper

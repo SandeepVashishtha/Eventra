@@ -120,19 +120,20 @@ async function handler(req, res) {
     // -----------------------------------------------------------------------
 
     const clientIp =
-      req.headers?.[\"x-vercel-forwarded-for\"]
-      || req.headers?.[\"x-real-ip\"]
+      req.headers?.["x-vercel-forwarded-for"]
+      || req.headers?.["x-real-ip"]
+      || req.headers?.["x-forwarded-for"]
       || req.socket?.remoteAddress
-      || null;
+      || "unknown";
 
-if (clientIp) {
-  if (!loginRateLimiter.check(clientIp)) {
-    return corsResponse(req, res, 429, {
-      success: false,
-      message: "Too many authentication attempts. Please try again later.",
-    });
-  }
-}
+    if (clientIp) {
+      if (!loginRateLimiter.check(clientIp)) {
+        return corsResponse(req, res, 429, {
+          success: false,
+          message: "Too many authentication attempts. Please try again later.",
+        });
+      }
+    }
 
     // -----------------------------------------------------------------------
     // Find user by username or email
