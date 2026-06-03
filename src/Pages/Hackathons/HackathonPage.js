@@ -159,6 +159,7 @@ const HackathonHub = () => {
   const [searchQuery, setSearchQuery] = useState("");
 const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
     difficulty: "",
@@ -181,25 +182,27 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
     cardsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const loadHackathons = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchHackathons();
+      setHackathons(data);
+      const tags = [
+        ...new Set(
+          data.flatMap((hackathon) => hackathon.techStack || []),
+        ),
+      ];
+      setAvailableTags(tags);
+    } catch (err) {
+      setError(err.message || "Failed to load hackathons");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Fetch hackathons and wire page listeners
   useEffect(() => {
-    let isMounted = true;
-    
-    const loadHackathons = async () => {
-      setIsLoading(true);
-      const data = await fetchHackathons();
-      if (isMounted) {
-        setHackathons(data);
-        const tags = [
-          ...new Set(
-            data.flatMap((hackathon) => hackathon.techStack || []),
-          ),
-        ];
-        setAvailableTags(tags);
-        setIsLoading(false);
-      }
-    };
-    
     loadHackathons();
 
     const handleScroll = () => {
@@ -594,7 +597,18 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
         {/* Hackathons Grid */}
         <SectionErrorBoundary label="Hackathons">
         <AnimatePresence mode="wait">
-         {isLoading ? (
+         {error ? (
+            <div className="col-span-full text-center py-16">
+              <p className="text-red-500 text-lg font-semibold mb-2">Failed to load hackathons</p>
+              <p className="text-gray-400 text-sm mb-4">{error}</p>
+              <button
+                onClick={() => { setError(null); loadHackathons(); }}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+              >
+                Retry
+              </button>
+            </div>
+          ) : isLoading ? (
   <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
     {[...Array(6)].map((_, i) => (
       <HackathonCardSkeleton key={`skeleton-${i}`} />
