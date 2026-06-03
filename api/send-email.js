@@ -51,7 +51,13 @@ const stripHtml = (str) => str.replace(/<[^>]*>?/gm, '');
 
 async function handler(req, res) {
   const corsHeaders = buildCorsHeaders(req);
-  res.set(corsHeaders);
+  if (typeof res.set === "function") {
+    res.set(corsHeaders);
+  } else if (typeof res.setHeader === "function") {
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      res.setHeader(key, value);
+    });
+  }
 
   if (req.method === "OPTIONS") {
     return res.status(204).end();

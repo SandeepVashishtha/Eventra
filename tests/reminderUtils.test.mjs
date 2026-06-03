@@ -66,11 +66,14 @@ function resetStorage() {
 
 function futureEvent(offsetMinutes = 120) {
   const d = new Date(Date.now() + offsetMinutes * 60 * 1000);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const dateVal = String(d.getDate()).padStart(2, "0");
   return {
     id: "evt-1",
     title: "Test Event",
-    date: d.toISOString().split("T")[0], // YYYY-MM-DD
-    time: d.toTimeString().slice(0, 5), // HH:MM
+    date: `${year}-${month}-${dateVal}`, // YYYY-MM-DD local
+    time: d.toTimeString().slice(0, 5), // HH:MM local
     location: "Berlin",
   };
 }
