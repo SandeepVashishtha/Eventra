@@ -19,7 +19,7 @@ export const getDraft = () => {
   if (!isStorageAvailable()) return null;
   try {
     const draft = localStorage.getItem(STORAGE_KEY);
-    return draft ? safeJsonParse(draft, {}) : null;
+    return draft ? safeJsonParse(draft, null) : null;
   } catch (error) {
     console.error("Error loading draft:", error);
     return null;
