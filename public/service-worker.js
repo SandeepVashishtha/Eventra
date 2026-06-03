@@ -231,6 +231,15 @@ const notifyClientsToSyncOfflineQueue = async () => {
   });
 };
 
+const isAllowedUrl = (url) => {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 const openNotificationTarget = async (targetUrl) => {
   const allClients = await self.clients.matchAll({
     includeUncontrolled: true,
@@ -239,7 +248,14 @@ const openNotificationTarget = async (targetUrl) => {
 
   const appOrigin = self.location.origin;
   const fallbackUrl = `${appOrigin}/settings/notifications`;
-  const destination = targetUrl ? new URL(targetUrl, appOrigin).href : fallbackUrl;
+
+  let destination = fallbackUrl;
+  if (targetUrl && isAllowedUrl(targetUrl)) {
+    const resolved = new URL(targetUrl, appOrigin).href;
+    if (resolved.startsWith(appOrigin)) {
+      destination = resolved;
+    }
+  }
 
   for (const client of allClients) {
     if ('focus' in client) {

@@ -1,4 +1,4 @@
-import "./EventDetails.print.css";
+﻿import "./EventDetails.print.css";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
@@ -314,7 +314,7 @@ const EventDetails = () => {
                 className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                 aria-label="Print or save as PDF"
               >
-                {isPrinting ? "Preparing..." : "🖨️ Print / Save as PDF"}
+                {isPrinting ? "Preparing..." : "≡ƒû¿∩╕Å Print / Save as PDF"}
               </button>
 
               {isOrganizer && (
@@ -332,7 +332,7 @@ const EventDetails = () => {
                       className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                       aria-label="Export registrant data"
                     >
-                      📥 Export Registrants
+                      ≡ƒôÑ Export Registrants
                     </button>
                     {showExportDropdown && (
                       <>

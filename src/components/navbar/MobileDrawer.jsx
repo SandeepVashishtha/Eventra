@@ -2,17 +2,21 @@ import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LogIn, UserPlus, Info, HelpCircle } from "lucide-react";
 import NavbarLinks from "./NavbarLinks";
+import { useTheme } from "../../context/ThemeContext";
 
 const MobileDrawer = ({
   isOpen,
   closeMenu,
   isAuthenticated,
   logout,
+  cursorEnabled,
+  toggleCursor,
 }) => {
   const location = useLocation();
   const drawerRef = useRef(null);
   const closeButtonRef = useRef(null);
   const isActive = (path) => location.pathname === path;
+  const { isDarkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -51,15 +55,17 @@ const MobileDrawer = ({
     };
   }, [closeMenu, isOpen]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 xl:hidden">
+    <div
+      className={`fixed inset-0 z-50 lg:hidden ${
+        isOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"
+      }`}
+    >
       <button
         type="button"
         aria-label="Close navigation menu"
         onClick={closeMenu}
-        className={`absolute inset-0 h-full w-full bg-black/50 transition-opacity duration-200 ${
+        className={`absolute inset-0 h-full w-full bg-black/50 transition-opacity duration-300 ease-in-out ${
           isOpen ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -218,6 +224,35 @@ const MobileDrawer = ({
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* Preferences Section (Theme & Cursor Toggles) - Visible only on mobile where main navbar controls are hidden */}
+          <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-800 sm:hidden">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3 px-3">
+              Preferences
+            </h3>
+            <div className="flex items-center gap-3 px-3">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+                <span>{isDarkMode ? "Light" : "Dark"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={toggleCursor}
+                className={`flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                  cursorEnabled
+                    ? "border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-950 dark:bg-blue-950/40 dark:text-blue-400"
+                    : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-850"
+                }`}
+              >
+                <MousePointer size={16} />
+                <span>Cursor: {cursorEnabled ? "On" : "Off"}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
