@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { users, usersByUsername } from "./signup.js";
+import { users, usersByUsername, isUsingInMemoryStore } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
@@ -100,6 +100,16 @@ async function handler(req, res) {
     if (validationErrors.length > 0) {
       return corsResponse(req, res, 400, { 
         error: validationErrors.join(", ") 
+      });
+    }
+
+    // -----------------------------------------------------------------------
+    // Guard: reject logins in production without a persistent store
+    // -----------------------------------------------------------------------
+
+    if (isUsingInMemoryStore()) {
+      return corsResponse(req, res, 503, {
+        error: "Service temporarily unavailable. Authentication is disabled while the server initializes its storage backend. Please try again shortly.",
       });
     }
 

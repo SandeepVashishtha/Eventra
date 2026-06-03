@@ -19,10 +19,16 @@ import { createRateLimiter } from "../lib/rateLimit.js";
 // See GitHub issue #4195 for full details on the production impact.
 // ---------------------------------------------------------------------------
 
-if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
-  // Emit a clear error rather than silently accepting registrations that will
-  // vanish on the next cold start. This prevents the confusing 401 behaviour
-  // that users experience after a serverless function restart.
+// Guard: prevent unintentional production use of the in-memory store.
+// When NODE_ENV=production but no DATABASE_URL is configured, any
+// registration would be lost on the next cold start, causing confusing 401
+// errors for users. This guard proactively returns 503 on write operations
+// so the misconfiguration is surfaced immediately rather than silently
+// accepting registrations that will vanish.
+const isUsingInMemoryStore = () =>
+  process.env.NODE_ENV === "production" && !process.env.DATABASE_URL;
+
+if (isUsingInMemoryStore()) {
   console.error(
     "[signup.js] FATAL: In-memory user store is active in a production environment. " +
     "Set DATABASE_URL to a persistent database to prevent data loss on cold starts."
@@ -206,6 +212,16 @@ async function handler(req, res) {
     }
 
     // -----------------------------------------------------------------------
+    // Guard: reject writes in production without a persistent store
+    // -----------------------------------------------------------------------
+
+    if (isUsingInMemoryStore()) {
+      return corsResponse(req, res, 503, {
+        error: "Service temporarily unavailable. The server is starting up with a temporary storage configuration. Please try again shortly.",
+      });
+    }
+
+    // -----------------------------------------------------------------------
     // Hash password using BCrypt
     // -----------------------------------------------------------------------
 
@@ -307,3 +323,5 @@ export default handler;
 export { users };
 
 export { usersById, usersByUsername };
+
+export { isUsingInMemoryStore };
