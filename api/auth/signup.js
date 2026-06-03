@@ -4,6 +4,7 @@ import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
+import { getClientIp } from "../lib/getClientIp.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
@@ -191,10 +192,7 @@ async function handler(req, res) {
     // Run after input validation so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
-    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
+    const clientIp = getClientIp(req);
 
     if (!signupRateLimiter.check(clientIp)) {
       return corsResponse(req, res, 429, {
