@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
@@ -12,7 +12,6 @@ import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -20,26 +19,16 @@ import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
-import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
-import { 
-  AuthFormSkeleton, 
-  ExploreEventsSkeleton, 
-  EventDetailSkeleton,
-  DashboardHomeSkeleton,
-} from "./components/common/SkeletonLoaders";
+import AppRoutes from "./components/AppRoutes";
 
 // Route-level lazy splits - loaded only when route is visited
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
-const AppRoutes = lazy(() => import("./components/AppRoutes"));
-const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
-const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
-const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
-const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
-const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
+
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
@@ -50,7 +39,6 @@ const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
-
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -74,8 +62,6 @@ function App() {
     }
   });
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
-  const [showChatbot, setShowChatbot] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
   useLenis();
   useRoutePrefetch(); // Predictive route pre-loading
@@ -95,26 +81,6 @@ function App() {
       // Ignore storage failures in private browsing or restricted contexts.
     }
   };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowChatbot(true);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
 
   useEffect(() => {
     const handleCursorPreference = (event) => {
@@ -194,57 +160,18 @@ function App() {
                 >
                   <PageTransition>
                     <ErrorBoundary>
-                      <Routes location={location} key={location.pathname}>
-                        <Route
-                          path="/register/:id"
-                          element={
-                            <ProtectedRoute>
-                              <Suspense fallback={<AuthFormSkeleton />}>
-                                <EventRegistration />
-                              </Suspense>
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route 
-                          path="/explore" 
-                          element={
-                            <Suspense fallback={<ExploreEventsSkeleton />}>
-                              <EventsPage />
-                            </Suspense>
-                          } 
-                        />
-                        <Route 
-                          path="/events/:id" 
-                          element={
-                            <Suspense fallback={<EventDetailSkeleton />}>
-                              <EventDetails />
-                            </Suspense>
-                          } 
-                        />
-                        {/* TODO: Implement missing auth/dashboard routes
-                          Pages do not exist:
-                          - ./Pages/auth/Login
-                          - ./Pages/auth/Signup
-                          - ./Pages/dashboard/Dashboard
-                          - ./Pages/Admin/AdminPanel
-                          - ./Pages/user/Profile
-                        */}
-                        <Route path="/event-recommendation" element={<EventRecommendation />} />
-                        <Route path="/saved-events" element={<SavedEventsPage />} />
-                        <Route path="*" element={<AppRoutes />} />
-                      </Routes>
+                      <AppRoutes />
                     </ErrorBoundary>
                   </PageTransition>
                 </main>
 
                 <ScrollToTop />
-                {showChatbot && (
-                  <SectionErrorBoundary label="Chatbot Assist" silent>
-                    <Suspense fallback={null}>
-                      <Chatbot />
-                    </Suspense>
-                  </SectionErrorBoundary>
-                )}
+
+                <SectionErrorBoundary label="Chatbot Assist" silent>
+                  <Suspense fallback={null}>
+                    <Chatbot />
+                  </Suspense>
+                </SectionErrorBoundary>
 
                 <SectionErrorBoundary label="Footer">
                   <Suspense fallback={null}>
@@ -266,13 +193,11 @@ function App() {
                   <SessionRecovery />
                 </Suspense>
 
-                {isDesktop && (
-                  <SectionErrorBoundary label="Custom Cursor" silent>
-                    <Suspense fallback={null}>
-                      <FluidCursor enabled={cursorEnabled} />
-                    </Suspense>
-                  </SectionErrorBoundary>
-                )}
+                <SectionErrorBoundary label="Custom Cursor" silent>
+                  <Suspense fallback={null}>
+                    <FluidCursor enabled={cursorEnabled} />
+                  </Suspense>
+                </SectionErrorBoundary>
               </div>
             </SessionRecoveryProvider>
           </MyEventsProvider>
@@ -281,4 +206,5 @@ function App() {
     </ErrorBoundary>
   );
 }
+
 export default App;
