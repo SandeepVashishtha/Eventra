@@ -16,6 +16,7 @@ const AuthPage = lazy(() => import("../auth/AuthPage"));
 const Unauthorized = lazy(() => import("../auth/Unauthorized"));
 const PasswordReset = lazy(() => import("../auth/PasswordReset"));
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
+const RBACSettings = lazy(() => import("../admin/RBACSettings"));
 const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
