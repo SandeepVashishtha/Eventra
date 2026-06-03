@@ -66,7 +66,7 @@ export default function TemplateNamePrompt({
               Save as Template
             </h2>
             <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-              Give your template a descriptive name (e.g., “Workshop Template”, “Meetup 2026”)
+              Give your template a descriptive name (e.g., &ldquo;Workshop Template&rdquo;, &ldquo;Meetup 2026&rdquo;)
             </p>
 
             <input
