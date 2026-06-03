@@ -93,7 +93,10 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                   src="/favicon.png"
                   alt="Eventra Brand Logo"
                   className="block h-full w-full object-contain"
-                  loading="lazy"
+                  loading="eager"
+                  decoding="async"
+                  width="36"
+                  height="36"
                 />
               </div>
               <h1 className="truncate text-base sm:text-lg lg:text-xl font-heading font-semibold text-text tracking-tight">Eventra</h1>
