@@ -2,9 +2,8 @@ import { useState, useRef, useEffect, useCallback, useId } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, Info, HelpCircle, LogIn } from "lucide-react";
 
-// Note: Auth page imports commented out - pages not yet created
-// const prefetchLogin = () => import("../../Pages/Auth/Login");
-// const prefetchSignup = () => import("../../Pages/Auth/Signup");
+const prefetchLogin = () => import("../auth/AuthPage");
+const prefetchSignup = () => import("../auth/AuthPage");
 
 const AuthButtons = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,7 +52,9 @@ const AuthButtons = () => {
         >
           <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full text-sm font-medium text-text-light hover:bg-bg-secondary hover:text-text transition-colors">
             Profile
-            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+            <ChevronDown
+              className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            />
           </div>
         </button>
 
@@ -83,9 +84,9 @@ const AuthButtons = () => {
                 Frequently Asked Questions
               </Link>
             </div>
-            
+
             <div role="separator" className="h-px bg-border my-2" />
-            
+
             <Link
               to="/login"
               role="menuitem"
