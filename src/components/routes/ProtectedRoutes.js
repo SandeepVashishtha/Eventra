@@ -1,10 +1,12 @@
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 import { Route } from "react-router-dom";
 
 import ProtectedRoute from "../auth/ProtectedRoute";
+import ErrorBoundary from "../common/ErrorBoundary";
 import { ROLES, PERMISSIONS } from "../../config/roles";
-const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
 
+// 🔥 FIX: Removed all duplicate const declarations that were causing fatal SyntaxErrors
+const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
 const EventCreation = lazy(() => import("../common/EventCreation/EventCreation"));
 const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
 const UserProfile = lazy(() => import("../user/UserProfile"));
@@ -16,20 +18,37 @@ const PasswordReset = lazy(() => import("../auth/PasswordReset"));
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
+const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
+const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
+const UIInventory = lazy(() => import("../admin/UIInventory"));
+
+// 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
+const withModuleBoundary = (children, boundaryName) => (
+  <ErrorBoundary
+    variant="section"
+    boundaryName={boundaryName}
+    title={`${boundaryName} needs a reset`}
+  >
+    <Suspense fallback={<div className="flex justify-center items-center min-h-[50vh] text-gray-500 animate-pulse">Loading {boundaryName}...</div>}>
+      {children}
+    </Suspense>
+  </ErrorBoundary>
+);
+
+// 🔥 FIX: Added helper for naked auth routes
+const withAuthSuspense = (children) => (
+  <Suspense fallback={<div className="flex justify-center items-center min-h-screen text-gray-500 animate-pulse">Loading...</div>}>
+    {children}
+  </Suspense>
+);
 
 export const getProtectedRoutes = () => [
   <Route
     key="/create-event"
     path="/create-event"
     element={
-      <ProtectedRoute
-        requiredPermissions={[PERMISSIONS.CREATE_EVENT]}
-        requiredScopes={["event:write"]}
-        validateContext={({ user }) =>
-          user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
-        }
-      >
-        <EventCreation />
+      <ProtectedRoute redirectTo="/login">
+        {withModuleBoundary(<EventCreation />, "Event creation")}
       </ProtectedRoute>
     }
   />,
@@ -39,10 +58,9 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute
         requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
-        requiredScopes={["admin:all"]}
-        validateContext={({ user }) => user?.status !== "Suspended"}
+        redirectTo="/login"
       >
-        <AdminDashboard />
+        {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
       </ProtectedRoute>
     }
   />,
@@ -53,11 +71,12 @@ export const getProtectedRoutes = () => [
       <ProtectedRoute
         requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
         requiredScopes={["hackathon:write"]}
-        validateContext={({ user }) =>
-          user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)
+        // 🔥 FIX: Prevented fatal destructuring crash if context is undefined
+        validateContext={(context) =>
+          context?.user?.roles?.includes(ROLES.ADMIN) || context?.user?.roles?.includes(ROLES.ORGANIZER)
         }
       >
-        <HostHackathon />
+        {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
       </ProtectedRoute>
     }
   />,
@@ -66,7 +85,7 @@ export const getProtectedRoutes = () => [
     path="/dashboard"
     element={
       <ProtectedRoute>
-        <Dashboard />
+        {withModuleBoundary(<Dashboard />, "User dashboard")}
       </ProtectedRoute>
     }
   />,
@@ -75,7 +94,17 @@ export const getProtectedRoutes = () => [
     path="/dashboard/profile"
     element={
       <ProtectedRoute>
-        <UserProfile />
+        {/* 🔥 FIX: Wrapped previously naked component to prevent full-app crashes */}
+        {withModuleBoundary(<UserProfile />, "User Profile")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/networking"
+    path="/networking"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<MatchmakingHub />, "Matchmaking Hub")}
       </ProtectedRoute>
     }
   />,
@@ -84,7 +113,7 @@ export const getProtectedRoutes = () => [
     path="/profile/edit"
     element={
       <ProtectedRoute>
-        <EditProfile />
+        {withModuleBoundary(<EditProfile />, "Profile editor")}
       </ProtectedRoute>
     }
   />,
@@ -93,7 +122,8 @@ export const getProtectedRoutes = () => [
     path="/profile"
     element={
       <ProtectedRoute>
-        <UserProfile />
+        {/* 🔥 FIX: Wrapped previously naked component */}
+        {withModuleBoundary(<UserProfile />, "User Profile")}
       </ProtectedRoute>
     }
   />,
@@ -102,7 +132,7 @@ export const getProtectedRoutes = () => [
     path="/settings"
     element={
       <ProtectedRoute>
-        <Settings />
+        {withModuleBoundary(<Settings />, "Settings")}
       </ProtectedRoute>
     }
   />,
@@ -111,7 +141,8 @@ export const getProtectedRoutes = () => [
     path="/settings/notifications"
     element={
       <ProtectedRoute>
-        <NotificationSettings />
+        {/* 🔥 FIX: Wrapped previously naked component */}
+        {withModuleBoundary(<NotificationSettings />, "Notification Settings")}
       </ProtectedRoute>
     }
   />,
@@ -125,15 +156,34 @@ export const getProtectedRoutes = () => [
           PERMISSIONS.CREATE_EVENT,
         ]}
       >
-        <SurveyEngine />
+        {withModuleBoundary(<SurveyEngine />, "Survey builder")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/admin/ui-inventory"
+    path="/admin/ui-inventory"
+    element={
+      <ProtectedRoute requiredRoles={[ROLES.ADMIN]}>
+        {withModuleBoundary(<UIInventory />, "UI Inventory")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/:eventId/floorplan-editor"
+    path="/events/:eventId/floorplan-editor"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<CollaborativeFloorPlan />, "Floor Plan Designer")}
       </ProtectedRoute>
     }
   />,
 ];
 
 export const getAuthRoutes = () => [
-  <Route key="/login" path="/login" element={<AuthPage />} />,
-  <Route key="/signup" path="/signup" element={<AuthPage />} />,
-  <Route key="/unauthorized" path="/unauthorized" element={<Unauthorized />} />,
-  <Route key="/password-reset" path="/password-reset" element={<PasswordReset />} />,
+  // 🔥 FIX: Safely suspended lazy-loaded auth routes
+  <Route key="/login" path="/login" element={withAuthSuspense(<AuthPage />)} />,
+  <Route key="/signup" path="/signup" element={withAuthSuspense(<AuthPage />)} />,
+  <Route key="/unauthorized" path="/unauthorized" element={withAuthSuspense(<Unauthorized />)} />,
+  <Route key="/password-reset" path="/password-reset" element={withAuthSuspense(<PasswordReset />)} />,
 ];

@@ -14,26 +14,26 @@
   --button-transition: all 0.2s ease-in-out;
 
   /* Primary Colors */
-  --primary-bg: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-text: #ffffff;
+  --primary-bg: var(--primary-color, #2563eb);
+  --primary-hover: var(--primary-hover, #1d4ed8);
+  --primary-text: var(--on-primary, #ffffff);
 
   /* Secondary Colors */
-  --secondary-bg: #f1f5f9;
-  --secondary-hover: #e2e8f0;
-  --secondary-text: #0f172a;
+  --secondary-bg: var(--secondary-color, #f1f5f9);
+  --secondary-hover: var(--evt-surface-hover, #e2e8f0);
+  --secondary-text: var(--text-color, #0f172a);
 
   /* Outline Colors */
-  --outline-color: #2563eb;
-  --outline-hover: #eff6ff;
+  --outline-color: var(--primary-color, #2563eb);
+  --outline-hover: var(--evt-surface-hover, #eff6ff);
 
   /* Danger Colors */
-  --danger-bg: #dc2626;
+  --danger-bg: var(--danger-color, #dc2626);
   --danger-hover: #b91c1c;
   --danger-text: #ffffff;
 
   /* Focus Ring */
-  --focus-ring: rgba(37, 99, 235, 0.4);
+  --focus-ring: var(--evt-focus-shadow, rgba(37, 99, 235, 0.4));
 }
 
 /* =========================
@@ -80,8 +80,10 @@
    Hover Effects
 ========================= */
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
 }
 
 /* =========================

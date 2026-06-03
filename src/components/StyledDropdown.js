@@ -1,6 +1,6 @@
+import { ChevronDown } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FiChevronDown } from "react-icons/fi";
 import useReducedMotion from "../hooks/useReducedMotion";
 
 const Dropdown = ({
@@ -75,6 +75,18 @@ const Dropdown = ({
       event.preventDefault();
       setOpen(false);
     }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex(0);
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex(allOptions.length - 1);
+    }
   };
 
   const handleListboxKeyDown = (event) => {
@@ -98,6 +110,16 @@ const Dropdown = ({
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       handleSelect(allOptions[currentActiveIndex]);
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      setActiveIndex(0);
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      setActiveIndex(allOptions.length - 1);
     }
   };
 
@@ -134,7 +156,7 @@ const Dropdown = ({
         >
           {value || placeholder}
         </span>
-        <FiChevronDown
+        <ChevronDown
           className={`text-gray-400 dark:text-gray-500 transition-transform ${
             open ? "rotate-180" : ""
           }`}
