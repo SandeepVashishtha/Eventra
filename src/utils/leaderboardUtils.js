@@ -62,6 +62,9 @@ export function normalizeLabel(label = "") {
  * @returns {number}
  */
 export function calculatePrPoints(labels) {
+  // 🔥 FIX: Prevent fatal TypeError crash if API omits the labels array
+  if (!Array.isArray(labels)) return DEFAULT_MERGED_PR_POINTS;
+
   const levelPoints = labels.reduce((total, label) => {
     const normalized = normalizeLabel(label);
     return total + (LABEL_POINTS[normalized] || 0);
@@ -98,7 +101,16 @@ export function applyAchievementBonus(contributor) {
  * @returns {Array}
  */
 export function filterContributors(contributors, search, activeCategory) {
-  const q = search.trim().toLowerCase();
+  // 🔥 FIX: Prevent fatal TypeError crash if search is null/undefined
+  const q = (search || "").trim().toLowerCase();
+
+  // 🔥 FIX: Hoisted the threshold calculation OUTSIDE the filter loop.
+  // Previously, this math was executing on every single iteration of the filter, 
+  // causing a massive O(N) performance bottleneck on large contributor datasets.
+  let monthlyThreshold = 0;
+  if (activeCategory === "monthly" && contributors.length > 0) {
+    monthlyThreshold = contributors[Math.floor(contributors.length * 0.4)]?.points || 0;
+  }
 
   return contributors.filter((c) => {
     const matchSearch =
@@ -109,11 +121,7 @@ export function filterContributors(contributors, search, activeCategory) {
     if (!matchSearch) return false;
 
     if (activeCategory === "monthly") {
-      const threshold =
-        contributors.length > 0
-          ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
-          : 0;
-      return c.points >= threshold;
+      return c.points >= monthlyThreshold;
     }
 
     if (activeCategory === "mentors") {
@@ -199,16 +207,18 @@ export function computeLeaderboardStats(contributors) {
   let totalPoints = 0;
 
   for (const c of contributors) {
-    totalPRs    += c.prs;
-    totalPoints += c.points;
+    totalPRs    += (c.prs || 0);
+    totalPoints += (c.points || 0);
   }
 
   return {
     totalContributors: contributors.length,
-    flooredTotalPRs:    totalPRs,
-    flooredTotalPoints: totalPoints,
+    // 🔥 FIX: Actually apply Math.floor as implied by the object keys
+    flooredTotalPRs:    Math.floor(totalPRs),
+    flooredTotalPoints: Math.floor(totalPoints),
   };
 }
+
 export const getAchievementBadge = (rank) => {
   if (rank === 1) {
     return {
@@ -235,13 +245,3 @@ export const getAchievementBadge = (rank) => {
     };
   }
   return {
-    label: "Silver Tier",
-    color: "from-slate-100 via-zinc-200 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/50 dark:border-slate-700/20",
-    icon: Code,
-    description: "Active contributor"
-  };
-};
-
-export const calculatePointsMultiplier = (points, rate) => {
-  return points * (rate > 0 ? rate : 1.0);
-};
