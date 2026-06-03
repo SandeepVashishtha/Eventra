@@ -1,3 +1,7 @@
+/**
+ * @fileoverview useLoginRateLimit - Exponential backoff login rate limiting hook
+ * @module hooks/useLoginRateLimit
+ */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   getBackoffDelay,

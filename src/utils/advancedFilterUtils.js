@@ -314,7 +314,7 @@ export const getUniqueCategories = (events) => {
       categories.add(event.category);
     }
   });
-  return Array.from(categories).sort();
+  return Array.from(categories).sort((a, b) => a.localeCompare(b));
 };
 
 /**

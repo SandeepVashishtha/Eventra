@@ -2,9 +2,8 @@ import { useState, useRef, useEffect, useCallback, useId } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, Info, HelpCircle, LogIn } from "lucide-react";
 
-// Note: Auth page imports commented out - pages not yet created
-// const prefetchLogin = () => import("../../Pages/Auth/Login");
-// const prefetchSignup = () => import("../../Pages/Auth/Signup");
+const prefetchLogin = () => import("../../components/auth/Login");
+const prefetchSignup = () => import("../../components/auth/Signup");
 
 const AuthButtons = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,7 +29,6 @@ const AuthButtons = () => {
         buttonRef.current?.focus();
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
     return () => {

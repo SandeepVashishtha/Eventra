@@ -159,7 +159,7 @@ export default function ModernAbout() {
                 >
                   <h3 className="text-black dark:text-white text-xl sm:text-2xl font-bold mb-1">
                     {s.value.includes("+") ? (
-                      <CountUp start={0} end={parseInt(s.value)} duration={3} suffix="+" enableScrollSpy scrollSpyOnce />
+                      <CountUp start={0} end={parseInt(s.value, 10)} duration={3} suffix="+" enableScrollSpy scrollSpyOnce />
                     ) : (
                       s.value
                     )}
