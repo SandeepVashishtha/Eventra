@@ -145,7 +145,7 @@ const EventsPage = () => {
 
     try {
       savedFilters = JSON.parse(
-        window.localStorage.getItem(FILTER_STORAGE_KEY) || "{}"
+        window.sessionStorage.getItem(FILTER_STORAGE_KEY) || "{}"
       );
     } catch {
       savedFilters = {};
@@ -197,7 +197,7 @@ const EventsPage = () => {
     setSearchParams(params, { replace: true });
 
     try {
-      window.localStorage.setItem(
+      window.sessionStorage.setItem(
         FILTER_STORAGE_KEY,
         JSON.stringify({
           searchQuery: listing.searchQuery,
@@ -209,7 +209,7 @@ const EventsPage = () => {
         })
       );
     } catch {
-      // localStorage can be unavailable in private browsing or embedded views.
+      // sessionStorage can be unavailable in private browsing or embedded views.
     }
   }, [
     listing.currentPage,
