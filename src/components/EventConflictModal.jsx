@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+﻿import { useRef, useEffect } from 'react';
 import { AlertTriangle, Clock, Calendar, X, ArrowRight, Globe } from 'lucide-react';
 import { formatTimeRange } from '../utils/conflictDetection';
 import { getUserTimezone } from '../utils/timezoneUtils';
@@ -35,7 +35,7 @@ const EventConflictModal = ({
   const userTimezone = getUserTimezone();
   const { containerRef: focusTrapRef } = useFocusTrap(isOpen, onCancel);
 
-  // 🔥 FIX: Added scroll lock to prevent background page from scrolling behind the modal
+  // ðŸ”¥ FIX: Added scroll lock to prevent background page from scrolling behind the modal
   useEffect(() => {
     if (isOpen) {
       const originalStyle = window.getComputedStyle(document.body).overflow;
@@ -79,9 +79,9 @@ const EventConflictModal = ({
 
   // Focus trapping is now handled by useFocusTrap above.
   // The hook handles Tab wrapping and Escape key automatically.
-  }, [isOpen]);
 
-  // 🔥 FIX: Safe date formatter to prevent RangeError crashes if event data is malformed
+
+  // ðŸ”¥ FIX: Safe date formatter to prevent RangeError crashes if event data is malformed
   const safeFormatDate = (dateStr) => {
     if (!dateStr) return "TBD";
     const d = new Date(dateStr);
@@ -157,7 +157,7 @@ const EventConflictModal = ({
               <div className="flex flex-wrap gap-4 mt-2 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
-                  {/* 🔥 FIX: Safely parse date */}
+                  {/* ðŸ”¥ FIX: Safely parse date */}
                   {safeFormatDate(newEvent?.date)}
                 </span>
                 <span className="flex items-center gap-1">
@@ -188,7 +188,7 @@ const EventConflictModal = ({
                   <div className="flex flex-wrap gap-4 mt-2 text-sm text-red-700 dark:text-red-300">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {/* 🔥 FIX: Safely parse date */}
+                      {/* ðŸ”¥ FIX: Safely parse date */}
                       {safeFormatDate(event.date)}
                     </span>
                     <span className="flex items-center gap-1">
@@ -228,7 +228,7 @@ const EventConflictModal = ({
                         <div className="flex flex-wrap gap-4 mt-2 text-sm text-green-700 dark:text-green-300">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
-                            {/* 🔥 FIX: Safely parse date */}
+                            {/* ðŸ”¥ FIX: Safely parse date */}
                             {safeFormatDate(event.date)}
                           </span>
                           <span className="flex items-center gap-1">
