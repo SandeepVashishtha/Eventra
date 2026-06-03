@@ -453,7 +453,11 @@ export const decodeAdvancedFilters = (value) => {
   }
 
   try {
-    return normalizeAdvancedFilters(JSON.parse(decodeURIComponent(value)));
+    const parsed = JSON.parse(decodeURIComponent(value));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return getDefaultFilters();
+    }
+    return normalizeAdvancedFilters(parsed);
   } catch {
     return getDefaultFilters();
   }
