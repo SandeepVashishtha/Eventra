@@ -21,15 +21,7 @@ import useLocalStorage from "../hooks/useLocalStorage";
 import { quickPrompts, getAssistantReply, INITIAL_MESSAGES } from "../config/chatbotKnowledge";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { marked } from "marked";
-import DOMPurify from "dompurify";
-
-// Configure DOMPurify to force all links to open in a new tab securely
-DOMPurify.addHook("afterSanitizeAttributes", (node) => {
-  if ("target" in node) {
-    node.setAttribute("target", "_blank");
-    node.setAttribute("rel", "noopener noreferrer");
-  }
-});
+import { sanitizeMarkdown } from "../utils/sanitizeHtml";
 
 const ICON_MAP = {
   CalendarDays,
@@ -401,7 +393,7 @@ export default function Chatbot() {
                       <div
                         className="chatbot-markdown"
                         dangerouslySetInnerHTML={{
-                          __html: DOMPurify.sanitize(marked.parse(message.content))
+                          __html: sanitizeMarkdown(message.content, marked.parse)
                         }}
                       />
                     )}
