@@ -466,6 +466,14 @@ class SseMultiplexer {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
     }
+    if (this.localStorageInterval) {
+      clearInterval(this.localStorageInterval);
+      this.localStorageInterval = null;
+    }
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
     this.lastSeenFollowers = null;
   }
 
@@ -493,9 +501,6 @@ class SseMultiplexer {
     if (this.releaseLockPromise) {
       this.releaseLockPromise();
     }
-
-    if (this.localStorageInterval) clearInterval(this.localStorageInterval);
-    if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
 
     // Remove the heartbeat key from localStorage when this tab was the leader.
     //
