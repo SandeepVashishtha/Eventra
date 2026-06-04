@@ -103,6 +103,11 @@ const FluidCursor = ({ enabled = true }) => {
 
     const { gl, ext } = getWebGLContext(canvas);
 
+    if (!gl || !ext?.formatRGBA || !ext?.formatRG || !ext?.formatR) {
+      console.warn("[FluidCursor] WebGL fluid cursor disabled: unsupported graphics context.");
+      return undefined;
+    }
+
     if (!ext.supportLinearFiltering) {
       config.DYE_RESOLUTION = 256;
       config.SHADING = false;
@@ -123,6 +128,19 @@ const FluidCursor = ({ enabled = true }) => {
         gl =
           canvas.getContext("webgl", params) ||
           canvas.getContext("experimental-webgl", params);
+
+      if (!gl) {
+        return {
+          gl: null,
+          ext: {
+            formatRGBA: null,
+            formatRG: null,
+            formatR: null,
+            halfFloatTexType: null,
+            supportLinearFiltering: false,
+          },
+        };
+      }
 
       let halfFloat;
       let supportLinearFiltering;

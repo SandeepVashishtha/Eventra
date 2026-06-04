@@ -35,7 +35,9 @@ import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import CalendarView from "../../components/CalendarView";
 import EventConflictModal from "../../components/EventConflictModal";
 import ConfettiCanvas from "../../components/common/ConfettiCanvas";
+import { SkeletonEventCard } from "../../components/common/SkeletonLoaders";
 import { logger } from "../../utils/logger";
+import { validate } from "../../validation";
 
 const MAX_NOTES_CHARS = 500;
 
@@ -447,8 +449,8 @@ const EventRegistration = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+        <SkeletonEventCard />
       </div>
     );
   }

@@ -38,6 +38,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { saveToOfflineCache, getFromOfflineCache } from "../utils/indexedDB";
 
 const MyEventsContext = createContext(null);
 
@@ -72,31 +73,22 @@ const toPersistedRecord = (eventId, registeredAt, event, registrationId, qrToken
 });
 
 // ---------------------------------------------------------------------------
-// localStorage helpers
+// IndexedDB helpers
 // ---------------------------------------------------------------------------
 
-const loadFromStorage = (userId) => {
+const loadFromIDB = async (userId) => {
   if (!userId) return [];
-  try {
-    const raw = localStorage.getItem(storageKey(userId));
-    const parsed = safeJsonParse(raw, []);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  const data = await getFromOfflineCache(storageKey(userId), []);
+  return Array.isArray(data) ? data : [];
 };
 
-const saveToStorage = (userId, records) => {
+const saveToIDB = async (userId, records) => {
   if (!userId) return;
   // Only persist the minimal, PII-free shape — strip formData and full event
   const persisted = records.map((r) =>
     toPersistedRecord(r.eventId, r.registeredAt, r.event || r.eventSummary, r.registrationId, r.qrToken),
   );
-  try {
-    localStorage.setItem(storageKey(userId), JSON.stringify(persisted));
-  } catch {
-    // localStorage might be full — fail silently
-  }
+  await saveToOfflineCache(storageKey(userId), persisted);
 };
 
 // ---------------------------------------------------------------------------
@@ -107,31 +99,46 @@ export const MyEventsProvider = ({ children }) => {
   const { user } = useAuth();
   const userId = user?.id || user?.email || null;
 
-  // Lazy init — loads persisted (PII-free) records immediately from localStorage.
-  // formData is absent from persisted records; it is available only for
-  // registrations added during the current session.
-  const [myEvents, setMyEvents] = useState(() => loadFromStorage(userId));
-  const [loading] = useState(false);
+  // Async init — loads persisted records from IndexedDB
+  const [myEvents, setMyEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Guard ref — skips the first save on load to prevent overwriting valid data
   const isInitialLoad = useRef(true);
 
-  // Reload from localStorage whenever the logged-in user changes
+  // Reload from IndexedDB whenever the logged-in user changes
   useEffect(() => {
-    isInitialLoad.current = true;
-    setMyEvents(loadFromStorage(userId));
-  }, [userId]);
-
-  // Persist to localStorage whenever myEvents changes — PII-free records only
-  useEffect(() => {
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false;
+    let mounted = true;
+    if (!userId) {
+      setMyEvents([]);
+      setLoading(false);
       return;
     }
-    if (userId !== null) {
-      saveToStorage(userId, myEvents);
+    
+    setLoading(true);
+    loadFromIDB(userId).then(data => {
+      if (mounted) {
+        setMyEvents(data);
+        setLoading(false);
+        // Important: allow saves *after* initial load resolves
+        setTimeout(() => {
+          isInitialLoad.current = false;
+        }, 50);
+      }
+    });
+
+    return () => { mounted = false; };
+  }, [userId]);
+
+  // Persist to IndexedDB whenever myEvents changes — PII-free records only
+  useEffect(() => {
+    if (isInitialLoad.current) {
+      return;
     }
-  }, [myEvents, userId]);
+    if (userId !== null && !loading) {
+      saveToIDB(userId, myEvents);
+    }
+  }, [myEvents, userId, loading]);
 
   /**
    * addRegistration — call this after a successful event registration.
@@ -170,7 +177,7 @@ export const MyEventsProvider = ({ children }) => {
     // Trigger automatic promotion from the waitlist
     import("../utils/waitlistUtils.js").then(({ promoteNextUser }) => {
       promoteNextUser(eventId);
-    });
+    }).catch(() => {});
   }, []);
 
   /**

@@ -13,7 +13,7 @@ import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
 import {
@@ -152,9 +152,9 @@ const EventsPage = () => {
       savedFilters = {};
     }
 
-    const page = parseInt(searchParams.get("page")) || 1;
+    const page = parseInt(searchParams.get("page"), 10) || 1;
     const perPage =
-      parseInt(searchParams.get("perPage")) || savedFilters.perPage || 6;
+      parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 6;
     const filter =
       searchParams.get("filter") || savedFilters.filterType || "all";
     const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
@@ -233,6 +233,7 @@ const EventsPage = () => {
       setLocalSearchInput(safeQuery);
       listing.setSearchQuery(safeQuery);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     rawSearchParam,
     routeSearchQuery,
@@ -327,7 +328,7 @@ const EventsPage = () => {
           onAdvancedFiltersChange={listing.setAdvancedFilters}
         />
 
-        <SectionErrorBoundary label="Events">
+        <ErrorBoundary level="section" label="Events">
      {renderCardSection(
   isLoading,
   listing.loadError,
@@ -347,13 +348,13 @@ const EventsPage = () => {
               />
             </div>
           )}
-        </SectionErrorBoundary>
+        </ErrorBoundary>
 
         {/* Interactive Event Timeline Planner Section */}
         <div className="mt-12 sm:mt-16">
-          <SectionErrorBoundary label="Event Timeline Planner">
+          <ErrorBoundary level="section" label="Event Timeline Planner">
             <EventTimeline />
-          </SectionErrorBoundary>
+          </ErrorBoundary>
         </div>
       </div>
 
