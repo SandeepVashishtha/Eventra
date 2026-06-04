@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 
 /**
  * useKeyboardShortcuts Hook
@@ -9,6 +9,13 @@ import { useEffect, useCallback } from "react";
  * @param {boolean} disabled - Global disable toggle
  */
 export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
+  const shortcutsRef = useRef(shortcuts);
+
+  // Sync shortcuts object to ref to prevent event listener churn on render
+  useEffect(() => {
+    shortcutsRef.current = shortcuts;
+  }, [shortcuts]);
+
   const handleKeyDown = useCallback(
     (event) => {
       if (disabled) return;
@@ -35,8 +42,9 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
       if (shift) keyString += "shift+";
       keyString += key.toLowerCase();
 
-      // Find matching handler
-      const handler = shortcuts[keyString] || shortcuts[key.toLowerCase()];
+      // Find matching handler via ref
+      const currentShortcuts = shortcutsRef.current;
+      const handler = currentShortcuts[keyString] || currentShortcuts[key.toLowerCase()];
 
       if (handler) {
         // If typing, only allow specific shortcuts (like esc)
@@ -46,7 +54,7 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
         handler(event);
       }
     },
-    [shortcuts, disabled]
+    [disabled]
   );
 
   useEffect(() => {
