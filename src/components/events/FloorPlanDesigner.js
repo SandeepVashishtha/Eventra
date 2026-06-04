@@ -77,7 +77,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             const seatsCountVal = updates.seatsCount;
             const freshAssigned = {};
             Object.keys(el.assignedAttendees).forEach((k) => {
-              if (parseInt(k) < seatsCountVal) {
+              if (parseInt(k, 10) < seatsCountVal) {
                 freshAssigned[k] = el.assignedAttendees[k];
               }
             });
@@ -412,11 +412,23 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       const collisions = new Map();
+      const GRID_SIZE = 100;
+      const buckets = new Map();
       for (let i = 0; i < elements.length; i++) {
-        for (let j = i + 1; j < elements.length; j++) {
-          if (checkCollision(elements[i], elements[j])) {
-            collisions.set(elements[i].id, true);
-            collisions.set(elements[j].id, true);
+        const el = elements[i];
+        const bx = Math.floor(el.x / GRID_SIZE);
+        const by = Math.floor(el.y / GRID_SIZE);
+        const key = `${bx},${by}`;
+        if (!buckets.has(key)) buckets.set(key, []);
+        buckets.get(key).push(el);
+      }
+      for (const bucket of buckets.values()) {
+        for (let i = 0; i < bucket.length; i++) {
+          for (let j = i + 1; j < bucket.length; j++) {
+            if (checkCollision(bucket[i], bucket[j])) {
+              collisions.set(bucket[i].id, true);
+              collisions.set(bucket[j].id, true);
+            }
           }
         }
       }

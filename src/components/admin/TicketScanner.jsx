@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { safeLocalStorage } from "../../utils/safeStorage";
+import { safeParseJson } from "../../utils/jsonUtils";
 import {
   Camera,
   CameraOff,
@@ -19,18 +19,13 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { pushToQueue } from "../../utils/offlineQueue";
-<<<<<<< HEAD
-import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "../../services/ticketService";
-=======
 import {
   validateTicket,
   recordCheckIn,
   fetchCheckInHistory,
   fetchScannerEvents,
 } from "../../services/ticketService";
->>>>>>> 7d75e43a (Add safe localStorage access with error handling)
 import "./TicketScanner.css";
-
 const HISTORY_CACHE_KEY = "eventra_checkins_cache";
 
 export default function TicketScanner() {
@@ -42,7 +37,6 @@ export default function TicketScanner() {
   const [checkinHistory, setCheckinHistory] = useState([]);
   const [events, setEvents] = useState([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-
   const [manualTicketId, setManualTicketId] = useState("");
   const [manualAttendeeName, setManualAttendeeName] = useState("");
   const [manualEventId, setManualEventId] = useState("");
@@ -123,18 +117,6 @@ export default function TicketScanner() {
   }, []);
 
   useEffect(() => {
-<<<<<<< HEAD
-    if (selectedEventId) {
-      fetchStats(selectedEventId);
-      fetchCheckInHistory(selectedEventId)
-        .then((data) => {
-          const items = Array.isArray(data) ? data : data.content || data.checkins || [];
-          setCheckinHistory(items);
-        })
-        .catch(() => {});
-    }
-  }, [selectedEventId, fetchStats]);
-=======
     const cached = safeLocalStorage.getItem(HISTORY_CACHE_KEY);
     if (cached) {
       try {
@@ -154,7 +136,6 @@ export default function TicketScanner() {
         // Keep cached history if API unavailable
       });
   }, []);
->>>>>>> 7d75e43a (Add safe localStorage access with error handling)
 
   const stopScanner = async () => {
     if (qrCodeInstanceRef.current && qrCodeInstanceRef.current.isScanning) {
@@ -213,11 +194,9 @@ export default function TicketScanner() {
     setCheckinHistory((prev) => [entry, ...prev].slice(0, 50));
     const cached = safeLocalStorage.getItem(HISTORY_CACHE_KEY) || "[]";
     try {
-      const updated = [entry, ...JSON.parse(cached)].slice(0, 50);
-      safeLocalStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updated));
-    } catch {
-      /* ignore */
-    }
+      const updated = [entry, ...safeParseJson(localStorage.getItem(HISTORY_CACHE_KEY), [])].slice(0, 50);
+      localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updated));
+    } catch { /* ignore */ }
   }, []);
 
   const handleScanSuccess = async (decodedText) => {
@@ -254,7 +233,7 @@ export default function TicketScanner() {
       }
     }
 
-    if (!ticketData || !ticketData.ticketId) {
+    if (!ticketData || typeof ticketData !== 'object' || !ticketData.ticketId) {
       setScanResult({
         status: "flagged",
         message: "Invalid QR Code format. Ticket is secure and cannot be verified.",

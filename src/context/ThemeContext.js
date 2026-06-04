@@ -13,13 +13,6 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 
 export const ThemeContext = createContext(null);
 
-const getSystemTheme = () =>
-  typeof window !== "undefined" &&
-  typeof window.matchMedia === "function" &&
-  window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-
 const safeStorage = {
   getItem(key, fallback = null) {
     try {
@@ -45,10 +38,23 @@ const safeStorage = {
   },
 };
 
-const getInitialTheme = () => safeStorage.getItem("theme", "system");
+const getSystemTheme = () =>
+  typeof window !== "undefined" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 
+const getInitialTheme = () => {
+  const stored = safeStorage.getItem("theme");
+  if (stored === "light" || stored === "dark" || stored === "system") {
+    return stored;
+  }
+  return "system";
+};
+
+// ✅ FIXED: Yahan se duplicate line hata di gayi hai
 export const ThemeProvider = ({ children }) => {
-  const [theme, setThemeState] = useState(getInitialTheme);
+  const [theme, setThemeState] = useState(() => getInitialTheme());
 
   // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {
@@ -80,21 +86,15 @@ export const ThemeProvider = ({ children }) => {
 
   const resolvedTheme = theme === "system" ? getSystemTheme() : theme;
   const isDarkMode = resolvedTheme === "dark";
-
   const setTheme = useCallback((newTheme) => {
     setThemeState(newTheme);
-    if (newTheme === "system") {
-      safeStorage.removeItem("theme");
-    } else {
-      safeStorage.setItem("theme", newTheme);
-    }
   }, []);
-
   const toggleTheme = useCallback(() => {
-    const next = resolvedTheme === "dark" ? "light" : "dark";
-    setThemeState(next);
-    safeStorage.setItem("theme", next);
-  }, [resolvedTheme]);
+    setThemeState((prev) => {
+      const resolved = prev === "system" ? getSystemTheme() : prev;
+      return resolved === "dark" ? "light" : "dark";
+    });
+  }, []);
 
   // Apply themes, custom HSL variable overrides, and sync storage
   useEffect(() => {
@@ -193,7 +193,7 @@ export const ThemeProvider = ({ children }) => {
     };
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
+  }, [setTheme]);
 
   const value = useMemo(
     () => ({
@@ -213,7 +213,17 @@ export const ThemeProvider = ({ children }) => {
       reducedMotion,
       setReducedMotion,
     }),
-    [theme, resolvedTheme, setTheme, toggleTheme, activeThemeId, isCustomizerOpen, customHsl, reducedMotion]
+    [
+      theme,
+      resolvedTheme,
+      isDarkMode,
+      setTheme,
+      toggleTheme,
+      activeThemeId,
+      isCustomizerOpen,
+      customHsl,
+      reducedMotion,
+    ]
   );
 
   return (

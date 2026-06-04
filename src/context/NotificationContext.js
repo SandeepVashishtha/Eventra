@@ -27,8 +27,14 @@ import {
 const NotificationContext = createContext();
 
 const POLLING_INTERVAL_MS = 60_000;
+const runtimeEnv =
+  typeof import.meta !== "undefined" && import.meta.env
+    ? import.meta.env
+    : typeof process !== "undefined" && process.env
+      ? process.env
+      : {};
 const VAPID_PUBLIC_KEY =
-  process.env.REACT_APP_VAPID_PUBLIC_KEY || process.env.VITE_VAPID_PUBLIC_KEY || "";
+  runtimeEnv.VITE_VAPID_PUBLIC_KEY || runtimeEnv.REACT_APP_VAPID_PUBLIC_KEY || "";
 
 const isValidEndpoint = (endpoint) =>
   endpoint && typeof endpoint === "string" && !endpoint.includes("undefined");
@@ -477,24 +483,24 @@ export const NotificationProvider = ({ children }) => {
         subscribed: true,
         subscribedAt: new Date().toISOString(),
       };
+
+      // Migrate any legacy push subscription object that included sensitive keys.
+      // If no legacy object exists, this still writes the safe status record.
       try {
+        const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
+        if (existing) {
+          try {
+            const parsed = JSON.parse(existing);
+            if (parsed?.keys) {
+              console.info("[NotificationContext] Migrating legacy push subscription record.");
+            }
+          } catch {
+            // Ignore invalid legacy data and continue with the safe record.
+          }
+        }
         window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
       } catch (error) {
-        // Non-fatal — the subscription is still active; local status just won't persist
-      }
-
-      // Migrate: remove any existing full subscription object that may have been
-      // stored by a previous version of this code before this fix was applied.
-      // This runs once per subscribe() call and is a no-op if the key is absent.
-      const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
-      if (existing) {
-        try {
-          const parsed = JSON.parse(existing);
-          if (parsed?.keys) {
-            // Old format with sensitive keys — replace with the safe record
-            window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-          }
-        } catch (error) { /* non-fatal */ }
+        // Non-fatal — the subscription is still active; local status just won't persist.
       }
 
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;

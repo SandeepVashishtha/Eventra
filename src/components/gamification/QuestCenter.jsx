@@ -203,6 +203,8 @@ const playClaimSound = () => {
 export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
   const confettiRef = useRef(null);
   const [activeTab, setActiveTab] = useState("daily");
+  const claimedGuardRef = useRef({});
+  const [activeTab, setActiveTab] = useState('daily');
 
   // Initialise quest progress from localStorage or fresh defaults
   const initState = useCallback(() => {
@@ -291,6 +293,16 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
     // Checking 'prev' guarantees atomic verification.
     setState((prev) => {
       if (prev[claimedKey][questId]) return prev; // Already claimed, block exploit
+    const claimedKey = isWeekly ? 'weeklyClaimed' : 'dailyClaimed';
+    const guardKey = `${claimedKey}:${questId}`;
+
+    // Synchronous guard — blocks side effects on rapid double-click
+    // before React has had a chance to re-render with updated claimed state
+    if (claimedGuardRef.current[guardKey]) return;
+    claimedGuardRef.current[guardKey] = true;
+
+    setState(prev => {
+      if (prev[claimedKey][questId]) return prev;
 
       return {
         ...prev,

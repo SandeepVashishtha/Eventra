@@ -32,9 +32,12 @@ const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
       <FormField label="Event Title" icon={FileText} error={errors.title} required>
         <input
           type="text"
+          id="title-input"
           name="title"
           value={formData.title}
           onChange={handleInputChange}
+          maxLength={200}
+          aria-describedby="title-counter"
           placeholder="Give your event a catchy title"
           className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
                    text-gray-900 dark:text-gray-100 focus:outline-none 
@@ -43,6 +46,9 @@ const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
                      errors.title ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                    }`}
         />
+        <div className="flex justify-end mt-1">
+          <CharacterCounter id="title-counter" value={formData.title} maxLength={200} />
+        </div>
       </FormField>
 
       <FormField label="Category" icon={Tag} error={errors.category} required>
@@ -68,10 +74,13 @@ const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
 
       <FormField label="Description" icon={FileText} error={errors.description} required>
         <textarea
+          id="description-input"
           name="description"
           value={formData.description}
           onChange={handleInputChange}
           rows={5}
+          maxLength={500}
+          aria-describedby="description-counter"
           placeholder="Tell people what your event is about..."
           className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
                    text-gray-900 dark:text-gray-100 focus:outline-none 
@@ -80,8 +89,8 @@ const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
                      errors.description ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                    }`}
         />
-        <div className="flex justify-end">
-          <CharacterCounter current={formData.description.length} max={500} />
+        <div className="flex justify-end mt-1">
+          <CharacterCounter id="description-counter" value={formData.description} maxLength={500} />
         </div>
       </FormField>
 
