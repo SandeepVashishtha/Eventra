@@ -178,6 +178,8 @@ export default function UserAchievements() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    // Free browser memory after download triggers (100ms ensures download starts first)
+    setTimeout(() => URL.revokeObjectURL(url), 100);
     toast.success(t("userAchievements.toastCertificateDownloaded"));
   };
 

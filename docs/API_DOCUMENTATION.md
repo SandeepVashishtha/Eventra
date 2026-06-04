@@ -1248,6 +1248,79 @@ Content-Type: application/json
 - **401 Unauthorized**: JWT is missing or invalid.
 - **403 Forbidden**: Authenticated user does not have the required role (`ORGANIZER`, `ADMIN`, or `SUPER_ADMIN`).
 
+## Update Hackathon
+
+| Method | Endpoint |
+|--------|----------|
+| PUT | `/api/hackathons/{id}` |
+
+Updates an existing hackathon by id. Restricted to authorized roles: `ORGANIZER`, `ADMIN`, `SUPER_ADMIN`.
+
+### Authentication
+Protected endpoint. Requires Bearer JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "title": "Updated Hackathon",
+  "description": "Updated hackathon description",
+  "organizer": "IEEE OIST Updated",
+  "startDate": "2026-10-10T10:00:00",
+  "endDate": "2026-10-11T18:00:00",
+  "location": "Bhopal",
+  "mode": "Hybrid",
+  "prizePool": "75000 INR",
+  "registrationDeadline": "2026-10-01T23:59:59",
+  "imageUrl": "https://example.com/updated.png"
+}
+```
+
+- `title`: required
+- `description`: required
+- `organizer`: required
+- `startDate`: required
+- `endDate`: required
+- `location`: required
+- `mode`: required
+- `registrationDeadline`: required
+- `prizePool`: optional
+- `imageUrl`: optional
+
+### Successful Response (200)
+
+```json
+{
+  "id": 2,
+  "title": "Updated Hackathon",
+  "description": "Updated hackathon description",
+  "organizer": "IEEE OIST Updated",
+  "startDate": "2026-10-10T10:00:00",
+  "endDate": "2026-10-11T18:00:00",
+  "location": "Bhopal",
+  "mode": "Hybrid",
+  "prizePool": "75000 INR",
+  "registrationDeadline": "2026-10-01T23:59:59",
+  "imageUrl": "https://example.com/updated.png"
+}
+```
+
+### Error Responses
+
+- **400 Bad Request**: Validation errors for invalid payloads.
+- **401 Unauthorized**: JWT is missing or invalid.
+- **403 Forbidden**: Authenticated user does not have the required role (`ORGANIZER`, `ADMIN`, or `SUPER_ADMIN`).
+- **404 Not Found**: Hackathon id does not exist.
+
+*Note: The backend implementation is handled in the Eventra-Backend repository. This docs PR only syncs API documentation with the backend behavior.*
+
 ---
 
 # Analytics APIs
