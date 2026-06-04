@@ -5,6 +5,8 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 
+import ErrorBoundary from "../common/ErrorBoundary";
+
 const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   const [showChat, setShowChat] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
@@ -403,4 +405,10 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   );
 };
 
-export default VirtualBoothModal;
+export default function SafeVirtualBoothModal(props) {
+  return (
+    <ErrorBoundary level="feature" label="Virtual Booth Modal">
+      <VirtualBoothModal {...props} />
+    </ErrorBoundary>
+  );
+}
