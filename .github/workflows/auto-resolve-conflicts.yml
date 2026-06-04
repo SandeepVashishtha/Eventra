@@ -13,6 +13,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_TOKEN }}
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
       - name: Auto resolve all open PRs
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -23,9 +28,37 @@ jobs:
             gh pr checkout $num
             if git merge origin/master --no-commit --no-ff 2>&1 | grep -q "CONFLICT"; then
               for file in $(git diff --name-only --diff-filter=U); do
-                python3 -c "import re;c=open('$file').read();open('$file','w').write(re.sub(r'<<<<<<< .*?\n(.*?)=======\n(.*?)>>>>>>> .*?\n',r'\1\2',c,flags=re.DOTALL))"
+                # Extract both sides of the conflict and keep the HEAD version
+                python3 -c "
+import re, sys
+path = '$file'
+with open(path) as f:
+    content = f.read()
+# Replace conflict markers with the HEAD (current) version
+resolved = re.sub(
+    r'<<<<<<< .*?\n(.*?)=======\n.*?>>>>>>> .*?\n',
+    r'\1',
+    content,
+    flags=re.DOTALL
+)
+if resolved != content:
+    with open(path, 'w') as f:
+        f.write(resolved)
+    print(f'  Resolved: {path}')
+else:
+    print(f'  No markers found in: {path}')
+"
                 git add $file
               done
+              # Validate that the resolved code is syntactically valid
+              if [ -f "package.json" ] && [ -f "package-lock.json" ]; then
+                npm install --silent 2>/dev/null
+                if npx tsc --noEmit 2>/dev/null; then
+                  echo "✅ TypeScript validation passed for PR #$num"
+                else
+                  echo "⚠️ TypeScript validation failed for PR #$num - pushing anyway (manual review needed)"
+                fi
+              fi
               git commit -m "auto-resolve PR #$num"
               git push origin $branch
             else
