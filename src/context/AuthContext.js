@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from "../config/api";
+import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler, setAuthToken } from "../config/api";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
 import { syncSecureStorage } from "../utils/secureStorage";
 import { toast } from "react-toastify";
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     error: null,
   });
 
-  const isMountedRef = useRef(false);
+  const isMountedRef = useRef(true);
   const needsExpiryCleanupRef = useRef(false);
   const expiryToastShownRef = useRef(false);
 
@@ -48,17 +48,21 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
+    setAuthToken(null);
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
-    sessionStorage.removeItem("token");
     syncSecureStorage.removeItem("user");
-    localStorage.removeItem("user");
     return true;
   }, []);
 
   const clearExpiredSession = useCallback(() => {
     // 🔥 FIX: Check if a user was actually logged in before blasting them with an "Expired" toast.
     // Anonymous users (who trigger a 401 on mount) shouldn't see this.
-    const hadPreviousSession = !!localStorage.getItem("user") || !!sessionStorage.getItem("token");
+    let hadPreviousSession = false;
+    try {
+      hadPreviousSession = !!syncSecureStorage.getItem("user");
+    } catch {
+      // localStorage unavailable (private browsing, quota exceeded, etc.)
+    }
 
     console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
     clearSession();
@@ -73,8 +77,11 @@ export const AuthProvider = ({ children }) => {
     expiryToastShownRef.current = true;
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",
-      autoClose: 5000,
+      autoClose: 4000,
     });
+    setTimeout(() => {
+      window.location.replace("/login");
+    }, 1500);
   }, [clearSession]);
 
   const setAuthRequestState = useCallback((nextState) => {
@@ -93,6 +100,11 @@ export const AuthProvider = ({ children }) => {
 
   const extractSession = useCallback(
     (res, data, fallbackEmail) => {
+      // Prefer an explicit token from the response body (legacy / non-HttpOnly
+      // deployments) or from a Bearer header, but fall back to "cookie-managed"
+      // when neither is present. The server sets an HttpOnly cookie that is
+      // transmitted automatically via withCredentials on every subsequent
+      // request; no client-side token string is needed for that flow.
       let sessionToken = data?.token ?? data?.accessToken ?? null;
 
       if (!sessionToken) {
@@ -100,6 +112,13 @@ export const AuthProvider = ({ children }) => {
         if (authHeader && authHeader.startsWith("Bearer ")) {
           sessionToken = authHeader.substring(7);
         }
+      }
+
+      // Cookie-only flow: the server set an HttpOnly cookie but did not include
+      // the token in the response body.  Sentinel value tells the rest of
+      // AuthContext not to attempt client-side JWT validation.
+      if (!sessionToken) {
+        sessionToken = "cookie-managed";
       }
 
       const rawUser = data?.user ?? data?.data ?? data ?? null;
@@ -236,9 +255,10 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, clearExpiredSession]);
 
-  const persistSession = useCallback((sessionToken, sessionUser) => {
+  const persistSession = useCallback(async (sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
+    setAuthToken(sessionToken);
 
     // The auth token is set exclusively by the server via a Set-Cookie response
     // header with HttpOnly; Secure; SameSite=Strict. Writing the token through
@@ -253,7 +273,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // eslint-disable-next-line no-unused-vars
       const { roles, permissions, scopes, ...displayProfile } = sessionUser;
-      syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
+      await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {
       console.error("[AuthContext] Error persisting user profile:", error);
     }
@@ -294,11 +314,10 @@ export const AuthProvider = ({ children }) => {
           throw new Error(data?.message || data?.error || "Invalid credentials");
         }
 
+        // extractSession now returns "cookie-managed" instead of null when the
+        // server uses HttpOnly cookies and omits the token from the response
+        // body. There is no longer a missing-token failure path here.
         const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
-
-        if (!sessionToken) {
-          throw new Error("Login failed: token missing from response");
-        }
 
         const persisted = persistSession(sessionToken, sessionUser);
         if (!persisted) return false;
@@ -394,6 +413,7 @@ export const AuthProvider = ({ children }) => {
       login,
       logout,
       setAuthSession,
+      setUser,
       isAuthenticated,
       hasRole,
       hasPermission,

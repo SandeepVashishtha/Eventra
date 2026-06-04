@@ -1,0 +1,75 @@
+{
+  "app": {
+    "name": "Eventra",
+    "tagline": "Tu plataforma de eventos todo en uno",
+    "loading": "Cargando página...",
+    "backOnline": "¡De vuelta en línea! Tus conexiones han sido restauradas.",
+    "offline": "Estás offline. Ejecutando en modo de caché local seguro."
+  },
+  "nav": {
+    "home": "Inicio",
+    "events": "Eventos",
+    "hackathons": "Hackathones",
+    "leaderboard": "Clasificación",
+    "contributors": "Contribuidores",
+    "about": "Acerca de",
+    "contact": "Contacto",
+    "dashboard": "Panel",
+    "admin": "Admin",
+    "signIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "signOut": "Cerrar Sesión",
+    "profile": "Perfil",
+    "settings": "Ajustes"
+  },
+  "auth": {
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "name": "Nombre",
+    "rememberMe": "Recordarme",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "sessionExpired": "Sesión expirada. Por favor inicia sesión nuevamente.",
+    "loginSuccess": "¡Bienvenido de nuevo!",
+    "signupSuccess": "¡Cuenta creada exitosamente!"
+  },
+  "validation": {
+    "required": "Este campo es obligatorio",
+    "invalidEmail": "Formato de correo inválido",
+    "weakPassword": "La contraseña no cumple con los requisitos de seguridad",
+    "passwordLength": "La contraseña debe tener al menos 8 caracteres"
+  },
+  "error": {
+    "generic": "Ocurrió un error inesperado. Por favor intenta de nuevo.",
+    "unauthorized": "Tus credenciales son incorrectas o tu sesión ha expirado.",
+    "notFound": "El recurso solicitado no fue encontrado.",
+    "serverError": "Algo salió mal. Por favor intenta de nuevo.",
+    "networkError": "No se puede alcanzar el servidor. Verifica tu conexión.",
+    "rateLimited": "Demasiadas solicitudes. Por favor espera..."
+  },
+  "common": {
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "retry": "Reintentar",
+    "loading": "Cargando...",
+    "search": "Buscar",
+    "closeModal": "Cerrar modal"
+  },
+  "footer": {
+    "rights": "Todos los derechos reservados.",
+    "privacy": "Política de Privacidad",
+    "terms": "Términos del Servicio"
+  },
+  "language": {
+    "switch": "Idioma",
+    "en": "English",
+    "es": "Español"
+  }
+}

@@ -13,7 +13,8 @@ import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
+import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
 import {
   decodeAdvancedFilters,
@@ -28,6 +29,8 @@ const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
 const renderCardSection = (
   isLoading,
+  loadError,
+  onRetry,
   paginatedEvents,
   viewMode,
   searchQuery,
@@ -48,6 +51,20 @@ const renderCardSection = (
             <EventCardSkeleton key={`skeleton-${i}`} />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <ErrorMessage title="Failed to load events" message={loadError} />
+        <button
+          onClick={onRetry}
+          className="mt-2 px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
+        >
+          Try again
+        </button>
       </div>
     );
   }
@@ -104,6 +121,7 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
+  const { isLoading } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
@@ -128,15 +146,15 @@ const EventsPage = () => {
 
     try {
       savedFilters = JSON.parse(
-        window.localStorage.getItem(FILTER_STORAGE_KEY) || "{}"
+        window.sessionStorage.getItem(FILTER_STORAGE_KEY) || "{}"
       );
     } catch {
       savedFilters = {};
     }
 
-    const page = parseInt(searchParams.get("page")) || 1;
+    const page = parseInt(searchParams.get("page"), 10) || 1;
     const perPage =
-      parseInt(searchParams.get("perPage")) || savedFilters.perPage || 6;
+      parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 6;
     const filter =
       searchParams.get("filter") || savedFilters.filterType || "all";
     const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
@@ -180,7 +198,7 @@ const EventsPage = () => {
     setSearchParams(params, { replace: true });
 
     try {
-      window.localStorage.setItem(
+      window.sessionStorage.setItem(
         FILTER_STORAGE_KEY,
         JSON.stringify({
           searchQuery: listing.searchQuery,
@@ -192,7 +210,7 @@ const EventsPage = () => {
         })
       );
     } catch {
-      // localStorage can be unavailable in private browsing or embedded views.
+      // sessionStorage can be unavailable in private browsing or embedded views.
     }
   }, [
     listing.currentPage,
@@ -215,6 +233,7 @@ const EventsPage = () => {
       setLocalSearchInput(safeQuery);
       listing.setSearchQuery(safeQuery);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     rawSearchParam,
     routeSearchQuery,
@@ -231,7 +250,7 @@ const EventsPage = () => {
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
-    if (!listing.isLoading && routeSearchQuery) {
+    if (!isLoading && routeSearchQuery) {
       setTimeout(() => {
         cardSectionRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -239,7 +258,7 @@ const EventsPage = () => {
         });
       }, 100);
     }
-  }, [listing.isLoading, routeSearchQuery]);
+  }, [isLoading, routeSearchQuery]);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -248,6 +267,7 @@ const EventsPage = () => {
   const clearSearchAndFilters = () => {
     listing.setSearchQuery("");
     listing.setFilterType("all");
+    listing.setCategoryFilter("all");
     listing.setSortType("Newest");
     listing.setAdvancedFilters(getDefaultFilters());
     setLocalSearchInput("");
@@ -272,6 +292,8 @@ const EventsPage = () => {
           <EventFiltersToolbar
             filterType={listing.filterType}
             onFilterChange={listing.setFilterType}
+            categoryFilter={listing.categoryFilter}
+            onCategoryChange={listing.setCategoryFilter}
             sortType={listing.sortType}
             onSortChange={listing.setSortType}
             viewMode={listing.viewMode}
@@ -284,6 +306,7 @@ const EventsPage = () => {
             onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
             priceStats={listing.priceStats}
             dateRangeStats={listing.dateRangeStats}
+            onResetFilters={clearSearchAndFilters}
           />
         </div>
 
@@ -295,6 +318,8 @@ const EventsPage = () => {
           }}
           filterType={listing.filterType}
           setFilterType={listing.setFilterType}
+          categoryFilter={listing.categoryFilter}
+          setCategoryFilter={listing.setCategoryFilter}
           sortType={listing.sortType}
           setSortType={listing.setSortType}
           viewMode={listing.viewMode}
@@ -303,14 +328,16 @@ const EventsPage = () => {
           onAdvancedFiltersChange={listing.setAdvancedFilters}
         />
 
-        <SectionErrorBoundary label="Events">
-          {renderCardSection(
-            listing.isLoading,
-            listing.paginatedEvents,
-            listing.viewMode,
-            listing.searchQuery,
-            clearSearchAndFilters
-          )}
+        <ErrorBoundary level="section" label="Events">
+     {renderCardSection(
+  isLoading,
+  listing.loadError,
+  listing.fetchEvents,
+  listing.paginatedEvents,
+  listing.viewMode,
+  listing.searchQuery,
+  clearSearchAndFilters
+)}
 
           {!listing.isLoading && listing.totalPages > 1 && (
             <div className="mt-8 flex justify-center">
@@ -321,13 +348,13 @@ const EventsPage = () => {
               />
             </div>
           )}
-        </SectionErrorBoundary>
+        </ErrorBoundary>
 
         {/* Interactive Event Timeline Planner Section */}
         <div className="mt-12 sm:mt-16">
-          <SectionErrorBoundary label="Event Timeline Planner">
+          <ErrorBoundary level="section" label="Event Timeline Planner">
             <EventTimeline />
-          </SectionErrorBoundary>
+          </ErrorBoundary>
         </div>
       </div>
 

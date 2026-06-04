@@ -7,19 +7,22 @@ import {
   normalizeValidationApiResponse,
   requestValidation,
 } from "./utils/validationApi";
+import i18n from "./i18n/i18n";
+
+const t = (key) => i18n.t(key);
 
 /**
  * Shared validation copy used by sync and async validators.
  * Keep these messages short because they are shown inline under form fields.
  */
 export const VALIDATION_MESSAGES = {
-  required: "This field is required",
-  invalidEmail: "Invalid email format",
-  emailTaken: "Email is already registered",
-  usernameTaken: "Username is already taken",
-  weakPassword: "Password does not meet strength requirements",
-  invalidPhone: "Phone number is invalid",
-  validationUnavailable: "Unable to validate right now. Please try again.",
+  required: t("validation.required"),
+  invalidEmail: t("validation.invalidEmail"),
+  emailTaken: t("validation.emailTaken"),
+  usernameTaken: t("validation.usernameTaken"),
+  weakPassword: t("validation.weakPassword"),
+  invalidPhone: t("validation.invalidPhone"),
+  validationUnavailable: t("validation.validationUnavailable"),
 };
 
 // Single source of truth regular expressions (Anchored, non-backtracking)
