@@ -35,7 +35,7 @@ const EventDetailsPage = () => {
     if (userId && event) {
       import("../../utils/waitlistUtils").then(({ getQueuePosition }) => {
         setQueuePosition(getQueuePosition(event.id, userId));
-      });
+      }).catch(() => setQueuePosition(-1));
     } else {
       setQueuePosition(-1);
     }
@@ -45,7 +45,7 @@ const EventDetailsPage = () => {
     if (event) {
       import("../../utils/waitlistUtils").then(({ getEventWaitlist }) => {
         setWaitlistCount(getEventWaitlist(event.id).length);
-      });
+      }).catch(() => setWaitlistCount(0));
     }
   }, [event, waitlistUpdated]);
 

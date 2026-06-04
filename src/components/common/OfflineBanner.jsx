@@ -7,13 +7,13 @@ export default function OfflineBanner() {
   const [status, setStatus] = useState(navigator.onLine ? "online" : "offline");
   const [visible, setVisible] = useState(!navigator.onLine);
   const [queueCount, setQueueCount] = useState(0);
+  const [syncSummary, setSyncSummary] = useState("");
   const timerRef = useRef(null);
 
   useEffect(() => {
-    let timer;
-
     const handleOnline = () => {
       setStatus("online");
+      setSyncSummary("");
       setVisible(true);
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
@@ -23,6 +23,7 @@ export default function OfflineBanner() {
 
     const handleOffline = () => {
       setStatus("offline");
+      setSyncSummary("");
       setVisible(true);
     };
 
@@ -34,7 +35,17 @@ export default function OfflineBanner() {
     const handleQueueProcessed = (e) => {
       const { succeeded, dropped, remaining } = e.detail;
       setQueueCount(remaining);
-      if (remaining === 0) {
+      if (dropped > 0) {
+        setSyncSummary(
+          `${dropped} queued action(s) could not be synced. ${succeeded} action(s) synced successfully.`,
+        );
+        setVisible(true);
+      } else {
+        setSyncSummary(
+          succeeded > 0 ? `${succeeded} queued action(s) synced successfully.` : "",
+        );
+      }
+      if (remaining === 0 && dropped === 0) {
         if (timerRef.current) clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => setVisible(false), 4000);
       }
@@ -70,7 +81,10 @@ export default function OfflineBanner() {
           <>
             <Wifi className="offline-banner-icon text-emerald-400" size={16} />
             <span>
-              Connection restored! {queueCount > 0 ? `Synchronizing ${queueCount} queued action(s)...` : "Offline cache is ready."}
+              {syncSummary ||
+                (queueCount > 0
+                  ? `Synchronizing ${queueCount} queued action(s)...`
+                  : "Connection restored! Offline cache is ready.")}
             </span>
           </>
         )}

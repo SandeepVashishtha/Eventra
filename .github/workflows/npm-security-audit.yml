@@ -1,0 +1,46 @@
+name: NPM Security Audit
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - package.json
+      - package-lock.json
+      - yarn.lock
+      - .github/workflows/npm-security-audit.yml
+  pull_request:
+    branches: [master, main]
+    paths:
+      - package.json
+      - package-lock.json
+      - yarn.lock
+      - .github/workflows/npm-security-audit.yml
+  schedule:
+    - cron: '0 0 * * 0' # Run weekly on Sundays
+
+jobs:
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Run NPM Audit
+        run: npm audit --audit-level=high
+
+      - name: Save audit report
+        run: npm audit --json > npm-audit-report.json || true
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: npm-audit-report.json
+          retention-days: 30
