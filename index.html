@@ -28,7 +28,9 @@
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
 		<!-- Vite will inject dev client & HMR in development automatically -->
-	</head>
+	    <!-- SRI added for #6452 -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js" integrity="sha256-nELQ1iQGv3wSWMHtcPAn6y2zTTVK2yN2yQO1/3S2Q4I=" crossorigin="anonymous"></script>
+    </head>
 	<body>
 		<a class="skip-to-content" href="#main">Skip to content</a>
 		<div id="root"></div>
@@ -43,4 +45,5 @@
 		<script type="module" src="/src/index.jsx"></script>
 	</body>
 </html>
+
 
