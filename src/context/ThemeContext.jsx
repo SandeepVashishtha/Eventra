@@ -37,7 +37,27 @@ const safeStorage = {
     }
   },
 };
+const getSystemTheme = () => {
+  if (
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  ) {
+    return "dark";
+  }
 
+  return "light";
+};
+
+const getInitialTheme = () => {
+  const savedTheme = safeStorage.getItem("theme");
+
+  if (savedTheme) {
+    return savedTheme;
+  }
+
+  return "system";
+};
 export const ThemeProvider = ({ children }) => {
   const [theme, setThemeState] = useState(() => getInitialTheme());
 

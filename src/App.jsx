@@ -20,7 +20,7 @@ import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
-import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
@@ -28,7 +28,7 @@ import {
   AuthFormSkeleton, 
   ExploreEventsSkeleton, 
   EventDetailSkeleton,
-  DashboardHomeSkeleton,
+  // DashboardHomeSkeleton,
 } from "./components/common/SkeletonLoaders";
 
 // Route-level lazy splits - loaded only when route is visited
@@ -39,12 +39,12 @@ const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"))
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
-const ExploreEvents = lazy(() => import("./Pages/Events/ExploreEvents"));
-const Login = lazy(() => import("./Pages/Auth/Login"));
-const Signup = lazy(() => import("./Pages/Auth/Signup"));
-const Profile = lazy(() => import("./Pages/User/Profile"));
-const Dashboard = lazy(() => import("./Pages/Dashboard/Dashboard"));
-const AdminPanel = lazy(() => import("./Pages/Admin/AdminPanel"));
+const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+// const Login = lazy(() => import("./Pages/Auth/Login"));
+// const Signup = lazy(() => import("./Pages/Auth/Signup"));
+// const Profile = lazy(() => import("./Pages/User/Profile"));
+// const Dashboard = lazy(() => import("./Pages/Dashboard/Dashboard"));
+// const AdminPanel = lazy(() => import("./Pages/Admin/AdminPanel"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
@@ -203,7 +203,7 @@ function App() {
                             </Suspense>
                           } 
                         />
-                        <Route 
+                        {/* <Route 
                           path="/login" 
                           element={
                             <Suspense fallback={<AuthFormSkeleton />}>
@@ -229,7 +229,7 @@ function App() {
                             </ProtectedRoute>
                           } 
                         />
-                        <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+                        <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} /> */}
                         <Route path="/event-recommendation" element={<EventRecommendation />} />
                         <Route path="/saved-events" element={<SavedEventsPage />} />
                         <Route path="*" element={<AppRoutes />} />

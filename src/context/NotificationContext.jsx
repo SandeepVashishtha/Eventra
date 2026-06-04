@@ -28,7 +28,9 @@ const NotificationContext = createContext();
 
 const POLLING_INTERVAL_MS = 60_000;
 const VAPID_PUBLIC_KEY =
-  process.env.REACT_APP_VAPID_PUBLIC_KEY || process.env.VITE_VAPID_PUBLIC_KEY || "";
+  import.meta.env.REACT_APP_VAPID_PUBLIC_KEY ||
+import.meta.env.VITE_VAPID_PUBLIC_KEY ||
+"";
 
 const isValidEndpoint = (endpoint) =>
   endpoint && typeof endpoint === "string" && !endpoint.includes("undefined");

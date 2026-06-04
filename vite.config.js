@@ -126,5 +126,8 @@ export default defineConfig(({ mode }) => {
     css: {
       devSourcemap: false,
     },
+    define: {
+  'process.env': {},
+},
   };
 });

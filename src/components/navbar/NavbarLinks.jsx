@@ -1,10 +1,14 @@
+import { useTranslation } from 'react-i18next';
+import { getNavItems } from "./constants/navItems";
 import { useRef, useState, useEffect} from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
-import { NAV_ITEMS } from "./constants/navItems";
+
 import { prefetchRoute } from "../../utils/prefetchUtils";
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
+  const { t } = useTranslation();       
+  const NAV_ITEMS = getNavItems(t);
   const location = useLocation();
   const navRef = useRef(null);
 
@@ -30,7 +34,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   };
 
   const handlePrefetch = (href) => {
-    if (href === "/events") prefetchRoute(() => import("../../Pages/Events/ExploreEvents"), "explore");
+    if (href === "/events") prefetchRoute(() => import("../../Pages/Events/EventsPage"), "explore");
     if (href === "/saved-events") prefetchRoute(() => import("../../Pages/SavedEventsPage"), "saved");
   };
 

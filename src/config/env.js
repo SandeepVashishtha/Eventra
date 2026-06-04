@@ -6,7 +6,7 @@ const optionalEnvVars = {
 };
 
 const getEnvVar = (key, fallback = "") => {
-  const value = process.env[key];
+  const value = import.meta.env[key];
 
   if (value === undefined || value === null || value === "") {
     if (fallback !== "") {
@@ -22,7 +22,7 @@ const getEnvVar = (key, fallback = "") => {
 };
 
 export const validateEnvironment = () => {
-  const missingVars = requiredEnvVars.filter((key) => !process.env[key]);
+const missingVars = requiredEnvVars.filter((key) => !import.meta.env[key]);
 
   if (missingVars.length > 0) {
     console.error(`[ENV VALIDATION FAILED] Missing variables: ${missingVars.join(", ")}`);
@@ -39,4 +39,6 @@ export const ENV = {
 
 export const SENTRY_DSN = getEnvVar("REACT_APP_SENTRY_DSN", "");
 
-export const isSentryEnabled = Boolean(SENTRY_DSN && process.env.NODE_ENV === "production");
+export const isSentryEnabled = Boolean(
+  SENTRY_DSN && import.meta.env.MODE === "production"
+);
