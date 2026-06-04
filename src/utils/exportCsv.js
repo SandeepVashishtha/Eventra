@@ -87,7 +87,7 @@ export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv"
     .map((row) => row.map(sanitizeCSVField).join(","))
     .join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
 
@@ -141,7 +141,7 @@ export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") 
     .map((row) => row.map(sanitizeCSVField).join(","))
     .join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
 
@@ -206,7 +206,7 @@ export const exportEventsToCSV = (events, filename = "eventra-events.csv") => {
     .map((row) => row.map(sanitizeCSVField).join(","))
     .join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
 
