@@ -66,6 +66,20 @@ export const config = {
   matcher: "/api/:path*",
 };
 
+const SECURITY_HEADERS = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), display-capture=()",
+};
+
+const addSecurityHeaders = (headers) => {
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    headers.set(key, value);
+  }
+};
+
 export default async function middleware(request) {
   const url = new URL(request.url);
 
@@ -81,16 +95,18 @@ export default async function middleware(request) {
     "unknown";
 
   if (await isRateLimited(ip)) {
+    const responseHeaders = new Headers({
+      "Content-Type": "application/json",
+      "Retry-After": String(API_RATE_WINDOW_S),
+    });
+    addSecurityHeaders(responseHeaders);
+    responseHeaders.set("Access-Control-Allow-Origin", url.origin);
+    responseHeaders.set("Access-Control-Allow-Credentials", "true");
     return new Response(
       JSON.stringify({ error: "Too many requests. Please try again later." }),
       {
         status: 429,
-        headers: {
-          "Content-Type": "application/json",
-          "Retry-After": String(API_RATE_WINDOW_S),
-          "Access-Control-Allow-Origin": url.origin,
-          "Access-Control-Allow-Credentials": "true",
-        },
+        headers: responseHeaders,
       },
     );
   }
