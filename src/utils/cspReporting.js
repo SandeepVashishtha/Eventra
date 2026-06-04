@@ -19,17 +19,8 @@
  * immediately in the browser console and reported to the team, rather than
  * silently breaking the UI.
  */
-
-const runtimeEnv =
-  typeof import.meta !== "undefined" && import.meta.env
-    ? import.meta.env
-    : typeof process !== "undefined" && process.env
-      ? process.env
-      : {};
-
-const isDev = runtimeEnv.DEV ?? runtimeEnv.NODE_ENV === "development";
-const reportUri = runtimeEnv.VITE_CSP_REPORT_URI || runtimeEnv.REACT_APP_CSP_REPORT_URI || null;
-
+const isDev = import.meta.env.MODE === 'development';
+const reportUri = import.meta.env.REACT_APP_CSP_REPORT_URI || null;
 /**
  * Formats a SecurityPolicyViolationEvent into a structured report object
  * that is safe to serialise and send to a reporting endpoint.

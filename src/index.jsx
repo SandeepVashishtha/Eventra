@@ -1,7 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-
+import { I18nextProvider } from 'react-i18next';
+import i18n from './i18n/index.js';
 import "./index.css";
 import "./i18n/i18n";
 import App from "./App";
@@ -20,7 +21,7 @@ initializeGlobalErrorHandling();
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
 initCspReporting();
 // Register in production for PWA/offline support; keep dev/test cache-free.
-if (import.meta.env.PROD) {
+if (import.meta.env.MODE === "production") {
   serviceWorkerRegistration.register();
 } else {
   serviceWorkerRegistration.unregister();
@@ -38,16 +39,17 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
   <React.StrictMode>
-    {/* Global Application Error Boundary (Fixes #5060) */}
-    <GlobalErrorBoundary>
-  <HelmetProvider>
-    <ThemeProvider>
-      <RealTimeProvider>
-        <RouterProvider router={router} />
-      </RealTimeProvider>
-    </ThemeProvider>
-  </HelmetProvider>
-</GlobalErrorBoundary>
+    <I18nextProvider i18n={i18n}>  
+      <GlobalErrorBoundary>
+        <HelmetProvider>
+          <ThemeProvider>
+            <RealTimeProvider>
+              <RouterProvider router={router} />
+            </RealTimeProvider>
+          </ThemeProvider>
+        </HelmetProvider>
+      </GlobalErrorBoundary>
+    </I18nextProvider> 
   </React.StrictMode>
 );
 

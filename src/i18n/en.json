@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "home": "Home",
+    "events": "Events",
+    "hackathons": "Hackathons",
+    "projects": "Projects",
+    "networking": "Networking",
+    "saved": "Saved",
+    "community": "Community",
+    "community_events": "Community Events",
+    "leaderboard": "Leaderboard",
+    "contributors": "Contributors",
+    "contributors_guide": "Contributors Guide",
+    "more": "More",
+    "about": "About",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "login": "Login",
+    "signup": "Sign Up",
+    "dashboard": "Dashboard",
+    "logout": "Logout"
+  },
+  "home": {
+    "hero_title": "Discover & Manage Events",
+    "hero_subtitle": "Find hackathons, tech events, and connect with the community",
+    "browse_events": "Browse Events",
+    "get_started": "Get Started"
+  },
+  "events": {
+    "title": "Events",
+    "search_placeholder": "Search events...",
+    "no_events": "No events found",
+    "register": "Register",
+    "view_details": "View Details",
+    "bookmark": "Bookmark",
+    "share": "Share"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "login_title": "Welcome Back",
+    "signup_title": "Create Account",
+    "forgot_password": "Forgot Password?",
+    "no_account": "Don't have an account?",
+    "have_account": "Already have an account?"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next"
+  },
+  "404": {
+    "title": "Lost in the Cloud?",
+    "message": "The page you are looking for could not be found.",
+    "go_home": "Home Page",
+    "browse_events": "Browse Events"
+  }
+}

@@ -8,7 +8,7 @@ import AuthButtons from "./AuthButtons";
 import InstallAppButton from "../common/InstallAppButton";
 import ProfileMenu from "./ProfileMenu";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
-import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
+import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

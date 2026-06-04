@@ -35,7 +35,9 @@ const runtimeEnv =
       ? process.env
       : {};
 const VAPID_PUBLIC_KEY =
-  runtimeEnv.VITE_VAPID_PUBLIC_KEY || runtimeEnv.REACT_APP_VAPID_PUBLIC_KEY || "";
+  import.meta.env.REACT_APP_VAPID_PUBLIC_KEY ||
+import.meta.env.VITE_VAPID_PUBLIC_KEY ||
+"";
 
 const isValidEndpoint = (endpoint) =>
   endpoint && typeof endpoint === "string" && !endpoint.includes("undefined");

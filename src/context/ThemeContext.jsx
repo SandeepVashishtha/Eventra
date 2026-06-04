@@ -37,22 +37,27 @@ const safeStorage = {
     }
   },
 };
-
-const getSystemTheme = () =>
-  typeof window !== "undefined" &&
+const getSystemTheme = () => {
+  if (
+    typeof window !== "undefined" &&
+    window.matchMedia &&
     window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-
-const getInitialTheme = () => {
-  const stored = safeStorage.getItem("theme");
-  if (stored === "light" || stored === "dark" || stored === "system") {
-    return stored;
+  ) {
+    return "dark";
   }
-  return "system";
+
+  return "light";
 };
 
-// ✅ FIXED: Yahan se duplicate line hata di gayi hai
+const getInitialTheme = () => {
+  const savedTheme = safeStorage.getItem("theme");
+
+  if (savedTheme) {
+    return savedTheme;
+  }
+
+  return "system";
+};
 export const ThemeProvider = ({ children }) => {
   const [theme, setThemeState] = useState(() => getInitialTheme());
 

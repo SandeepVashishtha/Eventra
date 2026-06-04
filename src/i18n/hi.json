@@ -1,0 +1,62 @@
+{
+  "nav": {
+     "home": "होम",
+    "events": "इवेंट्स",
+    "hackathons": "हैकाथॉन",
+    "projects": "प्रोजेक्ट्स",
+    "networking": "नेटवर्किंग",
+    "saved": "सेव किए",
+    "community": "समुदाय",
+    "community_events": "सामुदायिक इवेंट्स",
+    "leaderboard": "लीडरबोर्ड",
+    "contributors": "योगदानकर्ता",
+    "contributors_guide": "योगदान गाइड",
+    "more": "और",
+    "about": "हमारे बारे में",
+    "faq": "सवाल-जवाब",
+    "contact": "संपर्क करें",
+    "login": "लॉग इन",
+    "signup": "साइन अप",
+    "dashboard": "डैशबोर्ड",
+    "logout": "लॉग आउट"
+  },
+  "home": {
+    "hero_title": "इवेंट्स खोजें और प्रबंधित करें",
+    "hero_subtitle": "हैकाथॉन, टेक इवेंट खोजें और समुदाय से जुड़ें",
+    "browse_events": "इवेंट्स देखें",
+    "get_started": "शुरू करें"
+  },
+  "events": {
+    "title": "इवेंट्स",
+    "search_placeholder": "इवेंट्स खोजें...",
+    "no_events": "कोई इवेंट नहीं मिला",
+    "register": "रजिस्टर करें",
+    "view_details": "विवरण देखें",
+    "bookmark": "बुकमार्क",
+    "share": "शेयर करें"
+  },
+  "auth": {
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "login_title": "वापस स्वागत है",
+    "signup_title": "खाता बनाएं",
+    "forgot_password": "पासवर्ड भूल गए?",
+    "no_account": "खाता नहीं है?",
+    "have_account": "पहले से खाता है?"
+  },
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "error": "कुछ गलत हो गया",
+    "save": "सेव करें",
+    "cancel": "रद्द करें",
+    "submit": "जमा करें",
+    "back": "वापस",
+    "next": "अगला"
+  },
+  "404": {
+    "title": "क्लाउड में खो गए?",
+    "message": "आप जो पेज ढूंढ रहे हैं वो नहीं मिला।",
+    "go_home": "होम पेज",
+    "browse_events": "इवेंट्स देखें"
+  }
+}

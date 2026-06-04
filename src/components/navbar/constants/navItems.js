@@ -1,95 +1,30 @@
 import {
-  Home,
-  Calendar,
-  FolderKanban,
-  Users,
-  Trophy,
-  MessageSquare,
-  Book,
-  Bookmark,
-  Info,
-  HelpCircle,
-  MoreHorizontal,
+  Home, Calendar, FolderKanban, Users, Trophy,
+  MessageSquare, Book, Bookmark, Info, HelpCircle, MoreHorizontal,
 } from "lucide-react";
 
-export const NAV_ITEMS = [
+export const getNavItems = (t) => [
+  { name: t('nav.home'), href: "/", icon: <Home className="w-5 h-5" /> },
+  { name: t('nav.events'), href: "/events", icon: <Calendar className="w-5 h-5" /> },
+  { name: t('nav.hackathons'), href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
+  { name: t('nav.projects'), href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
+  { name: t('nav.networking'), href: "/networking", icon: <Users className="w-5 h-5" /> },
+  { name: t('nav.saved'), href: "/saved-events", icon: <Bookmark className="w-5 h-5" /> },
   {
-    name: "Home",
-    href: "/",
-    icon: <Home className="w-5 h-5" />,
-  },
-  {
-    name: "Events",
-    href: "/events",
-    icon: <Calendar className="w-5 h-5" />,
-  },
-  {
-    name: "Hackathons",
-    href: "/hackathons",
-    icon: <Trophy className="w-5 h-5" />,
-  },
-  {
-    name: "Projects",
-    href: "/projects",
-    icon: <FolderKanban className="w-5 h-5" />,
-  },
-  {
-    name: "Networking",
-    href: "/networking",
-    icon: <Users className="w-5 h-5" />,
-  },
-  {
-    name: "Saved",
-    href: "/saved-events",
-    icon: <Bookmark className="w-5 h-5" />,
-  },
-  {
-    name: "Community",
-    href: "/community-event",
-    icon: <Users className="w-5 h-5" />,
+    name: t('nav.community'), href: "/community-event", icon: <Users className="w-5 h-5" />,
     subItems: [
-      {
-        name: "Community Events",
-        href: "/community-event",
-        icon: <Users className="w-5 h-5" />,
-      },
-      {
-        name: "Leaderboard",
-        href: "/leaderboard",
-        icon: <Trophy className="w-5 h-5" />,
-      },
-      {
-        name: "Contributors",
-        href: "/contributors",
-        icon: <Users className="w-5 h-5" />,
-      },
-      {
-        name: "Contributors Guide",
-        href: "/contributorguide",
-        icon: <Book className="w-5 h-5" />,
-      },
+      { name: t('nav.community_events'), href: "/community-event", icon: <Users className="w-5 h-5" /> },
+      { name: t('nav.leaderboard'), href: "/leaderboard", icon: <Trophy className="w-5 h-5" /> },
+      { name: t('nav.contributors'), href: "/contributors", icon: <Users className="w-5 h-5" /> },
+      { name: t('nav.contributors_guide'), href: "/contributorguide", icon: <Book className="w-5 h-5" /> },
     ],
   },
   {
-    name: "More",
-    href: "/about",
-    icon: <MoreHorizontal className="w-5 h-5" />,
+    name: t('nav.more'), href: "/about", icon: <MoreHorizontal className="w-5 h-5" />,
     subItems: [
-      {
-        name: "About",
-        href: "/about",
-        icon: <Info className="w-5 h-5" />,
-      },
-      {
-        name: "FAQ",
-        href: "/faq",
-        icon: <HelpCircle className="w-5 h-5" />,
-      },
-      {
-        name: "Contact",
-        href: "/contact",
-        icon: <MessageSquare className="w-5 h-5" />,
-      },
+      { name: t('nav.about'), href: "/about", icon: <Info className="w-5 h-5" /> },
+      { name: t('nav.faq'), href: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
+      { name: t('nav.contact'), href: "/contact", icon: <MessageSquare className="w-5 h-5" /> },
     ],
   },
 ];
