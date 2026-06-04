@@ -108,21 +108,25 @@ export const generateSharingUrl = (shareData, platform) => {
  */
 export const generateEventSharingData = (event, baseUrl = null) => {
   // Determine the correct base URL for sharing
-  const deployedDomain = process.env.REACT_APP_PUBLIC_URL || "eventra.sandeepvashishtha.tech";
+  const rawPublicUrl = process.env.REACT_APP_PUBLIC_URL || "eventra.sandeepvashishtha.tech";
+  // Normalise: if the env var is already a full URL, use it as-is; otherwise prefix https://
+  const deployedOrigin = rawPublicUrl.startsWith("http")
+    ? rawPublicUrl.replace(/\/$/, "")
+    : `https://${rawPublicUrl}`;
 
   // If baseUrl is provided, use it, otherwise detect
   if (!baseUrl) {
     if (typeof window !== "undefined") {
       const currentUrl = window.location.href;
       // Check if we're on the deployed site
-      if (currentUrl.includes(deployedDomain)) {
-        baseUrl = `https://${deployedDomain}`;
+      if (currentUrl.includes(rawPublicUrl)) {
+        baseUrl = deployedOrigin;
       } else {
         // Use the current origin (localhost or other development environment)
         baseUrl = window.location.origin;
       }
     } else {
-      baseUrl = process.env.REACT_APP_PUBLIC_URL || `https://${deployedDomain}`; // Fallback for SSR/Node
+      baseUrl = deployedOrigin; // Fallback for SSR/Node
     }
   }
 
