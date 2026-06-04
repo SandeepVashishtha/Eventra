@@ -1,14 +1,9 @@
 import { logger } from "./logger.js";
+import { ENV } from "../config/env.js";
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
 const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
-const runtimeEnv =
-  typeof import.meta !== "undefined" && import.meta.env
-    ? import.meta.env
-    : typeof process !== "undefined" && process.env
-      ? process.env
-      : {};
 
 // Unique identifier for this tab instance
 const TAB_ID = Math.random().toString(36).substring(2, 9);
@@ -61,6 +56,7 @@ class SseMultiplexer {
     this.pathStatuses = new Map(); // path -> status string
     this.statusListeners = new Set(); // callbacks listening to status changes
     this.lastSeenFollowers = new Map();
+    this.tabIdToPaths = new Map();
 
     if (typeof window !== "undefined") {
       this.channel = new BroadcastChannel(MULTIPLEX_CHANNEL_NAME);
@@ -295,6 +291,11 @@ class SseMultiplexer {
       this.globalSubscribers.set(path, new Set());
     }
     this.globalSubscribers.get(path).add(tabId);
+
+    if (!this.tabIdToPaths.has(tabId)) {
+      this.tabIdToPaths.set(tabId, new Set());
+    }
+    this.tabIdToPaths.get(tabId).add(path);
   }
 
   removeGlobalSubscriber(path, tabId) {
@@ -303,6 +304,14 @@ class SseMultiplexer {
       set.delete(tabId);
       if (set.size === 0) {
         this.globalSubscribers.delete(path);
+      }
+    }
+
+    const paths = this.tabIdToPaths.get(tabId);
+    if (paths) {
+      paths.delete(path);
+      if (paths.size === 0) {
+        this.tabIdToPaths.delete(tabId);
       }
     }
   }
@@ -340,10 +349,7 @@ class SseMultiplexer {
   }
 
   openEventSource(path) {
-    const sseBaseUrl =
-      typeof window !== "undefined"
-        ? runtimeEnv.VITE_API_URL || runtimeEnv.REACT_APP_API_URL || "http://localhost:8080/api/v1"
-        : "http://localhost:8080/api/v1";
+    const sseBaseUrl = ENV.API_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
 
     logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
     this.updatePathStatus(path, "connecting");
@@ -425,35 +431,28 @@ class SseMultiplexer {
       const now = Date.now();
       let changed = false;
 
-      const registeredTabIds = new Set();
-      this.globalSubscribers.forEach((tabs) => {
-        tabs.forEach((id) => {
-          if (id !== this.tabId) {
-            registeredTabIds.add(id);
-          }
-        });
-      });
-
-      registeredTabIds.forEach((tabId) => {
-        const lastSeen = this.lastSeenFollowers.get(tabId);
-        if (lastSeen === undefined) {
-          this.lastSeenFollowers.set(tabId, now);
-        } else if (now - lastSeen > MISSING_TIMEOUT) {
+      for (const [tabId, lastSeen] of this.lastSeenFollowers) {
+        if (now - lastSeen > MISSING_TIMEOUT) {
           logger.log(
             `[SSE Multiplexer] Follower tab ${tabId} missed heartbeats. Removing stale subscriptions.`
           );
-          this.globalSubscribers.forEach((tabs, path) => {
-            if (tabs.has(tabId)) {
-              tabs.delete(tabId);
-              if (tabs.size === 0) {
-                this.globalSubscribers.delete(path);
+          const paths = this.tabIdToPaths.get(tabId);
+          if (paths) {
+            for (const path of paths) {
+              const tabs = this.globalSubscribers.get(path);
+              if (tabs) {
+                tabs.delete(tabId);
+                if (tabs.size === 0) {
+                  this.globalSubscribers.delete(path);
+                }
               }
             }
-          });
+            this.tabIdToPaths.delete(tabId);
+          }
           this.lastSeenFollowers.delete(tabId);
           changed = true;
         }
-      });
+      }
 
       if (changed) {
         this.reconcileConnections();

@@ -1,23 +1,60 @@
 /**
- * useCollaboration.js
- * 
- * Custom hook to handle real-time WebRTC and CRDT (Yjs) synchronization.
- * This simulates the multiplayer connection for the floor plan designer.
+ * @fileoverview useCollaboration - WebRTC and CRDT real-time collaboration hook
+ * @module hooks/useCollaboration
+ * @hook useCollaboration
+ *
+ * @description
+ * **⚠️ Stub implementation — not production-ready.**
+ * Simulates a real-time collaborative session for the floor plan designer.
+ * Connection, user presence, cursor sync, and change broadcasting are all
+ * mocked with hardcoded data and timers. A real implementation would use
+ * Yjs (CRDT) over y-webrtc or a WebSocket provider.
+ *
+ * @param {string} roomId - Unique room identifier. The effect re-runs whenever
+ *                          this changes. Passing a falsy value skips connection.
+ *
+ * @returns {{ users, isConnected, syncStatus, updateCursor, broadcastChange }}
+ *
+ * @returns {Array<{id,name,color,cursor}>} users         - Hardcoded presence list.
+ * @returns {boolean}                       isConnected   - True ~1.5 s after mount.
+ * @returns {'disconnected'|'syncing'|'synced'} syncStatus
+ * @returns {(x,y) => void}                 updateCursor  - Updates local cursor only; does not broadcast.
+ * @returns {(action,data) => void}         broadcastChange - No-op; arguments are ignored.
  */
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 import { createCollaborationTransport } from "../utils/collaborationTransport";
 
+/**
+ * A custom React hook that manages real-time collaborative sessions
+ * using simulated WebRTC and CRDT (Yjs) synchronization.
+ *
+ * Handles connection lifecycle, user presence tracking, cursor
+ * position broadcasting, and change propagation for the floor
+ * plan designer feature.
+ *
+ * @param {string} roomId - Unique room identifier for the session
+ * @returns {{
+ *   users: Object[],
+ *   isConnected: boolean,
+ *   syncStatus: string,
+ *   updateCursor: Function,
+ *   broadcastChange: Function
+ * }}
+ *
+ * @example
+ * const { users, isConnected, syncStatus, updateCursor } = useCollaboration(roomId);
+ * // syncStatus: 'disconnected' | 'syncing' | 'synced'
+ */
 export const useCollaboration = (roomId) => {
   const [users, setUsers] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [syncStatus, setSyncStatus] = useState("disconnected"); // disconnected, syncing, synced
+  const [syncStatus, setSyncStatus] = useState("disconnected");
 
   useEffect(() => {
     if (!roomId) return;
-    
-    // Simulate connection
+
     setSyncStatus("syncing");
     const connectTimer = setTimeout(() => {
       setIsConnected(true);
@@ -39,7 +76,6 @@ export const useCollaboration = (roomId) => {
   }, [roomId]);
 
   const updateCursor = useCallback((x, y) => {
-    // In a real app, this would broadcast cursor position via WebRTC/WebSockets
     setUsers(prev => prev.map(u => u.id === "u1" ? { ...u, cursor: { x, y } } : u));
   }, []);
 

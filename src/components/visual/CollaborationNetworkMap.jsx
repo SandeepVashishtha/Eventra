@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import useReducedMotion from "../../hooks/useReducedMotion";
 import {
   Globe,
   Users,
@@ -208,6 +209,7 @@ const ConnectionParticle = ({ path, color, delay }) => (
 
 // ============ MAIN COMPONENT ============
 export default function CollaborationNetworkMap() {
+  const prefersReducedMotion = useReducedMotion();
   const [activeHub, setActiveHub] = useState(null);
   const [pinnedHub, setPinnedHub] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -374,6 +376,19 @@ export default function CollaborationNetworkMap() {
                 </select>
               </div>
 
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-700 focus:outline-none"
+                aria-label="Filter by region"
+              >
+                {REGIONS.map((region) => (
+                  <option key={region} value={region}>
+                    {region === "All" ? "All Regions" : region}
+                  </option>
+                ))}
+              </select>
+
               <label className="flex items-center gap-2 text-slate-700">
                 <input
                   type="checkbox"
@@ -382,6 +397,17 @@ export default function CollaborationNetworkMap() {
                   className=" h-5 w-5 rounded-lg border-slate-300 focus:ring-2 focus:ring-violet-500 cursor-pointer"
                 />
                 <span>Connections</span>
+              </label>
+
+              <label className="flex items-center gap-2 text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={particlesEnabled}
+                  onChange={(e) => setParticlesEnabled(e.target.checked)}
+                  disabled={prefersReducedMotion}
+                  className="h-5 w-5 rounded-lg border-slate-300 focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                />
+                <span>Animated particles</span>
               </label>
             </div>
           </div>
@@ -490,7 +516,7 @@ export default function CollaborationNetworkMap() {
                       strokeWidth={Math.max(0.8, getConnectionWidth(conn.intensity))}
                       strokeLinecap="round"
                     />
-                    {particlesEnabled && (
+                    {particlesEnabled && !prefersReducedMotion && (
                       <ConnectionParticle path={pathD} color={color} delay={idx * 0.4} />
                     )}
                   </g>
