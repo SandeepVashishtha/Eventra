@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 import EmptyState from "../components/common/EmptyState";
 import useBookmarks from "../hooks/useBookmarks";
 import { exportToCSV } from "../utils/exportUtils";
+import { toast } from "react-toastify";
 
 const SavedEventsPage = () => {
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ const SavedEventsPage = () => {
     setExporting(true);
     try {
       exportToCSV(sorted, `eventra-saved-events-${new Date().toISOString().slice(0, 10)}`);
+    } catch {
+      toast.error("Failed to export saved events. Please try again.");
     } finally {
       // Brief visual feedback before resetting
       setTimeout(() => setExporting(false), 800);
