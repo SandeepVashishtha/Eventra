@@ -1,6 +1,3 @@
-import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import {
   AnimatePresence,
@@ -26,6 +23,23 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 
 const CountUp = CountUpLib.default || CountUpLib;
+const MotionLink = motion(Link);
+const SEARCH_RESULT_LIMIT = 6;
+
+const HEADLINE_PHRASES = [
+  "Amazing Tech Events",
+  "Exciting Hackathons Today",
+  "Innovative Dev Workshops",
+  "Cutting-Edge Tech Meetups",
+];
+
+const TAGLINE_TEXTS = ["Discover", "Connect", "Build", "Grow"];
+
+const HERO_STATS = [
+  { value: 1500, label: "Developers Joined", suffix: "+", icon: Users },
+  { value: 75, label: "Events Organized", suffix: "+", icon: Calendar },
+  { value: 30, label: "Partners & Sponsors", suffix: "+", icon: Handshake },
+];
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
@@ -51,31 +65,14 @@ const searchIndex = new Fuse(allSearchItems, {
   includeScore: true,
 });
 
-const getResultHref = (item, fallbackTerm) => {
-  const query = encodeURIComponent(item.title || fallbackTerm);
-  return `${SEARCH_ROUTES[item.type] || "/"}?search=${query}`;
-};
-
-const getResultIcon = (type) => {
-  const Icon = SEARCH_ICONS[type] || Search;
-  return <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />;
-};
-
 const Hero = () => {
   useDocumentTitle("Eventra | Home");
-  
-  const phrases = [
-    "Amazing Tech Events",
-    "Exciting Hackathons Today",
-    "Innovative Dev Workshops",
-    "Cutting-Edge Tech Meetups",
-  ];
+  const controls = useAnimation();
+  const prefersReducedMotion = useReducedMotion();
 
   const containerRef = useRef(null);
 
   const [isTouch, setIsTouch] = useState(false);
-  const [isDark, setIsDark] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
   const [statsReady, setStatsReady] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
@@ -92,39 +89,8 @@ const Hero = () => {
   const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-  };
-
-  const fadeUp = {
-    hidden: { y: 32, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
-    },
-  };
-
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
-    setIsDark(document.documentElement.classList.contains("dark"));
-    setIsMobileView(window.innerWidth <= 420);
-
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    
-    const onResize = () => {
-      setIsMobileView(window.innerWidth <= 420);
-    };
-    
-    window.addEventListener("resize", onResize);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", onResize);
-    };
   }, []);
 
   useEffect(() => {
@@ -189,40 +155,6 @@ const Hero = () => {
       transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
     },
   };
-
-  const floatShape = (i) => ({
-    y: [0, -15 - i * 4, 0],
-    x: [0, 12 + i * 3, 0],
-    rotate: [0, 8, -8, 0],
-    transition: {
-      duration: prefersReducedMotion ? 0 : 5 + i * 0.5,
-      repeat: Infinity,
-      ease: "easeInOut",
-      delay: i * 0.2,
-    },
-  });
-
-  // ─── CONFIG ────────────────────────────────────────────────────────────────
-  const shapes = [
-    { size: 42, pos: { top: "10%", left: "5%" }, light: "#3b82f6", dark: "#60a5fa" },
-    { size: 54, pos: { top: "14%", left: "20%" }, light: "#f59e0b", dark: "#fbbf24" },
-    { size: 30, pos: { top: "24%", left: "42%" }, light: "#22c55e", dark: "#4ade80" },
-    { size: 50, pos: { top: "30%", left: "70%" }, light: "#0ea5e9", dark: "#38bdf8" },
-    { size: 40, pos: { top: "52%", left: "10%" }, light: "#ec4899", dark: "#f472b6" },
-    { size: 26, pos: { top: "42%", left: "32%" }, light: "#8b5cf6", dark: "#a78bfa" },
-    { size: 68, pos: { top: "68%", left: "24%" }, light: "#f43f5e", dark: "#fb7185" },
-    { size: 50, pos: { top: "72%", left: "64%" }, light: "#10b981", dark: "#34d399" },
-    { size: 34, pos: { top: "48%", left: "80%" }, light: "#eab308", dark: "#fcd34d" },
-  ];
-
-  const stats = [
-    { value: 1500, label: "Developers Joined", suffix: "+" },
-    { value: 75, label: "Events Organized", suffix: "+" },
-    { value: 30, label: "Partners & Sponsors", suffix: "+" },
-  ];
-
-  const primaryBtn = "relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900";
-  const secondaryBtn = `${primaryBtn} border border-transparent`;
 
   return (
     <section

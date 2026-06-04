@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 
 export function useSurveySimulator(questions, feedbackPool) {
@@ -6,6 +6,9 @@ export function useSurveySimulator(questions, feedbackPool) {
   const [completionRate, setCompletionRate] = useState(87.3);
   const [simulatedData, setSimulatedData] = useState({});
   const [textFeed, setTextFeed] = useState([]);
+  const latestInputsRef = useRef({ questions, feedbackPool });
+
+  latestInputsRef.current = { questions, feedbackPool };
 
   // 🔥 FIX 1: Dependency Hashing to prevent Infinite Render Loops.
   // By tracking the stringified content, we prevent the useEffect from firing
@@ -16,8 +19,12 @@ export function useSurveySimulator(questions, feedbackPool) {
   // Initialize simulated data once or if questions length changes
   useEffect(() => {
     // Safety guard in case undefined is passed
-    const safeQuestions = questions || [];
-    const safeFeedback = feedbackPool || [];
+    const {
+      questions: currentQuestions,
+      feedbackPool: currentFeedbackPool,
+    } = latestInputsRef.current;
+    const safeQuestions = currentQuestions || [];
+    const safeFeedback = currentFeedbackPool || [];
     
     const initialData = {};
     const textComments = [];
@@ -56,8 +63,6 @@ export function useSurveySimulator(questions, feedbackPool) {
 
     setSimulatedData(initialData);
     setTextFeed(textComments);
-    // Use the content hashes as the true dependencies
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionsHash, feedbackHash]);
 
   // 🔥 FIX 2: Wrapped in useCallback to provide a stable reference signature.

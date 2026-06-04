@@ -1,5 +1,5 @@
 // 🔥 FIX 1: Imported React to prevent the fatal ReferenceError on React.cloneElement
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -12,7 +12,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
   const [dropPos, setDropPos] = useState({ top: 0, left: 0 });
 
   // 🔥 FIX 2: Extracted position logic so it can respond to window resizing
-  const updatePosition = () => {
+  const updatePosition = useCallback(() => {
     if (isOpen && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       setDropPos({
@@ -20,7 +20,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
         left: rect.left + rect.width / 2 + window.scrollX,
       });
     }
-  };
+  }, [isOpen]);
 
   useEffect(() => {
     updatePosition();
@@ -30,7 +30,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
     return () => {
       window.removeEventListener("resize", updatePosition);
     };
-  }, [isOpen]);
+  }, [isOpen, updatePosition]);
 
   const handleKeyDown = (event) => {
     if (event.key === "Enter" || event.key === " ") {

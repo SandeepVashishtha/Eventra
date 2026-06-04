@@ -91,17 +91,23 @@ const calculateTimeLeft = (endDate) => {
   };
 };
 
-const useKeyboardShortcut = (key, callback, deps = []) => {
+const useKeyboardShortcut = (key, callback) => {
+  const callbackRef = useRef(callback);
+
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
   useEffect(() => {
     const handler = (e) => {
       if (e.key === key && !e.target.matches("input, textarea")) {
         e.preventDefault();
-        callback();
+        callbackRef.current();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, deps); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key]);
 };
 
 const useToast = () => {
@@ -438,7 +444,7 @@ const timeLeft = useCountdown(
   useKeyboardShortcut("/", () => {
     searchInputRef.current?.focus();
     addToast("🔍 Search focused. Start typing...", "info", 1500);
-  }, [addToast]);
+  });
   
   // Filtered resources with difficulty filter
   const filteredResources = useMemo(() => {

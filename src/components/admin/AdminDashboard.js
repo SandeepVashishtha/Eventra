@@ -109,6 +109,7 @@ const AdminDashboard = () => {
   const [usersPage, setUsersPage] = useState(0);
   const [usersTotalPages, setUsersTotalPages] = useState(1);
   const [searchUser, setSearchUser] = useState("");
+  const [debouncedSearchUser, setDebouncedSearchUser] = useState("");
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState(null);
 
@@ -116,6 +117,7 @@ const AdminDashboard = () => {
   const [eventsPage, setEventsPage] = useState(0);
   const [eventsTotalPages, setEventsTotalPages] = useState(1);
   const [searchEvent, setSearchEvent] = useState("");
+  const [debouncedSearchEvent, setDebouncedSearchEvent] = useState("");
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsError, setEventsError] = useState(null);
 
@@ -262,15 +264,15 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (activeTab === "users") {
-      loadUsers(usersPage, searchUser);
+      loadUsers(usersPage, debouncedSearchUser);
     }
-  }, [activeTab, usersPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, usersPage, debouncedSearchUser, loadUsers]);
 
   useEffect(() => {
     if (activeTab === "events") {
-      loadEvents(eventsPage, searchEvent);
+      loadEvents(eventsPage, debouncedSearchEvent);
     }
-  }, [activeTab, eventsPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, eventsPage, debouncedSearchEvent, loadEvents]);
 
   const handleSearchUser = (value) => {
     setSearchUser(value);
@@ -285,18 +287,18 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (activeTab !== "users") return;
     const timer = setTimeout(() => {
-      loadUsers(0, searchUser);
+      setDebouncedSearchUser(searchUser);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchUser]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, searchUser]);
 
   useEffect(() => {
     if (activeTab !== "events") return;
     const timer = setTimeout(() => {
-      loadEvents(0, searchEvent);
+      setDebouncedSearchEvent(searchEvent);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchEvent]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, searchEvent]);
 
   if (!isAdmin) {
     if (!user) return <Navigate to="/login" replace />;

@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import Lenis from "@studio-freight/lenis";
 
+const DEFAULT_LENIS_OPTIONS = {};
+
 /**
  * Custom React hook to initialize, configure, and manage a Lenis smooth scrolling instance.
  *
@@ -20,9 +22,9 @@ import Lenis from "@studio-freight/lenis";
  *   to clean up event listeners, and resets `window.lenis` to `null` to prevent memory leaks.
  *
  * ### Dependency Caveat
- * The hook's dependency array is empty `[]`, meaning it initializes once on mount. The `options`
- * parameter is intentionally excluded from the dependencies. If options change dynamically,
- * you should pass a stable, memoized object from the calling component.
+ * The hook initializes with the current `options` object and re-initializes if that object
+ * reference changes. Pass a stable, memoized object from the calling component when using
+ * custom options.
  *
  * @param {Object} [options={}] - Custom configuration parameters to override or extend the Lenis default settings.
  * @param {number} [options.duration=1.2] - Duration of the scroll animation in seconds.
@@ -64,7 +66,7 @@ import Lenis from "@studio-freight/lenis";
  *   return <div>My Content</div>;
  * };
  */
-const useLenis = (options = {}) => {
+const useLenis = (options = DEFAULT_LENIS_OPTIONS) => {
   useEffect(() => {
     // Check if the primary pointer is coarse (touch device) to preserve native feel
     const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
@@ -107,11 +109,7 @@ const useLenis = (options = {}) => {
       lenis.destroy();
       window.lenis = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  // NOTE: options is intentionally excluded from deps — Lenis is initialized
-  // once on mount. If you need to react to option changes, pass a stable
-  // memoized object from the call site.
+  }, [options]);
 };
 
 export default useLenis;

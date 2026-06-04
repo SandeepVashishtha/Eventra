@@ -1,9 +1,18 @@
 import { useEffect, useRef } from "react";
 
+const DEFAULT_CONFETTI_COLORS = [
+  "#6366f1",
+  "#a855f7",
+  "#ec4899",
+  "#10b981",
+  "#3b82f6",
+  "#f59e0b",
+];
+
 const ConfettiCanvas = ({ 
   particleCount = 150, 
   duration = 4000, 
-  colors = ["#6366f1", "#a855f7", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"] 
+  colors = DEFAULT_CONFETTI_COLORS 
 }) => {
   const canvasRef = useRef(null);
 
@@ -80,8 +89,7 @@ const ConfettiCanvas = ({
       cancelAnimationFrame(animationFrameId);
       clearTimeout(timer);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [particleCount, duration]);
+  }, [particleCount, duration, colors]);
 
   return (
     <canvas

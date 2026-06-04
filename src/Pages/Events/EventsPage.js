@@ -124,7 +124,16 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
-  const { isLoading } = listing;
+  const {
+    isLoading,
+    setAdvancedFilters,
+    setEventsPerPage,
+    setFilterType,
+    setSafePage,
+    setSearchQuery: setListingSearchQuery,
+    setSortType,
+    setViewMode,
+  } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
@@ -137,9 +146,8 @@ const EventsPage = () => {
 
   // Sync the debounced value into the listing hook whenever it settles.
   useEffect(() => {
-    listing.setSearchQuery(debouncedSearchQuery);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchQuery]);
+    setListingSearchQuery(debouncedSearchQuery);
+  }, [debouncedSearchQuery, setListingSearchQuery]);
 
   // Initialize state from URL params, falling back to persisted filters.
   useEffect(() => {
@@ -172,17 +180,27 @@ const EventsPage = () => {
 
     if (initialSearch) {
       setLocalSearchInput(initialSearch);
-      listing.setSearchQuery(initialSearch);
+      setListingSearchQuery(initialSearch);
     }
-    listing.setFilterType(filter);
-    listing.setSortType(sort);
-    listing.setViewMode(view);
-    listing.setEventsPerPage(perPage);
-    listing.setAdvancedFilters(advancedFilters);
-    if (page !== 1) listing.setSafePage(page);
+    setFilterType(filter);
+    setSortType(sort);
+    setViewMode(view);
+    setEventsPerPage(perPage);
+    setAdvancedFilters(advancedFilters);
+    if (page !== 1) setSafePage(page);
     hasHydratedFilters.current = true;
     setFiltersHydrated(true);
-  }, [searchParams, routeSearchQuery, listing]);
+  }, [
+    searchParams,
+    routeSearchQuery,
+    setAdvancedFilters,
+    setEventsPerPage,
+    setFilterType,
+    setListingSearchQuery,
+    setSafePage,
+    setSortType,
+    setViewMode,
+  ]);
 
   // Sync search query when URL param changes (e.g. navigating from navbar search)
   useEffect(() => {
@@ -234,20 +252,19 @@ const EventsPage = () => {
     const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
     if (safeQuery !== listing.searchQuery) {
       setLocalSearchInput(safeQuery);
-      listing.setSearchQuery(safeQuery);
+      setListingSearchQuery(safeQuery);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     rawSearchParam,
     routeSearchQuery,
     listing.searchQuery,
-    listing.setSearchQuery,
+    setListingSearchQuery,
   ]);
 
   const handleSearch = (query = "") => {
     const safeQuery = prepareSafeSearchQuery(query);
     setLocalSearchInput(safeQuery);
-    listing.setSearchQuery(safeQuery);
+    setListingSearchQuery(safeQuery);
     return listing.filteredEvents;
   };
 
@@ -268,11 +285,11 @@ const EventsPage = () => {
   };
 
   const clearSearchAndFilters = () => {
-    listing.setSearchQuery("");
-    listing.setFilterType("all");
+    setListingSearchQuery("");
+    setFilterType("all");
     listing.setCategoryFilter("all");
-    listing.setSortType("Newest");
-    listing.setAdvancedFilters(getDefaultFilters());
+    setSortType("Newest");
+    setAdvancedFilters(getDefaultFilters());
     setLocalSearchInput("");
   };
 

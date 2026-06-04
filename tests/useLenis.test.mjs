@@ -85,8 +85,8 @@ describe('useLenis — source contract', () => {
 describe('useLenis — configuration', () => {
   it('accepts options parameter', () => {
     assert.ok(
-      src.includes('options = {}'),
-      'Must accept options parameter with default empty object',
+      src.includes('options = DEFAULT_LENIS_OPTIONS'),
+      'Must accept options parameter with a stable default options object',
     );
   });
 

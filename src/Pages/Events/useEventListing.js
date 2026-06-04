@@ -12,7 +12,6 @@ import {
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
-import { logger } from "../../utils/logger";
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
@@ -176,7 +175,7 @@ const useEventListing = () => {
     setCurrentPage(1);
   }, [searchQuery, filterType, sortType, advancedFilters, eventsPerPage]);
 
-  const setSafePage = (page) => {
+  const setSafePage = useCallback((page) => {
     if (page < 1) {
       setCurrentPage(1);
       return;
@@ -186,11 +185,11 @@ const useEventListing = () => {
       return;
     }
     setCurrentPage(page);
-  };
+  }, [pagination.totalPages]);
 
   const setAdvancedFilters = useCallback((filters) => {
     setAdvancedFiltersState(normalizeAdvancedFilters(filters));
-  }, []);
+  }, [setAdvancedFiltersState]);
 
   const priceStats = useMemo(() => getPriceStats(events), [events]);
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
