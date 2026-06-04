@@ -196,6 +196,7 @@ export const getProtectedRoutes = () => [
 export const getAuthRoutes = () => [
   // 🔥 FIX: Safely suspended lazy-loaded auth routes
   <Route key="/login" path="/login" element={withAuthSuspense(<AuthPage />)} />,
+  <Route key="/register" path="/register" element={withAuthSuspense(<AuthPage />)} />,
   <Route key="/signup" path="/signup" element={withAuthSuspense(<AuthPage />)} />,
   <Route key="/unauthorized" path="/unauthorized" element={withAuthSuspense(<Unauthorized />)} />,
   <Route key="/password-reset" path="/password-reset" element={withAuthSuspense(<PasswordReset />)} />,

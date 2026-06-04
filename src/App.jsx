@@ -23,6 +23,7 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
+import { getAuthRoutes, getProtectedRoutes } from "./components/routes/ProtectedRoutes";
 import {
   AuthFormSkeleton,
   ExploreEventsSkeleton,
@@ -219,14 +220,8 @@ function App() {
                             </Suspense>
                           }
                         />
-                        {/* TODO: Implement missing auth/dashboard routes
-                          Pages do not exist:
-                          - ./Pages/auth/Login
-                          - ./Pages/auth/Signup
-                          - ./Pages/dashboard/Dashboard
-                          - ./Pages/Admin/AdminPanel
-                          - ./Pages/user/Profile
-                        */}
+                        {getAuthRoutes()}
+                        {getProtectedRoutes()}
                         <Route
                           path="/event-recommendation"
                           element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
