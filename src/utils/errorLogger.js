@@ -6,28 +6,29 @@ import { SENTRY_DSN, isSentryEnabled } from "../config/env.js";
 let Sentry = null;
 
 if (isSentryEnabled && typeof window !== "undefined") {
-  try {
-    const SentryModule = require("@sentry/browser");
-    Sentry = SentryModule;
+  import("@sentry/browser")
+    .then((SentryModule) => {
+      Sentry = SentryModule;
 
-    Sentry.init({
-      dsn: SENTRY_DSN,
-      integrations: [
-        typeof SentryModule.browserTracingIntegration === "function"
-          ? SentryModule.browserTracingIntegration()
-          : null,
-        typeof SentryModule.replayIntegration === "function"
-          ? SentryModule.replayIntegration()
-          : null,
-      ].filter(Boolean),
-      tracesSampleRate: 0.25,
-      replaysSessionSampleRate: 0.1,
-      replaysOnErrorSampleRate: 1.0,
-      environment: process.env.NODE_ENV || "development",
+      Sentry.init({
+        dsn: SENTRY_DSN,
+        integrations: [
+          typeof SentryModule.browserTracingIntegration === "function"
+            ? SentryModule.browserTracingIntegration()
+            : null,
+          typeof SentryModule.replayIntegration === "function"
+            ? SentryModule.replayIntegration()
+            : null,
+        ].filter(Boolean),
+        tracesSampleRate: 0.25,
+        replaysSessionSampleRate: 0.1,
+        replaysOnErrorSampleRate: 1.0,
+        environment: process.env.NODE_ENV || "development",
+      });
+    })
+    .catch(() => {
+      // Sentry SDK unavailable — local-only logging will still work
     });
-  } catch {
-    // Sentry SDK unavailable — local-only logging will still work
-  }
 }
 
 function buildErrorEntry(error, errorInfo, extra = {}) {
