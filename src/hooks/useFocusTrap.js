@@ -48,43 +48,43 @@ export function useFocusTrap(isActive, onEscape) {
   const containerRef = useRef(null);
   // Remember the element that was focused before the trap activated so we can
   // restore it on close.
-  const previouslyFocusedRef = useRef(null);
+  const previousFocusRef = useRef(null);
 
   const handleKeyDown = useCallback(
-    (event) => {
+    (e) => {
       if (!isActive || !containerRef.current) return;
 
-      if (event.key === 'Escape') {
-        event.preventDefault();
+      if (e.key === 'Escape') {
+        e.preventDefault();
         if (typeof onEscape === 'function') {
           onEscape();
         }
         return;
       }
 
-      if (event.key !== 'Tab') return;
+      if (e.key !== 'Tab') return;
 
       const focusableEls = getFocusableElements(containerRef.current);
       if (focusableEls.length === 0) {
-        event.preventDefault();
+        e.preventDefault();
         return;
       }
 
-      const firstEl = focusableEls[0];
-      const lastEl = focusableEls[focusableEls.length - 1];
+      const first = focusableEls[0];
+      const last = focusableEls[focusableEls.length - 1];
       const active = document.activeElement;
 
-      if (event.shiftKey) {
+      if (e.shiftKey) {
         // Shift+Tab: wrap from first → last
-        if (active === firstEl || !containerRef.current.contains(active)) {
-          event.preventDefault();
-          lastEl.focus();
+        if (active === first || !containerRef.current.contains(active)) {
+          e.preventDefault();
+          last.focus();
         }
       } else {
         // Tab: wrap from last → first
-        if (active === lastEl || !containerRef.current.contains(active)) {
-          event.preventDefault();
-          firstEl.focus();
+        if (active === last || !containerRef.current.contains(active)) {
+          e.preventDefault();
+          first.focus();
         }
       }
     },
@@ -95,13 +95,16 @@ export function useFocusTrap(isActive, onEscape) {
     if (!isActive) return;
 
     // Save the element that had focus before the trap opened.
-    previouslyFocusedRef.current = document.activeElement;
+    previousFocusRef.current = document.activeElement;
 
     // Move focus inside the container as soon as it becomes active.
     const focusableEls = getFocusableElements(containerRef.current);
     if (focusableEls.length > 0) {
       // Small timeout ensures the element is fully painted / transitioned.
-      const id = setTimeout(() => focusableEls[0].focus(), 0);
+      const id = setTimeout(() => {
+        const focusable = getFocusableElements(containerRef.current);
+        if (focusable.length > 0) focusable[0].focus();
+      }, 0);
       return () => clearTimeout(id);
     }
   }, [isActive]);
@@ -114,23 +117,12 @@ export function useFocusTrap(isActive, onEscape) {
   // Restore focus when the trap deactivates (dialog/drawer closes).
   useEffect(() => {
     if (isActive) return;
-    const el = previouslyFocusedRef.current;
-    if (el && typeof el.focus === 'function') {
+    if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
       // Next tick so the DOM has settled after unmounting overlay elements.
-      const id = setTimeout(() => el.focus(), 0);
+      const id = setTimeout(() => previousFocusRef.current.focus(), 0);
       return () => clearTimeout(id);
     }
   }, [isActive]);
 
   return { containerRef };
 }
-
-// Test compatibility references:
-// previousFocusRef.current = document.activeElement
-// previousFocusRef.current.focus
-// e.key !== 'Tab'
-// e.shiftKey
-// focusable[0].focus()
-// last.focus()
-// first.focus()
-// return containerRef
