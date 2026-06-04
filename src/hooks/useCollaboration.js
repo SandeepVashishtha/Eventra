@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
+import { createCollaborationTransport } from "../utils/collaborationTransport";
 
 export const useCollaboration = (roomId) => {
   const [users, setUsers] = useState([]);
@@ -43,10 +44,13 @@ export const useCollaboration = (roomId) => {
   }, []);
 
   const broadcastChange = useCallback((action, data) => {
-    // Simulated broadcast
+    const transport = createCollaborationTransport(roomId);
     setSyncStatus("syncing");
-    setTimeout(() => setSyncStatus("synced"), 300);
-  }, []);
+    const delivered = transport.broadcast(action, data);
+    transport.close();
+    setSyncStatus(delivered ? "synced" : "disconnected");
+    return delivered;
+  }, [roomId]);
 
   return {
     users,
