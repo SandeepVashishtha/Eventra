@@ -17,7 +17,8 @@ const issues = [];
 
 for (const f of files) {
   const code = fs.readFileSync(f, 'utf8');
-  const rel = f.replace(process.cwd() + path.sep, '');
+  let rel = path.relative(process.cwd(), f);
+  rel = rel.split(path.sep).join('/');
   
   // Check for duplicate render() in class components
   const renderMatches = [...code.matchAll(/^\s*render\s*\(\s*\)\s*\{/gm)];
