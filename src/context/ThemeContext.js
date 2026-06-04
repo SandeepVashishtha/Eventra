@@ -166,7 +166,7 @@ export const ThemeProvider = ({ children }) => {
       if (!styleEl) {
         styleEl = document.createElement("style");
         styleEl.id = styleId;
-        styleEl.innerHTML = `
+        styleEl.textContent = `
           *, *::before, *::after {
             animation-duration: 0.01ms !important;
             animation-iteration-count: 1 !important;
