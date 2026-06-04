@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import Navbar from "./components/navbar/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
+import UpdateAvailableBanner from "./components/common/UpdateAvailableBanner";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -269,6 +270,7 @@ function App() {
                   </ErrorBoundary>
                 )}
               </div>
+              <UpdateAvailableBanner />
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>
