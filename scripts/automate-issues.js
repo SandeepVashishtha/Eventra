@@ -7,19 +7,83 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { spawn } = require('child_process');
 
 // Define the absolute root of the repository
 const REPO_ROOT = path.resolve(__dirname, '..');
 
-// Helper to run shell commands synchronously
-function runCmd(cmd) {
+/**
+ * Executes a shell command asynchronously with a timeout and interactive terminal mapping.
+ */
+function runCmdAsync(cmd, timeoutMs = 15000) {
+  return new Promise((resolve, reject) => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    const child = spawn(cmd, {
+      shell: true,
+      cwd: REPO_ROOT,
+      stdio: 'inherit', 
+      signal
+    });
+
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new Error(`Command timed out after ${timeoutMs / 1000}s: "${cmd}"`));
+    }, timeoutMs);
+
+    child.on('close', (code) => {
+      clearTimeout(timeoutId);
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`Command exited with code ${code}`));
+      }
+    });
+
+    child.on('error', (err) => {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') return;
+      reject(err);
+    });
+  });
+}
+
+/**
+ * Executes quiet verification background processes where output shouldn't stream to user terminal.
+ */
+function runQuietCmdAsync(cmd) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, { shell: true, cwd: REPO_ROOT, stdio: 'ignore' });
+    child.on('close', (code) => code === 0 ? resolve() : reject(new Error(`Exit code ${code}`)));
+    child.on('error', (err) => reject(err));
+  });
+}
+
+/**
+ * Defensive helper to clear local branches safely without destroying custom progress asynchronously
+ */
+async function checkAndSafelyDeleteBranchAsync(branchName) {
   try {
-    return execSync(cmd, { cwd: REPO_ROOT, encoding: 'utf8', stdio: 'pipe' });
+    // Check if the branch exists locally before doing anything
+    await runQuietCmdAsync(`git show-ref --verify --quiet refs/heads/${branchName}`);
   } catch (error) {
-    console.error(`❌ Failed executing: ${cmd}`);
-    console.error(error.stderr || error.message);
-    throw error;
+    // Branch does not exist locally; completely safe to skip deletion phase
+    return true;
+  }
+
+  try {
+    console.log(`⚠️  Existing local branch found for '${branchName}'. Attempting safe removal...`);
+    // Lowercase -d checks if the branch has been fully merged into upstream/HEAD
+    await runQuietCmdAsync(`git branch -d ${branchName}`);
+    console.log(`✅ Safely removed existing clean branch: ${branchName}`);
+    return true;
+  } catch (error) {
+    // Git blocked the delete execution because the branch has unique/unmerged commits
+    console.warn(`\n🛑 [SAFETY WARNING] Local branch '${branchName}' has unmerged custom variations or experiments!`);
+    console.warn(`👉 Action: Skipping loop execution for this item to protect your experimental data.`);
+    console.warn(`👉 Fix: If you want to force rewrite, manually clear it out via: git branch -D ${branchName}\n`);
+    return false;
   }
 }
 
@@ -187,103 +251,88 @@ const issues = [
   }
 ];
 
-// Run automation in sequence
-console.log('🤖 Starting Issue Automation Engine...');
-console.log(`Repository Root: ${REPO_ROOT}\n`);
+// Wrap the execution block in an async function context
+async function startAutomationEngine() {
+  console.log('🤖 Starting Asynchronous Issue Automation Engine...');
+  console.log(`Repository Root: ${REPO_ROOT}\n`);
 
-let successCount = 0;
-const results = [];
+  let successCount = 0;
+  const results = [];
 
-for (const issue of issues) {
-  const fullFilePath = path.join(REPO_ROOT, issue.filePath);
-  console.log(`\n==================================================`);
-  console.log(`📌 Processing Issue #${issue.id}: ${issue.branchName}`);
-  console.log(`📄 File: ${issue.filePath}`);
+  for (const issue of issues) {
+    const fullFilePath = path.join(REPO_ROOT, issue.filePath);
+    console.log(`\n==================================================`);
+    console.log(`📌 Processing Issue #${issue.id}: ${issue.branchName}`);
+    console.log(`📄 File: ${issue.filePath}`);
 
-  try {
-    // 1. Check if the file exists
-    if (!fs.existsSync(fullFilePath)) {
-      throw new Error(`File does not exist: ${issue.filePath}`);
-    }
-
-    // 2. Read file and preserve original line ending style
-    const rawContent = fs.readFileSync(fullFilePath, 'utf8');
-
-    const usesCRLF = rawContent.includes('\r\n');
-
-    const normalizedContent = rawContent.replace(/\r\n/g, '\n');
-    const normalizedSearch = issue.searchContent.replace(/\r\n/g, '\n');
-    const normalizedReplacement = issue.replacementContent.replace(/\r\n/g, '\n');
-
-    // 3. Verify exact matching of the search string
-    if (!normalizedContent.includes(normalizedSearch)) {
-      throw new Error(`Target search content not found in file! Check syntax or line endings.`);
-    }
-
-    // 4. State Isolation: Return safely to master branch and clear uncommitted artifacts
     try {
-      console.log('🔄 Safely resetting environment state...');
-      // Force switch to master, discarding uncommitted modifications to tracked files
-      runCmd('git checkout -f master'); 
-      // Clean up any remaining untracked artifacts or half-baked file states
-      runCmd('git reset --hard HEAD');   
-    } catch (stateError) {
-      throw new Error(`State reset failed. Cannot safely return to master branch: ${stateError.message}`);
+      // 1. Clean out existing tracking branches using async process control safely
+      const isSafeToProceed = await checkAndSafelyDeleteBranchAsync(issue.branchName);
+      if (!isSafeToProceed) {
+        throw new Error(`Skipped due to unmerged custom modifications tracking on existing local branch.`);
+      }
+
+      // 2. Isolate master branch state cleanly 
+      console.log('🔄 Safely resetting environment state to master...');
+      await runCmdAsync('git checkout -f master');
+      await runCmdAsync('git reset --hard HEAD');
+
+      // 3. FIX: Mount file explicitly from storage disk so 'content' is defined
+      if (!fs.existsSync(fullFilePath)) {
+        throw new Error(`Target file path does not exist on disk: ${issue.filePath}`);
+      }
+      const content = fs.readFileSync(fullFilePath, 'utf8');
+
+      // 4. Verify match signatures safely
+      const normalizedContent = content.replace(/\r\n/g, '\n');
+      const normalizedSearch = issue.searchContent.replace(/\r\n/g, '\n');
+
+      if (!normalizedContent.includes(normalizedSearch)) {
+        throw new Error(`Target search content not found in file! Check syntax or line endings.`);
+      }
+
+      // 5. Create branch cleanly
+      await runCmdAsync(`git checkout -b ${issue.branchName}`);
+      console.log(`✅ Checked out isolated branch: ${issue.branchName}`);
+
+      // 6. Perform string replacement
+      let newContent = content.replace(issue.searchContent, issue.replacementContent);
+      if (newContent === content) {
+        newContent = normalizedContent.replace(normalizedSearch, issue.replacementContent.replace(/\r\n/g, '\n'));
+      }
+
+      fs.writeFileSync(fullFilePath, newContent, 'utf8');
+      console.log(`✅ Code changes successfully mounted to file.`);
+
+      // 7. Stage and commit changes (streams outputs natively, respects GPG passphrases)
+      await runCmdAsync(`git add "${issue.filePath}"`);
+      await runCmdAsync(`git commit -m "${issue.commitMessage}"`);
+      console.log(`✅ Committed successfully: "${issue.commitMessage}"`);
+
+      successCount++;
+      results.push({ id: issue.id, branch: issue.branchName, status: 'Success' });
+    } catch (error) {
+      console.error(`❌ Failed on Issue #${issue.id}: ${error.message}`);
+      results.push({ id: issue.id, branch: issue.branchName, status: `Failed: ${error.message}` });
     }
-
-    // 5. Delete branch if it already exists to avoid branch namespace conflicts
-    try {
-      runCmd(`git branch -D ${issue.branchName}`);
-    } catch (e) {
-      // Ignore if branch doesn't exist
-    }
-
-    // 5b. Create and checkout the dedicated branch for this issue cleanly off fresh master
-    console.log(`🌿 Creating and switching to branch: ${issue.branchName}`);
-    runCmd(`git checkout -b ${issue.branchName}`);
-
-    // 6. Perform replacement on normalized strings
-    let newContent = normalizedContent.replace(
-      normalizedSearch,
-      normalizedReplacement
-    );
-    
-    // Restore original line ending style before writing
-    if (usesCRLF) {
-      newContent = newContent.replace(/\n/g, '\r\n');
-    }
-    
-    // Write the successfully modified content back to the file system
-    fs.writeFileSync(fullFilePath, newContent, 'utf8');
-    console.log(`✅ Code change successfully applied to file.`);
-    
-    // 7. Stage and Commit with safety nets
-    runCmd(`git add "${issue.filePath}"`);
-    
-    // Using --allow-empty protects execution if line transitions mask modifications
-    runCmd(`git commit --allow-empty -m "${issue.commitMessage}"`);
-    console.log(`✅ Committed successfully to branch ${issue.branchName}.`);
-
-    successCount++;
-    results.push({ id: issue.id, branch: issue.branchName, status: 'Success' });
-  } catch (error) {
-    console.error(`❌ Failed on Issue #${issue.id}: ${error.message}`);
-    results.push({ id: issue.id, branch: issue.branchName, status: `Failed: ${error.message}` });
   }
+
+  // Final Cleanup phase
+  console.log(`\n==================================================`);
+  console.log('🤖 Returning safely back to master branch...');
+  try {
+    await runCmdAsync('git checkout master');
+    console.log('✅ Back on master.');
+  } catch (err) {
+    console.error('❌ Failed to return to master:', err.message);
+  }
+
+  // Print execution metric dashboard
+  console.log(`\n==================================================`);
+  console.log(`📊 AUTOMATION SUMMARY: ${successCount} / ${issues.length} SUCCESSFUL`);
+  console.table(results);
+  console.log(`==================================================`);
 }
 
-// Checkout back to master at the end
-console.log(`\n==================================================`);
-console.log('🤖 Returning to master branch...');
-try {
-  runCmd('git checkout master');
-  console.log('✅ Back on master.');
-} catch (err) {
-  console.error('❌ Failed to return to master:', err.message);
-}
-
-// Print results summary
-console.log(`\n==================================================`);
-console.log(`📊 AUTOMATION SUMMARY: ${successCount} / ${issues.length} SUCCESSFUL`);
-console.table(results);
-console.log(`==================================================`);
+// Kickstart the execution engine
+startAutomationEngine();

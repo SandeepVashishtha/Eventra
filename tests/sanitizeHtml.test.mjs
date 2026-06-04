@@ -21,8 +21,9 @@ try {
 
   // Test Case 3: Whitelisted tags and attributes
   const goodHtml = '<p class="text-large"><a href="https://example.com" target="_blank">Link</a></p>';
+  const expectedHtml = '<p class="text-large"><a href="https://example.com" target="_blank" rel="noopener noreferrer">Link</a></p>';
   const outputHtml = sanitizeHtml(goodHtml);
-  assert.equal(outputHtml, goodHtml, "Should retain whitelisted tags (p, a) and attributes (class, href, target)");
+  assert.equal(outputHtml, expectedHtml, "Should retain whitelisted tags (p, a) and attributes (class, href, target)");
 
   // Test Case 4: Strip illegal attributes
   const badAttrHtml = '<div data-secret="123" onclick="doMalicious()">Click Me</div>';

@@ -9,6 +9,7 @@ import {
 import {
   parseTimeToMinutes,
 } from "../utils/eventCreationUtils";
+import { sanitizeHtml } from "../utils/sanitizeHtml";
 import { logger } from "../utils/logger";
 import { useAuth } from "../context/AuthContext";
 
@@ -51,12 +52,16 @@ export const useEventForm = () => {
     error: submitError, 
     success: submitSuccess 
   } = useFormSubmit(async (eventData) => {
+    const sanitized = {
+      ...eventData,
+      description: sanitizeHtml(eventData.description || ""),
+    };
     if (!API_ENDPOINTS.EVENTS.CREATE) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return { id: "mock-event-id", success: true };
     }
 
-    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, sanitized);
     const result = response.data;
     
     if (!(response.status === 200 && result?.success)) {
@@ -84,7 +89,7 @@ export const useEventForm = () => {
     
     const timer = setTimeout(checkForDraft, 300);
     return () => clearTimeout(timer);
-  }, []);
+  }, [scopedDraftKey]);
 
   // 💾 Debounced Draft Saving
   useEffect(() => {
@@ -110,7 +115,7 @@ export const useEventForm = () => {
         clearTimeout(saveDraftTimeoutRef.current);
       }
     };
-  }, [formData, isDraftLoaded]);
+  }, [formData, isDraftLoaded, scopedDraftKey]);
 
   // 🔍 Validation Logic
   const validateForm = useCallback(() => {
@@ -151,8 +156,13 @@ export const useEventForm = () => {
     if (!data.isVirtual && !data.location?.name?.trim()) {
       newErrors.location = "Location name is required for in-person events";
     }
-    if (data.isVirtual && !data.virtualLink?.trim()) {
-      newErrors.virtualLink = "Virtual link is required for online events";
+    if (data.isVirtual) {
+      const link = data.virtualLink?.trim();
+      if (!link) {
+        newErrors.virtualLink = "Virtual link is required for online events";
+      } else if (!/^https:\/\//i.test(link)) {
+        newErrors.virtualLink = "Virtual link must use HTTPS protocol";
+      }
     }
 
     if (data.capacity) {
@@ -184,7 +194,7 @@ export const useEventForm = () => {
     setFormData(initialFormData);
     setErrors({});
     localStorage.removeItem(scopedDraftKey);
-  }, []);
+  }, [scopedDraftKey]);
 
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
@@ -297,12 +307,12 @@ export const useEventForm = () => {
     } finally {
       setShowRestoreModal(false);
     }
-  }, []);
+  }, [scopedDraftKey]);
 
   const handleDiscardDraft = useCallback(() => {
     localStorage.removeItem(scopedDraftKey);
     setShowRestoreModal(false);
-  }, []);
+  }, [scopedDraftKey]);
 
   const hasUnsavedChanges = useMemo(() => {
     return Object.entries(formData).some(([key, value]) => {
