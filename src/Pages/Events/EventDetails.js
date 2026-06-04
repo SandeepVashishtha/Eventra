@@ -1,4 +1,5 @@
 ﻿import "./EventDetails.print.css";
+import CountdownTimer from "../../components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
@@ -463,9 +464,17 @@ const EventDetails = () => {
                   <Calendar className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
-                    <p className="font-semibold">{new Date(event.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
+                    <p className="font-semibold">
+                      {new Date(event.date).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <Clock className="h-5 w-5 text-indigo-600" />
                   <div>
@@ -473,6 +482,7 @@ const EventDetails = () => {
                     <p className="font-semibold">{event.time}</p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <MapPin className="h-5 w-5 text-indigo-600" />
                   <div>
@@ -480,6 +490,7 @@ const EventDetails = () => {
                     <p className="font-semibold">{event.location}</p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <Tag className="h-5 w-5 text-indigo-600" />
                   <div>
@@ -487,15 +498,14 @@ const EventDetails = () => {
                     <p className="font-semibold capitalize">{event.status}</p>
                   </div>
                 </div>
-              </div>
 
-              {event.status === "past" && <EventMaterials materials={event.materials || []} />}
-            </div>
-
-            {/* Right Column */}
-            <aside className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
-              <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
-                <ReminderControls event={event} canSetReminder={canSetReminder} />
+                {/* Event Countdown */}
+                <div className="sm:col-span-2">
+                  <CountdownTimer
+                    date={event.date}
+                    time={event.time}
+                  />
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -546,7 +556,7 @@ const EventDetails = () => {
                   dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
                 />
               </div>
-            </aside>
+            </div>
           </div>
 
           <div className="mt-12">
