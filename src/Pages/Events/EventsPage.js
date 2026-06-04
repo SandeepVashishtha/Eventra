@@ -18,6 +18,7 @@ import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
 import {
+import { safeJsonParse } from "../../utils/safeJsonParse";
   decodeAdvancedFilters,
   encodeAdvancedFilters,
   getDefaultFilters,
@@ -133,7 +134,7 @@ const EventsPage = () => {
     let savedFilters = {};
 
     try {
-      savedFilters = JSON.parse(
+      savedFilters = safeJsonParse(
         window.sessionStorage.getItem(FILTER_STORAGE_KEY) || "{}"
       );
     } catch {

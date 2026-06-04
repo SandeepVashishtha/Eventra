@@ -23,6 +23,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { syncSecureStorage } from "../../utils/secureStorage";
 import "./UserProfile.css";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // 🔥 FIX 1: Safe URL Sanitizer to prevent Stored XSS via malicious URI schemes
 const sanitizeUrl = (url) => {
@@ -72,7 +73,7 @@ export default function UserProfile() {
           new Promise((resolve) => setTimeout(resolve, 600))
         ]);
         if (saved && active) {
-          merged = { ...user, ...JSON.parse(saved) };
+          merged = { ...user, ...safeJsonParse(saved, {}) };
         }
       } catch (error) {
         console.error('Error parsing user profile from localStorage:', error);

@@ -4,6 +4,7 @@ import {
   Send, User, MessageSquare, ArrowLeft
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   const [showChat, setShowChat] = useState(false);
@@ -16,7 +17,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   const captureLead = (action) => {
     try {
       const existingLeadsStr = localStorage.getItem("eventra_sponsor_leads");
-      const existingLeads = existingLeadsStr ? JSON.parse(existingLeadsStr) : [];
+      const existingLeads = existingLeadsStr ? safeJsonParse(existingLeadsStr, []) : [];
       
       const newLead = {
         name: "Test Attendee",
