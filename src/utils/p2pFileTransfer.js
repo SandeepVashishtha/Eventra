@@ -20,6 +20,9 @@ let dbInstance = null;
 // Initialize IndexedDB
 const getDB = () => {
   if (dbInstance) return Promise.resolve(dbInstance);
+  if (typeof indexedDB === "undefined") {
+    return Promise.reject(new Error("IndexedDB is not available in this environment"));
+  }
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = (e) => {
