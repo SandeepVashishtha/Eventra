@@ -38,6 +38,11 @@ const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
 const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+const Login = lazy(() => import("./Pages/auth/Login"));
+const Signup = lazy(() => import("./Pages/auth/Signup"));
+const Dashboard = lazy(() => import("./Pages/dashboard/Dashboard"));
+const AdminPanel = lazy(() => import("./Pages/Admin/AdminPanel"));
+const Profile = lazy(() => import("./Pages/user/Profile"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
@@ -219,14 +224,52 @@ function App() {
                             </Suspense>
                           }
                         />
-                        {/* TODO: Implement missing auth/dashboard routes
-                          Pages do not exist:
-                          - ./Pages/auth/Login
-                          - ./Pages/auth/Signup
-                          - ./Pages/dashboard/Dashboard
-                          - ./Pages/Admin/AdminPanel
-                          - ./Pages/user/Profile
-                        */}
+                        <Route
+                          path="/login"
+                          element={
+                            <Suspense fallback={pageLoader}>
+                              <Login />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="/signup"
+                          element={
+                            <Suspense fallback={pageLoader}>
+                              <Signup />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="/dashboard"
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={pageLoader}>
+                                <Dashboard />
+                              </Suspense>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin"
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={pageLoader}>
+                                <AdminPanel />
+                              </Suspense>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/profile"
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={pageLoader}>
+                                <Profile />
+                              </Suspense>
+                            </ProtectedRoute>
+                          }
+                        />
                         <Route
                           path="/event-recommendation"
                           element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
