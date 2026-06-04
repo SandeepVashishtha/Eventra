@@ -330,6 +330,7 @@ export const API_ENDPOINTS = {
     EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
     USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
     PHONE: buildApiUrl("/api/validate/phone"),
+    CONTACT: buildApiUrl("/api/contact"),
   },
 };
 
