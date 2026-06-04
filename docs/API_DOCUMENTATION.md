@@ -1319,6 +1319,28 @@ Content-Type: application/json
 - **403 Forbidden**: Authenticated user does not have the required role (`ORGANIZER`, `ADMIN`, or `SUPER_ADMIN`).
 - **404 Not Found**: Hackathon id does not exist.
 
+## Delete Hackathon
+
+| Method | Endpoint |
+|--------|----------|
+| DELETE | `/api/hackathons/{id}` |
+
+Deletes an existing hackathon by id. Restricted to authorized roles: `ADMIN`, `SUPER_ADMIN`.
+
+### Authentication
+Protected endpoint. Requires Bearer JWT authentication.
+
+### Path Parameter
+- `id`: Long, hackathon id
+
+### Successful Response (204)
+No response body.
+
+### Error Responses
+- **401 Unauthorized**: JWT is missing or invalid.
+- **403 Forbidden**: Authenticated user does not have the required role (`ADMIN` or `SUPER_ADMIN`).
+- **404 Not Found**: Hackathon id does not exist.
+
 *Note: The backend implementation is handled in the Eventra-Backend repository. This docs PR only syncs API documentation with the backend behavior.*
 
 ---
