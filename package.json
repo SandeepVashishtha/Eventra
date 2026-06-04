@@ -46,7 +46,7 @@
     "react-toastify": "^11.1.0",
     "react-window": "^2.2.7",
     "recharts": "^3.8.1",
-    "vite": "8.0.14",
+    "vite": "8.0.16",
     "zustand": "^5.0.14"
   },
   "scripts": {
@@ -109,7 +109,7 @@
     "eslint-plugin-testing-library": "^7.13.5",
     "globals": "17.6.0",
     "jsdom": "^29.1.1",
-    "lint-staged": "^15.5.1",
+    "lint-staged": "^17.0.7",
     "postcss": "8.5.15",
     "prettier": "^3.2.5",
     "storybook": "^10.4.1",

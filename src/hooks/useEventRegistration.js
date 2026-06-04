@@ -42,11 +42,10 @@ import {
   saveCachedEventDetail,
 } from "../../utils/offlineEventCache";
 import { pushToQueue } from "../../utils/offlineQueue";
-import { logger } from "../../utils/logger";
 import { logError } from "../../utils/errorLogger";
 import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
 
-const MAX_NOTES_CHARS = 500;
+export const MAX_NOTES_CHARS = 500;
 
 // Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
@@ -305,7 +304,6 @@ const useEventRegistration = (eventIdParam) => {
   const { user, token, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
-  const isHackathonPath = location.pathname.startsWith("/register");
   const registrationPath = location.pathname;
 
   const [event, setEvent] = useState(null);
@@ -332,7 +330,7 @@ const useEventRegistration = (eventIdParam) => {
     errors,
     touched,
     isFormValid,
-    handleChange,
+    handleChange: handleFormChange,
     handleBlur,
     validateAll,
     setValues,
@@ -349,6 +347,21 @@ const useEventRegistration = (eventIdParam) => {
     validationRules,
     { debounceMs: 300 }
   );
+
+  const handleRegistrationChange = useCallback((event) => {
+    if (event.target.name !== "additionalInfo") {
+      handleFormChange(event);
+      return;
+    }
+
+    handleFormChange({
+      ...event,
+      target: {
+        ...event.target,
+        value: event.target.value.slice(0, MAX_NOTES_CHARS),
+      },
+    });
+  }, [handleFormChange]);
 
   // Load event data from backend API
   useEffect(() => {
@@ -517,6 +530,7 @@ const useEventRegistration = (eventIdParam) => {
         endpoint,
         {
           ...formData,
+          additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
           priority: formData.priority,
           eventId: parseInt(eventId),
           userId: user.id,
@@ -536,6 +550,7 @@ const useEventRegistration = (eventIdParam) => {
       if (isOfflineFailure) {
         const payload = {
           ...formData,
+          additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
           eventId: parseInt(eventId),
           userId: user.id,
         };
@@ -649,7 +664,7 @@ const useEventRegistration = (eventIdParam) => {
     errors,
     touched,
     isFormValid,
-    handleChange,
+    handleChange: handleRegistrationChange,
     handleBlur,
     validateAll,
     setValues,

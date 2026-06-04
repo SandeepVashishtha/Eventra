@@ -562,9 +562,21 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
       return { status: "dropped", item };
     }
 
+    let controller;
+    let timeoutId;
+
+    const clearPendingTimeout = () => {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
+    };
+
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      controller = new AbortController();
+      timeoutId = setTimeout(() => {
+        if (controller) controller.abort();
+      }, REQUEST_TIMEOUT_MS);
       const combinedSignal = signal
         ? combineAbortSignals(signal, controller.signal)
         : controller.signal;
@@ -576,7 +588,7 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
         signal: combinedSignal,
       });
 
-      clearTimeout(timeoutId);
+      clearPendingTimeout();
 
       if (response.ok) return { status: "success", item };
 
@@ -586,23 +598,24 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
 
         if (typeof onConflict === "function") {
           const resolution = await onConflict(item, serverState);
-          if (resolution === "retry") continue;
-          if (resolution === "discard") return { status: "dropped", item };
-          return { status: "success", item };
+          if (resolution === "retry") { clearPendingTimeout(); continue; }
+          if (resolution === "discard") { clearPendingTimeout(); return { status: "dropped", item }; }
+          clearPendingTimeout(); return { status: "success", item };
         }
-        return { status: "conflict", item, serverState };
+        clearPendingTimeout(); return { status: "conflict", item, serverState };
       }
 
       if (response.status >= 400 && response.status < 500) {
         logger.warn(
           `[OfflineQueue] Server rejected item ${item.id} with ${response.status} — dropping.`
         );
-        return { status: "dropped", item };
+        clearPendingTimeout(); return { status: "dropped", item };
       }
 
       // 5xx — retry with backoff
-      continue;
+      clearPendingTimeout(); continue;
     } catch (error) {
+      clearPendingTimeout();
       if (error.name === "AbortError") return { status: "error", item, error };
       logger.error(`[OfflineQueue] Network error processing item ${item.id}:`, error);
       // Retry on network errors

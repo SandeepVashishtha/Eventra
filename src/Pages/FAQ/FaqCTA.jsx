@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { HelpCircle, LifeBuoy, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 // ✅ OPTIMIZATION: Module-level definition prevents re-creation on every render
 const MotionLink = motion(Link);
@@ -9,32 +10,36 @@ const MotionLink = motion(Link);
 const CARD_BASE_CLASSES = "group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-4 shadow-md hover:shadow-lg transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0C0C1F]";
 const ICON_CLASSES = "w-10 h-10";
 
-const cards = [
-  {
-    title: "Browse FAQs",
-    description: "Quickly find answers to common questions about our platform.",
-    to: "/faq",
-    icon: <LifeBuoy className={`${ICON_CLASSES} text-purple-400`} aria-hidden="true" />,
-    hoverClass: "hover:bg-black/10",
-    onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
-  },
-  {
-    title: "Contact Support",
-    description: "Reach out to our team for personalized assistance.",
-    to: "/contact",
-    icon: <MessageCircle className={`${ICON_CLASSES} text-teal-400`} aria-hidden="true" />,
-    hoverClass: "hover:bg-gradient-to-br from-teal-400/20 via-cyan-400/20 to-blue-500/10",
-  },
-  {
-    title: "Give Feedback",
-    description: "Help us improve by sharing your thoughts and suggestions.",
-    to: "/feedback",
-    icon: <HelpCircle className={`${ICON_CLASSES} text-pink-400`} aria-hidden="true" />,
-    hoverClass: "hover:bg-black/10",
-  },
-];
+
 
 export default function FAQCTA() {
+  const { t } = useTranslation();
+
+  const cards = [
+    {
+      title: t("faq.ctaBrowseTitle"),
+      description: t("faq.ctaBrowseDesc"),
+      to: "/faq",
+      icon: <LifeBuoy className={`${ICON_CLASSES} text-purple-400`} aria-hidden="true" />,
+      hoverClass: "hover:bg-black/10",
+      onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+    },
+    {
+      title: t("faq.ctaContactTitle"),
+      description: t("faq.ctaContactDesc"),
+      to: "/contact",
+      icon: <MessageCircle className={`${ICON_CLASSES} text-teal-400`} aria-hidden="true" />,
+      hoverClass: "hover:bg-gradient-to-br from-teal-400/20 via-cyan-400/20 to-blue-500/10",
+    },
+    {
+      title: t("faq.ctaFeedbackTitle"),
+      description: t("faq.ctaFeedbackDesc"),
+      to: "/feedback",
+      icon: <HelpCircle className={`${ICON_CLASSES} text-pink-400`} aria-hidden="true" />,
+      hoverClass: "hover:bg-black/10",
+    },
+  ];
+
   // ✅ ACCESSIBILITY: Respect user's OS motion preferences
   const shouldReduceMotion = useReducedMotion();
 
@@ -53,7 +58,7 @@ export default function FAQCTA() {
         >
           <HelpCircle className="w-5 h-5 text-white/90" aria-hidden="true" />
           <span className="text-white/90 text-sm tracking-wider font-medium">
-            Got Questions? We’ve Got Answers!
+            {t("faq.ctaBadge")}
           </span>
         </motion.div>
 
@@ -65,7 +70,7 @@ export default function FAQCTA() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          Everything You Need to Know
+          {t("faq.ctaHeading")}
         </motion.h2>
 
         {/* Glass cards */}
