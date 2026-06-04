@@ -14,17 +14,29 @@
  */
 export const createAsyncValidator = (asyncValidatorFn, debounceMs = 300) => {
   let timeoutId;
+  let abortController;
 
   return async function asyncValidator(value, ...args) {
+    if (abortController) {
+      abortController.abort();
+    }
+    abortController = new AbortController();
+    const signal = abortController.signal;
+
     return new Promise((resolve) => {
       clearTimeout(timeoutId);
 
       timeoutId = setTimeout(async () => {
         try {
-          const result = await asyncValidatorFn(value, ...args);
-          resolve(result);
+          const result = await asyncValidatorFn(value, { signal }, ...args);
+          if (!signal.aborted) {
+            resolve(result);
+          }
         } catch (error) {
-          resolve(error.message || "Validation error");
+          if (!signal.aborted) {
+            if (error.name === "AbortError") return;
+            resolve(error.message || "Validation error");
+          }
         }
       }, debounceMs);
     });
@@ -68,7 +80,7 @@ export const withRetry = (validatorFn, maxRetries = 3, initialDelay = 1000) => {
  * @param {string} username - Username to validate
  * @returns {Promise<true|string>} Returns true if valid, error message if invalid
  */
-export const validateUsernameAvailable = async (username) => {
+export const validateUsernameAvailable = async (username, { signal } = {}) => {
   if (!username || username.length < 3) return true;
 
   try {
@@ -82,6 +94,7 @@ export const validateUsernameAvailable = async (username) => {
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },
+        signal,
       },
     );
 
@@ -104,7 +117,7 @@ export const validateUsernameAvailable = async (username) => {
  * @param {string} email - Email to validate
  * @returns {Promise<true|string>} Returns true if valid, error message if invalid
  */
-export const validateEmailAvailable = async (email) => {
+export const validateEmailAvailable = async (email, { signal } = {}) => {
   if (!email) return true;
 
   try {
@@ -118,6 +131,7 @@ export const validateEmailAvailable = async (email) => {
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },
+        signal,
       },
     );
 
@@ -140,7 +154,7 @@ export const validateEmailAvailable = async (email) => {
  * @param {string} email - Email to validate
  * @returns {Promise<true|string>} Returns true if valid, error message if invalid
  */
-export const validateEmailDomainExists = async (email) => {
+export const validateEmailDomainExists = async (email, { signal } = {}) => {
   if (!email) return true;
 
   try {
@@ -152,6 +166,7 @@ export const validateEmailDomainExists = async (email) => {
     const response = await fetch("/api/validate/email-domain", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+        signal,
       body: JSON.stringify({ email }),
     });
 
@@ -174,7 +189,7 @@ export const validateEmailDomainExists = async (email) => {
  * @param {string} password - Password to validate
  * @returns {Promise<true|string>} Returns true if valid, error message if invalid
  */
-export const validatePasswordStrength = async (password) => {
+export const validatePasswordStrength = async (password, { signal } = {}) => {
   if (!password) return true;
 
   try {
@@ -206,7 +221,7 @@ export const validatePasswordStrength = async (password) => {
  * @param {string} phone - Phone number to validate
  * @returns {Promise<true|string>} Returns true if valid, error message if invalid
  */
-export const validatePhoneNumber = async (phone) => {
+export const validatePhoneNumber = async (phone, { signal } = {}) => {
   if (!phone) return true;
 
   try {
@@ -217,6 +232,7 @@ export const validatePhoneNumber = async (phone) => {
     const response = await fetch("/api/validate/phone", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+        signal,
       body: JSON.stringify({ phone }),
     });
 
@@ -239,7 +255,7 @@ export const validatePhoneNumber = async (phone) => {
  * @param {string} code - Invitation code to validate
  * @returns {Promise<true|string>} Returns true if valid, error message if invalid
  */
-export const validateInvitationCode = async (code) => {
+export const validateInvitationCode = async (code, { signal } = {}) => {
   if (!code) return true;
 
   try {
@@ -248,6 +264,7 @@ export const validateInvitationCode = async (code) => {
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },
+        signal,
       },
     );
 
@@ -271,13 +288,14 @@ export const validateInvitationCode = async (code) => {
  * @param {Object} context - Additional context (userId, amount, etc.)
  * @returns {Promise<true|string>} Returns true if valid, error message if invalid
  */
-export const validatePromoCode = async (code, context = {}) => {
+export const validatePromoCode = async (code, { signal } = {}, context = {}) => {
   if (!code) return true;
 
   try {
     const response = await fetch("/api/validate/promo-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+        signal,
       body: JSON.stringify({ code, ...context }),
     });
 
@@ -319,7 +337,7 @@ export const createCustomAsyncValidator = (endpoint, options = {}) => {
     errorMessage = "Validation failed",
   } = options;
 
-  return async function customValidator(value) {
+  return async function customValidator(value, { signal } = {}) {
     if (!value) return true;
 
     try {
@@ -327,6 +345,7 @@ export const createCustomAsyncValidator = (endpoint, options = {}) => {
       let init = {
         method,
         headers: { "Content-Type": "application/json" },
+        signal,
       };
 
       if (method === "GET") {
