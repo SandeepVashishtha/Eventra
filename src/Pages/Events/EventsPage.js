@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react";
-import { useSearchParams, useLocation } from "react-router-dom"; // ✅ useLocation added here
+import { useSearchParams, useLocation } from "react-router-dom";
+import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid"; 
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import FeedbackButton from "../../components/FeedbackButton";
@@ -13,30 +14,43 @@ import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
+import ErrorMessage from "../../components/common/ErrorMessage";
+import { EventTimeline } from "../../components/EventTimeline";
+import {
+  decodeAdvancedFilters,
+  encodeAdvancedFilters,
+  getDefaultFilters,
+  hasActiveFilters as hasActiveAdvancedFilters,
+  normalizeAdvancedFilters,
+  serializeAdvancedFilters,
+} from "../../utils/advancedFilterUtils";
+
+const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
 const renderCardSection = (
   isLoading,
+  loadError,
+  onRetry,
   paginatedEvents,
   viewMode,
   searchQuery,
   onClearSearch
 ) => {
   if (isLoading) {
+  return <ExploreEventsSkeleton />;
+}
+
+  if (loadError) {
     return (
-      <div>
-        <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-          Loading events...
-        </div>
-        <div
-          className="animate-pulse transition-all duration-300 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-          role="status"
-          aria-label="Loading events"
+      <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <ErrorMessage title="Failed to load events" message={loadError} />
+        <button
+          onClick={onRetry}
+          className="mt-2 px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
         >
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <EventCardSkeleton key={`skeleton-${i}`} />
-          ))}
-        </div>
+          Try again
+        </button>
       </div>
     );
   }
@@ -55,7 +69,9 @@ const renderCardSection = (
       </div>
     );
   }
-
+  if (viewMode === "grid" && paginatedEvents.length > 20) {
+    return <VirtualizedEventGrid events={paginatedEvents} />;
+  }
   return (
     <div
       className={`grid gap-6 ${
@@ -93,7 +109,10 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
+  const { isLoading } = listing;
   const cardSectionRef = useRef();
+  const hasHydratedFilters = useRef(false);
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
 
   // Local input value updates immediately on each keystroke so the input
   // feels responsive. The debounced value is passed to the listing hook so
@@ -107,24 +126,53 @@ const EventsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchQuery]);
 
-  // Initialize state from URL params
+  // Initialize state from URL params, falling back to persisted filters.
   useEffect(() => {
-    const page = parseInt(searchParams.get("page")) || 1;
-    const perPage = parseInt(searchParams.get("perPage")) || 6;
-    const filter = searchParams.get("filter") || "all";
-    const sort = searchParams.get("sort") || "Newest";
-    const view = searchParams.get("view") || "grid";
+    if (hasHydratedFilters.current) return;
 
-    if (routeSearchQuery) listing.setSearchQuery(routeSearchQuery);
-    if (filter !== "all") listing.setFilterType(filter);
-    if (sort !== "Newest") listing.setSortType(sort);
-    if (view !== "grid") listing.setViewMode(view);
-    if (perPage !== 6) listing.setEventsPerPage(perPage);
+    let savedFilters = {};
+
+    try {
+      savedFilters = JSON.parse(
+        window.sessionStorage.getItem(FILTER_STORAGE_KEY) || "{}"
+      );
+    } catch {
+      savedFilters = {};
+    }
+
+    const page = parseInt(searchParams.get("page"), 10) || 1;
+    const perPage =
+      parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 6;
+    const filter =
+      searchParams.get("filter") || savedFilters.filterType || "all";
+    const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
+    const view = searchParams.get("view") || savedFilters.viewMode || "grid";
+    const urlAdvancedFilters = searchParams.get("filters");
+    const advancedFilters = urlAdvancedFilters
+      ? decodeAdvancedFilters(urlAdvancedFilters)
+      : normalizeAdvancedFilters(
+          savedFilters.advancedFilters || getDefaultFilters()
+        );
+    const initialSearch = routeSearchQuery || savedFilters.searchQuery || "";
+
+    if (initialSearch) {
+      setLocalSearchInput(initialSearch);
+      listing.setSearchQuery(initialSearch);
+    }
+    listing.setFilterType(filter);
+    listing.setSortType(sort);
+    listing.setViewMode(view);
+    listing.setEventsPerPage(perPage);
+    listing.setAdvancedFilters(advancedFilters);
     if (page !== 1) listing.setSafePage(page);
-  }, [searchParams, routeSearchQuery]);
+    hasHydratedFilters.current = true;
+    setFiltersHydrated(true);
+  }, [searchParams, routeSearchQuery, listing]);
 
   // Sync search query when URL param changes (e.g. navigating from navbar search)
   useEffect(() => {
+    if (!filtersHydrated) return;
+
     const params = {};
     if (listing.currentPage > 1) params.page = listing.currentPage;
     if (listing.eventsPerPage !== 6) params.perPage = listing.eventsPerPage;
@@ -132,7 +180,26 @@ const EventsPage = () => {
     if (listing.filterType !== "all") params.filter = listing.filterType;
     if (listing.sortType !== "Newest") params.sort = listing.sortType;
     if (listing.viewMode !== "grid") params.view = listing.viewMode;
+    if (hasActiveAdvancedFilters(listing.advancedFilters)) {
+      params.filters = encodeAdvancedFilters(listing.advancedFilters);
+    }
     setSearchParams(params, { replace: true });
+
+    try {
+      window.sessionStorage.setItem(
+        FILTER_STORAGE_KEY,
+        JSON.stringify({
+          searchQuery: listing.searchQuery,
+          filterType: listing.filterType,
+          sortType: listing.sortType,
+          viewMode: listing.viewMode,
+          perPage: listing.eventsPerPage,
+          advancedFilters: serializeAdvancedFilters(listing.advancedFilters),
+        })
+      );
+    } catch {
+      // sessionStorage can be unavailable in private browsing or embedded views.
+    }
   }, [
     listing.currentPage,
     listing.eventsPerPage,
@@ -140,17 +207,27 @@ const EventsPage = () => {
     listing.filterType,
     listing.sortType,
     listing.viewMode,
+    listing.advancedFilters,
+    filtersHydrated,
     setSearchParams,
   ]);
 
-  // Keep local state in sync when route search changes.
+  // Keep local state in sync when an explicit route search changes.
   useEffect(() => {
+    if (!rawSearchParam) return;
+
     const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
     if (safeQuery !== listing.searchQuery) {
       setLocalSearchInput(safeQuery);
       listing.setSearchQuery(safeQuery);
     }
-  }, [routeSearchQuery, listing.searchQuery, listing.setSearchQuery]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    rawSearchParam,
+    routeSearchQuery,
+    listing.searchQuery,
+    listing.setSearchQuery,
+  ]);
 
   const handleSearch = (query = "") => {
     const safeQuery = prepareSafeSearchQuery(query);
@@ -161,7 +238,7 @@ const EventsPage = () => {
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
-    if (!listing.isLoading && routeSearchQuery) {
+    if (!isLoading && routeSearchQuery) {
       setTimeout(() => {
         cardSectionRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -169,7 +246,7 @@ const EventsPage = () => {
         });
       }, 100);
     }
-  }, [listing.isLoading, routeSearchQuery]);
+  }, [isLoading, routeSearchQuery]);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -178,14 +255,11 @@ const EventsPage = () => {
   const clearSearchAndFilters = () => {
     listing.setSearchQuery("");
     listing.setFilterType("all");
+    listing.setCategoryFilter("all");
     listing.setSortType("Newest");
+    listing.setAdvancedFilters(getDefaultFilters());
     setLocalSearchInput("");
   };
-
-  const hasActiveFilters =
-    listing.filterType !== "all" ||
-    listing.sortType !== "Newest" ||
-    listing.searchQuery !== "";
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
@@ -206,6 +280,8 @@ const EventsPage = () => {
           <EventFiltersToolbar
             filterType={listing.filterType}
             onFilterChange={listing.setFilterType}
+            categoryFilter={listing.categoryFilter}
+            onCategoryChange={listing.setCategoryFilter}
             sortType={listing.sortType}
             onSortChange={listing.setSortType}
             viewMode={listing.viewMode}
@@ -218,6 +294,7 @@ const EventsPage = () => {
             onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
             priceStats={listing.priceStats}
             dateRangeStats={listing.dateRangeStats}
+            onResetFilters={clearSearchAndFilters}
           />
         </div>
 
@@ -229,20 +306,26 @@ const EventsPage = () => {
           }}
           filterType={listing.filterType}
           setFilterType={listing.setFilterType}
+          categoryFilter={listing.categoryFilter}
+          setCategoryFilter={listing.setCategoryFilter}
           sortType={listing.sortType}
           setSortType={listing.setSortType}
           viewMode={listing.viewMode}
           setViewMode={listing.setViewMode}
+          advancedFilters={listing.advancedFilters}
+          onAdvancedFiltersChange={listing.setAdvancedFilters}
         />
 
-        <SectionErrorBoundary label="Events">
-          {renderCardSection(
-            listing.isLoading,
-            listing.paginatedEvents,
-            listing.viewMode,
-            listing.searchQuery,
-            clearSearchAndFilters
-          )}
+        <ErrorBoundary level="section" label="Events">
+     {renderCardSection(
+  isLoading,
+  listing.loadError,
+  listing.fetchEvents,
+  listing.paginatedEvents,
+  listing.viewMode,
+  listing.searchQuery,
+  clearSearchAndFilters
+)}
 
           {!listing.isLoading && listing.totalPages > 1 && (
             <div className="mt-8 flex justify-center">
@@ -253,7 +336,14 @@ const EventsPage = () => {
               />
             </div>
           )}
-        </SectionErrorBoundary>
+        </ErrorBoundary>
+
+        {/* Interactive Event Timeline Planner Section */}
+        <div className="mt-12 sm:mt-16">
+          <ErrorBoundary level="section" label="Event Timeline Planner">
+            <EventTimeline />
+          </ErrorBoundary>
+        </div>
       </div>
 
       <EventCTA />

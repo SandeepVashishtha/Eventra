@@ -21,7 +21,8 @@ import {
   getUserTimezone,
   parseEventToUTC,
   parseTimeString,
-} from './timezoneUtils.js';
+  normalizeDateString,
+} from "./timezoneUtils.js";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -37,7 +38,7 @@ import {
  */
 const getEffectiveDuration = (event, fallbackMinutes = 60) => {
   const d = event?.durationMinutes;
-  return typeof d === 'number' && d > 0 ? d : fallbackMinutes;
+  return typeof d === "number" && d > 0 ? d : fallbackMinutes;
 };
 
 /**
@@ -109,12 +110,7 @@ export const getEventTimeRange = (event, durationMinutes = 60) => {
  * @param {string} [timezone]       - IANA tz; defaults to browser tz
  * @returns {boolean}
  */
-export const doEventsOverlap = (
-  event1,
-  event2,
-  fallbackDuration = 60,
-  timezone
-) => {
+export const doEventsOverlap = (event1, event2, fallbackDuration = 60, timezone) => {
   const tz = timezone || getUserTimezone();
   const range1 = getEventUTCRange(event1, fallbackDuration, tz);
   const range2 = getEventUTCRange(event2, fallbackDuration, tz);
@@ -129,14 +125,9 @@ export const doEventsOverlap = (
   // Only reached when date/time fields are unparseable (e.g. undefined).
   // The legacy code compared raw date strings; we still do that but via
   // normalizeDateString for format-tolerance.
-  try {
-    const { normalizeDateString } = require('./timezoneUtils');
-    const d1 = normalizeDateString(event1?.date);
-    const d2 = normalizeDateString(event2?.date);
-    if (d1 && d2 && d1 !== d2) return false;
-  } catch {
-    if (event1?.date !== event2?.date) return false;
-  }
+  const d1 = normalizeDateString(event1?.date);
+  const d2 = normalizeDateString(event2?.date);
+  if (d1 && d2 && d1 !== d2) return false;
 
   const r1 = getEventTimeRange(event1, fallbackDuration);
   const r2 = getEventTimeRange(event2, fallbackDuration);
@@ -164,6 +155,7 @@ export const findConflictingEvents = (
 
   return registeredEvents
     .map((reg) => reg.event || reg)
+    .filter((event) => !newEvent.id || !event.id || event.id !== newEvent.id)
     .filter((event) => doEventsOverlap(newEvent, event, fallbackDuration, tz));
 };
 
@@ -182,12 +174,7 @@ export const checkRegistrationConflict = (
   fallbackDuration = 60,
   timezone
 ) => {
-  const conflicts = findConflictingEvents(
-    newEvent,
-    registeredEvents,
-    fallbackDuration,
-    timezone
-  );
+  const conflicts = findConflictingEvents(newEvent, registeredEvents, fallbackDuration, timezone);
   return { hasConflict: conflicts.length > 0, conflicts };
 };
 
@@ -215,12 +202,9 @@ export const suggestAlternativeEvents = (
   const tz = timezone || getUserTimezone();
 
   // Exclude the target event and already-registered events
+  const registeredIds = new Set(registeredEvents.map((reg) => reg.event?.id || reg.id));
   const availableEvents = allEvents.filter((event) => {
-    const isTargetEvent = event.id === targetEvent.id;
-    const isRegistered = registeredEvents.some(
-      (reg) => (reg.event?.id || reg.id) === event.id
-    );
-    return !isTargetEvent && !isRegistered;
+    return event.id !== targetEvent.id && !registeredIds.has(event.id);
   });
 
   // Keep only events that don't conflict with existing registrations
@@ -235,20 +219,21 @@ export const suggestAlternativeEvents = (
   });
 
   // Prioritise events of the same category / type / tags as the target
+  const targetTagSet = new Set(targetEvent.tags || []);
+
   const sameCategoryEvents = nonConflictingEvents.filter(
     (event) =>
       event.category === targetEvent.category ||
       event.type === targetEvent.type ||
-      event.tags?.some((tag) => targetEvent.tags?.includes(tag))
+      event.tags?.some((tag) => targetTagSet.has(tag))
   );
 
   if (sameCategoryEvents.length >= maxSuggestions) {
     return sameCategoryEvents.slice(0, maxSuggestions);
   }
 
-  const otherEvents = nonConflictingEvents.filter(
-    (event) => !sameCategoryEvents.includes(event)
-  );
+  const sameCategorySet = new Set(sameCategoryEvents);
+  const otherEvents = nonConflictingEvents.filter((event) => !sameCategorySet.has(event));
 
   return [...sameCategoryEvents, ...otherEvents].slice(0, maxSuggestions);
 };
@@ -266,12 +251,7 @@ export const suggestAlternativeEvents = (
  * @param {string} [timezone]    - IANA tz; defaults to browser tz
  * @returns {string}  e.g. "10:00 AM – 11:30 AM"
  */
-export const formatTimeRange = (
-  timeStr,
-  durationMinutes = 60,
-  dateStr,
-  timezone
-) => {
+export const formatTimeRange = (timeStr, durationMinutes = 60, dateStr, timezone) => {
   const tz = timezone || getUserTimezone();
 
   // Timezone-aware path: requires a date string
@@ -280,10 +260,10 @@ export const formatTimeRange = (
     if (startMs !== null) {
       const endMs = startMs + durationMinutes * 60 * 1000;
 
-      const fmt = new Intl.DateTimeFormat('en-US', {
+      const fmt = new Intl.DateTimeFormat("en-US", {
         timeZone: tz,
-        hour: 'numeric',
-        minute: '2-digit',
+        hour: "numeric",
+        minute: "2-digit",
         hour12: true,
       });
 
@@ -298,9 +278,9 @@ export const formatTimeRange = (
   const formatMinutes = (mins) => {
     const h = Math.floor(mins / 60) % 24;
     const m = mins % 60;
-    const period = h >= 12 ? 'PM' : 'AM';
+    const period = h >= 12 ? "PM" : "AM";
     const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
-    return `${displayH}:${String(m).padStart(2, '0')} ${period}`;
+    return `${displayH}:${String(m).padStart(2, "0")} ${period}`;
   };
 
   return `${formatMinutes(startMinutes)} – ${formatMinutes(endMinutes)}`;

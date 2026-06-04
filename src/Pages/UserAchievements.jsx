@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../context/NotificationContext';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import QuestCenter from '../components/gamification/QuestCenter';
@@ -23,7 +24,8 @@ import {
 } from 'lucide-react';
 
 export default function UserAchievements() {
-  useDocumentTitle("Eventra | Achievements");
+  const { t } = useTranslation();
+  useDocumentTitle(t("userAchievements.pageTitle"));
   const { achievements, fetchAchievements } = useNotification();
   const [expandedBadgeId, setExpandedBadgeId] = useState(null);
   const [activeShareBadge, setActiveShareBadge] = useState(null);
@@ -148,13 +150,13 @@ export default function UserAchievements() {
   const handleShareTwitter = () => {
     const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareStory)}`;
     window.open(shareUrl, "_blank", "noopener,noreferrer");
-    toast.success("Opening Twitter/X share dialog!");
+    toast.success(t("userAchievements.toastTwitterShare"));
   };
 
   const handleShareLinkedIn = () => {
     const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://eventra.dev")}&summary=${encodeURIComponent(shareStory)}`;
     window.open(shareUrl, "_blank", "noopener,noreferrer");
-    toast.success("Opening LinkedIn share dialog!");
+    toast.success(t("userAchievements.toastLinkedinShare"));
   };
 
   
@@ -176,7 +178,9 @@ export default function UserAchievements() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Certificate Badge graphic downloaded!");
+    // Free browser memory after download triggers (100ms ensures download starts first)
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+    toast.success(t("userAchievements.toastCertificateDownloaded"));
   };
 
   // Onboarding Checklist configuration
@@ -187,30 +191,30 @@ export default function UserAchievements() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-20 px-4 md:px-8 transition-colors duration-300">
+    <div className="min-h-screen bg-bg text-text py-20 px-4 md:px-8 transition-colors duration-300">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* HEADER SECTION */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-slate-200 dark:border-slate-800/80 pb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-border pb-6">
           <div>
-            <div className="flex items-center gap-2 text-indigo-650 dark:text-indigo-400 font-black text-xs tracking-wider uppercase">
+            <div className="flex items-center gap-2 text-primary font-black text-xs tracking-wider uppercase">
               <Trophy className="w-4.5 h-4.5 animate-pulse" />
-              Progression Studio
+              {t("userAchievements.progressionStudio")}
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1.5 bg-clip-text text-transparent bg-gradient-to-r from-slate-950 to-indigo-700 dark:from-slate-100 dark:to-indigo-400">
-              Developer Achievements
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1.5 bg-clip-text text-transparent bg-gradient-to-r from-text to-primary">
+              {t("userAchievements.heading")}
             </h1>
-            <p className="text-slate-550 dark:text-slate-400 mt-2 text-xs sm:text-sm max-w-2xl leading-relaxed">
-              Track your open-source growth milestones, streak multipliers, and XP progression. Claim developer tokens as you host, contribute, and engage in events.
+            <p className="text-text-light mt-2 text-xs sm:text-sm max-w-2xl leading-relaxed">
+              {t("userAchievements.description")}
             </p>
           </div>
           <div className="shrink-0">
             <button
               onClick={() => setIsBadgeModalOpen(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98] cursor-pointer"
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary via-primary/80 to-secondary hover:opacity-90 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-premium-md hover:shadow-glow-sm active:scale-[0.98] cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-amber-300 animate-spin-slow" />
-              <span>Attendee Badge Center</span>
+              <span>{t("userAchievements.attendeeBadgeCenter")}</span>
             </button>
           </div>
         </div>
@@ -222,15 +226,15 @@ export default function UserAchievements() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-md flex flex-col items-center justify-center space-y-5 text-center relative overflow-hidden"
+            className="bg-card-bg/60 backdrop-blur-xl border border-border rounded-3xl p-6 shadow-premium-md flex flex-col items-center justify-center space-y-5 text-center relative overflow-hidden"
           >
             {/* Background absolute decorations */}
-            <div className="absolute -right-16 -top-16 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl" />
-            <div className="absolute -left-16 -bottom-16 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl" />
+            <div className="absolute -right-16 -top-16 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
+            <div className="absolute -left-16 -bottom-16 w-32 h-32 bg-secondary/10 rounded-full blur-2xl" />
 
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-400">
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-text-light">
               <Sparkles className="w-3.5 h-3.5 text-yellow-500" />
-              Rank Progression
+              {t("userAchievements.rankProgression")}
             </div>
 
             {/* Radial SVG Circle Wheel */}
@@ -249,7 +253,7 @@ export default function UserAchievements() {
                   cx="80"
                   cy="80"
                   r={radius}
-                  className="stroke-slate-200/50 dark:stroke-slate-800/45"
+                  className="stroke-border"
                   strokeWidth="8"
                   fill="none"
                 />
@@ -272,29 +276,29 @@ export default function UserAchievements() {
 
               {/* Center Glassmorphic Display */}
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Level</span>
-                <span className="text-3xl font-black text-slate-850 dark:text-white leading-none mt-1 tracking-tighter">
+                <span className="text-[10px] font-black uppercase tracking-widest text-text-light">{t("userAchievements.level")}</span>
+                <span className="text-3xl font-black text-text leading-none mt-1 tracking-tighter">
                   {currentLevel}
                 </span>
-                <span className="text-[10px] font-bold text-indigo-650 dark:text-indigo-400 mt-2 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-0.5 rounded-full border border-indigo-100/30">
+                <span className="text-[10px] font-bold text-primary mt-2 bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
                   {progressPercent}%
                 </span>
               </div>
             </div>
 
             {/* Stats Summary Panel */}
-            <div className="w-full pt-3 border-t border-slate-100 dark:border-slate-800/40 space-y-1">
-              <div className="flex justify-between text-xs font-bold text-slate-500">
-                <span>XP in Level</span>
-                <span className="text-slate-800 dark:text-slate-250 font-black">{xpInCurrentLevel} / 500</span>
+            <div className="w-full pt-3 border-t border-border space-y-1">
+              <div className="flex justify-between text-xs font-bold text-text-light">
+                <span>{t("userAchievements.xpInLevel")}</span>
+                <span className="text-text font-black">{xpInCurrentLevel} / 500</span>
               </div>
-              <div className="flex justify-between text-xs font-bold text-slate-500">
-                <span>Next Level In</span>
-                <span className="text-indigo-600 dark:text-indigo-400 font-black">{xpNeededForNext} XP</span>
+              <div className="flex justify-between text-xs font-bold text-text-light">
+                <span>{t("userAchievements.nextLevelIn")}</span>
+                <span className="text-primary font-black">{xpNeededForNext} XP</span>
               </div>
-              <div className="flex justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider pt-2">
-                <span>Total Accumulated</span>
-                <span className="text-slate-700 dark:text-slate-300 font-extrabold">{derivedXP} XP</span>
+              <div className="flex justify-between text-[11px] font-bold text-text-light/80 uppercase tracking-wider pt-2">
+                <span>{t("userAchievements.totalAccumulated")}</span>
+                <span className="text-text font-extrabold">{derivedXP} XP</span>
               </div>
             </div>
           </motion.div>
@@ -307,19 +311,19 @@ export default function UserAchievements() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-[156px] hover:border-indigo-300 dark:hover:border-slate-700 transition-all group"
+              className="bg-card-bg/60 backdrop-blur-xl border border-border rounded-3xl p-6 shadow-premium-sm hover:shadow-premium-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="flex items-center justify-between">
-                <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-sm shrink-0">
+                <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-premium-sm shrink-0">
                   <Calendar className="w-5 h-5" />
                 </div>
                 <TrendingUp className="w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
-                  Registrations
+                <p className="text-[10px] font-black text-text-light uppercase tracking-widest leading-none">
+                  {t("userAchievements.metricsRegistrations")}
                 </p>
-                <p className="text-3xl font-black text-slate-850 dark:text-slate-100 mt-2.5 tracking-tight">
+                <p className="text-3xl font-black text-text mt-2.5 tracking-tight">
                   {totalEvents}
                 </p>
               </div>
@@ -330,22 +334,22 @@ export default function UserAchievements() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.18 }}
-              className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-[156px] hover:border-pink-300 dark:hover:border-slate-700 transition-all group"
+              className="bg-card-bg/60 backdrop-blur-xl border border-border rounded-3xl p-6 shadow-premium-sm hover:shadow-premium-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="flex items-center justify-between">
-                <div className="p-3 rounded-2xl bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 shadow-sm shrink-0">
+                <div className="p-3 rounded-2xl bg-secondary/10 text-secondary shadow-premium-sm shrink-0">
                   <Zap className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] font-black text-pink-600 dark:text-pink-400 animate-pulse">
-                  ACTIVE
+                <span className="text-[10px] font-black text-secondary animate-pulse">
+                  {t("userAchievements.metricsActive")}
                 </span>
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
-                  Streak Range
+                <p className="text-[10px] font-black text-text-light uppercase tracking-widest leading-none">
+                  {t("userAchievements.metricsStreakRange")}
                 </p>
-                <p className="text-3xl font-black text-slate-850 dark:text-slate-100 mt-2.5 tracking-tight">
-                  {currentStreak} <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">Events</span>
+                <p className="text-3xl font-black text-text mt-2.5 tracking-tight">
+                  {currentStreak} <span className="text-xs text-text-light font-bold uppercase tracking-widest">{t("userAchievements.metricsEventsUnit")}</span>
                 </p>
               </div>
             </motion.div>
@@ -355,20 +359,20 @@ export default function UserAchievements() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
-              className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-[156px] hover:border-yellow-300 dark:hover:border-slate-700 transition-all group"
+              className="bg-card-bg/60 backdrop-blur-xl border border-border rounded-3xl p-6 shadow-premium-sm hover:shadow-premium-md hover:-translate-y-0.5 transition-all group"
             >
               <div className="flex items-center justify-between">
-                <div className="p-3 rounded-2xl bg-yellow-50 dark:bg-yellow-950/20 text-yellow-600 dark:text-yellow-405 shadow-sm shrink-0">
+                <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-premium-sm shrink-0">
                   <Award className="w-5 h-5" />
                 </div>
-                <CheckCircle className="w-4 h-4 text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <CheckCircle className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
-                  Tokens Claimed
+                <p className="text-[10px] font-black text-text-light uppercase tracking-widest leading-none">
+                  {t("userAchievements.metricsTokensClaimed")}
                 </p>
-                <p className="text-3xl font-black text-slate-850 dark:text-slate-100 mt-2.5 tracking-tight">
-                  {unlockedCount} <span className="text-xs text-slate-450 font-bold tracking-tight">/ {operationalBadges.length}</span>
+                <p className="text-3xl font-black text-text mt-2.5 tracking-tight">
+                  {unlockedCount} <span className="text-xs text-text-light font-bold tracking-tight">/ {operationalBadges.length}</span>
                 </p>
               </div>
             </motion.div>
@@ -381,16 +385,16 @@ export default function UserAchievements() {
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-indigo-900/40 via-purple-900/35 to-slate-900/60 border border-indigo-500/20 backdrop-blur-xl rounded-3xl p-6 shadow-lg space-y-4"
+            className="bg-gradient-to-br from-primary/20 via-primary/10 to-card-bg/60 border border-primary/20 backdrop-blur-xl rounded-3xl p-6 shadow-premium-lg space-y-4"
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-yellow-450 animate-bounce" />
               <h2 className="text-md font-black tracking-tight text-white uppercase">
-                Gamified Onboarding Checklist
+                {t("userAchievements.checklistHeading")}
               </h2>
             </div>
-            <p className="text-xs text-slate-350 max-w-xl leading-relaxed">
-              You haven&apos;t unlocked any milestone tokens yet. Complete the steps below to claim your first developer badge:
+            <p className="text-xs text-text-light max-w-xl leading-relaxed">
+              {t("userAchievements.checklistDescription")}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
               {onboardingQuests.map((quest) => (
@@ -399,19 +403,19 @@ export default function UserAchievements() {
                   className={`p-4 rounded-2xl border transition ${
                     quest.done
                       ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-350"
-                      : "bg-slate-950/40 border-slate-900 text-slate-400"
+                      : "bg-bg/40 border-border text-text-light"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Quest</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-text-light">{t("userAchievements.checklistQuest")}</span>
                     {quest.done ? (
-                      <span className="bg-emerald-500/20 text-emerald-450 px-2 py-0.5 rounded text-[8px] font-black uppercase">COMPLETED</span>
+                      <span className="bg-emerald-500/20 text-emerald-450 px-2 py-0.5 rounded text-[8px] font-black uppercase">{t("userAchievements.checklistCompleted")}</span>
                     ) : (
-                      <span className="bg-slate-800/80 text-slate-500 px-2 py-0.5 rounded text-[8px] font-black uppercase">PENDING</span>
+                      <span className="bg-bg/80 text-text-light/60 px-2 py-0.5 rounded text-[8px] font-black uppercase">{t("userAchievements.checklistPending")}</span>
                     )}
                   </div>
                   <h4 className="text-xs font-extrabold text-white">{quest.title}</h4>
-                  <p className="text-[10px] text-slate-400 mt-1">{quest.description}</p>
+                  <p className="text-[10px] text-text-light mt-1">{quest.description}</p>
                 </div>
               ))}
             </div>
@@ -420,9 +424,9 @@ export default function UserAchievements() {
 
         {/* MILESTONE BADGES SECTION */}
         <section className="space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-850 pb-3">
-            <h2 className="text-lg font-black tracking-tight text-slate-850 dark:text-slate-100">
-              Milestone Badges & Trophy Cases
+          <div className="flex items-center gap-2 border-b border-border pb-3">
+            <h2 className="text-lg font-black tracking-tight text-text">
+              {t("userAchievements.badgesSectionHeading")}
             </h2>
           </div>
 
@@ -436,39 +440,39 @@ export default function UserAchievements() {
                   layout
                   className={`p-5 rounded-3xl border flex flex-col transition-all cursor-pointer ${
                     badge.earned
-                      ? 'bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-slate-200/50 dark:border-slate-800/40 shadow-sm hover:shadow-[0_12px_24px_rgba(99,102,241,0.06)]'
-                      : 'bg-slate-100/55 dark:bg-slate-900/15 border-slate-200/30 dark:border-slate-850/20 opacity-70 hover:opacity-100'
+                      ? 'bg-card-bg/60 backdrop-blur-xl border-border shadow-premium-sm hover:shadow-premium-md hover:shadow-glow-sm'
+                      : 'bg-card-bg/15 border-border/30 opacity-70 hover:opacity-100 shadow-none'
                   }`}
                   onClick={() => toggleExpand(badge.id)}
                   whileHover={{ y: -4 }}
                   transition={{ type: "spring", stiffness: 250, damping: 20 }}
                 >
                   <div className="flex items-start justify-between">
-                    <span className={`text-3xl p-2.5 rounded-2xl shrink-0 shadow-xs ${badge.earned ? 'bg-indigo-50 dark:bg-indigo-950/40' : 'bg-slate-200/50 dark:bg-slate-850 filter grayscale'}`}>
+                    <span className={`text-3xl p-2.5 rounded-2xl shrink-0 shadow-premium-sm ${badge.earned ? 'bg-primary/10' : 'bg-bg filter grayscale'}`}>
                       {badge.icon}
                     </span>
                     {badge.earned ? (
-                      <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-350 px-2.5 py-0.5 rounded-full shadow-xs border border-emerald-100/35">
-                        Unlocked
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-350 px-2.5 py-0.5 rounded-full shadow-premium-sm border border-emerald-100/35">
+                        {t("userAchievements.badgesSectionUnlocked")}
                       </span>
                     ) : (
-                      <span className="text-[9px] font-black uppercase tracking-wider bg-slate-200 dark:bg-slate-800 text-slate-500 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-bg text-text-light px-2.5 py-0.5 rounded-full flex items-center gap-1">
                         <Lock className="w-2.5 h-2.5" />
-                        Locked
+                        {t("userAchievements.badgesSectionLocked")}
                       </span>
                     )}
                   </div>
 
-                  <h3 className="text-base font-extrabold text-slate-850 dark:text-slate-100 mt-4 tracking-tight">
+                  <h3 className="text-base font-extrabold text-text mt-4 tracking-tight">
                     {badge.name}
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed line-clamp-2">
+                  <p className="text-xs text-text-light mt-1 leading-relaxed line-clamp-2">
                     {badge.description}
                   </p>
 
                   {/* Accordion expand indicator */}
-                  <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-indigo-650 dark:text-indigo-400 mt-4 pt-3 border-t border-slate-100 dark:border-slate-850/40">
-                    <span>Inspect Details</span>
+                  <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-primary mt-4 pt-3 border-t border-border">
+                    <span>{t("userAchievements.badgesSectionInspectDetails")}</span>
                     <motion.div
                       animate={{ rotate: isOpen ? 180 : 0 }}
                       transition={{ duration: 0.2 }}
@@ -485,29 +489,29 @@ export default function UserAchievements() {
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="overflow-hidden space-y-4 pt-4 mt-3 border-t border-dashed border-slate-200 dark:border-slate-850/50"
+                        className="overflow-hidden space-y-4 pt-4 mt-3 border-t border-dashed border-border"
                       >
                         {/* Requirement details */}
                         <div className="space-y-1">
-                          <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none">
-                            Milestone Requirement
+                          <span className="block text-[9px] font-black uppercase tracking-widest text-text-light leading-none">
+                            {t("userAchievements.badgesSectionRequirement")}
                           </span>
-                          <span className="block text-xs font-semibold text-slate-600 dark:text-slate-350 leading-relaxed mt-1">
+                          <span className="block text-xs font-semibold text-text-light leading-relaxed mt-1">
                             {badge.details}
                           </span>
                         </div>
 
                         {/* Progress Bar indicator */}
                         <div className="space-y-1.5">
-                          <div className="flex justify-between text-[10px] font-black uppercase tracking-wide text-slate-400">
-                            <span>Progress status</span>
+                          <div className="flex justify-between text-[10px] font-black uppercase tracking-wide text-text-light">
+                            <span>{t("userAchievements.badgesSectionProgress")}</span>
                             <span>{badge.currentProgress} / {badge.targetProgress}</span>
                           </div>
-                          <div className="w-full h-2 rounded-full bg-slate-200/50 dark:bg-slate-800/40 overflow-hidden">
+                          <div className="w-full h-2 rounded-full bg-bg overflow-hidden">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${Math.min(100, (badge.currentProgress / badge.targetProgress) * 100)}%` }}
-                              className={`h-full rounded-full bg-gradient-to-r ${badge.earned ? 'from-emerald-500 to-teal-500 shadow-xs' : 'from-indigo-500 to-indigo-650'}`}
+                              className={`h-full rounded-full bg-gradient-to-r ${badge.earned ? 'from-emerald-500 to-teal-500' : 'from-primary/60 to-primary'}`}
                             />
                           </div>
                         </div>
@@ -515,12 +519,12 @@ export default function UserAchievements() {
                         {/* Log logs */}
                         <div className="space-y-2">
                           <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none">
-                            Completion Log & Credits
+                            {t("userAchievements.badgesSectionCompletionLog")}
                           </span>
                           <div className="space-y-1">
                             {(badge.log || []).map((logItem, idx) => (
-                              <div key={idx} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                                <span className="w-1 h-1 rounded-full bg-indigo-500 shrink-0" />
+                              <div key={idx} className="flex items-center gap-1.5 text-[10px] font-bold text-text-light">
+                                <span className="w-1 h-1 rounded-full bg-primary shrink-0" />
                                 <span>{logItem}</span>
                               </div>
                             ))}
@@ -529,17 +533,17 @@ export default function UserAchievements() {
 
                         {/* Share section */}
                         {badge.earned && (
-                          <div className="pt-4 border-t border-dashed border-slate-200 dark:border-slate-850/50 space-y-2.5" onClick={(e) => e.stopPropagation()}>
-                            <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none">
-                              Share Achievement
+                          <div className="pt-4 border-t border-dashed border-border space-y-2.5" onClick={(e) => e.stopPropagation()}>
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-text-light leading-none">
+                              {t("userAchievements.badgesSectionShare")}
                             </span>
                             <div className="flex flex-wrap gap-2 pt-0.5">
                               <button
                                 onClick={() => setActiveShareBadge(badge)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white transition-all cursor-pointer shadow-xs hover:scale-[1.03]"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white transition-all cursor-pointer shadow-premium-sm hover:shadow-glow-sm hover:scale-[1.03]"
                               >
                                 <Share2 className="w-3.5 h-3.5" />
-                                <span>Share Certificate</span>
+                                <span>{t("userAchievements.badgesSectionShareCertificate")}</span>
                               </button>
                             </div>
                           </div>
@@ -549,7 +553,7 @@ export default function UserAchievements() {
                         {!badge.earned && (
                           <div className="flex items-center gap-1.5 p-2 px-3 rounded-xl bg-rose-50/50 dark:bg-rose-950/15 border border-rose-100/20 dark:border-rose-900/10 text-[9px] font-bold text-rose-600 dark:text-rose-400 leading-tight">
                             <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-                            <span>Keep attending meetups and contributing to unlock this badge.</span>
+                            <span>{t("userAchievements.badgesSectionLockedWarning")}</span>
                           </div>
                         )}
                       </motion.div>
@@ -577,21 +581,21 @@ export default function UserAchievements() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-3xl w-full shadow-2xl relative space-y-5 text-left"
+              className="bg-card-bg border border-border rounded-3xl p-6 max-w-3xl w-full shadow-premium-lg relative space-y-5 text-left"
             >
               {/* Close Button */}
               <button
                 onClick={() => setActiveShareBadge(null)}
-                className="absolute right-5 top-5 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer transition-colors"
+                className="absolute right-5 top-5 p-2 rounded-xl bg-bg hover:opacity-90 border border-border text-text-light cursor-pointer transition-colors"
               >
                 <X size={16} />
               </button>
 
               <div className="space-y-1">
-                <h3 className="text-md font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                  <Share2 className="w-4 h-4 animate-pulse" /> Social Achievement Builder
+                <h3 className="text-md font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Share2 className="w-4 h-4 animate-pulse" /> {t("userAchievements.modalHeading")}
                 </h3>
-                <p className="text-xs text-slate-400">Customize your milestone story and preview how it appears on social feeds before posting.</p>
+                <p className="text-xs text-text-light">{t("userAchievements.modalDescription")}</p>
               </div>
 
               {/* Dual-Pane Grid Layout */}
@@ -600,18 +604,18 @@ export default function UserAchievements() {
                 {/* Column 1: Message Customizer & Controls */}
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
-                      Customize Your Story
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-text-light">
+                      {t("userAchievements.modalCustomizeStory")}
                     </label>
                     <textarea
                       value={shareStory}
                       onChange={(e) => setShareStory(e.target.value)}
                       rows={4}
-                      className="w-full p-3.5 rounded-2xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-xs text-slate-200 resize-none outline-none transition-all leading-relaxed"
-                      placeholder="Share your open-source journey..."
+                      className="w-full p-3.5 rounded-2xl bg-bg border border-border focus:border-primary focus:ring-1 focus:ring-primary text-xs text-text resize-none outline-none transition-all leading-relaxed"
+                      placeholder={t("userAchievements.modalStoryPlaceholder")}
                     />
                     <div className="flex justify-between text-[9px] font-bold text-slate-500">
-                      <span>Interactive Composer</span>
+                      <span>{t("userAchievements.modalInteractiveComposer")}</span>
                       <span className={shareStory.length > 280 ? "text-rose-500 font-extrabold" : ""}>
                         {shareStory.length} characters
                       </span>
@@ -620,7 +624,7 @@ export default function UserAchievements() {
 
                   {/* Quick Emojis & Hashtags Helpers */}
                   <div className="space-y-1.5">
-                    <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Quick Tags</span>
+                    <span className="block text-[9px] font-black uppercase tracking-widest text-text-light">{t("userAchievements.modalQuickTags")}</span>
                     <div className="flex flex-wrap gap-1.5">
                       {["#GSSoC2026", "#OpenSource", "#DevLife", "#LearnToCode"].map(tag => (
                         <button
@@ -630,7 +634,7 @@ export default function UserAchievements() {
                               setShareStory(prev => `${prev.trim()} ${tag}`);
                             }
                           }}
-                          className="px-2.5 py-1 text-[9px] font-extrabold rounded-lg bg-slate-850 hover:bg-slate-800 text-slate-300 border border-slate-800/60 transition cursor-pointer"
+                          className="px-2.5 py-1 text-[9px] font-extrabold rounded-lg bg-bg hover:bg-card-bg text-text border border-border transition cursor-pointer"
                         >
                           {tag}
                         </button>
@@ -643,17 +647,17 @@ export default function UserAchievements() {
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={handleShareTwitter}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-850 text-xs font-bold text-slate-300 transition cursor-pointer"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-bg hover:bg-card-bg text-xs font-bold text-text transition cursor-pointer"
                       >
                         <Twitter size={13} className="text-sky-400" />
-                        <span>Post on X</span>
+                        <span>{t("userAchievements.modalPostOnX")}</span>
                       </button>
                       <button
                         onClick={handleShareLinkedIn}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-850 text-xs font-bold text-slate-330 transition cursor-pointer"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-bg hover:bg-card-bg text-xs font-bold text-text transition cursor-pointer"
                       >
                         <Linkedin size={13} className="text-blue-500" />
-                        <span>Share LinkedIn</span>
+                        <span>{t("userAchievements.modalShareLinkedIn")}</span>
                       </button>
                     </div>
 
@@ -661,32 +665,32 @@ export default function UserAchievements() {
                       onClick={async () => {
                         try {
                           await navigator.clipboard.writeText(shareStory);
-                          toast.success("Social story copied to clipboard! 📋");
+                          toast.success(t("userAchievements.toastStoryCopied"));
                         } catch {
-                          toast.error("Failed to copy story.");
+                          toast.error(t("userAchievements.toastCopyFailed"));
                         }
                       }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-800/80 text-xs font-bold text-slate-200 transition cursor-pointer"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-bg hover:bg-card-bg border border-border text-xs font-bold text-text transition cursor-pointer"
                     >
                       <CheckCircle size={13} className="text-emerald-500" />
-                      <span>Copy Story to Clipboard</span>
+                      <span>{t("userAchievements.modalCopyStory")}</span>
                     </button>
 
                     <button
                       onClick={() => handleDownloadSVG(activeShareBadge)}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-xs font-black uppercase tracking-wider text-white transition cursor-pointer shadow-md shadow-indigo-500/10"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-xs font-black uppercase tracking-wider text-white transition cursor-pointer shadow-premium-md hover:shadow-glow-sm"
                     >
                       <Award size={13} className="text-yellow-350" />
-                      <span>Download Certificate</span>
+                      <span>{t("userAchievements.modalDownloadCertificate")}</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Column 2: Live Feed Preview */}
-                <div className="space-y-3.5 bg-slate-950/40 border border-slate-850 rounded-2xl p-4 flex flex-col justify-between">
-                  <div className="flex items-center justify-between border-b border-slate-850/80 pb-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-450">
-                      Live Feed Mockup
+                <div className="space-y-3.5 bg-bg/40 border border-border rounded-2xl p-4 flex flex-col justify-between">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-text-light">
+                      {t("userAchievements.modalLiveFeedMockup")}
                     </span>
                     {/* Switch layout platform selector */}
                     <div className="flex gap-1.5">
@@ -696,8 +700,8 @@ export default function UserAchievements() {
                           onClick={() => setSharePlatform(plat)}
                           className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest transition cursor-pointer ${
                             sharePlatform === plat
-                              ? "bg-indigo-600 text-white"
-                              : "bg-slate-850 text-slate-500 hover:text-slate-300"
+                              ? "bg-primary text-white"
+                              : "bg-bg text-text-light hover:text-text"
                           }`}
                         >
                           {plat}
@@ -708,7 +712,7 @@ export default function UserAchievements() {
 
                   {/* Render Twitter/X Post Mockup */}
                   {sharePlatform === "twitter" ? (
-                    <div className="p-4 bg-black rounded-xl border border-slate-850/85 text-left text-white space-y-3 shadow-inner select-none">
+                    <div className="p-4 bg-black rounded-xl border border-slate-850/85 text-left text-white space-y-3 shadow-none select-none">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-black text-indigo-400">
                           EV
@@ -722,13 +726,13 @@ export default function UserAchievements() {
                         </div>
                       </div>
                       <p className="text-xs text-slate-200 leading-relaxed break-words whitespace-pre-wrap">
-                        {shareStory || "Write something in the composer..."}
+                        {shareStory || t("userAchievements.modalPreviewFallback")}
                       </p>
                       
                       {/* Attached Card Mockup */}
                       <div className="border border-slate-850 rounded-2xl overflow-hidden bg-slate-950/70">
                         <div className="p-5 bg-gradient-to-br from-indigo-950/50 to-slate-950 text-center border-b border-slate-850">
-                          <span className="inline-block p-3 rounded-2xl bg-indigo-900/30 border border-indigo-500/25 text-3xl mx-auto shadow-inner">
+                          <span className="inline-block p-3 rounded-2xl bg-indigo-900/30 border border-indigo-500/25 text-3xl mx-auto shadow-none">
                             {activeShareBadge.icon}
                           </span>
                           <h4 className="text-sm font-extrabold text-white mt-3 tracking-tight">{activeShareBadge.name}</h4>
@@ -743,9 +747,9 @@ export default function UserAchievements() {
                     </div>
                   ) : (
                     /* Render LinkedIn Article Mockup */
-                    <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-850 text-left text-slate-800 dark:text-slate-200 space-y-3 shadow-inner select-none">
+                    <div className="p-4 bg-card-bg rounded-xl border border-border text-left text-text-light space-y-3 shadow-none select-none">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-black text-indigo-650 dark:text-indigo-400">
+                        <div className="w-8 h-8 rounded-full bg-bg flex items-center justify-center text-xs font-black text-primary">
                           EV
                         </div>
                         <div>
@@ -754,13 +758,13 @@ export default function UserAchievements() {
                         </div>
                       </div>
                       <p className="text-xs leading-relaxed break-words whitespace-pre-wrap">
-                        {shareStory || "Write something in the composer..."}
+                        {shareStory || t("userAchievements.modalPreviewFallback")}
                       </p>
                       
                       {/* Attached Article Mockup */}
-                      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-950/80">
+                      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-bg/80">
                         <div className="p-5 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-slate-950 text-center border-b border-slate-200 dark:border-slate-800">
-                          <span className="inline-block p-3 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300/30 dark:border-indigo-500/25 text-3xl mx-auto shadow-inner">
+                          <span className="inline-block p-3 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300/30 dark:border-indigo-500/25 text-3xl mx-auto shadow-none">
                             {activeShareBadge.icon}
                           </span>
                           <h4 className="text-sm font-extrabold text-slate-900 dark:text-white mt-3 tracking-tight">{activeShareBadge.name}</h4>

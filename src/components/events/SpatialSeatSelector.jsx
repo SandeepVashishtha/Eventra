@@ -1,23 +1,129 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ZoomIn, ZoomOut, RotateCcw, CheckCircle, ShieldAlert, Sparkles, HelpCircle } from "lucide-react";
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  CheckCircle,
+  ShieldAlert,
+  Sparkles,
+  HelpCircle,
+} from "lucide-react";
 import "./SpatialSeatSelector.css";
 
 // Fallback presets if no venue layout is stored yet
 const DEFAULT_PRESETS = {
   banquet: [
-    { id: "stage-1", type: "stage", label: "Main Stage", x: 350, y: 50, width: 300, height: 120, rotation: 0, seatsCount: 0, assignedAttendees: {} },
-    { id: "table-1", type: "round-table", label: "VIP Table A", x: 200, y: 300, width: 140, height: 140, rotation: 0, seatsCount: 8, tier: "VIP Front Row", assignedAttendees: { 0: "Amit Sharma", 1: "Priya Singh" } },
-    { id: "table-2", type: "round-table", label: "VIP Table B", x: 660, y: 300, width: 140, height: 140, rotation: 0, seatsCount: 8, tier: "VIP Front Row", assignedAttendees: { 2: "Rohit Verma", 3: "Neha Kapoor" } },
-    { id: "table-3", type: "round-table", label: "Table 1", x: 120, y: 520, width: 120, height: 120, rotation: 0, seatsCount: 6, tier: "General Seating", assignedAttendees: {} },
-    { id: "table-4", type: "round-table", label: "Table 2", x: 440, y: 520, width: 120, height: 120, rotation: 0, seatsCount: 6, tier: "General Seating", assignedAttendees: {} },
-    { id: "table-5", type: "round-table", label: "Table 3", x: 760, y: 520, width: 120, height: 120, rotation: 0, seatsCount: 6, tier: "General Seating", assignedAttendees: {} },
-    { id: "booth-1", type: "booth", label: "Sound & Lights", x: 450, y: 750, width: 100, height: 80, rotation: 0, seatsCount: 0, assignedAttendees: {} },
-    { id: "barrier-1", type: "barrier", label: "Security Line", x: 250, y: 220, width: 500, height: 10, rotation: 0, seatsCount: 0, assignedAttendees: {} }
-  ]
+    {
+      id: "stage-1",
+      type: "stage",
+      label: "Main Stage",
+      x: 350,
+      y: 50,
+      width: 300,
+      height: 120,
+      rotation: 0,
+      seatsCount: 0,
+      assignedAttendees: {},
+    },
+    {
+      id: "table-1",
+      type: "round-table",
+      label: "VIP Table A",
+      x: 200,
+      y: 300,
+      width: 140,
+      height: 140,
+      rotation: 0,
+      seatsCount: 8,
+      tier: "VIP Front Row",
+      assignedAttendees: { 0: "Amit Sharma", 1: "Priya Singh" },
+    },
+    {
+      id: "table-2",
+      type: "round-table",
+      label: "VIP Table B",
+      x: 660,
+      y: 300,
+      width: 140,
+      height: 140,
+      rotation: 0,
+      seatsCount: 8,
+      tier: "VIP Front Row",
+      assignedAttendees: { 2: "Rohit Verma", 3: "Neha Kapoor" },
+    },
+    {
+      id: "table-3",
+      type: "round-table",
+      label: "Table 1",
+      x: 120,
+      y: 520,
+      width: 120,
+      height: 120,
+      rotation: 0,
+      seatsCount: 6,
+      tier: "General Seating",
+      assignedAttendees: {},
+    },
+    {
+      id: "table-4",
+      type: "round-table",
+      label: "Table 2",
+      x: 440,
+      y: 520,
+      width: 120,
+      height: 120,
+      rotation: 0,
+      seatsCount: 6,
+      tier: "General Seating",
+      assignedAttendees: {},
+    },
+    {
+      id: "table-5",
+      type: "round-table",
+      label: "Table 3",
+      x: 760,
+      y: 520,
+      width: 120,
+      height: 120,
+      rotation: 0,
+      seatsCount: 6,
+      tier: "General Seating",
+      assignedAttendees: {},
+    },
+    {
+      id: "booth-1",
+      type: "booth",
+      label: "Sound & Lights",
+      x: 450,
+      y: 750,
+      width: 100,
+      height: 80,
+      rotation: 0,
+      seatsCount: 0,
+      assignedAttendees: {},
+    },
+    {
+      id: "barrier-1",
+      type: "barrier",
+      label: "Security Line",
+      x: 250,
+      y: 220,
+      width: 500,
+      height: 10,
+      rotation: 0,
+      seatsCount: 0,
+      assignedAttendees: {},
+    },
+  ],
 };
 
-const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelectSeat = () => {}, readOnly = false }) => {
+const SpatialSeatSelector = ({
+  eventId = "default",
+  selectedSeat = null,
+  onSelectSeat = () => {},
+  readOnly = false,
+}) => {
   const [elements, setElements] = useState([]);
   const [zoom, setZoom] = useState(0.85);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
@@ -37,20 +143,27 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
         const parsed = JSON.parse(savedLayout);
         if (Array.isArray(parsed)) {
           // Strict schema validation and sanitization
-          initialElements = parsed.map(el => ({
+          initialElements = parsed.map((el) => ({
             ...el,
-            id: typeof el.id === 'string' || typeof el.id === 'number' ? String(el.id) : Math.random().toString(36).substring(2, 9),
-            type: typeof el.type === 'string' ? el.type : 'round-table',
-            label: typeof el.label === 'string' ? el.label : 'Unknown',
+            id:
+              typeof el.id === "string" || typeof el.id === "number"
+                ? String(el.id)
+                : Math.random().toString(36).substring(2, 9),
+            type: typeof el.type === "string" ? el.type : "round-table",
+            label: typeof el.label === "string" ? el.label : "Unknown",
             x: Number(el.x) || 0,
             y: Number(el.y) || 0,
             width: Number(el.width) || 100,
             height: Number(el.height) || 100,
             rotation: Number(el.rotation) || 0,
             seatsCount: Number(el.seatsCount) || 0,
-            tier: typeof el.tier === 'string' ? el.tier : 'General Seating',
-            assignedAttendees: typeof el.assignedAttendees === 'object' && el.assignedAttendees !== null ? el.assignedAttendees : {},
-            seatLabels: typeof el.seatLabels === 'object' && el.seatLabels !== null ? el.seatLabels : {}
+            tier: typeof el.tier === "string" ? el.tier : "General Seating",
+            assignedAttendees:
+              typeof el.assignedAttendees === "object" && el.assignedAttendees !== null
+                ? el.assignedAttendees
+                : {},
+            seatLabels:
+              typeof el.seatLabels === "object" && el.seatLabels !== null ? el.seatLabels : {},
           }));
         } else {
           initialElements = DEFAULT_PRESETS.banquet;
@@ -83,7 +196,7 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
         positions.push({
           x: centerX + chairDistance * Math.cos(angle),
           y: centerY + chairDistance * Math.sin(angle),
-          index: i
+          index: i,
         });
       }
     } else if (el.type === "rect-table") {
@@ -104,7 +217,7 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
         const dy = py - cY;
         return {
           x: cX + dx * Math.cos(rad) - dy * Math.sin(rad),
-          y: cY + dx * Math.sin(rad) + dy * Math.cos(rad)
+          y: cY + dx * Math.sin(rad) + dy * Math.cos(rad),
         };
       };
 
@@ -148,6 +261,23 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
     return map;
   }, [elements, getSeatPositions]);
 
+  // Compute flat list of all seats across all elements for cross-table navigation
+  const allSeats = useMemo(() => {
+    const list = [];
+    elements.forEach((el) => {
+      if (el.seatsCount > 0) {
+        const positions = elementSeatPositions.get(el.id) || [];
+        positions.forEach((seat) => {
+          list.push({
+            ...seat,
+            elementId: el.id,
+          });
+        });
+      }
+    });
+    return list;
+  }, [elements, elementSeatPositions]);
+
   // Auto-center and zoom to highlighted seat in read-only dashboard view
   useEffect(() => {
     if (readOnly && selectedSeat && elements.length > 0) {
@@ -159,12 +289,30 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
           setZoom(1.3);
           setPanOffset({
             x: 500 - seat.x,
-            y: 400 - seat.y
+            y: 400 - seat.y,
           });
         }
       }
     }
   }, [readOnly, selectedSeat, elements, getSeatPositions]);
+
+  // Imperatively attach non-passive wheel event listener to avoid console intervention error
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.08 : 0.92;
+      setZoom((prev) => Math.max(0.4, Math.min(2.5, prev * factor)));
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
 
   // Pointer drag panning handlers
   const handlePointerDown = (e) => {
@@ -182,7 +330,7 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
     const dy = e.clientY - dragStartRef.current.y;
     setPanOffset({
       x: panStartRef.current.x + dx,
-      y: panStartRef.current.y + dy
+      y: panStartRef.current.y + dy,
     });
   };
 
@@ -192,20 +340,12 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
     e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
-  // Wheel zoom handler
-  const handleWheel = (e) => {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.08 : 0.92;
-    setZoom((prev) => Math.max(0.4, Math.min(2.5, prev * factor)));
-  };
-
-  // Check if a specific seat index on an element is selected
-  const isSeatSelected = (elId, idx) => {
+  const isSeatSelected = useCallback((elId, idx) => {
     return selectedSeat && selectedSeat.elementId === elId && selectedSeat.seatIndex === idx;
-  };
+  }, [selectedSeat]);
 
   // Selection callback
-  const handleSeatClick = (el, seat, seatIdx) => {
+  const handleSeatClick = useCallback((el, seat, seatIdx) => {
     if (readOnly) return;
     const isOccupied = el.assignedAttendees[seatIdx];
     if (isOccupied) return;
@@ -217,7 +357,7 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
       elementId: el.id,
       seatIndex: seatIdx,
       seatLabel: `${el.label} - ${label}`,
-      tier: tier
+      tier: tier,
     });
   };
 
@@ -232,7 +372,8 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
           </div>
           <div className="flex gap-4 items-center">
             <div className="text-xs text-zinc-400">
-              Available: <span className="font-bold text-emerald-400">{seatStats.available}</span> / {seatStats.total}
+              Available: <span className="font-bold text-emerald-400">{seatStats.available}</span> /{" "}
+              {seatStats.total}
             </div>
             <div className="text-xs text-zinc-400">
               Occupied: <span className="font-bold text-indigo-400">{seatStats.occupied}</span>
@@ -242,13 +383,12 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
       )}
 
       {/* Seating Viewport */}
-      <div 
+      <div
         ref={containerRef}
         className="ssp-viewport"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onWheel={handleWheel}
       >
         <svg
           className="ssp-blueprint-svg"
@@ -258,21 +398,28 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
           style={{
             transform: `scale(${zoom}) translate(${panOffset.x}px, ${panOffset.y}px)`,
             transformOrigin: "center center",
-            transition: isDraggingRef.current ? "none" : "transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+            transition: isDraggingRef.current
+              ? "none"
+              : "transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
           }}
         >
           {/* Visual Defs and Gradients */}
           <defs>
             <pattern id="blueprint-grid" width="30" height="30" patternUnits="userSpaceOnUse">
-              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(99, 102, 241, 0.03)" strokeWidth="1" />
+              <path
+                d="M 30 0 L 0 0 0 30"
+                fill="none"
+                stroke="rgba(99, 102, 241, 0.03)"
+                strokeWidth="1"
+              />
             </pattern>
-            
+
             {/* VIP/Premium Seat Gradients */}
             <radialGradient id="ssp-vip-avail" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stopColor="#fbbf24" />
               <stop offset="100%" stopColor="#d97706" />
             </radialGradient>
-            
+
             {/* General Admission Gradients */}
             <radialGradient id="ssp-gen-avail" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stopColor="#818cf8" />
@@ -319,7 +466,10 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
                       strokeWidth={1.5}
                     />
                   </>
-                ) : el.type !== "stage" && el.type !== "barrier" && el.type !== "exit" && el.type !== "booth" ? (
+                ) : el.type !== "stage" &&
+                  el.type !== "barrier" &&
+                  el.type !== "exit" &&
+                  el.type !== "booth" ? (
                   <>
                     <path
                       d={`M ${el.x} ${el.y + el.height} 
@@ -347,8 +497,16 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
                     width={el.width}
                     height={el.height}
                     rx={el.type === "stage" ? 8 : 2}
-                    fill={el.type === "stage" ? "rgba(30, 41, 59, 0.85)" : el.type === "exit" ? "rgba(220, 38, 38, 0.15)" : "rgba(31, 41, 55, 0.5)"}
-                    stroke={el.type === "stage" ? "#475569" : el.type === "exit" ? "#dc2626" : "#374151"}
+                    fill={
+                      el.type === "stage"
+                        ? "rgba(30, 41, 59, 0.85)"
+                        : el.type === "exit"
+                          ? "rgba(220, 38, 38, 0.15)"
+                          : "rgba(31, 41, 55, 0.5)"
+                    }
+                    stroke={
+                      el.type === "stage" ? "#475569" : el.type === "exit" ? "#dc2626" : "#374151"
+                    }
                     strokeWidth={el.type === "stage" ? 2 : 1}
                   />
                 )}
@@ -368,89 +526,19 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
                 </text>
 
                 {/* Render Interactive Chair elements */}
-                {(elementSeatPositions.get(el.id) || []).map((seat) => {
-                  const isOccupied = el.assignedAttendees[seat.index];
-                  const isSelected = isSeatSelected(el.id, seat.index);
-                  const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
-                  const seatTier = el.tier || (isVIP ? "VIP Front Row" : "General Seating");
-
-                  // Glow effect for selected seat or active highlight
-                  const glowClass = isSelected ? "ssp-seat-glowing" : "";
-
-                  return (
-                    <g
-                      key={`seat-${el.id}-${seat.index}`}
-                      className={`ssp-interactive-seat ${glowClass}`}
-                      onClick={() => handleSeatClick(el, seat, seat.index)}
-                      onMouseEnter={(e) => {
-                        const bbox = e.currentTarget.getBoundingClientRect();
-                        const vrect = containerRef.current.getBoundingClientRect();
-                        setHoveredSeat({
-                          el,
-                          seatIdx: seat.index,
-                          label: seatLabel,
-                          tier: seatTier,
-                          occupiedBy: isOccupied || null,
-                          x: bbox.left - vrect.left + bbox.width / 2,
-                          y: bbox.top - vrect.top - 10
-                        });
-                      }}
-                      onMouseLeave={() => setHoveredSeat(null)}
-                      style={{ cursor: isOccupied ? "not-allowed" : "pointer" }}
-                    >
-                      {/* 2.5D Chair base drop shadow */}
-                      <circle
-                        cx={seat.x}
-                        cy={seat.y + 3}
-                        r={11}
-                        fill="rgba(0, 0, 0, 0.45)"
-                      />
-
-                      {/* Main Interactive Seat circle */}
-                      <circle
-                        cx={seat.x}
-                        cy={seat.y}
-                        r={11}
-                        fill={
-                          isSelected 
-                            ? "url(#ssp-selected)" 
-                            : isOccupied 
-                              ? "#27272a" 
-                              : isVIP 
-                                ? "url(#ssp-vip-avail)" 
-                                : "url(#ssp-gen-avail)"
-                        }
-                        stroke={
-                          isSelected 
-                            ? "#67e8f9" 
-                            : isOccupied 
-                              ? "#18181b" 
-                              : isVIP 
-                                ? "#f59e0b" 
-                                : "#6366f1"
-                        }
-                        strokeWidth={1.5}
-                        style={{
-                          transition: "fill 0.25s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
-                        }}
-                      />
-
-                      {/* RADAR pulsing overlay loop animation inside dashboard view */}
-                      {readOnly && isSelected && (
-                        <circle
-                          cx={seat.x}
-                          cy={seat.y}
-                          r={28}
-                          fill="none"
-                          stroke="#22d3ee"
-                          strokeWidth={2}
-                          className="ssp-radar-pulse"
-                          pointerEvents="none"
-                        />
-                      )}
-                    </g>
-                  );
-                })}
+                {(elementSeatPositions.get(el.id) || []).map((seat) => (
+                  <MemoizedSeat
+                    key={`seat-${el.id}-${seat.index}`}
+                    el={el}
+                    seat={seat}
+                    allSeats={allSeats}
+                    isSelected={isSeatSelected(el.id, seat.index)}
+                    readOnly={readOnly}
+                    onSelect={handleSeatClick}
+                    onHover={setHoveredSeat}
+                    containerRef={containerRef}
+                  />
+                ))}
               </g>
             );
           })}
@@ -458,29 +546,32 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
 
         {/* Viewport Zoom & Reset Controls floating overlay */}
         <div className="ssp-viewport-controls">
-          <button 
+          <button
             type="button"
-            className="ssp-ctrl-btn" 
-            title="Zoom In" 
+            className="ssp-ctrl-btn"
+            title="Zoom In"
             onClick={() => setZoom((z) => Math.min(2.5, z + 0.15))}
           >
             <ZoomIn size={15} />
           </button>
           <div className="ssp-zoom-pct">{Math.round(zoom * 100)}%</div>
-          <button 
+          <button
             type="button"
-            className="ssp-ctrl-btn" 
-            title="Zoom Out" 
+            className="ssp-ctrl-btn"
+            title="Zoom Out"
             onClick={() => setZoom((z) => Math.max(0.4, z - 0.15))}
           >
             <ZoomOut size={15} />
           </button>
           <div className="ssp-ctrl-divider" />
-          <button 
+          <button
             type="button"
-            className="ssp-ctrl-btn" 
-            title="Reset View" 
-            onClick={() => { setZoom(0.85); setPanOffset({ x: 0, y: 0 }); }}
+            className="ssp-ctrl-btn"
+            title="Reset View"
+            onClick={() => {
+              setZoom(0.85);
+              setPanOffset({ x: 0, y: 0 });
+            }}
           >
             <RotateCcw size={15} />
           </button>
@@ -497,19 +588,17 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
               transition={{ duration: 0.15 }}
               style={{
                 left: hoveredSeat.x,
-                top: hoveredSeat.y
+                top: hoveredSeat.y,
               }}
             >
-              <div className="ssp-pop-title">
-                {hoveredSeat.el.label}
-              </div>
-              <div className="ssp-pop-seat">
-                {hoveredSeat.label}
-              </div>
+              <div className="ssp-pop-title">{hoveredSeat.el.label}</div>
+              <div className="ssp-pop-seat">{hoveredSeat.label}</div>
               <div className="ssp-pop-divider" />
               <div className="ssp-pop-row">
                 <span className="ssp-pop-label">Tier:</span>
-                <span className={`ssp-pop-val ${hoveredSeat.tier.toLowerCase().includes("vip") ? "text-amber-400 font-bold" : "text-indigo-300"}`}>
+                <span
+                  className={`ssp-pop-val ${hoveredSeat.tier.toLowerCase().includes("vip") ? "text-amber-400 font-bold" : "text-indigo-300"}`}
+                >
                   {hoveredSeat.tier}
                 </span>
               </div>
@@ -559,3 +648,157 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
 };
 
 export default SpatialSeatSelector;
+
+// ── Optimized Seat Component ────────────────────────────────────────────────
+
+const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, containerRef }) => {
+  const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
+  const isOccupied = el.assignedAttendees[seat.index];
+  const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
+  const seatTier = el.tier || (isVIP ? "VIP Front Row" : "General Seating");
+
+  const tabIndex = readOnly || isOccupied ? -1 : 0;
+  const role = !readOnly && !isOccupied ? "button" : undefined;
+  const availability = isOccupied ? "Occupied" : "Available";
+  const ariaLabel = `${el.label} - ${seatLabel}, ${availability} (${seatTier})`;
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      if (readOnly || isOccupied) return;
+      e.preventDefault();
+      onSelect(el, seat, seat.index);
+      return;
+    }
+
+    const arrowKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+    if (arrowKeys.includes(e.key)) {
+      e.preventDefault();
+      let tx = 0,
+        ty = 0;
+      if (e.key === "ArrowRight") tx = 1;
+      if (e.key === "ArrowLeft") tx = -1;
+      if (e.key === "ArrowUp") ty = -1;
+      if (e.key === "ArrowDown") ty = 1;
+
+      let bestSeat = null;
+      let minScore = Infinity;
+
+      (allSeats || []).forEach((s) => {
+        if (s.elementId === el.id && s.index === seat.index) return;
+        const dx = s.x - seat.x;
+        const dy = s.y - seat.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist === 0) return;
+
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const dot = nx * tx + ny * ty;
+
+        if (dot > 0.1) {
+          const score = dist / dot;
+          if (score < minScore) {
+            minScore = score;
+            bestSeat = s;
+          }
+        }
+      });
+
+      if (bestSeat) {
+        const nextSeatEl = document.getElementById(`seat-element-${bestSeat.elementId}-${bestSeat.index}`);
+        if (nextSeatEl) {
+          nextSeatEl.focus();
+        }
+      }
+    }
+  };
+
+  const handleFocus = (e) => {
+    if (!containerRef.current) return;
+    const bbox = e.currentTarget.getBoundingClientRect();
+    const vrect = containerRef.current.getBoundingClientRect();
+    onHover({
+      el,
+      seatIdx: seat.index,
+      label: seatLabel,
+      tier: seatTier,
+      occupiedBy: isOccupied || null,
+      x: bbox.left - vrect.left + bbox.width / 2,
+      y: bbox.top - vrect.top - 10,
+    });
+  };
+
+  const handleBlur = () => {
+    onHover(null);
+  };
+
+  const handleMouseEnter = useCallback((e) => {
+    const bbox = e.currentTarget.getBoundingClientRect();
+    const vrect = containerRef.current.getBoundingClientRect();
+    onHover({
+      el,
+      seatIdx: seat.index,
+      label: seatLabel,
+      tier: seatTier,
+      occupiedBy: isOccupied || null,
+      x: bbox.left - vrect.left + bbox.width / 2,
+      y: bbox.top - vrect.top - 10,
+    });
+  }, [containerRef, el, onHover, seat.index, seatLabel, seatTier, isOccupied]);
+
+  const handleMouseLeave = useCallback(() => {
+    onHover(null);
+  }, [onHover]);
+
+  const handleClick = useCallback(() => {
+    onSelect(el, seat, seat.index);
+  }, [el, onSelect, seat]);
+
+  return (
+    <g
+      id={`seat-element-${el.id}-${seat.index}`}
+      className={`ssp-interactive-seat ${isSelected ? "ssp-seat-glowing" : ""}`}
+      tabIndex={tabIndex}
+      role={role}
+      aria-label={ariaLabel}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{ cursor: isOccupied ? "not-allowed" : "pointer" }}
+    >
+      <circle cx={seat.x} cy={seat.y + 3} r={11} fill="rgba(0, 0, 0, 0.45)" />
+      <circle
+        cx={seat.x}
+        cy={seat.y}
+        r={11}
+        fill={
+          isSelected
+            ? "url(#ssp-selected)"
+            : isOccupied
+              ? "#27272a"
+              : isVIP
+                ? "url(#ssp-vip-avail)"
+                : "url(#ssp-gen-avail)"
+        }
+        stroke={isSelected ? "#67e8f9" : isOccupied ? "#18181b" : isVIP ? "#f59e0b" : "#6366f1"}
+        strokeWidth={1.5}
+      />
+      {readOnly && isSelected && (
+        <circle
+          cx={seat.x}
+          cy={seat.y}
+          r={28}
+          fill="none"
+          stroke="#22d3ee"
+          strokeWidth={2}
+          className="ssp-radar-pulse"
+          pointerEvents="none"
+        />
+      )}
+    </g>
+  );
+};
+
+const MemoizedSeat = memo(Seat);

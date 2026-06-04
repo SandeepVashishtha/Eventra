@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -13,6 +13,8 @@ import {
   ChevronUp,
   ChevronDown
 } from "lucide-react";
+import { safeJsonParse } from "../../utils/safeJsonParse";
+import { syncSecureStorage } from "../../utils/secureStorage";
 
 // Confetti Component for celebration
 const OnboardingConfetti = () => {
@@ -104,43 +106,41 @@ export default function OnboardingChecklist() {
   ]);
 
   // Check storage values and update task statuses
-  const checkTaskStatus = () => {
+  const checkTaskStatus = useCallback(async () => {
     // 1. Check user profile / skills in local storage or state
     let interestsDone = false;
     try {
-      const storedUser = localStorage.getItem("user");
+      const storedUser = await syncSecureStorage.getItemAsync("user");
       if (storedUser) {
-        const parsed = JSON.parse(storedUser);
+        const parsed = safeJsonParse(storedUser, {});
         if (parsed.skills && parsed.skills.length > 0) {
           interestsDone = true;
         }
       } else if (user?.skills && user.skills.length > 0) {
         interestsDone = true;
       }
-      
-      const storedInterests = localStorage.getItem("user_interests");
-      if (storedInterests) {
-        const parsedInt = JSON.parse(storedInterests);
-        if (parsedInt.length > 0) {
-          interestsDone = true;
-        }
-      }
     } catch (e) {
-      console.error("Error reading interests for onboarding checklist:", e);
+      if (user?.skills && user.skills.length > 0) {
+        interestsDone = true;
+      }
+    }
+    
+    const storedInterests = localStorage.getItem("user_interests");
+    if (storedInterests) {
+      const parsedInt = safeJsonParse(storedInterests, []);
+      if (parsedInt.length > 0) {
+        interestsDone = true;
+      }
     }
 
     // 2. Check bookmarked projects
     let bookmarkDone = false;
-    try {
-      const storedBookmarks = localStorage.getItem("eventra_bookmarked_projects");
-      if (storedBookmarks) {
-        const parsed = JSON.parse(storedBookmarks);
-        if (parsed.length > 0) {
-          bookmarkDone = true;
-        }
+    const storedBookmarks = localStorage.getItem("eventra_bookmarked_projects");
+    if (storedBookmarks) {
+      const parsed = safeJsonParse(storedBookmarks, []);
+      if (parsed.length > 0) {
+        bookmarkDone = true;
       }
-    } catch (e) {
-      console.error("Error reading bookmarks for onboarding checklist:", e);
     }
 
     // 3. Check sandbox request execution
@@ -177,7 +177,7 @@ export default function OnboardingChecklist() {
 
       return updated;
     });
-  };
+  }, [user]);
 
   // Perform checks periodically and on routing
   useEffect(() => {
@@ -187,7 +187,7 @@ export default function OnboardingChecklist() {
     const interval = setInterval(checkTaskStatus, 1500);
 
     return () => clearInterval(interval);
-  }, [user, isDismissed, location]);
+  }, [user, isDismissed, location, checkTaskStatus]);
 
   // Listen to custom reset event to show checklist immediately
   useEffect(() => {
@@ -201,7 +201,7 @@ export default function OnboardingChecklist() {
     return () => {
       window.removeEventListener("eventraOnboardingReset", handleResetEvent);
     };
-  }, []);
+  }, [checkTaskStatus]);
 
   const handleDismiss = () => {
     localStorage.setItem("eventra_onboarding_dismissed", "true");

@@ -12,13 +12,13 @@ const CursorToggle = ({ cursorEnabled, toggleCursor }) => {
           ? "Turn off background cursor effects"
           : "Turn on background cursor effects"
       }
-      className={`relative flex items-center justify-center w-10 h-10 rounded-full border transition-all duration-205 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+      className={`h-9 w-9 rounded-full border transition-colors flex items-center justify-center shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
         cursorEnabled
-          ? "border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-950 dark:bg-blue-950/40 dark:text-blue-400"
-          : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-black dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+          ? "border-primary/40 bg-primary/10 text-primary"
+          : "border-border bg-card-bg text-text-light hover:bg-bg-secondary"
       }`}
     >
-      <MousePointer size={18} aria-hidden="true" />
+      <MousePointer className="h-4 w-4" aria-hidden="true" />
     </button>
   );
 };

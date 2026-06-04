@@ -1,7 +1,11 @@
+/* eslint-disable no-console */
 /**
  * Feedback Utilities
  * Handles localStorage-based feedback management for events
  */
+
+import { safeJsonParse } from './safeJsonParse';
+import { sanitizeHtml } from './sanitizeHtml';
 
 const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
 
@@ -12,10 +16,14 @@ const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
  */
 export const getEventFeedback = (eventId) => {
   try {
-    const allFeedback = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '{}');
-    return allFeedback[eventId] || [];
+    const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
+    const rawFeedback = allFeedback[eventId] || [];
+    return rawFeedback.map(f => ({
+      ...f,
+      comment: f.comment ? sanitizeHtml(f.comment) : f.comment
+    }));
   } catch (error) {
-    console.error('Error retrieving feedback:', error);
+    //console.error('Error retrieving feedback:', error);
     return [];
   }
 };
@@ -28,30 +36,23 @@ export const getEventFeedback = (eventId) => {
  */
 export const saveFeedback = (eventId, feedback) => {
   try {
-    const allFeedback = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '{}');
-    const eventFeedback = allFeedback[eventId] || [];
+    const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
+    const rawList = allFeedback[eventId] || [];
 
-    // Check if user already submitted feedback (by submittedAt timestamp if userId not available)
-    const existingIndex = eventFeedback.findIndex(
-      (f) => f.userId === feedback.userId
-    );
+    // Use a Map for O(1) userId lookups instead of O(N) findIndex
+    const feedbackMap = new Map(rawList.map((f) => [f.userId, f]));
 
     const feedbackObject = {
       ...feedback,
       submittedAt: new Date().toISOString(),
     };
 
-    if (existingIndex >= 0) {
-      eventFeedback[existingIndex] = feedbackObject;
-    } else {
-      eventFeedback.push(feedbackObject);
-    }
-
-    allFeedback[eventId] = eventFeedback;
+    feedbackMap.set(feedback.userId, feedbackObject);
+    allFeedback[eventId] = Array.from(feedbackMap.values());
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
   } catch (error) {
-    console.error('Error saving feedback:', error);
+    //console.error('Error saving feedback:', error);
     return false;
   }
 };
@@ -68,9 +69,10 @@ export const hasUserSubmittedFeedback = (eventId, userId = null) => {
     if (!userId) {
       return feedback.length > 0;
     }
-    return feedback.some((f) => f.userId === userId);
+    const userIdSet = new Set(feedback.map((f) => f.userId));
+    return userIdSet.has(userId);
   } catch (error) {
-    console.error('Error checking feedback status:', error);
+    //console.error('Error checking feedback status:', error);
     return false;
   }
 };
@@ -84,12 +86,11 @@ export const hasUserSubmittedFeedback = (eventId, userId = null) => {
 export const getUserFeedback = (eventId, userId = null) => {
   try {
     const feedback = getEventFeedback(eventId);
-    if (!userId) {
-      return feedback.length > 0 ? feedback[feedback.length - 1] : null;
-    }
-    return feedback.find((f) => f.userId === userId) || null;
+    if (!userId) return feedback[0] || null;
+    const feedbackMap = new Map(feedback.map((f) => [f.userId, f]));
+    return feedbackMap.get(userId) || null;
   } catch (error) {
-    console.error('Error retrieving user feedback:', error);
+    //console.error('Error retrieving user feedback:', error);
     return null;
   }
 };
@@ -117,7 +118,7 @@ export const getAverageRating = (eventId) => {
       total,
     };
   } catch (error) {
-    console.error('Error calculating average rating:', error);
+    //console.error('Error calculating average rating:', error);
     return { average: 0, count: 0, total: 0 };
   }
 };
@@ -150,7 +151,7 @@ export const getRatingBreakdown = (eventId) => {
 
     return breakdown;
   } catch (error) {
-    console.error('Error calculating rating breakdown:', error);
+    //console.error('Error calculating rating breakdown:', error);
     return { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
   }
 };
@@ -193,7 +194,7 @@ export const getRecommendationStats = (eventId) => {
       percentage,
     };
   } catch (error) {
-    console.error('Error calculating recommendation stats:', error);
+    //console.error('Error calculating recommendation stats:', error);
     return { recommendCount: 0, notRecommendCount: 0, total: 0, percentage: 0 };
   }
 };
@@ -218,7 +219,7 @@ export const getTagStats = (eventId) => {
 
     return tagCounts;
   } catch (error) {
-    console.error('Error calculating tag stats:', error);
+    //console.error('Error calculating tag stats:', error);
     return {};
   }
 };
@@ -231,7 +232,7 @@ export const getTagStats = (eventId) => {
  */
 export const deleteFeedback = (eventId, userId = null) => {
   try {
-    const allFeedback = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '{}');
+    const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const eventFeedback = allFeedback[eventId] || [];
 
     if (userId) {
@@ -243,7 +244,7 @@ export const deleteFeedback = (eventId, userId = null) => {
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
   } catch (error) {
-    console.error('Error deleting feedback:', error);
+    //console.error('Error deleting feedback:', error);
     return false;
   }
 };
@@ -273,7 +274,7 @@ export const exportFeedbackAsCSV = (eventId) => {
     const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
     return csv;
   } catch (error) {
-    console.error('Error exporting feedback:', error);
+    //console.error('Error exporting feedback:', error);
     return '';
   }
 };
@@ -286,7 +287,7 @@ export const clearAllFeedback = () => {
     localStorage.removeItem(FEEDBACK_STORAGE_KEY);
     return true;
   } catch (error) {
-    console.error('Error clearing feedback:', error);
+    //console.error('Error clearing feedback:', error);
     return false;
   }
 };

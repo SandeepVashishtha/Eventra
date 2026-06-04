@@ -1,10 +1,11 @@
+import { Github, ExternalLink, Plus, X } from "lucide-react";
 import { getPublicErrorMessage, FORM_ERRORS } from "../../utils/errorMessages";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { FiGithub, FiExternalLink, FiPlus, FiX } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getUserFullName } from "../../utils/userNameUtils.mjs";
+import CharacterCounter from "./CharacterCounter";
 import "./ProjectSubmission.css";
 
 const ProjectSubmission = ({ onClose, onSubmit }) => {
@@ -51,7 +52,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "number" ? parseInt(value) || 0 : value,
+      [name]: type === "number" ? parseInt(value, 10) || 0 : value,
     }));
   };
 
@@ -144,7 +145,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
         <div className="submission-header">
           <h2>Submit Your Project</h2>
           <button onClick={onClose} className="close-btn" aria-label="button">
-            <FiX />
+            <X />
           </button>
         </div>
 
@@ -162,9 +163,13 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
               value={formData.title}
               onChange={handleInputChange}
               required
-              maxLength="255"
+              maxLength={255}
+              aria-describedby="title-counter"
               placeholder="Enter your project title"
             />
+            <div className="flex justify-end mt-1">
+              <CharacterCounter id="title-counter" value={formData.title} maxLength={255} />
+            </div>
           </div>
 
           <div className="form-group">
@@ -175,8 +180,13 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
               value={formData.description}
               onChange={handleInputChange}
               rows="4"
+              maxLength={1000}
+              aria-describedby="description-counter"
               placeholder="Describe your project, its features, and purpose"
             />
+            <div className="flex justify-end mt-1">
+              <CharacterCounter id="description-counter" value={formData.description} maxLength={1000} />
+            </div>
           </div>
 
           <div className="form-row">
@@ -227,7 +237,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
                 onClick={handleTechStackAdd}
                 className="add-tech-btn"
                aria-label="button">
-                <FiPlus />
+                <Plus />
               </button>
             </div>
             <div className="tech-stack-list">
@@ -238,7 +248,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
                     type="button"
                     onClick={() => handleTechStackRemove(tech)}
                   >
-                    <FiX />
+                    <X />
                   </button>
                 </span>
               ))}
@@ -249,7 +259,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
             <div className="form-group">
               <label htmlFor="githubUrl">GitHub URL</label>
               <div className="input-with-icon">
-                <FiGithub />
+                <Github />
                 <input
                   type="url"
                   id="githubUrl"
@@ -264,7 +274,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
             <div className="form-group">
               <label htmlFor="liveDemo">Live Demo URL</label>
               <div className="input-with-icon">
-                <FiExternalLink />
+                <ExternalLink />
                 <input
                   type="url"
                   id="liveDemo"
@@ -363,7 +373,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || formData.title.length > 255 || formData.description.length > 1000}
               className="btn-primary"
              aria-label="button">
               {isSubmitting ? "Submitting..." : "Submit Project"}

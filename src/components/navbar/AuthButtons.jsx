@@ -1,33 +1,108 @@
+import { useState, useRef, useEffect, useCallback, useId } from "react";
 import { Link } from "react-router-dom";
-import { LogIn, UserPlus } from "lucide-react";
+import { ChevronDown, Info, HelpCircle, LogIn } from "lucide-react";
 
-const AuthButtons = ({ isMobile = false, onActionClick }) => {
-  const baseClass =
-    "h-10 px-5 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-200 ease-in-out whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 active:scale-[0.98]";
+const prefetchLogin = () => import("../../components/auth/Login");
+const prefetchSignup = () => import("../../components/auth/Signup");
 
-  const secondaryClass = `${baseClass} ${
-    isMobile ? "w-full" : ""
-  } text-zinc-700 hover:text-zinc-900 border border-zinc-200 bg-white hover:bg-zinc-50 active:bg-zinc-100 dark:text-zinc-300 dark:hover:text-white dark:border-zinc-700 dark:bg-zinc-900/60 dark:hover:bg-zinc-800 dark:active:bg-zinc-800/50`;
+const AuthButtons = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+  const buttonRef = useRef(null);
+  const menuId = useId();
 
-  const primaryClass = `${baseClass} ${
-    isMobile ? "w-full" : ""
-  } bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white dark:bg-blue-500 dark:hover:bg-blue-600 dark:active:bg-blue-700 shadow-sm shadow-blue-500/10 hover:shadow-md hover:shadow-blue-500/15`;
+  const closeMenu = useCallback(() => setIsOpen(false), []);
+  const toggleMenu = useCallback(() => setIsOpen((prev) => !prev), []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        closeMenu();
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        closeMenu();
+        buttonRef.current?.focus();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, closeMenu]);
 
   return (
-    <div
-      className={
-        isMobile
-          ? "flex flex-col gap-3 w-full mt-4"
-          : "flex items-center justify-center gap-3"
-      }
-    >
-      <Link to="/login" onClick={onActionClick} className={secondaryClass}>
-        {isMobile && <LogIn className="w-4 h-4 mr-2 animate-pulse" />}
-        Sign In
-      </Link>
+    <div className="flex items-center justify-center gap-2.5">
+      <div className="relative" ref={menuRef}>
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={toggleMenu}
+          aria-expanded={isOpen}
+          aria-haspopup="menu"
+          aria-controls={isOpen ? menuId : undefined}
+          className="flex items-center gap-2 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full text-sm font-medium text-text-light hover:bg-bg-secondary hover:text-text transition-colors">
+            Profile
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+          </div>
+        </button>
 
-      <Link to="/signup" onClick={onActionClick} className={primaryClass}>
-        {isMobile && <UserPlus className="w-4 h-4 mr-2 animate-pulse" />}
+        {isOpen && (
+          <div
+            id={menuId}
+            role="menu"
+            className="absolute right-0 mt-3 w-64 origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+          >
+            <div className="space-y-1">
+              <Link
+                to="/about"
+                role="menuitem"
+                onClick={closeMenu}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light hover:bg-bg hover:text-text transition-colors"
+              >
+                <Info className="w-4 h-4" />
+                About
+              </Link>
+              <Link
+                to="/faq"
+                role="menuitem"
+                onClick={closeMenu}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light hover:bg-bg hover:text-text transition-colors"
+              >
+                <HelpCircle className="w-4 h-4" />
+                Frequently Asked Questions
+              </Link>
+            </div>
+            
+            <div role="separator" className="h-px bg-border my-2" />
+            
+            <Link
+              to="/login"
+              role="menuitem"
+              onClick={closeMenu}
+              onMouseEnter={() => prefetchLogin()}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:bg-bg transition-colors"
+            >
+              <LogIn className="w-4 h-4" />
+              Sign In
+            </Link>
+          </div>
+        )}
+      </div>
+
+      <Link
+        to="/signup"
+        onMouseEnter={() => prefetchSignup()}
+        className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-all duration-200 whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
+      >
         Get Started
       </Link>
     </div>
@@ -35,4 +110,3 @@ const AuthButtons = ({ isMobile = false, onActionClick }) => {
 };
 
 export default AuthButtons;
-
