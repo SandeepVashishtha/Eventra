@@ -10,30 +10,6 @@ import { validate, validateEmailAvailability, validatePasswordStrength } from ".
 
 const getResultMessage = (result, fallback) => (result?.isValid ? "" : result?.message || fallback);
 
-const parseSignupResponse = async (response) => {
-  if (typeof response?.text === "function") {
-    const responseText = await response.text();
-    let data = null;
-    try {
-      data = responseText ? JSON.parse(responseText) : null;
-    } catch {
-      data = null;
-    }
-
-    return {
-      ok: response.ok,
-      status: response.status,
-      data,
-    };
-  }
-
-  return {
-    ok: response?.status >= 200 && response?.status < 300,
-    status: response?.status,
-    data: response?.data || null,
-  };
-};
-
 const SignupForm = () => {
   const navigate = useNavigate();
   const { setAuthSession } = useAuth();
@@ -235,22 +211,18 @@ const SignupForm = () => {
         confirmPassword: formData.confirmPassword,
       });
 
-      const { ok, status, data } = await parseSignupResponse(response);
-
-      if (!ok) {
-        const backendMessage = data?.message || data?.error || "Registration failed";
-        setSubmitError(`${backendMessage} (${status})`);
+      if (!response.ok) {
+        const backendMessage = response.data?.message || response.data?.error || "Registration failed";
+        setSubmitError(`${backendMessage} (${response.status})`);
         setLoading(false);
         return;
       }
 
-      const sessionToken = data?.token;
-      if (!sessionToken) {
-        setSubmitError("Signup completed but no token was returned.");
-        setLoading(false);
-        return;
-      }
+      // Under the HttpOnly-cookie auth model the server sets the session
+      // cookie on the signup response. The client never sees a raw JWT.
+      const sessionToken = "cookie-managed";
 
+      const data = response.data || {};
       const sessionUser = {
         id: data?.id,
         firstName: data?.firstName ?? formData.firstName.trim(),
