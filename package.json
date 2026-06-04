@@ -46,7 +46,7 @@
     "react-toastify": "^11.1.0",
     "react-window": "^2.2.7",
     "recharts": "^3.8.1",
-    "vite": "8.0.14",
+    "vite": "8.0.16",
     "zustand": "^5.0.14"
   },
   "scripts": {
