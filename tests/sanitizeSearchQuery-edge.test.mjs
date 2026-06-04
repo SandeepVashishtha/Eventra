@@ -32,6 +32,16 @@ const htmlChars = "test<script>alert('xss')</script>end";
 const sanitizedHtml = sanitizeSearchQuery(htmlChars);
 assert.ok(!sanitizedHtml.includes("<"), "less-than removed");
 assert.ok(!sanitizedHtml.includes(">"), "greater-than removed");
+assert.ok(!sanitizedHtml.toLowerCase().includes("alert"), "script payload removed");
+assert.equal(sanitizedHtml, "test end", "safe text around script payload preserved");
+
+assert.equal(sanitizeSearchQuery("<img src=x onerror=alert(1)>"), "", "image onerror payload removed");
+assert.equal(sanitizeSearchQuery("<<test>>"), "test", "malformed angle-bracket query neutralized");
+assert.equal(
+  sanitizeSearchQuery("conference <img src=x onerror=alert(1)> 2026"),
+  "conference 2026",
+  "mixed safe and unsafe query preserves safe terms"
+);
 
 assert.equal(sanitizeSearchQuery("a".repeat(200)), "a".repeat(200), "query at exact max length preserved");
 assert.equal(sanitizeSearchQuery("a".repeat(201)), "a".repeat(200), "query exceeding max length truncated");

@@ -50,6 +50,11 @@ export default defineConfig(({ mode }) => {
 
     // Pre-bundle heavy deps once → node_modules/.vite/deps
     optimizeDeps: {
+      rolldownOptions: {
+        moduleTypes: {
+          ".js": "jsx",
+        },
+      },
       include: [
         "react",
         "react-dom",

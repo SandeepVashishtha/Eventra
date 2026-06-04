@@ -9,7 +9,16 @@ const isLocalhost = Boolean(
     window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
 );
 
-const isDev = process.env.NODE_ENV === 'development';
+const runtimeEnv =
+  typeof import.meta !== "undefined" && import.meta.env
+    ? import.meta.env
+    : typeof process !== "undefined" && process.env
+      ? process.env
+      : {};
+
+const isDev = runtimeEnv.DEV ?? runtimeEnv.NODE_ENV === 'development';
+const publicBaseUrl = runtimeEnv.BASE_URL || "/";
+const isProd = runtimeEnv.PROD ?? runtimeEnv.NODE_ENV === "production";
 
 const log = (...args) => {
   if (isDev) {
@@ -40,16 +49,16 @@ const retryServiceWorkerOperation = async (
 };
 
 export function register(config) {
-  if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+  if (isProd && 'serviceWorker' in navigator) {
     // The URL constructor is available in all browsers that support SW.
-    const publicUrl = new URL(process.env.PUBLIC_URL, window.location.href);
+    const publicUrl = new URL(publicBaseUrl, window.location.href);
     if (publicUrl.origin !== window.location.origin) {
       // Service worker won't work if PUBLIC_URL is on a different origin
       return;
     }
 
     window.addEventListener('load', () => {
-      const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
+      const swUrl = `${publicUrl.pathname.replace(/\/$/, "")}/service-worker.js`;
 
       if (isLocalhost) {
         // This is running on localhost. Let's check if a service worker still exists or not.
