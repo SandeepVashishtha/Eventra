@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useMemo, useState, Fragment } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,8 +20,6 @@ import {
 import useLocalStorage from "../hooks/useLocalStorage";
 import { quickPrompts, getAssistantReply, INITIAL_MESSAGES } from "../config/chatbotKnowledge";
 import { useFocusTrap } from "../hooks/useFocusTrap";
-import { marked } from "marked";
-import { sanitizeMarkdown } from "../utils/sanitizeHtml";
 
 const ICON_MAP = {
   CalendarDays,
@@ -30,6 +28,59 @@ const ICON_MAP = {
   Navigation,
   Ticket,
 };
+
+function renderMarkdownToReact(text) {
+  if (!text) return null;
+  const segments = [];
+  let remaining = text;
+  let key = 0;
+
+  const parseInline = (str) => {
+    const inlineParts = [];
+    let inlineRemaining = str;
+    let inlineKey = 0;
+
+    const inlineRegex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`(.+?)`)|(\[(.+?)\]\((.+?)\))/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = inlineRegex.exec(inlineRemaining)) !== null) {
+      if (match.index > lastIndex) {
+        inlineParts.push(
+          <Fragment key={inlineKey++}>{inlineRemaining.slice(lastIndex, match.index)}</Fragment>
+        );
+      }
+      if (match[2]) {
+        inlineParts.push(<strong key={inlineKey++}>{match[2]}</strong>);
+      } else if (match[4]) {
+        inlineParts.push(<em key={inlineKey++}>{match[4]}</em>);
+      } else if (match[6]) {
+        inlineParts.push(<code key={inlineKey++} className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-xs">{match[6]}</code>);
+      } else if (match[9]) {
+        inlineParts.push(
+          <a key={inlineKey++} href={match[9]} target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline">
+            {match[8]}
+          </a>
+        );
+      }
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < inlineRemaining.length) {
+      inlineParts.push(<Fragment key={inlineKey++}>{inlineRemaining.slice(lastIndex)}</Fragment>);
+    }
+    return inlineParts.length ? inlineParts : str;
+  };
+
+  const lines = remaining.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (i > 0) {
+      segments.push(<br key={key++} />);
+    }
+    segments.push(<Fragment key={key++}>{parseInline(line)}</Fragment>);
+  }
+  return segments;
+}
 
 // Maximum number of messages retained in localStorage.
 // Older messages beyond this cap are dropped from the front of the array so
@@ -390,12 +441,9 @@ export default function Chatbot() {
                     {message.role === "user" ? (
                       message.content
                     ) : (
-                      <div
-                        className="chatbot-markdown"
-                        dangerouslySetInnerHTML={{
-                          __html: sanitizeMarkdown(message.content, marked.parse)
-                        }}
-                      />
+                      <div className="chatbot-markdown">
+                        {renderMarkdownToReact(message.content)}
+                      </div>
                     )}
                   </motion.div>
                 </div>

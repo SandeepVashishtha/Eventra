@@ -9,7 +9,7 @@ export async function verifyCertificate(uid) {
     return { success: false, error: "UID is required" };
   }
 
-  const apiBaseUrl = process.env.REACT_APP_API_URL || process.env.VITE_API_URL || "";
+  const apiBaseUrl = process.env.REACT_APP_API_URL || import.meta.env.VITE_API_URL || "";
 
   try {
     const response = await fetch(

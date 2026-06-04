@@ -2,7 +2,7 @@ import { Code, Star, ChevronLeft, ChevronRight, Users, ArrowUp, ArrowDown, Minus
 // src/features/leaderboard/LeaderBoard.tsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
 import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
@@ -639,7 +639,7 @@ export default function LeaderBoard() {
 
   // ─── Render ───────────────────────────────────────────────
   return (
-    <FeatureErrorBoundary>
+    <ErrorBoundary level="feature">
       <div
         className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(224,233,242,0.52),_transparent_42%),linear-gradient(180deg,#f8fbfe_0%,#eef4fa_100%)] pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300"
         role="main"
@@ -1098,6 +1098,6 @@ export default function LeaderBoard() {
 
         <GSSoCContribution />
       </div>
-    </FeatureErrorBoundary>
+    </ErrorBoundary>
   );
 }

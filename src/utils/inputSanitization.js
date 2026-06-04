@@ -23,9 +23,12 @@ export const sanitizeSearchQuery = (query = '') => {
   let sanitized = query.trim();
 
   sanitized = sanitized
-    // Drop executable blocks before stripping tag characters so their payloads
-    // cannot survive as searchable text.
-    .replace(/<\s*(script|style)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, ' ')
+    // Strip <script> and <style> blocks using a non-backtracking approach.
+    // The previous regex used nested quantifiers causing catastrophic backtracking.
+    .replace(/<script\b[^>]*>/gi, ' ')
+    .replace(/<\/script\s*>/gi, ' ')
+    .replace(/<style\b[^>]*>/gi, ' ')
+    .replace(/<\/style\s*>/gi, ' ')
     .replace(/<\s*\/?\s*(script|style)\b[^>]*>?/gi, ' ')
     .replace(/<\s*(img|iframe|object|embed|svg|math|link|meta)\b[^>]*>?/gi, ' ')
     .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s<>]+)/gi, ' ')

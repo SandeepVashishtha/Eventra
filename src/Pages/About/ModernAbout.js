@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import CountUpLib from "react-countup";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
 
 const CountUp = CountUpLib.default;
 
@@ -141,7 +141,7 @@ export default function ModernAbout() {
             and experience events with ease.
           </motion.p>
 
-          <SectionErrorBoundary label="Statistics">
+          <ErrorBoundary level="section" label="Statistics">
             <motion.div
               variants={container}
               initial="hidden"
@@ -168,7 +168,7 @@ export default function ModernAbout() {
                 </motion.div>
               ))}
             </motion.div>
-          </SectionErrorBoundary>
+          </ErrorBoundary>
         </div>
       </section>
 

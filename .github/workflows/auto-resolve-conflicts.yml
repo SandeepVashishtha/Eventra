@@ -1,0 +1,34 @@
+﻿name: Auto-Resolve Merge Conflicts
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+      - name: Auto resolve all open PRs
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          gh pr list --repo ${{ github.repository }} --state open --base master --json number,headRefName | jq -c '.[]' | while read -r pr; do
+            num=$(echo $pr | jq -r '.number')
+            branch=$(echo $pr | jq -r '.headRefName')
+            gh pr checkout $num
+            if git merge origin/master --no-commit --no-ff 2>&1 | grep -q "CONFLICT"; then
+              for file in $(git diff --name-only --diff-filter=U); do
+                python3 -c "import re;c=open('$file').read();open('$file','w').write(re.sub(r'<<<<<<< .*?\n(.*?)=======\n(.*?)>>>>>>> .*?\n',r'\1\2',c,flags=re.DOTALL))"
+                git add $file
+              done
+              git commit -m "auto-resolve PR #$num"
+              git push origin $branch
+            else
+              git merge --abort 2>/dev/null || true
+            fi
+          done

@@ -1,3 +1,7 @@
+/**
+ * @fileoverview useOfflineSync - Offline queue sync hook with cross-tab locking
+ * @module hooks/useOfflineSync
+ */
 import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +13,24 @@ import { fetchWithTimeout } from "../utils/fetchWithTimeout";
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
+
+/**
+ * A custom React hook that syncs queued offline actions to the server
+ * when the network connection is restored.
+ *
+ * Handles exponential backoff retries, conflict resolution via UI modal,
+ * cross-tab locking using Web Locks API with localStorage fallback, and
+ * security validation to prevent cross-user action replay.
+ *
+ * Automatically triggers sync on: network reconnect, background sync
+ * events, queue updates, and session restore events.
+ *
+ * @returns {void}
+ *
+ * @example
+ * // Mount once at app root level
+ * useOfflineSync();
+ */
 
 const useOfflineSync = () => {
   const { token, user } = useAuth();
