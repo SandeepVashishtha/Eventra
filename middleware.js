@@ -7,32 +7,56 @@
 // /api/*.js. This middleware restores edge-level abuse protection for
 // those proxied requests.
 //
-// Rate limiting uses @vercel/kv (Redis) so the counter is shared across
-// all global Edge nodes. The previous in-memory Map was per-process and
-// silently ineffective in a distributed Edge environment.
+// Rate limiting uses the Vercel KV REST API directly via fetch so it works
+// in the Edge Runtime. (@vercel/kv uses Node.js internals and is not
+// allowed in Edge Middleware.)
+//
+// If KV_REST_API_URL / KV_REST_API_TOKEN are not set (no KV store
+// provisioned) the middleware gracefully skips rate limiting.
 //
 // Setup:
 //   1. npx vercel link && npx vercel env pull
 //   2. vercel kv create <store-name>   (sets KV_REST_API_URL / KV_REST_API_TOKEN)
 // ---------------------------------------------------------------------------
 
-import { kv } from "@vercel/kv";
-
-const API_RATE_LIMIT = 60;         // max requests
-const API_RATE_WINDOW_S = 60;      // per window in seconds (Redis TTL unit)
+const API_RATE_LIMIT = 60;     // max requests
+const API_RATE_WINDOW_S = 60;  // per window in seconds
 
 // ---------------------------------------------------------------------------
-// Distributed rate limiter using Redis INCR + EXPIRE (atomic sliding window)
+// Distributed rate limiter — calls the KV REST API via fetch (Edge-safe).
+// Returns false (not limited) when KV is not configured.
 // ---------------------------------------------------------------------------
 
 const isRateLimited = async (ip) => {
+  const kvUrl = process.env.KV_REST_API_URL;
+  const kvToken = process.env.KV_REST_API_TOKEN;
+
+  // Graceful degradation: no KV store provisioned → skip rate limiting
+  if (!kvUrl || !kvToken) return false;
+
   const key = `rl:${ip}`;
+  const headers = {
+    Authorization: `Bearer ${kvToken}`,
+    "Content-Type": "application/json",
+  };
+
   // INCR is atomic — safe across concurrent Edge invocations
-  const count = await kv.incr(key);
+  const incrRes = await fetch(`${kvUrl}/incr/${key}`, {
+    method: "POST",
+    headers,
+  });
+  if (!incrRes.ok) return false;
+
+  const { result: count } = await incrRes.json();
+
   if (count === 1) {
-    // First request in this window: set expiry so key auto-evicts
-    await kv.expire(key, API_RATE_WINDOW_S);
+    // First request in this window: set TTL so the key auto-evicts
+    await fetch(`${kvUrl}/expire/${key}/${API_RATE_WINDOW_S}`, {
+      method: "POST",
+      headers,
+    });
   }
+
   return count > API_RATE_LIMIT;
 };
 
