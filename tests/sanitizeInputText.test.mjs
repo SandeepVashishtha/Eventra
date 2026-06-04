@@ -24,7 +24,7 @@ assert.ok(sanitized.includes("&lt;"), "opening bracket escaped");
 assert.ok(sanitized.includes("&gt;"), "closing bracket escaped");
 assert.ok(sanitized.includes("&quot;"), "double quotes escaped");
 assert.ok(sanitized.includes("&#x27;"), "single quotes escaped");
-assert.ok(sanitized.includes("&#x2F;"), "slashes escaped");
+assert.ok(sanitized.includes("/slash/"), "slashes preserved");
 
 const onlySpecial = "&<>\"'/";
 const sanitizedOnly = sanitizeInputText(onlySpecial);

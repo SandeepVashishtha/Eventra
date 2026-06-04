@@ -119,9 +119,8 @@ export const sanitizeInputText = (text = '') => {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#x27;',
-    '/': '&#x2F;'
+    "'": '&#x27;'
   };
 
-  return text.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
+  return text.replace(/[&<>"']/g, (match) => htmlEscapes[match]);
 };
