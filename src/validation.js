@@ -95,27 +95,33 @@ export const validate = {
   minLength: (min) => (val) => (val && val.length >= min) || `Minimum ${min} characters`,
   maxLength: (max) => (val) => (!val || val.length <= max) || `Maximum ${max} characters`,
 
-  /**
+ /**
    * Survey sanitizers & XSS guards.
-   * Capped to 150 chars for prompts, 80 for options.
+   * Input is length-capped BEFORE running regex to eliminate ReDoS risk.
+   * Uses a safe, linear-time regex without overlapping alternations.
    */
   sanitizeSurveyPrompt: (val) => {
     if (typeof val !== "string") return "";
-    let cleaned = val.replace(/<\/?[^>]+(>|$)/g, "");
-    if (cleaned.length > 150) cleaned = cleaned.substring(0, 150);
-    return cleaned;
+    // Defense 1: Cap the initial evaluation length to protect engine
+    const truncated = val.slice(0, 150);
+    // Defense 2: Run safe, non-backtracking regex
+    return truncated.replace(/<\/?[^>]*>/g, "");
   },
 
   sanitizeSurveyOption: (val) => {
     if (typeof val !== "string") return "";
-    let cleaned = val.replace(/<\/?[^>]+(>|$)/g, "");
-    if (cleaned.length > 80) cleaned = cleaned.substring(0, 80);
-    return cleaned;
+    // Defense 1: Cap the initial evaluation length
+    const truncated = val.slice(0, 80);
+    // Defense 2: Run safe, non-backtracking regex
+    return truncated.replace(/<\/?[^>]*>/g, "");
   },
 
   detectHTML: (val) => {
     if (typeof val !== "string") return false;
-    return /<\/?[^>]+(>|$)/g.test(val);
+    // Defense 1: Truncate long strings to cap analysis window
+    const truncated = val.slice(0, 150);
+    // Defense 2: Run safe regex check
+    return /<\/?[^>]*>/g.test(truncated);
   },
 };
 
