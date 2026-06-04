@@ -21,12 +21,17 @@ export const CountdownBadge = ({ date, time }) => {
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    let timerId = null;
+    timerId = setInterval(() => {
       const remaining = calculateTimeLeft(deadline);
       setTimeLeft(remaining);
-      if (!remaining) clearInterval(timer);
+      if (!remaining && timerId !== null) {
+        clearInterval(timerId);
+      }
     }, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      if (timerId !== null) clearInterval(timerId);
+    };
   }, [deadline]);
 
   if (!timeLeft) {
@@ -51,12 +56,17 @@ const CountdownTimer = ({ date, time }) => {
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    let timerId = null;
+    timerId = setInterval(() => {
       const remaining = calculateTimeLeft(deadline);
       setTimeLeft(remaining);
-      if (!remaining) clearInterval(timer);
+      if (!remaining && timerId !== null) {
+        clearInterval(timerId);
+      }
     }, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      if (timerId !== null) clearInterval(timerId);
+    };
   }, [deadline]);
 
   if (!timeLeft) {
