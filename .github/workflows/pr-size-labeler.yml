@@ -2,64 +2,103 @@ name: PR Size Labeler
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
-  pull-requests: write
+  contents: read
+  issues: write
+  pull-requests: read
 
 jobs:
-  label:
-    name: Auto Label PR Size
+  assign-size-label:
+    name: Assign size label
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Calculate and apply size label
+        uses: actions/github-script@v7
         with:
-          fetch-depth: 0
+          script: |
+            const pr = context.payload.pull_request;
+            const repo = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            };
 
-      - name: Calculate PR Size
-        id: size
-        run: |
-          # Fetch the target branch to compare
-          git fetch origin ${{ github.event.pull_request.base.ref }}
-          
-          # Calculate line changes (additions + deletions) excluding package-lock.json and mock assets
-          CHANGES=$(git diff --numstat origin/${{ github.event.pull_request.base.ref }}...HEAD | \
-            grep -v 'package-lock.json' | \
-            grep -v 'Mock' | \
-            awk '{add += $1; del += $2} END {print add + del}')
-          
-          # Default to 0 if no changes
-          if [ -z "$CHANGES" ]; then CHANGES=0; fi
-          echo "Total line changes: $CHANGES"
-          echo "changes=$CHANGES" >> $GITHUB_OUTPUT
+            const sizeLabels = [
+              { name: 'size/XS', min: 0, color: '009900', description: 'Extra-small pull request' },
+              { name: 'size/S', min: 10, color: '77bb00', description: 'Small pull request' },
+              { name: 'size/M', min: 50, color: 'eebb00', description: 'Medium pull request' },
+              { name: 'size/L', min: 200, color: 'ee9900', description: 'Large pull request' },
+              { name: 'size/XL', min: 500, color: 'ee5500', description: 'Extra-large pull request' },
+              { name: 'size/XXL', min: 1000, color: 'ee0000', description: 'Very large pull request' },
+            ];
 
-      - name: Apply Label based on Size
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CHANGES: ${{ steps.size.outputs.changes }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-        run: |
-          LABEL="size/XS"
-          if [ "$CHANGES" -gt 500 ]; then
-            LABEL="size/XL"
-          elif [ "$CHANGES" -gt 200 ]; then
-            LABEL="size/L"
-          elif [ "$CHANGES" -gt 50 ]; then
-            LABEL="size/M"
-          elif [ "$CHANGES" -gt 10 ]; then
-            LABEL="size/S"
-          fi
-          
-          echo "Assigning label: $LABEL"
-          
-          # First, clean up any old size labels to prevent duplicates on update
-          ALL_LABELS=("size/XS" "size/S" "size/M" "size/L" "size/XL")
-          for L in "${ALL_LABELS[@]}"; do
-            if [ "$L" != "$LABEL" ]; then
-              gh pr edit "$PR_URL" --remove-label "$L" || true
-            fi
-          done
-          
-          # Add the correct size label
-          gh pr edit "$PR_URL" --add-label "$LABEL"
+            const ignoredPatterns = [
+              /^package-lock\.json$/,
+              /^yarn\.lock$/,
+              /^pnpm-lock\.yaml$/,
+              /^dist\//,
+              /^build\//,
+              /^coverage\//,
+              /(^|\/)Mock/i,
+            ];
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              ...repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+
+            const changes = files
+              .filter((file) => !ignoredPatterns.some((pattern) => pattern.test(file.filename)))
+              .reduce((total, file) => total + file.additions + file.deletions, 0);
+
+            const nextLabel = [...sizeLabels]
+              .reverse()
+              .find((label) => changes >= label.min).name;
+
+            core.info(`Calculated ${changes} changed lines for PR #${pr.number}; applying ${nextLabel}`);
+
+            try {
+              for (const label of sizeLabels) {
+                try {
+                  await github.rest.issues.getLabel({ ...repo, name: label.name });
+                } catch (error) {
+                  if (error.status !== 404) throw error;
+                  await github.rest.issues.createLabel({
+                    ...repo,
+                    name: label.name,
+                    color: label.color,
+                    description: label.description,
+                  });
+                }
+              }
+
+              const currentSizeLabels = pr.labels
+                .map((label) => label.name)
+                .filter((name) => name.startsWith('size/') && name !== nextLabel);
+
+              for (const label of currentSizeLabels) {
+                await github.rest.issues.removeLabel({
+                  ...repo,
+                  issue_number: pr.number,
+                  name: label,
+                });
+              }
+
+              const hasNextLabel = pr.labels.some((label) => label.name === nextLabel);
+              if (!hasNextLabel) {
+                await github.rest.issues.addLabels({
+                  ...repo,
+                  issue_number: pr.number,
+                  labels: [nextLabel],
+                });
+              }
+            } catch (error) {
+              if (error.status === 403 || error.status === 404) {
+                core.warning(`Could not update PR size labels with this token: ${error.message}`);
+                return;
+              }
+              throw error;
+            }
