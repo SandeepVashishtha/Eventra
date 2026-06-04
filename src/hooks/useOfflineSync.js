@@ -1,10 +1,16 @@
-import { useEffect, useRef } from 'react';
-import { toast } from 'react-toastify';
-import { useAuth } from '../context/AuthContext';
-import { API_ENDPOINTS } from '../config/api';
+import { useEffect, useRef } from "react";
+import { toast } from "react-toastify";
+import { useAuth } from "../context/AuthContext";
+import { safeLocalStorage } from "../utils/safeStorage";
+import { API_ENDPOINTS } from "../config/api";
 import { logger } from "../utils/logger";
-import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership } from '../utils/offlineQueue';
-import { isTokenValid } from '../utils/tokenUtils';
+import {
+  getQueueIndexedDB,
+  setQueue,
+  clearQueue,
+  filterQueueByOwnership,
+} from "../utils/offlineQueue";
+import { isTokenValid } from "../utils/tokenUtils";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
 
 const MAX_RETRIES = 3;
@@ -90,25 +96,17 @@ const useOfflineSync = () => {
         logger.warn(
           `[useOfflineSync] Conflict modal for item ${item.id} timed out after ${AUTO_DISMISS_MS / 1000}s. Discarding local change.`
         );
-        resolve({ resolution: "server" });
-      }, AUTO_DISMISS_MS);
 
-      // Cancel if the enclosing useEffect is cleaned up (component unmount)
-      signal?.addEventListener("abort", () => {
-        cleanup();
-        resolve({ resolution: "server" });
-      }, { once: true });
+        window.addEventListener("eventra-offline-conflict-resolved", handleResolution);
 
-      window.addEventListener("eventra-offline-conflict-resolved", handleResolution);
-
-      // Notify the UI to open the conflict resolution modal
-      window.dispatchEvent(
-        new CustomEvent("eventra-offline-conflict", {
-          detail: { item, serverState },
-        })
-      );
-    });
-  };
+        // Notify the UI to open the conflict resolution modal
+        window.dispatchEvent(
+          new CustomEvent("eventra-offline-conflict", {
+            detail: { item, serverState },
+          })
+        );
+      });
+    };
 
     const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false, signal = null, idempotencyKey = null) => {
       if (attempt > 0) {
@@ -119,15 +117,15 @@ const useOfflineSync = () => {
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
 
-      const headers = { 'Content-Type': 'application/json' };
+      const headers = { "Content-Type": "application/json" };
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      if (forceOverride) headers['X-Override-Conflict'] = 'true';
-      if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+      if (forceOverride) headers["X-Override-Conflict"] = "true";
+      if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
 
       const { response, data } = await fetchWithTimeout(
         url,
         {
-          method: 'POST',
+          method: "POST",
           headers,
           body: JSON.stringify(payload),
           signal // 🔥 FIX: Passed signal so network request aborts if component unmounts mid-sync
@@ -146,7 +144,7 @@ const useOfflineSync = () => {
       if (response.status >= 400 && response.status < 500) {
         logger.warn(
           `Offline queue: server rejected item with ${response.status} — dropping.`,
-          await response.text().catch(() => '')
+          await response.text().catch(() => "")
         );
         return { status: "dropped" };
       }
@@ -179,11 +177,10 @@ const useOfflineSync = () => {
       // SECURITY: Validate queue ownership to prevent cross-user action replay.
       const currentUserId = user?.id;
       if (!currentUserId) {
-        logger.error('[Security] Cannot sync queue: current user ID is missing');
-        toast.error(
-          "Unable to verify offline actions ownership. Please refresh the page.",
-          { autoClose: 6000 }
-        );
+        logger.error("[Security] Cannot sync queue: current user ID is missing");
+        toast.error("Unable to verify offline actions ownership. Please refresh the page.", {
+          autoClose: 6000,
+        });
         return;
       }
 
@@ -193,14 +190,13 @@ const useOfflineSync = () => {
       // If all actions were filtered out due to ownership mismatch, clear the queue
       if (validatedQueue.length === 0 && queue.length > 0) {
         logger.warn(
-          '[Security] Clearing offline queue: all actions belong to different user(s). ' +
-          'This prevents cross-user action replay.'
+          "[Security] Clearing offline queue: all actions belong to different user(s). " +
+            "This prevents cross-user action replay."
         );
         await clearQueue();
-        toast.warning(
-          "Offline actions from a previous session have been cleared for security.",
-          { autoClose: 5000 }
-        );
+        toast.warning("Offline actions from a previous session have been cleared for security.", {
+          autoClose: 5000,
+        });
         return;
       }
 
@@ -252,14 +248,34 @@ const useOfflineSync = () => {
             // Handle Conflict loop — pass the abort signal so the waiter
             // is cancelled cleanly if the component unmounts mid-sync
             if (res.status === "conflict") {
-              const resolution = await resolveConflict(item, res.serverState, conflictController.signal);
+              const resolution = await resolveConflict(
+                item,
+                res.serverState,
+                conflictController.signal
+              );
 
               if (resolution.resolution === "local") {
                 // Retry with force flag
-                res = await postWithBackoff(url, item.payload, token, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff(
+                  url,
+                  item.payload,
+                  token,
+                  0,
+                  true,
+                  conflictController.signal,
+                  item.id
+                );
               } else if (resolution.resolution === "merge") {
                 // Post merged content
-                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff(
+                  url,
+                  resolution.mergedPayload,
+                  token,
+                  0,
+                  true,
+                  conflictController.signal,
+                  item.id
+                );
               } else {
                 // Discard local (treated as handled success so we proceed)
                 res = { status: "success" };
@@ -291,7 +307,7 @@ const useOfflineSync = () => {
 
         if (droppedCount > 0) {
           toast.error(
-            `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
+            `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`
           );
         }
       } finally {
@@ -304,7 +320,7 @@ const useOfflineSync = () => {
       const LOCK_TIMEOUT_MS = 30_000;
 
       const now = Date.now();
-      const lockVal = localStorage.getItem(LOCK_KEY);
+      const lockVal = safeLocalStorage.getItem(LOCK_KEY);
 
       if (lockVal) {
         try {
@@ -318,9 +334,9 @@ const useOfflineSync = () => {
 
       const currentTabId = Math.random().toString(36).slice(2, 9);
       const lockData = JSON.stringify({ timestamp: now, tabId: currentTabId });
-      
+
       try {
-        localStorage.setItem(LOCK_KEY, lockData);
+        safeLocalStorage.setItem(LOCK_KEY, lockData);
       } catch (e) {
         // If localStorage fails (private mode etc.), run sync directly to avoid blocking
         await executeSync();
@@ -329,7 +345,10 @@ const useOfflineSync = () => {
 
       const heartbeatInterval = setInterval(() => {
         try {
-          localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
+          safeLocalStorage.setItem(
+            LOCK_KEY,
+            JSON.stringify({ timestamp: Date.now(), tabId: currentTabId })
+          );
         } catch (e) {}
       }, 10_000);
 
@@ -338,11 +357,11 @@ const useOfflineSync = () => {
       } finally {
         clearInterval(heartbeatInterval);
         try {
-          const checkVal = localStorage.getItem(LOCK_KEY);
+          const checkVal = safeLocalStorage.getItem(LOCK_KEY);
           if (checkVal) {
             const parsed = JSON.parse(checkVal);
             if (parsed && parsed.tabId === currentTabId) {
-              localStorage.removeItem(LOCK_KEY);
+              safeLocalStorage.removeItem(LOCK_KEY);
             }
           }
         } catch (e) {}

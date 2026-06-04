@@ -1,7 +1,7 @@
 import { Star, MessageSquare, Send, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { safeLocalStorage } from "../../utils/safeStorage";
 import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -15,21 +15,14 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   // Synchronize and reset form states cleanly whenever switching to a new event context
   useEffect(() => {
     const key = `feedback-submitted-${eventId}`;
-    if (localStorage.getItem(key)) {
+    if (safeLocalStorage.getItem(key)) {
       setSubmitted(true);
     } else {
-      setSubmitted(false);
-      // 🔥 FIX: Reset the form state when navigating to a new, unreviewed event
       setSubmitted(false);
       setRating(0);
       setHoveredRating(0);
       setComment("");
     }
-    
-    // Wipe out state properties from the preceding event
-    setRating(0);
-    setHoveredRating(0);
-    setComment("");
   }, [eventId]);
 
   const handleSubmit = async (e) => {
@@ -47,8 +40,8 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
     try {
       // Simulate API submit delay
       await new Promise((resolve) => setTimeout(resolve, 800));
-      
-      localStorage.setItem(`feedback-submitted-${eventId}`, "true");
+
+      safeLocalStorage.setItem(`feedback-submitted-${eventId}`, "true");
       setSubmitted(true);
       toast.success("Feedback submitted! Thank you for sharing your thoughts.");
     } catch (err) {
@@ -179,7 +172,8 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                 Thank you for your feedback!
               </h4>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-2.5">
-                We&apos;ve received your submission. Your rating and comments have been shared with the event organizers.
+                We&apos;ve received your submission. Your rating and comments have been shared with
+                the event organizers.
               </p>
             </div>
           </motion.div>

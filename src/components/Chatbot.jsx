@@ -116,6 +116,7 @@ export default function Chatbot() {
     } catch (e) {
       console.warn("localStorage unavailable for Chatbot expiration check");
     }
+    safeLocalStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
   }, [setMessages]);
 
   useEffect(() => {
@@ -126,11 +127,7 @@ export default function Chatbot() {
 
   // Sync last active timestamp when messages change
   useEffect(() => {
-    try {
-      localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
-    } catch (e) {
-      console.warn("localStorage unavailable for Chatbot sync");
-    }
+    safeLocalStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
   }, [messages]);
 
   const handleClearConversation = () => {
@@ -218,14 +215,17 @@ export default function Chatbot() {
     wasOpenRef.current = isOpen;
     wasMinimizedRef.current = isMinimized;
 
-    const timer = setTimeout(() => {
-      if (chatLogsRef.current) {
-        chatLogsRef.current.scrollTo({
-          top: chatLogsRef.current.scrollHeight,
-          behavior: isOpening ? "auto" : "smooth",
-        });
-      }
-    }, isOpening ? 250 : 50);
+    const timer = setTimeout(
+      () => {
+        if (chatLogsRef.current) {
+          chatLogsRef.current.scrollTo({
+            top: chatLogsRef.current.scrollHeight,
+            behavior: isOpening ? "auto" : "smooth",
+          });
+        }
+      },
+      isOpening ? 250 : 50
+    );
 
     return () => clearTimeout(timer);
   }, [messages, isTyping, isMinimized, isOpen]);
@@ -244,7 +244,9 @@ export default function Chatbot() {
     // Append User Message, pruning the oldest entries when the cap is exceeded.
     setMessages((prev) => {
       const next = [...prev, { role: "user", content: cleanMessage }];
-      return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
+      return next.length > MAX_STORED_MESSAGES
+        ? next.slice(next.length - MAX_STORED_MESSAGES)
+        : next;
     });
     setDraft("");
     setIsTyping(true);
@@ -254,8 +256,13 @@ export default function Chatbot() {
     replyTimerRef.current = setTimeout(() => {
       const reply = getAssistantReply(cleanMessage);
       setMessages((prev) => {
-        const next = [...prev, { role: "assistant", content: reply.answer, actions: reply.actions }];
-        return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
+        const next = [
+          ...prev,
+          { role: "assistant", content: reply.answer, actions: reply.actions },
+        ];
+        return next.length > MAX_STORED_MESSAGES
+          ? next.slice(next.length - MAX_STORED_MESSAGES)
+          : next;
       });
       setIsTyping(false);
       replyTimerRef.current = null;
@@ -474,9 +481,7 @@ export default function Chatbot() {
                   </motion.div>
                 </div>
               )}
-              
-              {/* 🔥 FIX: Added the missing dummy div to act as the scroll target for messagesEndRef */}
-              <div ref={messagesEndRef} />
+
             </div>
 
             {/* Footer controls */}

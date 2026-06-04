@@ -3,6 +3,7 @@
  * @module hooks/useLocalStorage
  */
 import { useState, useEffect, useCallback, useRef } from "react";
+import { safeLocalStorage } from "../utils/safeStorage.js";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
 import { logger } from "../utils/logger";
 
@@ -36,8 +37,13 @@ const useLocalStorage = (key, initialValue) => {
 
   const readValue = useCallback(() => {
     if (typeof window === "undefined") return initialValueRef.current;
+
+    if (!safeLocalStorage.isAvailable()) {
+      return initialValueRef.current;
+    }
+
     try {
-      const item = window.localStorage.getItem(key);
+      const item = safeLocalStorage.getItem(key);
       return safeJsonParse(item, initialValueRef.current);
     } catch (error) {
       logger.warn(`useLocalStorage: error reading key "${key}":`, error);
@@ -46,28 +52,41 @@ const useLocalStorage = (key, initialValue) => {
   }, [key]);
 
   const [storedValue, setStoredValue] = useState(() => {
-  if (typeof window === "undefined") return initialValue;
+    if (typeof window === "undefined") return initialValue;
 
-  try {
-    const item = window.localStorage.getItem(key);
-    return safeJsonParse(item, initialValue);
-  } catch (error) {
-    console.warn(`useLocalStorage: error reading key "${key}":`, error);
-    return initialValue;
-  }
+    if (!safeLocalStorage.isAvailable()) {
+      return initialValue;
+    }
+
+    try {
+      const item = safeLocalStorage.getItem(key);
+      return safeJsonParse(item, initialValue);
+    } catch (error) {
+      logger.warn(`useLocalStorage: error reading key "${key}":`, error);
+      return initialValue;
+    }
   });
 
-  
   const setValue = useCallback(
     (value) => {
       try {
+        if (!safeLocalStorage.isAvailable()) {
+          logger.warn(`useLocalStorage: storage unavailable for key "${key}"`);
+          return;
+        }
+
         setStoredValue((currentVal) => {
           const newValue = value instanceof Function ? value(currentVal) : value;
 
           queueMicrotask(() => {
-            window.localStorage.setItem(key, JSON.stringify(newValue));
+            const success = safeLocalStorage.setItem(key, JSON.stringify(newValue));
+            if (!success) {
+              logger.warn(`useLocalStorage: failed to set key "${key}"`);
+            }
             isInternalWrite.current = true;
-            window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+            }
           });
 
           return newValue;
@@ -81,20 +100,31 @@ const useLocalStorage = (key, initialValue) => {
 
   const removeValue = useCallback(() => {
     try {
-      window.localStorage.removeItem(key);
+      if (!safeLocalStorage.isAvailable()) {
+        logger.warn(`useLocalStorage: storage unavailable for key "${key}"`);
+        return;
+      }
+
+      const success = safeLocalStorage.removeItem(key);
+      if (!success) {
+        logger.warn(`useLocalStorage: failed to remove key "${key}"`);
+      }
+
       setStoredValue(initialValueRef.current);
 
-      // 🔥 FIX: Mark as internal before dispatching
       isInternalWrite.current = true;
-      window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+      }
     } catch (error) {
       logger.warn(`useLocalStorage: error removing key "${key}":`, error);
     }
   }, [key]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const handleStorageChange = (event) => {
-      // 🔥 FIX: Skip events WE fired — they are already handled by setStoredValue
       if (isInternalWrite.current) {
         isInternalWrite.current = false;
         return;
@@ -118,13 +148,7 @@ const useLocalStorage = (key, initialValue) => {
 };
 
 export default useLocalStorage;
+
 export const isLocalStorageAvailable = () => {
-  try {
-    const testKey = "__storage_test__";
-    window.localStorage.setItem(testKey, testKey);
-    window.localStorage.removeItem(testKey);
-    return true;
-  } catch (e) {
-    return false;
-  }
+  return safeLocalStorage.isAvailable();
 };

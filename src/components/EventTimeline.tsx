@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useMyEvents } from "../context/MyEventsContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { safeLocalStorage } from "../utils/safeStorage";
 import {
   Calendar,
   Clock,
@@ -58,9 +59,6 @@ export const EventTimeline: React.FC = () => {
 
   // 2. React Hooks to manage state & localStorage synchronization
   const [timeline, setTimeline] = useState<Event[]>(() => {
-    // 🔥 FIX: SSR Guard to prevent ReferenceError crashes in test/server environments
-    if (typeof window === "undefined") return [];
-    
     try {
       const stored = localStorage.getItem("eventra_timeline");
       return stored ? JSON.parse(stored) : [];
@@ -81,11 +79,7 @@ export const EventTimeline: React.FC = () => {
 
   // Sync state changes to localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem("eventra_timeline", JSON.stringify(timeline));
-    } catch (e) {
-      console.error("Failed to save timeline to localStorage", e);
-    }
+    safeLocalStorage.setItem("eventra_timeline", JSON.stringify(timeline));
   }, [timeline]);
 
   // Clear clash alert after 4 seconds
@@ -210,7 +204,8 @@ export const EventTimeline: React.FC = () => {
               My Timeline Planner
             </h2>
             <p className="mt-2 text-sm text-slate-400 max-w-xl">
-              Design your personalized conference day. Seamlessly schedule your registered events, track timing, and resolve conflicts instantly.
+              Design your personalized conference day. Seamlessly schedule your registered events,
+              track timing, and resolve conflicts instantly.
             </p>
           </div>
           <div className="flex items-center gap-3 self-start md:self-center bg-slate-900/60 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-800">
@@ -238,7 +233,12 @@ export const EventTimeline: React.FC = () => {
               <div className="flex-1">
                 <h4 className="font-bold text-red-300 text-sm">Schedule Conflict Detected!</h4>
                 <p className="text-xs text-red-200/90 mt-1">
-                  Cannot schedule <strong className="text-white">"{clashAlert.newEventTitle}"</strong>. It conflicts directly with <strong className="text-white">"{clashAlert.clashingEventTitle}"</strong> on <strong className="underline decoration-red-400/50">{clashAlert.dateTime}</strong>.
+                  Cannot schedule{" "}
+                  <strong className="text-white">"{clashAlert.newEventTitle}"</strong>. It conflicts
+                  directly with{" "}
+                  <strong className="text-white">"{clashAlert.clashingEventTitle}"</strong> on{" "}
+                  <strong className="underline decoration-red-400/50">{clashAlert.dateTime}</strong>
+                  .
                 </p>
               </div>
               <button
@@ -265,7 +265,6 @@ export const EventTimeline: React.FC = () => {
 
         {/* Unified Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
           {/* Left Panel: Available Registered Events (5 Columns) */}
           <div className="lg:col-span-5 flex flex-col gap-6">
             <div className="bg-slate-900/50 rounded-2xl p-5 border border-slate-800">
@@ -274,7 +273,8 @@ export const EventTimeline: React.FC = () => {
                 Registered Events
               </h3>
               <p className="text-xs text-slate-400 mb-5 leading-relaxed">
-                These are the events you are registered to attend. Select them below to add to your custom visual schedule timeline.
+                These are the events you are registered to attend. Select them below to add to your
+                custom visual schedule timeline.
               </p>
 
               {availableRegisteredEvents.length === 0 ? (
@@ -282,7 +282,8 @@ export const EventTimeline: React.FC = () => {
                   <HelpCircle className="mx-auto text-slate-600 mb-3" size={32} />
                   <p className="text-sm text-slate-400 font-medium">No registrations yet</p>
                   <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                    Register for upcoming events on the dashboard above, and they will appear here to plan!
+                    Register for upcoming events on the dashboard above, and they will appear here
+                    to plan!
                   </p>
                 </div>
               ) : unscheduledEvents.length === 0 ? (
@@ -307,7 +308,9 @@ export const EventTimeline: React.FC = () => {
                         className="p-3.5 bg-slate-950/80 rounded-xl border border-slate-800/80 hover:border-slate-700 hover:bg-slate-900 transition flex items-center justify-between gap-4"
                       >
                         <div className="min-w-0">
-                          <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-1.5 ${getCategoryStyles(event.category)}`}>
+                          <span
+                            className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-1.5 ${getCategoryStyles(event.category)}`}
+                          >
                             {event.category}
                           </span>
                           <h4 className="text-sm font-semibold text-slate-200 truncate pr-2">
@@ -354,7 +357,8 @@ export const EventTimeline: React.FC = () => {
                 <Clock className="text-slate-600 mb-3 animate-pulse" size={40} />
                 <p className="text-sm font-semibold text-slate-300">Your timeline is empty</p>
                 <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                  Schedule some of your registered events using the panel on the left to map your day visually.
+                  Schedule some of your registered events using the panel on the left to map your
+                  day visually.
                 </p>
               </div>
             ) : (
@@ -396,7 +400,9 @@ export const EventTimeline: React.FC = () => {
                                 <Clock size={10} />
                                 {item.time}
                               </span>
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${getCategoryStyles(item.category)}`}>
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${getCategoryStyles(item.category)}`}
+                              >
                                 {item.category}
                               </span>
                             </div>
@@ -439,7 +445,6 @@ export const EventTimeline: React.FC = () => {
               </div>
             )}
           </div>
-
         </div>
       </div>
     </section>

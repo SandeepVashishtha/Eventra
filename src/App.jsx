@@ -4,6 +4,7 @@ import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
+import { safeLocalStorage } from "./utils/safeStorage";
 
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
@@ -65,11 +66,7 @@ function App() {
     </div>
   );
   const [cursorEnabled, setCursorEnabled] = useState(() => {
-    try {
-      return localStorage.getItem("cursor") !== "off";
-    } catch {
-      return true; // fallback safe default
-    }
+    return safeLocalStorage.getItem("cursor") !== "off";
   });
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
@@ -87,11 +84,7 @@ function App() {
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
     setCursorEnabled(newValue);
-    try {
-      localStorage.setItem("cursor", newValue ? "on" : "off");
-    } catch {
-      // Ignore storage failures in private browsing or restricted contexts.
-    }
+    safeLocalStorage.setItem("cursor", newValue ? "on" : "off");
   };
 
   useEffect(() => {
