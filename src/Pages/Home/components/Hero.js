@@ -12,7 +12,7 @@ import CountUpLib from "react-countup";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
-import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
+import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import RespawningText from "../../../components/visual/RespawningText";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
@@ -158,7 +158,7 @@ const Hero = () => {
 
   useEffect(() => {
     if (debouncedTerm.trim()) {
-      setSearchResults(searchIndex.search(debouncedTerm).slice(0, SEARCH_RESULT_LIMIT));
+      setSearchResults(searchIndex.search(debouncedTerm.trim()).slice(0, SEARCH_RESULT_LIMIT));
       setShowResults(true);
       return;
     }
@@ -377,7 +377,7 @@ const Hero = () => {
           </motion.div>
 
           {!searchTerm.trim() && (
-            <SectionErrorBoundary label="Statistics">
+            <ErrorBoundary level="section" label="Statistics">
               <motion.div
                 variants={fadeUp}
                 style={{ y: isTouch || prefersReducedMotion ? 0 : yStats, willChange: "transform" }}
@@ -416,7 +416,7 @@ const Hero = () => {
                   </motion.div>
                 ))}
               </motion.div>
-            </SectionErrorBoundary>
+            </ErrorBoundary>
           )}
         </motion.div>
       </motion.div>

@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { Clock } from "lucide-react";
+import { getServerTime } from "../../utils/timeSync";
 
 const calculateTimeLeft = (deadline) => {
-  const diff = new Date(deadline) - new Date();
+  const diff = new Date(deadline) - getServerTime();
   if (isNaN(diff) || diff <= 0) return null;
   return {
     days: Math.floor(diff / (1000 * 60 * 60 * 24)),

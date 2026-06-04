@@ -13,7 +13,7 @@ import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
 import {
@@ -121,6 +121,7 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
+  const { isLoading } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
@@ -145,15 +146,15 @@ const EventsPage = () => {
 
     try {
       savedFilters = JSON.parse(
-        window.localStorage.getItem(FILTER_STORAGE_KEY) || "{}"
+        window.sessionStorage.getItem(FILTER_STORAGE_KEY) || "{}"
       );
     } catch {
       savedFilters = {};
     }
 
-    const page = parseInt(searchParams.get("page")) || 1;
+    const page = parseInt(searchParams.get("page"), 10) || 1;
     const perPage =
-      parseInt(searchParams.get("perPage")) || savedFilters.perPage || 6;
+      parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 6;
     const filter =
       searchParams.get("filter") || savedFilters.filterType || "all";
     const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
@@ -197,7 +198,7 @@ const EventsPage = () => {
     setSearchParams(params, { replace: true });
 
     try {
-      window.localStorage.setItem(
+      window.sessionStorage.setItem(
         FILTER_STORAGE_KEY,
         JSON.stringify({
           searchQuery: listing.searchQuery,
@@ -209,7 +210,7 @@ const EventsPage = () => {
         })
       );
     } catch {
-      // localStorage can be unavailable in private browsing or embedded views.
+      // sessionStorage can be unavailable in private browsing or embedded views.
     }
   }, [
     listing.currentPage,
@@ -232,6 +233,7 @@ const EventsPage = () => {
       setLocalSearchInput(safeQuery);
       listing.setSearchQuery(safeQuery);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     rawSearchParam,
     routeSearchQuery,
@@ -248,7 +250,7 @@ const EventsPage = () => {
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
-    if (!listing.isLoading && routeSearchQuery) {
+    if (!isLoading && routeSearchQuery) {
       setTimeout(() => {
         cardSectionRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -256,7 +258,7 @@ const EventsPage = () => {
         });
       }, 100);
     }
-  }, [listing.isLoading, routeSearchQuery]);
+  }, [isLoading, routeSearchQuery]);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -265,6 +267,7 @@ const EventsPage = () => {
   const clearSearchAndFilters = () => {
     listing.setSearchQuery("");
     listing.setFilterType("all");
+    listing.setCategoryFilter("all");
     listing.setSortType("Newest");
     listing.setAdvancedFilters(getDefaultFilters());
     setLocalSearchInput("");
@@ -289,6 +292,8 @@ const EventsPage = () => {
           <EventFiltersToolbar
             filterType={listing.filterType}
             onFilterChange={listing.setFilterType}
+            categoryFilter={listing.categoryFilter}
+            onCategoryChange={listing.setCategoryFilter}
             sortType={listing.sortType}
             onSortChange={listing.setSortType}
             viewMode={listing.viewMode}
@@ -301,6 +306,7 @@ const EventsPage = () => {
             onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
             priceStats={listing.priceStats}
             dateRangeStats={listing.dateRangeStats}
+            onResetFilters={clearSearchAndFilters}
           />
         </div>
 
@@ -312,6 +318,8 @@ const EventsPage = () => {
           }}
           filterType={listing.filterType}
           setFilterType={listing.setFilterType}
+          categoryFilter={listing.categoryFilter}
+          setCategoryFilter={listing.setCategoryFilter}
           sortType={listing.sortType}
           setSortType={listing.setSortType}
           viewMode={listing.viewMode}
@@ -320,9 +328,9 @@ const EventsPage = () => {
           onAdvancedFiltersChange={listing.setAdvancedFilters}
         />
 
-        <SectionErrorBoundary label="Events">
+        <ErrorBoundary level="section" label="Events">
      {renderCardSection(
-  listing.isLoading,
+  isLoading,
   listing.loadError,
   listing.fetchEvents,
   listing.paginatedEvents,
@@ -340,13 +348,13 @@ const EventsPage = () => {
               />
             </div>
           )}
-        </SectionErrorBoundary>
+        </ErrorBoundary>
 
         {/* Interactive Event Timeline Planner Section */}
         <div className="mt-12 sm:mt-16">
-          <SectionErrorBoundary label="Event Timeline Planner">
+          <ErrorBoundary level="section" label="Event Timeline Planner">
             <EventTimeline />
-          </SectionErrorBoundary>
+          </ErrorBoundary>
         </div>
       </div>
 

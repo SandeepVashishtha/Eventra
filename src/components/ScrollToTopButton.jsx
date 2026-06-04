@@ -12,8 +12,12 @@ export default function ScrollToTopButton() {
     
     // Check initially and set up observer
     handleChatbotState();
+    
+    // 🔥 FIX: Removed `subtree: true`. 
+    // Observing the entire DOM subtree causes massive CPU layout thrashing on every React render.
+    // Since the Chatbot uses createPortal to append directly to the body, we only need to observe direct children.
     const observer = new MutationObserver(handleChatbotState);
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, { childList: true }); 
     
     return () => {
       observer.disconnect();
@@ -26,11 +30,21 @@ export default function ScrollToTopButton() {
 
   return <BackToTopButton threshold={50} positionClass={positionClass} />;
 }
+
 // Accessible landmark container router focus shifting utility helper
 export const shiftLandmarkFocus = (elementId) => {
+  // 🔥 FIX: Added SSR guard to prevent ReferenceError crashes in Node/Next.js/Testing environments
+  if (typeof document === "undefined") return;
+
   const container = document.getElementById(elementId);
   if (container) {
     container.setAttribute("tabindex", "-1");
     container.focus();
+
+    // 🔥 FIX: Clean up the tabindex after focus is lost so we don't permanently pollute the DOM
+    container.addEventListener('blur', function cleanup() {
+      container.removeAttribute('tabindex');
+      container.removeEventListener('blur', cleanup);
+    });
   }
 };
