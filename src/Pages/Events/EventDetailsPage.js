@@ -7,7 +7,7 @@ import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
 import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
 import { toast } from "react-toastify";
-import { getEventStatus } from "../../utils/eventUtils";
+import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { logError } from "../../utils/errorLogger";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -214,7 +214,10 @@ const EventDetailsPage = () => {
     );
   }
 
-  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+  const eventStatus = getEventStatus(event);
+  const isPastEvent = eventStatus === "past" || eventStatus === "ended";
+  const isCancelledEvent = eventStatus === "cancelled";
+  const isRegistrationBlocked = isEventRegistrationClosed(event);
 
   return (
     <>
@@ -265,10 +268,10 @@ const EventDetailsPage = () => {
                     </span>
                     <span
                       className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        isPastEvent ? "bg-gray-600" : "bg-green-600"
+                        isRegistrationBlocked ? "bg-gray-600" : "bg-green-600"
                       }`}
                     >
-                      {isPastEvent ? "Past Event" : "Upcoming"}
+                      {isCancelledEvent ? "Cancelled" : isPastEvent ? "Past Event" : "Upcoming"}
                     </span>
                   </div>
                   <h1
@@ -297,7 +300,7 @@ const EventDetailsPage = () => {
               className="flex min-w-0 flex-col gap-4 sm:gap-6 lg:col-span-1"
               aria-label="Event registration and details"
             >
-              {!isPastEvent && <CountdownTimer date={event.date} time={event.time} />}
+              {!isRegistrationBlocked && <CountdownTimer date={event.date} time={event.time} />}
 
               <div className="rounded-2xl border border-gray-200 bg-card-bg p-4 shadow-sm dark:border-gray-700 dark:bg-card-bg sm:p-6">
                 <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
@@ -343,7 +346,7 @@ const EventDetailsPage = () => {
                 </div>
               </div>
 
-              {!isPastEvent && (
+              {!isRegistrationBlocked && (
                 isRegistered(event.id) ? (
                   <div className="w-full text-center py-3 bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 rounded-2xl font-semibold">
                     You are registered!
