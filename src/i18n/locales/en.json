@@ -154,5 +154,13 @@
     "switch": "Language",
     "en": "English",
     "es": "Español"
+  },
+  "theme": {
+    "switchToLight": "Switch to Light",
+    "switchToDark": "Switch to Dark",
+    "customizer": "THEME Customizer",
+    "switchToLightMode": "Switch to Light Mode",
+    "switchToDarkMode": "Switch to Dark Mode",
+    "openCustomizer": "Open Theme Customizer"
   }
 }
