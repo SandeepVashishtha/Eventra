@@ -1,0 +1,96 @@
+name: GSSoC — Mentor Label Auto-Apply
+
+# Automatically applies `mentor:Ayushh-Sharmaa` label when that
+# mentor is added as a PR reviewer, submits a review, or is assigned to an issue.
+on:
+  pull_request_target:
+    types: [review_requested]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [assigned]
+
+concurrency:
+  group: mentor-label-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  apply-mentor-label:
+    name: Apply Mentor Label
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Apply mentor label on reviewer/review/assignment events
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const MENTOR_USERNAME = 'Ayushh-Sharmaa';
+            const MENTOR_LABEL    = `mentor:${MENTOR_USERNAME}`;
+            const LABEL_COLOR     = '6f42c1';
+
+            // ── Ensure the label exists ───────────────────────────────────────
+            async function ensureMentorLabel() {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: MENTOR_LABEL });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner, repo,
+                    name: MENTOR_LABEL,
+                    color: LABEL_COLOR,
+                    description: `GSSoC: Mentor — @${MENTOR_USERNAME}`,
+                  });
+                  console.log(`✅ Created label: ${MENTOR_LABEL}`);
+                }
+              }
+            }
+
+            // ── Apply label to an issue/PR if not already present ────────────
+            async function applyLabelTo(issueNumber, targetType) {
+              await ensureMentorLabel();
+              const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+                owner, repo, issue_number: issueNumber,
+              });
+              if (labels.some(l => l.name === MENTOR_LABEL)) {
+                console.log(`⏭️  ${MENTOR_LABEL} already on ${targetType} #${issueNumber} — skipping`);
+                return;
+              }
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number: issueNumber, labels: [MENTOR_LABEL],
+              });
+              console.log(`🏷️  Applied ${MENTOR_LABEL} to ${targetType} #${issueNumber}`);
+            }
+
+            const event = context.eventName;
+
+            // ── Trigger (a): PR review_requested ─────────────────────────────
+            if (event === 'pull_request_target') {
+              const reviewer = context.payload.requested_reviewer;
+              if (reviewer && reviewer.login === MENTOR_USERNAME) {
+                const prNum = context.payload.pull_request.number;
+                await applyLabelTo(prNum, 'PR');
+              }
+            }
+
+            // ── Trigger (b): PR review submitted ─────────────────────────────
+            else if (event === 'pull_request_review') {
+              const reviewer = context.payload.review.user;
+              if (reviewer && reviewer.login === MENTOR_USERNAME) {
+                const prNum = context.payload.pull_request.number;
+                await applyLabelTo(prNum, 'PR');
+              }
+            }
+
+            // ── Trigger (c): Issue assigned ───────────────────────────────────
+            else if (event === 'issues') {
+              const assignee = context.payload.assignee;
+              if (assignee && assignee.login === MENTOR_USERNAME) {
+                const issueNum = context.payload.issue.number;
+                await applyLabelTo(issueNum, 'issue');
+              }
+            }
