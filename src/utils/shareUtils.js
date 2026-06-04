@@ -107,8 +107,19 @@ export const generateSharingUrl = (shareData, platform) => {
  * @returns {Object} Sharing data object
  */
 export const generateEventSharingData = (event, baseUrl = null) => {
+  if (!event?.id) {
+    console.warn("[shareUtils] generateEventSharingData called with missing event.id — share URL cannot be constructed.");
+    return {
+      title: "",
+      description: "",
+      url: "",
+      hashtags: "eventra,event,tech",
+      image: "",
+    };
+  }
+
   // Determine the correct base URL for sharing
-  const deployedDomain = process.env.REACT_APP_PUBLIC_URL || "eventra.sandeepvashishtha.tech";
+  const rawPublicUrl = process.env.REACT_APP_PUBLIC_URL || "eventra.sandeepvashishtha.tech";
 
   // If baseUrl is provided, use it, otherwise detect
   if (!baseUrl) {
