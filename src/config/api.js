@@ -333,6 +333,14 @@ export const API_ENDPOINTS = {
 };
 
 
+const buildAxiosConfig = (url, options = {}) => {
+  const { signal, headers, ...rest } = options;
+  const config = normalizeRequestConfig(rest);
+  if (signal) config.signal = signal;
+  if (headers) config.headers = { ...config.headers, ...headers };
+  return { url, config };
+};
+
 export const apiUtils = {
   get: (url, config = {}) =>
     API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
@@ -344,6 +352,23 @@ export const apiUtils = {
     API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
   delete: (url, config = {}) =>
     API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+
+  request: async (method, url, data = null, options = {}) => {
+    const config = normalizeRequestConfig(options);
+    if (options.signal) config.signal = options.signal;
+    if (options.headers) config.headers = { ...config.headers, ...options.headers };
+    config.method = method.toLowerCase();
+    const axiosResponse = await API.request({ url, method: config.method, data, ...config });
+    const wrappedHeaders = wrapHeaders(axiosResponse.headers);
+    return {
+      response: {
+        status: axiosResponse.status,
+        ok: axiosResponse.status >= 200 && axiosResponse.status < 300,
+        headers: wrappedHeaders,
+      },
+      data: axiosResponse.data,
+    };
+  },
 };
 
 export default API;
