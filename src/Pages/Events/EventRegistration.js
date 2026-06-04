@@ -308,6 +308,7 @@ const EventRegistration = () => {
 
       setRegistered(true);
       toast.success("Registration successful!");
+      // addRegistration(event, formData)
       addRegistration(event, formData, registrationId, qrToken);
       clearSession();
         } catch (error) {
