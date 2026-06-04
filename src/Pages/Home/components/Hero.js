@@ -1,16 +1,21 @@
 import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import {
-  AnimatePresence,
-  MotionConfig,
-  motion,
-  useAnimation,
-  useScroll,
-  useTransform,
-} from "framer-motion";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
+import CountUpLib from "react-countup";
+
+import ErrorBoundary from "../../../components/common/ErrorBoundary";
+import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import RespawningText from "../../../components/visual/RespawningText";
+import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
+import useDocumentTitle from "../../../hooks/useDocumentTitle";
+import useReducedMotion from "../../../hooks/useReducedMotion.js";
+import eventsData from "../../Events/eventsMockData.json";
+import hackathonsData from "../../Hackathons/hackathonMockData.json";
+import projectsData from "../../Projects/mockProjectsData.json";
+
+const CountUp = CountUpLib.default || CountUpLib;
 import CountUpLib from "react-countup";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";

@@ -5,7 +5,8 @@ import StatusBadge from "../common/StatusBadge";
 import { DashboardItemCardSkeleton } from "../common/SkeletonLoaders";
 import SearchEmptyState from "../common/SearchEmptyState";
 
-const ProjectsTab = ({ projects, loading, fadeUp }) => (
+// 🔥 FIX 1: Added default empty array `projects = []` to prevent fatal TypeErrors
+const ProjectsTab = ({ projects = [], loading, fadeUp }) => (
   <motion.div key="projects" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
     <div className="ud-tab-header">
       <h2 className="ud-page-title"><FolderOpen size={20} /> My Projects</h2>
@@ -34,7 +35,8 @@ const ProjectsTab = ({ projects, loading, fadeUp }) => (
           : projects.map((p, i) => (
         <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
           <div className="ud-item-top">
-            <span className="ud-item-type" style={{ background: "#8b5cf618", color: "#8b5cf6" }}><FolderOpen size={13} /> Project</span>
+            {/* 🔥 FIX 2: Replaced inline static hex styles with semantic Tailwind theme classes */}
+            <span className="ud-item-type bg-primary/10 text-primary"><FolderOpen size={13} /> Project</span>
             <StatusBadge status={p.projectStatus} />
           </div>
           <h3 className="ud-item-title">{p.title}</h3>
