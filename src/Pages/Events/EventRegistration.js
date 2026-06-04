@@ -360,7 +360,11 @@ const EventRegistration = () => {
         setRegistered(true);
         toast.success(isEventFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
         const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
-        addRegistration(event, formData, existingRegId, "");
+        // Do not pass the current form values — the server rejected this
+        // submission as a duplicate, so formData is unconfirmed. Storing it
+        // would overwrite the locally-cached registration with values that
+        // may differ from the authoritative server record.
+        addRegistration(event, {}, existingRegId, "");
         clearSession();
         toast.info(failureMessage);
         return;
