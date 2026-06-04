@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/preserve-manual-memoization */
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle } from "lucide-react";
+import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle, Undo, Redo } from "lucide-react";
 import { toast } from "react-toastify";
 import ConfirmationModal from "../../common/ConfirmationModal";
 import ElementPalette from "./FloorPlan/ElementPalette";
@@ -17,7 +18,52 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const [selectedId, setSelectedId] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const [announcement, setAnnouncement] = useState("");
+  // Undo/Redo History States
+  const [past, setPast] = useState([]);
+  const [future, setFuture] = useState([]);
+
+  // Refs for tracking changes and avoiding stale closure issues
+  const elementsRef = useRef(elements);
+  const dragStartElementsRef = useRef(null);
+  const keyboardMoveStartElementsRef = useRef(null);
+  const isEditingRef = useRef(false);
+  const editTimerRef = useRef(null);
+
+  useEffect(() => {
+    elementsRef.current = elements;
+  }, [elements]);
+
+  // Record a snapshot of elements before a modifications
+  const recordHistory = useCallback((currentElements = elementsRef.current) => {
+    setPast((prev) => {
+      if (prev.length > 0 && JSON.stringify(prev[prev.length - 1]) === JSON.stringify(currentElements)) {
+        return prev;
+      }
+      return [...prev, currentElements];
+    });
+    setFuture([]);
+  }, []);
+
+  const undo = useCallback(() => {
+    if (past.length === 0) return;
+    const previous = past[past.length - 1];
+    const newPast = past.slice(0, past.length - 1);
+    setPast(newPast);
+    setFuture((prev) => [elementsRef.current, ...prev]);
+    setElements(previous);
+    announce("Undone last action.");
+  }, [past, announce]);
+
+  const redo = useCallback(() => {
+    if (future.length === 0) return;
+    const next = future[0];
+    const newFuture = future.slice(1);
+    setPast((prev) => [...prev, elementsRef.current]);
+    setFuture(newFuture);
+    setElements(next);
+    announce("Redone action.");
+  }, [future, announce]);
+
   const announce = useCallback((message) => {
     setAnnouncement("");
     setTimeout(() => { setAnnouncement(message); }, 50);
@@ -46,6 +92,21 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   useEffect(() => { elementsMapRef.current = new Map(elements.map((el) => [el.id, el])); }, [elements]);
 
   const updateSelectedElement = useCallback((key, value) => {
+    // Debounced history record session for properties panel adjustments (typing, sliders, checkboxes)
+    // Skip if editing is driven by canvas drag or repeating keyboard movements
+    if (!isDraggingRef.current && !keyboardMoveStartElementsRef.current) {
+      if (!isEditingRef.current) {
+        recordHistory();
+        isEditingRef.current = true;
+      }
+      if (editTimerRef.current) {
+        clearTimeout(editTimerRef.current);
+      }
+      editTimerRef.current = setTimeout(() => {
+        isEditingRef.current = false;
+      }, 800);
+    }
+
     const updates = typeof key === "object" ? key : { [key]: value };
     const currentSelectedId = selectedIdRef.current;
     setElements((prev) =>
@@ -67,10 +128,11 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         return el;
       })
     );
-  }, []);
+  }, [recordHistory]);
 
   const handleSeatAssign = (seatIndex, attendeeName) => {
-    setElements(elements.map(el => {
+    recordHistory();
+    setElements(elementsRef.current.map(el => {
       const nextAssignments = { ...el.assignedAttendees };
       Object.keys(nextAssignments).forEach(k => {
         if (nextAssignments[k] === attendeeName) {
@@ -140,6 +202,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
           <p className="text-xs text-gray-500 mb-3">Current changes will be overwritten.</p>
           <div className="flex gap-2">
             <button onClick={() => {
+              recordHistory();
               setElements(PRESETS[presetName]);
               setSelectedId(null);
               toast.success(`${presetName} layout loaded!`);
@@ -155,6 +218,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   };
 
   const handleAddElement = (type) => {
+    recordHistory();
     const id = `${type}-${Date.now()}`;
     const newElement = {
       id,
@@ -176,6 +240,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
   const confirmDeleteSelected = () => {
     if (selectedId) {
+      recordHistory();
       setElements(elements.filter(el => el.id !== selectedId));
       setSelectedId(null);
       toast.success("Element deleted successfully!");
@@ -185,17 +250,32 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   };
 
   const handleImport = (importedData) => {
+    recordHistory();
     setElements(importedData);
     setSelectedId(null);
     toast.success("Floor plan layout imported successfully!");
   };
 
   useEffect(() => {
+    const repeatingKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "r", "R", "+", "-", "=", "_"];
+
     const handleKeyDown = (e) => {
-      if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT")) return;
+      if (document.activeElement && (
+        document.activeElement.tagName === "INPUT" || 
+        document.activeElement.tagName === "SELECT" || 
+        document.activeElement.tagName === "TEXTAREA"
+      )) return;
       if (!selectedIdRef.current) return;
       const activeEl = elementsMapRef.current.get(selectedIdRef.current);
       if (!activeEl) return;
+
+      // Group repeating keyboard adjustments (arrows, rotation, resize) into a single history action
+      if (repeatingKeys.includes(e.key)) {
+        if (!keyboardMoveStartElementsRef.current) {
+          keyboardMoveStartElementsRef.current = elementsRef.current;
+        }
+      }
+
       const step = snapToGridRef.current ? 20 : 5;
       switch (e.key) {
         case "ArrowUp":
@@ -255,9 +335,56 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         default: break;
       }
     };
+
+    const handleKeyUp = (e) => {
+      if (repeatingKeys.includes(e.key)) {
+        if (keyboardMoveStartElementsRef.current) {
+          if (JSON.stringify(keyboardMoveStartElementsRef.current) !== JSON.stringify(elementsRef.current)) {
+            setPast(prev => [...prev, keyboardMoveStartElementsRef.current]);
+            setFuture([]);
+          }
+          keyboardMoveStartElementsRef.current = null;
+        }
+      }
+    };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
   }, [updateSelectedElement, announce, handleDeleteSelected, setSelectedId]);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if (document.activeElement && (
+        document.activeElement.tagName === "INPUT" || 
+        document.activeElement.tagName === "SELECT" || 
+        document.activeElement.tagName === "TEXTAREA"
+      )) {
+        return;
+      }
+
+      const modifier = e.ctrlKey || e.metaKey;
+
+      if (modifier && !e.altKey) {
+        if (e.key === "z" || e.key === "Z") {
+          e.preventDefault();
+          if (e.shiftKey) {
+            redo();
+          } else {
+            undo();
+          }
+        } else if (e.key === "y" || e.key === "Y") {
+          e.preventDefault();
+          redo();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [undo, redo]);
 
   const handleMouseDown = useCallback((e, elementId = null) => {
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
@@ -269,6 +396,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       setSelectedId(elementId);
       selectedIdRef.current = elementId;
       isDraggingRef.current = true;
+      dragStartElementsRef.current = elementsRef.current;
       setElements(prev => {
         const el = prev.find(item => item.id === elementId);
         if (el) {
@@ -313,6 +441,13 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+    }
+    if (dragStartElementsRef.current) {
+      if (JSON.stringify(dragStartElementsRef.current) !== JSON.stringify(elementsRef.current)) {
+        setPast(prev => [...prev, dragStartElementsRef.current]);
+        setFuture([]);
+      }
+      dragStartElementsRef.current = null;
     }
   }, []);
 
@@ -382,6 +517,27 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
           </div>
         </div>
         <div className="fp-topbar-actions">
+          {/* Undo/Redo Controls */}
+          <div className="flex items-center gap-1 bg-gray-900/60 border border-gray-800/80 px-2 py-1.5 rounded-lg mr-2">
+            <button
+              onClick={undo}
+              disabled={past.length === 0}
+              className={`p-1 rounded transition-colors ${past.length === 0 ? "text-gray-600 cursor-not-allowed" : "text-gray-300 hover:text-indigo-400 hover:bg-white/5"}`}
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo last change"
+            >
+              <Undo size={16} />
+            </button>
+            <button
+              onClick={redo}
+              disabled={future.length === 0}
+              className={`p-1 rounded transition-colors ${future.length === 0 ? "text-gray-600 cursor-not-allowed" : "text-gray-300 hover:text-indigo-400 hover:bg-white/5"}`}
+              title="Redo (Ctrl+Y)"
+              aria-label="Redo last change"
+            >
+              <Redo size={16} />
+            </button>
+          </div>
           <div className="hidden md:flex items-center gap-1.5 bg-gray-900/60 border border-gray-800/80 px-2.5 py-1.5 rounded-lg mr-2">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Presets:</span>
             <button onClick={() => loadPreset("empty")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Clear</button>
