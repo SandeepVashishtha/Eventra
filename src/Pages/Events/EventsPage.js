@@ -28,6 +28,7 @@ import {
 
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
+const DEFAULT_EVENTS_PER_PAGE = 6;
 const renderCardSection = (
   isLoading,
   loadError,
@@ -48,7 +49,7 @@ const renderCardSection = (
           role="status"
           aria-label="Loading events"
         >
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+          {Array.from({ length: DEFAULT_EVENTS_PER_PAGE }, (_, i) => (
             <EventCardSkeleton key={`skeleton-${i}`} />
           ))}
         </div>
@@ -157,28 +158,18 @@ const EventsPage = () => {
 
     const page = parseInt(searchParams.get("page"), 10) || 1;
     const perPage =
-      parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 6;
-    const filter =
-      searchParams.get("filter") || savedFilters.filterType || "all";
-    const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
-    const view = searchParams.get("view") || savedFilters.viewMode || "grid";
-    const urlAdvancedFilters = searchParams.get("filters");
-    const advancedFilters = urlAdvancedFilters
-      ? decodeAdvancedFilters(urlAdvancedFilters)
-      : normalizeAdvancedFilters(
-          savedFilters.advancedFilters || getDefaultFilters()
-        );
-    const initialSearch = routeSearchQuery || savedFilters.searchQuery || "";
+      parseInt(searchParams.get("perPage")) || DEFAULT_EVENTS_PER_PAGE;
+    const filter = searchParams.get("filter") || "all";
+    const sort = searchParams.get("sort") || "Newest";
+    const view = searchParams.get("view") || "grid";
 
-    if (initialSearch) {
-      setLocalSearchInput(initialSearch);
-      listing.setSearchQuery(initialSearch);
+    if (routeSearchQuery) listing.setSearchQuery(routeSearchQuery);
+    if (filter !== "all") listing.setFilterType(filter);
+    if (sort !== "Newest") listing.setSortType(sort);
+    if (view !== "grid") listing.setViewMode(view);
+    if (perPage !== DEFAULT_EVENTS_PER_PAGE) {
+      listing.setEventsPerPage(perPage);
     }
-    listing.setFilterType(filter);
-    listing.setSortType(sort);
-    listing.setViewMode(view);
-    listing.setEventsPerPage(perPage);
-    listing.setAdvancedFilters(advancedFilters);
     if (page !== 1) listing.setSafePage(page);
     hasHydratedFilters.current = true;
     setFiltersHydrated(true);
@@ -190,7 +181,9 @@ const EventsPage = () => {
 
     const params = {};
     if (listing.currentPage > 1) params.page = listing.currentPage;
-    if (listing.eventsPerPage !== 6) params.perPage = listing.eventsPerPage;
+    if (listing.eventsPerPage !== DEFAULT_EVENTS_PER_PAGE) {
+      params.perPage = listing.eventsPerPage;
+    }
     if (listing.searchQuery) params.search = listing.searchQuery;
     if (listing.filterType !== "all") params.filter = listing.filterType;
     if (listing.sortType !== "Newest") params.sort = listing.sortType;
@@ -245,9 +238,11 @@ const EventsPage = () => {
   ]);
 
   const handleSearch = (query = "") => {
-    const safeQuery = prepareSafeSearchQuery(query);
+    const safeQuery = prepareSafeSearchQuery(query.trim());
+
     setLocalSearchInput(safeQuery);
     listing.setSearchQuery(safeQuery);
+
     return listing.filteredEvents;
   };
 
@@ -258,13 +253,18 @@ const EventsPage = () => {
         cardSectionRef.current?.scrollIntoView({
           behavior: "smooth",
           block: "start",
+          inline: "nearest",
         });
       }, 100);
     }
   }, [isLoading, routeSearchQuery]);
 
   const scrollToCard = () => {
-    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+    cardSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+      inline: "nearest",
+    });
   };
 
   const clearSearchAndFilters = () => {
