@@ -268,7 +268,7 @@ export const buildPersonalizedRecommendations = ({
     location,
   });
 
-  return events
+  const scoredEvents = events
     .filter((event) => includeInteracted || !interactionProfile.registeredIds.has(getEventId(event)))
     .map((event) => {
       const result = calculateRecommendationScore(event, userProfile, interactionProfile);
@@ -279,8 +279,25 @@ export const buildPersonalizedRecommendations = ({
         recommendationReasons: result.reasons,
         breakdown: result.breakdown,
       };
-    })
+    });
+
+  const recommended = scoredEvents
     .filter((event) => event.recommendationScore > 0)
     .sort((a, b) => b.recommendationScore - a.recommendationScore)
+    .slice(0, limit);
+
+  if (recommended.length > 0) {
+    return recommended;
+  }
+
+  // Fallback for new/inactive users: recommend general trending/popular events rather than an empty list
+  return scoredEvents
+    .map((event) => ({
+      ...event,
+      recommendationReasons: event.recommendationReasons.length > 0
+        ? event.recommendationReasons
+        : ["Recommended for you"],
+    }))
+    .sort((a, b) => getPopularityScore(b) - getPopularityScore(a))
     .slice(0, limit);
 };
