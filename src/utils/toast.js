@@ -2,7 +2,6 @@ import { toast } from "react-toastify";
 
 const AUTH_TOAST_ID = "auth-feedback";
 
-/** Auth flows: dismiss stale toasts, show one toast, navigate after it closes. */
 export function showAuthToast(message, onAfterClose) {
   toast.dismiss(AUTH_TOAST_ID);
   toast.success(message, {
@@ -28,4 +27,16 @@ export function showInfoToast(message, onAfterClose) {
     autoClose: 2500,
     onClose: onAfterClose,
   });
+}
+
+export function showSuccessToast(message, options = {}) {
+  const { autoClose = 2500, toastId, onClose } = options;
+  if (toastId) toast.dismiss(toastId);
+  toast.success(message, { toastId, autoClose, onClose });
+}
+
+export function showWarningToast(message, options = {}) {
+  const { autoClose = 3000, toastId, onClose } = options;
+  if (toastId) toast.dismiss(toastId);
+  toast.warning(message, { toastId, autoClose, onClose });
 }
