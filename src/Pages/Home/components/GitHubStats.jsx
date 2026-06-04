@@ -80,6 +80,9 @@ export default function GitHubStats() {
           ]);
 
         // Repository data is required; bail out if it failed
+        // repoResult.status === "rejected"
+        // contributorsResult.status === "rejected"
+        // prResult.status === "rejected"
         if (repoResult.status === "rejected") {
           const cached = readCache();
           if (cached) {
@@ -111,6 +114,8 @@ export default function GitHubStats() {
           }
         } else if (prResult.status === "rejected") {
           prCount = "—";
+        } else {
+         //console.warn("Failed to fetch pull request count:", prResult.reason);
         }
 
         const next = {

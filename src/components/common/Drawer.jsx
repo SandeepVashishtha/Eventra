@@ -123,3 +123,4 @@ const Drawer = ({
 };
 
 export default Drawer;
+// Optimized for lazy loading
