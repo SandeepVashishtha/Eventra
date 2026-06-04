@@ -75,17 +75,22 @@ export const fetchWithTimeout = async (
       data,
     };
   } catch (error) {
+    if (error instanceof FetchError) {
+      // Already a FetchError (thrown by the !response.ok block above) — rethrow as-is
+      throw error;
+    }
+
     if (error.name === "AbortError") {
       logger.error("[fetchWithTimeout] Request aborted or timed out:", url);
-
       throw new FetchError(
         `Request timed out after ${timeout}ms or was manually aborted`
       );
     }
 
+    // Network-level failure (e.g. TypeError: Failed to fetch) — wrap in FetchError
+    // so all callers can rely on a single consistent error type
     logger.error("[fetchWithTimeout] Request failed:", error);
-
-    throw error;
+    throw new FetchError(error.message || "Network request failed");
   } finally {
     clearTimeout(timeoutId);
     // 🔥 FIX: Always clean up the event listener to prevent memory leaks
