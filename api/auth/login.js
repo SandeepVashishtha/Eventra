@@ -116,6 +116,8 @@ async function handler(req, res) {
 
     if (!loginRateLimiter.check(clientIp)) {
       return corsResponse(req, res, 429, {
+        success: false,
+        message: "Too many authentication attempts. Please try again later.",
         error: "Too many login attempts. Please try again later.",
         retryAfter: 60,
       });
