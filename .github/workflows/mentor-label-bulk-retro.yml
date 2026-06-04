@@ -1,0 +1,85 @@
+name: GSSoC — Bulk Retroactive Mentor Label
+
+# One-shot: manually trigger from Actions tab to label ALL existing PRs and issues.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (true = log only, false = actually apply labels)'
+        required: true
+        default: 'false'
+
+jobs:
+  bulk-label:
+    name: Apply Mentor Label to All Existing Items
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Bulk apply mentor label
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const MENTOR_USERNAME = 'Ayushh-Sharmaa';
+            const MENTOR_LABEL    = `mentor:${MENTOR_USERNAME}`;
+            const LABEL_COLOR     = '6f42c1';
+            const DRY_RUN         = context.payload.inputs.dry_run === 'true';
+
+            console.log(`🚀 Mode: ${DRY_RUN ? 'DRY RUN (no changes)' : 'LIVE (labels will be applied)'}`);
+
+            // ── Ensure label exists ───────────────────────────────────────────
+            if (!DRY_RUN) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: MENTOR_LABEL });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner, repo,
+                    name: MENTOR_LABEL,
+                    color: LABEL_COLOR,
+                    description: `GSSoC: Mentor — @${MENTOR_USERNAME}`,
+                  });
+                  console.log(`✅ Created label: ${MENTOR_LABEL}`);
+                }
+              }
+            }
+
+            let labeled = 0;
+            let skipped = 0;
+
+            // ── Helper: apply label to one item ───────────────────────────────
+            async function processItem(number, type) {
+              const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+                owner, repo, issue_number: number,
+              });
+              const hasLabel = labels.some(l => l.name === MENTOR_LABEL);
+              if (hasLabel) {
+                console.log(`⏭️  ${type} #${number} — already labeled`);
+                skipped++;
+                return;
+              }
+              console.log(`🏷️  ${type} #${number} — ${DRY_RUN ? '[DRY RUN] would apply' : 'applying'} ${MENTOR_LABEL}`);
+              if (!DRY_RUN) {
+                await github.rest.issues.addLabels({
+                  owner, repo, issue_number: number, labels: [MENTOR_LABEL],
+                });
+              }
+              labeled++;
+            }
+
+            // ── Paginate through ALL issues (open + closed) ───────────────────
+            for await (const response of github.paginate.iterator(
+              github.rest.issues.listForRepo,
+              { owner, repo, state: 'all', per_page: 100 }
+            )) {
+              for (const item of response.data) {
+                const type = item.pull_request ? 'PR' : 'Issue';
+                await processItem(item.number, type);
+              }
+            }
+
+            console.log(`\n✅ Done — ${labeled} labeled, ${skipped} already had the label.`);

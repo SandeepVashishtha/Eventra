@@ -52,10 +52,9 @@ const getInitialTheme = () => {
   return "system";
 };
 
+// ✅ FIXED: Yahan se duplicate line hata di gayi hai
 export const ThemeProvider = ({ children }) => {
-
-  export const ThemeProvider = ({ children }) => {
-    const [theme, setThemeState] = useState(() => getInitialTheme());
+  const [theme, setThemeState] = useState(() => getInitialTheme());
 
   // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {

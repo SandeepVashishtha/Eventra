@@ -8,7 +8,7 @@ import { useEffect, useCallback, useRef } from "react";
  * @param {Object} shortcuts - Mapping of keys to handlers
  * @param {boolean} disabled - Global disable toggle
  */
-const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
+export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
   const shortcutsRef = useRef(shortcuts);
   useEffect(() => {
     shortcutsRef.current = shortcuts;

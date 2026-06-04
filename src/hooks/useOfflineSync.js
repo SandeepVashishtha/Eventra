@@ -1,3 +1,7 @@
+/**
+ * @fileoverview useOfflineSync - Offline queue sync hook with cross-tab locking
+ * @module hooks/useOfflineSync
+ */
 import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +13,24 @@ import { fetchWithTimeout } from "../utils/fetchWithTimeout";
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
+
+/**
+ * A custom React hook that syncs queued offline actions to the server
+ * when the network connection is restored.
+ *
+ * Handles exponential backoff retries, conflict resolution via UI modal,
+ * cross-tab locking using Web Locks API with localStorage fallback, and
+ * security validation to prevent cross-user action replay.
+ *
+ * Automatically triggers sync on: network reconnect, background sync
+ * events, queue updates, and session restore events.
+ *
+ * @returns {void}
+ *
+ * @example
+ * // Mount once at app root level
+ * useOfflineSync();
+ */
 
 const useOfflineSync = () => {
   const { token, user } = useAuth();
@@ -328,10 +350,12 @@ const useOfflineSync = () => {
       }
 
       const heartbeatInterval = setInterval(() => {
+        if (syncLockAborted) { clearInterval(heartbeatInterval); return; }
         try {
           localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
         } catch (e) {}
       }, 10_000);
+      heartbeatIntervalRef.current = heartbeatInterval;
 
       try {
         await executeSync();
@@ -395,6 +419,8 @@ const useOfflineSync = () => {
 
     let idleId = null;
     let timeoutId = null;
+    const heartbeatIntervalRef = { current: null };
+    let syncLockAborted = false;
 
     if (navigator.onLine) {
       if (typeof window.requestIdleCallback === "function") {
@@ -419,6 +445,14 @@ const useOfflineSync = () => {
       // listener is removed and the sync loop exits cleanly on unmount.
       conflictController.abort();
       
+      // Signal the sync lock heartbeat to stop — it runs outside React's
+      // lifecycle and won't be caught by the normal finally block on unmount.
+      syncLockAborted = true;
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+
       if (idleId !== null) {
         window.cancelIdleCallback(idleId);
       }
