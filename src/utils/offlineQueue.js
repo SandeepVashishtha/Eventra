@@ -432,15 +432,10 @@ export const setQueue = async (newQueue) => {
           return;
         }
 
-        let completed = 0;
-        newQueue.forEach((item) => {
-          const putReq = store.put(item);
-          putReq.onsuccess = () => {
-            completed++;
-            if (completed === newQueue.length) resolve();
-          };
-          putReq.onerror = () => reject(putReq.error);
-        });
+        newQueue.forEach((item) => store.put(item));
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
       };
       clearReq.onerror = () => reject(clearReq.error);
     });

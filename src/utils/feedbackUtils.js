@@ -32,25 +32,18 @@ export const getEventFeedback = (eventId) => {
 export const saveFeedback = (eventId, feedback) => {
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
-    const eventFeedback = allFeedback[eventId] || [];
+    const rawList = allFeedback[eventId] || [];
 
-    // Check if user already submitted feedback (by submittedAt timestamp if userId not available)
-    const existingIndex = eventFeedback.findIndex(
-      (f) => f.userId === feedback.userId
-    );
+    // Use a Map for O(1) userId lookups instead of O(N) findIndex
+    const feedbackMap = new Map(rawList.map((f) => [f.userId, f]));
 
     const feedbackObject = {
       ...feedback,
       submittedAt: new Date().toISOString(),
     };
 
-    if (existingIndex >= 0) {
-      eventFeedback[existingIndex] = feedbackObject;
-    } else {
-      eventFeedback.push(feedbackObject);
-    }
-
-    allFeedback[eventId] = eventFeedback;
+    feedbackMap.set(feedback.userId, feedbackObject);
+    allFeedback[eventId] = Array.from(feedbackMap.values());
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
   } catch (error) {
@@ -71,7 +64,8 @@ export const hasUserSubmittedFeedback = (eventId, userId = null) => {
     if (!userId) {
       return feedback.length > 0;
     }
-    return feedback.some((f) => f.userId === userId);
+    const userIdSet = new Set(feedback.map((f) => f.userId));
+    return userIdSet.has(userId);
   } catch (error) {
     //console.error('Error checking feedback status:', error);
     return false;
@@ -87,10 +81,9 @@ export const hasUserSubmittedFeedback = (eventId, userId = null) => {
 export const getUserFeedback = (eventId, userId = null) => {
   try {
     const feedback = getEventFeedback(eventId);
-    if (!userId) {
-      return feedback.length > 0 ? feedback[feedback.length - 1] : null;
-    }
-    return feedback.find((f) => f.userId === userId) || null;
+    if (!userId) return feedback[0] || null;
+    const feedbackMap = new Map(feedback.map((f) => [f.userId, f]));
+    return feedbackMap.get(userId) || null;
   } catch (error) {
     //console.error('Error retrieving user feedback:', error);
     return null;

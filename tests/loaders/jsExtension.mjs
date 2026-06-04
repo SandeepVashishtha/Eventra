@@ -35,3 +35,16 @@ export async function resolve(specifier, context, nextResolve) {
   }
   return nextResolve(specifier, context);
 }
+
+export async function load(url, context, nextLoad) {
+  if (url.endsWith(".json")) {
+    const filePath = fileURLToPath(url);
+    const rawSource = fs.readFileSync(filePath, "utf-8");
+    return {
+      format: "module",
+      source: `export default ${rawSource};`,
+      shortCircuit: true
+    };
+  }
+  return nextLoad(url, context);
+}
