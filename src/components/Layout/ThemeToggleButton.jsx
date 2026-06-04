@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
 import { Sun, Moon, Palette } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerOpen }) => {
+  const { t } = useTranslation();
+
   if (isMobile) {
     return (
       <div className="flex flex-col gap-2.5 w-full">
@@ -15,7 +18,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerO
           ) : (
             <Moon className="w-5 h-5 text-indigo-500" />
           )}
-          <span>{isDarkMode ? "Switch to Light" : "Switch to Dark"}</span>
+          <span>{isDarkMode ? t("theme.switchToLight") : t("theme.switchToDark")}</span>
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.95 }}
@@ -23,7 +26,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerO
           className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
         >
           <Palette className="w-5 h-5" />
-          <span>THEME Customizer</span>
+          <span>{t("theme.customizer")}</span>
         </motion.button>
       </div>
     );
@@ -34,8 +37,8 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerO
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={toggleTheme}
-        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        title={isDarkMode ? t("theme.switchToLightMode") : t("theme.switchToDarkMode")}
+        aria-label={isDarkMode ? t("theme.switchToLightMode") : t("theme.switchToDarkMode")}
       >
         <motion.span
           key={isDarkMode ? "sun" : "moon"}
@@ -53,7 +56,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerO
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.92 }}
         onClick={() => setIsCustomizerOpen && setIsCustomizerOpen(true)}
-        title="Open Theme Customizer"
+        title={t("theme.openCustomizer")}
         className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-gradient-to-r from-indigo-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 border border-indigo-200/50 dark:border-indigo-800/40 hover:shadow-[0_0_12px_rgba(236,72,153,0.3)] text-indigo-550 dark:text-indigo-400 cursor-pointer"
       >
         <Palette className="w-4 h-4 animate-pulse text-indigo-500 dark:text-indigo-400" />
