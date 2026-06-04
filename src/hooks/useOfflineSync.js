@@ -328,10 +328,12 @@ const useOfflineSync = () => {
       }
 
       const heartbeatInterval = setInterval(() => {
+        if (syncLockAborted) { clearInterval(heartbeatInterval); return; }
         try {
           localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
         } catch (e) {}
       }, 10_000);
+      heartbeatIntervalRef.current = heartbeatInterval;
 
       try {
         await executeSync();
@@ -395,6 +397,8 @@ const useOfflineSync = () => {
 
     let idleId = null;
     let timeoutId = null;
+    const heartbeatIntervalRef = { current: null };
+    let syncLockAborted = false;
 
     if (navigator.onLine) {
       if (typeof window.requestIdleCallback === "function") {
@@ -419,6 +423,14 @@ const useOfflineSync = () => {
       // listener is removed and the sync loop exits cleanly on unmount.
       conflictController.abort();
       
+      // Signal the sync lock heartbeat to stop — it runs outside React's
+      // lifecycle and won't be caught by the normal finally block on unmount.
+      syncLockAborted = true;
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+
       if (idleId !== null) {
         window.cancelIdleCallback(idleId);
       }
