@@ -138,6 +138,17 @@ const playClaimSound = () => {
       osc2.start(triggerTime);
       osc2.stop(triggerTime + 0.25);
     });
+
+    // Close the audio context after all notes finish playing to prevent resource leakage
+    setTimeout(() => {
+      try {
+        if (ctx.state !== "closed") {
+          ctx.close();
+        }
+      } catch (err) {
+        console.warn("Failed to close AudioContext:", err);
+      }
+    }, 1500);
   } catch (error) {
     console.warn("Web Audio API not allowed or supported on this context:", error);
   }
