@@ -1,5 +1,6 @@
 // serviceWorkerRegistration.js
 // Registers the PWA service worker with dynamic lifecycle hooks to improve offline access.
+import { logger } from './utils/logger';
 
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost' ||
@@ -19,13 +20,6 @@ const runtimeEnv =
 const isDev = runtimeEnv.DEV ?? runtimeEnv.NODE_ENV === 'development';
 const publicBaseUrl = runtimeEnv.BASE_URL || "/";
 const isProd = runtimeEnv.PROD ?? runtimeEnv.NODE_ENV === "production";
-
-const log = (...args) => {
-  if (isDev) {
-    console.log(...args);
-  }
-};
-
 const MAX_SW_RETRIES = 3;
 const SW_RETRY_DELAY = 2000;
 
@@ -66,7 +60,7 @@ export function register(config) {
 
         // Add logging to localhost, welcoming developers
         navigator.serviceWorker.ready.then(() => {
-          log(
+          logger.log(
             'This web app is being served cache-first by a service worker. To learn more, visit https://cra.link/pwa'
           );
         });
@@ -85,7 +79,7 @@ function registerValidSW(swUrl, config) {
     .then((registration) => {
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'CACHE_UPDATED') {
-          log('[Service Worker] Cache updated to version:', event.data.version);
+          logger.log('[Service Worker] Cache updated to version:', event.data.version);
           window.dispatchEvent(new CustomEvent('sw-cache-updated', { detail: event.data }));
         }
       });
@@ -100,7 +94,7 @@ function registerValidSW(swUrl, config) {
               // At this point, the updated precached content has been fetched,
               // but the previous service worker will still serve the older
               // content until all client tabs are closed.
-              log(
+              logger.log(
                 'New content is available and will be used when all tabs for this page are closed. See https://cra.link/pwa.'
               );
 
@@ -111,7 +105,7 @@ function registerValidSW(swUrl, config) {
             } else {
               // At this point, everything has been precached.
               // It's the perfect time to display a "Content is cached for offline use!" message.
-              log('Content is cached for offline use.');
+              logger.log('Content is cached for offline use.');
 
               // Execute callback
               if (config && config.onSuccess) {
@@ -124,7 +118,7 @@ function registerValidSW(swUrl, config) {
     })
     .catch((error) => {
       if (isDev) {
-        console.error(
+        logger.error(
           'Error during service worker registration:',
           error
         );
@@ -156,7 +150,7 @@ function checkValidServiceWorker(swUrl, config) {
       }
     })
     .catch(() => {
-      log('No internet connection found. App is running in offline mode.');
+      logger.log('No internet connection found. App is running in offline mode.');
     });
 }
 
@@ -168,7 +162,7 @@ export function unregister() {
       })
       .catch((error) => {
         if (isDev) {
-          console.error(error.message);
+          logger.error(error.message);
         }
       });
   }
