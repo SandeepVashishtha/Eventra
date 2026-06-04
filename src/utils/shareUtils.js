@@ -2,6 +2,7 @@
  * Sharing utility functions for Eventra
  * These functions generate URLs for sharing content across various platforms
  */
+import { ENV } from "../config/env";
 
 // ---------------------------------------------------------------------------
 // Share URL validation
@@ -107,22 +108,17 @@ export const generateSharingUrl = (shareData, platform) => {
  * @returns {Object} Sharing data object
  */
 export const generateEventSharingData = (event, baseUrl = null) => {
-  // Determine the correct base URL for sharing
-  const deployedDomain = process.env.REACT_APP_PUBLIC_URL || "eventra.sandeepvashishtha.tech";
-
-  // If baseUrl is provided, use it, otherwise detect
+  // Determine the correct base URL for sharing.
+  // ENV.PUBLIC_URL resolves VITE_PUBLIC_URL then REACT_APP_PUBLIC_URL (dual-prefix),
+  // so this works correctly for both CRA and Vite builds across all environments.
   if (!baseUrl) {
     if (typeof window !== "undefined") {
-      const currentUrl = window.location.href;
-      // Check if we're on the deployed site
-      if (currentUrl.includes(deployedDomain)) {
-        baseUrl = `https://${deployedDomain}`;
-      } else {
-        // Use the current origin (localhost or other development environment)
-        baseUrl = window.location.origin;
-      }
+      // Always prefer the live origin — covers localhost, staging, and production
+      // without needing to hard-code or match against a domain string.
+      baseUrl = window.location.origin;
     } else {
-      baseUrl = process.env.REACT_APP_PUBLIC_URL || `https://${deployedDomain}`; // Fallback for SSR/Node
+      // SSR / Node context: fall back to the centralized env config.
+      baseUrl = ENV.PUBLIC_URL;
     }
   }
 
