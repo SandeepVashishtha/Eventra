@@ -3,7 +3,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2, Check } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
@@ -27,7 +28,8 @@ import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 
 const EventDetails = () => {
-  const { eventId } = useParams();
+ const { eventId } = useParams();
+const navigate = useNavigate();
   const { user } = useAuth();
   const { addRecentlyViewed } = useRecentlyViewed();
 
@@ -121,6 +123,16 @@ const EventDetails = () => {
     }
   };
 
+ // Keyboard shortcuts for Event Detail page
+  useKeyboardShortcuts({
+    r: () => { if (event && !isEventRegistrationClosed(event)) navigate(`/events/${event.id}/register`); },
+    c: handleCopy,
+    s: () => setShowShareModal(true),
+    p: handlePrint,
+  });
+
+
+
   if (fetchLoading) return <EventDetailSkeleton />;
 
   if (fetchError || !event) {
@@ -176,15 +188,12 @@ const EventDetails = () => {
                   onClick={handleCopy}
                   className={`p-2 rounded-full transition-colors ${linkCopied 
                     ? "text-green-600 bg-green-50 dark:bg-green-900/30" 
-                    : "ttext-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                    : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
                   }`}
                aria-label={linkCopied ? "Link copied!" : "Copy event link"}
               title={linkCopied ? "Copied!" : "Copy link"}
-              >
-             {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
-
-             
-                  <Link2 size={28} />
+             >
+                {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
                 </button>
               </div>
               <div
