@@ -158,7 +158,7 @@ export const parseEventToUTC = (dateStr, timeStr, timezone) => {
     const tzYear = parseInt(parts.year, 10);
     const tzMonth = parseInt(parts.month, 10) - 1;
     const tzDay = parseInt(parts.day, 10);
-    const tzHour = parseInt(parts.hour, 10) % 24; // handle "24" edge case
+    const tzHour = parseInt(parts.hour, 10); // handle "24" edge case via Date.UTC automatic rollover
     const tzMinute = parseInt(parts.minute, 10);
 
     // Offset in ms between what the tz formatter sees and what we intended
