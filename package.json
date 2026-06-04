@@ -13,7 +13,6 @@
     "@heroicons/react": "^2.2.0",
     "@sentry/browser": "9.12.0",
     "@studio-freight/lenis": "^1.0.42",
-    "@tailwindcss/postcss": "4.3.0",
     "aos": "^2.3.4",
     "axios": "^1.16.1",
     "bcryptjs": "3.0.3",
@@ -122,9 +121,7 @@
   },
   "optionalDependencies": {
     "@rolldown/binding-linux-x64-gnu": "1.0.2",
-    "@rolldown/binding-linux-x64-musl": "1.0.2",
-    "lightningcss-linux-x64-gnu": "1.32.0",
-    "lightningcss-linux-x64-musl": "1.32.0"
+    "@rolldown/binding-linux-x64-musl": "1.0.2"
   },
   "_gssoc_comment_dx": "// DEVELOPER EXPERIENCE: Integrated pre-commit validations to prevent broken or unformatted scripts from being pushed upstream."
 }
