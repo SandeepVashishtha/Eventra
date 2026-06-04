@@ -1,3 +1,7 @@
+/**
+ * @fileoverview useDebounce - Generic value debouncing hook
+ * @module hooks/useDebounce
+ */
 import { useState, useEffect } from "react";
 
 /**
