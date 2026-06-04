@@ -25,6 +25,7 @@ const initialAnalyticsState = {
   liveCount: 0,
   scanVelocity: 0,
   status: SSE_STATUS.IDLE,
+  seenEventIds: [],
 };
 
 // --- 3. Split the Reducers ---
@@ -45,12 +46,23 @@ function leaderboardReducer(state, action) {
 
 function analyticsReducer(state, action) {
   switch (action.type) {
-    case "CHECKIN":
+    case "CHECKIN": {
+      const eventId = action.payload?.id;
+      // Deduplicate: skip if we've already processed this event (e.g. on SSE reconnect)
+      if (eventId && state.seenEventIds.includes(eventId)) {
+        return state;
+      }
+      // Cap seenEventIds at 200 entries to prevent unbounded memory growth
+      const newSeen = eventId
+        ? [...state.seenEventIds, eventId].slice(-200)
+        : state.seenEventIds;
       return {
         ...state,
         recentCheckins: [action.payload, ...state.recentCheckins.slice(0, 49)],
         liveCount: state.liveCount + 1,
+        seenEventIds: newSeen,
       };
+    }
     case "UPDATE":
       return { ...state, ...action.payload };
     case "STATUS":
