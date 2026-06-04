@@ -50,10 +50,17 @@ const keywordIndex = knowledgeBase.reduce((acc, item) => {
 
 const sortedKeywords = [...keywordIndex.keys()].sort((a, b) => b.length - a.length);
 
+const keywordPattern = new RegExp(
+  sortedKeywords
+    .map((kw) => kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|"),
+  "i"
+);
+
 export function getAssistantReply(input) {
-  const normalizedInput = input.toLowerCase();
-  const match = sortedKeywords.find((keyword) => normalizedInput.includes(keyword));
-  const matchedItem = match ? keywordIndex.get(match) : null;
+  const match = input.match(keywordPattern);
+  const matchedKeyword = match ? match[0].toLowerCase() : null;
+  const matchedItem = matchedKeyword ? keywordIndex.get(matchedKeyword) : null;
   return (
     matchedItem || {
       answer: defaultAnswer,
