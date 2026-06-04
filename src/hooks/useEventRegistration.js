@@ -521,7 +521,9 @@ const useEventRegistration = (eventIdParam) => {
           eventId: parseInt(eventId),
           userId: user.id,
         },
-        token
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
       setRegistered(true);
