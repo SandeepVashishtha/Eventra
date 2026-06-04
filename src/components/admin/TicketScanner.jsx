@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
+import { safeParseJson } from "../../utils/jsonUtils";
 import {
   Camera,
   CameraOff,
@@ -20,7 +21,6 @@ import { toast } from "react-toastify";
 import { pushToQueue } from "../../utils/offlineQueue";
 import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "../../services/ticketService";
 import "./TicketScanner.css";
-
 const HISTORY_CACHE_KEY = "eventra_checkins_cache";
 
 export default function TicketScanner() {
@@ -32,7 +32,6 @@ export default function TicketScanner() {
   const [checkinHistory, setCheckinHistory] = useState([]);
   const [events, setEvents] = useState([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-
   const [manualTicketId, setManualTicketId] = useState("");
   const [manualAttendeeName, setManualAttendeeName] = useState("");
   const [manualEventId, setManualEventId] = useState("");
@@ -180,7 +179,7 @@ export default function TicketScanner() {
   const addToHistory = useCallback((entry) => {
     setCheckinHistory((prev) => [entry, ...prev].slice(0, 50));
     try {
-      const updated = [entry, ...JSON.parse(localStorage.getItem(HISTORY_CACHE_KEY) || "[]")].slice(0, 50);
+      const updated = [entry, ...safeParseJson(localStorage.getItem(HISTORY_CACHE_KEY), [])].slice(0, 50);
       localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updated));
     } catch { /* ignore */ }
   }, []);
@@ -219,7 +218,7 @@ export default function TicketScanner() {
       }
     }
 
-    if (!ticketData || !ticketData.ticketId) {
+    if (!ticketData || typeof ticketData !== 'object' || !ticketData.ticketId) {
       setScanResult({
         status: "flagged",
         message: "Invalid QR Code format. Ticket is secure and cannot be verified.",

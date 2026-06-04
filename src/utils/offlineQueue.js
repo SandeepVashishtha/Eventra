@@ -246,7 +246,17 @@ export const getQueueIndexedDB = async () => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
       const request = store.getAll();
-      request.onsuccess = () => resolve(request.result || []);
+      request.onsuccess = () => {
+        const items = request.result || [];
+        // SECURITY (Issue #6449): Validate structural integrity to prevent cache poisoning
+        const validItems = items.filter(item => 
+          item && 
+          typeof item.id === 'string' && 
+          typeof item.actionType === 'string' &&
+          typeof item.payload === 'object'
+        );
+        resolve(validItems);
+      };
       request.onerror = () => reject(request.error);
     });
   } catch (err) {
@@ -353,9 +363,8 @@ export const pushToQueue = async (item, userId = null) => {
     }
     return false;
   }
-
-  // 1. Sync mirror updates immediately (Synchronous fallback)
-  const queue = getQueue();
+  // 1. Check authoritative IndexedDB store for limit enforcement
+  const queue = await getQueueIndexedDB();
   if (queue.length >= 15) {
     logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
     if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
@@ -433,15 +442,10 @@ export const setQueue = async (newQueue) => {
           return;
         }
 
-        let completed = 0;
-        newQueue.forEach((item) => {
-          const putReq = store.put(item);
-          putReq.onsuccess = () => {
-            completed++;
-            if (completed === newQueue.length) resolve();
-          };
-          putReq.onerror = () => reject(putReq.error);
-        });
+        newQueue.forEach((item) => store.put(item));
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
       };
       clearReq.onerror = () => reject(clearReq.error);
     });

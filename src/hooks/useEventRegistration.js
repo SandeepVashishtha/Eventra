@@ -1,3 +1,30 @@
+/**
+ * @file useEventRegistration.js
+ * @module hooks/useEventRegistration
+ *
+ * @description
+ * Custom React hook that encapsulates the full event-registration lifecycle.
+ *
+ * Responsibilities:
+ * - Fetches event details from the backend API, with a three-tier fallback:
+ *     1. Live API response (saved to offline cache on success).
+ *     2. Offline cache (`offlineEventCache`) when the network request fails.
+ *     3. Bundled mock data (`hackathonMockData.json`) for hackathon paths
+ *        (`/register/*`) or as a last resort.
+ * - Pre-fills `fullName` and `email` from the authenticated user's profile.
+ * - Validates the registration form via `useFormValidation` (300 ms debounce).
+ * - Detects scheduling conflicts against the user's existing registrations
+ *   and opens a conflict-resolution modal when one is found.
+ * - Checks live event capacity immediately before submission and routes the
+ *   request to the waitlist endpoint when the event is full.
+ * - Uses a module-level `Map` lock (`registrationLocks`) and a ref
+ *   (`isSubmittingRef`) to guard against duplicate concurrent submissions.
+ * - Falls back to an offline queue (`offlineQueue`) when a network/timeout
+ *   error is detected, so the registration syncs automatically once
+ *   connectivity is restored.
+ * - Clears the session-recovery context (`useSessionRecovery`) after a
+ *   successful or already-registered response.
+ */
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -24,6 +51,25 @@ const MAX_NOTES_CHARS = 500;
 // Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
 
+/**
+ * Derives a user-facing error message from a failed registration API response.
+ *
+ * Priority order:
+ * 1. HTTP 409 with "already registered" / "duplicate" body  → already-registered copy.
+ * 2. HTTP 409 / 423, or body mentioning capacity keywords   → capacity-full copy.
+ * 3. Body mentioning "conflict"                             → server-conflict copy.
+ * 4. Any other non-empty message from the response body     → returned as-is.
+ * 5. Fallback generic copy.
+ *
+ * @private
+ * @param {Object} error - The caught error object, typically from `apiUtils`.
+ * @param {number}  [error.status]        - HTTP status code.
+ * @param {Object}  [error.data]          - Parsed response body.
+ * @param {string}  [error.data.message]  - Message field from the body.
+ * @param {string}  [error.data.error]    - Error field from the body.
+ * @param {string}  [error.message]       - JS Error message (network errors).
+ * @returns {string} A localised, human-readable failure message.
+ */
 const getRegistrationFailureMessage = (error) => {
   const message = error?.data?.message || error?.data?.error || error?.message || "";
   const normalizedMessage = message.toLowerCase();
@@ -47,6 +93,210 @@ const getRegistrationFailureMessage = (error) => {
   return message || "Registration failed. Please try again.";
 };
 
+/**
+ * Manages the complete event-registration flow for a single event page.
+ *
+ * The hook resolves the target event ID from three sources (in priority order):
+ * 1. The `eventIdParam` argument passed directly by the parent component.
+ * 2. The `:eventId` URL segment exposed by React Router.
+ * 3. The `:id` URL segment (legacy route shape).
+ *
+ * @param {string|number} [eventIdParam] - Optional event ID supplied directly
+ *   by the consuming component. When omitted the hook reads the ID from the
+ *   current URL via `useParams()`.
+ *
+ * @returns {{
+ *   event:                  Object|null,
+ *   loading:                boolean,
+ *   submitting:             boolean,
+ *   registered:             boolean,
+ *   isEventFull:            boolean,
+ *   isPastEvent:            boolean,
+ *   formData:               Object,
+ *   errors:                 Object,
+ *   touched:                Object,
+ *   isFormValid:            boolean,
+ *   handleChange:           Function,
+ *   handleBlur:             Function,
+ *   validateAll:            Function,
+ *   setValues:              Function,
+ *   showConflictModal:      boolean,
+ *   conflictData:           { conflicts: Array, suggestions: Array },
+ *   handleSubmit:           Function,
+ *   handleConflictCancel:   Function,
+ *   handleConflictProceed:  Function,
+ *   handleSelectAlternative:Function,
+ *   myEvents:               Array,
+ * }} An object containing event data, form state, and all event handlers
+ *   needed to render a registration page.
+ *
+ * @property {Object|null} event
+ *   The loaded event object, or `null` while the initial fetch is in flight.
+ *   On API failure the object may contain a `cacheInfo` sub-object
+ *   (`{ cachedAt: number, label: string }`) indicating that stale cached
+ *   data is being displayed.
+ *
+ * @property {boolean} loading
+ *   `true` while the initial event fetch is in progress; `false` once data
+ *   (live, cached, or mock) has been applied.
+ *
+ * @property {boolean} submitting
+ *   `true` between the moment the user confirms submission and the moment
+ *   the API call (or offline-queue push) resolves. Use to disable the submit
+ *   button and show a loading indicator.
+ *
+ * @property {boolean} registered
+ *   Becomes `true` after a successful registration, a successful waitlist
+ *   join, an already-registered 409 response, or a successful offline-queue
+ *   push. Use to render a success / confirmation view.
+ *
+ * @property {boolean} isEventFull
+ *   `true` when `event.attendees >= event.maxAttendees`. Submission is still
+ *   permitted; the user will be placed on the waitlist automatically.
+ *
+ * @property {boolean} isPastEvent
+ *   `true` when `getEventStatus(event)` returns `"past"` or `"ended"`.
+ *   Consumers should disable registration and surface an appropriate message.
+ *
+ * @property {Object} formData
+ *   Controlled form values managed by `useFormValidation`:
+ *   - `fullName`       {string} – pre-filled from `user.fullName` when authenticated.
+ *   - `email`          {string} – pre-filled from `user.email` when authenticated.
+ *   - `phone`          {string}
+ *   - `organization`   {string}
+ *   - `designation`    {string}
+ *   - `additionalInfo` {string} – capped at `MAX_NOTES_CHARS` (500) characters.
+ *   - `priority`       {string} – defaults to `"Medium"`.
+ *
+ * @property {Object} errors
+ *   Field-level validation error messages keyed by field name. A key is
+ *   present only when the field has a validation error (string value).
+ *
+ * @property {Object} touched
+ *   Boolean flags keyed by field name; `true` once the field has been
+ *   blurred. Use to conditionally show inline error messages.
+ *
+ * @property {boolean} isFormValid
+ *   `true` when all required fields (`fullName`, `email`, `phone`) pass
+ *   their validation rules and no errors are present.
+ *
+ * @property {Function} handleChange
+ *   `(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void`
+ *   Standard controlled-input onChange handler; updates `formData` and
+ *   triggers debounced field-level validation (300 ms).
+ *
+ * @property {Function} handleBlur
+ *   `(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => void`
+ *   Marks a field as touched and runs immediate validation on blur.
+ *
+ * @property {Function} validateAll
+ *   `() => boolean` – Triggers validation for all fields at once and returns
+ *   `true` if the form is valid. Called internally by `handleSubmit`.
+ *
+ * @property {Function} setValues
+ *   `(updater: Object | ((prev: Object) => Object)) => void`
+ *   Directly sets all form values. Use sparingly (e.g. "reset form").
+ *
+ * @property {boolean} showConflictModal
+ *   `true` when a scheduling conflict with an existing registration has been
+ *   detected. Consumers should render a conflict-resolution modal.
+ *
+ * @property {{ conflicts: Array, suggestions: Array }} conflictData
+ *   Populated when `showConflictModal` is `true`.
+ *   - `conflicts`   – Array of conflicting event objects from `myEvents`.
+ *   - `suggestions` – Alternative events without a schedule clash, fetched
+ *     from the live events list. May be empty when the fetch fails.
+ *
+ * @property {Function} handleSubmit
+ *   `(e: React.FormEvent) => Promise<void>` – Main form-submit handler.
+ *   Steps performed:
+ *   1. Guards against unauthenticated users (redirects to `/login`).
+ *   2. Runs `validateAll()`; aborts with a toast on failure.
+ *   3. Guards against duplicate in-flight submissions (ref + lock map).
+ *   4. Fetches fresh capacity data and informs the user if the event is full.
+ *   5. Checks for scheduling conflicts; opens the conflict modal if found.
+ *   6. Calls `proceedWithRegistration()`.
+ *
+ * @property {Function} handleConflictCancel
+ *   `() => void` – Closes the conflict modal and cancels registration.
+ *   Shows an informational toast.
+ *
+ * @property {Function} handleConflictProceed
+ *   `() => void` – Closes the conflict modal and proceeds with registration
+ *   despite the detected conflict. Delegates to `proceedWithRegistration()`.
+ *
+ * @property {Function} handleSelectAlternative
+ *   `(alternativeEvent: Object) => void` – Closes the conflict modal and
+ *   navigates the user to the registration page for the chosen alternative
+ *   event (`/events/:id/register`).
+ *
+ * @property {Array} myEvents
+ *   The current user's existing registrations, sourced from
+ *   `MyEventsContext`. Used internally for conflict detection and exposed for
+ *   consumers that need to display the user's schedule alongside the form.
+ *
+ * @example
+ * // Basic usage inside a registration page component
+ * import useEventRegistration from "hooks/useEventRegistration";
+ * import ConflictModal from "components/ConflictModal";
+ *
+ * function EventRegistrationPage() {
+ *   const {
+ *     event,
+ *     loading,
+ *     submitting,
+ *     registered,
+ *     isEventFull,
+ *     isPastEvent,
+ *     formData,
+ *     errors,
+ *     touched,
+ *     isFormValid,
+ *     handleChange,
+ *     handleBlur,
+ *     handleSubmit,
+ *     showConflictModal,
+ *     conflictData,
+ *     handleConflictCancel,
+ *     handleConflictProceed,
+ *     handleSelectAlternative,
+ *   } = useEventRegistration(); // reads eventId from the URL automatically
+ *
+ *   if (loading) return <Spinner />;
+ *   if (!event) return <NotFound />;
+ *   if (registered) return <SuccessView isWaitlist={isEventFull} />;
+ *
+ *   return (
+ *     <>
+ *       <form onSubmit={handleSubmit}>
+ *         <input
+ *           name="fullName"
+ *           value={formData.fullName}
+ *           onChange={handleChange}
+ *           onBlur={handleBlur}
+ *         />
+ *         {touched.fullName && errors.fullName && (
+ *           <span>{errors.fullName}</span>
+ *         )}
+ *
+ *         <button type="submit" disabled={submitting || isPastEvent}>
+ *           {isEventFull ? "Join Waitlist" : "Register"}
+ *         </button>
+ *       </form>
+ *
+ *       {showConflictModal && (
+ *         <ConflictModal
+ *           conflicts={conflictData.conflicts}
+ *           suggestions={conflictData.suggestions}
+ *           onCancel={handleConflictCancel}
+ *           onProceed={handleConflictProceed}
+ *           onSelectAlternative={handleSelectAlternative}
+ *         />
+ *       )}
+ *     </>
+ *   );
+ * }
+ */
 const useEventRegistration = (eventIdParam) => {
   const { eventId: routeEventId, id: routeId } = useParams();
   const eventId = eventIdParam || routeEventId || routeId;
@@ -215,7 +465,7 @@ const useEventRegistration = (eventIdParam) => {
 
   const checkAndHandleConflicts = useCallback(async () => {
     if (!event) return false;
-    
+
     const conflictCheck = checkRegistrationConflict(event, myEvents);
     if (conflictCheck.hasConflict) {
       try {

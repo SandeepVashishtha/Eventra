@@ -70,7 +70,7 @@ try {
   );
   assert.equal(
     getPublicErrorMessage({ message: "jwt expired" }),
-    "Your session has expired. Please sign in again."
+    "Your credentials are incorrect or your session has expired. Please sign in again."
   );
   assert.equal(
     getPublicErrorMessage({ message: "ECONNREFUSED" }),

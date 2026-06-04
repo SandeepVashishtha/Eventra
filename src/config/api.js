@@ -1,6 +1,7 @@
 import axios from "axios";
 import { ENV } from "./env";
 import { syncServerTimeFromHeader } from "../utils/timeSync";
+import { getCSRFToken } from "../utils/csrfToken";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -104,9 +105,14 @@ const API = axios.create({
 });
 
 let onUnauthorized = null;
+let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
+};
+
+export const setAuthToken = (token) => {
+  _authToken = token;
 };
 
 /**
@@ -202,9 +208,19 @@ API.interceptors.request.use((config) => {
   if (isDev) {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
-  
+
+  if (_authToken && _authToken !== "cookie-managed") {
+    config.headers["Authorization"] = `Bearer ${_authToken}`;
+  }
+
   const method = config.method?.toUpperCase();
-  
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    const csrf = getCSRFToken();
+    if (csrf) {
+      config.headers["X-CSRF-Token"] = csrf;
+    }
+  }
+
   return config;
 });
 
@@ -337,6 +353,16 @@ export { normalizeApiError };
 // Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {
   store: new Map(),
-  get(key) { return this.store.get(key); },
-  set(key, val) { this.store.set(key, val); }
+
+  get(key) {
+    return this.store.get(key);
+  },
+
+  set(key, val) {
+    this.store.set(key, val);
+  },
+
+  clear() {
+    this.store.clear();
+  },
 };
