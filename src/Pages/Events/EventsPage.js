@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react";
-import { useSearchParams, useLocation } from "react-router-dom"; // ✅ useLocation added here
+import { useSearchParams, useLocation } from "react-router-dom";
+import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid"; 
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import FeedbackButton from "../../components/FeedbackButton";
@@ -13,7 +14,7 @@ import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
 import {
@@ -83,7 +84,9 @@ const renderCardSection = (
       </div>
     );
   }
-
+  if (viewMode === "grid" && paginatedEvents.length > 20) {
+    return <VirtualizedEventGrid events={paginatedEvents} />;
+  }
   return (
     <div
       className={`grid gap-6 ${
@@ -233,6 +236,7 @@ const EventsPage = () => {
       setLocalSearchInput(safeQuery);
       listing.setSearchQuery(safeQuery);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     rawSearchParam,
     routeSearchQuery,
@@ -327,7 +331,7 @@ const EventsPage = () => {
           onAdvancedFiltersChange={listing.setAdvancedFilters}
         />
 
-        <SectionErrorBoundary label="Events">
+        <ErrorBoundary level="section" label="Events">
      {renderCardSection(
   isLoading,
   listing.loadError,
@@ -347,13 +351,13 @@ const EventsPage = () => {
               />
             </div>
           )}
-        </SectionErrorBoundary>
+        </ErrorBoundary>
 
         {/* Interactive Event Timeline Planner Section */}
         <div className="mt-12 sm:mt-16">
-          <SectionErrorBoundary label="Event Timeline Planner">
+          <ErrorBoundary level="section" label="Event Timeline Planner">
             <EventTimeline />
-          </SectionErrorBoundary>
+          </ErrorBoundary>
         </div>
       </div>
 

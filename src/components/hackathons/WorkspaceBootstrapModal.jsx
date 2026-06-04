@@ -448,7 +448,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
               >
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Add GitHub usernames of your teammates. They'll receive a collaboration invitation email.
+                    Add GitHub usernames of your teammates. They&apos;ll receive a collaboration invitation email.
                     {initialHandle && (
                       <span className="block mt-1 text-blue-600 dark:text-blue-400">
                         ✓ Pre-filled <strong>@{initialHandle}</strong> from the contact link.

@@ -236,7 +236,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
     if (user) {
       import("../../utils/waitlistUtils").then(({ getQueuePosition }) => {
         setQueuePos(getQueuePosition(event.id, user.id || user.email));
-      });
+      }).catch(() => setQueuePos(-1));
     }
   }, [event.id, user]);
 
@@ -319,8 +319,8 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             };
           });
           setWaitlistEvents(resolved);
-        });
-      });
+        }).catch(() => setWaitlistEvents([]));
+      }).catch(() => setWaitlistEvents([]));
     } else {
       setWaitlistEvents([]);
     }
