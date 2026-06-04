@@ -1,9 +1,9 @@
-const React = require('react');
-const { renderHook } = require('@testing-library/react');
+import React, { useEffect } from 'react';
+import { renderHook } from '@testing-library/react';
 
 function useTest() {
   let cleaned = false;
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       cleaned = true;
     };
