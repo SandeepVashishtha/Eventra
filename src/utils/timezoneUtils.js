@@ -205,3 +205,29 @@ export const isDST = (date = new Date()) => {
   const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
   return Math.max(jan, jul) !== date.getTimezoneOffset();
 };
+
+/**
+ * Resolve an event's date + time into an absolute Date instant, anchored to the
+ * event's own timezone rather than the viewer's browser timezone.
+ *
+ * This exists because naive parsing such as `new Date(`${date}T${time}`)`
+ * interprets the wall-clock time in the viewer's local timezone. An event
+ * created at 18:00 IST then renders its countdown and start time differently
+ * for a viewer in PST, so users see the wrong time and can miss the event.
+ *
+ * The conversion delegates to parseEventToUTC, which uses Intl to handle DST
+ * correctly. When no timezone is supplied it falls back to the user's timezone,
+ * preserving previous behaviour for events that never recorded one.
+ *
+ * @param {string} dateStr - Event date (accepted by normalizeDateString)
+ * @param {string} timeStr - Event time (accepted by parseTimeString)
+ * @param {string} [timezone] - IANA timezone the event time is expressed in
+ * @returns {Date|null} Absolute instant, or null when inputs cannot be parsed
+ */
+export const resolveEventInstant = (dateStr, timeStr, timezone) => {
+  const utcMs = parseEventToUTC(dateStr, timeStr, timezone);
+  if (utcMs === null || Number.isNaN(utcMs)) {
+    return null;
+  }
+  return new Date(utcMs);
+};
