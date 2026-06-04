@@ -413,20 +413,42 @@ const EventRegistration = () => {
       return;
     }
 
-    const isFull = await checkEventCapacity(eventId, event);
-    if (isFull) {
-      const { getGlobalWaitlist } = await import("../../utils/waitlistUtils");
-      const records = getGlobalWaitlist();
-      const onWaitlist = records.some(
-        (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
-      );
-      if (onWaitlist) {
-        toast.error(t("eventRegistration.toastAlreadyWaitlisted"));
-        return;
+    // Acquire both locks before any async work so that a concurrent submission
+    // arriving during capacity checks or conflict detection is blocked by the
+    // guards above rather than being allowed to start a parallel flow.
+    isSubmittingRef.current = true;
+    registrationLocks.set(eventId, true);
+
+    let conflictDetected = false;
+    try {
+      const isFull = await checkEventCapacity(eventId, event);
+      if (isFull) {
+        const { getGlobalWaitlist } = await import("../../utils/waitlistUtils");
+        const records = getGlobalWaitlist();
+        const onWaitlist = records.some(
+          (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
+        );
+        if (onWaitlist) {
+          isSubmittingRef.current = false;
+          registrationLocks.delete(eventId);
+          toast.error(t("eventRegistration.toastAlreadyWaitlisted"));
+          return;
+        }
       }
+      conflictDetected = await checkAndHandleConflicts();
+    } catch (err) {
+      isSubmittingRef.current = false;
+      registrationLocks.delete(eventId);
+      return;
     }
 
-    if (await checkAndHandleConflicts()) return;
+    if (conflictDetected) {
+      // The conflict modal is visible; release the lock so the user can review
+      // without blocking future attempts. handleConflictProceed re-acquires.
+      isSubmittingRef.current = false;
+      registrationLocks.delete(eventId);
+      return;
+    }
 
     proceedWithRegistration();
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
@@ -438,8 +460,16 @@ const EventRegistration = () => {
   }, []);
 
   const handleConflictProceed = useCallback(() => {
+    if (isSubmittingRef.current) {
+      return;
+    }
+    if (registrationLocks.has(eventId)) {
+      return;
+    }
+    isSubmittingRef.current = true;
+    registrationLocks.set(eventId, true);
     proceedWithRegistration();
-  }, [proceedWithRegistration]);
+  }, [eventId, proceedWithRegistration]);
 
   const handleSelectAlternative = useCallback((alternativeEvent) => {
     setShowConflictModal(false);
