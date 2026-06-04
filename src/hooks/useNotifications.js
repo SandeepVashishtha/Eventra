@@ -10,6 +10,8 @@ export const useNotifications = () => {
    // Track whether the initial load from IndexedDB has completed so we
    // don't immediately overwrite persisted data with an empty array on mount.
    const didLoadRef = useRef(false);
+   const writeSeqRef = useRef(0);
+   const debounceTimerRef = useRef(null);
 
    useEffect(() => {
      idbGet(STORAGE_KEY)
@@ -24,8 +26,6 @@ export const useNotifications = () => {
          setNotifications([]);
        })
        .finally(() => {
-         // Allow the persistence effect to run only after the initial
-         // load has settled — prevents wiping IndexedDB on mount.
          didLoadRef.current = true;
        });
    }, []);
@@ -49,11 +49,18 @@ export const useNotifications = () => {
 
   useEffect(() => {
     if (!didLoadRef.current) return;
-    // Persist on every change — including when the list is cleared to []
-    // so that markAllAsRead and future "clear all" features are durable.
-    idbSet(STORAGE_KEY, JSON.stringify(notifications)).catch((error) => {
-      logger.error("Failed to persist notifications to indexedDB", error);
-    });
+
+    const seq = ++writeSeqRef.current;
+    const timer = setTimeout(() => {
+      const currentSeq = writeSeqRef.current;
+      if (seq === currentSeq) {
+        idbSet(STORAGE_KEY, JSON.stringify(notifications)).catch((error) => {
+          logger.error("Failed to persist notifications to indexedDB", error);
+        });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [notifications]);
 
   const requestPermission = async () => {
