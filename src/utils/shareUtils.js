@@ -81,6 +81,10 @@ export const generateSharingUrl = (shareData, platform) => {
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
 
     case "messenger":
+      // Messenger sharing requires a Facebook App ID (app_id parameter) which
+      // is not available in this client-side configuration.
+      // Callers should hide or disable the Messenger share button.
+      console.warn("[shareUtils] Messenger sharing is not supported — no Facebook App ID configured.");
       return "";
 
     case "linkedin":
