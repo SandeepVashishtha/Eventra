@@ -1,4 +1,3 @@
-// 🔥 FIX: In-memory queue and lock to prevent localStorage race conditions
 let isUpdating = false;
 let interestQueue = [];
 
@@ -36,7 +35,6 @@ const processInterestQueue = () => {
     }
   } catch (error) {
     console.error("Failed to update user interests:", error);
-    interestQueue = []; // Clear the queue on persistent error to avoid infinite recursion
   } finally {
     isUpdating = false;
     if (interestQueue.length > 0) {
@@ -56,6 +54,5 @@ export const clearActivityHistory = () => {
     localStorage.removeItem("eventra_user_profile");
     interestQueue = [];
   } catch (error) {
-    console.error("Failed to clear activity history:", error);
   }
 };
