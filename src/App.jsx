@@ -11,8 +11,6 @@ import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
-import LanguageSwitcher from "./components/common/LanguageSwitcher";
-import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -29,7 +27,6 @@ import {
   AuthFormSkeleton,
   ExploreEventsSkeleton,
   EventDetailSkeleton,
-  DashboardHomeSkeleton,
 } from "./components/common/SkeletonLoaders";
 
 // Route-level lazy splits - loaded only when route is visited
@@ -41,11 +38,6 @@ const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
 const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
-const Login = lazy(() => import("./components/auth/Login"));
-const Signup = lazy(() => import("./components/auth/Signup"));
-const Profile = lazy(() => import("./components/user/UserProfile"));
-const Dashboard = lazy(() => import("./components/user/UserDashboard"));
-const AdminPanel = lazy(() => import("./components/admin/AdminDashboard"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
@@ -215,7 +207,7 @@ function App() {
                           path="/explore"
                           element={
                             <Suspense fallback={<ExploreEventsSkeleton />}>
-                              <EventsPage />
+                              <ExploreEvents />
                             </Suspense>
                           }
                         />

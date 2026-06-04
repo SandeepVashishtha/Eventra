@@ -29,13 +29,7 @@ const writeRegistrations = (registrations) => {
   }
 };
 
-const writeRegistrations = (registrations) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(registrations));
-  } catch {
-    // localStorage may be unavailable or full; keep the UI functional.
-  }
-};
+
 
 /**
  * localStorage is used here only for UX hints.
