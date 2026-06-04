@@ -1,6 +1,8 @@
 // serviceWorkerRegistration.js
 // Registers the PWA service worker with dynamic lifecycle hooks to improve offline access.
 
+import { logger } from "./utils/logger";
+
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost' ||
     // [::1] is the IPv6 localhost address.
@@ -22,7 +24,7 @@ const isProd = runtimeEnv.PROD ?? runtimeEnv.NODE_ENV === "production";
 
 const log = (...args) => {
   if (isDev) {
-    console.log(...args);
+    logger.info(...args);
   }
 };
 
@@ -124,7 +126,7 @@ function registerValidSW(swUrl, config) {
     })
     .catch((error) => {
       if (isDev) {
-        console.error(
+        logger.error(
           'Error during service worker registration:',
           error
         );
@@ -168,7 +170,7 @@ export function unregister() {
       })
       .catch((error) => {
         if (isDev) {
-          console.error(error.message);
+          logger.error(error.message);
         }
       });
   }
