@@ -302,7 +302,7 @@ export default function CollaborationNetworkMap() {
   );
 
   return (
-    <section className="bg-white py-12 text-slate-900">
+    <section className="bg-white dark:bg-slate-950 py-12 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-6">
         <div className="relative overflow-hidden">
           {/* Header with Controls */}
@@ -330,10 +330,10 @@ export default function CollaborationNetworkMap() {
               </div>
             </div>
 
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               Global Collaboration Network
             </h2>
-            <p className="max-w-2xl text-slate-600">
+            <p className="max-w-2xl text-slate-600 dark:text-slate-400">
               Real-time collaboration across {stats.totalDevs.toLocaleString()} developers in{" "}
               {stats.regions} regions.
             </p>
@@ -350,7 +350,7 @@ export default function CollaborationNetworkMap() {
                   placeholder="Search hubs or technologies..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full md:w-80 rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-700 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full md:w-80 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-3 pl-10 pr-4 text-slate-700 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
                   aria-label="Search hubs"
                 />
               </div>
@@ -363,7 +363,7 @@ export default function CollaborationNetworkMap() {
                 <select
                   value={selectedActivity}
                   onChange={(e) => setSelectedActivity(e.target.value)}
-                  className="rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-700 focus:outline-none"
+                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-3 pl-10 pr-4 text-slate-700 dark:text-slate-200 focus:outline-none"
                   aria-label="Filter by activity"
                 >
                   {["All", "Critical", "High", "Medium", "Low"].map((a) => (
@@ -388,7 +388,7 @@ export default function CollaborationNetworkMap() {
 
           {/* Stats Summary */}
           <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg"
               <Users size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
@@ -428,7 +428,7 @@ export default function CollaborationNetworkMap() {
 
           {/* Map Frame */}
           <div
-            className="relative mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
+            className="relative mt-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900"
             style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
           >
             <svg
