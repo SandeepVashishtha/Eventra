@@ -41,10 +41,18 @@ const CollaborationHub = () => {
   };
 
   const [collaborationOpportunities, setCollaborationOpportunities] = useState(() => {
-    const saved = localStorage.getItem('eventra_collaboration_opportunities');
+    let saved;
+    try {
+      saved = localStorage.getItem('eventra_collaboration_opportunities');
+    } catch {
+      // localStorage unavailable (private browsing, quota exceeded, etc.)
+    }
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(item => item && typeof item === 'object');
+        }
       } catch (e) {
         console.error("Failed to parse collaboration opportunities from localStorage", e);
       }
@@ -189,14 +197,22 @@ const CollaborationHub = () => {
     }
   ];
 
+  // 🔥 FIX: Added safe date formatter to prevent RangeError crashes
+  const safeFormatDate = (dateStr, options = { month: 'short', day: 'numeric' }) => {
+    if (!dateStr) return "TBD";
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? "TBD" : d.toLocaleDateString(undefined, options);
+  };
+
   // Filtering opportunities dynamically
+  const query = searchQuery.toLowerCase();
+
   const filteredOpportunities = collaborationOpportunities.filter((opp) => {
-    const query = searchQuery.toLowerCase();
     const matchesSearch =
-      opp.title.toLowerCase().includes(query) ||
-      opp.description.toLowerCase().includes(query) ||
-      opp.organizer.toLowerCase().includes(query) ||
-      opp.skills.some(skill => skill.toLowerCase().includes(query));
+      (opp.title?.toLowerCase() || "").includes(query) ||
+      (opp.description?.toLowerCase() || "").includes(query) ||
+      (opp.organizer?.toLowerCase() || "").includes(query) ||
+      (Array.isArray(opp.skills) && opp.skills.some(skill => skill?.toLowerCase().includes(query)));
 
     const matchesType = filterType === 'All' || opp.type === filterType;
     return matchesSearch && matchesType;
@@ -204,12 +220,11 @@ const CollaborationHub = () => {
 
   // Filtering networking requests dynamically
   const filteredNetworking = networkingRequests.filter((req) => {
-    const query = searchQuery.toLowerCase();
     return (
-      req.name.toLowerCase().includes(query) ||
-      req.role.toLowerCase().includes(query) ||
-      req.company.toLowerCase().includes(query) ||
-      req.skills.some(skill => skill.toLowerCase().includes(query))
+      (req.name?.toLowerCase() || "").includes(query) ||
+      (req.role?.toLowerCase() || "").includes(query) ||
+      (req.company?.toLowerCase() || "").includes(query) ||
+      (Array.isArray(req.skills) && req.skills.some(skill => skill?.toLowerCase().includes(query)))
     );
   });
 
@@ -340,7 +355,8 @@ const CollaborationHub = () => {
                   <div className="opportunity-skills">
                     <strong>Required Skills:</strong>
                     <div className="skills-tags">
-                      {opportunity.skills.map((skill) => (
+                      {/* 🔥 FIX: Protected map */}
+                      {Array.isArray(opportunity.skills) && opportunity.skills.map((skill) => (
                         <span key={skill} className="skill-tag">{skill}</span>
                       ))}
                     </div>
@@ -354,7 +370,8 @@ const CollaborationHub = () => {
                     <div className="detail-item text-right">
                       <span className="label block text-[10px] text-slate-400 font-bold uppercase">Deadline</span>
                       <span className="value text-xs font-black text-slate-800 dark:text-slate-200">
-                        {new Date(opportunity.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        {/* 🔥 FIX: Replaced raw Date parse */}
+                        {safeFormatDate(opportunity.deadline)}
                       </span>
                     </div>
                   </div>
@@ -410,7 +427,8 @@ const CollaborationHub = () => {
                   <div className="progress-section mb-4">
                     <div className="progress-header flex justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
                       <span>Progress: {collab.progress}%</span>
-                      <span>Next Meeting: {new Date(collab.nextMeeting).toLocaleDateString()}</span>
+                      {/* 🔥 FIX: Replaced raw Date parse */}
+                      <span>Next Meeting: {safeFormatDate(collab.nextMeeting, undefined)}</span>
                     </div>
                     <div className="progress-bar w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div 
@@ -687,7 +705,8 @@ const CollaborationHub = () => {
                   <Calendar className="w-4 h-4 text-indigo-500 mx-auto mb-1" />
                   <span className="block text-[9px] uppercase font-bold text-slate-400">Deadline</span>
                   <span className="text-xs font-black text-slate-800 dark:text-white">
-                    {new Date(selectedOpportunity.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    {/* 🔥 FIX: Replaced raw Date parse */}
+                    {safeFormatDate(selectedOpportunity.deadline)}
                   </span>
                 </div>
                 <div className="p-3 bg-slate-50 dark:bg-slate-950/30 rounded-xl text-center">
@@ -700,7 +719,8 @@ const CollaborationHub = () => {
               <div className="mb-6">
                 <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Required Core Skills</h4>
                 <div className="flex flex-wrap gap-1.5">
-                  {selectedOpportunity.skills.map((skill) => (
+                  {/* 🔥 FIX: Protected map */}
+                  {Array.isArray(selectedOpportunity.skills) && selectedOpportunity.skills.map((skill) => (
                     <span key={skill} className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 border border-indigo-500/10">
                       {skill}
                     </span>

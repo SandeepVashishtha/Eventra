@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ZoomIn,
@@ -261,6 +261,23 @@ const SpatialSeatSelector = ({
     return map;
   }, [elements, getSeatPositions]);
 
+  // Compute flat list of all seats across all elements for cross-table navigation
+  const allSeats = useMemo(() => {
+    const list = [];
+    elements.forEach((el) => {
+      if (el.seatsCount > 0) {
+        const positions = elementSeatPositions.get(el.id) || [];
+        positions.forEach((seat) => {
+          list.push({
+            ...seat,
+            elementId: el.id,
+          });
+        });
+      }
+    });
+    return list;
+  }, [elements, elementSeatPositions]);
+
   // Auto-center and zoom to highlighted seat in read-only dashboard view
   useEffect(() => {
     if (readOnly && selectedSeat && elements.length > 0) {
@@ -510,86 +527,19 @@ const SpatialSeatSelector = ({
                 </text>
 
                 {/* Render Interactive Chair elements */}
-                {(elementSeatPositions.get(el.id) || []).map((seat) => {
-                  const isOccupied = el.assignedAttendees[seat.index];
-                  const isSelected = isSeatSelected(el.id, seat.index);
-                  const seatLabel =
-                    (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
-                  const seatTier = el.tier || (isVIP ? "VIP Front Row" : "General Seating");
-
-                  // Glow effect for selected seat or active highlight
-                  const glowClass = isSelected ? "ssp-seat-glowing" : "";
-
-                  return (
-                    <g
-                      key={`seat-${el.id}-${seat.index}`}
-                      className={`ssp-interactive-seat ${glowClass}`}
-                      onClick={() => handleSeatClick(el, seat, seat.index)}
-                      onMouseEnter={(e) => {
-                        const bbox = e.currentTarget.getBoundingClientRect();
-                        const vrect = containerRef.current.getBoundingClientRect();
-                        setHoveredSeat({
-                          el,
-                          seatIdx: seat.index,
-                          label: seatLabel,
-                          tier: seatTier,
-                          occupiedBy: isOccupied || null,
-                          x: bbox.left - vrect.left + bbox.width / 2,
-                          y: bbox.top - vrect.top - 10,
-                        });
-                      }}
-                      onMouseLeave={() => setHoveredSeat(null)}
-                      style={{ cursor: isOccupied ? "not-allowed" : "pointer" }}
-                    >
-                      {/* 2.5D Chair base drop shadow */}
-                      <circle cx={seat.x} cy={seat.y + 3} r={11} fill="rgba(0, 0, 0, 0.45)" />
-
-                      {/* Main Interactive Seat circle */}
-                      <circle
-                        cx={seat.x}
-                        cy={seat.y}
-                        r={11}
-                        fill={
-                          isSelected
-                            ? "url(#ssp-selected)"
-                            : isOccupied
-                              ? "#27272a"
-                              : isVIP
-                                ? "url(#ssp-vip-avail)"
-                                : "url(#ssp-gen-avail)"
-                        }
-                        stroke={
-                          isSelected
-                            ? "#67e8f9"
-                            : isOccupied
-                              ? "#18181b"
-                              : isVIP
-                                ? "#f59e0b"
-                                : "#6366f1"
-                        }
-                        strokeWidth={1.5}
-                        style={{
-                          transition:
-                            "fill 0.25s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-                        }}
-                      />
-
-                      {/* RADAR pulsing overlay loop animation inside dashboard view */}
-                      {readOnly && isSelected && (
-                        <circle
-                          cx={seat.x}
-                          cy={seat.y}
-                          r={28}
-                          fill="none"
-                          stroke="#22d3ee"
-                          strokeWidth={2}
-                          className="ssp-radar-pulse"
-                          pointerEvents="none"
-                        />
-                      )}
-                    </g>
-                  );
-                })}
+                {(elementSeatPositions.get(el.id) || []).map((seat) => (
+                  <MemoizedSeat
+                    key={`seat-${el.id}-${seat.index}`}
+                    el={el}
+                    seat={seat}
+                    allSeats={allSeats}
+                    isSelected={isSeatSelected(el.id, seat.index)}
+                    readOnly={readOnly}
+                    onSelect={handleSeatClick}
+                    onHover={setHoveredSeat}
+                    containerRef={containerRef}
+                  />
+                ))}
               </g>
             );
           })}
@@ -699,3 +649,147 @@ const SpatialSeatSelector = ({
 };
 
 export default SpatialSeatSelector;
+
+// ── Optimized Seat Component ────────────────────────────────────────────────
+
+const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, containerRef }) => {
+  const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
+  const isOccupied = el.assignedAttendees[seat.index];
+  const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
+  const seatTier = el.tier || (isVIP ? "VIP Front Row" : "General Seating");
+
+  const tabIndex = readOnly || isOccupied ? -1 : 0;
+  const role = !readOnly && !isOccupied ? "button" : undefined;
+  const availability = isOccupied ? "Occupied" : "Available";
+  const ariaLabel = `${el.label} - ${seatLabel}, ${availability} (${seatTier})`;
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      if (readOnly || isOccupied) return;
+      e.preventDefault();
+      onSelect(el, seat, seat.index);
+      return;
+    }
+
+    const arrowKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+    if (arrowKeys.includes(e.key)) {
+      e.preventDefault();
+      let tx = 0,
+        ty = 0;
+      if (e.key === "ArrowRight") tx = 1;
+      if (e.key === "ArrowLeft") tx = -1;
+      if (e.key === "ArrowUp") ty = -1;
+      if (e.key === "ArrowDown") ty = 1;
+
+      let bestSeat = null;
+      let minScore = Infinity;
+
+      (allSeats || []).forEach((s) => {
+        if (s.elementId === el.id && s.index === seat.index) return;
+        const dx = s.x - seat.x;
+        const dy = s.y - seat.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist === 0) return;
+
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const dot = nx * tx + ny * ty;
+
+        if (dot > 0.1) {
+          const score = dist / dot;
+          if (score < minScore) {
+            minScore = score;
+            bestSeat = s;
+          }
+        }
+      });
+
+      if (bestSeat) {
+        const nextSeatEl = document.getElementById(`seat-element-${bestSeat.elementId}-${bestSeat.index}`);
+        if (nextSeatEl) {
+          nextSeatEl.focus();
+        }
+      }
+    }
+  };
+
+  const handleFocus = (e) => {
+    if (!containerRef.current) return;
+    const bbox = e.currentTarget.getBoundingClientRect();
+    const vrect = containerRef.current.getBoundingClientRect();
+    onHover({
+      el,
+      seatIdx: seat.index,
+      label: seatLabel,
+      tier: seatTier,
+      occupiedBy: isOccupied || null,
+      x: bbox.left - vrect.left + bbox.width / 2,
+      y: bbox.top - vrect.top - 10,
+    });
+  };
+
+  const handleBlur = () => {
+    onHover(null);
+  };
+
+  return (
+    <g
+      id={`seat-element-${el.id}-${seat.index}`}
+      className={`ssp-interactive-seat ${isSelected ? "ssp-seat-glowing" : ""}`}
+      tabIndex={tabIndex}
+      role={role}
+      aria-label={ariaLabel}
+      onClick={() => onSelect(el, seat, seat.index)}
+      onKeyDown={handleKeyDown}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onMouseEnter={(e) => {
+        const bbox = e.currentTarget.getBoundingClientRect();
+        const vrect = containerRef.current.getBoundingClientRect();
+        onHover({
+          el,
+          seatIdx: seat.index,
+          label: seatLabel,
+          tier: seatTier,
+          occupiedBy: isOccupied || null,
+          x: bbox.left - vrect.left + bbox.width / 2,
+          y: bbox.top - vrect.top - 10,
+        });
+      }}
+      onMouseLeave={() => onHover(null)}
+      style={{ cursor: isOccupied ? "not-allowed" : "pointer" }}
+    >
+      <circle cx={seat.x} cy={seat.y + 3} r={11} fill="rgba(0, 0, 0, 0.45)" />
+      <circle
+        cx={seat.x}
+        cy={seat.y}
+        r={11}
+        fill={
+          isSelected
+            ? "url(#ssp-selected)"
+            : isOccupied
+              ? "#27272a"
+              : isVIP
+                ? "url(#ssp-vip-avail)"
+                : "url(#ssp-gen-avail)"
+        }
+        stroke={isSelected ? "#67e8f9" : isOccupied ? "#18181b" : isVIP ? "#f59e0b" : "#6366f1"}
+        strokeWidth={1.5}
+      />
+      {readOnly && isSelected && (
+        <circle
+          cx={seat.x}
+          cy={seat.y}
+          r={28}
+          fill="none"
+          stroke="#22d3ee"
+          strokeWidth={2}
+          className="ssp-radar-pulse"
+          pointerEvents="none"
+        />
+      )}
+    </g>
+  );
+};
+
+const MemoizedSeat = memo(Seat);

@@ -24,11 +24,8 @@ const PriceRangeSlider = ({
   // Sync external prop changes (e.g. filter reset from parent) into local state.
   useEffect(() => {
     setMin(minPrice);
-  }, [minPrice]);
-
-  useEffect(() => {
     setMax(maxPrice);
-  }, [maxPrice]);
+  }, [minPrice, maxPrice]);
 
   // Visual-only handlers — update local state on every tick for smooth UI.
   const handleMinChange = (e) => {
