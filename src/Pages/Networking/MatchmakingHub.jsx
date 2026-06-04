@@ -1,20 +1,24 @@
-import React, { useState, useEffect } from "react";
-import { fetchRecommendedConnections, suggestMeetingSlots } from "../../utils/aiMatchmaking";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { fetchRecommendedConnections } from "../../utils/aiMatchmaking";
 import { Calendar, MessageSquare, Zap, Star } from "lucide-react";
 import { toast } from "react-toastify";
 
 const MatchmakingHub = () => {
+  const { eventId = "networking-hub" } = useParams();
+  const { user } = useAuth();
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadMatches = async () => {
-      const results = await fetchRecommendedConnections({ id: "me" }, "current_event");
+      const results = await fetchRecommendedConnections(user || {}, eventId);
       setConnections(results);
       setLoading(false);
     };
     loadMatches();
-  }, []);
+  }, [eventId, user]);
 
   const handleSchedule = (connection) => {
     toast.success(`Meeting request sent to ${connection.name}!`);
