@@ -413,22 +413,37 @@ const EventRegistration = () => {
       return;
     }
 
-    const isFull = await checkEventCapacity(eventId, event);
-    if (isFull) {
-      const { getGlobalWaitlist } = await import("../../utils/waitlistUtils");
-      const records = getGlobalWaitlist();
-      const onWaitlist = records.some(
-        (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
-      );
-      if (onWaitlist) {
-        toast.error(t("eventRegistration.toastAlreadyWaitlisted"));
+    setSubmitting(true);
+    isSubmittingRef.current = true;
+
+    try {
+      const isFull = await checkEventCapacity(eventId, event);
+      if (isFull) {
+        const { getGlobalWaitlist } = await import("../../utils/waitlistUtils");
+        const records = getGlobalWaitlist();
+        const onWaitlist = records.some(
+          (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
+        );
+        if (onWaitlist) {
+          toast.error(t("eventRegistration.toastAlreadyWaitlisted"));
+          setSubmitting(false);
+          isSubmittingRef.current = false;
+          return;
+        }
+      }
+
+      if (await checkAndHandleConflicts()) {
+        setSubmitting(false);
+        isSubmittingRef.current = false;
         return;
       }
+
+      proceedWithRegistration();
+    } catch (err) {
+      setSubmitting(false);
+      isSubmittingRef.current = false;
+      toast.error("An error occurred during submission");
     }
-
-    if (await checkAndHandleConflicts()) return;
-
-    proceedWithRegistration();
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
 
   // Handle conflict modal actions
