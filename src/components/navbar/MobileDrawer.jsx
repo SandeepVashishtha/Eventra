@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { LogIn, UserPlus, Sun, Moon, MousePointer } from "lucide-react";
 import NavbarLinks from "./NavbarLinks";
 import { useTheme } from "../../context/ThemeContext";
+import AuthButtons from "./AuthButtons";
 
 const MobileDrawer = ({
   isOpen,
@@ -149,32 +150,7 @@ const MobileDrawer = ({
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col gap-4 mt-4">
-                <Link
-                  to="/login"
-                  onClick={closeMenu}
-                  className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
-                    isActive("/login")
-                      ? "text-black dark:text-white border-black dark:border-white font-semibold"
-                      : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
-                  }`}
-                >
-                  <LogIn className="w-5 h-5" />
-                  Login
-                </Link>
-                <Link
-                  to="/signup"
-                  onClick={closeMenu}
-                  className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
-                    isActive("/signup")
-                      ? "text-black dark:text-white border-black dark:border-white font-semibold"
-                      : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
-                  }`}
-                >
-                  <UserPlus className="w-5 h-5" />
-                  Sign Up
-                </Link>
-              </div>
+              <AuthButtons isMobile onActionClick={closeMenu} />
             )}
           </div>
 
