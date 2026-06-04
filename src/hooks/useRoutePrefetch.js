@@ -6,7 +6,18 @@ import { prefetchRoute } from "../utils/prefetchUtils";
  * useRoutePrefetch Hook
  *
  * Automatically pre-fetches high-priority routes based on the current location.
- * For example, if the user is on the Home page, we might pre-fetch the Explore page.
+ * Also returns a `prefetchRoute` function for imperative use (e.g. on hover/focus
+ * of navigation links or event cards) so the chunk is already cached before the
+ * user clicks, reducing the Suspense fallback window during transitions.
+ *
+ * FIX 3: Expose `prefetchRoute` imperatively so event-card click handlers can
+ * call it on hover/pointerenter to warm the chunk before navigation fires.
+ * Example usage in an event card:
+ *
+ *   const { prefetchRoute } = useRoutePrefetch();
+ *   <div onPointerEnter={() => prefetchRoute(
+ *     () => import('../Pages/Events/EventDetails'), 'details'
+ *   )}>
  */
 export const useRoutePrefetch = (config = {}) => {
   const location = useLocation();
@@ -20,16 +31,20 @@ export const useRoutePrefetch = (config = {}) => {
     }
   }, []);
 
+  // Immediate (non-idle) prefetch for imperative use on hover/focus.
+  // Call this when the user signals intent (hover, focus, long-press) so
+  // the chunk is already resolved by the time they click and navigate.
+  const prefetchImmediate = useCallback((importFn, key) => {
+    prefetchRoute(importFn, key);
+  }, []);
+
   useEffect(() => {
     const path = location.pathname;
 
-    // Define prefetch strategies based on current path
     if (path === "/") {
-      // On home, prefetch major entry points
       prefetch(() => import("../Pages/Events/EventsPage"), "explore");
       prefetch(() => import("../components/auth/Login"), "login");
     } else if (path === "/explore" || path === "/events") {
-      // On explore, prefetch event details and registration
       prefetch(() => import("../Pages/Events/EventDetails"), "details");
       prefetch(
         () => import("../Pages/Events/EventRegistration"),
@@ -38,5 +53,8 @@ export const useRoutePrefetch = (config = {}) => {
     }
   }, [location.pathname, prefetch]);
 
-  return { prefetchManual: prefetch };
+  return {
+    prefetchManual: prefetch,
+    prefetchRoute: prefetchImmediate, // expose for hover-intent prefetch
+  };
 };
