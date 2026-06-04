@@ -212,7 +212,8 @@ describe('AuthContext', () => {
 
       expect(screen.getByTestId('user-status')).toHaveTextContent('logged-out');
       expect(screen.getByTestId('token-val')).toHaveTextContent('no-token');
-      expect(syncSecureStorage.getItem('user')).toBeNull();
+      const storedUser = await syncSecureStorage.getItemAsync('user');
+      expect(storedUser).toBeNull();
     });
   });
 
@@ -258,7 +259,8 @@ describe('AuthContext', () => {
         expect(screen.getByTestId('user-status')).toHaveTextContent('logged-in')
       );
       expect(screen.getByTestId('token-val')).toHaveTextContent('cookie-managed');
-      expect(JSON.parse(syncSecureStorage.getItem('user')).email).toBe('bob@example.com');
+      const storedUser = await syncSecureStorage.getItemAsync('user');
+      expect(JSON.parse(storedUser).email).toBe('bob@example.com');
     });
 
     it('returns false and sets error when API returns non-200 status', async () => {
