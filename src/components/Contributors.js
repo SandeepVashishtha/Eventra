@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
-import FeatureErrorBoundary from "./common/FeatureErrorBoundary";
+import ErrorBoundary from "./common/ErrorBoundary";
 import SEOHead from "../components/SEOHead";
 import { storageManager } from "../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../utils/storage/storageKeys";
@@ -226,7 +226,7 @@ const ContributorsInner = () => {
   // UPDATED: Loading skeleton grid
   if (loading) {
     return (
-      <FeatureErrorBoundary>
+      <ErrorBoundary level="feature">
         <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
@@ -236,13 +236,13 @@ const ContributorsInner = () => {
           </div>
         </div>
       </section>
-      </FeatureErrorBoundary>
+      </ErrorBoundary>
     );
   }
 
   if (error)
     return (
-      <FeatureErrorBoundary>
+      <ErrorBoundary level="feature">
         <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
@@ -258,12 +258,12 @@ const ContributorsInner = () => {
           </button>
         </div>
       </section>
-      </FeatureErrorBoundary>
+      </ErrorBoundary>
     );
   return (
     // UPDATED: Section background
-    <FeatureErrorBoundary>
-      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+      <ErrorBoundary level="feature">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           {/* Added The Search Bar */}
           <div className="flex justify-center mb-8">
@@ -445,7 +445,7 @@ const ContributorsInner = () => {
         )}
       </div>
     </section>
-    </FeatureErrorBoundary>
+    </ErrorBoundary>
   );
 };
 

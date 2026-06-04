@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { useAuth } from "../context/AuthContext";
-import FeatureErrorBoundary from "../components/common/FeatureErrorBoundary";
+import ErrorBoundary from "../components/common/ErrorBoundary";
 import SEOHead from "../components/SEOHead";
 import Loading from "./common/Loading";
 
@@ -21,12 +21,12 @@ const Dashboard = () => {
         description="Manage your events, registrations, and account settings on Eventra."
         url={currentUrl}
       />
-      <FeatureErrorBoundary>
+      <ErrorBoundary level="feature">
         <Suspense fallback={<Loading text="Loading dashboard..." />}>
           {/* 🔥 FIX: Safely invoked isAdmin with optional chaining to prevent TypeError crashes */}
           {isAdmin?.() ? <AdminDashboard /> : <UserDashboard />}
         </Suspense>
-      </FeatureErrorBoundary>
+      </ErrorBoundary>
     </>
   );
 };

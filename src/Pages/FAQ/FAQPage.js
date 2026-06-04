@@ -11,6 +11,7 @@ import {
   Search,
   HelpCircle,
   X,
+  ChevronDown,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
 import SEOHead from "../../components/SEOHead";
@@ -119,6 +120,7 @@ function FAQSectionInner() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [expandedItems, setExpandedItems] = useState(new Set());
 
   // Search Suggestions State
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -197,9 +199,16 @@ function FAQSectionInner() {
     });
   };
 
-  const [cardStyles, setCardStyles] = useState(() =>
-    faqs.map(() => ({ transform: "scale(1)", filter: "none" }))
-  );
+  // Toggle accordion item
+  const toggleAccordion = (index) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedItems(newExpanded);
+  };
 
   const wrapperRefs = useRef([]);
   const sectionRef = useRef(null);
@@ -211,7 +220,6 @@ function FAQSectionInner() {
 
   useEffect(() => {
     wrapperRefs.current = [];
-    setCardStyles(filteredFaqs.map(() => ({ transform: "scale(1)", filter: "none" })));
   }, [searchTerm, selectedCategory, filteredFaqs]);
 
   useEffect(() => {
@@ -242,39 +250,6 @@ function FAQSectionInner() {
           setIsHeaderFixed(false);
         }
 
-        const viewportCenter = window.innerHeight / 2;
-
-        const nextStyles = wrapperRefs.current.map((wrapper) => {
-          if (!wrapper) {
-            return {
-              transform: "scale(1)",
-              filter: "none",
-            };
-          }
-
-          const rect = wrapper.getBoundingClientRect();
-          const scrollProgress = viewportCenter - rect.top;
-
-          if (scrollProgress > 0) {
-            const factor = Math.min(scrollProgress / window.innerHeight, 1);
-
-            const scale = 1 - factor * 0.04;
-            const blur = factor * 2;
-
-            return {
-              transform: `scale(${scale}) translateY(${factor * -10}px)`,
-              filter: `blur(${blur}px) brightness(${1 - factor * 0.05})`,
-              opacity: 1 - factor * 0.15,
-            };
-          }
-
-          return {
-            transform: "scale(1)",
-            filter: "none",
-          };
-        });
-
-        setCardStyles(nextStyles);
         ticking = false;
       });
     };   
@@ -344,11 +319,10 @@ function FAQSectionInner() {
           -webkit-backdrop-filter: blur(10px);
           width: 100%;
           box-sizing: border-box;
-          
-         display: flex;
+          display: flex;
           flex-direction: column;
           align-items: center;
-          transition: transform 0.5s ease, opacity 0.5s ease, padding 0.5s ease, background 0.5s ease;
+          transition: padding 0.3s ease, background 0.3s ease;
         }
 
         .faq-heading-inner {
@@ -364,7 +338,7 @@ function FAQSectionInner() {
           right: 0;
           z-index: 90;
           border-bottom: 1px solid var(--heading-border);
-          padding: 10px 20px 16px;
+          padding: 12px 20px 16px;
         }
 
         .faq-heading-block h2 {
@@ -387,56 +361,55 @@ function FAQSectionInner() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          
-          padding: 32px max(20px, env(safe-area-inset-right) + 88px) 0 20px;
+          padding: 32px 20px 0 20px;
           max-width: 100%;
           box-sizing: border-box;
-        }
-
-       @media (max-width: 640px) {
-          .faq-cards-container {
-            padding-right: 20px;
-          }
         }
 
         .card-pin-wrapper {
           position: relative;
           width: 100%;
           max-width: 820px;
-          margin-bottom: 90px;
+          margin-bottom: 16px;
         }
 
-        .faq-card-inner {
-          transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease, background 0.35s ease;
+        .faq-accordion-item {
           width: 100%;
           background: var(--card-bg);
           border: 1px solid var(--card-border);
-          backdrop-filter: blur(14px);
-          -webkit-backdrop-filter: blur(14px);
-          border-radius: 16px;
-          padding: 36px;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.06);
-          box-sizing: border-box;
+          border-radius: 12px;
+          overflow: hidden;
+          transition: all 0.2s ease;
         }
 
-        .dark .faq-card-inner { box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
-
-        .faq-card-inner:hover {
-          transform: translateY(-6px);
-          border-color: rgba(99,102,241,0.4);
-          box-shadow: 0 20px 60px rgba(79,70,229,0.18);
+        .faq-accordion-item:hover {
+          border-color: rgba(99,102,241,0.3);
+          box-shadow: 0 8px 24px rgba(79,70,229,0.12);
         }
 
-        .faq-card-header {
+        .faq-accordion-header {
           display: flex;
           align-items: center;
           gap: 12px;
-          margin-bottom: 10px;
+          padding: 20px 24px;
+          cursor: pointer;
+          user-select: none;
+          transition: all 0.2s ease;
+          background: var(--card-bg);
+        }
+
+        .faq-accordion-item:hover .faq-accordion-header {
+          background: var(--card-bg);
+        }
+
+        .faq-accordion-header:focus-visible {
+          outline: 2px solid var(--cat-color);
+          outline-offset: 2px;
         }
 
         .faq-icon {
-          width: 32px;
-          height: 32px;
+          width: 36px;
+          height: 36px;
           border-radius: 8px;
           background: var(--icon-bg);
           color: var(--icon-color);
@@ -444,34 +417,137 @@ function FAQSectionInner() {
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
+          font-size: 16px;
+        }
+
+        .faq-accordion-title-group {
+          flex: 1;
+          text-align: left;
         }
 
         .faq-cat {
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           font-weight: 700;
           letter-spacing: 0.05em;
           color: var(--cat-color);
           text-transform: uppercase;
+          margin-bottom: 4px;
+          display: block;
         }
 
-        .faq-card-inner h3 {
-          font-size: 1.45rem;
-          line-height: 1.4;
-          letter-spacing: -0.02em;
+        .faq-accordion-header h3 {
+          font-size: 1.1rem;
+          line-height: 1.5;
+          letter-spacing: -0.01em;
           color: var(--heading-color);
-          margin: 0 0 10px;
+          margin: 0;
           font-weight: 600;
         }
 
-        .faq-card-inner p {
+        .faq-chevron {
+          width: 24px;
+          height: 24px;
+          color: var(--cat-color);
+          flex-shrink: 0;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .faq-accordion-item.expanded .faq-chevron {
+          transform: rotate(180deg);
+        }
+
+        .faq-accordion-content {
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+          border-top: 1px solid var(--card-border);
+        }
+
+        .faq-accordion-item.expanded .faq-accordion-content {
+          border-top: 1px solid var(--card-border);
+        }
+
+        .faq-answer-wrapper {
+          padding: 20px 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .faq-accordion-content p {
           color: var(--answer-color);
           line-height: 1.8;
           font-size: 1rem;
           margin: 0;
         }
 
+        .faq-helpfulness {
+          margin-top: 8px;
+          padding-top: 12px;
+          border-top: 1px solid var(--card-border);
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .faq-helpfulness-label {
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: var(--subtext-color);
+        }
+
+        .faq-vote-buttons {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .faq-vote-btn {
+          padding: 6px 12px;
+          border-radius: 8px;
+          border: 1px solid;
+          font-size: 0.875rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          background: var(--card-bg);
+          white-space: nowrap;
+        }
+
+        .faq-vote-btn:hover {
+          transform: translateY(-2px);
+        }
+
+        .faq-vote-btn.voted-yes {
+          background: rgba(34, 197, 94, 0.08);
+          border-color: #22c55e;
+          color: #16a34a;
+        }
+
+        .faq-vote-btn.voted-no {
+          background: rgba(239, 68, 68, 0.08);
+          border-color: #ef4444;
+          color: #dc2626;
+        }
+
+        .faq-vote-btn:not(.voted-yes):not(.voted-no) {
+          background: rgba(0, 0, 0, 0.02);
+          border-color: var(--card-border);
+          color: var(--subtext-color);
+        }
+
+        .dark .faq-vote-btn:not(.voted-yes):not(.voted-no) {
+          background: rgba(255, 255, 255, 0.02);
+          border-color: var(--card-border);
+        }
+
         .scroll-spacer {
-          height: 50vh;
+          height: 32px;
           pointer-events: none;
         }
 
@@ -485,7 +561,7 @@ function FAQSectionInner() {
         .search-input {
           width: 100%;
           padding: 12px 44px 12px 44px;
-          border-radius: 14px;
+          border-radius: 10px;
           border: 1px solid #e5e7eb;
           background: rgba(255,255,255,0.8);
           font-size: 14px;
@@ -494,10 +570,22 @@ function FAQSectionInner() {
           backdrop-filter: blur(10px);
         }
 
+        .search-input:focus {
+          border-color: var(--cat-color);
+          background: rgba(255,255,255,0.95);
+          box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
         .dark .search-input {
           background: rgba(15,23,42,0.6);
           border-color: rgba(255,255,255,0.1);
           color: white;
+        }
+
+        .dark .search-input:focus {
+          background: rgba(15,23,42,0.8);
+          border-color: var(--cat-color);
+          box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
         }
 
         .search-icon {
@@ -505,7 +593,7 @@ function FAQSectionInner() {
           left: 14px;
           top: 50%;
           transform: translateY(-50%);
-          color: white;
+          color: #9ca3af;
         }
 
         .clear-btn {
@@ -514,13 +602,22 @@ function FAQSectionInner() {
           top: 50%;
           transform: translateY(-50%);
           padding: 6px;
-          border-radius: 8px;
+          border-radius: 6px;
           background: transparent;
+          border: none;
           cursor: pointer;
+          color: #9ca3af;
+          transition: all 0.2s ease;
         }
 
         .clear-btn:hover {
-          background: rgba(0,0,0,0.05);
+          background: rgba(0,0,0,0.08);
+          color: var(--heading-color);
+        }
+
+        .dark .clear-btn:hover {
+          background: rgba(255,255,255,0.08);
+          color: var(--heading-color);
         }
 
         .suggestions {
@@ -529,8 +626,8 @@ function FAQSectionInner() {
           width: 100%;
           background: white;
           border: 1px solid #e5e7eb;
-          border-radius: 14px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+          border-radius: 10px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.12);
           z-index: 60;
           overflow: hidden;
         }
@@ -538,16 +635,58 @@ function FAQSectionInner() {
         .dark .suggestions {
           background: #0f172a;
           border-color: rgba(255,255,255,0.1);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
 
         .suggestion-item {
-          padding: 10px 12px;
+          padding: 12px 14px;
           font-size: 13px;
           cursor: pointer;
+          transition: background 0.15s ease;
+          color: var(--heading-color);
         }
 
         .suggestion-item:hover {
           background: rgba(99,102,241,0.08);
+        }
+
+        .dark .suggestion-item:hover {
+          background: rgba(129, 140, 248, 0.08);
+        }
+
+        @media (max-width: 640px) {
+          .faq-heading-block {
+            padding: 48px 16px 24px;
+          }
+
+          .faq-heading-block h2 {
+            font-size: 1.75rem;
+          }
+
+          .faq-heading-block p {
+            font-size: 0.95rem;
+          }
+
+          .faq-accordion-header {
+            padding: 16px 16px;
+            gap: 10px;
+          }
+
+          .faq-answer-wrapper {
+            padding: 16px 16px;
+          }
+
+          .faq-accordion-header h3 {
+            font-size: 1rem;
+          }
+
+          .faq-cards-container {
+            padding: 24px 16px 0 16px;
+          }
+
+          .faq-card-pin-wrapper {
+            margin-bottom: 12px;
+          }
         }
       `}</style>
 
@@ -653,56 +792,78 @@ function FAQSectionInner() {
               </button>
             </div>
           ) : (
-            filteredFaqs.map((faq, index) => (
-              <div
-                key={index}
-                className="card-pin-wrapper"
-                ref={(el) => {
-                  if (el) wrapperRefs.current[index] = el;
-                }}
-              >
+            filteredFaqs.map((faq, index) => {
+              const isExpanded = expandedItems.has(index);
+              
+              return (
                 <div
-                  className="faq-card-inner"
-                  style={cardStyles[index] || { transform: "scale(1)", filter: "none" }}
+                  key={index}
+                  className="card-pin-wrapper"
+                  ref={(el) => {
+                    if (el) wrapperRefs.current[index] = el;
+                  }}
                 >
-                  <div className="faq-card-header">
-                    <span className="faq-icon">{faq.icon}</span>
-                    <span className="faq-cat">{faq.category}</span>
-                  </div>
-                  <h3>{faq.question}</h3>
-                  <p>{faq.answer}</p>
+                  <div className={`faq-accordion-item${isExpanded ? " expanded" : ""}`}>
+                    {/* Accordion Header */}
+                    <button
+                      className="faq-accordion-header"
+                      onClick={() => toggleAccordion(index)}
+                      aria-expanded={isExpanded}
+                      aria-controls={`faq-answer-${index}`}
+                    >
+                      <span className="faq-icon">{faq.icon}</span>
+                      <div className="faq-accordion-title-group">
+                        <span className="faq-cat">{faq.category}</span>
+                        <h3>{faq.question}</h3>
+                      </div>
+                      <div className="faq-chevron">
+                        <ChevronDown size={20} />
+                      </div>
+                    </button>
 
-                  {/* Helpfulness Rating Widget */}
-                  <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row gap-3 items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                      Was this answer helpful?
-                    </span>
-                    <div className="flex gap-2 w-full sm:w-auto justify-end">
-                      <button
-                        onClick={() => handleVote(faq.question, "yes")}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border cursor-pointer hover:scale-105 active:scale-95 ${
-                          ratings[faq.question]?.voted === "yes"
-                            ? "bg-green-50 border-green-200 text-green-600 dark:bg-green-950/20 dark:border-green-900/30 dark:text-green-400"
-                            : "bg-slate-50/50 border-slate-200/50 text-slate-500 hover:text-slate-700 dark:bg-slate-900/40 dark:border-slate-800 dark:text-slate-400 dark:hover:text-slate-350"
-                        }`}
-                      >
-                        👍 Yes ({ratings[faq.question]?.yes || 0})
-                      </button>
-                      <button
-                        onClick={() => handleVote(faq.question, "no")}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border cursor-pointer hover:scale-105 active:scale-95 ${
-                          ratings[faq.question]?.voted === "no"
-                            ? "bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400"
-                            : "bg-slate-50/50 border-slate-200/50 text-slate-500 hover:text-slate-700 dark:bg-slate-900/40 dark:border-slate-800 dark:text-slate-400 dark:hover:text-slate-350"
-                        }`}
-                      >
-                        👎 No ({ratings[faq.question]?.no || 0})
-                      </button>
+                    {/* Accordion Content */}
+                    <div
+                      className="faq-accordion-content"
+                      id={`faq-answer-${index}`}
+                      style={{
+                        maxHeight: isExpanded ? "2000px" : "0px",
+                      }}
+                    >
+                      <div className="faq-answer-wrapper">
+                        <p>{faq.answer}</p>
+
+                        {/* Helpfulness Rating Widget */}
+                        <div className="faq-helpfulness">
+                          <span className="faq-helpfulness-label">
+                            Was this answer helpful?
+                          </span>
+                          <div className="faq-vote-buttons">
+                            <button
+                              onClick={() => handleVote(faq.question, "yes")}
+                              className={`faq-vote-btn ${
+                                ratings[faq.question]?.voted === "yes" ? "voted-yes" : ""
+                              }`}
+                              aria-pressed={ratings[faq.question]?.voted === "yes"}
+                            >
+                              👍 Yes ({ratings[faq.question]?.yes || 0})
+                            </button>
+                            <button
+                              onClick={() => handleVote(faq.question, "no")}
+                              className={`faq-vote-btn ${
+                                ratings[faq.question]?.voted === "no" ? "voted-no" : ""
+                              }`}
+                              aria-pressed={ratings[faq.question]?.voted === "no"}
+                            >
+                              👎 No ({ratings[faq.question]?.no || 0})
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
           {filteredFaqs.length > 0 && <div className="scroll-spacer" />}
         </div>

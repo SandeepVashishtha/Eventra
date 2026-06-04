@@ -99,7 +99,7 @@ const WhatsHappening = () => {
         link: `/hackathons/${hackathon.id}`,
         featured:
           hackathon.prize &&
-          parseInt(hackathon.prize.replace(/[$,]/g, "")) > 30000,
+          parseInt(hackathon.prize.replace(/[$,]/g, ""), 10) > 30000,
         location: hackathon.location,
         prize: hackathon.prize,
         participants: hackathon.participants,

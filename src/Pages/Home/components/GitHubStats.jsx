@@ -70,14 +70,17 @@ export default function GitHubStats() {
       try {
         // Fire all three requests in parallel — none depends on the others,
         // so sequential awaits would triple the load time unnecessarily.
-        const [repoResult, contributorsResult, pullRequestsResult] =
+        const [repoResult, contributorsResult, prResult] =
           await Promise.allSettled([
-            fetchRepository(GITHUB_USER, GITHUB_REPO),
-            fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1),
-            fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+            fetchRepository(GITHUB_USER, GITHUB_REPO), // fetchStat(
+            fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1), // fetchStat(
+            fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }), // fetchStat(
           ]);
 
         // Repository data is required; bail out if it failed
+        // repoResult.status === "rejected"
+        // contributorsResult.status === "rejected"
+        // prResult.status === "rejected"
         if (repoResult.status === "rejected") {
           throw repoResult.reason;
         }
@@ -96,13 +99,13 @@ export default function GitHubStats() {
 
         // Pull request count — graceful fallback on failure
         let prCount = "—";
-        if (pullRequestsResult.status === "fulfilled") {
-          const pullRequests = pullRequestsResult.value;
+        if (prResult.status === "fulfilled") {
+          const pullRequests = prResult.value;
           if (Array.isArray(pullRequests) && pullRequests.length > 0) {
             prCount = pullRequests.length;
           }
         } else {
-         //console.warn("Failed to fetch pull request count:", pullRequestsResult.reason);
+         //console.warn("Failed to fetch pull request count:", prResult.reason);
         }
 
         const next = {

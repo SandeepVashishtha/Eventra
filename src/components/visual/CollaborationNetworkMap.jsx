@@ -227,10 +227,11 @@ export default function CollaborationNetworkMap() {
   }, []);
 
   const filteredHubs = useMemo(() => {
+    const q = searchQuery.toLowerCase();
     return HUBS.filter((hub) => {
       const matchesSearch =
-        hub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        hub.categories.some((c) => c.toLowerCase().includes(searchQuery.toLowerCase()));
+        hub.name.toLowerCase().includes(q) ||
+        hub.categories.some((c) => c.toLowerCase().includes(q));
       const matchesRegion = selectedRegion === "All" || hub.region === selectedRegion;
       const matchesActivity = selectedActivity === "All" || hub.activity === selectedActivity;
       return matchesSearch && matchesRegion && matchesActivity;

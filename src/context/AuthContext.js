@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from "../config/api";
+import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler, setAuthToken } from "../config/api";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
 import { syncSecureStorage } from "../utils/secureStorage";
 import { toast } from "react-toastify";
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     error: null,
   });
 
-  const isMountedRef = useRef(false);
+  const isMountedRef = useRef(true);
   const needsExpiryCleanupRef = useRef(false);
   const expiryToastShownRef = useRef(false);
 
@@ -48,16 +48,21 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
+    setAuthToken(null);
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     syncSecureStorage.removeItem("user");
-    localStorage.removeItem("user");
     return true;
   }, []);
 
   const clearExpiredSession = useCallback(() => {
     // 🔥 FIX: Check if a user was actually logged in before blasting them with an "Expired" toast.
     // Anonymous users (who trigger a 401 on mount) shouldn't see this.
-    const hadPreviousSession = !!localStorage.getItem("user");
+    let hadPreviousSession = false;
+    try {
+      hadPreviousSession = !!syncSecureStorage.getItem("user");
+    } catch {
+      // localStorage unavailable (private browsing, quota exceeded, etc.)
+    }
 
     console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
     clearSession();
@@ -72,8 +77,11 @@ export const AuthProvider = ({ children }) => {
     expiryToastShownRef.current = true;
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",
-      autoClose: 5000,
+      autoClose: 4000,
     });
+    setTimeout(() => {
+      window.location.replace("/login");
+    }, 1500);
   }, [clearSession]);
 
   const setAuthRequestState = useCallback((nextState) => {
@@ -247,9 +255,10 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, clearExpiredSession]);
 
-  const persistSession = useCallback((sessionToken, sessionUser) => {
+  const persistSession = useCallback(async (sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
+    setAuthToken(sessionToken);
 
     // The auth token is set exclusively by the server via a Set-Cookie response
     // header with HttpOnly; Secure; SameSite=Strict. Writing the token through
@@ -264,7 +273,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // eslint-disable-next-line no-unused-vars
       const { roles, permissions, scopes, ...displayProfile } = sessionUser;
-      syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
+      await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {
       console.error("[AuthContext] Error persisting user profile:", error);
     }
@@ -404,6 +413,7 @@ export const AuthProvider = ({ children }) => {
       login,
       logout,
       setAuthSession,
+      setUser,
       isAuthenticated,
       hasRole,
       hasPermission,
