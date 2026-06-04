@@ -36,7 +36,7 @@ import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import CalendarView from "../../components/CalendarView";
 import EventConflictModal from "../../components/EventConflictModal";
 import ConfettiCanvas from "../../components/common/ConfettiCanvas";
-import { SkeletonEventCard } from "../../components/common/SkeletonLoaders";
+import { SkeletonEventCard, WaitlistSkeleton, WaitlistPositionSkeleton } from "../../components/common/SkeletonLoaders";
 import { logger } from "../../utils/logger";
 import { validate } from "../../validation";
 
@@ -492,6 +492,20 @@ const EventRegistration = () => {
           <ArrowLeft className="w-4 h-4" />
           {t("eventRegistration.pastEventBackToDetails")}
         </Link>
+      </div>
+    );
+  }
+
+
+  // Show skeleton while joining the waitlist specifically
+  if (submitting && isEventFull) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-12 gap-4">
+        <WaitlistSkeleton />
+        <WaitlistPositionSkeleton />
+        <p className="sr-only" role="status" aria-live="polite">
+          Joining the waitlist, please wait…
+        </p>
       </div>
     );
   }
