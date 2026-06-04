@@ -11,6 +11,10 @@ export const verifyAuth = (handler) => {
   return async (req, res) => {
     const corsHeaders = buildCorsHeaders(req);
 
+    if (req.method === "OPTIONS") {
+      return res.status(200).set(corsHeaders).end();
+    }
+
     // 1. Extract token from Cookie or Authorization header
     let token = null;
 
