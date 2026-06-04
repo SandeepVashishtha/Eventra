@@ -12,6 +12,16 @@ function getFiles(dir) {
   return r;
 }
 
+// Helper to strip out comments and string literals to prevent regex false positives
+function cleanCodeForRegex(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, '')  // Remove multi-line comments
+    .replace(/\/\/.*/g, '')            // Remove single-line comments
+    .replace(/'[^'\\]*(?:\\.[^'\\]*)*'/g, '')   // Remove single-quoted strings safely
+    .replace(/"[^"\\]*(?:\\.[^"\\]*)*"/g, '')   // Remove double-quoted strings safely
+    .replace(/`[\s\S]*?`/g, '');       // Remove template literals
+}
+
 const files = getFiles('src');
 const issues = [];
 
@@ -23,14 +33,20 @@ for (const f of files) {
   // Check for duplicate render() in class components
   const renderMatches = [...code.matchAll(/^\s*render\s*\(\s*\)\s*\{/gm)];
   if (renderMatches.length > 1) {
-    issues.push('DUPLICATE_RENDER: ' + rel);
+    hasDuplicateRender = true;
+    break;
   }
+}
+
+if (hasDuplicateRender) {
+  issues.push('DUPLICATE_RENDER: ' + rel);
+}
   
-  // Check for duplicate export default
-  const exportMatches = [...code.matchAll(/^export default /gm)];
-  if (exportMatches.length > 1) {
-    issues.push('DUPLICATE_EXPORT: ' + rel);
-  }
+// Check for duplicate export default on code stripped of comments and strings
+const exportMatches = [...cleanCode.matchAll(/\bexport\s+default\b/g)];
+if (exportMatches.length > 1) {
+  issues.push('DUPLICATE_EXPORT: ' + rel);
+}
 }
 
 console.log('Issues found:', issues.length);

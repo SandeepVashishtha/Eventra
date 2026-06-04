@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import useReducedMotion from "../../hooks/useReducedMotion";
 import {
   Globe,
   Users,
@@ -208,6 +209,7 @@ const ConnectionParticle = ({ path, color, delay }) => (
 
 // ============ MAIN COMPONENT ============
 export default function CollaborationNetworkMap() {
+  const prefersReducedMotion = useReducedMotion();
   const [activeHub, setActiveHub] = useState(null);
   const [pinnedHub, setPinnedHub] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -227,10 +229,11 @@ export default function CollaborationNetworkMap() {
   }, []);
 
   const filteredHubs = useMemo(() => {
+    const q = searchQuery.toLowerCase();
     return HUBS.filter((hub) => {
       const matchesSearch =
-        hub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        hub.categories.some((c) => c.toLowerCase().includes(searchQuery.toLowerCase()));
+        hub.name.toLowerCase().includes(q) ||
+        hub.categories.some((c) => c.toLowerCase().includes(q));
       const matchesRegion = selectedRegion === "All" || hub.region === selectedRegion;
       const matchesActivity = selectedActivity === "All" || hub.activity === selectedActivity;
       return matchesSearch && matchesRegion && matchesActivity;
@@ -275,12 +278,9 @@ export default function CollaborationNetworkMap() {
   );
 
   const getPopupStyle = useCallback((hub) => {
-    let leftPercent = (hub.x / 1000) * 100;
-    let topPercent = (hub.y / 550) * 100;
-    if (leftPercent > 72) leftPercent = 72;
-    if (leftPercent < 28) leftPercent = 28;
-    if (topPercent > 68) topPercent = 63;
-    return { left: `${leftPercent}%`, top: `${topPercent}%` };
+    let leftPercent = 0;
+    let topPercent = 0;
+    return { left: `${leftPercent}%`, top: `${topPercent}%`, transform: "translate(-50%, -100%)" };
   }, []);
 
   const handleHubClick = useCallback(
@@ -376,6 +376,19 @@ export default function CollaborationNetworkMap() {
                 </select>
               </div>
 
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-700 focus:outline-none"
+                aria-label="Filter by region"
+              >
+                {REGIONS.map((region) => (
+                  <option key={region} value={region}>
+                    {region === "All" ? "All Regions" : region}
+                  </option>
+                ))}
+              </select>
+
               <label className="flex items-center gap-2 text-slate-700">
                 <input
                   type="checkbox"
@@ -384,6 +397,17 @@ export default function CollaborationNetworkMap() {
                   className=" h-5 w-5 rounded-lg border-slate-300 focus:ring-2 focus:ring-violet-500 cursor-pointer"
                 />
                 <span>Connections</span>
+              </label>
+
+              <label className="flex items-center gap-2 text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={particlesEnabled}
+                  onChange={(e) => setParticlesEnabled(e.target.checked)}
+                  disabled={prefersReducedMotion}
+                  className="h-5 w-5 rounded-lg border-slate-300 focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                />
+                <span>Animated particles</span>
               </label>
             </div>
           </div>
@@ -435,7 +459,8 @@ export default function CollaborationNetworkMap() {
           >
             <svg
               className="h-[420px] w-full"
-              viewBox="0 0 1000 550"
+              viewBox="0 0 1000 500"
+              
               preserveAspectRatio="xMidYMid meet"
               role="img"
               aria-label="Global collaboration network map"
@@ -491,7 +516,7 @@ export default function CollaborationNetworkMap() {
                       strokeWidth={Math.max(0.8, getConnectionWidth(conn.intensity))}
                       strokeLinecap="round"
                     />
-                    {particlesEnabled && (
+                    {particlesEnabled && !prefersReducedMotion && (
                       <ConnectionParticle path={pathD} color={color} delay={idx * 0.4} />
                     )}
                   </g>
@@ -513,9 +538,8 @@ export default function CollaborationNetworkMap() {
                     onMouseLeave={() => !pinnedHub && setActiveHub(null)}
                     onClick={() => handleHubClick(hub)}
                     role="button"
-                    tabIndex={0}
                     aria-label={`${hub.name}, ${hub.devs} developers, ${hub.activity} activity`}
-                    style={{ cursor: "pointer" }}
+                    style={{ outline: "none", cursor: "pointer" }}
                   >
                     {/* Pulse ring */}
                     <motion.circle
@@ -585,11 +609,11 @@ export default function CollaborationNetworkMap() {
             <AnimatePresence>
               {(activeHub || pinnedHub) && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                  initial={{ opacity: 0, scale: 0.92, y: 1 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.92, y: 8 }}
                   transition={{ duration: 0.18, ease: "easeOut" }}
-                  className={`cnm-popup-card ${pinnedHub ? "pinned" : ""}`}
+                  className={`absolute w-70 z-50 bg-white p-5 m-4 shadow-lg rounded-lg ${pinnedHub ? "pinned" : ""}`}
                   style={getPopupStyle(activeHub || pinnedHub)}
                 >
                   {/* Close button for pinned */}
@@ -603,78 +627,104 @@ export default function CollaborationNetworkMap() {
                       }}
                       aria-label="Close popup"
                     >
-                      <X size={14} />
+                      <X size={18} />
                     </button>
                   )}
 
                   {/* Header */}
-                  <div className="popup-header">
-                    <MapPin className="popup-icon" />
-                    <div className="popup-title-group">
-                      <h4 className="popup-title">{(activeHub || pinnedHub).name}</h4>
-                      <div className="popup-meta">
-                        <span className="popup-coords">
-                          {(activeHub || pinnedHub).lat} • {(activeHub || pinnedHub).lng}
-                        </span>
-                        <span className="popup-timezone">
-                          <Clock size={11} /> {formatTimeInZone((activeHub || pinnedHub).timezone)}
-                        </span>
-                      </div>
+                  <div className="mb-4">
+
+                    <div className="flex items-center gap-2">
+                      <MapPin className="text-blue-500" size={18} />
+
+                      <h4 className="text-xl font-bold text-slate-800">
+                        {(activeHub || pinnedHub).name}
+                      </h4>
                     </div>
+
+                    <div className="mt-2 ml-7 text-xs text-slate-500 space-y-1">
+
+                      <div>
+                        {(activeHub || pinnedHub).lat}° N • {(activeHub || pinnedHub).lng}° E
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <Clock size={13} />
+                        {formatTimeInZone((activeHub || pinnedHub).timezone)}
+                      </div>
+
+                    </div>
+
                   </div>
 
                   {/* Stats Grid */}
-                  <div className="popup-stats">
-                    <div className="popup-stat">
-                      <Users className="stat-icon" />
-                      <div>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 flex-shrink-0" />
                         <span className="mt-1 block text-sm text-slate-600">Developers</span>
-                        <span className="block text-2xl font-bold text-emerald-400">
+                      </div>
+                      <h4 className="block text-2xl font-bold text-emerald-400">
                           {(activeHub || pinnedHub).devs.toLocaleString()}
-                        </span>
-                      </div>
+                      </h4>
                     </div>
-                    <div className="popup-stat">
-                      <Code className="stat-icon" />
-                      <div>
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <div className="flex items-center gap-2">
+                        <Code className="w-4 h-4 flex-shrink-0" />
                         <span className="mt-1 block text-sm text-slate-600">Projects</span>
-                        <span className="block text-2xl font-bold text-emerald-400">
-                          {(activeHub || pinnedHub).projects}
-                        </span>
                       </div>
+                      <h4 className="block text-2xl font-bold text-emerald-400">
+                          {(activeHub || pinnedHub).projects}
+                      </h4>
                     </div>
                   </div>
 
                   {/* Categories */}
-                  <div className="popup-categories">
+                  <div className="flex flex-wrap gap-2 mb-4">
                     {(activeHub || pinnedHub).categories.map((cat) => (
-                      <span key={cat} className="category-tag">
+                      <span key={cat} className="px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-600">
                         {cat}
                       </span>
                     ))}
                   </div>
 
                   {/* Status & Region */}
-                  <div className="popup-footer">
-                    <div className="popup-status">
-                      <span className="status-label">Activity:</span>
-                      <div
-                        className={`status-badge ${(activeHub || pinnedHub).activity.toLowerCase()}`}
-                      >
-                        <Activity className="status-icon" size={12} />
-                        <span>
-                          {ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].label} Activity
-                        </span>
-                      </div>
+                  <div className="mb-4 flex items-center justify-between">
+
+                    <span className="text-sm text-slate-500">
+                      Activity Level
+                    </span>
+
+                    <div
+                      className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold
+                      ${(activeHub || pinnedHub).activity === "critical"
+                        ? "bg-red-100 text-red-600"
+                        : (activeHub || pinnedHub).activity === "high"
+                        ? "bg-orange-100 text-orange-600"
+                        : (activeHub || pinnedHub).activity === "medium"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-green-100 text-green-600"
+                      }`}
+                    >
+                      <Activity size={12} />
+                      {ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].label}
                     </div>
-                    <span className="popup-region">{(activeHub || pinnedHub).region}</span>
                   </div>
 
-                  {/* Action */}
-                  <button className="popup-action" aria-label="button">
-                    <ExternalLink size={14} />
-                    <span>View Hub Details</span>
-                  </button>
+                  {/* Region */}
+                  <div className="flex items-center justify-between border-t pt-3">
+
+                    <span className="text-sm font-medium text-slate-600">
+                      {(activeHub || pinnedHub).region}
+                    </span>
+
+                    <button className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+                      <ExternalLink size={14} />
+                      View Details
+                    </button>
+
+                  </div>
+                
                 </motion.div>
               )}
             </AnimatePresence>

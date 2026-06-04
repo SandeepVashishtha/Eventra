@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell, BellOff, Check, Mail, Monitor, Save, Volume2 } from "lucide-react";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { useNotification } from "../context/NotificationContext";
@@ -49,7 +49,26 @@ const NotificationSettings = () => {
     showBrowserNotification,
   } = useNotification();
   const [statusMessage, setStatusMessage] = useState("");
+  const timeoutRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (statusMessage) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        setStatusMessage("");
+      }, 4000);
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [statusMessage]);
 
   const enabledCategoryCount = useMemo(
     () =>
@@ -76,27 +95,31 @@ const NotificationSettings = () => {
     }));
   };
 
+  const showStatusMessage = (message) => {
+    setStatusMessage(message);
+  };
+
   const handlePushToggle = async (enabled) => {
     if (enabled) {
       const result = await subscribeToPush();
       if (result.subscribed) {
-        setStatusMessage("Push notifications are active for this browser.");
+        showStatusMessage("Push notifications are active for this browser.");
       } else if (result.reason === "missing-vapid-key") {
-        setStatusMessage("Browser notifications are enabled. Server push needs a VAPID key.");
+        showStatusMessage("Browser notifications are enabled. Server push needs a VAPID key.");
       } else {
-        setStatusMessage("Push notifications could not be enabled in this browser.");
+        showStatusMessage("Push notifications could not be enabled in this browser.");
       }
       return;
     }
 
     await unsubscribeFromPush();
-    setStatusMessage("Push notifications are paused.");
+    showStatusMessage("Push notifications are paused.");
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     const result = await savePreferences(preferences);
-    setStatusMessage(
+    showStatusMessage(
       result.savedRemotely
         ? "Notification preferences saved."
         : "Notification preferences saved locally."
@@ -112,7 +135,7 @@ const NotificationSettings = () => {
       category: "system",
       timestamp: new Date().toISOString(),
     });
-    setStatusMessage(
+    showStatusMessage(
       delivered
         ? "Test notification sent."
         : "Allow browser notifications to send a test notification."
