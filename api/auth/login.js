@@ -211,8 +211,9 @@ async function handler(req, res) {
       // Ignore write errors on test response objects
     }
 
-    // Reset rate limit on successful login so a legitimate user is not penalised
-    loginRateLimiter.reset(clientIp);
+    // Do not reset the rate limit on successful login.
+    // Login rate limiting is intended to protect the endpoint from
+    // rapid repeated authentication attempts regardless of success.
 
     return corsResponse(req, res, 200, {
       message: "Login successful",
