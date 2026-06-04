@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import Navbar from "./components/navbar/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
+import UpdateAvailableBanner from "./components/common/UpdateAvailableBanner";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -27,17 +28,14 @@ import { getAuthRoutes, getProtectedRoutes } from "./components/routes/Protected
 import {
   AuthFormSkeleton,
   ExploreEventsSkeleton,
-  EventDetailSkeleton,
 } from "./components/common/SkeletonLoaders";
 
 // Route-level lazy splits - loaded only when route is visited
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
-const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
-const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
 const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
 
 // Non-critical UI - deferred after first paint
@@ -194,16 +192,7 @@ function App() {
                   <PageTransition>
                     <ErrorBoundary>
                       <Routes location={location} key={location?.pathname || "default"}>
-                        <Route
-                          path="/register/:id"
-                          element={
-                            <ProtectedRoute>
-                              <Suspense fallback={<AuthFormSkeleton />}>
-                                <EventRegistration />
-                              </Suspense>
-                            </ProtectedRoute>
-                          }
-                        />
+                        {/* /explore is a legacy alias for the Events page */}
                         <Route
                           path="/explore"
                           element={
@@ -213,10 +202,10 @@ function App() {
                           }
                         />
                         <Route
-                          path="/events/:id"
+                          path="/event-recommendation"
                           element={
-                            <Suspense fallback={<EventDetailSkeleton />}>
-                              <EventDetails />
+                            <Suspense fallback={null}>
+                              <EventRecommendation />
                             </Suspense>
                           }
                         />
@@ -228,8 +217,16 @@ function App() {
                         />
                         <Route
                           path="/saved-events"
-                          element={<Suspense fallback={null}><SavedEventsPage /></Suspense>}
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={<AuthFormSkeleton />}>
+                                <SavedEventsPage />
+                              </Suspense>
+                            </ProtectedRoute>
+                          }
                         />
+                        {/* All other routes (auth, dashboard, admin, profile, events, etc.)
+                            are handled by AppRoutes → PublicRoutes / ProtectedRoutes */}
                         <Route
                           path="*"
                           element={
@@ -277,9 +274,10 @@ function App() {
                     <Suspense fallback={null}>
                       <FluidCursor enabled={cursorEnabled} />
                     </Suspense>
-                </ErrorBoundary>
+                  </ErrorBoundary>
                 )}
               </div>
+              <UpdateAvailableBanner />
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>

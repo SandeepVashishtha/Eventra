@@ -1,0 +1,171 @@
+name: Issue Type Labeler
+
+# Mirrors PR Type Labeler — detects the type of work an issue represents
+# by scanning the title and body with keyword rules.
+# Applies type:* labels (same catalogue used by the PR workflow) so
+# issue → PR label inheritance stays consistent.
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+concurrency:
+  group: issue-type-label-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+permissions:
+  issues: write
+
+jobs:
+  assign-type-label:
+    name: Assign issue type label(s)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Detect and apply type labels
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue      = context.payload.issue;
+            const issueNum   = issue.number;
+            const issueTitle = (issue.title || '').toLowerCase();
+            const issueBody  = (issue.body  || '').toLowerCase();
+            const combined   = `${issueTitle} ${issueBody}`;
+
+            // ── Label catalogue (identical to type-labeler.yml for PRs) ────
+            const TYPE_LABELS = [
+              'type:bug',
+              'type:feature',
+              'type:docs',
+              'type:testing',
+              'type:security',
+              'type:performance',
+              'type:design',
+              'type:refactor',
+              'type:devops',
+              'type:accessibility',
+            ];
+
+            const LABEL_META = {
+              'type:bug':           { color: 'd73a4a', description: 'Something is broken or incorrect' },
+              'type:feature':       { color: '0075ca', description: 'New feature or enhancement' },
+              'type:docs':          { color: '0052cc', description: 'Improvements or additions to documentation' },
+              'type:testing':       { color: '5319e7', description: 'Tests added or improved' },
+              'type:security':      { color: 'e4e669', description: 'Security improvement or fix' },
+              'type:performance':   { color: 'f9d0c4', description: 'Performance improvement' },
+              'type:design':        { color: 'fef2c0', description: 'UI/UX design changes' },
+              'type:refactor':      { color: 'c5def5', description: 'Code refactoring without behavior change' },
+              'type:devops':        { color: 'bfd4f2', description: 'CI/CD, infrastructure, or tooling changes' },
+              'type:accessibility': { color: 'bfd4f2', description: 'Accessibility improvements' },
+            };
+
+            // ── Keyword rules (title + body scan) ──────────────────────────
+            const KEYWORD_RULES = [
+              {
+                label: 'type:bug',
+                keywords: ['fix', 'bug', 'patch', 'hotfix', 'revert', 'regression', 'crash', 'error',
+                           'broken', 'fail', 'failure', 'not working', 'doesn\'t work', 'issue', 'wrong',
+                           'incorrect', 'unexpected', 'problem', 'defect'],
+              },
+              {
+                label: 'type:feature',
+                keywords: ['feat', 'feature', 'add', 'new', 'implement', 'enhance', 'enhancement',
+                           'improvement', 'support', 'request', 'suggest', 'proposal', 'idea', 'would like'],
+              },
+              {
+                label: 'type:docs',
+                keywords: ['doc', 'docs', 'documentation', 'readme', 'changelog', 'wiki', 'comment',
+                           'guide', 'tutorial', 'instruction', 'typo', 'spelling', 'grammar'],
+              },
+              {
+                label: 'type:testing',
+                keywords: ['test', 'tests', 'spec', 'e2e', 'unit', 'integration', 'coverage',
+                           'jest', 'cypress', 'playwright', 'flaky', 'assertion'],
+              },
+              {
+                label: 'type:security',
+                keywords: ['security', 'auth', 'vuln', 'vulnerability', 'cve', 'sanitize', 'escape',
+                           'xss', 'csrf', 'permission', 'token', 'secret', 'leak', 'injection',
+                           'authentication', 'authorization'],
+              },
+              {
+                label: 'type:performance',
+                keywords: ['perf', 'performance', 'speed', 'optimize', 'optim', 'cache', 'lazy',
+                           'memo', 'slow', 'fast', 'bundle', 'compress', 'loading', 'latency',
+                           'memory', 'cpu', 'efficient'],
+              },
+              {
+                label: 'type:design',
+                keywords: ['design', 'style', 'styles', 'css', 'ui', 'ux', 'layout', 'theme',
+                           'color', 'responsive', 'animation', 'font', 'icon', 'visual', 'spacing',
+                           'margin', 'padding', 'mobile', 'dark mode', 'light mode'],
+              },
+              {
+                label: 'type:refactor',
+                keywords: ['refactor', 'cleanup', 'clean up', 'restructure', 'reorganize', 'rename',
+                           'move', 'simplify', 'extract', 'rewrite', 'technical debt', 'dead code'],
+              },
+              {
+                label: 'type:devops',
+                keywords: ['ci', 'cd', 'pipeline', 'workflow', 'action', 'deploy', 'docker',
+                           'infra', 'helm', 'config', 'env', 'build', 'release', 'devops',
+                           'github actions', 'vercel', 'netlify', 'automation'],
+              },
+              {
+                label: 'type:accessibility',
+                keywords: ['a11y', 'accessibility', 'aria', 'wcag', 'screen reader', 'keyboard',
+                           'contrast', 'alt text', 'focus', 'tab order', 'color blind'],
+              },
+            ];
+
+            // ── Helpers ────────────────────────────────────────────────────
+            async function ensureLabels() {
+              await Promise.all(
+                Object.entries(LABEL_META).map(async ([name, { color, description }]) => {
+                  try {
+                    await github.rest.issues.getLabel({ owner, repo, name });
+                  } catch (err) {
+                    if (err.status !== 404) throw err;
+                    await github.rest.issues.createLabel({ owner, repo, name, color, description });
+                    console.log(`✅ Created label: ${name}`);
+                  }
+                })
+              );
+            }
+
+            async function getCurrentLabels() {
+              const { data } = await github.rest.issues.get({ owner, repo, issue_number: issueNum });
+              return data.labels.map(l => (typeof l === 'string' ? l : l.name));
+            }
+
+            // ── Detect ─────────────────────────────────────────────────────
+            const detected = new Set();
+            for (const rule of KEYWORD_RULES) {
+              if (rule.keywords.some(kw => combined.includes(kw))) {
+                detected.add(rule.label);
+              }
+            }
+
+            console.log(`Issue #${issueNum} | Title: "${issue.title}"`);
+            console.log(`Detected type labels: ${[...detected].join(', ') || 'none'}`);
+
+            await ensureLabels();
+            const current = await getCurrentLabels();
+
+            // Remove stale type:* labels — never touch mentor/spam/quality labels
+            const stale = current.filter(l => TYPE_LABELS.includes(l) && !detected.has(l));
+            for (const name of stale) {
+              await github.rest.issues.removeLabel({ owner, repo, issue_number: issueNum, name });
+              console.log(`🗑 Removed stale type label: ${name}`);
+            }
+
+            // Add newly detected labels (idempotent)
+            const toAdd = [...detected].filter(l => !current.includes(l));
+            if (toAdd.length > 0) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number: issueNum, labels: toAdd });
+              console.log(`🏷️  Added type labels: ${toAdd.join(', ')}`);
+            } else {
+              console.log('No new type labels to add — all detected labels already present.');
+            }
