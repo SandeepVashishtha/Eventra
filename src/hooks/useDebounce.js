@@ -1,5 +1,8 @@
 /**
- * Custom hook to debounce a value by the specified delay.
+ * @fileoverview useDebounce - Generic value debouncing hook
+ * @module hooks/useDebounce
+ */
+ /* Custom hook to debounce a value by the specified delay.
  *
  * Returns the latest value that has been stable for at least `delay` ms.
  * Each time `value` changes the timer resets; the debounced value only
