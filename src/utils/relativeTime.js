@@ -1,5 +1,5 @@
 export function getRelativeTime(dateInput) {
-  if (!dateInput || typeof dateInput === 'number') return null;
+  if (!dateInput) return null;
   const now = new Date();
   const date = new Date(dateInput);
 
@@ -55,8 +55,6 @@ export function getSmartDateLabel(dateInput, timeInput = "") {
     year: "numeric",
   });
 }
-
-// RELIABILITY ENHANCEMENT: Added automated Jest unit test coverage for past/future date offsets and singular/plural formats.
 
 export function isPast(dateInput) {
   if (!dateInput) return false;
