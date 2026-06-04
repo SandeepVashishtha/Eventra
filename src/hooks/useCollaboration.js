@@ -1,6 +1,25 @@
 /**
  * @fileoverview useCollaboration - WebRTC and CRDT real-time collaboration hook
  * @module hooks/useCollaboration
+ * @hook useCollaboration
+ *
+ * @description
+ * **⚠️ Stub implementation — not production-ready.**
+ * Simulates a real-time collaborative session for the floor plan designer.
+ * Connection, user presence, cursor sync, and change broadcasting are all
+ * mocked with hardcoded data and timers. A real implementation would use
+ * Yjs (CRDT) over y-webrtc or a WebSocket provider.
+ *
+ * @param {string} roomId - Unique room identifier. The effect re-runs whenever
+ *                          this changes. Passing a falsy value skips connection.
+ *
+ * @returns {{ users, isConnected, syncStatus, updateCursor, broadcastChange }}
+ *
+ * @returns {Array<{id,name,color,cursor}>} users         - Hardcoded presence list.
+ * @returns {boolean}                       isConnected   - True ~1.5 s after mount.
+ * @returns {'disconnected'|'syncing'|'synced'} syncStatus
+ * @returns {(x,y) => void}                 updateCursor  - Updates local cursor only; does not broadcast.
+ * @returns {(action,data) => void}         broadcastChange - No-op; arguments are ignored.
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -34,7 +53,7 @@ export const useCollaboration = (roomId) => {
 
   useEffect(() => {
     if (!roomId) return;
-    
+
     setSyncStatus("syncing");
     const connectTimer = setTimeout(() => {
       setIsConnected(true);

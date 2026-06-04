@@ -33,10 +33,35 @@ let _notificationPermission = "default";
 global.Notification = {
   requestPermission: async () => _notificationPermission,
 };
+
+const _listeners = new Map();
 global.window = {
   ...global,
   Notification: global.Notification,
   localStorage: global.localStorage,
+  addEventListener(event, cb) {
+    if (!_listeners.has(event)) _listeners.set(event, []);
+    _listeners.get(event).push(cb);
+  },
+  removeEventListener(event, cb) {
+    if (!_listeners.has(event)) return;
+    _listeners.set(event, _listeners.get(event).filter((l) => l !== cb));
+  },
+  dispatchEvent(event) {
+    const eventName = typeof event === "string" ? event : event.type;
+    if (_listeners.has(eventName)) {
+      for (const cb of _listeners.get(eventName)) {
+        cb(event);
+      }
+    }
+    return true;
+  },
+};
+global.CustomEvent = class CustomEvent {
+  constructor(type, options) {
+    this.type = type;
+    this.detail = options?.detail;
+  }
 };
 
 // ── Minimal React stub ──────────────────────────────────────────────────────
@@ -46,14 +71,18 @@ global.window = {
 let _stateSlots = [];
 let _stateIndex = 0;
 let _effects = [];
+let _effectStates = [];
+let _effectIndex = 0;
 
 function resetReact() {
   _stateSlots = [];
   _stateIndex = 0;
   _effects = [];
+  _effectStates = [];
+  _effectIndex = 0;
 }
 
-// Minimal useState: synchronous state management
+// Minimal useState and useEffect with dependency tracking
 global.React = {
   useState: (initial) => {
     const idx = _stateIndex++;
@@ -68,8 +97,34 @@ global.React = {
     };
     return [_stateSlots[idx], setState];
   },
-  useEffect: (fn, _deps) => {
-    _effects.push(fn);
+  useEffect: (fn, deps) => {
+    const idx = _effectIndex++;
+    const prevDeps = _effectStates[idx];
+    let shouldRun = false;
+
+    if (!prevDeps || !deps) {
+      shouldRun = true;
+    } else {
+      for (let i = 0; i < deps.length; i++) {
+        if (deps[i] !== prevDeps[i]) {
+          shouldRun = true;
+          break;
+        }
+      }
+    }
+
+    if (shouldRun) {
+      _effectStates[idx] = deps ? [...deps] : [];
+      _effects.push(fn);
+    }
+  },
+  useCallback: (fn, deps) => fn,
+  useRef: (initial) => {
+    const idx = _stateIndex++;
+    if (_stateSlots[idx] === undefined) {
+      _stateSlots[idx] = { current: initial };
+    }
+    return _stateSlots[idx];
   },
 };
 
@@ -88,6 +143,7 @@ function resetStorage() {
  */
 function runHook() {
   _stateIndex = 0;
+  _effectIndex = 0;
   _effects = [];
   const result = useNotifications();
 
@@ -99,6 +155,7 @@ function runHook() {
 
   // Re-run so returned values reflect post-effect state
   _stateIndex = 0;
+  _effectIndex = 0;
   _effects = [];
   return useNotifications();
 }

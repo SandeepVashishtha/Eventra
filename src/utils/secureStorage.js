@@ -272,11 +272,12 @@ export const syncSecureStorage = {
    * @returns {Promise<boolean>} `true` on success; `false` when the write
    *   could not be persisted (localStorage full, encryption error, etc.).
    */
-  setItem: async (key, value) => {
+  setItem: (key, value) => {
     try {
       pendingWrites.set(key, value);
-      await writeWithEncryption(key, value);
-      pendingWrites.delete(key);
+      writeWithEncryption(key, value).then(() => {
+        pendingWrites.delete(key);
+      });
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);

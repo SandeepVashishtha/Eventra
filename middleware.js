@@ -95,6 +95,42 @@ export default async function middleware(request) {
     );
   }
 
+  // RBAC for ticket routes
+  if (url.pathname.startsWith("/api/tickets/")) {
+    const cookieHeader = request.headers.get("cookie") || "";
+    const tokenMatch = cookieHeader.match(/(?:(?:^|.*;\s*)token\s*\=\s*([^;]*).*$)|^.*$/);
+    const token = tokenMatch ? tokenMatch[1] : null;
+    let roles = [];
+    
+    if (token) {
+      try {
+        const payloadStr = atob(token.split('.')[1]);
+        const payload = JSON.parse(payloadStr);
+        roles = payload.roles || [];
+      } catch (e) {
+        // Ignore parsing errors (treat as unauthenticated)
+      }
+    }
+    
+    const hasAccess = roles.some(role => 
+      ["ORGANIZER", "VOLUNTEER", "ADMIN", "SUPER_ADMIN", "EVENT_MANAGER"].includes(role.toUpperCase())
+    );
+    
+    if (!hasAccess) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: Insufficient permissions for ticket routes" }),
+        {
+          status: 403,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": url.origin,
+            "Access-Control-Allow-Credentials": "true",
+          },
+        }
+      );
+    }
+  }
+
   // Allow the request to proceed to the rewrite destination
   return;
 }
