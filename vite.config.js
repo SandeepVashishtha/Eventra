@@ -88,10 +88,6 @@ export default defineConfig(({ mode }) => {
       // the custom Tailwind `short` screen: (max-height: 520px) media query.
       cssMinify: false,
       chunkSizeWarningLimit: 1000,
-      // Use esbuild for CSS minification instead of the default lightningcss,
-      // which cannot parse the custom Tailwind `short` screen media query.
-      cssMinify: "esbuild",
-      chunkSizeWarningLimit: 1500,
       rollupOptions: {
         output: {
           // manualChunks must be a function in Vite 8 / Rolldown
