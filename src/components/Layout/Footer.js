@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { SiDiscord } from "react-icons/si";
 import {
   FaBook,
   FaBookOpen,
@@ -60,6 +61,11 @@ const socialLinks = [
     name: "LinkedIn",
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
     icon: FaLinkedin,
+  },
+  {
+    name: "Discord",
+    href: "https://discord.gg/6MQ9r5nHT",
+    icon: SiDiscord,
   },
 ];
 
