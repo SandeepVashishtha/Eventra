@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.x",
+    "node": "22.x",
     "npm": ">=9.6.4"
   },
   "dependencies": {
@@ -45,8 +45,9 @@
     "react-qr-code": "^2.0.21",
     "react-router-dom": "^7.15.1",
     "react-toastify": "^11.1.0",
+    "react-window": "^2.2.7",
     "recharts": "^3.8.1",
-    "vite": "8.0.14",
+    "vite": "8.0.16",
     "zustand": "^5.0.14"
   },
   "scripts": {
@@ -59,9 +60,9 @@
     "preview": "vite preview",
     "validate-env": "node scripts/validate-env.js",
     "test": "npm run test:unit",
-    "test:unit": "node --test tests/eventPaginationUtils.test.mjs tests/routeSearchUtils.test.mjs tests/userNameUtils.test.mjs tests/relativeTime.test.mjs tests/safeJsonParse.test.mjs tests/registerUtils.test.mjs tests/bookmarkUtils.test.mjs tests/auth.test.mjs tests/passwordResetEndpoint.test.mjs tests/eventDraftUtils.test.mjs tests/exportCsv.test.mjs tests/githubProxy.test.mjs tests/hackathonFilterUtils.test.mjs tests/loginEndpoint.test.mjs tests/logoutEndpoint.test.mjs tests/colorTokens.test.mjs tests/themeConsistency.test.mjs tests/sseMultiplexer.test.mjs tests/cspReporting.test.mjs tests/readTimeUtils.test.mjs tests/secureStorage.test.mjs tests/conflictDetection.test.mjs tests/eventRecommendationsResponsive.test.mjs tests/spatialSeatSelectorAccessibility.test.mjs tests/waitlist.test.mjs tests/attendanceTracking.test.mjs",
+    "test:unit": "node scripts/run-unit-tests.mjs",
     "test:e2e": "playwright test",
-    "lint": "eslint src --max-warnings=-1",
+    "lint": "eslint src --max-warnings=250",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
     "prepare": "node scripts/setup-git-config.js",
@@ -90,6 +91,8 @@
     ]
   },
   "devDependencies": {
+    "@emnapi/core": "^1.10.0",
+    "@emnapi/runtime": "^1.10.0",
     "@playwright/test": "1.60.0",
     "@storybook/addon-a11y": "^10.4.1",
     "@storybook/addon-docs": "^10.4.1",
@@ -100,16 +103,20 @@
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.4.21",
     "cross-env": "^10.1.0",
+    "eslint": "^9.39.1",
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-storybook": "10.4.1",
+    "eslint-plugin-testing-library": "^7.13.5",
     "globals": "17.6.0",
-    "lint-staged": "^15.5.1",
+    "jsdom": "^29.1.1",
+    "lint-staged": "^17.0.7",
     "postcss": "8.5.15",
     "prettier": "^3.2.5",
     "storybook": "^10.4.1",
     "tailwindcss": "^4.3.0",
     "typescript": "^4.9.5",
+    "vitest": "^4.1.8",
     "webpack": "^5.107.2"
   },
   "overrides": {

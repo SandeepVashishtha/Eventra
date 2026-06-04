@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n/index.js';
 import "./index.css";
+import "./i18n/i18n";
 import App from "./App";
 import { ThemeProvider } from "./context/ThemeContext";
 import GlobalErrorBoundary from "./components/common/ErrorBoundary";
@@ -33,6 +34,7 @@ const router = createBrowserRouter([
   }
 ]);
 
+// Mount the React application to the DOM
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
@@ -52,6 +54,7 @@ root.render(
 );
 
 // [GSSoC-Critical-Landmark-5] Critical execution routing pathway tracking
+
 
 
 

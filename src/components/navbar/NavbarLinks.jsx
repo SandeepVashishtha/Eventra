@@ -38,7 +38,6 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     if (href === "/saved-events") prefetchRoute(() => import("../../Pages/SavedEventsPage"), "saved");
   };
 
-
   useEffect(() => {
     setOpenGroup(null);
   }, [location.pathname]);
@@ -69,16 +68,18 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
 
   const secondaryItemNames = ["Saved", "About", "FAQ", "Contact"];
 
-  const getNavLinkClasses = (active, isSecondary = false) => {
+  const getNavLinkClasses = (active, isSecondary = false, isDropdown = false) => {
     return vertical
       ? `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-all duration-200 w-full py-2 px-3 border-l-2 rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
           active
             ? "text-text border-primary font-semibold bg-bg-secondary"
             : "text-text-light hover:text-text border-transparent hover:bg-bg"
         }`
-      : `flex gap-1.5 items-center text-[12px] xl:text-[13px] font-medium uppercase tracking-[0.03em] transition-all duration-200 px-1.5 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
+      : `flex gap-1.5 items-center text-[12px] lg:text-[13px] font-normal uppercase tracking-[0.03em] transition-all duration-200 px-3 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
           active
             ? "text-text border-primary"
+            : isDropdown
+            ? "text-text-light/75 hover:text-text border-transparent hover:border-border"
             : "text-text-light hover:text-text border-transparent hover:border-border"
         }`;
   };
@@ -89,7 +90,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
-          : "items-center gap-0.5 xl:gap-1 mx-0.5 xl:mx-1 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
+          : "items-center gap-4 lg:gap-5 mx-2 lg:mx-4 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
       }`}
       aria-label={vertical ? "Mobile primary links" : "Primary links"}
     >
@@ -106,7 +107,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
               key={item.name}
               className={`relative group/nav flex items-center shrink-0 ${
                 vertical ? "w-full flex-col items-start" : "flex-none"
-              } ${!vertical && secondaryItemNames.includes(item.name) ? "hidden xl:flex" : ""}`}
+              } ${!vertical && secondaryItemNames.includes(item.name) ? "hidden lg:flex" : ""}`}
             >
               <div className="flex w-full items-center gap-0.5">
                 <NavLink
@@ -124,7 +125,8 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                   className={({ isActive }) =>
                     getNavLinkClasses(
                       isActive || isSubItemActive,
-                      secondaryItemNames.includes(item.name)
+                      secondaryItemNames.includes(item.name),
+                      true
                     )
                   }
                 >
@@ -159,14 +161,14 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     aria-label={`${
                       isOpen ? "Collapse" : "Expand"
                     } ${item.name} submenu`}
-                    className={`ml-auto inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
+                    className={`ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md p-1 transition-colors hover:bg-bg-secondary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
                       isSubItemActive
                         ? "text-text"
-                        : "text-text-light hover:text-text"
+                        : "text-text-light/75 hover:text-text"
                     }`}
                   >
                     <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                      className={`w-3 h-3 transition-transform duration-200 ${
                         isOpen
                           ? "rotate-180"
                           : "group-hover/nav:rotate-180"
@@ -199,10 +201,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     onClick={(e) => handleNavbarLinkClick(sub.href, e)}
                     role={!vertical ? "menuitem" : undefined}
                     className={({ isActive }) =>
-                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
+                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
                         isActive
-                          ? "bg-gray-50 dark:bg-gray-700/80 text-black dark:text-white font-semibold"
-                          : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white hover:bg-gray-50/80 dark:hover:bg-gray-700/50"
+                          ? "bg-bg-secondary text-text font-semibold"
+                          : "text-text-light hover:text-text hover:bg-bg"
                       }`
                     }
                   >
@@ -232,8 +234,6 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           </NavLink>
         );
       })}
-
-
     </nav>
   );
 };

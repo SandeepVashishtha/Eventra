@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react";
-import { useSearchParams, useLocation } from "react-router-dom"; // ✅ useLocation added here
+import { useSearchParams, useLocation } from "react-router-dom";
+import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid"; 
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import FeedbackButton from "../../components/FeedbackButton";
@@ -13,7 +14,7 @@ import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
 import {
@@ -37,23 +38,8 @@ const renderCardSection = (
   onClearSearch
 ) => {
   if (isLoading) {
-    return (
-      <div>
-        <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-          Loading events...
-        </div>
-        <div
-          className="animate-pulse transition-all duration-300 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-          role="status"
-          aria-label="Loading events"
-        >
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <EventCardSkeleton key={`skeleton-${i}`} />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  return <ExploreEventsSkeleton />;
+}
 
   if (loadError) {
     return (
@@ -83,7 +69,9 @@ const renderCardSection = (
       </div>
     );
   }
-
+  if (viewMode === "grid" && paginatedEvents.length > 20) {
+    return <VirtualizedEventGrid events={paginatedEvents} />;
+  }
   return (
     <div
       className={`grid gap-6 ${
@@ -121,6 +109,7 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
+  const { isLoading } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
@@ -151,9 +140,9 @@ const EventsPage = () => {
       savedFilters = {};
     }
 
-    const page = parseInt(searchParams.get("page")) || 1;
+    const page = parseInt(searchParams.get("page"), 10) || 1;
     const perPage =
-      parseInt(searchParams.get("perPage")) || savedFilters.perPage || 6;
+      parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 6;
     const filter =
       searchParams.get("filter") || savedFilters.filterType || "all";
     const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
@@ -232,6 +221,7 @@ const EventsPage = () => {
       setLocalSearchInput(safeQuery);
       listing.setSearchQuery(safeQuery);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     rawSearchParam,
     routeSearchQuery,
@@ -248,7 +238,7 @@ const EventsPage = () => {
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
-    if (!listing.isLoading && routeSearchQuery) {
+    if (!isLoading && routeSearchQuery) {
       setTimeout(() => {
         cardSectionRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -256,7 +246,7 @@ const EventsPage = () => {
         });
       }, 100);
     }
-  }, [listing.isLoading, routeSearchQuery]);
+  }, [isLoading, routeSearchQuery]);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -326,9 +316,9 @@ const EventsPage = () => {
           onAdvancedFiltersChange={listing.setAdvancedFilters}
         />
 
-        <SectionErrorBoundary label="Events">
+        <ErrorBoundary level="section" label="Events">
      {renderCardSection(
-  listing.isLoading,
+  isLoading,
   listing.loadError,
   listing.fetchEvents,
   listing.paginatedEvents,
@@ -346,13 +336,13 @@ const EventsPage = () => {
               />
             </div>
           )}
-        </SectionErrorBoundary>
+        </ErrorBoundary>
 
         {/* Interactive Event Timeline Planner Section */}
         <div className="mt-12 sm:mt-16">
-          <SectionErrorBoundary label="Event Timeline Planner">
+          <ErrorBoundary level="section" label="Event Timeline Planner">
             <EventTimeline />
-          </SectionErrorBoundary>
+          </ErrorBoundary>
         </div>
       </div>
 
