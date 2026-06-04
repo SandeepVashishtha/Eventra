@@ -33,6 +33,7 @@ const router = createBrowserRouter([
   }
 ]);
 
+// Mount the React application to the DOM
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
