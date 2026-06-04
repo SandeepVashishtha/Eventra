@@ -2,7 +2,7 @@ import { Code, Star, ChevronLeft, ChevronRight, Users, ArrowUp, ArrowDown, Minus
 // src/features/leaderboard/LeaderBoard.tsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
 import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
@@ -224,7 +224,7 @@ const PodiumCard = React.memo(({ contributor, position, orderClass, styling, isF
       whileHover={{ y: -6, scale: 1.02 }}
       className={`flex flex-col items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl p-6 border-b-8 ${styling.borderClass} border border-slate-200/50 dark:border-slate-800/40 shadow-xl ${orderClass}`}
       role="listitem"
-      aria-label={`${position} place: ${contributor.username}`}
+      aria-label={`${position} place: ${contributor?.username || "Unknown"}`}
     >
       <div className="relative mb-4">
         <span className={`absolute -inset-1 rounded-full bg-gradient-to-r ${styling.ringClass} blur-sm opacity-80`} aria-hidden="true" />
@@ -302,6 +302,7 @@ export default function LeaderBoard() {
   // Refs
   const lastAppliedSyncRef = useRef(null);
   const searchInputRef = useRef(null);
+  const prevContributorsRef = useRef([]); // Added for safe streak calculation
 
   // Context
   const {
@@ -343,7 +344,11 @@ export default function LeaderBoard() {
     [contributors]
   );
 
-  const top3 = useMemo(() => filteredContributors.slice(0, 3), [filteredContributors]);
+  // Podium always reflects the active sort criterion so the #1/#2/#3 positions
+  // match what the user sees in the table below.  filteredContributors is the
+  // pre-sort array; reading top-3 from it caused the podium to show the wrong
+  // contributors whenever the sort was set to anything other than the default.
+  const top3 = useMemo(() => sortedContributors.slice(0, 3), [sortedContributors]);
 
   const sortOptions = useMemo(
     () => [
@@ -369,36 +374,9 @@ export default function LeaderBoard() {
     if (streamContributors.length === 0 || lastSynced === lastAppliedSyncRef.current) return;
 
     lastAppliedSyncRef.current = lastSynced;
-
     const preparedContributors = prepareLeaderboardEntries(streamContributors);
 
-    setContributors((prev) => {
-      setStreaks((prevStreaks) => {
-        const updatedStreaks = { ...prevStreaks };
-        const prevRanks = new Map(prev.map((c, idx) => [c.username, idx + 1]));
-
-        preparedContributors.forEach((c, newIdx) => {
-          const username = c.username;
-          const newRank = newIdx + 1;
-          const prevRank = prevRanks.get(username);
-          const currentStreak = prevStreaks[username] || { consecutiveUp: 0, onFire: false, rankDifference: 0 };
-
-          if (prevRank !== undefined) {
-            const rankDifference = prevRank - newRank;
-            let consecutiveUp = rankDifference > 0 ? currentStreak.consecutiveUp + 1 : rankDifference < 0 ? 0 : currentStreak.consecutiveUp;
-            const onFire = rankDifference >= 3 || consecutiveUp >= 3;
-
-            updatedStreaks[username] = { consecutiveUp, onFire, rankDifference };
-          } else {
-            updatedStreaks[username] = { consecutiveUp: 0, onFire: false, rankDifference: 0 };
-          }
-        });
-
-        return updatedStreaks;
-      });
-      return preparedContributors;
-    });
-
+    setContributors(preparedContributors);
     setLastUpdated(`Live: ${formatLastUpdated(lastSynced)}`);
 
     // Update cache
@@ -411,6 +389,40 @@ export default function LeaderBoard() {
       logger.warn("Failed to update leaderboard cache:", err);
     }
   }, [streamContributors, lastSynced]);
+
+  // FIX: Safe streak calculation without nested state updates
+  useEffect(() => {
+    if (contributors.length === 0) {
+      prevContributorsRef.current = [];
+      setStreaks({});
+      return;
+    }
+
+    setStreaks((prevStreaks) => {
+      const updatedStreaks = { ...prevStreaks };
+      const prevRanks = new Map(prevContributorsRef.current.map((c, idx) => [c.username, idx + 1]));
+
+      contributors.forEach((c, newIdx) => {
+        const username = c.username;
+        const newRank = newIdx + 1;
+        const prevRank = prevRanks.get(username);
+        const currentStreak = prevStreaks[username] || { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+
+        if (prevRank !== undefined) {
+          const rankDifference = prevRank - newRank;
+          let consecutiveUp = rankDifference > 0 ? currentStreak.consecutiveUp + 1 : rankDifference < 0 ? 0 : currentStreak.consecutiveUp;
+          const onFire = rankDifference >= 3 || consecutiveUp >= 3;
+          updatedStreaks[username] = { consecutiveUp, onFire, rankDifference };
+        } else {
+          updatedStreaks[username] = { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+        }
+      });
+
+      return updatedStreaks;
+    });
+
+    prevContributorsRef.current = contributors;
+  }, [contributors]);
 
   // Load initial data
   useEffect(() => {
@@ -570,6 +582,14 @@ export default function LeaderBoard() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  // Reset to page 1 whenever the sort criterion or active category changes.
+  // Without this a user on page 5 who switches sort stays on page 5 — which
+  // may now have no rows if the sorted list is shorter, or shows a confusing
+  // mid-list entry point that does not correspond to the new ranking.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy, activeCategory]);
+
   // ─── Podium Configuration ───────────────────────────────────────────────
   const podiumConfig = useMemo(() => [
     {
@@ -619,7 +639,7 @@ export default function LeaderBoard() {
 
   // ─── Render ───────────────────────────────────────────────
   return (
-    <FeatureErrorBoundary>
+    <ErrorBoundary level="feature">
       <div
         className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(224,233,242,0.52),_transparent_42%),linear-gradient(180deg,#f8fbfe_0%,#eef4fa_100%)] pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300"
         role="main"
@@ -772,7 +792,7 @@ export default function LeaderBoard() {
                 gradient: "from-blue-500/10 to-indigo-500/10",
                 border: "border-blue-100 dark:border-blue-900/30",
                 textColor: "text-blue-600 dark:text-blue-400",
-                icon: FaUsers,
+                icon: Users, // FIX: Replaced FaUsers
               },
               {
                 title: "Merged Pull Requests",
@@ -780,7 +800,7 @@ export default function LeaderBoard() {
                 gradient: "from-emerald-500/10 to-teal-500/10",
                 border: "border-emerald-100 dark:border-emerald-900/30",
                 textColor: "text-emerald-600 dark:text-emerald-400",
-                icon: FaCode,
+                icon: Code, // FIX: Replaced FaCode
               },
               {
                 title: "Total Arena Points",
@@ -788,7 +808,7 @@ export default function LeaderBoard() {
                 gradient: "from-amber-500/10 to-orange-500/10",
                 border: "border-amber-100 dark:border-amber-900/30",
                 textColor: "text-amber-600 dark:text-amber-400",
-                icon: FaStar,
+                icon: Star, // FIX: Replaced FaStar
               },
             ].map((card, idx) => (
               <motion.div
@@ -1078,6 +1098,6 @@ export default function LeaderBoard() {
 
         <GSSoCContribution />
       </div>
-    </FeatureErrorBoundary>
+    </ErrorBoundary>
   );
 }

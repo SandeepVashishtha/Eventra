@@ -277,7 +277,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   if (!project) return null;
 
   // Header decorative random codes
-  const csIcons = [Code2, Cpu, GitPullRequest];
+ const csIcons = [Code2, Cpu, GitPullRequest];
   const RandomIcon = csIcons[(index || 0) % csIcons.length];
 
   return (

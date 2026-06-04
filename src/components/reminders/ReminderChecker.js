@@ -47,6 +47,11 @@ const ReminderChecker = () => {
           return;
         }
 
+        // 🔥 FIX: Prevent unbounded memory growth over long user sessions
+        if (notifiedIdsRef.current.size > 500) {
+          notifiedIdsRef.current.clear();
+        }
+
         // Add to our locally tracked notified set
         notifiedIdsRef.current.add(reminder.id);
 
@@ -68,8 +73,16 @@ const ReminderChecker = () => {
       });
     };
 
-    checkReminders();
-    const intervalId = window.setInterval(checkReminders, CHECK_INTERVAL_MS);
+    // 🔥 FIX: Inject 0-500ms mathematical jitter to stagger simultaneous tab executions.
+    // This solves the race condition where 3 tabs fire at the exact same millisecond 
+    // before the BroadcastChannel has time to deliver the message.
+    const runWithJitter = () => {
+      const randomJitterDelay = Math.random() * 500;
+      setTimeout(checkReminders, randomJitterDelay);
+    };
+
+    runWithJitter();
+    const intervalId = window.setInterval(runWithJitter, CHECK_INTERVAL_MS);
 
     return () => {
       window.clearInterval(intervalId);

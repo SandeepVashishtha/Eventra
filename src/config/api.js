@@ -1,5 +1,7 @@
 import axios from "axios";
 import { ENV } from "./env";
+import { syncServerTimeFromHeader } from "../utils/timeSync";
+import { getCSRFToken } from "../utils/csrfToken";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -103,9 +105,14 @@ const API = axios.create({
 });
 
 let onUnauthorized = null;
+let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
+};
+
+export const setAuthToken = (token) => {
+  _authToken = token;
 };
 
 /**
@@ -201,22 +208,30 @@ API.interceptors.request.use((config) => {
   if (isDev) {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
-  
+
+  if (_authToken && _authToken !== "cookie-managed") {
+    config.headers["Authorization"] = `Bearer ${_authToken}`;
+  }
+
   const method = config.method?.toUpperCase();
-  if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-    if (!config.headers['Idempotency-Key'] && !config.headers['X-Idempotency-Key']) {
-      const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID 
-        ? crypto.randomUUID() 
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-      config.headers['Idempotency-Key'] = generateId();
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    const csrf = getCSRFToken();
+    if (csrf) {
+      config.headers["X-CSRF-Token"] = csrf;
     }
   }
-  
+
   return config;
 });
 
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
+    if (headerValue) {
+      syncServerTimeFromHeader(headerValue);
+    }
+    return response;
+  },
   async (error) => {
     const config = error.config || {};
     const status = error?.response?.status;
@@ -226,7 +241,7 @@ API.interceptors.response.use(
     }
 
     const retryCount = config._retryCount || 0;
-    const isNonMutating = config.method?.toUpperCase() === 'GET';
+    const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
     const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
     
     // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
@@ -266,6 +281,7 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+    AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
 
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the

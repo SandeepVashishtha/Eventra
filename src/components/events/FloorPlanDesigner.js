@@ -64,14 +64,9 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     announce("Redone action.");
   }, [future, announce]);
 
-  const [announcement, setAnnouncement] = useState("");
-  const announceRef = useRef(null);
-  announceRef.current = (message) => {
+  const announce = useCallback((message) => {
     setAnnouncement("");
     setTimeout(() => { setAnnouncement(message); }, 50);
-  };
-  const announce = useCallback((message) => {
-    announceRef.current?.(message);
   }, []);
 
   const [zoom, setZoom] = useState(0.8);
@@ -113,15 +108,16 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     }
 
     const updates = typeof key === "object" ? key : { [key]: value };
+    const currentSelectedId = selectedIdRef.current;
     setElements((prev) =>
       prev.map((el) => {
-        if (el.id === selectedId) {
+        if (el.id === currentSelectedId) {
           let updated = { ...el, ...updates };
           if ("seatsCount" in updates) {
             const seatsCountVal = updates.seatsCount;
             const freshAssigned = {};
             Object.keys(el.assignedAttendees).forEach((k) => {
-              if (parseInt(k) < seatsCountVal) {
+              if (parseInt(k, 10) < seatsCountVal) {
                 freshAssigned[k] = el.assignedAttendees[k];
               }
             });
@@ -132,7 +128,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         return el;
       })
     );
-  }, [selectedId, recordHistory]);
+  }, [recordHistory]);
 
   const handleSeatAssign = (seatIndex, attendeeName) => {
     recordHistory();
@@ -358,7 +354,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [updateSelectedElement, announce, handleDeleteSelected]);
+  }, [updateSelectedElement, announce, handleDeleteSelected, setSelectedId]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
@@ -481,11 +477,23 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       const collisions = new Map();
+      const GRID_SIZE = 100;
+      const buckets = new Map();
       for (let i = 0; i < elements.length; i++) {
-        for (let j = i + 1; j < elements.length; j++) {
-          if (checkCollision(elements[i], elements[j])) {
-            collisions.set(elements[i].id, true);
-            collisions.set(elements[j].id, true);
+        const el = elements[i];
+        const bx = Math.floor(el.x / GRID_SIZE);
+        const by = Math.floor(el.y / GRID_SIZE);
+        const key = `${bx},${by}`;
+        if (!buckets.has(key)) buckets.set(key, []);
+        buckets.get(key).push(el);
+      }
+      for (const bucket of buckets.values()) {
+        for (let i = 0; i < bucket.length; i++) {
+          for (let j = i + 1; j < bucket.length; j++) {
+            if (checkCollision(bucket[i], bucket[j])) {
+              collisions.set(bucket[i].id, true);
+              collisions.set(bucket[j].id, true);
+            }
           }
         }
       }

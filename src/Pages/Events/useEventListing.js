@@ -194,81 +194,66 @@ const useEventListing = () => {
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
   const filteredEvents = useMemo(() => {
-    // 1. Search (typo-tolerant fuzzy search with ranking from PR #5461)
-    let filtered = debouncedSearchQuery.trim()
-      ? getRouteSearchResults(
-          events,
-          debouncedSearchQuery,
-          [
-            { name: "title", weight: 0.8 },
-            { name: "category", weight: 0.5 },
-            { name: "tags", weight: 0.4 },
-            { name: "location.name", weight: 0.3 },
-            { name: "location.city", weight: 0.3 },
-            { name: "description", weight: 0.1 },
-          ]
-        )
-      : [...events];
+  // 1. Fuzzy search first (or all events if no query)
+  let filtered = debouncedSearchQuery.trim()
+    ? getRouteSearchResults(
+        events,
+        debouncedSearchQuery,
+        [
+          { name: "title", weight: 0.8 },
+          { name: "category", weight: 0.5 },
+          { name: "tags", weight: 0.4 },
+          { name: "location.name", weight: 0.3 },
+          { name: "location.city", weight: 0.3 },
+          { name: "description", weight: 0.1 },
+        ]
+      )
+    : [...events];
 
-    // 2. Status Timing Filter ('Live Now', 'Upcoming', 'Past Events') based on current system date
+  // 2. Status timing filter
+  filtered = filtered.filter((event) => {
+    const status = getEventStatus(event);
+    if (filterType === "live" && status !== "live") return false;
+    if (filterType === "upcoming" && status !== "upcoming") return false;
+    if (filterType === "past" && status !== "past" && status !== "ended") return false;
+    return true;
+  });
+
+  // 3. Category filter
+  const target = categoryFilter && categoryFilter !== "all"
+    ? categoryFilter.toLowerCase()
+    : null;
+
+  if (target) {
     filtered = filtered.filter((event) => {
-      const status = getEventStatus(event);
-      if (filterType === "live") {
-        return status === "live";
-      }
-      if (filterType === "upcoming") {
-        return status === "upcoming";
-      }
-      if (filterType === "past") {
-        return status === "past" || status === "ended";
-      }
-      return true; // "all"
-    });
+      const cat = event.category?.toLowerCase() || "";
+      const type = event.type?.toLowerCase() || "";
 
-    // 3. Category Filter matching domain categories (Hackathons, Tech Talks, Cultural, Web Dev, etc.)
-    if (categoryFilter && categoryFilter !== "all") {
-      const target = categoryFilter.toLowerCase();
-      filtered = filtered.filter((event) => {
-        const cat = event.category?.toLowerCase() || "";
-        const type = event.type?.toLowerCase() || "";
-        
-        if (target === "hackathon" || target === "hackathons") {
-          return type === "hackathon" || cat.includes("hackathon");
-        }
-        if (target === "tech talks" || target === "tech-talks" || target === "conference") {
-          return (
-            type === "conference" ||
-            type === "summit" ||
-            cat.includes("tech") ||
-            cat.includes("conference") ||
-            cat.includes("summit")
-          );
-        }
-        if (target === "cultural" || target === "networking" || target === "cultural & networking") {
-          return (
-            cat.includes("networking") ||
-            cat.includes("cultural") ||
-            cat.includes("community")
-          );
-        }
-        
-        // General domain category matching (e.g. web development -> web-development / web)
-        const normalizedTarget = target.replace(/[^a-z0-9]+/g, "");
-        const normalizedCat = cat.replace(/[^a-z0-9]+/g, "");
-        const normalizedType = type.replace(/[^a-z0-9]+/g, "");
-        
+      if (target === "hackathon" || target === "hackathons") {
+        return type === "hackathon" || cat.includes("hackathon");
+      } else if (["tech talks", "tech-talks", "conference"].includes(target)) {
         return (
-          normalizedCat.includes(normalizedTarget) ||
-          normalizedType.includes(normalizedTarget) ||
-          normalizedTarget.includes(normalizedCat) ||
-          normalizedTarget.includes(normalizedType)
+          type === "conference" || type === "summit" ||
+          cat.includes("tech") || cat.includes("conference") || cat.includes("summit")
         );
-      });
-    }
+      } else if (["cultural", "networking", "cultural & networking"].includes(target)) {
+        return cat.includes("networking") || cat.includes("cultural") || cat.includes("community");
+      } else {
+        const norm = (s) => s.replace(/[^a-z0-9]+/g, "");
+        const nTarget = norm(target), nCat = norm(cat), nType = norm(type);
+        return (
+          nCat.includes(nTarget) || nType.includes(nTarget) ||
+          nTarget.includes(nCat) || nTarget.includes(nType)
+        );
+      }
+    });
+  }
 
-    // 4. Advanced Filters fallback
-    return applyAdvancedFilters(filtered, advancedFilters);
-  }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
+  // 4. Advanced filters
+  return applyAdvancedFilters(filtered, advancedFilters);
+}, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
+ 
+    
 
   const sortedEvents = useMemo(() => {
     return [...filteredEvents].sort((a, b) => {

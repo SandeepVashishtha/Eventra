@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.x",
+    "node": "22.x",
     "npm": ">=9.6.4"
   },
   "dependencies": {
@@ -25,6 +25,8 @@
     "fuse.js": "^7.1.0",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "2.3.8",
+    "i18next": "^23.16.8",
+    "i18next-browser-languagedetector": "^8.2.1",
     "idb-keyval": "6.2.4",
     "jsonwebtoken": "9.0.3",
     "jspdf": "^4.2.1",
@@ -36,6 +38,7 @@
     "react-dom": "^19.2.6",
     "react-helmet-async": "3.0.0",
     "react-hot-toast": "^2.6.0",
+    "react-i18next": "^13.5.0",
     "react-icons": "^5.6.0",
     "react-intersection-observer": "^10.0.3",
     "react-qr-code": "^2.0.21",
@@ -55,20 +58,14 @@
     "preview": "vite preview",
     "validate-env": "node scripts/validate-env.js",
     "test": "npm run test:unit",
-    "test:unit": "node --test tests/eventPaginationUtils.test.mjs tests/routeSearchUtils.test.mjs tests/userNameUtils.test.mjs tests/relativeTime.test.mjs tests/safeJsonParse.test.mjs tests/registerUtils.test.mjs tests/bookmarkUtils.test.mjs tests/auth.test.mjs tests/passwordResetEndpoint.test.mjs tests/eventDraftUtils.test.mjs tests/exportCsv.test.mjs tests/githubProxy.test.mjs tests/hackathonFilterUtils.test.mjs tests/loginEndpoint.test.mjs tests/logoutEndpoint.test.mjs tests/colorTokens.test.mjs tests/themeConsistency.test.mjs tests/sseMultiplexer.test.mjs tests/cspReporting.test.mjs tests/readTimeUtils.test.mjs tests/secureStorage.test.mjs tests/conflictDetection.test.mjs tests/eventRecommendationsResponsive.test.mjs tests/spatialSeatSelectorAccessibility.test.mjs",
+    "test:unit": "node scripts/run-unit-tests.mjs",
     "test:e2e": "playwright test",
-    "lint": "eslint src --max-warnings=-1",
+    "lint": "eslint src --max-warnings=250",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
     "prepare": "node scripts/setup-git-config.js",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
-  },
-  "jest": {
-    "moduleNameMapper": {
-      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
-      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js"
-    }
   },
   "browserslist": {
     "production": [
@@ -102,9 +99,11 @@
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.4.21",
     "cross-env": "^10.1.0",
+    "eslint": "^9.39.1",
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-storybook": "10.4.1",
+    "eslint-plugin-testing-library": "^7.13.5",
     "globals": "17.6.0",
     "lint-staged": "^15.5.1",
     "postcss": "8.5.15",

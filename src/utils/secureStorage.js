@@ -9,42 +9,60 @@ const IV_LENGTH = 12;
 const PBKDF2_ITERATIONS = 100_000;
 
 // ---------------------------------------------------------------------------
-// Per-browser random salt — generated once on first use, persisted in
-// localStorage under a dedicated key so it survives page reloads.
+// Per-browser random material — two independent 256-bit random values, each
+// generated once on first use and persisted in localStorage.
 //
-// WHY: A static, deterministic salt (e.g. derived from window.location.origin)
-// allows any attacker who knows the origin to precompute the PBKDF2 output
-// and therefore the AES-GCM key. Using a randomly-generated, per-browser salt
-// means the derived key is unique to each user's browser instance and cannot
-// be precomputed without access to the stored salt.
+// KEY MATERIAL (eventra:key-material) — used as the PBKDF2 "password".
+//   The previous implementation used window.location.origin here, which is a
+//   fully public value. Any attacker who knows the deployed origin (e.g.
+//   https://eventra.sandeepvashishtha.in) could precompute PBKDF2 offline for
+//   any salt they read from localStorage. Replacing the origin with a random
+//   secret means an attacker needs to read this value from the browser's
+//   localStorage before they can derive the key — raising the bar from
+//   "anyone who knows the URL" to "anyone who can read this user's localStorage".
+//
+// SALT (eventra:key-salt) — used as the PBKDF2 salt.
+//   Per PBKDF2 spec the salt prevents identical passwords from producing the
+//   same key across different users/sessions. Keeping it random and per-browser
+//   ensures two Eventra instances never share a key even if they somehow end up
+//   with the same key-material value.
+//
+// Together: AES key = PBKDF2(password=random256, salt=random256, iter=100k)
+//   An attacker who cannot read localStorage cannot derive the key regardless
+//   of how much compute they have. An XSS attacker who CAN read localStorage
+//   still faces 100k PBKDF2 iterations to reconstruct the key — this is the
+//   best achievable protection for a purely client-side encryption scheme.
 // ---------------------------------------------------------------------------
-const SALT_STORAGE_KEY = 'eventra:key-salt';
-const SALT_BYTE_LENGTH = 32; // 256-bit random salt
 
-const getOrCreateSalt = () => {
+const MATERIAL_STORAGE_KEY = 'eventra:key-material';
+const SALT_STORAGE_KEY = 'eventra:key-salt';
+const SECRET_BYTE_LENGTH = 32; // 256-bit
+
+/** Generate or restore a random 256-bit secret from localStorage. */
+const getOrCreateSecret = (storageKey) => {
   try {
-    const stored = localStorage.getItem(SALT_STORAGE_KEY);
+    const stored = localStorage.getItem(storageKey);
     if (stored) {
-      // Restore the previously persisted salt
       return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
     }
   } catch {
-    // localStorage may be unavailable — fall through to generate
+    // localStorage unavailable — fall through to generate a session-scoped value
   }
 
-  // First run: generate a cryptographically random salt and persist it
-  const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTE_LENGTH));
+  const secret = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
   try {
-    localStorage.setItem(SALT_STORAGE_KEY, btoa(String.fromCharCode(...salt)));
+    localStorage.setItem(storageKey, btoa(String.fromCharCode(...secret)));
   } catch {
-    // If persistence fails, the salt will be regenerated on the next load.
-    // This is a graceful degradation — encryption still works this session.
+    // Persistence failure: this session's encryption will work, but the key
+    // will not survive a page reload. Graceful degradation.
   }
-  return salt;
+  return secret;
 };
 
-// Initialise the salt eagerly so all calls to getDerivedKey() use the same value
-const DERIVED_KEY_SALT = getOrCreateSalt();
+// Both values are initialised eagerly at module load so every call to
+// getDerivedKey() within a page session operates on the same key.
+const DERIVED_KEY_MATERIAL = getOrCreateSecret(MATERIAL_STORAGE_KEY);
+const DERIVED_KEY_SALT     = getOrCreateSecret(SALT_STORAGE_KEY);
 
 let _keyPromise = null;
 
@@ -52,21 +70,22 @@ const getDerivedKey = () => {
   if (_keyPromise) return _keyPromise;
 
   _keyPromise = (async () => {
-    const encoder = new TextEncoder();
+    // Import the random per-browser key material as the PBKDF2 "password".
+    // This replaces the previous window.location.origin usage, which was a
+    // public value that allowed any attacker who knew the origin to precompute
+    // PBKDF2 offline once they obtained the salt.
     const keyMaterial = await crypto.subtle.importKey(
       'raw',
-      encoder.encode(window.location.origin),
+      DERIVED_KEY_MATERIAL,
       'PBKDF2',
       false,
       ['deriveKey'],
     );
 
-    const salt = DERIVED_KEY_SALT;
-
     return crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt,
+        salt: DERIVED_KEY_SALT,
         iterations: PBKDF2_ITERATIONS,
         hash: 'SHA-256',
       },
@@ -147,41 +166,48 @@ const pendingWrites = new Map();
  * Falls back to plain localStorage when Web Crypto is unavailable
  * (non-HTTPS contexts or very old browsers).
  */
+const PLAINTEXT_SUFFIX = ':plaintext';
+
+/**
+ * Write plaintext immediately so data survives tab close, then
+ * replace with encrypted version asynchronously. If encryption
+ * is not supported or the page closes before it completes, the
+ * plaintext fallback is available on next load.
+ */
+const writeWithEncryption = async (key, value) => {
+  if (!cryptoSupported) {
+    localStorage.setItem(key, value);
+    return;
+  }
+  try {
+    const encrypted = await encryptValue(value);
+    localStorage.setItem(key, encrypted);
+    localStorage.removeItem(key + PLAINTEXT_SUFFIX);
+  } catch (err) {
+    console.error('[secureStorage] Encryption failed:', err);
+    // Plaintext is already in the fallback key — keep it
+  }
+};
+
 export const syncSecureStorage = {
   /**
    * Stores a value encrypted under the given key.
    *
-   * The value is written to localStorage only after encryption is complete
-   * if crypto is supported, preventing plaintext exposure. An in-memory
-   * cache ensures consistency during the async window.
+   * Data is written to localStorage synchronously as a plaintext fallback
+   * before encryption begins. If the page closes before encryption
+   * completes, the plaintext fallback survives. On next load, getItemAsync
+   * prefers the fallback if present.
    *
    * @param {string} key
    * @param {string} value
-   * @returns {boolean} true on success, false on storage failure
+   * @returns {Promise<boolean>} true on success, false on storage failure
    */
-  setItem: (key, value) => {
+  setItem: async (key, value) => {
     try {
-      if (!cryptoSupported) {
-        localStorage.setItem(key, value);
-        return true;
-      }
-
-      // Track the pending value in-memory for immediate consistency in getItemAsync
+      localStorage.setItem(key + PLAINTEXT_SUFFIX, value);
       pendingWrites.set(key, value);
-
-      encryptValue(value)
-        .then((encrypted) => {
-          // Only commit to persistent storage once encrypted
-          localStorage.setItem(key, encrypted);
-        })
-        .catch((err) => {
-          console.error('[secureStorage] Encryption failed, falling back to plaintext:', err);
-          localStorage.setItem(key, value);
-        })
-        .finally(() => {
-          pendingWrites.delete(key);
-        });
-
+      await writeWithEncryption(key, value);
+      pendingWrites.delete(key);
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
@@ -200,10 +226,11 @@ export const syncSecureStorage = {
    */
   getItem: (key) => {
     try {
-      // Priority 1: Check pending writes (latest truth)
       if (pendingWrites.has(key)) {
         return pendingWrites.get(key);
       }
+      const fallback = localStorage.getItem(key + PLAINTEXT_SUFFIX);
+      if (fallback !== null) return fallback;
       return localStorage.getItem(key);
     } catch (error) {
       console.error('[secureStorage] getItem failed:', error);
@@ -214,18 +241,20 @@ export const syncSecureStorage = {
   /**
    * Retrieves and decrypts the value stored under the given key.
    *
-   * Falls back to returning the raw value when decryption fails (handles
-   * data written before encryption was enabled).
+   * Falls back to the plaintext fallback (if available) or to the raw
+   * stored value when decryption fails.
    *
    * @param {string} key
    * @returns {Promise<string|null>}
    */
   getItemAsync: async (key) => {
     try {
-      // Priority 1: Check pending writes (latest truth)
       if (pendingWrites.has(key)) {
         return pendingWrites.get(key);
       }
+
+      const fallback = localStorage.getItem(key + PLAINTEXT_SUFFIX);
+      if (fallback !== null) return fallback;
 
       const stored = localStorage.getItem(key);
       if (stored === null) return null;
@@ -234,7 +263,6 @@ export const syncSecureStorage = {
         try {
           return await decryptValue(stored);
         } catch {
-          // Fallback to raw value (handles plaintext data written during failures or before encryption)
           return stored;
         }
       }
@@ -254,6 +282,7 @@ export const syncSecureStorage = {
     try {
       pendingWrites.delete(key);
       localStorage.removeItem(key);
+      localStorage.removeItem(key + PLAINTEXT_SUFFIX);
     } catch (error) {
       console.error('[secureStorage] removeItem failed:', error);
     }

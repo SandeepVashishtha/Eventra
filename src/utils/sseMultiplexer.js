@@ -3,9 +3,53 @@ import { logger } from "./logger.js";
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
 const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
+const runtimeEnv =
+  typeof import.meta !== "undefined" && import.meta.env
+    ? import.meta.env
+    : typeof process !== "undefined" && process.env
+      ? process.env
+      : {};
 
 // Unique identifier for this tab instance
 const TAB_ID = Math.random().toString(36).substring(2, 9);
+
+const ALLOWED_MESSAGE_TYPES = new Set([
+  "SUBSCRIBE",
+  "UNSUBSCRIBE",
+  "UNSUBSCRIBE_ALL",
+  "QUERY_SUBSCRIBERS",
+  "SUBSCRIBERS_RESPONSE",
+  "SSE_MESSAGE",
+  "SSE_STATUS",
+  "RECONNECT_REQUEST",
+  "PING",
+  "PONG",
+]);
+
+const MESSAGE_REQUIRED_FIELDS = {
+  SUBSCRIBE: ["tabId", "path"],
+  UNSUBSCRIBE: ["tabId", "path"],
+  UNSUBSCRIBE_ALL: ["tabId", "paths"],
+  QUERY_SUBSCRIBERS: ["tabId"],
+  SUBSCRIBERS_RESPONSE: ["tabId", "paths"],
+  SSE_MESSAGE: ["path", "data"],
+  SSE_STATUS: ["path", "status"],
+  RECONNECT_REQUEST: ["path"],
+  PING: ["tabId"],
+  PONG: ["tabId"],
+};
+
+const isValidBroadcastMessage = (msg) => {
+  if (!msg || typeof msg !== "object" || !msg.type) return false;
+  if (!ALLOWED_MESSAGE_TYPES.has(msg.type)) return false;
+  const required = MESSAGE_REQUIRED_FIELDS[msg.type];
+  if (!required) return false;
+  for (const field of required) {
+    if (!(field in msg)) return false;
+    if (field === "paths" && !Array.isArray(msg.paths)) return false;
+  }
+  return true;
+};
 
 class SseMultiplexer {
   constructor() {
@@ -177,7 +221,7 @@ class SseMultiplexer {
   }
 
   handleBroadcastMessage(msg) {
-    if (!msg || msg.tabId === this.tabId) return;
+    if (!isValidBroadcastMessage(msg) || msg.tabId === this.tabId) return;
 
     if (this.isLeader && this.lastSeenFollowers) {
       this.lastSeenFollowers.set(msg.tabId, Date.now());
@@ -298,9 +342,7 @@ class SseMultiplexer {
   openEventSource(path) {
     const sseBaseUrl =
       typeof window !== "undefined"
-        ? process.env.VITE_API_URL ||
-          process.env.REACT_APP_API_URL ||
-          "http://localhost:8080/api/v1"
+        ? runtimeEnv.VITE_API_URL || runtimeEnv.REACT_APP_API_URL || "http://localhost:8080/api/v1"
         : "http://localhost:8080/api/v1";
 
     logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
