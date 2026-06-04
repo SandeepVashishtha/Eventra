@@ -1,0 +1,92 @@
+name: GSSoC — Mentor Label Fallback
+
+# When a PR is merged OR an issue is closed, checks if any mentor:* label
+# is present. If none found, applies mentor:Ayushh-Sharmaa as default fallback.
+# This guarantees EVERY closed PR and EVERY closed issue gets the mentor label.
+on:
+  pull_request_target:
+    types: [closed]
+  issues:
+    types: [closed]
+
+concurrency:
+  group: mentor-label-fallback-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  mentor-label-fallback:
+    name: Mentor Label Fallback
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Apply fallback mentor label if none present
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const DEFAULT_MENTOR = 'Ayushh-Sharmaa';
+            const MENTOR_LABEL   = `mentor:${DEFAULT_MENTOR}`;
+            const LABEL_COLOR    = '6f42c1';
+
+            const event = context.eventName;
+
+            // ── For PRs: apply on ALL closes (merged OR unmerged) ────────────
+            // Remove the merged check below if you want it on unmerged too.
+            // Currently: applies to EVERY closed PR regardless of merge status.
+
+            const itemNum = event === 'pull_request_target'
+              ? context.payload.pull_request.number
+              : context.payload.issue.number;
+            const itemType = event === 'pull_request_target' ? 'PR' : 'issue';
+
+            // ── Fetch current labels ──────────────────────────────────────────
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner, repo, issue_number: itemNum,
+            });
+            const labelNames = labels.map(l => l.name);
+
+            // ── Check if any mentor:* label already exists ────────────────────
+            const hasMentorLabel = labelNames.some(n => n.startsWith('mentor:'));
+            if (hasMentorLabel) {
+              console.log(`✅ ${itemType} #${itemNum} already has a mentor:* label — no fallback needed`);
+              return;
+            }
+
+            // ── Ensure fallback label exists ──────────────────────────────────
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: MENTOR_LABEL });
+            } catch (e) {
+              if (e.status === 404) {
+                await github.rest.issues.createLabel({
+                  owner, repo,
+                  name: MENTOR_LABEL,
+                  color: LABEL_COLOR,
+                  description: `GSSoC: Mentor — @${DEFAULT_MENTOR}`,
+                });
+                console.log(`✅ Created label: ${MENTOR_LABEL}`);
+              }
+            }
+
+            // ── Apply fallback label ──────────────────────────────────────────
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number: itemNum, labels: [MENTOR_LABEL],
+            });
+            console.log(`🏷️  Applied fallback ${MENTOR_LABEL} to ${itemType} #${itemNum}`);
+
+            // ── Post informational comment on PRs only ────────────────────────
+            if (event === 'pull_request_target') {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: itemNum,
+                body: [
+                  `> ℹ️ **Mentor Attribution Note:** No \`mentor:*\` label was found on this PR at close time.`,
+                  `> The default label \`${MENTOR_LABEL}\` has been applied automatically.`,
+                  `> If this attribution is incorrect, a maintainer can update the label manually.`,
+                  ``,
+                  `_GSSoC'26 automation · Mentor: [@${DEFAULT_MENTOR}](https://github.com/${DEFAULT_MENTOR})_`,
+                ].join('\n'),
+              });
+            }
