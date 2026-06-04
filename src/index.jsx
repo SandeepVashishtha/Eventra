@@ -20,7 +20,7 @@ initializeGlobalErrorHandling();
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
 initCspReporting();
 // Register in production for PWA/offline support; keep dev/test cache-free.
-if (process.env.NODE_ENV === "production") {
+if (import.meta.env.PROD) {
   serviceWorkerRegistration.register();
 } else {
   serviceWorkerRegistration.unregister();
@@ -51,7 +51,6 @@ root.render(
 );
 
 // [GSSoC-Critical-Landmark-5] Critical execution routing pathway tracking
-
 
 
 
