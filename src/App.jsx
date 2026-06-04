@@ -68,7 +68,7 @@ function App() {
     try {
       return localStorage.getItem("cursor") !== "off";
     } catch {
-      return true; // fallback safe default
+      return true;
     }
   });
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
@@ -76,7 +76,7 @@ function App() {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
   useLenis();
-  useRoutePrefetch(); // Predictive route pre-loading
+  useRoutePrefetch();
 
   useKeyboardShortcuts({
     onOpenHelp: () => setShowKeyboardModal(true),
@@ -98,7 +98,6 @@ function App() {
     const timer = setTimeout(() => {
       setShowChatbot(true);
     }, 3000);
-
     return () => clearTimeout(timer);
   }, []);
 
@@ -106,12 +105,8 @@ function App() {
     const handleResize = () => {
       setIsDesktop(window.innerWidth >= 1024);
     };
-
     window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
@@ -120,11 +115,8 @@ function App() {
         setCursorEnabled(event.detail.cursorEnabled);
       }
     };
-
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-    return () => {
-      window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
-    };
+    return () => window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
   }, []);
 
   useEffect(() => {
@@ -140,13 +132,9 @@ function App() {
         autoClose: 5000,
       });
     };
-
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-    if (!navigator.onLine) {
-      handleOffline();
-    }
-
+    if (!navigator.onLine) handleOffline();
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
@@ -190,62 +178,92 @@ function App() {
                   id="main-content"
                   className="relative z-10 min-h-[85vh] bg-bg text-text transition-colors duration-300"
                 >
-                  <PageTransition>
-                    <ErrorBoundary>
-                      <Routes location={location} key={location?.pathname || "default"}>
-                        <Route
-                          path="/register/:id"
-                          element={
+                  {/*
+                    FIX 2: PageTransition now wraps each Route's element individually
+                    (not the entire Routes block). This means:
+                    - Suspense fallback (skeleton) is INSIDE PageTransition, so the
+                      skeleton animates in immediately during the transition instead of
+                      showing a white gap while the lazy component loads.
+                    - AnimatePresence gets the correct key per-route, triggering
+                      exit/enter animations properly.
+                    - The old structure had PageTransition outside Routes, which meant
+                      the exiting animation would finish before the entering Suspense
+                      boundary even mounted, causing the white flash.
+                  */}
+                  <ErrorBoundary>
+                    <Routes location={location} key={location?.pathname || "default"}>
+                      <Route
+                        path="/register/:id"
+                        element={
+                          <PageTransition>
                             <ProtectedRoute>
                               <Suspense fallback={<AuthFormSkeleton />}>
                                 <EventRegistration />
                               </Suspense>
                             </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/explore"
-                          element={
+                          </PageTransition>
+                        }
+                      />
+                      <Route
+                        path="/explore"
+                        element={
+                          <PageTransition>
                             <Suspense fallback={<ExploreEventsSkeleton />}>
                               <ExploreEvents />
                             </Suspense>
-                          }
-                        />
-                        <Route
-                          path="/events/:id"
-                          element={
+                          </PageTransition>
+                        }
+                      />
+                      <Route
+                        path="/events/:id"
+                        element={
+                          <PageTransition>
                             <Suspense fallback={<EventDetailSkeleton />}>
                               <EventDetails />
                             </Suspense>
-                          }
-                        />
-                        {/* TODO: Implement missing auth/dashboard routes
-                          Pages do not exist:
-                          - ./Pages/auth/Login
-                          - ./Pages/auth/Signup
-                          - ./Pages/dashboard/Dashboard
-                          - ./Pages/Admin/AdminPanel
-                          - ./Pages/user/Profile
-                        */}
-                        <Route
-                          path="/event-recommendation"
-                          element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
-                        />
-                        <Route
-                          path="/saved-events"
-                          element={<Suspense fallback={null}><SavedEventsPage /></Suspense>}
-                        />
-                        <Route
-                          path="*"
-                          element={
+                          </PageTransition>
+                        }
+                      />
+                      {/* TODO: Implement missing auth/dashboard routes
+                        Pages do not exist:
+                        - ./Pages/auth/Login
+                        - ./Pages/auth/Signup
+                        - ./Pages/dashboard/Dashboard
+                        - ./Pages/Admin/AdminPanel
+                        - ./Pages/user/Profile
+                      */}
+                      <Route
+                        path="/event-recommendation"
+                        element={
+                          <PageTransition>
+                            <Suspense fallback={null}>
+                              <EventRecommendation />
+                            </Suspense>
+                          </PageTransition>
+                        }
+                      />
+                      <Route
+                        path="/saved-events"
+                        element={
+                          <PageTransition>
+                            <Suspense fallback={null}>
+                              <SavedEventsPage />
+                            </Suspense>
+                          </PageTransition>
+                        }
+                      />
+                      <Route
+                        path="*"
+                        element={
+                          <PageTransition>
                             <Suspense fallback={pageLoader}>
                               <AppRoutes />
                             </Suspense>
-                          }
-                        />
-                      </Routes>
-                    </ErrorBoundary>
-                  </PageTransition>
+                          </PageTransition>
+                        }
+                      />
+                    </Routes>
+                  </ErrorBoundary>
                 </main>
 
                 <ScrollToTop />
@@ -266,7 +284,6 @@ function App() {
                 <Suspense fallback={null}>
                   <ScrollToTopButton />
                 </Suspense>
-                {/* Enhanced back-to-top with progress ring - appears at 400px */}
                 <Suspense fallback={null}>
                   <BackToTop />
                 </Suspense>
@@ -282,7 +299,7 @@ function App() {
                     <Suspense fallback={null}>
                       <FluidCursor enabled={cursorEnabled} />
                     </Suspense>
-                </ErrorBoundary>
+                  </ErrorBoundary>
                 )}
               </div>
             </SessionRecoveryProvider>
