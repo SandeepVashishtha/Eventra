@@ -1,0 +1,31 @@
+{
+  "app": {
+    "name": "Eventra",
+    "tagline": "Votre plateforme d'événements tout-en-un",
+    "loading": "Chargement de la page...",
+    "backOnline": "De retour en ligne ! Vos connexions ont été rétablies.",
+    "offline": "Vous êtes actuellement hors ligne. Exécution en mode de mise en cache locale."
+  },
+  "nav": {
+    "home": "Accueil",
+    "events": "Événements",
+    "hackathons": "Hackathons",
+    "leaderboard": "Classement",
+    "contributors": "Contributeurs",
+    "about": "À propos",
+    "contact": "Contact",
+    "dashboard": "Tableau de bord",
+    "admin": "Admin",
+    "signIn": "Se connecter",
+    "signUp": "S'inscrire",
+    "signOut": "Se déconnecter",
+    "profile": "Profil",
+    "settings": "Paramètres"
+  },
+  "language": {
+    "switch": "Langue",
+    "en": "English",
+    "es": "Español",
+    "fr": "Français"
+  }
+}
