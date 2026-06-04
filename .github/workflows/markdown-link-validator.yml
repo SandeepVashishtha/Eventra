@@ -17,7 +17,28 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Get changed markdown files
+        id: changed-files
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            **/*.md
+
+      - name: Check if any markdown files changed
+        id: has-changes
+        run: echo "count=${{ steps.changed-files.outputs.all_changed_files_count }}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache markdown link check tooling
+        if: steps.has-changes.outputs.count != '0'
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npx-mdlink-${{ hashFiles('.github/markdown-link-check-config.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npx-mdlink-
+
       - name: Run Markdown Link Checker
+        if: steps.has-changes.outputs.count != '0'
         uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
           use-quiet-mode: 'yes'

@@ -1,3 +1,5 @@
+import { ENV } from "../config/env.js";
+
 /**
  * Sharing utility functions for Eventra
  * These functions generate URLs for sharing content across various platforms
@@ -14,7 +16,7 @@
 // Accepts:
 //  - Relative paths starting with /
 //  - Absolute URLs whose origin matches window.location.origin
-//  - The configured REACT_APP_PUBLIC_URL origin
+//  - The configured PUBLIC_URL origin (from centralized env.js)
 //
 // Rejects: external URLs, javascript: URIs, data: URIs
 // ---------------------------------------------------------------------------
@@ -29,7 +31,7 @@ export const isValidShareUrl = (url) => {
     const allowedOrigins = new Set();
     if (typeof window !== "undefined") allowedOrigins.add(window.location.origin);
 
-    const configuredPublicUrl = process.env.REACT_APP_PUBLIC_URL;
+    const configuredPublicUrl = ENV.PUBLIC_URL;
     if (configuredPublicUrl) {
       try {
         allowedOrigins.add(new URL(configuredPublicUrl).origin);
@@ -125,15 +127,15 @@ export const generateEventSharingData = (event, baseUrl = null) => {
   if (!baseUrl) {
     if (typeof window !== "undefined") {
       const currentUrl = window.location.href;
-      // Check if we're on the deployed site
-      if (currentUrl.includes(deployedDomain)) {
-        baseUrl = `https://${deployedDomain}`;
+      // Use the configured public URL if it matches the current domain
+      if (publicUrl && currentUrl.includes(publicUrl)) {
+        baseUrl = publicUrl;
       } else {
         // Use the current origin (localhost or other development environment)
         baseUrl = window.location.origin;
       }
     } else {
-      baseUrl = process.env.REACT_APP_PUBLIC_URL || `https://${deployedDomain}`; // Fallback for SSR/Node
+      baseUrl = publicUrl; // Fallback for SSR/Node
     }
   }
 
