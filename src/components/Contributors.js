@@ -182,12 +182,26 @@ const ContributorsInner = () => {
 
       const enhanced = await Promise.all(
         allContributors.map(async (c) => {
-          const profile = await fetchGitHubProfile(c.login);
-          return {
-            ...c,
-            ...profile,
-            role: getRoleByGitHubActivity({ ...c, ...profile }),
-          };
+          try {
+            const profile = await fetchGitHubProfile(c.login);
+            return {
+              ...c,
+              ...profile,
+              role: getRoleByGitHubActivity({ ...c, ...profile }),
+            };
+          } catch (err) {
+            console.error(`Failed to load profile for ${c.login || "unknown"}:`, err);
+            return {
+              ...c,
+              followers: 0,
+              public_repos: 0,
+              name: c.login || "Contributor",
+              bio: "Open source contributor",
+              company: null,
+              location: null,
+              role: getRoleByGitHubActivity(c),
+            };
+          }
         }),
       );
 
