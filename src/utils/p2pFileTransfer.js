@@ -178,9 +178,15 @@ export async function simulateServerDownload(fileId, fileName, onProgress) {
 const peerId = `peer_${Math.random().toString(36).substring(2, 7)}`;
 let signalingChannel = null;
 
+const isBrowser = typeof window !== "undefined";
+const webrtcAvailable = isBrowser &&
+  typeof RTCPeerConnection !== "undefined" &&
+  typeof RTCSessionDescription !== "undefined" &&
+  typeof RTCIceCandidate !== "undefined";
+
 // Establish P2P Broadcast Channel for multi-tab signaling
 const getSignalingChannel = () => {
-  if (!signalingChannel && typeof window !== "undefined") {
+  if (!signalingChannel && isBrowser) {
     signalingChannel = new BroadcastChannel("eventra_p2p_mesh");
   }
   return signalingChannel;
@@ -287,6 +293,11 @@ export class P2PFileTransferCoordinator {
     this.setupSignaling();
     this.updateState("searching", 0, "-", null, 0);
 
+    if (!webrtcAvailable) {
+      this.updateState("failed");
+      return false;
+    }
+
     // Broadcast file request to other tabs
     this.bc.postMessage({
       type: "P2P_QUERY",
@@ -332,6 +343,10 @@ export class P2PFileTransferCoordinator {
 
   // Initiator builds connection offer to target peer
   async connectToPeer(targetPeerId) {
+    if (!webrtcAvailable) {
+      this.updateState("failed");
+      return;
+    }
     this.isInitiator = true;
     this.updateState("connecting", 0, "-", targetPeerId, 1);
     
@@ -367,6 +382,10 @@ export class P2PFileTransferCoordinator {
 
   // Target peer receives connection offer and replies with answer
   async handleOffer(offer, senderId) {
+    if (!webrtcAvailable) {
+      this.updateState("failed");
+      return;
+    }
     this.isInitiator = false;
     this.updateState("connecting", 0, "-", senderId, 1);
 
