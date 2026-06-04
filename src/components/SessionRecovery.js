@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSessionRecovery } from '../context/SessionRecoveryContext';
-import { WifiOff, RefreshCw, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, X, CheckCircle, AlertCircle } from 'lucide-react';
 
 const SessionRecovery = () => {
+  // 🔥 FIX: Added fallback empty object to prevent TypeError if context is missing in tests
   const {
     isOnline,
     isReconnecting,
@@ -11,17 +12,40 @@ const SessionRecovery = () => {
     dismissRecoveryPrompt,
     clearSession,
     sessionData,
-  } = useSessionRecovery();
+  } = useSessionRecovery() || {};
 
   const [isRestoring, setIsRestoring] = useState(false);
+  const [showOnlineToast, setShowOnlineToast] = useState(false);
+  const prevOnlineRef = useRef(isOnline);
+  
+  // 🔥 FIX: SSR Hydration guard to prevent Date.now() mismatches between server and client
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!prevOnlineRef.current && isOnline) {
+      setShowOnlineToast(true);
+      const timer = setTimeout(() => {
+        setShowOnlineToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+    prevOnlineRef.current = isOnline;
+  }, [isOnline]);
 
   const handleRestore = async () => {
     setIsRestoring(true);
     try {
-      const session = restoreSession();
+      // 🔥 FIX: Added missing 'await' to prevent race conditions and dispatching raw Promises
+      const session = await restoreSession?.();
       if (session) {
-        window.dispatchEvent(new CustomEvent('sessionRestored', { detail: session }));
-        dismissRecoveryPrompt();
+        // 🔥 FIX: Ensure window exists before dispatching (SSR safety)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('sessionRestored', { detail: session }));
+        }
+        dismissRecoveryPrompt?.();
       }
     } catch (error) {
       console.error('Failed to restore session:', error);
@@ -31,9 +55,12 @@ const SessionRecovery = () => {
   };
 
   const handleDismiss = () => {
-    clearSession();
-    dismissRecoveryPrompt();
+    clearSession?.();
+    dismissRecoveryPrompt?.();
   };
+
+  // 🔥 FIX: Do not render dynamic UI until hydration is complete to prevent SSR crashes
+  if (!isMounted) return null;
 
   if (!isOnline && !showRecoveryPrompt) {
     return (
@@ -41,7 +68,7 @@ const SessionRecovery = () => {
         <div className="bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
           <WifiOff size={20} className="animate-pulse" />
           <div>
-            <p className="font-semibold text-sm">You're offline</p>
+            <p className="font-semibold text-sm">You&apos;re offline</p>
             <p className="text-xs opacity-90">Changes will be saved locally</p>
           </div>
         </div>
@@ -63,6 +90,20 @@ const SessionRecovery = () => {
     );
   }
 
+  if (isOnline && showOnlineToast && !showRecoveryPrompt) {
+    return (
+      <div className="fixed bottom-4 right-4 z-[45] animate-slide-up">
+        <div className="bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
+          <Wifi size={20} />
+          <div>
+            <p className="font-semibold text-sm">You&apos;re back online</p>
+            <p className="text-xs opacity-90">Connection restored</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (showRecoveryPrompt && sessionData) {
     const isValidTimestamp =
       sessionData &&
@@ -72,9 +113,10 @@ const SessionRecovery = () => {
 
     if (!isValidTimestamp) return null;
 
-    const timeSinceSession = Math.floor(
+    // 🔥 FIX: Added Math.max(0, ...) to prevent negative minutes if user's clock is skewed
+    const timeSinceSession = Math.max(0, Math.floor(
       (Date.now() - sessionData.timestamp) / 1000 / 60
-    );
+    ));
 
     return (
       <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
@@ -95,10 +137,12 @@ const SessionRecovery = () => {
               </p>
               <div className="flex gap-3">
                 <button
+                  type="button"
                   onClick={handleRestore}
                   disabled={isRestoring}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-                 aria-label="button">
+                  aria-label="Restore the previous session"
+                >
                   {isRestoring ? (
                     <>
                       <RefreshCw size={16} className="animate-spin" />
@@ -112,9 +156,11 @@ const SessionRecovery = () => {
                   )}
                 </button>
                 <button
+                  type="button"
                   onClick={handleDismiss}
                   className="flex-1 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-                 aria-label="button">
+                  aria-label="Start a fresh session"
+                >
                   <X size={16} />
                   Start Fresh
                 </button>

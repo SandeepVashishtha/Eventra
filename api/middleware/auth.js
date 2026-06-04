@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../auth/jwt-config.js";
-import { users } from "../auth/signup.js";
+import { users, usersById } from "../auth/signup.js";
+import { buildCorsHeaders } from "../auth/cors.js";
 
 // ---------------------------------------------------------------------------
 // JWT Middleware
@@ -8,6 +9,8 @@ import { users } from "../auth/signup.js";
 
 export const verifyAuth = (handler) => {
   return async (req, res) => {
+    const corsHeaders = buildCorsHeaders(req);
+
     // 1. Extract token from Cookie or Authorization header
     let token = null;
 
@@ -27,7 +30,7 @@ export const verifyAuth = (handler) => {
     }
 
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized: Missing authentication token" });
+      return res.status(401).set(corsHeaders).json({ error: "Unauthorized: Missing authentication token" });
     }
 
     // 2. Verify token signature and expiry
@@ -36,42 +39,41 @@ export const verifyAuth = (handler) => {
       decoded = jwt.verify(token, getJwtSecret());
     } catch (error) {
       if (error.name === "TokenExpiredError") {
-        return res.status(401).json({ error: "Unauthorized: Token expired", expired: true });
+        return res.status(401).set(corsHeaders).json({ error: "Unauthorized: Token expired", expired: true });
       }
-      return res.status(401).json({ error: "Unauthorized: Invalid token" });
+      return res.status(401).set(corsHeaders).json({ error: "Unauthorized: Invalid token" });
     }
 
-    // 3. Verify the user referenced by the JWT still exists in the user store.
-    //
-    //    CONTEXT: user records are held in a module-scoped in-memory Map that
-    //    resets on every serverless cold start. A JWT issued before a cold start
-    //    is still cryptographically valid (signature + expiry check pass), but
-    //    the user it references no longer exists in the current instance. Without
-    //    this check, protected endpoints would accept the orphaned token and then
-    //    fail later with confusing errors when they try to look up the user.
-    //
-    //    This check is intentionally lightweight: it only confirms the user
-    //    record is present in the current process. It does NOT replace a
-    //    persistent database — that architectural fix is tracked separately.
-    //    If the users Map is empty (cold start) this returns 401 with a clear
-    //    message so the client can prompt re-authentication.
-    const userEmail = decoded?.email;
+    // 3. Verify the user referenced by the JWT still exists and is active.
+    // Never reconstruct users from token claims; revocation must be honored.
     const userId = decoded?.id;
+    const normalizedEmail = typeof decoded?.email === "string" ? decoded.email.toLowerCase() : null;
 
-    if (userEmail || userId) {
-      const userExists = userEmail
-        ? users.has(userEmail.toLowerCase())
-        : Array.from(users.values()).some((u) => u.id === userId);
+    if (!userId && !normalizedEmail) {
+      return res
+        .status(401)
+        .set(corsHeaders)
+        .json({ error: "Unauthorized: Invalid token payload" });
+    }
 
-      if (!userExists) {
-        return res.status(401).json({
-          error: "Unauthorized: Session invalidated. Please log in again.",
-          sessionInvalidated: true,
-        });
-      }
+    let user = null;
+    if (userId && usersById.has(userId)) {
+      user = usersById.get(userId);
+    } else if (normalizedEmail && users.has(normalizedEmail)) {
+      user = users.get(normalizedEmail);
+    }
+
+    if (!user) {
+      return res.status(401).set(corsHeaders).json({ error: "Unauthorized: User not found" });
+    }
+
+    if (user.isActive === false) {
+      return res.status(401).set(corsHeaders).json({ error: "Unauthorized: User inactive" });
     }
 
     req.user = decoded;
+    req.authToken = token;
     return handler(req, res);
   };
 };
+

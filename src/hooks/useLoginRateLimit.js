@@ -1,3 +1,7 @@
+/**
+ * @fileoverview useLoginRateLimit - Exponential backoff login rate limiting hook
+ * @module hooks/useLoginRateLimit
+ */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   getBackoffDelay,
@@ -112,12 +116,10 @@ function useLoginRateLimit() {
     if (retryMs <= 0) return;
 
     const serverUntil = Date.now() + retryMs;
-    setLockoutUntil((prev) => {
-      const next = Math.max(prev, serverUntil);
-      persistRateLimit(attemptCount, next);
-      return next;
-    });
-  }, [attemptCount]);
+    setLockoutUntil((prev) => Math.max(prev, serverUntil));
+    // persistence is handled automatically by the sync useEffect:
+    // useEffect(() => { persistRateLimit(attemptCount, lockoutUntil); }, [attemptCount, lockoutUntil]);
+  }, []);
 
   /**
    * Clears all attempt tracking and removes the persisted state.

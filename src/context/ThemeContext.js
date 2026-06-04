@@ -1,4 +1,5 @@
 import {
+  useCallback,
   createContext,
   useContext,
   useEffect,
@@ -12,26 +13,58 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 
 export const ThemeContext = createContext(null);
 
+const safeStorage = {
+  getItem(key, fallback = null) {
+    try {
+      if (typeof window === "undefined" || !window.localStorage) return fallback;
+      return window.localStorage.getItem(key) ?? fallback;
+    } catch {
+      return fallback;
+    }
+  },
+  setItem(key, value) {
+    try {
+      window.localStorage?.setItem(key, value);
+    } catch {
+      // Storage can be blocked in private browsing or embedded contexts.
+    }
+  },
+  removeItem(key) {
+    try {
+      window.localStorage?.removeItem(key);
+    } catch {
+      // Non-fatal: theme state still updates in memory.
+    }
+  },
+};
+
 const getSystemTheme = () =>
-  window.matchMedia("(prefers-color-scheme: dark)").matches
+  typeof window !== "undefined" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 
-const getInitialTheme = () =>
-  localStorage.getItem("theme") || "system";
+const getInitialTheme = () => {
+  const stored = safeStorage.getItem("theme");
+  if (stored === "light" || stored === "dark" || stored === "system") {
+    return stored;
+  }
+  return "system";
+};
 
+// ✅ FIXED: Yahan se duplicate line hata di gayi hai
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(getInitialTheme);
+  const [theme, setThemeState] = useState(() => getInitialTheme());
 
   // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {
-    return localStorage.getItem("activeThemeId") || "default";
+    return safeStorage.getItem("activeThemeId", "default");
   });
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
   // Custom HSL state
   const [customHsl, setCustomHsl] = useState(() => {
-    const saved = localStorage.getItem("customHsl");
+    const saved = safeStorage.getItem("customHsl");
 
     return safeJsonParse(
       saved,
@@ -47,11 +80,21 @@ export const ThemeProvider = ({ children }) => {
   // Reduced motion state
   const prefersReduced = useReducedMotion();
   const [reducedMotion, setReducedMotion] = useState(() => {
-    const saved = localStorage.getItem("reducedMotion");
+    const saved = safeStorage.getItem("reducedMotion");
     return saved !== null ? saved === "true" : prefersReduced;
   });
 
   const resolvedTheme = theme === "system" ? getSystemTheme() : theme;
+  const isDarkMode = resolvedTheme === "dark";
+  const setTheme = useCallback((newTheme) => {
+    setThemeState(newTheme);
+  }, []);
+  const toggleTheme = useCallback(() => {
+    setThemeState((prev) => {
+      const resolved = prev === "system" ? getSystemTheme() : prev;
+      return resolved === "dark" ? "light" : "dark";
+    });
+  }, []);
 
   // Apply themes, custom HSL variable overrides, and sync storage
   useEffect(() => {
@@ -63,14 +106,14 @@ export const ThemeProvider = ({ children }) => {
     root.classList.add(resolvedTheme);
 
     if (theme === "system") {
-      localStorage.removeItem("theme");
+      safeStorage.removeItem("theme");
     } else {
-      localStorage.setItem("theme", theme);
+      safeStorage.setItem("theme", theme);
     }
 
     // Apply active skin theme colors
     const activeTheme = THEMES[activeThemeId] || THEMES.default;
-    const themeColors = activeTheme.colors[resolvedTheme] || activeTheme.colors.dark;
+    const themeColors = activeTheme.colors.light || activeTheme.colors.dark;
     if (themeColors) {
       Object.entries(themeColors).forEach(([variable, val]) => {
         root.style.setProperty(variable, val);
@@ -87,23 +130,26 @@ export const ThemeProvider = ({ children }) => {
       root.style.removeProperty("--primary-hover");
     }
 
-    localStorage.setItem("activeThemeId", activeThemeId);
-    localStorage.setItem("customHsl", JSON.stringify(customHsl));
+    safeStorage.setItem("activeThemeId", activeThemeId);
+    safeStorage.setItem("customHsl", JSON.stringify(customHsl));
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
-      metaTheme.setAttribute(
-        "content",
-        customHsl && customHsl.active
-          ? `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l}%)`
-          : resolvedTheme === "dark" ? "#0f172a" : "#ffffff"
-      );
+      let themeColor = "#ffffff";
+      if (customHsl && customHsl.active) {
+        themeColor = `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l}%)`;
+      } else {
+        const isDark = document.documentElement.classList.contains("dark") || 
+                       window.matchMedia("(prefers-color-scheme: dark)").matches;
+        themeColor = isDark ? "#090e1a" : "#ffffff";
+      }
+      metaTheme.setAttribute("content", themeColor);
     }
-  }, [theme, resolvedTheme, activeThemeId, customHsl]);
+  }, [activeThemeId, customHsl, theme, resolvedTheme]);
 
   // Sync OS-level reduced motion preference changes
   useEffect(() => {
-    const saved = localStorage.getItem("reducedMotion");
+    const saved = safeStorage.getItem("reducedMotion");
     if (saved === null) {
       setReducedMotion(prefersReduced);
     }
@@ -111,7 +157,7 @@ export const ThemeProvider = ({ children }) => {
 
   // Handle global CSS override for transitions and animations
   useEffect(() => {
-    localStorage.setItem("reducedMotion", reducedMotion);
+    safeStorage.setItem("reducedMotion", reducedMotion);
 
     const styleId = "reduced-motion-override";
     let styleEl = document.getElementById(styleId);
@@ -137,29 +183,28 @@ export const ThemeProvider = ({ children }) => {
 
   // Detect system dark theme preference changes
   useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      if (!localStorage.getItem("theme")) {
+      if (!safeStorage.getItem("theme")) {
         setTheme("system");
       }
     };
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
+  }, [setTheme]);
 
   const value = useMemo(
     () => ({
       theme,
       resolvedTheme,
-      isDarkMode: resolvedTheme === "dark",
+      isDarkMode,
       setTheme,
       isCustomizerOpen,
       setIsCustomizerOpen,
 
-      toggleTheme: () =>
-        setTheme((current) =>
-          current === "dark" || (current === "system" && getSystemTheme() === "dark") ? "light" : "dark"
-        ),
+      toggleTheme,
       activeThemeId,
       setActiveThemeId,
       THEMES,
@@ -168,7 +213,17 @@ export const ThemeProvider = ({ children }) => {
       reducedMotion,
       setReducedMotion,
     }),
-    [theme, resolvedTheme, activeThemeId, isCustomizerOpen, customHsl, reducedMotion]
+    [
+      theme,
+      resolvedTheme,
+      isDarkMode,
+      setTheme,
+      toggleTheme,
+      activeThemeId,
+      isCustomizerOpen,
+      customHsl,
+      reducedMotion,
+    ]
   );
 
   return (

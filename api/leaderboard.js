@@ -1,31 +1,34 @@
-const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
+import { getClientIp } from "./lib/getClientIp.js";
+import { buildCorsHeaders } from "./auth/cors.js";
+
+const GITHUB_REPO = process.env.GITHUB_REPO || "SandeepVashishtha/Eventra";
 
 const POINTS = {
   gssoclevel1: 3,
   gssoclevel2: 7,
   gssoclevel3: 10,
 };
-const DEFAULT_MERGED_PR_POINTS = 1;
 
-// ---------------------------------------------------------------------------
-// Per-IP rate limiting
-//
-// Prevents a single unauthenticated caller from flooding this endpoint and
-// exhausting the authenticated GITHUB_TOKEN quota (5 000 req/hr). Each call
-// triggers up to 11 sequential GitHub API requests, so even a modest flood
-// drains the quota quickly.
-//
-// Limit: 5 requests per IP per minute. In-memory; resets on cold start.
-// ---------------------------------------------------------------------------
+const DEFAULT_MERGED_PR_POINTS = 1;
+const MAX_PAGES = 10;
+
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 5;
 const ipRateLimitMap = new Map();
+
+const MAX_RATE_LIMIT_ENTRIES = 5000;
 
 const isRateLimited = (ip) => {
   const now = Date.now();
   const entry = ipRateLimitMap.get(ip);
 
   if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    if (!entry && ipRateLimitMap.size >= MAX_RATE_LIMIT_ENTRIES) {
+      const oldestKey = ipRateLimitMap.keys().next().value;
+      if (oldestKey !== undefined) {
+        ipRateLimitMap.delete(oldestKey);
+      }
+    }
     ipRateLimitMap.set(ip, { count: 1, windowStart: now });
     return false;
   }
@@ -38,13 +41,12 @@ const isRateLimited = (ip) => {
   return false;
 };
 
-// Evict stale rate-limit entries at most once per window to avoid O(n)
-// iteration on every request.
 let lastEvictionAt = 0;
 const evictStaleIpEntries = () => {
   const now = Date.now();
   if (now - lastEvictionAt < RATE_LIMIT_WINDOW_MS) return;
   lastEvictionAt = now;
+
   for (const [key, entry] of ipRateLimitMap.entries()) {
     if (now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
       ipRateLimitMap.delete(key);
@@ -52,15 +54,62 @@ const evictStaleIpEntries = () => {
   }
 };
 
-// ---------------------------------------------------------------------------
-// Server-side in-memory cache
-//
-// Prevents every CDN cache miss / cold start from firing 11 GitHub API calls.
-// The leaderboard data changes slowly; 5-minute freshness is sufficient.
-// ---------------------------------------------------------------------------
-const CACHE_TTL_MS = 5 * 60_000; // 5 minutes
+const CACHE_TTL_MS = 5 * 60_000;
 let cachedLeaderboard = null;
 let cacheTimestamp = 0;
+
+// ETag store for conditional GitHub API requests
+// Maps URL -> { etag: string, data: any, timestamp: number }
+const eTagStore = new Map();
+let lastETagEvictionAt = 0;
+
+const evictStaleETags = () => {
+  const now = Date.now();
+  if (now - lastETagEvictionAt < CACHE_TTL_MS) return;
+  lastETagEvictionAt = now;
+  for (const [key, entry] of eTagStore.entries()) {
+    if (now - entry.timestamp >= CACHE_TTL_MS) {
+      eTagStore.delete(key);
+    }
+  }
+};
+
+const fetchWithConditional = async (url, headers, timeoutMs = 10000) => {
+  evictStaleETags();
+  const cached = eTagStore.get(url);
+  const conditionalHeaders = { ...headers };
+
+  if (cached?.etag) {
+    conditionalHeaders["If-None-Match"] = cached.etag;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const response = await fetch(url, { headers: conditionalHeaders, signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (response.status === 304) {
+      return { status: 304, data: cached.data, etag: cached.etag };
+    }
+
+    if (!response.ok) {
+      return { status: response.status, data: null, etag: null };
+    }
+
+    const etag = response.headers.get("etag");
+    const data = await response.json();
+
+    if (etag) {
+      eTagStore.set(url, { etag, data, timestamp: Date.now() });
+    }
+
+    return { status: response.status, data, etag };
+  } catch (error) {
+    console.warn(`[Leaderboard API] conditional fetch error for ${url}:`, error);
+    return { status: 0, data: null, etag: null };
+  }
+};
 
 const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -73,25 +122,68 @@ const calculatePrPoints = (labels) => {
   return levelPoints || DEFAULT_MERGED_PR_POINTS;
 };
 
-// ---------------------------------------------------------------------------
-// Resolve the caller's IP from common proxy headers then socket address
-// ---------------------------------------------------------------------------
-const getClientIp = (req) => {
-  const forwarded = req.headers?.["x-forwarded-for"];
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
+const fetchPrPage = async (page, headers) => {
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`;
+  const result = await fetchWithConditional(url, headers);
+
+  if (result.status === 0 || result.status >= 400) {
+    console.warn(`[Leaderboard API] PR page ${page} failed with status: ${result.status}`);
+    return { prs: [], hasMore: false };
   }
-  return req.socket?.remoteAddress || req.connection?.remoteAddress || "unknown";
+
+  if (result.status === 304) {
+    return { prs: Array.isArray(result.data) ? result.data : [], hasMore: result.data?.length === 100 };
+  }
+
+  const prs = Array.isArray(result.data) ? result.data : [];
+  return { prs, hasMore: prs.length === 100 };
+};
+
+const aggregatePrs = (prs, contributorsInfo) => {
+  const contributorsMap = {};
+
+  prs.forEach((pr) => {
+    if (!pr.merged_at) return;
+
+    const labels = pr.labels.map((label) => label.name.toLowerCase());
+    const hasGsocLabel = labels.some((label) => label.includes("gssoc") || label.includes("gsoc"));
+    if (!hasGsocLabel) return;
+
+    const author = pr.user.login;
+    const points = calculatePrPoints(labels);
+
+    if (!contributorsMap[author]) {
+      const info = contributorsInfo[author] || {
+        name: author,
+        avatar: pr.user.avatar_url,
+        profile: pr.user.html_url,
+      };
+
+      contributorsMap[author] = {
+        username: author,
+        name: info.name,
+        avatar: info.avatar,
+        profile: info.profile,
+        points: 0,
+        prs: 0,
+      };
+    }
+
+    contributorsMap[author].points += points;
+    contributorsMap[author].prs += 1;
+  });
+
+  return contributorsMap;
 };
 
 export default async function handler(req, res) {
-  // Only allow GET requests
+  const corsHeaders = buildCorsHeaders(req);
+  res.set(corsHeaders);
+
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // Per-IP rate limiting — prevents unauthenticated callers from draining the
-  // GitHub token quota (each leaderboard call can fire 11 GitHub API requests).
   const clientIp = getClientIp(req);
   evictStaleIpEntries();
 
@@ -102,8 +194,6 @@ export default async function handler(req, res) {
     });
   }
 
-  // Serve from the in-process cache when fresh — avoids redundant GitHub calls
-  // on warm instances within the same 5-minute window.
   const now = Date.now();
   if (cachedLeaderboard && now - cacheTimestamp < CACHE_TTL_MS) {
     res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
@@ -118,91 +208,49 @@ export default async function handler(req, res) {
   };
 
   try {
-    let contributorsMap = {};
-    const contributorsInfo = {};
-
-    // 1. Fetch contributors to get names and avatars
     const contributorsUrl = `https://api.github.com/repos/${GITHUB_REPO}/contributors`;
-    const contributorsRes = await fetch(contributorsUrl, { headers });
+    const contributorsRes = await fetchWithConditional(contributorsUrl, headers);
 
-    if (!contributorsRes.ok) {
+    if (contributorsRes.status === 0 || contributorsRes.status >= 400) {
       throw new Error(`Failed to fetch contributors: ${contributorsRes.status}`);
     }
 
-    const contributorsData = await contributorsRes.json();
+    const contributorsData = contributorsRes.data;
+    const contributorsInfo = {};
 
     if (Array.isArray(contributorsData)) {
-      contributorsData.forEach((contributor) => {
+      for (const contributor of contributorsData) {
         contributorsInfo[contributor.login] = {
           name: contributor.name || contributor.login,
           avatar: contributor.avatar_url,
           profile: contributor.html_url,
         };
-      });
+      }
     }
 
-    // 2. Fetch all closed PRs
-    let page = 1;
-    let hasMore = true;
+    const { prs: firstPagePrs, hasMore } = await fetchPrPage(1, headers);
+    let allPrs = [...firstPagePrs];
 
-    // Limit to 10 pages (1000 PRs) to avoid hitting Vercel 10s timeout limits
-    // In production, consider Webhooks or a database-backed Cron job if > 1000 PRs
-    const MAX_PAGES = 10;
+    if (hasMore) {
+      const remainingPageNumbers = Array.from(
+        { length: MAX_PAGES - 1 },
+        (_, index) => index + 2,
+      );
 
-    while (hasMore && page <= MAX_PAGES) {
-      const pullsUrl = `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`;
-      const prsRes = await fetch(pullsUrl, { headers });
+      const remainingResults = await Promise.allSettled(
+        remainingPageNumbers.map((page) => fetchPrPage(page, headers)),
+      );
 
-      if (!prsRes.ok) {
-        console.warn(`[Leaderboard API] GitHub API request failed with status: ${prsRes.status}`);
-        hasMore = false;
-        break;
-      }
-
-      const prs = await prsRes.json();
-
-      if (!Array.isArray(prs) || prs.length === 0) {
-        hasMore = false;
-        break;
-      }
-
-      prs.forEach((pr) => {
-        if (!pr.merged_at) return; // Only count merged PRs
-
-        const labels = pr.labels.map((l) => l.name.toLowerCase());
-        const hasGsocLabel = labels.some(
-          (label) => label.includes("gssoc") || label.includes("gsoc")
-        );
-
-        if (!hasGsocLabel) return; // Must have GSOC labels
-
-        const author = pr.user.login;
-        const points = calculatePrPoints(labels);
-
-        if (!contributorsMap[author]) {
-          const contributorInfo = contributorsInfo[author] || {
-            name: author,
-            avatar: pr.user.avatar_url,
-            profile: pr.user.html_url,
-          };
-          contributorsMap[author] = {
-            username: author,
-            name: contributorInfo.name,
-            avatar: contributorInfo.avatar,
-            profile: contributorInfo.profile,
-            points: 0,
-            prs: 0,
-          };
+      for (const result of remainingResults) {
+        if (result.status === "fulfilled" && result.value.prs.length > 0) {
+          allPrs.push(...result.value.prs);
+          if (!result.value.hasMore) break;
         }
-
-        contributorsMap[author].points += points;
-        contributorsMap[author].prs += 1;
-      });
-
-      page++;
+      }
     }
 
-    // 3. Add achievement-based bonus points to gamify contributors
+    const contributorsMap = aggregatePrs(allPrs, contributorsInfo);
+
     Object.keys(contributorsMap).forEach((user) => {
       const count = contributorsMap[user].prs;
       if (count >= 10) {
@@ -212,9 +260,8 @@ export default async function handler(req, res) {
       }
     });
 
-    // 4. Sort contributors by points
     const sortedContributors = Object.values(contributorsMap).sort(
-      (a, b) => b.points - a.points
+      (a, b) => b.points - a.points,
     );
 
     // 5. Populate the in-process cache so subsequent warm-instance calls skip
@@ -222,7 +269,6 @@ export default async function handler(req, res) {
     cachedLeaderboard = sortedContributors;
     cacheTimestamp = Date.now();
 
-    // 6. Apply Edge Caching (Cache-Control)
     res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
     res.setHeader("X-Cache", "MISS");
 

@@ -2,7 +2,7 @@
 // Self-Healing Offline Queue Utility (IndexedDB backed with LocalStorage Backup)
 // ---------------------------------------------------------------------------
 import { safeJsonParse } from "./safeJsonParse.js";
-import { logger } from "../utils/logger";
+import { logger } from "./logger.js";
 
 const QUEUE_KEY = "eventra_offline_queue";
 const DB_NAME = "eventra_offline_db";
@@ -353,9 +353,8 @@ export const pushToQueue = async (item, userId = null) => {
     }
     return false;
   }
-
-  // 1. Sync mirror updates immediately (Synchronous fallback)
-  const queue = getQueue();
+  // 1. Check authoritative IndexedDB store for limit enforcement
+  const queue = await getQueueIndexedDB();
   if (queue.length >= 15) {
     logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
     if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
@@ -433,15 +432,10 @@ export const setQueue = async (newQueue) => {
           return;
         }
 
-        let completed = 0;
-        newQueue.forEach((item) => {
-          const putReq = store.put(item);
-          putReq.onsuccess = () => {
-            completed++;
-            if (completed === newQueue.length) resolve();
-          };
-          putReq.onerror = () => reject(putReq.error);
-        });
+        newQueue.forEach((item) => store.put(item));
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
       };
       clearReq.onerror = () => reject(clearReq.error);
     });
@@ -514,4 +508,186 @@ export const filterQueueByOwnership = (queue, currentUserId) => {
   });
 
   return validatedQueue;
+};
+
+// ---------------------------------------------------------------------------
+// Processing Pipeline — exponential backoff, retry, and replay
+// ---------------------------------------------------------------------------
+
+const MAX_RETRY_COUNT = 5;
+const BASE_BACKOFF_MS = 1_000;
+const REQUEST_TIMEOUT_MS = 10_000;
+
+const notifyQueueProcessed = (result) => {
+  if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
+  window.dispatchEvent(
+    new CustomEvent("eventra-offline-queue-processed", {
+      detail: result,
+    })
+  );
+};
+
+/**
+ * Retry a single queued action with exponential backoff + jitter.
+ *
+ * @param {object}   item      - Queued action item (must have endpoint, payload, id, retryCount)
+ * @param {function} fetchFn   - Async function(url, options) => { status, data }
+ * @param {object}   [options] - { signal, onConflict }
+ * @returns {Promise<{status: "success"|"dropped"|"conflict"|"error", item: object}>}
+ */
+export const processQueueItem = async (item, fetchFn, options = {}) => {
+  const { signal, onConflict } = options;
+
+  for (let attempt = 0; attempt <= MAX_RETRY_COUNT; attempt++) {
+    if (signal?.aborted) return { status: "error", item, error: new DOMException("Aborted", "AbortError") };
+
+    if (attempt > 0) {
+      const delay = BASE_BACKOFF_MS * Math.pow(2, attempt - 1) + Math.random() * 500;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    const url = item.endpoint;
+    if (!url) {
+      logger.warn(`[OfflineQueue] Item ${item.id} has no endpoint — dropping.`);
+      return { status: "dropped", item };
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      const combinedSignal = signal
+        ? combineAbortSignals(signal, controller.signal)
+        : controller.signal;
+
+      const response = await fetchFn(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(item.payload),
+        signal: combinedSignal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) return { status: "success", item };
+
+      if (response.status === 409) {
+        let serverState = null;
+        try { serverState = await response.json(); } catch { serverState = {}; }
+
+        if (typeof onConflict === "function") {
+          const resolution = await onConflict(item, serverState);
+          if (resolution === "retry") continue;
+          if (resolution === "discard") return { status: "dropped", item };
+          return { status: "success", item };
+        }
+        return { status: "conflict", item, serverState };
+      }
+
+      if (response.status >= 400 && response.status < 500) {
+        logger.warn(
+          `[OfflineQueue] Server rejected item ${item.id} with ${response.status} — dropping.`
+        );
+        return { status: "dropped", item };
+      }
+
+      // 5xx — retry with backoff
+      continue;
+    } catch (error) {
+      if (error.name === "AbortError") return { status: "error", item, error };
+      logger.error(`[OfflineQueue] Network error processing item ${item.id}:`, error);
+      // Retry on network errors
+    }
+  }
+
+  return { status: "dropped", item };
+};
+
+/**
+ * Process all items in the offline queue.
+ *
+ * 1. Reads queue from IndexedDB
+ * 2. Validates ownership via filterQueueByOwnership
+ * 3. Processes each item with retry/backoff
+ * 4. Removes permanently failed items after MAX_RETRY_COUNT
+ * 5. Dispatches eventra-offline-queue-processed custom event
+ *
+ * @param {string}   currentUserId - User ID for ownership validation
+ * @param {function} fetchFn       - Async HTTP fetch function
+ * @param {object}   [options]     - { signal, onConflict }
+ * @returns {Promise<{processed: number, succeeded: number, dropped: number, remaining: number}>}
+ */
+export const processQueue = async (currentUserId, fetchFn, options = {}) => {
+  const { signal } = options;
+
+  const queue = await getQueueIndexedDB();
+  if (queue.length === 0) return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
+
+  const validated = filterQueueByOwnership(queue, currentUserId);
+  if (validated.length === 0) {
+    await clearQueue();
+    return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
+  }
+
+  const succeeded = [];
+  const dropped = [];
+  const failed = [];
+
+  for (const item of validated) {
+    if (signal?.aborted) break;
+
+    if (item.retryCount >= MAX_RETRY_COUNT) {
+      dropped.push(item);
+      continue;
+    }
+
+    const result = await processQueueItem(item, fetchFn, {
+      ...options,
+      onConflict: options.onConflict
+        ? (queuedItem, serverState) => options.onConflict(queuedItem, serverState)
+        : undefined,
+    });
+
+    if (result.status === "success") {
+      succeeded.push(item);
+    } else if (result.status === "dropped") {
+      dropped.push(item);
+    } else {
+      failed.push({ ...item, retryCount: (item.retryCount || 0) + 1 });
+    }
+  }
+
+  if (failed.length > 0) {
+    await setQueue(failed);
+  } else {
+    await clearQueue();
+  }
+
+  const remaining = failed.length;
+
+  notifyQueueProcessed({ succeeded: succeeded.length, dropped: dropped.length, remaining });
+
+  return {
+    processed: validated.length,
+    succeeded: succeeded.length,
+    dropped: dropped.length,
+    remaining,
+  };
+};
+
+/**
+ * Internal: combine two AbortSignals into one so either can abort.
+ */
+const combineAbortSignals = (...signals) => {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort();
+
+  for (const signal of signals) {
+    if (signal.aborted) {
+      controller.abort();
+      return controller.signal;
+    }
+    signal.addEventListener("abort", onAbort, { once: true });
+  }
+
+  return controller.signal;
 };

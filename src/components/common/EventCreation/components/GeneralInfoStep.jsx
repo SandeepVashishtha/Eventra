@@ -1,12 +1,11 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { FileText, Image, Upload, ClipboardList, Layers } from "lucide-react";
+import CharacterCounter from "../../CharacterCounter";
 
 const GeneralInfoStep = ({
   formData,
   setFormData,
   errors,
-  setErrors,
   handleInputChange,
   handleImageUpload,
   prefersReducedMotion,
@@ -27,16 +26,23 @@ const GeneralInfoStep = ({
         </label>
         <input
           type="text"
+          id="title"
           name="title"
           value={formData.title}
           onChange={handleInputChange}
           placeholder="React Summit 2026 / AI Hackathon Gujarat / Open Source Meetup"
           maxLength={200}
+          aria-describedby="title-counter"
           className={`w-full border ${
             errors.title ? "border-red-500" : "border-gray-300 dark:border-gray-600"
           } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
         />
-        {errors.title && <span className="text-red-500 text-sm mt-1">{errors.title}</span>}
+        <div className="flex justify-between items-start mt-1">
+          <div className="flex-1">
+            {errors.title && <span className="text-red-500 text-sm">{errors.title}</span>}
+          </div>
+          <CharacterCounter id="title-counter" value={formData.title} maxLength={200} />
+        </div>
       </motion.div>
 
       {/* Event Banner */}
@@ -169,44 +175,26 @@ const GeneralInfoStep = ({
           <ClipboardList className="w-5 h-5 text-indigo-500 inline-block mr-2" />
           Description <span className="text-red-600">*</span>
         </label>
-        <p
-          className={`text-sm text-right mt-1 ${
-            formData.description.length > 450
-              ? "text-red-500"
-              : formData.description.length > 350
-              ? "text-yellow-500"
-              : "text-gray-400"
-          }`}
-        >
-          {formData.description.length}/500 characters
-        </p>
-
-        {/* Character counter + error row */}
+        <textarea
+          id="description"
+          name="description"
+          value={formData.description}
+          onChange={handleInputChange}
+          rows="5"
+          maxLength={500}
+          aria-describedby="description-counter"
+          placeholder="Tell people what your event is about..."
+          className={`w-full border ${
+            errors.description ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+          } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300 resize-none`}
+        />
         <div className="flex justify-between items-start mt-1">
           <div className="flex-1">
             {errors.description && (
               <span className="text-red-500 text-sm">{errors.description}</span>
             )}
           </div>
-          {(() => {
-            const len = formData.description.length;
-            const max = 500;
-            const ratio = len / max;
-            const counterColor =
-              ratio >= 0.95
-                ? "text-red-500"
-                : ratio >= 0.8
-                ? "text-amber-500"
-                : "text-gray-500 dark:text-gray-400";
-            return (
-              <span
-                className={`text-xs font-medium ml-2 tabular-nums ${counterColor}`}
-                aria-live="polite"
-              >
-                {len} / {max}
-              </span>
-            );
-          })()}
+          <CharacterCounter id="description-counter" value={formData.description} maxLength={500} />
         </div>
       </motion.div>
 

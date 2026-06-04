@@ -1,0 +1,158 @@
+{
+  "app": {
+    "name": "Eventra",
+    "tagline": "Your all-in-one event platform",
+    "loading": "Loading page...",
+    "backOnline": "Back online! Your connections have been restored and sync is complete.",
+    "offline": "You are currently offline. Running in secure local offline caching mode."
+  },
+  "nav": {
+    "home": "Home",
+    "events": "Events",
+    "hackathons": "Hackathons",
+    "leaderboard": "Leaderboard",
+    "contributors": "Contributors",
+    "about": "About",
+    "contact": "Contact",
+    "dashboard": "Dashboard",
+    "admin": "Admin",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "name": "Name",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "sessionExpired": "Session expired. Please log in again.",
+    "loginSuccess": "Welcome back!",
+    "signupSuccess": "Account created successfully!"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email format",
+    "emailTaken": "Email is already registered",
+    "usernameTaken": "Username is already taken",
+    "weakPassword": "Password does not meet strength requirements",
+    "invalidPhone": "Phone number is invalid",
+    "validationUnavailable": "Unable to validate right now. Please try again.",
+    "passwordLength": "Password must be at least 8 characters"
+  },
+  "error": {
+    "generic": "An unexpected error occurred. Please try again.",
+    "badRequest": "The request could not be understood. Please check your input and try again.",
+    "unauthorized": "Your credentials are incorrect or your session has expired. Please sign in again.",
+    "forbidden": "You don't have permission to perform this action.",
+    "notFound": "The requested resource was not found.",
+    "conflict": "This information is already in use. Please try a different value.",
+    "unprocessable": "Some fields contain invalid values. Please review and correct them.",
+    "tooManyRequests": "Too many requests. Please wait a moment before trying again.",
+    "serverError": "Something went wrong on our end. Please try again shortly.",
+    "serviceUnavailable": "The service is temporarily unavailable. Please try again shortly.",
+    "networkError": "Unable to reach the server. Please check your connection.",
+    "emailExists": "This email is already registered. Try signing in instead.",
+    "invalidCredentials": "Invalid email or password.",
+    "accountNotFound": "No account found with those details.",
+    "accountLocked": "Your account has been temporarily locked. Please try again later.",
+    "rateLimited": "Rate limited. Please wait..."
+  },
+  "errorBoundary": {
+    "title": "System Crash Prevented",
+    "description": "Eventra encountered an unexpected crash. The issue has been intercepted and logged. You can try reloading, resetting your local cache, or copying the diagnostic report below to report this issue.",
+    "reload": "Reload Page",
+    "tryAgain": "Try Again",
+    "resetCache": "Reset Cache",
+    "copyReport": "Copy Report",
+    "copied": "Copied!",
+    "viewDiagnostics": "View Diagnostics",
+    "hideDiagnostics": "Hide Diagnostics",
+    "errorRef": "Error Reference ID",
+    "loading": "Loading page...",
+    "sectionFailed": "{{label}} failed to load",
+    "featureFailed": "{{label}} failed to load"
+  },
+  "event": {
+    "create": "Create Event",
+    "edit": "Edit Event",
+    "delete": "Delete Event",
+    "register": "Register",
+    "registered": "Registered",
+    "details": "Event Details",
+    "date": "Date",
+    "time": "Time",
+    "location": "Location",
+    "category": "Category",
+    "description": "Description",
+    "organizer": "Organizer",
+    "price": "Price",
+    "free": "Free",
+    "noEvents": "No events found",
+    "search": "Search events...",
+    "filters": "Filters",
+    "clearFilters": "Clear Filters",
+    "viewMode": "View Mode",
+    "timeline": "Timeline",
+    "recommendations": "Recommendations for you",
+    "saved": "Saved Events"
+  },
+  "hackathon": {
+    "title": "Hackathons",
+    "noResults": "No Hackathons Found",
+    "noResultsDesc": "Check back later for exciting new hackathons!",
+    "noFiltersMatch": "No hackathons match your current filters. Try adjusting your search or filters.",
+    "resetFilters": "Reset Filters",
+    "stats": {
+      "hosted": "Hackathons Hosted",
+      "participants": "Participants",
+      "projects": "Projects Built",
+      "prizes": "Prizes Awarded"
+    }
+  },
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "retry": "Retry",
+    "loading": "Loading...",
+    "search": "Search",
+    "noResults": "No results found",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "closeModal": "Close modal"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "contact": "Contact Us"
+  },
+  "landing": {
+    "hero": {
+      "title": "Discover & Join Amazing Events",
+      "subtitle": "The ultimate platform for event discovery, registration, and management."
+    },
+    "stats": {
+      "events": "Events Hosted",
+      "users": "Active Users",
+      "contributors": "Contributors"
+    }
+  },
+  "language": {
+    "switch": "Language",
+    "en": "English",
+    "es": "Español"
+  }
+}

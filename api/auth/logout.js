@@ -1,16 +1,14 @@
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "./jwt-config.js";
+import { buildCorsHeaders, corsResponse } from "./cors.js";
+import { verifyAuth } from "../middleware/auth.js";
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
 // ---------------------------------------------------------------------------
 
 // Use the same centralised helper as login.js and signup.js so that all three
-// handlers share a consistent signing secret. The previous inline fallback
-// ("your-super-secret-jwt-key-change-in-production") differed from the
-// development fallback in jwt-config.js ("eventra-local-development-jwt-secret"),
-// causing jwt.verify() here to reject every token issued by login.js in local
-// development (the keys never matched).
+// handlers share a consistent signing secret.
 const JWT_SECRET = getJwtSecret();
 
 // ---------------------------------------------------------------------------
@@ -39,74 +37,44 @@ const JWT_SECRET = getJwtSecret();
 //  3. The in-process blacklist, which is effective within a single long-running
 //     server process (e.g. local development or a non-serverless deployment).
 
-const tokenBlacklist = new Set();
+// Map<token, expiryUnixSeconds> — uses the JWT exp claim as the expiry so
+// entries are naturally bounded by the token lifetime (default 7d).
+// A Map is used instead of Set so we can check expiry at read time without
+// iterating, and the cleanup pass can delete entries without mutating during
+// iteration (collect keys first, then delete).
+const tokenBlacklist = new Map();
 
-// Optional: Token blacklist cleanup interval (cleanup expired tokens periodically)
 const BLACKLIST_CLEANUP_INTERVAL = parseInt(process.env.BLACKLIST_CLEANUP_INTERVAL) || 3600000; // 1 hour
 
-// Cleanup expired tokens from blacklist
+// Cleanup expired tokens from blacklist (runs every hour by default).
+// Collects expired keys into an array first, then deletes — avoids mutating
+// the Map during iteration (the bug the original Set-based approach had).
 const cleanupExpiredTokens = () => {
   const now = Math.floor(Date.now() / 1000);
-  for (const entry of tokenBlacklist) {
-    try {
-      const token = entry;
-      const tokenParts = token.split(".");
-      if (tokenParts.length === 3) {
-        const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
-        if (payload.exp && payload.exp < now) {
-          tokenBlacklist.delete(token);
-        }
-      }
-    } catch (e) {
-      // If parsing fails, keep the entry
-    }
+  const expired = [];
+  for (const [token, exp] of tokenBlacklist) {
+    if (exp < now) expired.push(token);
+  }
+  for (const token of expired) {
+    tokenBlacklist.delete(token);
   }
 };
 
-// Start periodic cleanup
 let cleanupInterval = null;
 const startCleanupInterval = () => {
   if (!cleanupInterval) {
     cleanupInterval = setInterval(cleanupExpiredTokens, BLACKLIST_CLEANUP_INTERVAL);
-    // Don't let this prevent the process from exiting
     if (cleanupInterval.unref) {
       cleanupInterval.unref();
     }
   }
 };
 
-// Start the cleanup interval
 startCleanupInterval();
 
 // ---------------------------------------------------------------------------
-// CORS Headers
+// CORS Headers (delegated to shared cors.js)
 // ---------------------------------------------------------------------------
-
-const corsHeaders = (req) => {
-  const allowedOrigin = process.env.ALLOWED_ORIGIN;
-  const requestOrigin = req.headers?.origin;
-
-  const corsOrigin = allowedOrigin || "*";
-  if (allowedOrigin && requestOrigin !== allowedOrigin) {
-    console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
-  }
-
-  // Access-Control-Allow-Credentials must not be sent with a wildcard origin.
-  // Per the CORS spec, browsers reject credentialed responses when the reflected
-  // origin is "*". Only set the header when a specific origin is configured.
-  const isSpecificOrigin = corsOrigin !== "*";
-
-  return {
-    "Access-Control-Allow-Origin": corsOrigin,
-    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
-};
-
-const corsResponse = (res, status, data, req) => {
-  return res.status(status).set(corsHeaders(req)).json(data);
-};
 
 // ---------------------------------------------------------------------------
 // Extract token from Authorization header
@@ -130,15 +98,33 @@ const extractToken = (authHeader) => {
 // ---------------------------------------------------------------------------
 
 const isTokenBlacklisted = (token) => {
-  return tokenBlacklist.has(token);
+  const exp = tokenBlacklist.get(token);
+  if (exp === undefined) return false;
+  // Auto-evict expired entries at read time so stale tokens don't linger
+  // until the next cleanup interval.
+  if (exp < Math.floor(Date.now() / 1000)) {
+    tokenBlacklist.delete(token);
+    return false;
+  }
+  return true;
 };
 
 // ---------------------------------------------------------------------------
-// Add token to blacklist
+// Add token to blacklist with auto-expiry based on JWT exp claim
 // ---------------------------------------------------------------------------
 
 const blacklistToken = (token) => {
-  tokenBlacklist.add(token);
+  try {
+    const payload = JSON.parse(
+      Buffer.from(token.split(".")[1], "base64").toString()
+    );
+    const exp = payload.exp ?? Math.floor(Date.now() / 1000) + 7 * 86400;
+    tokenBlacklist.set(token, exp);
+  } catch {
+    // If the token can't be decoded (malformed), keep it for a bounded
+    // default TTL so the blacklist can't be spammed with garbage entries.
+    tokenBlacklist.set(token, Math.floor(Date.now() / 1000) + 86400);
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -169,41 +155,41 @@ const authenticateToken = (token) => {
 // Logout Handler
 // ---------------------------------------------------------------------------
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return res.status(200).set(corsHeaders(req)).end();
+    return res.status(200).set(buildCorsHeaders(req)).end();
   }
 
   // Only allow POST requests
   if (req.method !== "POST") {
-    return corsResponse(res, 405, { error: "Method not allowed" }, req);
+    return corsResponse(req, res, 405, { error: "Method not allowed" });
   }
 
   try {
     // -----------------------------------------------------------------------
-    // Extract and validate token from Authorization header
+    // Extract token from req.authToken (populated by verifyAuth middleware)
+    // Falls back to Authorization header extraction for direct API callers.
     // -----------------------------------------------------------------------
 
-    const authHeader = req.headers?.authorization || req.headers?.Authorization;
-    const token = extractToken(authHeader);
+    const token = req.authToken || (() => {
+      const authHeader = req.headers?.authorization || req.headers?.Authorization;
+      return extractToken(authHeader);
+    })();
 
     if (!token) {
-      return corsResponse(res, 401, { 
+      return corsResponse(req, res, 401, { 
         error: "Authentication required. No token provided." 
-      }, req);
+      });
     }
 
-    // -----------------------------------------------------------------------
-    // Verify token is valid
-    // -----------------------------------------------------------------------
+    // Validate that the token matches the authenticated user (defense-in-depth)
+    const decoded = jwt.verify(token, getJwtSecret());
 
-    const authResult = authenticateToken(token);
-    
-    if (!authResult.valid) {
-      return corsResponse(res, 401, { 
-        error: authResult.error 
-      }, req);
+    if (decoded.id !== req.user.id || decoded.email !== req.user.email) {
+      return corsResponse(req, res, 401, {
+        error: "Token does not match authenticated session.",
+      });
     }
 
     // -----------------------------------------------------------------------
@@ -226,28 +212,30 @@ export default async function handler(req, res) {
     // Return success response
     // -----------------------------------------------------------------------
 
-    return corsResponse(res, 200, {
+    return corsResponse(req, res, 200, {
       message: "Logged out successfully",
       timestamp: new Date().toISOString(),
-    }, req);
+    });
 
   } catch (error) {
     console.error("Logout Error:", error);
-    return corsResponse(res, 500, { 
+    return corsResponse(req, res, 500, { 
       error: "Internal server error. Please try again later." 
-    }, req);
+    });
   }
 }
+
+export default verifyAuth(handler);
 
 // ---------------------------------------------------------------------------
 // Export utility functions for testing
 // ---------------------------------------------------------------------------
 
-export { 
-  tokenBlacklist, 
-  isTokenBlacklisted, 
-  blacklistToken, 
-  authenticateToken, 
+export {
+  tokenBlacklist,
+  isTokenBlacklisted,
+  blacklistToken,
+  authenticateToken,
   extractToken,
   cleanupExpiredTokens,
 };

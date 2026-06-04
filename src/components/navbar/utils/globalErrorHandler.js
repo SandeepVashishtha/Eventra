@@ -1,16 +1,15 @@
 // Flag to ensure initialization only runs once (Idempotency Guard)
 let isInitialized = false;
+let appLogger = null; // 🟢 Add this line
 
 /**
  * Initializes global runtime error and unhandled promise rejection monitoring.
  * Safe to be called multiple times due to HMR or React StrictMode.
  */
-export function initializeGlobalErrorHandling() {
+export function initializeGlobalErrorHandling(logger) { // 🟢 Updated this line
+  appLogger = logger || { log: console.error };
   // If already initialized, exit early to prevent duplicate listeners
   if (isInitialized) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Error Monitoring] Already initialized. Skipping duplicate setup.');
-    }
     return;
   }
 
@@ -21,32 +20,45 @@ export function initializeGlobalErrorHandling() {
   // Set flag to true
   isInitialized = true;
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Error Monitoring] Global error handlers initialized successfully.');
-  }
 }
 
 // Named handler for standard runtime errors
 function handleGlobalError(event) {
-  // Prevent application crashing completely if desired, or just log it
-  console.error('Captured Global Error:', {
-    message: event.message,
-    source: event.filename,
-    line: event.lineno,
-    col: event.colno,
-    error: event.error,
-  });
+  // 🟢 Guard to prevent double-reporting errors already caught by React
+  if (event.error && event.error.__isReactHandled) return;
 
-  // TODO: Add backend/analytics logging endpoint tracking here if needed
+  // 🟢 Standardized payload structure
+  const payload = {
+    event: 'app_crash',
+    level: 'error',
+    source: 'window.onerror',
+    message: event.message || 'Unknown runtime error',
+    metadata: {
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      stack: event.error?.stack || null,
+    }
+  };
+
+  appLogger.log(payload); 
 }
 
 // Named handler for unhandled async promise rejections
 function handleUnhandledRejection(event) {
-  console.warn('Captured Unhandled Promise Rejection:', {
-    reason: event.reason,
-  });
+  // 🟢 Standardized payload structure for unhandled promises
+  const payload = {
+    event: 'app_crash',
+    level: 'error',
+    source: 'window.unhandledrejection',
+    message: event.reason?.message || 'Unhandled Promise Rejection',
+    metadata: {
+      stack: event.reason?.stack || null,
+      reason: typeof event.reason === 'object' ? JSON.stringify(event.reason) : event.reason
+    }
+  };
 
-  // TODO: Add backend/analytics logging endpoint tracking here if needed
+  appLogger.log(payload);
 }
 
 /**
@@ -56,4 +68,5 @@ export function resetGlobalErrorHandling() {
   window.removeEventListener('error', handleGlobalError);
   window.removeEventListener('unhandledrejection', handleUnhandledRejection);
   isInitialized = false;
+  appLogger = null;
 }

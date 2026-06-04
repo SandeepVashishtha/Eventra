@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import { getPublicRoutes } from "./routes/PublicRoutes";
@@ -40,12 +40,23 @@ const AppRoutes = () => {
           path="/dashboard/achievements"
           element={
             <ProtectedRoute>
-              <UserAchievements />
+              {/* 🔥 FIX: Added localized Suspense to prevent top-level router layout thrashing */}
+              <Suspense fallback={<RouteFallback />}>
+                <UserAchievements />
+              </Suspense>
             </ProtectedRoute>
           }
         />
 
-      <Route path="*" element={<NotFoundPage />} />
+      {/* 🔥 FIX: Added localized Suspense for 404 page */}
+      <Route 
+        path="*" 
+        element={
+          <Suspense fallback={<RouteFallback />}>
+            <NotFoundPage />
+          </Suspense>
+        } 
+      />
     </Routes>
   </Suspense>
   );

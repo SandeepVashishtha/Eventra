@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * PriceRangeSlider Component
@@ -24,11 +24,8 @@ const PriceRangeSlider = ({
   // Sync external prop changes (e.g. filter reset from parent) into local state.
   useEffect(() => {
     setMin(minPrice);
-  }, [minPrice]);
-
-  useEffect(() => {
     setMax(maxPrice);
-  }, [maxPrice]);
+  }, [minPrice, maxPrice]);
 
   // Visual-only handlers — update local state on every tick for smooth UI.
   const handleMinChange = (e) => {
@@ -76,6 +73,7 @@ const PriceRangeSlider = ({
           onChange={handleMinChange}
           onMouseUp={commitRange}
           onTouchEnd={commitRange}
+          onKeyUp={commitRange}
           disabled={disabled}
           className="absolute w-full h-2 top-2 rounded-full appearance-none cursor-pointer bg-transparent pointer-events-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-indigo-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-indigo-500 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:shadow-md disabled:opacity-50"
         />
@@ -89,6 +87,7 @@ const PriceRangeSlider = ({
           onChange={handleMaxChange}
           onMouseUp={commitRange}
           onTouchEnd={commitRange}
+          onKeyUp={commitRange}
           disabled={disabled}
           className="absolute w-full h-2 top-2 rounded-full appearance-none cursor-pointer bg-transparent pointer-events-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-purple-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-purple-600 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:shadow-md disabled:opacity-50"
         />

@@ -1,4 +1,5 @@
 import { verifyAuth } from "./middleware/auth.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
 
 const SAFE_GITHUB_PATH_PATTERNS = [
   /^\/repos\/[^/?#]+\/[^/?#]+$/,
@@ -72,22 +73,58 @@ const evictStaleEntries = () => {
   }
 };
 
+// Disallowed characters in any part of the path
+const DISALLOWED_PATH_CHARS = /[\x00-\x1f\x7f\x00]/;
+
 const normalizePath = (path) => {
   const rawPath = Array.isArray(path) ? path.join("/") : path;
   if (!rawPath || typeof rawPath !== "string") {
     return "";
   }
 
-  return rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
+  // URL-decode so %2e%2e%2f (URL-encoded ../) is visible to validation
+  let decoded;
+  try {
+    decoded = decodeURIComponent(rawPath);
+  } catch {
+    // Malformed percent encoding — reject
+    return "";
+  }
+
+  // Reject null bytes, control characters, and newlines
+  if (DISALLOWED_PATH_CHARS.test(decoded)) {
+    return "";
+  }
+
+  return decoded.startsWith("/") ? decoded : `/${decoded}`;
 };
 
 const isSafeGitHubPath = (path) => {
-  if (path.includes("..") || path.includes("@") || path.includes("://")) {
+  // Reject path traversal sequences and protocol separators
+  if (path.includes("..") || path.includes("@") || path.includes("://") || path.startsWith("//")) {
     return false;
   }
 
-  const { pathname } = new URL(path, "https://api.github.com");
-  return SAFE_GITHUB_PATH_PATTERNS.some((pattern) => pattern.test(pathname));
+  // Reject paths with query strings or fragments already embedded
+  if (path.includes("?") || path.includes("#")) {
+    return false;
+  }
+
+  // Use URL constructor to resolve against GitHub API base; any absolute
+  // URL embedded in the path will cause hostname to differ from api.github.com
+  let url;
+  try {
+    url = new URL(path, "https://api.github.com");
+  } catch {
+    return false;
+  }
+
+  if (url.hostname !== "api.github.com") {
+    return false;
+  }
+
+  // After resolving, ensure the pathname matches at least one safe pattern
+  return SAFE_GITHUB_PATH_PATTERNS.some((pattern) => pattern.test(url.pathname));
 };
 
 async function handler(req, res) {
@@ -115,7 +152,8 @@ async function handler(req, res) {
     return res.status(400).json({ error: "Invalid GitHub API path" });
   }
 
-  const url = new URL(normalizedPath, "https://api.github.com");
+  const url = new URL("https://api.github.com");
+  url.pathname = normalizedPath;
   Object.entries(queryParams).forEach(([key, value]) => {
     if (!ALLOWED_QUERY_PARAMS.has(key)) return;
     if (Array.isArray(value)) {
@@ -128,12 +166,12 @@ async function handler(req, res) {
   const token = process.env.GITHUB_TOKEN;
 
   try {
-    const fetchRes = await fetch(url.toString(), {
+    const fetchRes = await fetchWithTimeout(url.toString(), {
       headers: {
         Accept: "application/vnd.github.v3+json",
         ...(token ? { Authorization: `token ${token}` } : {}),
       },
-    });
+    }, 10000);
 
     const data = await fetchRes.json();
 
@@ -152,3 +190,4 @@ async function handler(req, res) {
 }
 
 export default verifyAuth(handler);
+

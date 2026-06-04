@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Bell, CheckCheck, Settings } from "lucide-react";
 import { useNotification } from "../../context/NotificationContext";
@@ -14,14 +14,44 @@ export default function NotificationBell() {
     markAllAsRead,
     preferences,
   } = useNotification();
+  
   const [isOpen, setIsOpen] = useState(false);
+  
+  // 🔥 FIX: Added ref to track the dropdown container for click-outside detection
+  const dropdownRef = useRef(null);
+
+  // 🔥 FIX: Added effect to close dropdown on outside click or Escape key
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
 
   const visibleGroups = Object.entries(groupedNotifications || {}).filter(
     ([category]) => preferences?.categories?.[category]?.inApp !== false
   );
 
   return (
-    <div className="relative z-50">
+    // 🔥 FIX: Attached the ref to the root div
+    <div className="relative z-50" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-gray-600 hover:text-blue-600 focus:outline-none transition-colors"
@@ -73,20 +103,23 @@ export default function NotificationBell() {
         </div>
 
         <div className="max-h-96 overflow-y-auto">
-          {notifications.length === 0 || visibleGroups.length === 0 ? (
+          {/* 🔥 FIX: Added optional chaining (?.) to prevent crashes if arrays are undefined */}
+          {notifications?.length === 0 || visibleGroups?.length === 0 ? (
             <div className="p-4 text-center text-sm text-gray-400">No alerts found</div>
           ) : (
-            visibleGroups.map(([category, categoryNotifications]) => (
+            visibleGroups?.map(([category, categoryNotifications]) => (
               <section key={category} className="border-b border-gray-100 last:border-b-0">
                 <div className="flex items-center justify-between bg-gray-50/70 px-3 py-2">
                   <span className="text-xs font-semibold uppercase text-gray-500">
                     {NOTIFICATION_CATEGORIES[category]?.label || "System"}
                   </span>
                   <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
-                    {categoryNotifications.filter((notif) => !notif.isRead).length} new
+                    {/* 🔥 FIX: Defensive filter */}
+                    {categoryNotifications?.filter((notif) => !notif.isRead).length || 0} new
                   </span>
                 </div>
-                {categoryNotifications.map((notif) => (
+                {/* 🔥 FIX: Defensive map */}
+                {categoryNotifications?.map((notif) => (
                   <button
                     type="button"
                     key={notif.id}

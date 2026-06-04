@@ -41,13 +41,21 @@ export const knowledgeBase = [
 export const defaultAnswer =
   "I can help with event registration, recommendations, hosting guidance, and platform support. Try asking about the event you want to attend or what kind of workshop you are looking for.";
 
+const keywordIndex = knowledgeBase.reduce((acc, item) => {
+  item.keywords.forEach((kw) => {
+    if (!acc.has(kw)) acc.set(kw, item);
+  });
+  return acc;
+}, new Map());
+
+const sortedKeywords = [...keywordIndex.keys()].sort((a, b) => b.length - a.length);
+
 export function getAssistantReply(input) {
   const normalizedInput = input.toLowerCase();
-  const match = knowledgeBase.find((item) =>
-    item.keywords.some((keyword) => normalizedInput.includes(keyword))
-  );
+  const match = sortedKeywords.find((keyword) => normalizedInput.includes(keyword));
+  const matchedItem = match ? keywordIndex.get(match) : null;
   return (
-    match || {
+    matchedItem || {
       answer: defaultAnswer,
       actions: [{ label: "Explore events", to: "/events", icon: "CalendarDays" }],
     }
