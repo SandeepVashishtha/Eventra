@@ -85,7 +85,7 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
       const snap = {};
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && !k.includes("token") && !k.includes("password")) {
+        if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
           try { snap[k] = localStorage.getItem(k)?.slice(0, 200); } catch {}
         }
       }
@@ -282,7 +282,7 @@ class ErrorBoundary extends React.Component {
         const snap = {};
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
-          if (k && !k.includes("token") && !k.includes("password")) {
+          if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
             try { snap[k] = localStorage.getItem(k)?.slice(0, 200); } catch {}
           }
         }

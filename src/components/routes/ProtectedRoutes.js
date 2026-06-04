@@ -22,7 +22,7 @@ const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"
 const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
 const UIInventory = lazy(() => import("../admin/UIInventory"));
 const SponsorDashboard = lazy(() => import("../../Pages/Sponsors/SponsorDashboard"));
-const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
+const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard.jsx"));
 
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
@@ -196,6 +196,7 @@ export const getProtectedRoutes = () => [
 export const getAuthRoutes = () => [
   // 🔥 FIX: Safely suspended lazy-loaded auth routes
   <Route key="/login" path="/login" element={withAuthSuspense(<AuthPage />)} />,
+  <Route key="/register" path="/register" element={withAuthSuspense(<AuthPage />)} />,
   <Route key="/signup" path="/signup" element={withAuthSuspense(<AuthPage />)} />,
   <Route key="/unauthorized" path="/unauthorized" element={withAuthSuspense(<Unauthorized />)} />,
   <Route key="/password-reset" path="/password-reset" element={withAuthSuspense(<PasswordReset />)} />,

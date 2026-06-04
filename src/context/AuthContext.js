@@ -100,26 +100,12 @@ export const AuthProvider = ({ children }) => {
 
   const extractSession = useCallback(
     (res, data, fallbackEmail) => {
-      // Prefer an explicit token from the response body (legacy / non-HttpOnly
-      // deployments) or from a Bearer header, but fall back to "cookie-managed"
-      // when neither is present. The server sets an HttpOnly cookie that is
-      // transmitted automatically via withCredentials on every subsequent
-      // request; no client-side token string is needed for that flow.
-      let sessionToken = data?.token ?? data?.accessToken ?? null;
-
-      if (!sessionToken) {
-        const authHeader = res.headers?.authorization || res.headers?.Authorization || null;
-        if (authHeader && authHeader.startsWith("Bearer ")) {
-          sessionToken = authHeader.substring(7);
-        }
-      }
-
-      // Cookie-only flow: the server set an HttpOnly cookie but did not include
-      // the token in the response body.  Sentinel value tells the rest of
-      // AuthContext not to attempt client-side JWT validation.
-      if (!sessionToken) {
-        sessionToken = "cookie-managed";
-      }
+      // Under a strict HttpOnly-cookie authentication model, the client-visible
+      // response body or headers (like data.token, data.accessToken, and Authorization
+      // response headers) are ignored entirely to prevent token-injection risks.
+      // Authenticated sessions are established solely through successful backend
+      // validation of the HttpOnly session cookie, using the sentinel value "cookie-managed".
+      const sessionToken = "cookie-managed";
 
       const rawUser = data?.user ?? data?.data ?? data ?? null;
       const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
