@@ -5,6 +5,12 @@ import { safeParseJson } from "./jsonUtils";
 // (e.g. the dependency was skipped during npm install), every call below
 // is a no-op — the app continues working without remote error reporting.
 let Sentry = null;
+const runtimeEnv =
+  typeof import.meta !== "undefined" && import.meta.env
+    ? import.meta.env
+    : typeof process !== "undefined" && process.env
+      ? process.env
+      : {};
 
 if (isSentryEnabled && typeof window !== "undefined") {
   try {
@@ -24,7 +30,7 @@ if (isSentryEnabled && typeof window !== "undefined") {
       tracesSampleRate: 0.25,
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
-      environment: process.env.NODE_ENV || "development",
+      environment: runtimeEnv.MODE || runtimeEnv.NODE_ENV || "development",
     });
   } catch {
     // Sentry SDK unavailable — local-only logging will still work
