@@ -50,7 +50,7 @@ const LazyImage = ({
     <img
       ref={imgRef}
       src={src}
-      alt={alt}
+      alt={alt || ""}
       width={width}
       height={height}
       loading={loading}
