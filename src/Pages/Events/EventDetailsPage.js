@@ -11,6 +11,7 @@ import { getEventStatus } from "../../utils/eventUtils";
 import { logError } from "../../utils/errorLogger";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
+import LazyImage from "../../components/common/LazyImage";
 // Note: eventsMockData.json is NOT statically imported here.
 // It is loaded dynamically (and only in development/fallback mode) so that
 // the mock JSON is not bundled into the production build.
@@ -249,11 +250,12 @@ const EventDetailsPage = () => {
           >
             <section className="min-w-0 lg:col-span-2" aria-labelledby="event-details-title">
               <div className="relative mb-5 aspect-[4/3] overflow-hidden rounded-2xl shadow-xl xs:aspect-video sm:mb-8">
-                <img
+                <LazyImage
                   src={event.image}
                   alt={`${event.title} event banner`}
-                  className="w-full h-96 object-cover"
-                  loading="lazy"
+                  className="w-full h-96"
+                  imgClassName="object-cover"
+                  loading="eager"
                 />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />

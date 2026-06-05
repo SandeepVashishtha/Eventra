@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { syncSecureStorage } from "../../utils/secureStorage";
+import LazyImage from "../common/LazyImage";
 import "./UserProfile.css";
 
 const fadeUp = (prefersReducedMotion) => ({
@@ -123,10 +124,12 @@ export default function UserProfile() {
             {/* Avatar */}
             <div className="upv-avatar-wrap">
               {profile?.avatarBase64 || profile?.profilePicture ? (
-                <img
+                <LazyImage
                   src={profile.avatarBase64 || profile.profilePicture}
                   alt={displayName}
-                  className="upv-avatar-img" loading="lazy"/>
+                  aspectRatio="1/1"
+                  className="upv-avatar-img"
+                />
               ) : (
                 <div className="upv-avatar-placeholder">
                   <span className="upv-avatar-initials">{initials}</span>
