@@ -127,15 +127,15 @@ export const generateEventSharingData = (event, baseUrl = null) => {
   if (!baseUrl) {
     if (typeof window !== "undefined") {
       const currentUrl = window.location.href;
-      // Use the configured public URL if it matches the current domain
-      if (publicUrl && currentUrl.includes(publicUrl)) {
-        baseUrl = publicUrl;
+      // Check if we're on the deployed site
+      if (currentUrl.includes(rawPublicUrl)) {
+        baseUrl = deployedOrigin;
       } else {
         // Use the current origin (localhost or other development environment)
         baseUrl = window.location.origin;
       }
     } else {
-      baseUrl = publicUrl; // Fallback for SSR/Node
+      baseUrl = deployedOrigin; // Fallback for SSR/Node
     }
   }
 

@@ -2,6 +2,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
+import { SiDiscord } from "react-icons/si";
+
 import {
   FaBook,
   FaBookOpen,
@@ -113,6 +115,16 @@ const socialLinks = [
       />
     ),
   },
+  {
+  name: "Discord",
+  href: "https://discord.com/users/sandeep_vashishtha",
+  icon: (
+    <SiDiscord
+      className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+      size={20}
+      />
+    ),
+ },
 ].filter(Boolean);
 
 /* ================================
@@ -278,7 +290,7 @@ const Newsletter = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-gray-900 to-black hover:from-indigo-600 hover:to-purple-600 dark:from-white dark:to-gray-200 dark:hover:from-indigo-400 dark:hover:to-purple-500 text-white dark:text-black rounded-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/30 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-semibold tracking-wide"
+          className="...bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 dark:from-white dark:to-gray-200...text-white dark:text-black..."
         >
           {isSubmitting
             ? "Subscribing..."
