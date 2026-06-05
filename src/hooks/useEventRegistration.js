@@ -1,3 +1,4 @@
+import { createRateLimiter } from "../../utils/rateLimiter";
 /**
  * @file useEventRegistration.js
  * @module hooks/useEventRegistration
@@ -44,11 +45,16 @@ import {
 import { pushToQueue } from "../../utils/offlineQueue";
 import { logError } from "../../utils/errorLogger";
 import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
+import { logAbuseAttempt } from "../../utils/abuseLogger";
 
 export const MAX_NOTES_CHARS = 500;
 
 // Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
+const registrationLimiter = createRateLimiter({
+  maxTokens: 3,
+  refillRate: 0.2, // roughly 1 token every 5 seconds
+});
 
 /**
  * Derives a user-facing error message from a failed registration API response.
@@ -504,6 +510,22 @@ const useEventRegistration = (eventIdParam) => {
 
   // Proceed with registration after conflict check or user confirmation
   const proceedWithRegistration = useCallback(async () => {
+    if (!registrationLimiter.tryConsume()) {
+      const retryMs = registrationLimiter.getRetryAfterMs();
+
+      logAbuseAttempt("event-registration-rate-limit", {
+        eventId,
+        userId: user?.id,
+      });
+
+      toast.error(
+        `Too many registration attempts. Please wait ${Math.ceil(
+          retryMs / 1000
+        )} seconds and try again.`
+      );
+
+      return;
+    }
     if (!isAuthenticated() || !user?.id) {
       toast.error("Please log in to register for events.");
       navigate("/login", {
