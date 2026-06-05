@@ -30,7 +30,6 @@ const Login = () => {
     isLockedOut,
     applyServerLockout,
   } = useLoginRateLimit();
-
   // If ProtectedRoute redirected here because the JWT expired, show a notice.
   const sessionExpired = location.state?.sessionExpired ?? false;
   const introPoints = [
@@ -66,7 +65,6 @@ const Login = () => {
     setError(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   useEffect(() => {
     if (isAuthenticated()) {
       navigate('/dashboard', { replace: true });
@@ -75,7 +73,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  if (loading) return;
+    if (authRequest.loading) return;
     if (isLockedOut()) return;
     if (!validate()) return;
 
