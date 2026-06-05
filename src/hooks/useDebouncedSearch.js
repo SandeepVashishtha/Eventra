@@ -1,3 +1,7 @@
+/**
+ * @fileoverview useDebouncedSearch - Debounced search query hook
+ * @module hooks/useDebouncedSearch
+ */
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 /**
