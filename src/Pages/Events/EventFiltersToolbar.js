@@ -1,7 +1,8 @@
-import { Grid, List, Search, X, RotateCcw, Sparkles, Filter, ChevronDown, Check } from "lucide-react";
+import { Grid, List, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import StyledDropdown from "../../components/StyledDropdown";
 import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
+import useEventFilterPresets from "../../hooks/useEventFilterPresets";
 
 const CATEGORY_OPTIONS = [
   { id: "all", label: "All Categories" },
@@ -34,9 +35,23 @@ const EventFiltersToolbar = ({
   searchQuery,
   onSearchChange,
   onResetFilters,
+  currentFilterConfig,
+  onApplyPreset,
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
+  const [presetName, setPresetName] = useState("");
+  const [editingPresetId, setEditingPresetId] = useState("");
+  const [editingPresetName, setEditingPresetName] = useState("");
   const debounceRef = useRef(null);
+  const {
+    presets,
+    presetError,
+    clearPresetError,
+    savePreset,
+    renamePreset,
+    updatePreset,
+    deletePreset,
+  } = useEventFilterPresets();
 
   useEffect(() => {
     setLocalQuery(searchQuery || "");
@@ -65,6 +80,37 @@ const EventFiltersToolbar = ({
     }
 
     onSearchChange?.("");
+  };
+
+  const handleSavePreset = () => {
+    const result = savePreset(presetName, currentFilterConfig);
+    if (!result.error) {
+      setPresetName("");
+    }
+  };
+
+  const handleStartRename = (preset) => {
+    clearPresetError();
+    setEditingPresetId(preset.id);
+    setEditingPresetName(preset.name);
+  };
+
+  const handleRenamePreset = (presetId) => {
+    const result = renamePreset(presetId, editingPresetName);
+    if (!result.error) {
+      setEditingPresetId("");
+      setEditingPresetName("");
+    }
+  };
+
+  const handleDeletePreset = (preset) => {
+    if (
+      window.confirm(
+        `Delete the "${preset.name}" filter preset? This cannot be undone.`,
+      )
+    ) {
+      deletePreset(preset.id);
+    }
   };
 
   const hasAnyFilterActive =
@@ -133,6 +179,135 @@ const EventFiltersToolbar = ({
         isOpen={isAdvancedFiltersOpen}
         onToggleOpen={() => onToggleAdvancedFilters?.((isOpen) => !isOpen)}
       />
+
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/45 p-4 shadow-inner">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-100">
+              <Save size={16} className="text-indigo-300" />
+              Saved Presets
+            </h4>
+            <p className="mt-1 text-xs text-slate-500">
+              Save this filter setup and apply it again later.
+            </p>
+          </div>
+
+          <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+            <label htmlFor="event-filter-preset-name" className="sr-only">
+              Preset name
+            </label>
+            <input
+              id="event-filter-preset-name"
+              type="text"
+              value={presetName}
+              onChange={(event) => {
+                clearPresetError();
+                setPresetName(event.target.value);
+              }}
+              placeholder="Preset name"
+              className="min-w-0 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+            />
+            <button
+              type="button"
+              onClick={handleSavePreset}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-500/50 bg-indigo-600 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-indigo-500/10 transition hover:bg-indigo-500"
+            >
+              <Save size={14} />
+              Save Preset
+            </button>
+          </div>
+        </div>
+
+        {presetError && (
+          <p className="mt-3 rounded-xl border border-red-500/20 bg-red-950/20 px-3 py-2 text-xs font-medium text-red-300">
+            {presetError}
+          </p>
+        )}
+
+        <div className="mt-4 space-y-2">
+          {presets.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-slate-800 px-3 py-3 text-sm text-slate-500">
+              No saved presets yet.
+            </p>
+          ) : (
+            presets.map((preset) => {
+              const isEditing = editingPresetId === preset.id;
+
+              return (
+                <div
+                  key={preset.id}
+                  className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0 flex-1">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editingPresetName}
+                        onChange={(event) => {
+                          clearPresetError();
+                          setEditingPresetName(event.target.value);
+                        }}
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+                        aria-label={`Rename ${preset.name}`}
+                      />
+                    ) : (
+                      <p className="truncate text-sm font-semibold text-slate-100">
+                        {preset.name}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onApplyPreset?.(preset.filters)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20"
+                    >
+                      <Upload size={13} />
+                      Apply
+                    </button>
+                    {isEditing ? (
+                      <button
+                        type="button"
+                        onClick={() => handleRenamePreset(preset.id)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1.5 text-xs font-semibold text-indigo-300 transition hover:bg-indigo-500/20"
+                      >
+                        <Save size={13} />
+                        Save
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleStartRename(preset)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white"
+                      >
+                        <Pencil size={13} />
+                        Edit
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => updatePreset(preset.id, currentFilterConfig)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/20"
+                    >
+                      <RefreshCcw size={13} />
+                      Update
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePreset(preset)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20"
+                    >
+                      <Trash2 size={13} />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </section>
 
       {/* 2. Interactive Search & Timing row */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
