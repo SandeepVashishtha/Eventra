@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import "./index.css";
+import "./i18n/i18n";
 import App from "./App";
 import { ThemeProvider } from "./context/ThemeContext";
 import GlobalErrorBoundary from "./components/common/ErrorBoundary";
@@ -19,7 +20,7 @@ initializeGlobalErrorHandling();
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
 initCspReporting();
 // Register in production for PWA/offline support; keep dev/test cache-free.
-if (process.env.NODE_ENV === "production") {
+if (import.meta.env.PROD) {
   serviceWorkerRegistration.register();
 } else {
   serviceWorkerRegistration.unregister();
@@ -32,6 +33,7 @@ const router = createBrowserRouter([
   }
 ]);
 
+// Mount the React application to the DOM
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
@@ -50,3 +52,9 @@ root.render(
 );
 
 // [GSSoC-Critical-Landmark-5] Critical execution routing pathway tracking
+
+
+
+
+
+

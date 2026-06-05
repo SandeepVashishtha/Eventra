@@ -198,9 +198,11 @@ export class P2PFileTransferCoordinator {
     this.bc = getSignalingChannel();
     this.isInitiator = false;
     this.onMessageListener = null;
+    this.currentState = null;
   }
 
   updateState(state, progress = 0, speed = "-", peer = null, count = 1) {
+    this.currentState = state;
     if (this.onStateChange) {
       this.onStateChange({
         state, // 'searching', 'connecting', 'transferring', 'completed', 'failed'
@@ -291,14 +293,37 @@ export class P2PFileTransferCoordinator {
 
     // We wait 2.5 seconds to discover nearby peers. If none answer, we fail and trigger fallback.
     return new Promise((resolve) => {
-      setTimeout(() => {
-        if (!this.pc) {
+      const searchTimeout = setTimeout(() => {
+        if (!this.pc || this.currentState === "searching") {
           this.cleanup();
           resolve(false); // No peers found, trigger server fallback
-        } else {
-          resolve(true); // Connected to peer!
         }
       }, 2500);
+
+      // Add a secondary connection safety timer of 5 seconds total
+      const connectionSafetyTimeout = setTimeout(() => {
+        if (this.currentState === "connecting" || this.currentState === "searching") {
+          this.cleanup();
+          resolve(false); // WebRTC connection handshakes timed out, fallback to server
+        } else if (this.currentState === "completed" || this.currentState === "transferring") {
+          resolve(true);
+        }
+      }, 5000);
+
+      // Attach state listener check to resolve immediately if completed
+      const checkInterval = setInterval(() => {
+        if (this.currentState === "completed") {
+          clearTimeout(searchTimeout);
+          clearTimeout(connectionSafetyTimeout);
+          clearInterval(checkInterval);
+          resolve(true);
+        } else if (this.currentState === "failed") {
+          clearTimeout(searchTimeout);
+          clearTimeout(connectionSafetyTimeout);
+          clearInterval(checkInterval);
+          resolve(false);
+        }
+      }, 200);
     });
   }
 
@@ -436,7 +461,13 @@ export class P2PFileTransferCoordinator {
     };
 
     this.channel.onmessage = async (e) => {
-      const chunkMsg = JSON.parse(e.data);
+      let chunkMsg;
+      try {
+        chunkMsg = JSON.parse(e.data);
+      } catch (err) {
+        console.error("Failed to parse incoming P2P message:", err);
+        return;
+      }
       this.receivedChunks.push(chunkMsg);
 
       const progress = Math.round((this.receivedChunks.length / chunkMsg.totalChunks) * 100);
@@ -463,6 +494,9 @@ export class P2PFileTransferCoordinator {
     };
 
     this.channel.onclose = () => {
+      if (this.currentState !== "completed") {
+        this.updateState("failed");
+      }
       this.cleanup();
     };
   }

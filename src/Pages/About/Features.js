@@ -1,8 +1,17 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
+import {
+  Star,
+  QrCode,
+  TrendingUp,
+  Users,
+  Lock,
+  Globe,
+  ArrowRight
+} from "lucide-react";
 
 // 🎯 Safe: Extracted common classes to avoid repetition
-const ICON_CLASSES = "text-indigo-500 dark:text-indigo-400 text-2xl";
+const ICON_CLASSES = "text-indigo-500 dark:text-indigo-400 w-6 h-6";
 const CARD_BASE_CLASSES = "relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 focus-within:ring-2 focus-within:ring-indigo-500 dark:focus-within:ring-indigo-400";
 const HEADING_CLASSES = "text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight";
 const DESCRIPTION_CLASSES = "mt-6 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto";
@@ -28,7 +37,7 @@ const item = {
 // 🎯 Safe: Feature data with accessibility-friendly structure
 const features = [
   {
-    icon: <FaStar className={ICON_CLASSES} aria-hidden="true" />,
+    icon: <Star className={ICON_CLASSES} aria-hidden="true" />,
     title: "Smart Event Creation",
     stat: "90% faster setup",
     description: "Launch events in minutes with intelligent templates, automatic capacity management, and integrated ticketing. Full support for workshops, conferences, meetups, and specialized events.",
@@ -37,7 +46,7 @@ const features = [
     enabled: true,
   },
   {
-    icon: <FaQrcode className={ICON_CLASSES} aria-hidden="true" />,
+    icon: <QrCode className={ICON_CLASSES} aria-hidden="true" />,
     title: "Instant QR Check-ins",
     stat: "3 sec check-in",
     description: "Lightning-fast attendee check-ins with QR codes that work offline. Real-time attendance tracking and automated no-show management keep your events running smoothly.",
@@ -46,7 +55,7 @@ const features = [
     enabled: false,
   },
   {
-    icon: <FaChartLine className={ICON_CLASSES} aria-hidden="true" />,
+    icon: <TrendingUp className={ICON_CLASSES} aria-hidden="true" />,
     title: "Live Analytics",
     stat: "15+ metrics",
     description: "Real-time dashboards showing registration trends, attendance patterns, and engagement insights. Make data-driven decisions that lead to consistently better events.",
@@ -55,7 +64,7 @@ const features = [
     enabled: false,
   },
   {
-    icon: <FaUsers className={ICON_CLASSES} aria-hidden="true" />,
+    icon: <Users className={ICON_CLASSES} aria-hidden="true" />,
     title: "Team Collaboration",
     stat: "Unlimited members",
     description: "Invite co-organizers, assign specific roles, and coordinate effortlessly. Built-in communication tools and task management ensure seamless teamwork.",
@@ -64,7 +73,7 @@ const features = [
     enabled: false,
   },
   {
-    icon: <FaLock className={ICON_CLASSES} aria-hidden="true" />,
+    icon: <Lock className={ICON_CLASSES} aria-hidden="true" />,
     title: "Enterprise Security",
     stat: "Bank-level security",
     description: "SOC 2 compliant with end-to-end encryption. Advanced privacy controls and full GDPR compliance for handling sensitive attendee data with complete confidence.",
@@ -73,7 +82,7 @@ const features = [
     enabled: false,
   },
   {
-    icon: <FaGlobe className={ICON_CLASSES} aria-hidden="true" />,
+    icon: <Globe className={ICON_CLASSES} aria-hidden="true" />,
     title: "Global Reach",
     stat: "195 countries",
     description: "Multi-timezone coordination, 30+ languages, and international payment processing. Host events anywhere in the world and welcome attendees from everywhere.",
@@ -181,8 +190,8 @@ export default function Features() {
                     aria-label={`${feature.cta} - ${feature.title}`}
                   >
                     {feature.cta}
-                    <FaArrowRight 
-                      className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" 
+                    <ArrowRight
+                      className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200"
                       aria-hidden="true"
                     />
                   </Link>
@@ -194,7 +203,7 @@ export default function Features() {
                     aria-disabled="true"
                   >
                     {feature.cta}
-                    <FaArrowRight 
+                    <ArrowRight 
                       className="ml-2 w-4 h-4 opacity-50" 
                       aria-hidden="true"
                     />

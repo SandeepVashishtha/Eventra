@@ -314,7 +314,7 @@ export const getUniqueCategories = (events) => {
       categories.add(event.category);
     }
   });
-  return Array.from(categories).sort();
+  return Array.from(categories).sort((a, b) => a.localeCompare(b));
 };
 
 /**
@@ -453,7 +453,11 @@ export const decodeAdvancedFilters = (value) => {
   }
 
   try {
-    return normalizeAdvancedFilters(JSON.parse(decodeURIComponent(value)));
+    const parsed = JSON.parse(decodeURIComponent(value));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return getDefaultFilters();
+    }
+    return normalizeAdvancedFilters(parsed);
   } catch {
     return getDefaultFilters();
   }

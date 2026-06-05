@@ -8,7 +8,7 @@ import {
   ChevronRight,
   FilterX,
 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import { showSuccessToast } from "../../utils/toast";
 import {
   generateAIInsights
 } from "../../services/aiRecommendationService";
@@ -693,7 +693,7 @@ const EventRecommendation = () => {
               <button
                 onClick={() => {
                   addRegistration(selectedEvent, { source: "recommendation" });
-                  toast.success(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
+                  showSuccessToast(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
                   setSelectedEvent(null);
                 }}
                 className="flex-1 px-4 py-2.5 rounded-xl bg-primary hover:opacity-90 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
@@ -705,7 +705,6 @@ const EventRecommendation = () => {
         </div>
       )}
       
-      <Toaster position="bottom-right" />
     </div>
   );
 };
