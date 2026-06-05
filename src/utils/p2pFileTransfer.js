@@ -20,22 +20,30 @@ let dbInstance = null;
 // Initialize IndexedDB
 const getDB = () => {
   if (dbInstance) return Promise.resolve(dbInstance);
+  if (typeof window === "undefined" || typeof indexedDB === "undefined" || !indexedDB) {
+    return Promise.reject(new Error("IndexedDB is not supported in this environment"));
+  }
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = (e) => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: "chunkId" });
-      }
-    };
-    request.onsuccess = (e) => {
-      dbInstance = e.target.result;
-      resolve(dbInstance);
-    };
-    request.onerror = (e) => {
-      console.error("IndexedDB initialization error:", e);
-      reject(e);
-    };
+    try {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME, { keyPath: "chunkId" });
+        }
+      };
+      request.onsuccess = (e) => {
+        dbInstance = e.target.result;
+        resolve(dbInstance);
+      };
+      request.onerror = (e) => {
+        console.error("IndexedDB initialization error:", e);
+        reject(e);
+      };
+    } catch (err) {
+      console.error("IndexedDB open exception:", err);
+      reject(err);
+    }
   });
 };
 
