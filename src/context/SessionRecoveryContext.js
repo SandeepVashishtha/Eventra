@@ -3,6 +3,9 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 import { logger } from "../utils/logger";
 import { sanitizeSessionState } from "../utils/sessionSanitization";
 import { getDeviceFingerprint } from "../utils/deviceFingerprint";
+import { useAuth } from "./AuthContext";
+import useCloudSessionRecovery from "../hooks/useCloudSessionRecovery";
+import useMultiSessionRecovery from "../hooks/useMultiSessionRecovery";
 
 // ---------------------------------------------------------------------------
 // CryptoJS has been removed from this module.
@@ -27,7 +30,6 @@ const SessionRecoveryContext = createContext();
 
 const SESSION_KEY = "eventra_session_state";
 const SESSION_TIMEOUT = 30 * 60 * 1000;
-const RECOVERY_KEY_NAME = "eventra_session_recovery_key";
 
 // ---------------------------------------------------------------------------
 // Web Crypto helpers — PBKDF2 + AES-256-GCM
@@ -158,6 +160,7 @@ export const useSessionRecovery = () => {
 };
 
 export const SessionRecoveryProvider = ({ children }) => {
+  const { user, isAuthenticated } = useAuth();
   const [hasSession, setHasSession] = useState(false);
   const [sessionData, setSessionData] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
@@ -168,6 +171,13 @@ export const SessionRecoveryProvider = ({ children }) => {
   const lastActivityRef = useRef(Date.now());
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
+  const cloudRecovery = useCloudSessionRecovery({
+    user,
+    isAuthenticated: isAuthenticated?.() || false,
+  });
+  const multiRecovery = useMultiSessionRecovery({
+    cloudSessions: cloudRecovery.cloudSessions,
+  });
 
   const updateActivity = useCallback(() => {
     const now = Date.now();
@@ -288,9 +298,18 @@ export const SessionRecoveryProvider = ({ children }) => {
           }
 
           const sanitizedState = sanitizeSessionState(state);
+          const recoveryType = sanitizedState.recoveryType || sanitizedState.page || "session";
+          const workflowId = sanitizedState.eventId || sanitizedState.id || "active";
+          const sessionId =
+            sanitizedState.sessionId ||
+            sanitizedState.recoverySessionId ||
+            `${recoveryType}-${workflowId}`;
 
           const currentSession = {
             ...sanitizedState,
+            sessionId,
+            sessionName: sanitizedState.sessionName || sanitizedState.name,
+            recoveryType,
             timestamp: Date.now(),
             lastActivity: lastActivityRef.current,
             deviceFingerprint: getDeviceFingerprint(),
@@ -300,12 +319,26 @@ export const SessionRecoveryProvider = ({ children }) => {
           localStorage.setItem(SESSION_KEY, ciphertext);
           setSessionData(currentSession);
           setHasSession(true);
+          multiRecovery.upsertSession({
+            sessionId,
+            name: currentSession.sessionName,
+            type: recoveryType,
+            draftData: currentSession,
+            source: "local",
+            updatedAt: new Date(currentSession.timestamp).toISOString(),
+            lastUpdated: new Date(currentSession.timestamp).toISOString(),
+          });
+          cloudRecovery.saveCloudSession(currentSession, {
+            sessionId,
+            name: currentSession.sessionName,
+            type: recoveryType,
+          });
         } catch (e) {
           logger.error("Failed to save session:", e);
         }
       }, 1000);
     },
-    [],
+    [cloudRecovery, multiRecovery],
   );
 
   const clearSession = useCallback(() => {
@@ -327,6 +360,43 @@ export const SessionRecoveryProvider = ({ children }) => {
     return sessionData;
   }, [sessionData]);
 
+  const restoreRecoverySessionById = useCallback(
+    async (sessionId) => {
+      const session = multiRecovery.sessions.find(
+        (item) => item.id === sessionId || item.sessionId === sessionId,
+      );
+      if (!session) return null;
+
+      if (session.source === "cloud" || session.source === "cloud-newer") {
+        const restored = await cloudRecovery.restoreCloudSession(session.sessionId);
+        return restored?.draftData || restored || session.draftData;
+      }
+
+      return session.draftData;
+    },
+    [cloudRecovery, multiRecovery.sessions],
+  );
+
+  const deleteRecoverySessionById = useCallback(
+    async (sessionId) => {
+      const session = multiRecovery.sessions.find(
+        (item) => item.id === sessionId || item.sessionId === sessionId,
+      );
+      multiRecovery.deleteSession(sessionId);
+      if (session?.source === "cloud" || session?.source === "cloud-newer") {
+        await cloudRecovery.dismissCloudSession(session.sessionId);
+      }
+    },
+    [cloudRecovery, multiRecovery],
+  );
+
+  const renameRecoverySessionById = useCallback(
+    (sessionId, name) => {
+      multiRecovery.renameSession(sessionId, name);
+    },
+    [multiRecovery],
+  );
+
   const dismissRecoveryPrompt = useCallback(() => {
     setShowRecoveryPrompt(false);
   }, []);
@@ -343,6 +413,12 @@ export const SessionRecoveryProvider = ({ children }) => {
   }, [hasSession, clearSession]);
 
   useEffect(() => {
+    if ((multiRecovery.hasSessions || cloudRecovery.hasCloudSessions) && !sessionData) {
+      setShowRecoveryPrompt(true);
+    }
+  }, [cloudRecovery.hasCloudSessions, multiRecovery.hasSessions, sessionData]);
+
+  useEffect(() => {
     const saveTimeout = saveTimeoutRef.current;
     const activityTimeout = activityTimeoutRef.current;
     return () => {
@@ -357,9 +433,26 @@ export const SessionRecoveryProvider = ({ children }) => {
     isOnline,
     isReconnecting,
     showRecoveryPrompt,
+    recoverySessions: multiRecovery.sessions,
+    visibleRecoverySessions: multiRecovery.visibleSessions,
+    groupedRecoverySessions: multiRecovery.groupedSessions,
+    recoverySessionSearchQuery: multiRecovery.searchQuery,
+    setRecoverySessionSearchQuery: multiRecovery.setSearchQuery,
+    hasRecoverySessions: multiRecovery.hasSessions,
+    cloudSessions: cloudRecovery.cloudSessions,
+    hasCloudSessions: cloudRecovery.hasCloudSessions,
+    isCloudSyncing: cloudRecovery.isCloudSyncing,
+    cloudSyncError: cloudRecovery.cloudSyncError,
     saveSession,
     clearSession,
     restoreSession,
+    restoreRecoverySessionById,
+    restoreCloudSession: cloudRecovery.restoreCloudSession,
+    deleteRecoverySessionById,
+    renameRecoverySessionById,
+    importRecoverySessions: multiRecovery.replaceSessions,
+    dismissCloudSession: cloudRecovery.dismissCloudSession,
+    refreshCloudSessions: cloudRecovery.refreshCloudSessions,
     dismissRecoveryPrompt,
     lastActivity,
   };
