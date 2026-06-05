@@ -77,6 +77,11 @@ export const useMultiSessionRecovery = ({
     [localSessions, persist],
   );
 
+  const replaceSessions = useCallback(
+    (sessions) => persist(sessions),
+    [persist],
+  );
+
   const allSessions = useMemo(
     () =>
       normalizeMultiSessions([
@@ -108,6 +113,7 @@ export const useMultiSessionRecovery = ({
     renameSession,
     deleteSession,
     cleanupExpired,
+    replaceSessions,
     hasSessions: allSessions.length > 0,
   };
 };

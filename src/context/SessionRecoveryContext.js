@@ -450,6 +450,7 @@ export const SessionRecoveryProvider = ({ children }) => {
     restoreCloudSession: cloudRecovery.restoreCloudSession,
     deleteRecoverySessionById,
     renameRecoverySessionById,
+    importRecoverySessions: multiRecovery.replaceSessions,
     dismissCloudSession: cloudRecovery.dismissCloudSession,
     refreshCloudSessions: cloudRecovery.refreshCloudSessions,
     dismissRecoveryPrompt,

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSessionRecovery } from '../context/SessionRecoveryContext';
 import { Wifi, WifiOff, RefreshCw, X, CheckCircle, AlertCircle } from 'lucide-react';
+import useSessionExportImport from '../hooks/useSessionExportImport';
 
 const SessionRecovery = () => {
   // 🔥 FIX: Added fallback empty object to prevent TypeError if context is missing in tests
@@ -20,13 +21,29 @@ const SessionRecovery = () => {
     restoreRecoverySessionById,
     deleteRecoverySessionById,
     renameRecoverySessionById,
+    importRecoverySessions,
   } = useSessionRecovery() || {};
 
   const [isRestoring, setIsRestoring] = useState(false);
   const [showOnlineToast, setShowOnlineToast] = useState(false);
   const [renamingSessionId, setRenamingSessionId] = useState("");
   const [renameValue, setRenameValue] = useState("");
+  const [selectedExportIds, setSelectedExportIds] = useState([]);
+  const [selectedImportIds, setSelectedImportIds] = useState([]);
+  const [importStrategy, setImportStrategy] = useState("skip");
   const prevOnlineRef = useRef(isOnline);
+  const {
+    exportSessions,
+    parseImportText,
+    importSessions,
+    clearImportPreview,
+    importPreview,
+    importError,
+    statusMessage,
+  } = useSessionExportImport({
+    sessions: visibleRecoverySessions,
+    onImportSessions: importRecoverySessions,
+  });
   
   // 🔥 FIX: SSR Hydration guard to prevent Date.now() mismatches between server and client
   const [isMounted, setIsMounted] = useState(false);
@@ -94,6 +111,48 @@ const SessionRecovery = () => {
     renameRecoverySessionById?.(sessionId, renameValue);
     setRenamingSessionId("");
     setRenameValue("");
+  };
+
+  const handleImportFile = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const result = parseImportText(await file.text());
+    if (result.ok) {
+      setSelectedImportIds(result.sessions.map((session) => session.sessionId));
+    }
+    event.target.value = "";
+  };
+
+  const toggleImportSelection = (sessionId) => {
+    setSelectedImportIds((current) =>
+      current.includes(sessionId)
+        ? current.filter((id) => id !== sessionId)
+        : [...current, sessionId],
+    );
+  };
+
+  const toggleExportSelection = (sessionId) => {
+    setSelectedExportIds((current) =>
+      current.includes(sessionId)
+        ? current.filter((id) => id !== sessionId)
+        : [...current, sessionId],
+    );
+  };
+
+  const handleExportSelected = () => {
+    const selectedSessions = visibleRecoverySessions.filter((session) =>
+      selectedExportIds.includes(session.sessionId),
+    );
+    exportSessions(selectedSessions);
+  };
+
+  const handleImportSelected = () => {
+    importSessions({
+      selectedSessionIds: selectedImportIds,
+      strategy: importStrategy,
+    });
+    setSelectedImportIds([]);
   };
 
   // 🔥 FIX: Do not render dynamic UI until hydration is complete to prevent SSR crashes
@@ -179,6 +238,90 @@ const SessionRecovery = () => {
                   </button>
                 )}
               </div>
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <button
+                  type="button"
+                  onClick={() => exportSessions(visibleRecoverySessions)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  Export All
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportSelected}
+                  disabled={selectedExportIds.length === 0}
+                  className="bg-emerald-100 dark:bg-emerald-900/50 hover:bg-emerald-200 dark:hover:bg-emerald-900 disabled:bg-gray-100 disabled:text-gray-400 text-emerald-800 dark:text-emerald-100 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  Export Selected
+                </button>
+                <label className="cursor-pointer bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-800 dark:text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors">
+                  Import Sessions
+                  <input
+                    type="file"
+                    accept="application/json,.json"
+                    onChange={handleImportFile}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+              {(statusMessage || importError) && (
+                <p className={`mb-3 rounded-lg px-3 py-2 text-sm ${importError ? 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'}`}>
+                  {importError || statusMessage}
+                </p>
+              )}
+              {importPreview && (
+                <div className="mb-4 rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-semibold text-blue-900 dark:text-blue-100">
+                        Previewing {importPreview.sessions.length} imported session{importPreview.sessions.length === 1 ? '' : 's'}
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        Exported {new Date(importPreview.exportedAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <select
+                      value={importStrategy}
+                      onChange={(event) => setImportStrategy(event.target.value)}
+                      className="rounded-md border border-blue-200 bg-white px-2 py-1 text-sm text-blue-950 dark:border-blue-900 dark:bg-slate-900 dark:text-blue-100"
+                    >
+                      <option value="skip">Skip duplicates</option>
+                      <option value="replace">Replace duplicates</option>
+                      <option value="keep-both">Keep both copies</option>
+                      <option value="rename">Rename imported</option>
+                    </select>
+                  </div>
+                  <div className="mt-3 max-h-40 space-y-2 overflow-y-auto">
+                    {importPreview.sessions.map((session) => (
+                      <label key={session.sessionId} className="flex items-center gap-2 text-sm text-blue-950 dark:text-blue-100">
+                        <input
+                          type="checkbox"
+                          checked={selectedImportIds.includes(session.sessionId)}
+                          onChange={() => toggleImportSelection(session.sessionId)}
+                        />
+                        <span className="truncate">{session.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleImportSelected}
+                      disabled={selectedImportIds.length === 0}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      Import Selected
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearImportPreview}
+                      className="bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-200 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                 {visibleRecoverySessions.map((session) => {
                   const updated = new Date(session.updatedAt || session.lastUpdated);
@@ -188,7 +331,15 @@ const SessionRecovery = () => {
                   return (
                     <div key={session.sessionId} className="rounded-lg border border-gray-200 dark:border-slate-700 p-3">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedExportIds.includes(session.sessionId)}
+                            onChange={() => toggleExportSelection(session.sessionId)}
+                            className="mt-1"
+                            aria-label={`Select ${session.name} for export`}
+                          />
+                          <div className="min-w-0">
                           {isRenaming ? (
                             <div className="flex gap-2">
                               <input
@@ -212,6 +363,7 @@ const SessionRecovery = () => {
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             Updated {Number.isNaN(updated.getTime()) ? 'recently' : updated.toLocaleString()}
                           </p>
+                          </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <button
@@ -221,6 +373,13 @@ const SessionRecovery = () => {
                             className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
                           >
                             Restore
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => exportSessions([session])}
+                            className="bg-emerald-100 dark:bg-emerald-900/50 hover:bg-emerald-200 dark:hover:bg-emerald-900 text-emerald-800 dark:text-emerald-100 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                          >
+                            Export
                           </button>
                           <button
                             type="button"
