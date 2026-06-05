@@ -555,7 +555,6 @@ const useEventRegistration = (eventIdParam) => {
           additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
           priority: formData.priority,
           eventId: parseInt(eventId),
-          userId: user.id,
         },
         token
       );
@@ -574,7 +573,6 @@ const useEventRegistration = (eventIdParam) => {
           ...formData,
           additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
           eventId: parseInt(eventId),
-          userId: user.id,
         };
 
         const success = await pushToQueue(
