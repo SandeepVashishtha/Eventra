@@ -498,8 +498,8 @@ const HackathonHub = () => {
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${showFilters
-                    ? "bg-primary text-white border-primary shadow-glow-sm"
-                    : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 shadow-sm dark:shadow-none"
+                  ? "bg-primary text-white border-primary shadow-glow-sm"
+                  : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 shadow-sm dark:shadow-none"
                   }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -601,8 +601,8 @@ const HackathonHub = () => {
                           key={tag}
                           onClick={() => handleTagSelect(tag)}
                           className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${selectedTags.includes(tag)
-                              ? "bg-primary text-white border-primary shadow-glow-sm"
-                              : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 hover:text-primary shadow-sm dark:shadow-none"
+                            ? "bg-primary text-white border-primary shadow-glow-sm"
+                            : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 hover:text-primary shadow-sm dark:shadow-none"
                             }`}
                         >
                           {tag}
@@ -634,8 +634,8 @@ const HackathonHub = () => {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${activeTab === tab.key
-                    ? "bg-gradient-to-r from-primary via-primary to-secondary text-white border-primary/50 shadow-glow-sm scale-105"
-                    : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/30 hover:text-primary shadow-sm dark:shadow-none"
+                  ? "bg-gradient-to-r from-primary via-primary to-secondary text-white border-primary/50 shadow-glow-sm scale-105"
+                  : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/30 hover:text-primary shadow-sm dark:shadow-none"
                   }`}
               >
                 {tab.label}
