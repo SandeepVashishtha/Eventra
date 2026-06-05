@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { authService } from "../../services/authService";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { ROLES } from "../../config/roles";
 import { useAuth } from "../../context/AuthContext";
@@ -243,8 +244,7 @@ const SignupForm = () => {
       return;
     }
     try {
-      const signupEndpoint = API_ENDPOINTS.AUTH.REGISTER || API_ENDPOINTS.AUTH.SIGNUP;
-      const response = await apiUtils.post(signupEndpoint, {
+      const response = await authService.register({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
