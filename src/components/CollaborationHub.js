@@ -2,6 +2,7 @@ import StatusBadge from "./common/StatusBadge";
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import useDebounce from '../hooks/useDebounce.js';
 import { toast } from 'react-toastify';
 import './components.css';
 import CharacterCounter from "../../components/common/CharacterCounter";
@@ -15,6 +16,7 @@ const CollaborationHub = () => {
   const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState('opportunities');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const mockMaterials = [
     { id: 'slides-1', title: 'Tech Summit 2025 Keynote Presentation', type: 'ppt', size: '14.2 MB', url: '#' },
@@ -205,7 +207,7 @@ const CollaborationHub = () => {
   };
 
   // Filtering opportunities dynamically
-  const query = searchQuery.toLowerCase();
+  const query = debouncedSearchQuery.toLowerCase();
 
   const filteredOpportunities = collaborationOpportunities.filter((opp) => {
     const matchesSearch =

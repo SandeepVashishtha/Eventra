@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import useDebounce from "../../hooks/useDebounce.js";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
@@ -67,6 +68,7 @@ export default function UserDashboard() {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [filterType, setFilterType] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [greeting, setGreeting] = useState("");
@@ -140,7 +142,7 @@ export default function UserDashboard() {
 
   const filteredData = useMemo(() =>
     MOCK_DATA.filter(item => {
-      const matchSearch = (item.title || "").toLowerCase().includes(searchQuery.toLowerCase());
+      const matchSearch = (item.title || "").toLowerCase().includes(debouncedSearchQuery.toLowerCase());
       const matchType = filterType === "All" || item.type === filterType;
       const matchStatus = filterStatus === "All"
         || item.status === filterStatus
@@ -152,7 +154,7 @@ export default function UserDashboard() {
       if (!b.date) return -1;
       return new Date(b.date) - new Date(a.date);
     }),
-  [searchQuery, filterType, filterStatus]);
+  [debouncedSearchQuery, filterType, filterStatus]);
 
   const notifications = [
     { id: 1, text: "React Conference 2025 registration opens soon", time: "2h ago", unread: true },
