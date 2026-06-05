@@ -257,20 +257,23 @@ const AdminDashboard = () => {
   }, []);
 
   useEffect(() => {
+    if (!isAdmin) return;
     loadStats();
-  }, [loadStats]);
+  }, [loadStats, isAdmin]);
 
   useEffect(() => {
+    if (!isAdmin) return;
     if (activeTab === "users") {
       loadUsers(usersPage, searchUser);
     }
-  }, [activeTab, usersPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, usersPage, isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (!isAdmin) return;
     if (activeTab === "events") {
       loadEvents(eventsPage, searchEvent);
     }
-  }, [activeTab, eventsPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, eventsPage, isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearchUser = (value) => {
     setSearchUser(value);
