@@ -3,7 +3,9 @@ import {
   buildInteractionProfile,
   buildPersonalizedRecommendations,
   calculateRecommendationScore,
+  getRecommendationTagCacheStats,
   getTrendingEventsForArea,
+  resetRecommendationTagCache,
 } from "../src/utils/recommendationEngine.js";
 
 const events = [
@@ -87,6 +89,30 @@ const recommendations = buildPersonalizedRecommendations({
 assert(!recommendations.some((event) => event.id === 1), "registered events should be excluded");
 assert.equal(recommendations[0].id, 2, "bookmarked/category-matching event should rank first");
 assert(recommendations[0].recommendationReasons.length > 0);
+
+resetRecommendationTagCache();
+buildPersonalizedRecommendations({
+  events,
+  registeredEvents: [events[0]],
+  bookmarkedEvents: [events[1]],
+});
+const firstCacheStats = getRecommendationTagCacheStats();
+assert.deepEqual(
+  firstCacheStats.keys,
+  ["1", "2"],
+  "first recommendation build should cache interacted event tags",
+);
+
+buildPersonalizedRecommendations({
+  events,
+  registeredEvents: [events[0]],
+  bookmarkedEvents: [events[1]],
+});
+assert.deepEqual(
+  getRecommendationTagCacheStats(),
+  firstCacheStats,
+  "subsequent builds should reuse the tag cache instead of clearing it",
+);
 
 const localTrending = getTrendingEventsForArea(events, "San Francisco", 2);
 assert.equal(localTrending[0].id, 1);

@@ -85,6 +85,20 @@ const _getCachedTags = (event) => {
   return tags;
 };
 
+const clearTagCache = () => {
+  _tagCache.clear();
+  _cacheOrder.length = 0;
+};
+
+export const getRecommendationTagCacheStats = () => ({
+  size: _tagCache.size,
+  keys: [..._cacheOrder],
+});
+
+export const resetRecommendationTagCache = () => {
+  clearTagCache();
+};
+
 const getSimilarityScore = (candidate, interactedEvents) => {
   if (!interactedEvents.length) return 0;
 
