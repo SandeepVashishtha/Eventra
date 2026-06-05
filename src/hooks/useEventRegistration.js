@@ -17,7 +17,8 @@
  *   and opens a conflict-resolution modal when one is found.
  * - Checks live event capacity immediately before submission and routes the
  *   request to the waitlist endpoint when the event is full.
- * - Uses a module-level `Map` lock (`registrationLocks`) and a ref
+ * - Uses a shared module-level `Map` lock (`registrationLocks` from
+ *   `utils/registrationLocks`) and a ref
  *   (`isSubmittingRef`) to guard against duplicate concurrent submissions.
  * - Falls back to an offline queue (`offlineQueue`) when a network/timeout
  *   error is detected, so the registration syncs automatically once
@@ -44,11 +45,9 @@ import {
 import { pushToQueue } from "../../utils/offlineQueue";
 import { logError } from "../../utils/errorLogger";
 import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
+import registrationLocks from "../../utils/registrationLocks";
 
 export const MAX_NOTES_CHARS = 500;
-
-// Registration lock map to prevent concurrent registrations for the same event
-const registrationLocks = new Map();
 
 /**
  * Derives a user-facing error message from a failed registration API response.

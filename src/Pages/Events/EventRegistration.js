@@ -39,8 +39,34 @@ import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 import { SkeletonEventCard, WaitlistSkeleton, WaitlistPositionSkeleton } from "../../components/common/SkeletonLoaders";
 import { logger } from "../../utils/logger";
 import { validate } from "../../validation";
+import { getCacheAgeLabel, getCachedEventDetail, saveCachedEventDetail } from "../../utils/offlineEventCache";
+import { pushToQueue } from "../../utils/offlineQueue";
+import registrationLocks from "../../utils/registrationLocks";
 
 const MAX_NOTES_CHARS = 500;
+
+const getRegistrationFailureMessage = (error) => {
+  const message = error?.data?.message || error?.data?.error || error?.message || "";
+  const normalizedMessage = message.toLowerCase();
+
+  if (error?.status === 409 && /already registered|duplicate/.test(normalizedMessage)) {
+    return "You are already registered for this event.";
+  }
+
+  if (
+    error?.status === 409 ||
+    error?.status === 423 ||
+    /capacity|full|sold out|max(?:imum)? capacity/.test(normalizedMessage)
+  ) {
+    return "This event has reached maximum capacity. Please choose another event.";
+  }
+
+  if (/conflict/.test(normalizedMessage)) {
+    return "Registration could not be completed because the server reported a conflict.";
+  }
+
+  return message || "Registration failed. Please try again.";
+};
 
 const EventRegistration = () => {
   const { t } = useTranslation();
@@ -60,7 +86,6 @@ const EventRegistration = () => {
   const [registered, setRegistered] = useState(false);
   const [waitlistPosition, setWaitlistPosition] = useState(-1);
   const isSubmittingRef = useRef(false);
-  const registrationLocksRef = useRef(new Map());
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -263,7 +288,7 @@ const EventRegistration = () => {
 
     setShowConflictModal(false);
 
-    registrationLocksRef.current.set(eventId, true);
+    registrationLocks.set(eventId, true);
     isSubmittingRef.current = true;
     setSubmitting(true);
 
@@ -283,7 +308,7 @@ const EventRegistration = () => {
         toast.error(err.message || t("eventRegistration.toastRegistrationError"));
         return;
       } finally {
-        registrationLocksRef.current.delete(eventId);
+        registrationLocks.delete(eventId);
         isSubmittingRef.current = false;
         setSubmitting(false);
       }
@@ -369,7 +394,7 @@ const EventRegistration = () => {
 
       toast.error(failureMessage);
     } finally {
-      registrationLocksRef.current.delete(eventId);
+      registrationLocks.delete(eventId);
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
@@ -409,7 +434,7 @@ const EventRegistration = () => {
       return;
     }
 
-    if (registrationLocksRef.current.has(eventId)) {
+    if (registrationLocks.has(eventId)) {
       toast.error(t("eventRegistration.toastAnotherInProgress"));
       return;
     }
