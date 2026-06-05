@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
 import { darkTheme } from "../../components/styles/theme";
+import { safeParseJson } from "../../utils/jsonUtils";
 import { SkeletonBlock } from "../../components/common/SkeletonLoaders";
 const CountUp = CountUpLib.default || CountUpLib;
 
@@ -13,12 +14,8 @@ const CountUp = CountUpLib.default || CountUpLib;
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
 
 const getStoredSearchHistory = () => {
-  try {
-    const stored = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || "[]");
-    return Array.isArray(stored) ? stored.slice(0, 5) : [];
-  } catch {
-    return [];
-  }
+  const stored = safeParseJson(localStorage.getItem(SEARCH_HISTORY_KEY), []);
+  return Array.isArray(stored) ? stored.slice(0, 5) : [];
 };
 
 const TRENDING_SEARCHES = [
@@ -152,7 +149,7 @@ export default function EventHero({
           .
         </p>
   
-        <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0">
+        <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0 relative z-50">
           <ModernSearchInput
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}

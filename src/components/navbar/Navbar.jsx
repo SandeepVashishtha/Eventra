@@ -5,6 +5,7 @@ import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
 import AuthButtons from "./AuthButtons";
+import InstallAppButton from "../common/InstallAppButton";
 import ProfileMenu from "./ProfileMenu";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
@@ -89,7 +90,10 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                   src="/favicon.png"
                   alt="Eventra Brand Logo"
                   className="block h-full w-full object-contain"
-                  loading="lazy"
+                  loading="eager"
+                  decoding="async"
+                  width="36"
+                  height="36"
                 />
               </div>
               <h1 className="text-lg font-heading font-bold text-text tracking-tight">Eventra</h1>
@@ -109,6 +113,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               ) : (
                 <AuthButtons />
               )}
+              <InstallAppButton />
               <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             </div>
 

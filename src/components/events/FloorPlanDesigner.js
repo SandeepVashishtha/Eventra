@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle } from "lucide-react";
+import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle, Undo2, Redo2 } from "lucide-react";
 import { toast } from "react-toastify";
 import ConfirmationModal from "../../common/ConfirmationModal";
 import ElementPalette from "./FloorPlan/ElementPalette";
@@ -13,6 +13,7 @@ import "./FloorPlanDesigner.css";
 const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const navigate = useNavigate();
   const [elements, setElements] = useState([]);
+  const [history, setHistory] = useState({ past: [], future: [] });
   const [lastSavedElementsStr, setLastSavedElementsStr] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -37,26 +38,93 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const isPanningRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const elementStartRef = useRef({ x: 0, y: 0 });
+  const dragStartElementsRef = useRef([]);
+  const dragMovedRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
+  const elementsRef = useRef([]);
   const elementsMapRef = useRef(new Map());
+  const historyLimit = 50;
 
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => { snapToGridRef.current = snapToGrid; }, [snapToGrid]);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
-  useEffect(() => { elementsMapRef.current = new Map(elements.map((el) => [el.id, el])); }, [elements]);
+  useEffect(() => {
+    elementsRef.current = elements;
+    elementsMapRef.current = new Map(elements.map((el) => [el.id, el]));
+  }, [elements]);
+
+  const commitElementsChange = useCallback((nextElements) => {
+    setElements((currentElements) => {
+      const resolvedNextElements =
+        typeof nextElements === "function" ? nextElements(currentElements) : nextElements;
+
+      if (JSON.stringify(currentElements) === JSON.stringify(resolvedNextElements)) {
+        return currentElements;
+      }
+
+      setHistory((currentHistory) => ({
+        past: [...currentHistory.past, currentElements].slice(-historyLimit),
+        future: []
+      }));
+
+      return resolvedNextElements;
+    });
+  }, []);
+
+  const undo = useCallback(() => {
+    setHistory((currentHistory) => {
+      if (currentHistory.past.length === 0) return currentHistory;
+
+      const previousElements = currentHistory.past[currentHistory.past.length - 1];
+      const currentElements = elementsRef.current;
+      const previousIds = new Set(previousElements.map((el) => el.id));
+
+      if (selectedIdRef.current && !previousIds.has(selectedIdRef.current)) {
+        setSelectedId(null);
+      }
+
+      setElements(previousElements);
+
+      return {
+        past: currentHistory.past.slice(0, -1),
+        future: [currentElements, ...currentHistory.future].slice(0, historyLimit)
+      };
+    });
+  }, []);
+
+  const redo = useCallback(() => {
+    setHistory((currentHistory) => {
+      if (currentHistory.future.length === 0) return currentHistory;
+
+      const nextElements = currentHistory.future[0];
+      const currentElements = elementsRef.current;
+      const nextIds = new Set(nextElements.map((el) => el.id));
+
+      if (selectedIdRef.current && !nextIds.has(selectedIdRef.current)) {
+        setSelectedId(null);
+      }
+
+      setElements(nextElements);
+
+      return {
+        past: [...currentHistory.past, currentElements].slice(-historyLimit),
+        future: currentHistory.future.slice(1)
+      };
+    });
+  }, []);
 
   const updateSelectedElement = useCallback((key, value) => {
     const updates = typeof key === "object" ? key : { [key]: value };
     const currentSelectedId = selectedIdRef.current;
-    setElements((prev) =>
-      prev.map((el) => {
+    commitElementsChange((currentElements) =>
+      currentElements.map((el) => {
         if (el.id === currentSelectedId) {
           let updated = { ...el, ...updates };
           if ("seatsCount" in updates) {
             const seatsCountVal = updates.seatsCount;
             const freshAssigned = {};
             Object.keys(el.assignedAttendees).forEach((k) => {
-              if (parseInt(k) < seatsCountVal) {
+              if (parseInt(k, 10) < seatsCountVal) {
                 freshAssigned[k] = el.assignedAttendees[k];
               }
             });
@@ -67,17 +135,18 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         return el;
       })
     );
-  }, []);
+  }, [commitElementsChange]);
 
   const handleSeatAssign = (seatIndex, attendeeName) => {
-    setElements(elements.map(el => {
+    const currentSelectedId = selectedIdRef.current;
+    commitElementsChange((currentElements) => currentElements.map(el => {
       const nextAssignments = { ...el.assignedAttendees };
       Object.keys(nextAssignments).forEach(k => {
         if (nextAssignments[k] === attendeeName) {
           delete nextAssignments[k];
         }
       });
-      if (el.id === selectedId) {
+      if (el.id === currentSelectedId) {
         if (attendeeName !== "") {
           nextAssignments[seatIndex] = attendeeName;
         } else {
@@ -103,6 +172,8 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       initialElements = PRESETS.banquet;
     }
     setElements(initialElements);
+    setHistory({ past: [], future: [] });
+    setSelectedId(null);
     setLastSavedElementsStr(JSON.stringify(initialElements));
   }, [eventId]);
 
@@ -140,7 +211,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
           <p className="text-xs text-gray-500 mb-3">Current changes will be overwritten.</p>
           <div className="flex gap-2">
             <button onClick={() => {
-              setElements(PRESETS[presetName]);
+              commitElementsChange(PRESETS[presetName]);
               setSelectedId(null);
               toast.success(`${presetName} layout loaded!`);
               announce(`${presetName} layout loaded!`);
@@ -167,7 +238,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       seatsCount: type.includes("table") ? 6 : 0,
       assignedAttendees: {}
     };
-    setElements([...elements, newElement]);
+    commitElementsChange((currentElements) => [...currentElements, newElement]);
     setSelectedId(id);
     announce(`New ${type.replace("-", " ")} added at position X 350, Y 350. Selected.`);
   };
@@ -176,7 +247,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
   const confirmDeleteSelected = () => {
     if (selectedId) {
-      setElements(elements.filter(el => el.id !== selectedId));
+      commitElementsChange((currentElements) => currentElements.filter(el => el.id !== selectedId));
       setSelectedId(null);
       toast.success("Element deleted successfully!");
       announce("Element deleted successfully.");
@@ -185,7 +256,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   };
 
   const handleImport = (importedData) => {
-    setElements(importedData);
+    commitElementsChange(importedData);
     setSelectedId(null);
     toast.success("Floor plan layout imported successfully!");
   };
@@ -193,6 +264,21 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT")) return;
+      if (e.ctrlKey || e.metaKey) {
+        const key = e.key.toLowerCase();
+        if (key === "z" && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+          announce("Undid last floor plan change.");
+          return;
+        }
+        if (key === "y" || (key === "z" && e.shiftKey)) {
+          e.preventDefault();
+          redo();
+          announce("Redid last floor plan change.");
+          return;
+        }
+      }
       if (!selectedIdRef.current) return;
       const activeEl = elementsMapRef.current.get(selectedIdRef.current);
       if (!activeEl) return;
@@ -257,7 +343,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [updateSelectedElement, announce, handleDeleteSelected, setSelectedId]);
+  }, [updateSelectedElement, announce, handleDeleteSelected, setSelectedId, undo, redo]);
 
   const handleMouseDown = useCallback((e, elementId = null) => {
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
@@ -269,6 +355,8 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       setSelectedId(elementId);
       selectedIdRef.current = elementId;
       isDraggingRef.current = true;
+      dragStartElementsRef.current = elementsRef.current;
+      dragMovedRef.current = false;
       setElements(prev => {
         const el = prev.find(item => item.id === elementId);
         if (el) {
@@ -302,14 +390,22 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         }
         newX = Math.max(10, Math.min(990, newX));
         newY = Math.max(10, Math.min(990, newY));
+        dragMovedRef.current = true;
         setElements(prev => prev.map(el => el.id === currentSelectedId ? { ...el, x: newX, y: newY } : el));
       }
     });
   }, []);
 
   const handleMouseUp = useCallback(() => {
+    if (isDraggingRef.current && dragMovedRef.current) {
+      setHistory((currentHistory) => ({
+        past: [...currentHistory.past, dragStartElementsRef.current].slice(-historyLimit),
+        future: []
+      }));
+    }
     isDraggingRef.current = false;
     isPanningRef.current = false;
+    dragMovedRef.current = false;
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -342,11 +438,23 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       const collisions = new Map();
+      const GRID_SIZE = 100;
+      const buckets = new Map();
       for (let i = 0; i < elements.length; i++) {
-        for (let j = i + 1; j < elements.length; j++) {
-          if (checkCollision(elements[i], elements[j])) {
-            collisions.set(elements[i].id, true);
-            collisions.set(elements[j].id, true);
+        const el = elements[i];
+        const bx = Math.floor(el.x / GRID_SIZE);
+        const by = Math.floor(el.y / GRID_SIZE);
+        const key = `${bx},${by}`;
+        if (!buckets.has(key)) buckets.set(key, []);
+        buckets.get(key).push(el);
+      }
+      for (const bucket of buckets.values()) {
+        for (let i = 0; i < bucket.length; i++) {
+          for (let j = i + 1; j < bucket.length; j++) {
+            if (checkCollision(bucket[i], bucket[j])) {
+              collisions.set(bucket[i].id, true);
+              collisions.set(bucket[j].id, true);
+            }
           }
         }
       }
@@ -370,6 +478,30 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
           </div>
         </div>
         <div className="fp-topbar-actions">
+          <button
+            onClick={() => {
+              undo();
+              announce("Undid last floor plan change.");
+            }}
+            className="fp-btn fp-btn-secondary"
+            disabled={history.past.length === 0}
+            title="Undo (Ctrl+Z)"
+            aria-label="Undo last floor plan change"
+          >
+            <Undo2 size={16} /> Undo
+          </button>
+          <button
+            onClick={() => {
+              redo();
+              announce("Redid last floor plan change.");
+            }}
+            className="fp-btn fp-btn-secondary"
+            disabled={history.future.length === 0}
+            title="Redo (Ctrl+Y)"
+            aria-label="Redo last floor plan change"
+          >
+            <Redo2 size={16} /> Redo
+          </button>
           <div className="hidden md:flex items-center gap-1.5 bg-gray-900/60 border border-gray-800/80 px-2.5 py-1.5 rounded-lg mr-2">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Presets:</span>
             <button onClick={() => loadPreset("empty")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Clear</button>

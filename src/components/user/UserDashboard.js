@@ -7,7 +7,8 @@ import {
   LogOut, User, Plus, Search, X
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect, useMemo, Component } from "react";
+import { useState, useEffect, useMemo } from "react";
+import ErrorBoundary from "../common/ErrorBoundary";
 import { useAuth } from "../../context/AuthContext";
 import StatusBadge from "../common/StatusBadge";
 import EventsTab from "./EventsTab";
@@ -24,36 +25,7 @@ import {
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
-
-// ✅ FIX 1: Define FeatureErrorBoundary — was used but never defined/imported
-class FeatureErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, info) {
-    console.error("FeatureErrorBoundary caught:", error, info);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="ud-error-state">
-          <p>Something went wrong loading this section.</p>
-          <button onClick={() => this.setState({ hasError: false, error: null })}>
-            Retry
-          </button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
+import OfflineIndicator from "../common/OfflineIndicator";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 24 },
@@ -116,8 +88,6 @@ export default function UserDashboard() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const safeData = Array.isArray(MOCK_DATA) ? MOCK_DATA : [];
-
   const derivedData = useMemo(() => {
     let eventsTotal = 0;
     let eventsCreated = 0;
@@ -164,7 +134,7 @@ export default function UserDashboard() {
       upcomingHackathons,
       activeProjects,
     };
-  }, [MOCK_DATA]);
+  }, []);
 
   const { stats, upcomingEvents, upcomingHackathons, activeProjects } = derivedData;
 
@@ -182,7 +152,7 @@ export default function UserDashboard() {
       if (!b.date) return -1;
       return new Date(b.date) - new Date(a.date);
     }),
-  [MOCK_DATA, searchQuery, filterType, filterStatus]);
+  [searchQuery, filterType, filterStatus]);
 
   const notifications = [
     { id: 1, text: "React Conference 2025 registration opens soon", time: "2h ago", unread: true },
@@ -193,6 +163,7 @@ export default function UserDashboard() {
 
   return (
     <div className="ud-root">
+      <OfflineIndicator />
       {/* Sidebar */}
       <aside className="ud-sidebar">
         <div className="ud-sidebar-brand">
@@ -448,45 +419,45 @@ export default function UserDashboard() {
           {/* Events tab */}
           {activeTab === "events" && (
             <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <FeatureErrorBoundary>
+              <ErrorBoundary level="feature">
                 <EventsTab
                   hostedEvents={MOCK_DATA.filter(d => d.type === "Event" && d.participationType)}
                   onViewTicket={setSelectedTicketEvent}
                 />
-              </FeatureErrorBoundary>
+              </ErrorBoundary>
             </motion.div>
           )}
 
           {/* Hackathons tab */}
           {activeTab === "hackathons" && (
             <motion.div key="hackathons" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <FeatureErrorBoundary>
+              <ErrorBoundary level="feature">
                 <HackathonsTab
                   hackathons={MOCK_DATA.filter(d => d.type === "Hackathon")}
                   loading={loading}
                   fadeUp={fadeUp(prefersReducedMotion)}
                 />
-              </FeatureErrorBoundary>
+              </ErrorBoundary>
             </motion.div>
           )}
 
           {/* Projects tab */}
           {activeTab === "projects" && (
             <motion.div key="projects" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <FeatureErrorBoundary>
+              <ErrorBoundary level="feature">
                 <ProjectsTab
                   projects={MOCK_DATA.filter(d => d.type === "Project")}
                   loading={loading}
                   fadeUp={fadeUp(prefersReducedMotion)}
                 />
-              </FeatureErrorBoundary>
+              </ErrorBoundary>
             </motion.div>
           )}
 
           {/* Registrations tab */}
           {activeTab === "registrations" && (
             <motion.div key="registrations" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <FeatureErrorBoundary>
+              <ErrorBoundary level="feature">
                 <RegistrationsTab
                   filteredData={filteredData}
                   loading={loading}
@@ -496,7 +467,7 @@ export default function UserDashboard() {
                   setFilterStatus={setFilterStatus}
                   setSelectedTicketEvent={setSelectedTicketEvent}
                 />
-              </FeatureErrorBoundary>
+              </ErrorBoundary>
             </motion.div>
           )}
         </AnimatePresence>
