@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { useSearchParams, useLocation } from "react-router-dom";
-import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid"; 
+import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import FeedbackButton from "../../components/FeedbackButton";
@@ -38,8 +38,8 @@ const renderCardSection = (
   onClearSearch
 ) => {
   if (isLoading) {
-  return <ExploreEventsSkeleton />;
-}
+    return <ExploreEventsSkeleton />;
+  }
 
   if (loadError) {
     return (
@@ -69,16 +69,15 @@ const renderCardSection = (
       </div>
     );
   }
-  if (viewMode === "grid" && paginatedEvents.length > 20) {
+  if (viewMode === "grid" && paginatedEvents.length > 50) {
     return <VirtualizedEventGrid events={paginatedEvents} />;
   }
   return (
     <div
-      className={`grid gap-6 ${
-        viewMode === "grid"
+      className={`grid gap-6 ${viewMode === "grid"
           ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
           : "grid-cols-1 max-w-4xl mx-auto"
-      }`}
+        }`}
     >
       {paginatedEvents.map((event) => (
         <EventCard key={event.id} event={event} />
@@ -151,8 +150,8 @@ const EventsPage = () => {
     const advancedFilters = urlAdvancedFilters
       ? decodeAdvancedFilters(urlAdvancedFilters)
       : normalizeAdvancedFilters(
-          savedFilters.advancedFilters || getDefaultFilters()
-        );
+        savedFilters.advancedFilters || getDefaultFilters()
+      );
     const initialSearch = routeSearchQuery || savedFilters.searchQuery || "";
 
     if (initialSearch) {
@@ -317,15 +316,15 @@ const EventsPage = () => {
         />
 
         <ErrorBoundary level="section" label="Events">
-     {renderCardSection(
-  isLoading,
-  listing.loadError,
-  listing.fetchEvents,
-  listing.paginatedEvents,
-  listing.viewMode,
-  listing.searchQuery,
-  clearSearchAndFilters
-)}
+          {renderCardSection(
+            isLoading,
+            listing.loadError,
+            listing.fetchEvents,
+            listing.paginatedEvents,
+            listing.viewMode,
+            listing.searchQuery,
+            clearSearchAndFilters
+          )}
 
           {!listing.isLoading && listing.totalPages > 1 && (
             <div className="mt-8 flex justify-center">
