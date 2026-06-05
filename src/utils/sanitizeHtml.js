@@ -91,7 +91,7 @@ const getDOMPurify = () => {
 export function sanitizeHtml(dirty) {
   if (!dirty || typeof dirty !== "string") return "";
   const purifier = getDOMPurify();
-  if (!purifier) return dirty;
+  if (!purifier) return "";
   return purifier.sanitize(dirty, PURIFY_CONFIG);
 }
 
