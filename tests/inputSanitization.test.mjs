@@ -19,8 +19,28 @@ assert.strictEqual(sanitizeSearchQuery("hello;drop table"), "hellodrop table", "
 assert.strictEqual(sanitizeSearchQuery("test' OR '1'='1"), "test OR 1=1", "Single quotes should be removed, equals and numbers remain");
 assert.strictEqual(sanitizeSearchQuery("<script>alert('xss')</script>"), "", "Script tag payloads should be removed");
 assert.strictEqual(sanitizeSearchQuery("<img src=x onerror=alert(1)>"), "", "Image onerror payloads should be removed");
-assert.strictEqual(sanitizeSearchQuery("<<test>>"), "test", "Malformed angle-bracket input should be neutralized");
-assert.strictEqual(sanitizeSearchQuery("test < raw > query"), "test raw query", "Raw angle brackets should be removed");
+assert.strictEqual(
+  sanitizeSearchQuery("<svg><animateTransform onbegin=alert(1)></animateTransform></svg>"),
+  "",
+  "SVG animation handlers should be removed"
+);
+assert.strictEqual(
+  sanitizeSearchQuery("<math><mtext><img src=x onerror=alert(1)></mtext></math> algebra"),
+  "algebra",
+  "MathML-based HTML payloads should be removed while preserving plain terms"
+);
+assert.strictEqual(
+  sanitizeSearchQuery('<a href="data:text/html,<script>alert(1)</script>">report</a>'),
+  "report",
+  "Data URI attributes should be stripped while preserving harmless link text"
+);
+assert.strictEqual(
+  sanitizeSearchQuery("data:text/html,<svg onload=alert(1)> report"),
+  "report",
+  "Raw data URI payloads should be removed from search text"
+);
+assert.strictEqual(sanitizeSearchQuery("<<test>>"), "", "Malformed angle-bracket input should be neutralized");
+assert.strictEqual(sanitizeSearchQuery("test < raw > query"), "test query", "Raw angle brackets should be removed");
 assert.strictEqual(sanitizeSearchQuery("events javascript:alert(1) today"), "events today", "Script fragments should be removed");
 assert.strictEqual(sanitizeSearchQuery("find <script>alert('xss')</script> workshops"), "find workshops", "Mixed safe and unsafe text should preserve safe terms");
 assert.strictEqual(sanitizeSearchQuery("test|grep"), "testgrep", "Pipes should be removed");

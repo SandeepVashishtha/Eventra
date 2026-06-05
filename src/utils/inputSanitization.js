@@ -1,10 +1,49 @@
-/* eslint-disable-next-line no-console */
+import createDOMPurify from "dompurify";
+
 /**
  * Input Sanitization Utilities
  *
  * Sanitize and validate user input to prevent injection attacks
  * and ensure data integrity across API boundaries.
  */
+
+const createPlainTextPurifier = () => {
+  if (typeof createDOMPurify?.sanitize === "function") {
+    return createDOMPurify;
+  }
+
+  const domWindow =
+    typeof window !== "undefined" && window?.document
+      ? window
+      : globalThis?.window?.document
+        ? globalThis.window
+        : null;
+
+  if (domWindow && typeof createDOMPurify === "function") {
+    return createDOMPurify(domWindow);
+  }
+
+  return null;
+};
+
+const stripHtmlToPlainText = (value) =>
+  value
+    .replace(/<\s*(script|style)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, " ")
+    .replace(/<[^>]*>/g, " ");
+
+const sanitizeHtmlToPlainText = (value) => {
+  const purifier = createPlainTextPurifier();
+
+  if (purifier?.sanitize) {
+    return purifier.sanitize(value, {
+      ALLOWED_TAGS: [],
+      ALLOWED_ATTR: [],
+      KEEP_CONTENT: false,
+    });
+  }
+
+  return stripHtmlToPlainText(value);
+};
 
 /**
  * Sanitize search query to prevent NoSQL injection attacks.
@@ -20,18 +59,11 @@ export const sanitizeSearchQuery = (query = '') => {
 
   const MAX_QUERY_LENGTH = 200;
 
-  let sanitized = query.trim();
+  let sanitized = sanitizeHtmlToPlainText(query.trim());
 
   sanitized = sanitized
-    // Strip <script> and <style> blocks using a non-backtracking approach.
-    // The previous regex used nested quantifiers causing catastrophic backtracking.
-    .replace(/<script\b[^>]*>/gi, ' ')
-    .replace(/<\/script\s*>/gi, ' ')
-    .replace(/<style\b[^>]*>/gi, ' ')
-    .replace(/<\/style\s*>/gi, ' ')
-    .replace(/<\s*\/?\s*(script|style)\b[^>]*>?/gi, ' ')
-    .replace(/<\s*(img|iframe|object|embed|svg|math|link|meta)\b[^>]*>?/gi, ' ')
     .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s<>]+)/gi, ' ')
+    .replace(/\bdata\s*:[^\s]+/gi, ' ')
     .replace(/\b(?:java|vb)script\s*:/gi, ' ')
     .replace(/\b(?:alert|confirm|prompt)\s*\([^)]*\)/gi, ' ')
     .replace(/[${}\[\];'`|\\/\n\r<>]/g, '')
@@ -86,7 +118,6 @@ export const validateSearchQuery = (query = '') => {
 export const prepareSafeSearchQuery = (rawQuery = '') => {
   const validation = validateSearchQuery(rawQuery);
   if (!validation.isValid) {
-    /* eslint-disable-next-line no-console */
     console.warn(`[Security] Invalid search query: ${validation.error}`);
     return '';
   }
