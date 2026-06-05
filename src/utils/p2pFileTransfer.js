@@ -300,18 +300,22 @@ export class P2PFileTransferCoordinator {
         }
       }, 2500);
 
+      let checkInterval;
+
       // Add a secondary connection safety timer of 5 seconds total
       const connectionSafetyTimeout = setTimeout(() => {
         if (this.currentState === "connecting" || this.currentState === "searching") {
           this.cleanup();
+          clearInterval(checkInterval);
           resolve(false); // WebRTC connection handshakes timed out, fallback to server
         } else if (this.currentState === "completed" || this.currentState === "transferring") {
+          clearInterval(checkInterval);
           resolve(true);
         }
       }, 5000);
 
       // Attach state listener check to resolve immediately if completed
-      const checkInterval = setInterval(() => {
+      checkInterval = setInterval(() => {
         if (this.currentState === "completed") {
           clearTimeout(searchTimeout);
           clearTimeout(connectionSafetyTimeout);
