@@ -168,11 +168,21 @@ async function handler(req, res) {
 
   try {
     // -----------------------------------------------------------------------
-    // Extract token from Authorization header (req.user populated by verifyAuth)
+    // Extract token from Authorization header or cookie (req.user populated
+    // by verifyAuth — the middleware already validated the user, so we trust
+    // either transport)
     // -----------------------------------------------------------------------
 
-    const authHeader = req.headers?.authorization || req.headers?.Authorization;
-    const token = extractToken(authHeader);
+    let token = extractToken(req.headers?.authorization || req.headers?.Authorization);
+
+    // Fall back to the token cookie used by login.js and signup.js
+    if (!token && req.cookies?.token) {
+      token = req.cookies.token;
+    } else if (!token && req.headers?.cookie) {
+      const cookies = req.headers.cookie.split(';').map(c => c.trim());
+      const tokenCookie = cookies.find(c => c.startsWith('token='));
+      if (tokenCookie) token = tokenCookie.substring(6);
+    }
 
     if (!token) {
       return corsResponse(req, res, 401, { 
@@ -197,9 +207,6 @@ async function handler(req, res) {
     );
 
     // -----------------------------------------------------------------------
-    // Return success response
-    // -----------------------------------------------------------------------
-
     return corsResponse(req, res, 200, {
       message: "Logged out successfully",
       timestamp: new Date().toISOString(),
