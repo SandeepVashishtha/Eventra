@@ -101,7 +101,7 @@ const AuthButtons = () => {
       <Link
         to="/signup"
         onMouseEnter={() => prefetchSignup()}
-        className="px-4 py-2 rounded-full text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-colors whitespace-nowrap shadow-none"
+        className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-all duration-200 whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
       >
         Get Started
       </Link>

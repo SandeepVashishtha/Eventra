@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react";
-import { useSearchParams, useLocation } from "react-router-dom"; // ✅ useLocation added here
+import { useSearchParams, useLocation } from "react-router-dom";
+import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid"; 
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import FeedbackButton from "../../components/FeedbackButton";
@@ -37,23 +38,8 @@ const renderCardSection = (
   onClearSearch
 ) => {
   if (isLoading) {
-    return (
-      <div>
-        <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-          Loading events...
-        </div>
-        <div
-          className="animate-pulse transition-all duration-300 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-          role="status"
-          aria-label="Loading events"
-        >
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <EventCardSkeleton key={`skeleton-${i}`} />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  return <ExploreEventsSkeleton />;
+}
 
   if (loadError) {
     return (
@@ -83,7 +69,9 @@ const renderCardSection = (
       </div>
     );
   }
-
+  if (viewMode === "grid" && paginatedEvents.length > 20) {
+    return <VirtualizedEventGrid events={paginatedEvents} />;
+  }
   return (
     <div
       className={`grid gap-6 ${
