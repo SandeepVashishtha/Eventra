@@ -314,6 +314,14 @@ export const API_ENDPOINTS = {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
   },
+  SESSION_RECOVERY: {
+    BASE: buildApiUrl("/api/session-recovery"),
+    SESSION: (sessionId) =>
+      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}`),
+    RESTORE: (sessionId) =>
+      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}/restore`),
+    CLEANUP_EXPIRED: buildApiUrl("/api/session-recovery/expired"),
+  },
   TICKETS: {
     VALIDATE: buildApiUrl("/api/tickets/validate"),
     CHECK_IN: buildApiUrl("/api/tickets/checkin"),
@@ -330,6 +338,7 @@ export const API_ENDPOINTS = {
     EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
     USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
     PHONE: buildApiUrl("/api/validate/phone"),
+    CONTACT: buildApiUrl("/api/contact"),
   },
 };
 
