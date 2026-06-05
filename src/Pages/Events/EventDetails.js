@@ -1,7 +1,6 @@
 import "./EventDetails.print.css";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
-import React from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
@@ -15,7 +14,6 @@ import { useMyEvents } from "../../context/MyEventsContext";
 import { logger } from "../../utils/logger";
 import ReminderControls from "../../components/reminders/ReminderControls";
 import CertificateDownload from "../../components/CertificateDownload";
-import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
@@ -444,6 +442,10 @@ const EventDetails = () => {
               </Link>
             </div>
           </div>
+
+          <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <ReminderControls event={event} canSetReminder={canSetReminder} />
+          </section>
 
           {/* Main Grid */}
           <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] items-start">

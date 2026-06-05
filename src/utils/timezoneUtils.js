@@ -129,18 +129,9 @@ export const parseEventToUTC = (dateStr, timeStr, timezone) => {
   const [year, month, day] = normalizedDate.split('-').map(Number);
   const { hours, minutes } = parsedTime;
 
-  // Build an ISO string with the local date/time and force-interpret it in the
-  // target timezone by using the "en" locale with the explicit timeZone option.
-  // We do this by constructing the date in UTC-0 first and then calculating
-  // the actual UTC moment by comparing what the formatter says vs UTC midnight.
-  //
-  // Strategy: use Date.UTC as a base, then apply the timezone offset correction
-  // by comparing the Intl-formatted date back to the numeric value.
-  try {
-    // Construct a UTC candidate by treating the local time as-if UTC
-    const utcCandidate = Date.UTC(year, month - 1, day, hours, minutes, 0, 0);
+  const targetLocalMs = Date.UTC(year, month - 1, day, hours, minutes, 0, 0);
 
-    // Now find what date/time the UTC candidate looks like in the target tz
+  try {
     const formatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: tz,
       year: 'numeric',
@@ -151,22 +142,29 @@ export const parseEventToUTC = (dateStr, timeStr, timezone) => {
       hour12: false,
     });
 
-    const parts = Object.fromEntries(
-      formatter.formatToParts(utcCandidate).map((p) => [p.type, p.value])
-    );
+    let utcCandidate = targetLocalMs;
 
-    const tzYear = parseInt(parts.year, 10);
-    const tzMonth = parseInt(parts.month, 10) - 1;
-    const tzDay = parseInt(parts.day, 10);
-    const tzHour = parseInt(parts.hour, 10) % 24; // handle "24" edge case
-    const tzMinute = parseInt(parts.minute, 10);
+    // Resolve "wall clock in timezone" to UTC. One pass is enough for most
+    // offsets; a few iterations keeps DST boundaries honest when the offset
+    // changes between the UTC guess and the resolved instant.
+    for (let i = 0; i < 4; i += 1) {
+      const parts = Object.fromEntries(
+        formatter.formatToParts(utcCandidate).map((p) => [p.type, p.value])
+      );
 
-    // Offset in ms between what the tz formatter sees and what we intended
-    const diff =
-      utcCandidate -
-      Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, 0, 0);
+      const tzYear = parseInt(parts.year, 10);
+      const tzMonth = parseInt(parts.month, 10) - 1;
+      const tzDay = parseInt(parts.day, 10);
+      const tzHour = parseInt(parts.hour, 10) % 24; // handle "24" edge case
+      const tzMinute = parseInt(parts.minute, 10);
+      const formattedLocalMs = Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, 0, 0);
+      const delta = targetLocalMs - formattedLocalMs;
 
-    return utcCandidate + diff;
+      if (delta === 0) return utcCandidate;
+      utcCandidate += delta;
+    }
+
+    return utcCandidate;
   } catch {
     // Fallback: treat the time as local browser time
     return new Date(year, month - 1, day, hours, minutes).getTime();
@@ -204,4 +202,30 @@ export const isDST = (date = new Date()) => {
   const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
   const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
   return Math.max(jan, jul) !== date.getTimezoneOffset();
+};
+
+/**
+ * Resolve an event's date + time into an absolute Date instant, anchored to the
+ * event's own timezone rather than the viewer's browser timezone.
+ *
+ * This exists because naive parsing such as `new Date(`${date}T${time}`)`
+ * interprets the wall-clock time in the viewer's local timezone. An event
+ * created at 18:00 IST then renders its countdown and start time differently
+ * for a viewer in PST, so users see the wrong time and can miss the event.
+ *
+ * The conversion delegates to parseEventToUTC, which uses Intl to handle DST
+ * correctly. When no timezone is supplied it falls back to the user's timezone,
+ * preserving previous behaviour for events that never recorded one.
+ *
+ * @param {string} dateStr - Event date (accepted by normalizeDateString)
+ * @param {string} timeStr - Event time (accepted by parseTimeString)
+ * @param {string} [timezone] - IANA timezone the event time is expressed in
+ * @returns {Date|null} Absolute instant, or null when inputs cannot be parsed
+ */
+export const resolveEventInstant = (dateStr, timeStr, timezone) => {
+  const utcMs = parseEventToUTC(dateStr, timeStr, timezone);
+  if (utcMs === null || Number.isNaN(utcMs)) {
+    return null;
+  }
+  return new Date(utcMs);
 };

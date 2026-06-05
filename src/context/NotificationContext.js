@@ -23,6 +23,7 @@ import {
   urlBase64ToUint8Array,
   writeNotificationPreferences,
 } from "../utils/notificationPreferences";
+import { logger } from "../utils/logger";
 
 const NotificationContext = createContext();
 
@@ -492,7 +493,7 @@ export const NotificationProvider = ({ children }) => {
           try {
             const parsed = JSON.parse(existing);
             if (parsed?.keys) {
-              console.info("[NotificationContext] Migrating legacy push subscription record.");
+              logger.info("[NotificationContext] Migrating legacy push subscription record.");
             }
           } catch {
             // Ignore invalid legacy data and continue with the safe record.
