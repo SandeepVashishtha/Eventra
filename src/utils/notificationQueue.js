@@ -169,6 +169,8 @@ const flushBatch = async () => {
     logger.info(`[NotificationQueue] Flushed batch of ${batch.length} notification(s).`);
   } catch (err) {
     logger.error("[NotificationQueue] Unexpected error during flush:", err);
+    // Put the batch back into pendingBatch so it isn't permanently dropped
+    pendingBatch.unshift(...batch);
   } finally {
     isFlushing = false;
   }
