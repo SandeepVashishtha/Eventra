@@ -468,7 +468,7 @@ const useEventRegistration = (eventIdParam) => {
     return () => {
       isCancelled = true;
     };
-  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+  }, [eventId, user?.id, isAuthenticated, setValues, location.pathname]);
 
   const checkEventCapacity = useCallback(async (id, currentEvent) => {
     try {
