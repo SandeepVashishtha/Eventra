@@ -264,9 +264,8 @@ const useOfflineSync = () => {
           // This prevents making requests with stale tokens and protects IndexedDB from being falsely overwritten below.
           if (conflictController.signal.aborted) {
             logger.warn("[useOfflineSync] Sync aborted due to session change. Halting queue processing.");
-            return; 
+            return;
           }
-
           const retries = item.retryCount ?? 0;
 
           if (retries >= MAX_RETRIES) {
@@ -292,13 +291,12 @@ const useOfflineSync = () => {
             // is cancelled cleanly if the component unmounts mid-sync
             if (res.status === "conflict") {
               const resolution = await resolveConflict(item, res.serverState, conflictController.signal);
-
               if (resolution.resolution === "local") {
                 // Retry with force flag
-                res = await postWithBackoff(url, item.payload, token, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff(url, item.payload, authToken, 0, true, conflictController.signal, item.id);
               } else if (resolution.resolution === "merge") {
                 // Post merged content
-                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff(url, resolution.mergedPayload, authToken, 0, true, conflictController.signal, item.id);
               } else {
                 // Discard local (treated as handled success so we proceed)
                 res = { status: "success" };
