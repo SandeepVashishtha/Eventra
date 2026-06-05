@@ -370,9 +370,9 @@ export default function TicketScanner() {
     setManualAttendeeName("");
   };
 
-  const handleResetScan = () => {
+  const handleResetScan = async () => {
     setScanResult(null);
-    startScanner(selectedCameraId);
+    await startScanner(selectedCameraId);
   };
 
   const handleEventSelect = (e) => {
