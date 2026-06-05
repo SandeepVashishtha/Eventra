@@ -103,23 +103,31 @@ class SseMultiplexer {
     const HEARTBEAT_TIMEOUT = 7000;
 
     const checkLeader = () => {
-      if (this.isLeader) return;
-
       const now = Date.now();
       const heartbeat = localStorage.getItem(HEARTBEAT_KEY);
+
+      let activeLeaderId = null;
 
       if (heartbeat) {
         try {
           const parsed = JSON.parse(heartbeat);
-          if (parsed && now - parsed.timestamp < HEARTBEAT_TIMEOUT && parsed.tabId !== this.tabId) {
-            // Active leader exists
-            return;
+          if (parsed && now - parsed.timestamp < HEARTBEAT_TIMEOUT) {
+            activeLeaderId = parsed.tabId;
           }
         } catch {}
       }
 
-      // Try to claim leadership
-      this.claimLocalStorageLeadership();
+      if (this.isLeader) {
+        // If we are the leader but our heartbeat expired and someone else claimed it
+        if (activeLeaderId && activeLeaderId !== this.tabId) {
+          this.demoteFromLeadership();
+        }
+      } else {
+        // If we are a follower and no active leader exists, claim it
+        if (!activeLeaderId || activeLeaderId === this.tabId) {
+          this.claimLocalStorageLeadership();
+        }
+      }
     };
 
     this.localStorageInterval = setInterval(checkLeader, HEARTBEAT_INTERVAL);
@@ -130,10 +138,21 @@ class SseMultiplexer {
     this.isLeader = true;
     logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
 
-    // Write an immediate heartbeat so other tabs see the new leader without
-    // waiting up to HEARTBEAT_INTERVAL (3 s) for the first interval tick.
+    const HEARTBEAT_TIMEOUT = 7000;
+
     const writeHeartbeat = () => {
+      if (!this.isLeader) return;
       try {
+        // Before overwriting, check if we were usurped while suspended
+        const heartbeat = localStorage.getItem(HEARTBEAT_KEY);
+        if (heartbeat) {
+          const parsed = JSON.parse(heartbeat);
+          if (parsed && parsed.tabId !== this.tabId && Date.now() - parsed.timestamp < HEARTBEAT_TIMEOUT) {
+            this.demoteFromLeadership();
+            return;
+          }
+        }
+
         localStorage.setItem(
           HEARTBEAT_KEY,
           JSON.stringify({ tabId: this.tabId, timestamp: Date.now() })
@@ -144,12 +163,29 @@ class SseMultiplexer {
     };
     writeHeartbeat();
 
-    // Heartbeat loop — keep the entry fresh while leadership is held
     this.heartbeatInterval = setInterval(writeHeartbeat, 2000);
 
     this.startHeartbeatChecks();
     this.queryGlobalSubscribers();
     this.reconcileConnections();
+  }
+
+  demoteFromLeadership() {
+    if (!this.isLeader) return;
+    this.isLeader = false;
+    logger.log(`[SSE Multiplexer] Tab ${this.tabId} demoted from leadership.`);
+
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+
+    this.stopHeartbeatChecks();
+
+    for (const source of this.activeEventSources.values()) {
+      source.close();
+    }
+    this.activeEventSources.clear();
   }
 
   // --- 2. Subscription Management ---
