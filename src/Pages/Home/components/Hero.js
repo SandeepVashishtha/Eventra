@@ -1,19 +1,9 @@
 import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import {
-  AnimatePresence,
-  MotionConfig,
-  motion,
-  useAnimation,
-  useScroll,
-  useTransform,
-} from "framer-motion";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -45,6 +35,21 @@ const allSearchItems = [
   ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
 ];
 
+const HEADLINE_PHRASES = [
+  "Amazing Tech Events",
+  "Exciting Hackathons Today",
+  "Innovative Dev Workshops",
+  "Cutting-Edge Tech Meetups",
+];
+const TAGLINE_TEXTS = ["Discover & Join"];
+const SEARCH_RESULT_LIMIT = 5;
+const HERO_STATS = [
+  { icon: Users, value: 1500, label: "Developers Joined", suffix: "+" },
+  { icon: Calendar, value: 75, label: "Events Organized", suffix: "+" },
+  { icon: Handshake, value: 30, label: "Partners & Sponsors", suffix: "+" },
+];
+const MotionLink = motion(Link);
+
 const searchIndex = new Fuse(allSearchItems, {
   keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
   threshold: 0.3,
@@ -63,13 +68,8 @@ const getResultIcon = (type) => {
 
 const Hero = () => {
   useDocumentTitle("Eventra | Home");
-  
-  const phrases = [
-    "Amazing Tech Events",
-    "Exciting Hackathons Today",
-    "Innovative Dev Workshops",
-    "Cutting-Edge Tech Meetups",
-  ];
+  const controls = useAnimation();
+  const prefersReducedMotion = useReducedMotion();
 
   const containerRef = useRef(null);
 
@@ -92,15 +92,6 @@ const Hero = () => {
   const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  const container = {
-    hidden: { opacity: 1 },
-    show: { opacity: 1, transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-  };
-
-  const fadeUp = {
-    hidden: { y: 0, opacity: 1 },
-    show: { y: 0, opacity: 1 },
-  };
 
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
