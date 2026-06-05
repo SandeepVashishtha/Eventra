@@ -4,6 +4,18 @@
  */
 import { useState, useEffect, useCallback, useRef } from "react";
 
+// Simple synchronous hash to avoid exposing raw userId (email) in localStorage keys.
+const hashUserId = (userId) => {
+  if (!userId || userId === "guest") return "guest";
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    const chr = userId.charCodeAt(i);
+    hash = (hash << 5) - hash + chr;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+};
+
 /**
  * A custom React hook that manages bookmarked events for a user,
  * persisting them to localStorage keyed by userId.
@@ -41,7 +53,7 @@ const toBookmarkEntry = (event) => ({
 });
 
 const useBookmarks = (userId = "guest") => {
-  const storageKey = `bookmarks_${userId}`;
+  const storageKey = `bookmarks_${hashUserId(userId)}`;
 
   const [bookmarks, setBookmarks] = useState(() => {
     try {
