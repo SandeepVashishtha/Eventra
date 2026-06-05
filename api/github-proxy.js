@@ -1,5 +1,6 @@
 import { verifyAuth } from "./middleware/auth.js";
 import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
+import { buildCorsHeaders, corsResponse } from "./auth/cors.js";
 
 const SAFE_GITHUB_PATH_PATTERNS = [
   /^\/repos\/[^/?#]+\/[^/?#]+$/,
@@ -101,7 +102,7 @@ async function handler(req, res) {
   // Check rate limit before doing any work.
   if (isRateLimited(userId)) {
     evictStaleEntries();
-    return res.status(429).json({
+    return corsResponse(req, res, 429, {
       error: "Too many requests. You may make up to 60 proxy requests per minute.",
     });
   }
@@ -110,13 +111,13 @@ async function handler(req, res) {
   const { path, ...queryParams } = req.query;
 
   if (!path) {
-    return res.status(400).json({ error: "Missing path parameter" });
+    return corsResponse(req, res, 400, { error: "Missing path parameter" });
   }
 
   const normalizedPath = normalizePath(path);
 
   if (!normalizedPath || !isSafeGitHubPath(normalizedPath)) {
-    return res.status(400).json({ error: "Invalid GitHub API path" });
+    return corsResponse(req, res, 400, { error: "Invalid GitHub API path" });
   }
 
   const url = new URL(normalizedPath, "https://api.github.com");
@@ -148,10 +149,10 @@ async function handler(req, res) {
       res.setHeader("Cache-Control", cacheControl);
     }
 
-    return res.status(fetchRes.status).json(data);
+    return corsResponse(req, res, fetchRes.status, data);
   } catch (error) {
     console.error("GitHub Proxy Error:", error);
-    return res.status(500).json({ error: "Failed to fetch from GitHub API" });
+    return corsResponse(req, res, 500, { error: "Failed to fetch from GitHub API" });
   }
 }
 
