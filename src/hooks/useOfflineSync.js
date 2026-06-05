@@ -39,6 +39,13 @@ const useOfflineSync = () => {
   const isLockPending = useRef(false); // 🔥 FIX: Protects against asynchronous race conditions during Web Lock acquisition
   const conflictControllerRef = useRef(new AbortController());
 
+  // Use a mutable ref to hold auth parameters to prevent stale closures
+  // inside listeners without re-creating event listeners on every auth update.
+  const authRef = useRef({ token, user, isAuthenticated, loading });
+  useEffect(() => {
+    authRef.current = { token, user, isAuthenticated, loading };
+  }, [token, user, isAuthenticated, loading]);
+
   // Clean up controller on full unmount
   useEffect(() => {
     return () => {
@@ -185,6 +192,7 @@ const useOfflineSync = () => {
     const conflictController = conflictControllerRef.current;
 
     const executeSync = async () => {
+      const { token: currentToken, user: currentUser, isAuthenticated: currentIsAuthenticated, loading: currentLoading } = authRef.current;
       const queue = await getQueueIndexedDB();
       if (queue.length === 0) {
         return;
@@ -193,7 +201,7 @@ const useOfflineSync = () => {
       // Wait for AuthContext to finish initial session validation before
       // attempting to sync. During loading, token and user are still null even
       // for valid cookie-managed sessions, so any check here would be premature.
-      if (loading) {
+      if (currentLoading) {
         return;
       }
 
@@ -201,7 +209,7 @@ const useOfflineSync = () => {
       // isAuthenticated() correctly handles both token-based and cookie-managed
       // sessions, avoiding the false "session expired" failure that occurred
       // when useOfflineSync called isTokenValid("cookie-managed") directly.
-      if (!isAuthenticated()) {
+      if (!currentIsAuthenticated()) {
         toast.warning(
           "Offline actions are pending but your session has expired. Please log in again to sync them.",
           { autoClose: 6000 }
@@ -210,7 +218,7 @@ const useOfflineSync = () => {
       }
 
       // SECURITY: Validate queue ownership to prevent cross-user action replay.
-      const currentUserId = user?.id;
+      const currentUserId = currentUser?.id;
       if (!currentUserId) {
         logger.error('[Security] Cannot sync queue: current user ID is missing');
         toast.error(
@@ -246,7 +254,7 @@ const useOfflineSync = () => {
       // sent automatically by the browser. Do not forward the "cookie-managed"
       // sentinel string as a Bearer token value; pass null instead so the
       // Authorization header is omitted and the session cookie is used.
-      const authToken = token === "cookie-managed" ? null : token;
+      const authToken = currentToken === "cookie-managed" ? null : currentToken;
 
       isSyncing.current = true;
 
@@ -295,10 +303,10 @@ const useOfflineSync = () => {
 
               if (resolution.resolution === "local") {
                 // Retry with force flag
-                res = await postWithBackoff(url, item.payload, token, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff(url, item.payload, currentToken, 0, true, conflictController.signal, item.id);
               } else if (resolution.resolution === "merge") {
                 // Post merged content
-                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff(url, resolution.mergedPayload, currentToken, 0, true, conflictController.signal, item.id);
               } else {
                 // Discard local (treated as handled success so we proceed)
                 res = { status: "success" };
