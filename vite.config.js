@@ -50,6 +50,11 @@ export default defineConfig(({ mode }) => {
 
     // Pre-bundle heavy deps once → node_modules/.vite/deps
     optimizeDeps: {
+      rolldownOptions: {
+        moduleTypes: {
+          ".js": "jsx",
+        },
+      },
       include: [
         "react",
         "react-dom",
@@ -82,6 +87,10 @@ export default defineConfig(({ mode }) => {
       // Disable CSS minification — lightningcss (Vite 8 default) cannot parse
       // the custom Tailwind `short` screen: (max-height: 520px) media query.
       cssMinify: false,
+      chunkSizeWarningLimit: 1000,
+      // Use esbuild for CSS minification instead of the default lightningcss,
+      // which cannot parse the custom Tailwind `short` screen media query.
+      cssMinify: "esbuild",
       chunkSizeWarningLimit: 1500,
       rollupOptions: {
         output: {
