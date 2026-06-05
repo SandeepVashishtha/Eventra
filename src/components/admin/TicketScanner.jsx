@@ -351,7 +351,7 @@ export default function TicketScanner() {
     }
   };
 
-  const handleManualCheckIn = (e) => {
+  const handleManualCheckIn = async (e) => {
     e.preventDefault();
     if (!manualTicketId.trim() || !manualAttendeeName.trim() || !manualEventId) {
       toast.error("Please fill in Ticket Code, Attendee Name, and select an Event.");
@@ -365,7 +365,7 @@ export default function TicketScanner() {
       eventName: manualEventName,
     };
 
-    processTicket(manualData);
+    await processTicket(manualData);
     setManualTicketId("");
     setManualAttendeeName("");
   };
