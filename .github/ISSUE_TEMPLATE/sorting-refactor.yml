@@ -1,7 +1,7 @@
-name: "🔧 Sorting Component Refactor"
+name: "Sorting Component Refactor"
 about: "Refactor the Sorting component and related visualization components for improved code organization"
 title: "Refactor sorting components for better code organization"
-labels: ["refactor", "enhancement", "mentor:Ayushh-Sharmaa"]
+labels: ["refactor", "enhancement"]
 assignees: []
 body:
   - type: markdown

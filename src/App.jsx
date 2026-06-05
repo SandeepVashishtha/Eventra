@@ -235,6 +235,7 @@ function App() {
                             </Suspense>
                           }
                         />
+
                       </Routes>
                     </ErrorBoundary>
                   </PageTransition>

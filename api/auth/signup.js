@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+<<<<<<< HEAD
 import { createRateLimiter } from "../lib/rateLimit.js";
+=======
+>>>>>>> 1bf21393bd46781538952ca0c2b7db650f244bbe
 
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 
