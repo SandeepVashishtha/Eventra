@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Sparkles,
@@ -11,6 +11,8 @@ import {
   Clock,
 } from "lucide-react";
 import mockEvents from "../../Pages/Events/eventsMockData.json";
+import { syncSecureStorage } from "../../utils/secureStorage";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // =========================================================================
 // INLINE VECTOR GRAPHIC CONSTANTS (FALLBACK PLACEHOLDER IMAGES)
@@ -151,19 +153,25 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
   // Core processing effect tracing profile parameters
   useEffect(() => {
     setLoading(true);
+    let active = true;
 
-    const computationalTimer = setTimeout(() => {
+    const loadRecommendations = async () => {
       let userInterests = ["Coding", "Tech", "AI", "Development"];
 
       // Sync and extract client custom telemetry interests log from localStorage safely
       try {
-        const storedInterests = localStorage.getItem("user_interests");
-        if (storedInterests) {
-          userInterests = JSON.parse(storedInterests);
+        const storedUser = await syncSecureStorage.getItemAsync("user");
+        if (storedUser) {
+          const parsed = safeJsonParse(storedUser, null);
+          if (parsed && Array.isArray(parsed.skills) && parsed.skills.length > 0) {
+            userInterests = parsed.skills;
+          }
         }
       } catch (error) {
-        console.error("Failsafe tracking intercept: localStorage parsing collapsed safely.", error);
+        console.error("Failsafe tracking intercept: secureStorage parsing collapsed safely.", error);
       }
+
+      if (!active) return;
 
       // Ensure mock data arrays pass standard validation checks
       const validMockEvents = Array.isArray(mockEvents) ? mockEvents : [];
@@ -204,12 +212,21 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
         (a, b) => b.recommendationScore - a.recommendationScore
       );
 
-      // Select topmost 6 scoring matches for the carousel limits
-      setRecommendedEvents(sortedResultMatrix.slice(0, 6));
-      setLoading(false);
+      if (active) {
+        // Select topmost 6 scoring matches for the carousel limits
+        setRecommendedEvents(sortedResultMatrix.slice(0, 6));
+        setLoading(false);
+      }
+    };
+
+    const computationalTimer = setTimeout(() => {
+      loadRecommendations();
     }, 800);
 
-    return () => clearTimeout(computationalTimer);
+    return () => {
+      active = false;
+      clearTimeout(computationalTimer);
+    };
   }, [currentEventId, currentCategory]);
 
   // Carousel slider boundary movement methods
