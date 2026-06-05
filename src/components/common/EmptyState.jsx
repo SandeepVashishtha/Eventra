@@ -1,4 +1,3 @@
-import React from "react";
 import { Search, FilterX, Inbox } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -9,6 +8,7 @@ const EmptyState = ({
   onClearFilters,
   onBrowseAll,
   icon,
+  compact = false,
 }) => {
   const getDefaultConfig = () => {
     switch (type) {
@@ -50,24 +50,28 @@ const EmptyState = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]"
+      className={`relative overflow-hidden rounded-3xl text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] ${
+        compact ? "p-6" : "p-10"
+      }`}
     >
       {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-gradient-to-tr from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 rounded-full blur-3xl" />
-      </div>
+      {!compact && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-gradient-to-tr from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 rounded-full blur-3xl" />
+        </div>
+      )}
 
       <div className="relative z-10">
         {/* Icon/Illustration */}
-        <div className="flex justify-center mb-6">
-          <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
+        <div className={`flex justify-center ${compact ? "mb-4" : "mb-6"}`}>
+          <div className={`${compact ? "p-3 rounded-xl" : "p-4 rounded-2xl"} bg-gray-50 dark:bg-gray-700/50`}>
             {config.icon}
           </div>
         </div>
 
         {/* Title */}
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        <h3 className={`${compact ? "text-lg" : "text-xl"} font-semibold text-gray-900 dark:text-gray-100`}>
           {config.title}
         </h3>
 

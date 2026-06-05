@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom"; // 🔥 FIX: Required for Modal Portal
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { syncSecureStorage } from "../../utils/secureStorage";
 
 import {
   User as UserIcon,
@@ -13,7 +15,10 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   X as XIcon,
+  Sparkles,
 } from "lucide-react";
+
+import AiProfileGeneratorModal from "./AiProfileGeneratorModal";
 
 const initialFormState = {
   fullName: "",
@@ -82,28 +87,71 @@ const EditProfile = () => {
   const { user, setUser } = useAuth();
 
   // Initialize with fallback progression to prevent undefined fields
-  const [form, setForm] = useState(() => {
-    const saved = localStorage.getItem("user");
-    const parsed = safeJsonParse(saved, null);
-    if (parsed) {
-      return parsed;
-    }
-    return user ? { ...initialFormState, ...user } : initialFormState;
-  });
+  const [form, setForm] = useState(user ? { ...initialFormState, ...user } : initialFormState);
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [currentSkillInput, setCurrentSkillInput] = useState("");
+  const [aiModalOpen, setAiModalOpen] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Keep state synchronized if the auth context updates lazily
+  const handleApplyAiProfile = (parsedData) => {
+    setForm(prev => {
+      const nextSkills = [...prev.skills];
+      if (parsedData.skills && parsedData.skills.length > 0) {
+        parsedData.skills.forEach(skill => {
+          if (!nextSkills.some(s => s.toLowerCase() === skill.toLowerCase())) {
+            nextSkills.push(skill);
+          }
+        });
+      }
+
+      return {
+        ...prev,
+        bio: parsedData.bio || prev.bio,
+        github: parsedData.github || prev.github,
+        portfolio: parsedData.portfolio || prev.portfolio,
+        skills: nextSkills,
+      };
+    });
+  };
+
+  // 🔥 FIX 1: Track mount state to prevent ghost navigations
+  const isMounted = useRef(true);
   useEffect(() => {
-    const saved = localStorage.getItem("user");
-    if (!saved && user) {
-      setForm((prev) => ({ ...prev, ...user }));
-    }
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Load saved profile or sync with context user
+  useEffect(() => {
+    let active = true;
+    const loadProfileData = async () => {
+      try {
+        const saved = await syncSecureStorage.getItemAsync("user");
+        if (active) {
+          if (saved) {
+            const parsed = safeJsonParse(saved, null);
+            if (parsed) {
+              setForm(parsed);
+              return;
+            }
+          }
+          if (user) {
+            setForm((prev) => ({ ...prev, ...user }));
+          }
+        }
+      } catch (error) {
+        console.error("Error loading secure user profile:", error);
+      }
+    };
+    loadProfileData();
+    return () => {
+      active = false;
+    };
   }, [user]);
 
   const validate = (nextForm) => {
@@ -175,6 +223,18 @@ const EditProfile = () => {
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // 🔥 FIX 1: Prevent LocalStorage QuotaExceededError Crash
+    // Enforce a strict 1MB limit. Base64 inflates sizes by ~33%, meaning
+    // anything over 1MB risks exceeding the total ~5MB localStorage boundary.
+    if (file.size > 1048576) {
+      alert("Image is too large. Please select an image under 1MB to prevent browser storage errors.");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = null;
+      }
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       const result = typeof reader.result === "string" ? reader.result : "";
@@ -202,14 +262,27 @@ const EditProfile = () => {
 
     setLoading(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
+      // 🔥 FIX 1: If user navigated away, stop executing!
+      if (!isMounted.current) return;
+
       setLoading(false);
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(resolvedForm);
-      localStorage.setItem("user", JSON.stringify(resolvedForm));
+      
+      // 🔥 FIX 2: Strip massive Base64 strings before saving to storage to prevent QuotaExceededError crashes
+      const safeStorageUser = { ...resolvedForm };
+      delete safeStorageUser.avatarBase64;
+      
+      try {
+        await syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
+      } catch (e) {
+        console.warn("Could not save to secure storage, quota exceeded.");
+      }
 
       setTimeout(() => {
+        if (!isMounted.current) return;
         navigate("/dashboard/profile");
       }, 1000);
     }, 1500);
@@ -236,8 +309,16 @@ const EditProfile = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center justify-between">
             <span className="text-black dark:text-white">Edit Profile</span>
+            <button
+              type="button"
+              onClick={() => setAiModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl shadow-md transition-all active:scale-[0.98]"
+            >
+              <Sparkles size={16} />
+              Auto-fill with AI
+            </button>
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage your personal information and how others see you on Eventra.
@@ -588,13 +669,19 @@ const EditProfile = () => {
         onConfirm={performSave}
         loading={loading}
       />
+      <AiProfileGeneratorModal
+        isOpen={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        onApplyProfile={handleApplyAiProfile}
+      />
     </div>
   );
 };
 
+// 🔥 FIX 2: Wrapped the modal in a React Portal to prevent layout/z-index clipping
 const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
   if (!open) return null;
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
       <div className="relative w-full max-w-md mx-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-6 z-10">
@@ -620,7 +707,8 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

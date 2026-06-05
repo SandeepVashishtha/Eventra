@@ -2,14 +2,15 @@ import { getRelativeTime, getSmartDateLabel } from "./relativeTime";
 
 describe("relativeTime utilities", () => {
   describe("getRelativeTime", () => {
-    it("returns null for falsy, null, or undefined inputs", () => {
-      expect(getRelativeTime("")).toBeNull();
-      expect(getRelativeTime(null)).toBeNull();
-      expect(getRelativeTime(undefined)).toBeNull();
+    it("returns fallback for null, undefined, or empty inputs", () => {
+      expect(getRelativeTime("")).toBe("—");
+      expect(getRelativeTime(null)).toBe("—");
+      expect(getRelativeTime(undefined)).toBe("—");
     });
 
-    it("returns null for invalid date strings", () => {
-      expect(getRelativeTime("invalid-date")).toBeNull();
+    it("returns fallback for invalid and malformed date strings", () => {
+      expect(getRelativeTime("invalid-date")).toBe("—");
+      expect(getRelativeTime("2026-02-30T99:99:99")).toBe("—");
     });
 
     it("returns relative time descriptions for valid past and future dates", () => {
@@ -24,14 +25,14 @@ describe("relativeTime utilities", () => {
   });
 
   describe("getSmartDateLabel", () => {
-    it('returns "—" for falsy, null, or undefined date inputs', () => {
-      expect(getSmartDateLabel("")).toBe("—");
-      expect(getSmartDateLabel(null)).toBe("—");
-      expect(getSmartDateLabel(undefined)).toBe("—");
+    it('returns "TBD" for falsy, null, or undefined date inputs', () => {
+      expect(getSmartDateLabel("")).toBe("TBD");
+      expect(getSmartDateLabel(null)).toBe("TBD");
+      expect(getSmartDateLabel(undefined)).toBe("TBD");
     });
 
-    it('returns "—" for invalid date inputs', () => {
-      expect(getSmartDateLabel("invalid-date")).toBe("—");
+    it('returns "TBD" for invalid date inputs', () => {
+      expect(getSmartDateLabel("invalid-date")).toBe("TBD");
     });
 
     it("returns relative description if available", () => {

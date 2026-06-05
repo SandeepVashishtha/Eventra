@@ -1,19 +1,48 @@
 /**
  * Recursively sanitizes any session state object to strip out sensitive
  * authentication parameters or credentials before caching.
+ *
+ * Key naming conventions covered:
+ *  - Standard OAuth / OIDC fields: accessToken, refreshToken, idToken, credential
+ *  - API key patterns: apiKey, apikey, api_key, bearerToken
+ *  - Generic auth aliases: auth, authorization, token, jwt, password, secret
+ *  - Wallet / crypto fields: mnemonic, privateKey, backupKey
+ *
+ * Matching is case-insensitive (key.toLowerCase() before Set lookup).
+ * The JWT_REGEX secondary check catches opaque tokens whose field names
+ * aren't in this list but whose values structurally look like JWTs.
  */
 const SENSITIVE_KEYS = new Set([
+  // Standard token fields
   "token",
   "accesstoken",
+  "refreshtoken",
+  "idtoken",
   "jwt",
+  "bearertoken",
+  // Credential / secret fields
+  "credential",
+  "apikey",
+  "api_key",
+  "clientsecret",
+  "client_secret",
   "password",
+  "passwd",
   "secret",
-  "mnemonic",
-  "privatekey",
-  "backupkey",
-  "sessiontoken",
+  "secretkey",
+  "secret_key",
+  // Auth header aliases
   "auth",
   "authorization",
+  "sessiontoken",
+  // Crypto / wallet fields
+  "mnemonic",
+  "privatekey",
+  "private_key",
+  "backupkey",
+  "backup_key",
+  "signingkey",
+  "signing_key",
 ]);
 
 // Base64URL-encoded JWT regex format (header.payload.signature)

@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useContext,
   useEffect,
@@ -7,8 +7,11 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from "../config/api";
+import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler, setAuthToken } from "../config/api";
+import { authService } from "../services/authService";
+import { userService } from "../services/userService";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
+import { syncSecureStorage } from "../utils/secureStorage";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles";
 
@@ -31,7 +34,7 @@ export const AuthProvider = ({ children }) => {
     error: null,
   });
 
-  const isMountedRef = useRef(false);
+  const isMountedRef = useRef(true);
   const needsExpiryCleanupRef = useRef(false);
   const expiryToastShownRef = useRef(false);
 
@@ -47,15 +50,27 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
+    setAuthToken(null);
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
-    sessionStorage.removeItem("token");
-    localStorage.removeItem("user");
+    syncSecureStorage.removeItem("user");
     return true;
   }, []);
 
   const clearExpiredSession = useCallback(() => {
+    // 🔥 FIX: Check if a user was actually logged in before blasting them with an "Expired" toast.
+    // Anonymous users (who trigger a 401 on mount) shouldn't see this.
+    let hadPreviousSession = false;
+    try {
+      hadPreviousSession = !!syncSecureStorage.getItem("user");
+    } catch {
+      // localStorage unavailable (private browsing, quota exceeded, etc.)
+    }
+
     console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
     clearSession();
+
+    // If they were never logged in, this is just a guest pinging the API. Silent exit.
+    if (!hadPreviousSession) return;
 
     if (expiryToastShownRef.current) {
       return;
@@ -64,8 +79,11 @@ export const AuthProvider = ({ children }) => {
     expiryToastShownRef.current = true;
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",
-      autoClose: 5000,
+      autoClose: 4000,
     });
+    setTimeout(() => {
+      window.location.replace("/login");
+    }, 1500);
   }, [clearSession]);
 
   const setAuthRequestState = useCallback((nextState) => {
@@ -84,14 +102,12 @@ export const AuthProvider = ({ children }) => {
 
   const extractSession = useCallback(
     (res, data, fallbackEmail) => {
-      let sessionToken = data?.token ?? data?.accessToken ?? null;
-
-      if (!sessionToken) {
-        const authHeader = res.headers?.authorization || res.headers?.Authorization || null;
-        if (authHeader && authHeader.startsWith("Bearer ")) {
-          sessionToken = authHeader.substring(7);
-        }
-      }
+      // Under a strict HttpOnly-cookie authentication model, the client-visible
+      // response body or headers (like data.token, data.accessToken, and Authorization
+      // response headers) are ignored entirely to prevent token-injection risks.
+      // Authenticated sessions are established solely through successful backend
+      // validation of the HttpOnly session cookie, using the sentinel value "cookie-managed".
+      const sessionToken = "cookie-managed";
 
       const rawUser = data?.user ?? data?.data ?? data ?? null;
       const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
@@ -130,7 +146,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const validateSession = async () => {
       try {
-        const res = await apiUtils.get(API_ENDPOINTS.USERS.PROFILE);
+        const res = await userService.getProfile();
         if (!isMountedRef.current) return;
 
         if (res.ok && res.data) {
@@ -227,50 +243,31 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, clearExpiredSession]);
 
-  const persistSession = useCallback((sessionToken, sessionUser) => {
+  const persistSession = useCallback(async (sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
-    try {
-      if (sessionToken && sessionToken !== 'cookie-managed') {
-        document.cookie = `token=${sessionToken}; path=/; Secure; SameSite=Strict`;
-      }
-    } catch (err) {
-      // Ignore cookie write failures in strict environments
-    }
+    setAuthToken(sessionToken);
 
+    // The auth token is set exclusively by the server via a Set-Cookie response
+    // header with HttpOnly; Secure; SameSite=Strict. Writing the token through
+    // document.cookie here would create a second, JS-readable copy of the same
+    // credential, exposing it to XSS-based theft. The client-side code only
+    // needs to store the non-sensitive display profile (see below).
+
+    // Strip authorization fields before persisting to storage. Roles, scopes,
+    // and permissions are always re-derived from the backend on page load via
+    // validateSession, so storing them client-side only widens the XSS attack
+    // surface with no functional benefit.
     try {
-      localStorage.setItem("user", JSON.stringify(sessionUser));
+      // eslint-disable-next-line no-unused-vars
+      const { roles, permissions, scopes, ...displayProfile } = sessionUser;
+      await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error("[AuthContext] Error persisting user profile:", error);
     }
     return true;
   }, []);
 
-  /**
-   * Sign in with a Google credential returned by @react-oauth/google.
-   *
-   * SECURITY NOTE
-   * -------------
-   * The Google ID token (credential) MUST be verified server-side.
-   * Client-side JWT decoding only reads the payload — it does NOT verify
-   * the cryptographic signature, audience (aud), issuer (iss), or expiry.
-   * Skipping the backend exchange would allow any Google-issued token
-   * (even one issued for a completely different application) to create a
-   * valid session in Eventra.
-   *
-   * Flow:
-   *  1. POST the raw Google credential to the Eventra backend.
-   *  2. The backend verifies it against Google's JWKS endpoint and checks
-   *     aud, iss, exp, and email_verified.
-   *  3. On success the backend returns an Eventra-signed JWT + user object.
-   *  4. We persist ONLY the Eventra JWT — never the raw Google token.
-   *
-   * @param {string} credential - Raw Google ID token from @react-oauth/google
-   * @returns {Promise<true>} Resolves to true on success
-   * @throws {Error} If the credential is missing, the backend rejects it,
-   *                 or the response does not contain an Eventra token
-   */
   const setAuthSession = useCallback(
     (sessionToken, sessionUser) => {
       return persistSession(sessionToken, sessionUser);
@@ -294,7 +291,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
+        const res = await authService.login({
           usernameOrEmail,
           password,
         });
@@ -305,11 +302,10 @@ export const AuthProvider = ({ children }) => {
           throw new Error(data?.message || data?.error || "Invalid credentials");
         }
 
+        // extractSession now returns "cookie-managed" instead of null when the
+        // server uses HttpOnly cookies and omits the token from the response
+        // body. There is no longer a missing-token failure path here.
         const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
-
-        if (!sessionToken) {
-          throw new Error("Login failed: token missing from response");
-        }
 
         const persisted = persistSession(sessionToken, sessionUser);
         if (!persisted) return false;
@@ -319,68 +315,13 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         if (!isMountedRef.current) return false;
         setAuthRequestState({ loading: false, error: getAuthErrorMessage(error, "Login failed. Please try again.") });
-        throw error;
-      }
-    },
-    [extractSession, persistSession, setAuthRequestState]
-  );
-
-  const signInWithGoogle = useCallback(
-    async (credential) => {
-      if (!credential) {
-        const error = new Error("Google Sign-In failed: missing credential");
-        setAuthRequestState({ loading: false, error: error.message });
-        throw error;
-      }
-
-      if (!setAuthRequestState({ loading: true, error: null })) {
         return false;
       }
-
-      let res;
-      try {
-        res = await apiUtils.post(API_ENDPOINTS.AUTH.GOOGLE, { token: credential });
-      } catch (networkError) {
-        const error = new Error(
-          `Google Sign-In failed: could not reach the server. ${
-            networkError?.message || "Please check your connection and try again."
-          }`
-        );
-        if (!isMountedRef.current) return false;
-        setAuthRequestState({ loading: false, error: error.message });
-        throw error;
-      }
-
-      const data = res.data;
-
-      if (res.status !== 200) {
-        const error = new Error(
-          data?.message || data?.error || `Google Sign-In failed: server returned ${res.status}`
-        );
-        if (!isMountedRef.current) return false;
-        setAuthRequestState({ loading: false, error: error.message });
-        throw error;
-      }
-
-      const { sessionToken, sessionUser } = extractSession(res, data, null);
-
-      if (!sessionToken) {
-        const error = new Error(
-          "Google Sign-In failed: the server did not return an authentication token."
-        );
-        if (!isMountedRef.current) return false;
-        setAuthRequestState({ loading: false, error: error.message });
-        throw error;
-      }
-
-      const persisted = persistSession(sessionToken, sessionUser);
-      if (!persisted) return false;
-
-      setAuthRequestState({ loading: false, error: null });
-      return true;
     },
     [extractSession, persistSession, setAuthRequestState]
   );
+
+
 
   const logout = useCallback(() => {
     clearSession();
@@ -390,11 +331,11 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
     if (token !== "cookie-managed" && !isTokenValid(token)) {
-      needsExpiryCleanupRef.current = true;
+      clearExpiredSession();
       return false;
     }
     return true;
-  }, [user, token]);
+  }, [user, token, clearExpiredSession]);
 
   const hasRole = useCallback(
     (roleName) => {
@@ -438,7 +379,6 @@ export const AuthProvider = ({ children }) => {
       authRequest,
       login,
       logout,
-      signInWithGoogle,
       setAuthSession,
       setUser,
       isAuthenticated,
@@ -460,8 +400,8 @@ export const AuthProvider = ({ children }) => {
       authRequest,
       login,
       logout,
-      signInWithGoogle,
       setAuthSession,
+      setUser,
       isAuthenticated,
       hasRole,
       hasPermission,

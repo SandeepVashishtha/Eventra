@@ -1,28 +1,23 @@
-import React, {
-  memo,
-  useRef,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
+import AuthButtons from "./AuthButtons";
+import InstallAppButton from "../common/InstallAppButton";
+import ProfileMenu from "./ProfileMenu";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
   const navRef = useRef(null);
 
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
-  const { isDarkMode, toggleTheme } = useTheme();
 
   useBodyScrollLock(isMobileMenuOpen);
   const handleCloseModals = useCallback(() => {
@@ -30,7 +25,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   }, []);
 
   const handleSearchFocus = useCallback(() => {
-    const searchInput = document.querySelector(
+    const searchInput = navRef.current?.querySelector(
       'input[type="text"], input[type="search"]'
     );
 
@@ -38,7 +33,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   }, []);
 
   const handleNewEvent = useCallback(() => {
-    const createEventBtn = document.querySelector(
+    const createEventBtn = navRef.current?.querySelector(
       '[aria-label*="Create Event"], [aria-label*="create"]'
     );
 
@@ -65,6 +60,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
 
           setScrollProgress(progress);
+          setScrolled(scrollTop > 12);
           ticking = false;
         });
 
@@ -84,35 +80,57 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className="sticky top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
+        className={`sticky top-0 left-0 w-full z-[200] transition-all duration-300 ${
+          scrolled
+            ? "backdrop-blur-md bg-navbar/95 border-b border-border shadow-sm"
+            : "bg-transparent border-b border-transparent"
+        }`}
       >
-        <div className="h-full px-4 flex items-center justify-between">
-          <Link to="/" aria-label="Eventra home logo template">
-            <div className="flex items-center justify-center gap-3">
-              <img src="/Eventra.png" alt="Eventra Brand Logo" className="h-12 w-auto object-contain rounded-xl bg-gray-200 dark:bg-transparent p-1" />
-              <h1 className="text-2xl font-heading font-bold text-text">Eventra</h1>
+        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+          {/* Logo - Left Section */}
+          <Link to="/" aria-label="Eventra home logo template" className="relative z-10 flex items-center shrink-0">
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 flex-none items-center justify-center overflow-hidden rounded-lg bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
+                <img
+                  src="/favicon.png"
+                  alt="Eventra Brand Logo"
+                  className="block h-full w-full object-contain"
+                  loading="eager"
+                  decoding="async"
+                  width="36"
+                  height="36"
+                />
+              </div>
+              <h1 className="truncate text-base sm:text-lg lg:text-xl font-heading font-semibold text-text tracking-tight">Eventra</h1>
             </div>
           </Link>
 
-          <div className="flex items-center gap-4">
-            <DesktopNavbar isAuthenticated={authenticated} user={user} logout={logout} />
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
-              aria-pressed={isDarkMode}
-              className="theme-toggle relative flex items-center justify-center w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-800 text-black dark:text-white shadow-md hover:scale-110 hover:shadow-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-            >
-              <div className="transition-transform duration-500">
-                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </div>
-            </button>
-            <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-            <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
+          {/* Desktop Links - Wrapping instead of absolute positioning */}
+          <div className="hidden lg:flex items-center justify-center flex-1 overflow-x-auto">
+            <DesktopNavbar />
+          </div>
+
+          {/* Right Controls Container */}
+          <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0">
+            <div className="hidden lg:flex items-center gap-2.5">
+              {authenticated ? (
+                <ProfileMenu user={user} logout={logout} />
+              ) : (
+                <AuthButtons />
+              )}
+              <InstallAppButton />
+              <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+            </div>
+
+            <div className="lg:hidden">
+              <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
+            </div>
           </div>
         </div>
+        
+        {/* Scroll Progress Bar */}
         <div className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
-          <div className="h-full bg-blue-500 transition-all duration-100 ease-out" style={{ width: `${scrollProgress}%` }} />
+          <div className="h-full bg-primary transition-all duration-100 ease-out" style={{ width: `${scrollProgress}%` }} />
         </div>
       </nav>
     </>
