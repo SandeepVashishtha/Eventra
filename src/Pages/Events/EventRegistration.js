@@ -299,9 +299,7 @@ const EventRegistration = () => {
           ...formData,
           priority: formData.priority,
           eventId: parseInt(eventId),
-          userId: user.id,
-        },
-        token
+        }
       );
 
       const regData = response.data || {};
@@ -327,7 +325,6 @@ const EventRegistration = () => {
         const payload = {
           ...formData,
           eventId: parseInt(eventId),
-          userId: user.id,
         };
 
         const success = await pushToQueue(
