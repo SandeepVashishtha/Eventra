@@ -27,7 +27,7 @@ import {
   normalizeEventAvailability,
 } from "../../utils/eventAvailabilityUtils.mjs";
 import { useFormValidation } from "../../hooks/useFormValidation";
-import { getEventStatus } from "../../utils/eventUtils";
+import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -479,6 +479,8 @@ const EventRegistration = () => {
 
   const isEventFull = useMemo(() => event ? event.attendees >= event.maxAttendees : false, [event]);
   const isPastEvent = useMemo(() => getEventStatus(event) === "past" || getEventStatus(event) === "ended", [event]);
+  const isCancelledEvent = useMemo(() => getEventStatus(event) === "cancelled", [event]);
+  const isRegistrationBlocked = useMemo(() => isEventRegistrationClosed(event), [event]);
 
   if (loading) {
     return (
@@ -506,14 +508,16 @@ const EventRegistration = () => {
     );
   }
 
-  if (isPastEvent) {
+  if (isRegistrationBlocked) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           {t("eventRegistration.pastEventTitle")}
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
-          {t("eventRegistration.pastEventDescription")}
+          {isCancelledEvent
+            ? "This event has been cancelled."
+            : t("eventRegistration.pastEventDescription")}
         </p>
         <Link
           to={isHackathonPath ? `/hackathons/${event.id}` : `/events/${event.id}`}
