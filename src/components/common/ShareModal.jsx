@@ -109,7 +109,7 @@ const ShareModal = ({ isOpen, onClose, event }) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.2 }}
-            onClick={(event) => event.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800/40">
               <h2 id="share-modal-title" className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
