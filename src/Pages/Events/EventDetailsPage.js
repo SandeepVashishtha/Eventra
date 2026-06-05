@@ -74,30 +74,37 @@ const EventDetailsPage = () => {
     : {};
 
   const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy link to clipboard");
-    }
-  };
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+
+    setCopied(true);
+
+    toast.success("Event link copied successfully!");
+
+    setTimeout(() => setCopied(false), 2000);
+  } catch {
+    toast.error("Failed to copy link to clipboard");
+  }
+};
 
   const handleNativeShare = async () => {
+  try {
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: event.title,
-          text: shareText,
-          url: shareUrl,
-        });
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          toast.error("Unable to share event");
-        }
-      }
+      await navigator.share({
+        title: event.title,
+        text: shareText,
+        url: shareUrl,
+      });
+
+      toast.success("Event shared successfully!");
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Share not supported. Link copied to clipboard!");
     }
-  };
+  } catch (error) {
+    toast.error("Failed to share event");
+  }
+};
 
   useEffect(() => {
     let isCancelled = false;
@@ -445,7 +452,7 @@ const EventDetailsPage = () => {
                     aria-label="Share via device"
                   >
                     <Share2 size={14} />
-                    Share via Device
+                    Share Event 📤
                   </button>
                 )}
               </div>
