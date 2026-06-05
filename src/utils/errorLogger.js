@@ -1,5 +1,6 @@
 import { SENTRY_DSN, isSentryEnabled } from "../config/env.js";
 import { safeParseJson } from "./jsonUtils";
+import { logger } from "./logger";
 
 // Try to load the real Sentry SDK. If @sentry/browser is not installed
 // (e.g. the dependency was skipped during npm install), every call below
@@ -60,15 +61,13 @@ function persistToLocalStorage(entry) {
 
 export const logError = (error, errorInfo, extra = {}) => {
   try {
-    console.group?.("[Eventra ErrorLogger]");
-    console.error("[ErrorLogger]", error);
+    logger.error("[ErrorLogger]", error);
     if (errorInfo?.componentStack) {
-      console.error("[ComponentStack]", errorInfo);
+      logger.error("[ComponentStack]", errorInfo);
     }
     if (Object.keys(extra).length) {
-      console.info("Context:", extra);
+      logger.info("[ErrorLogger] Context:", extra);
     }
-    console.groupEnd?.();
 
     if (Sentry) {
       Sentry.withScope((scope) => {
@@ -83,7 +82,7 @@ export const logError = (error, errorInfo, extra = {}) => {
     const entry = buildErrorEntry(error, errorInfo, extra);
     persistToLocalStorage(entry);
   } catch (loggerError) {
-    console.warn("[Eventra ErrorLogger] Failed to log error:", loggerError);
+    logger.warn("[Eventra ErrorLogger] Failed to log error:", loggerError);
   }
 };
 

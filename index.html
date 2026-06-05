@@ -1,3 +1,14 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Theme -->
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Eventra" />
 
     <!-- Preconnect for faster external resource loading -->
     <link rel="preconnect" href="https://api.github.com" />
@@ -48,4 +59,15 @@
       async
     ></script>
   </head>
+  <body>
+    <div id="root"></div>
 
+    <noscript>
+      <div style="padding: 1rem; text-align: center">
+        <strong>Eventra requires JavaScript to run. Please enable JavaScript in your browser.</strong>
+      </div>
+    </noscript>
+
+    <script type="module" src="/src/index.jsx"></script>
+  </body>
+</html>

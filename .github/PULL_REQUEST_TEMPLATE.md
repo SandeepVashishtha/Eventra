@@ -1,46 +1,44 @@
 <!--
   🙏 Thank you for contributing to Eventra!
-  Please fill out this template completely — incomplete PRs will receive the `do-not-merge` label.
-  Read the Contributing Guide: https://github.com/Ayushh-Sharmaa/Eventra/blob/main/CONTRIBUTING.md
+  Fill out this template completely — incomplete PRs will receive the `do-not-merge` label.
+  Contributing Guide: https://github.com/Ayushh-Sharmaa/Eventra/blob/main/CONTRIBUTING.md
 -->
 
 ## 📝 Description
 
-<!-- Provide a clear and concise summary of what this PR does and WHY it is needed. -->
+<!-- Clear, concise summary of WHAT this PR does and WHY it is needed. -->
 
 ## 🔗 Linked Issue
 
-<!-- Every PR MUST be linked to an open issue. PRs without a linked issue will be blocked. -->
-Closes #<!-- issue number -->
+<!-- PRs without a linked issue will be blocked. -->
+
+Closes #
 
 ## 🏷️ Type of Change
 
-<!-- Check all that apply -->
-- [ ] 🐛 Bug fix (non-breaking change that fixes an issue)
-- [ ] ✨ New feature (non-breaking change that adds functionality)
-- [ ] 💥 Breaking change (fix or feature that causes existing functionality to change)
-- [ ] ♻️ Refactor (code change with no functional effect)
+- [ ] 🐛 Bug fix (non-breaking)
+- [ ] ✨ New feature (non-breaking)
+- [ ] 💥 Breaking change
+- [ ] ♻️ Refactor (no functional effect)
 - [ ] 📖 Documentation update
 - [ ] 🎨 UI / Style update
 - [ ] ⚙️ CI / Workflow change
 - [ ] 🔒 Security fix
 
-## 🧪 How Has This Been Tested?
+## 🧪 Testing
 
-<!-- Describe the tests you ran to verify your changes. Provide instructions so reviewers can reproduce. -->
-
-**Test Environment:**
+**Environment:**
 - OS:
-- Browser / Node.js version:
+- Browser / Node.js:
 
-**Steps to test:**
+**Steps to reproduce / verify:**
 1.
 2.
 3.
 
-## 📸 Screenshots / Screen Recordings
+## 📸 Screenshots / Recording
 
-<!-- If your PR has UI changes, add before/after screenshots here. Delete this section if not applicable. -->
+<!-- Required for UI changes. Delete if not applicable. -->
 
 | Before | After |
 |--------|-------|
@@ -48,33 +46,29 @@ Closes #<!-- issue number -->
 
 ## ✅ Self-Review Checklist
 
-<!-- Complete EVERY item before requesting review. Unchecked required boxes = `do-not-merge` label. -->
+**Code Quality**
+- [ ] Self-review done; code follows project style and naming conventions
+- [ ] Hard-to-understand areas are commented
+- [ ] No new warnings, console errors, or leftover debug logs
 
-### Code Quality
-- [ ] I have performed a self-review of my own code
-- [ ] My code follows the project's style guidelines and naming conventions
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] My changes generate no new warnings or console errors
-- [ ] I have removed all debug logs, `console.log`, and temporary code
+**Testing**
+- [ ] Changes tested locally and work as expected
+- [ ] Existing tests pass (note any failures in Additional Notes)
+- [ ] New tests added for new functionality where applicable
 
-### Testing
-- [ ] I have tested my changes locally and they work as expected
-- [ ] Existing tests pass with my changes (or I've noted any failures below)
-- [ ] I have added tests for new functionality where applicable
+**Documentation & Standards**
+- [ ] README / docs / JSDoc updated if needed
+- [ ] Commits follow [Conventional Commits](https://www.conventionalcommits.org/) format
+- [ ] Branch named with correct prefix (`feat/`, `fix/`, `docs/`, etc.)
 
-### Documentation & Standards
-- [ ] I have updated relevant documentation (README, docs, JSDoc) if needed
-- [ ] My commit messages follow the [Conventional Commits](https://www.conventionalcommits.org/) format
-- [ ] My branch name follows the project's naming convention (`feat/`, `fix/`, `docs/`, etc.)
-
-### GSSoC Compliance
-- [ ] I was **assigned to the linked issue** before starting this PR
-- [ ] This PR does **not** include AI-generated boilerplate or copy-pasted content without understanding
-- [ ] I have not made trivial changes (whitespace-only, minor README typos) for point farming
+**GSSoC Compliance**
+- [ ] I was assigned to the linked issue before opening this PR
+- [ ] No AI-generated boilerplate or copy-pasted code included without full understanding
+- [ ] No trivial changes (whitespace-only, minor typos) made for point farming
 
 ## 📋 Additional Notes
 
-<!-- Any other information that reviewers should know. Leave blank if none. -->
+<!-- Anything else reviewers should know. Leave blank if none. -->
 
 ---
 _GSSoC'26 · Mentor: [@Ayushh-Sharmaa](https://github.com/Ayushh-Sharmaa)_
