@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import StyledDropdown from "../../components/StyledDropdown";
 import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
 import useEventFilterPresets from "../../hooks/useEventFilterPresets";
+import useFilterSuggestions from "../../hooks/useFilterSuggestions";
 import { exportEventsResultFile } from "../../utils/eventResultsExport";
 
 const CATEGORY_OPTIONS = [
@@ -56,6 +57,11 @@ const EventFiltersToolbar = ({
     updatePreset,
     deletePreset,
   } = useEventFilterPresets();
+  const { suggestions } = useFilterSuggestions({
+    currentFilters: currentFilterConfig,
+    visibleEvents,
+    presets,
+  });
 
   useEffect(() => {
     setLocalQuery(searchQuery || "");
@@ -141,6 +147,15 @@ const EventFiltersToolbar = ({
     }
   };
 
+  const suggestionKindLabels = {
+    category: "Category",
+    location: "Location",
+    eventType: "Type",
+    dateRange: "Date",
+    combination: "Combo",
+    preset: "Preset",
+  };
+
   const hasAnyFilterActive =
     (searchQuery && searchQuery.trim() !== "") ||
     (filterType && filterType !== "all") ||
@@ -207,6 +222,35 @@ const EventFiltersToolbar = ({
         isOpen={isAdvancedFiltersOpen}
         onToggleOpen={() => onToggleAdvancedFilters?.((isOpen) => !isOpen)}
       />
+
+      <section className="rounded-2xl border border-indigo-500/20 bg-indigo-950/20 p-4 shadow-inner">
+        <div className="flex flex-col gap-1">
+          <h4 className="flex items-center gap-2 text-sm font-bold text-indigo-100">
+            <Sparkles size={16} className="text-indigo-300" />
+            Suggested Filters
+          </h4>
+          <p className="text-xs text-indigo-200/60">
+            Personalized shortcuts from recent searches, views, presets, and popular event patterns.
+          </p>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {suggestions.map((suggestion) => (
+            <button
+              key={suggestion.id}
+              type="button"
+              onClick={() => onApplyPreset?.(suggestion.filters)}
+              className="group inline-flex max-w-full items-center gap-2 rounded-full border border-indigo-300/20 bg-slate-950/60 px-3 py-2 text-left text-xs font-semibold text-indigo-100 shadow-sm transition hover:border-indigo-300/50 hover:bg-indigo-500/20 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+              title={suggestion.reason}
+            >
+              <span className="rounded-full bg-indigo-400/15 px-2 py-0.5 text-[10px] uppercase tracking-wider text-indigo-200">
+                {suggestionKindLabels[suggestion.kind] || "Filter"}
+              </span>
+              <span className="truncate">{suggestion.label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="rounded-2xl border border-slate-800 bg-slate-900/45 p-4 shadow-inner">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
