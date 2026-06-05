@@ -1,23 +1,14 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
+import useDebounce from "../hooks/useDebounce";
 import "./styles/components.css";
 
 const SearchFilter = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm]);
 
   const categories = [
     { value: "all", label: "All Categories" },
@@ -114,17 +105,30 @@ const SearchFilter = () => {
     },
   ];
 
-  const filteredEvents = mockEvents.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-                         event.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
-      const normalizedLocation = event.location
-        ?.toString()
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-');
+  // 🔥 FIX: Safe date formatter to prevent RangeError crashes if event data is malformed
+  const safeFormatDate = (dateStr) => {
+    if (!dateStr) return "TBD";
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? "TBD" : d.toLocaleDateString();
+  };
 
-      const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
+  const filteredEvents = mockEvents.filter(event => {
+    const safeSearchTerm = (debouncedSearchTerm || "").toLowerCase();
+    
+    // 🔥 FIX: Added fallback empty strings to prevent TypeError crashes if event data is incomplete
+    const matchesSearch = 
+      (event.title || "").toLowerCase().includes(safeSearchTerm) ||
+      (event.description || "").toLowerCase().includes(safeSearchTerm);
+      
+    const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
+    
+    const normalizedLocation = event.location
+      ?.toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-');
+
+    const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
     const matchesPrice = priceFilter === 'all' || event.price === priceFilter;
     
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
@@ -155,7 +159,8 @@ const SearchFilter = () => {
         className="search-bar"
       >
         <div className="search-input-wrapper">
-          <span className="search-icon">🔍</span>
+          {/* 🔥 FIX: Added aria-hidden to prevent screen reader noise */}
+          <span className="search-icon" aria-hidden="true">🔍</span>
           <input
             id="search-events"
             type="text"
@@ -223,7 +228,7 @@ const SearchFilter = () => {
       </motion.div>
 
       {/* Results Count */}
-      <div className="results-count">
+      <div className="results-count" role="status" aria-live="polite">
         <span>{filteredEvents.length} events found</span>
       </div>
 
@@ -243,7 +248,8 @@ const SearchFilter = () => {
             className="event-card-search"
           >
             <div className="event-image-large">
-              <div className="event-emoji">{event.image}</div>
+              {/* 🔥 FIX: Added aria-hidden to decorative emoji */}
+              <div className="event-emoji" aria-hidden="true">{event.image}</div>
               <div className="event-badges">
                 <span className={`price-badge ${event.price}`}>
                   {event.price === "free" ? "FREE" : "PAID"}
@@ -253,20 +259,26 @@ const SearchFilter = () => {
             <div className="event-content">
               <h3 className="event-title">{event.title}</h3>
               <p className="event-description">{event.description}</p>
-              <div className="event-meta">
+              <div className="event-meta" aria-label="Event details">
                 <span className="event-date">
-                  📅 {new Date(event.date).toLocaleDateString()}
+                  <span role="img" aria-hidden="true" className="mr-1">📅</span> 
+                  {/* 🔥 FIX: Safely parse date */}
+                  {safeFormatDate(event.date)}
                 </span>
-                <span className="event-location">📍 {event.location}</span>
-                <span className="event-attendees">👥 {event.attendees}</span>
+                <span className="event-location">
+                  <span role="img" aria-hidden="true" className="mr-1">📍</span> {event.location}
+                </span>
+                <span className="event-attendees">
+                  <span role="img" aria-hidden="true" className="mr-1">👥</span> {event.attendees}
+                </span>
               </div>
-              <div className="event-rating">
-                <span className="stars">⭐⭐⭐⭐⭐</span>
+              <div className="event-rating" aria-label={`Rating: ${event.rating} out of 5 stars`}>
+                <span className="stars" aria-hidden="true">⭐⭐⭐⭐⭐</span>
                 <span className="rating-value">{event.rating}</span>
               </div>
               <div className="event-actions">
-                <button className="btn-primary" aria-label="button">Register Now</button>
-                <button className="btn-outline" aria-label="button">Learn More</button>
+                <button className="btn-primary" aria-label={`Register for ${event.title}`}>Register Now</button>
+                <button className="btn-outline" aria-label={`Learn more about ${event.title}`}>Learn More</button>
               </div>
             </div>
           </motion.div>
@@ -279,7 +291,8 @@ const SearchFilter = () => {
           animate={{ opacity: 1 }}
           className="no-results"
         >
-          <div className="no-results-icon">😞</div>
+          {/* 🔥 FIX: Added aria-hidden to decorative emoji */}
+          <div className="no-results-icon" aria-hidden="true">😞</div>
           <h3>No events found</h3>
           <p>Try adjusting your search criteria</p>
         </motion.div>

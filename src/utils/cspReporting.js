@@ -20,8 +20,15 @@
  * silently breaking the UI.
  */
 
-const isDev = process.env.NODE_ENV === 'development';
-const reportUri = process.env.REACT_APP_CSP_REPORT_URI || null;
+const runtimeEnv =
+  typeof import.meta !== "undefined" && import.meta.env
+    ? import.meta.env
+    : typeof process !== "undefined" && process.env
+      ? process.env
+      : {};
+
+const isDev = runtimeEnv.DEV ?? runtimeEnv.NODE_ENV === "development";
+const reportUri = runtimeEnv.VITE_CSP_REPORT_URI || runtimeEnv.REACT_APP_CSP_REPORT_URI || null;
 
 /**
  * Formats a SecurityPolicyViolationEvent into a structured report object
@@ -74,16 +81,29 @@ function sendReport(report) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Module-scoped handler reference
+//
+// Storing the handler at module scope is the only way to guarantee that
+// initCspReporting() and teardownCspReporting() operate on the SAME function
+// object. addEventListener/removeEventListener use reference equality, so
+// passing a new anonymous function to removeEventListener silently fails to
+// remove the previously registered listener, causing a memory leak.
+// ---------------------------------------------------------------------------
+let _cspHandler = null;
+
 /**
  * Attaches the CSP violation listener to the document.
  *
  * Call this once from the application entry point (index.js) after the
- * DOM is ready.
+ * DOM is ready. Calling it again while already active is a no-op.
  */
 export function initCspReporting() {
   if (typeof document === 'undefined') return;
+  // Guard against double registration
+  if (_cspHandler) return;
 
-  document.addEventListener('securitypolicyviolation', (event) => {
+  _cspHandler = (event) => {
     const report = buildReport(event);
 
     if (isDev) {
@@ -99,16 +119,23 @@ export function initCspReporting() {
     }
 
     sendReport(report);
-  });
+  };
+
+  document.addEventListener('securitypolicyviolation', _cspHandler);
 }
 
 /**
  * Removes the CSP violation listener.
- * Useful in unit tests to reset between test cases.
+ *
+ * Uses the same `_cspHandler` reference that was registered in
+ * `initCspReporting()` so the listener is actually removed. Previously
+ * this passed a new anonymous function to removeEventListener, which
+ * silently did nothing and caused a memory leak on every test teardown.
  */
 export function teardownCspReporting() {
   if (typeof document === 'undefined') return;
-  // Re-adding without the original reference would leave the old listener
-  // attached; this is a best-effort teardown for test environments only.
-  document.removeEventListener('securitypolicyviolation', () => {});
+  if (!_cspHandler) return;
+
+  document.removeEventListener('securitypolicyviolation', _cspHandler);
+  _cspHandler = null;
 }

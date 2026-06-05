@@ -1,5 +1,14 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useId, useRef } from "react";
 import "./ConfirmationModal.css";
+
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "textarea:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
 
 const ConfirmationModal = ({
   isOpen,
@@ -12,45 +21,117 @@ const ConfirmationModal = ({
 }) => {
   const cancelButtonRef = useRef(null);
   const modalRef = useRef(null);
+  const previouslyFocusedElementRef = useRef(null);
+  const titleId = useId();
+  const descriptionId = useId();
 
   useEffect(() => {
     if (!isOpen) return;
+
     const prevOverflow = document.body.style.overflow;
-    const prevActive = document.activeElement;
+    previouslyFocusedElementRef.current = document.activeElement;
+
     document.body.style.overflow = "hidden";
     cancelButtonRef.current?.focus();
 
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose();
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusableElements = Array.from(
+        modalRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) || []
+      ).filter((element) => !element.hasAttribute("disabled"));
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        modalRef.current?.focus();
+        return;
+      }
+
+      const firstFocusableElement = focusableElements[0];
+      const lastFocusableElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstFocusableElement) {
+        event.preventDefault();
+        lastFocusableElement.focus();
+        return;
+      }
+
+      if (!event.shiftKey && activeElement === lastFocusableElement) {
+        event.preventDefault();
+        firstFocusableElement.focus();
+        return;
+      }
+
+      if (!modalRef.current?.contains(activeElement)) {
+        event.preventDefault();
+        firstFocusableElement.focus();
+      }
     };
-    document.addEventListener("keydown", onKey);
+
+    document.addEventListener("keydown", handleKeyDown);
+
     return () => {
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = prevOverflow;
-      prevActive?.focus?.();
+      if (previouslyFocusedElementRef.current?.isConnected) {
+        previouslyFocusedElementRef.current.focus();
+      }
+      previouslyFocusedElementRef.current = null;
     };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) onClose();
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
   };
 
   return (
-    <div className="confirmation-modal-overlay" onClick={handleOverlayClick} role="presentation">
-      <div ref={modalRef} className="confirmation-modal-content" role="dialog" aria-modal="true">
+    <div
+      className="confirmation-modal-overlay"
+      onClick={handleOverlayClick}
+      role="presentation"
+    >
+      <div
+        ref={modalRef}
+        className="confirmation-modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+        tabIndex={-1}
+      >
         <div className="confirmation-modal-header">
-          <h3>{title}</h3>
+          <h3 id={titleId}>{title}</h3>
         </div>
+
         <div className="confirmation-modal-body">
-          <p>{message}</p>
+          <p id={descriptionId}>{message}</p>
         </div>
+
         <div className="confirmation-modal-actions">
-          <button ref={cancelButtonRef} type="button" className="confirmation-modal-btn confirmation-modal-btn-cancel" onClick={onClose} aria-label="Cancel">
+          <button
+            ref={cancelButtonRef}
+            type="button"
+            className="confirmation-modal-btn confirmation-modal-btn-cancel"
+            onClick={onClose}
+          >
             {cancelText}
           </button>
-          <button type="button" className="confirmation-modal-btn confirmation-modal-btn-confirm" onClick={onConfirm} aria-label="Confirm">
+
+          <button
+            type="button"
+            className="confirmation-modal-btn confirmation-modal-btn-confirm"
+            onClick={onConfirm}
+          >
             {confirmText}
           </button>
         </div>

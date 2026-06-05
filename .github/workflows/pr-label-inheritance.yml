@@ -2,7 +2,7 @@ name: PR Label Inheritance
 
 on:
   pull_request_target:
-    types: [opened, edited, reopened, synchronize]
+    types: [opened, edited, reopened]
 
 permissions:
   issues: read
@@ -25,18 +25,15 @@ jobs:
             // ── Label categories managed by dedicated workflows ─────────────
             // These are intentionally excluded from inheritance to avoid
             // conflicts with difficulty.yml, type-labeler.yml, quality-labeler.yml,
-            // pr-status-lifecycle.yml, and pr-conflict-labeler.yml.
+            // and pr-auto-assign.yml (gssoc:approved).
             // Each of those workflows manages its own label namespace exclusively.
             const MANAGED_PREFIXES = [
               'level:',       // owned by difficulty.yml
               'type:',        // owned by type-labeler.yml
               'quality:',     // owned by quality-labeler.yml
-              'gssoc:',       // owned by pr-status-lifecycle.yml (deploy verified)
+              'size/',         // owned by size-labeler.yml
+              'gssoc:',       // owned by pr-auto-assign.yml
               'mentor:',      // managed manually by mentors
-              'review:',      // owned by pr-status-lifecycle.yml
-              'deploy:',      // owned by pr-status-lifecycle.yml
-              'changes:',     // owned by pr-status-lifecycle.yml
-              'conflict:',    // owned by pr-conflict-labeler.yml
             ];
 
             function isManagedLabel(name) {
@@ -44,10 +41,12 @@ jobs:
             }
 
             // 1. Extract linked issue numbers using regex
-            // Matching keywords: Fixes, Closes, Resolves, Fixed, Closed, Resolved followed by #<number>
-            const regex = /(?:fixes|closes|resolves|fixed|closed|resolved)\s+#(\d+)/gi;
+            // Matching keywords: Fixes, Closes, Resolves, Fixed, Closed, Resolved followed by one or more issue references.
+            const regex = /(?:fixes|closes|resolves|fixed|closed|resolved)\s*[:\-]?\s*((?:#\d+(?:\s*(?:,|and)\s*)?)+)/gi;
             const matches = [...body.matchAll(regex)];
-            const linkedIssues = [...new Set(matches.map(match => parseInt(match[1])))];
+            const linkedIssues = [...new Set(
+              matches.flatMap(match => [...match[1].matchAll(/#(\d+)/g)].map(issue => parseInt(issue[1], 10)))
+            )];
 
             console.log(`Linked issues found: ${linkedIssues.join(', ') || 'None'}`);
 

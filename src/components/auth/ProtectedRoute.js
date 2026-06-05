@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { isTokenValid } from '../../utils/auth';
@@ -49,11 +49,30 @@ const ProtectedRoute = ({
     );
   }
 
+  // If the user is not authenticated, send them to login regardless of which
+  // downstream check fails. This handles the edge case where isAuthenticated()
+  // returns true (e.g. stale session data) but role/permission checks still fail
+  // for an unauthenticated user — we redirect to /login instead of /unauthorized.
+  const redirectIfUnauthenticated = () => {
+    if (!isAuthenticated()) {
+      return (
+        <Navigate
+          to={redirectTo}
+          replace
+          state={{ from: location, sessionExpired }}
+        />
+      );
+    }
+    return null;
+  };
+
   // SECURITY: Check required roles against JWT token (server-signed, authoritative).
   // hasRole() verifies roles from the JWT, not localStorage, preventing privilege escalation.
   if (requiredRoles.length > 0) {
     const hasRequiredRole = requiredRoles.some(role => hasRole(role));
     if (!hasRequiredRole) {
+      const authRedirect = redirectIfUnauthenticated();
+      if (authRedirect) return authRedirect;
       return <Navigate to="/unauthorized" replace state={{ from: location }} />;
     }
   }
@@ -61,8 +80,10 @@ const ProtectedRoute = ({
   // SECURITY: Check required permissions against JWT claims.
   // Permissions must be verified server-side for critical operations.
   if (requiredPermissions.length > 0) {
-    const hasRequiredPermission = requiredPermissions.some(permission => hasPermission(permission));
+    const hasRequiredPermission = requiredPermissions.every(permission => hasPermission(permission));
     if (!hasRequiredPermission) {
+      const authRedirect = redirectIfUnauthenticated();
+      if (authRedirect) return authRedirect;
       return <Navigate to="/unauthorized" replace state={{ from: location }} />;
     }
   }
@@ -73,6 +94,8 @@ const ProtectedRoute = ({
     const userScopes = user?.scopes || user?.scope?.split(' ') || [];
     const hasRequiredScope = requiredScopes.every(scope => userScopes.includes(scope));
     if (!hasRequiredScope) {
+      const authRedirect = redirectIfUnauthenticated();
+      if (authRedirect) return authRedirect;
       return <Navigate to="/unauthorized" replace state={{ from: location }} />;
     }
   }
@@ -81,6 +104,8 @@ const ProtectedRoute = ({
   if (validateContext && typeof validateContext === 'function') {
     const isContextValid = validateContext({ user, location });
     if (!isContextValid) {
+      const authRedirect = redirectIfUnauthenticated();
+      if (authRedirect) return authRedirect;
       return <Navigate to="/unauthorized" replace state={{ from: location }} />;
     }
   }

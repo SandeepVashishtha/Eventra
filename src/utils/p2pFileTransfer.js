@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * src/utils/p2pFileTransfer.js
  *
@@ -38,6 +39,22 @@ const getDB = () => {
   });
 };
 
+// Helper to attach error/abort handlers to an IndexedDB transaction and request
+const attachIdbReadHandlers = (transaction, request, resolve, fallbackValue, functionName) => {
+  transaction.onerror = (err) => {
+    console.error(`${functionName} transaction error:`, err);
+    resolve(fallbackValue);
+  };
+  transaction.onabort = (err) => {
+    console.error(`${functionName} transaction aborted:`, err);
+    resolve(fallbackValue);
+  };
+  request.onerror = (err) => {
+    console.error(`${functionName} request error:`, err);
+    resolve(fallbackValue);
+  };
+};
+
 // Check if all chunks for a file exist in IndexedDB
 export async function isFileCached(fileId) {
   try {
@@ -46,11 +63,12 @@ export async function isFileCached(fileId) {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
       
-      // Let's search by keys
       const request = store.openCursor();
       let chunksCount = 0;
       let totalChunks = 0;
       
+      attachIdbReadHandlers(transaction, request, resolve, false, "isFileCached");
+
       request.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
@@ -77,9 +95,12 @@ export async function getCachedFile(fileId) {
     return new Promise((resolve) => {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
+
       const request = store.openCursor();
       const chunks = [];
       
+      attachIdbReadHandlers(transaction, request, resolve, null, "getCachedFile");
+
       request.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
@@ -177,9 +198,11 @@ export class P2PFileTransferCoordinator {
     this.bc = getSignalingChannel();
     this.isInitiator = false;
     this.onMessageListener = null;
+    this.currentState = null;
   }
 
   updateState(state, progress = 0, speed = "-", peer = null, count = 1) {
+    this.currentState = state;
     if (this.onStateChange) {
       this.onStateChange({
         state, // 'searching', 'connecting', 'transferring', 'completed', 'failed'
@@ -270,14 +293,37 @@ export class P2PFileTransferCoordinator {
 
     // We wait 2.5 seconds to discover nearby peers. If none answer, we fail and trigger fallback.
     return new Promise((resolve) => {
-      setTimeout(() => {
-        if (!this.pc) {
+      const searchTimeout = setTimeout(() => {
+        if (!this.pc || this.currentState === "searching") {
           this.cleanup();
           resolve(false); // No peers found, trigger server fallback
-        } else {
-          resolve(true); // Connected to peer!
         }
       }, 2500);
+
+      // Add a secondary connection safety timer of 5 seconds total
+      const connectionSafetyTimeout = setTimeout(() => {
+        if (this.currentState === "connecting" || this.currentState === "searching") {
+          this.cleanup();
+          resolve(false); // WebRTC connection handshakes timed out, fallback to server
+        } else if (this.currentState === "completed" || this.currentState === "transferring") {
+          resolve(true);
+        }
+      }, 5000);
+
+      // Attach state listener check to resolve immediately if completed
+      const checkInterval = setInterval(() => {
+        if (this.currentState === "completed") {
+          clearTimeout(searchTimeout);
+          clearTimeout(connectionSafetyTimeout);
+          clearInterval(checkInterval);
+          resolve(true);
+        } else if (this.currentState === "failed") {
+          clearTimeout(searchTimeout);
+          clearTimeout(connectionSafetyTimeout);
+          clearInterval(checkInterval);
+          resolve(false);
+        }
+      }, 200);
     });
   }
 
@@ -360,6 +406,44 @@ export class P2PFileTransferCoordinator {
     }
   }
 
+  // Regulate chunk transmission using DataChannel flow control
+  async sendChunks(fileChunks) {
+    const total = fileChunks.length;
+    const channel = this.channel;
+    if (!channel) return;
+
+    // Monitor bufferedAmount and pause sending when the buffer is congested
+    channel.bufferedAmountLowThreshold = 65536; // 64 KB
+    let index = 0;
+
+    const sendNext = () => {
+      while (index < total) {
+        if (!channel || channel.readyState !== "open") {
+          break;
+        }
+
+        // Check if browser DataChannel buffer is congested
+        if (channel.bufferedAmount > channel.bufferedAmountLowThreshold) {
+          channel.onbufferedamountlow = () => {
+            channel.onbufferedamountlow = null;
+            sendNext();
+          };
+          return;
+        }
+
+        const chunk = fileChunks[index];
+        channel.send(JSON.stringify({
+          chunkIndex: chunk.chunkIndex,
+          totalChunks: total,
+          data: chunk.data
+        }));
+        index++;
+      }
+    };
+
+    sendNext();
+  }
+
   // Setup WebRTC DataChannel handlers for transferring chunks
   setupDataChannel() {
     if (!this.channel) return;
@@ -371,24 +455,19 @@ export class P2PFileTransferCoordinator {
       if (!this.isInitiator) {
         const fileChunks = await getCachedFile(this.fileId);
         if (fileChunks) {
-          const total = fileChunks.length;
-          fileChunks.forEach((chunk, index) => {
-            setTimeout(() => {
-              if (this.channel && this.channel.readyState === "open") {
-                this.channel.send(JSON.stringify({
-                  chunkIndex: chunk.chunkIndex,
-                  totalChunks: total,
-                  data: chunk.data
-                }));
-              }
-            }, index * 200); // Throttling chunk transmissions
-          });
+          this.sendChunks(fileChunks);
         }
       }
     };
 
     this.channel.onmessage = async (e) => {
-      const chunkMsg = JSON.parse(e.data);
+      let chunkMsg;
+      try {
+        chunkMsg = JSON.parse(e.data);
+      } catch (err) {
+        console.error("Failed to parse incoming P2P message:", err);
+        return;
+      }
       this.receivedChunks.push(chunkMsg);
 
       const progress = Math.round((this.receivedChunks.length / chunkMsg.totalChunks) * 100);
@@ -415,6 +494,9 @@ export class P2PFileTransferCoordinator {
     };
 
     this.channel.onclose = () => {
+      if (this.currentState !== "completed") {
+        this.updateState("failed");
+      }
       this.cleanup();
     };
   }
