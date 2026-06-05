@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Sun, MousePointer, Bell, ShieldCheck, ArrowRight, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import useDocumentTitle from "../hooks/useDocumentTitle";
-import { toast } from "react-hot-toast";
+import { showSuccessToast, showErrorToast } from "../utils/toast";
 
 const Settings = () => {
   useDocumentTitle("Eventra | Settings");
@@ -57,17 +57,17 @@ const Settings = () => {
       });
       setShowKey(true);
       setIsGenerating(false);
-      toast.success("New Advanced Backup Key generated successfully!");
+      showSuccessToast("New Advanced Backup Key generated successfully!");
     }, 850);
   };
 
   const handleCopyKey = () => {
     if (!backupKey) return;
     navigator.clipboard.writeText(`Mnemonic: ${backupKey.mnemonic}\nHex: ${backupKey.hex}`)
-      .then(() => toast.success("Backup key copied to clipboard!"))
+      .then(() => showSuccessToast("Backup key copied to clipboard!"))
       .catch((err) => {
         console.error("Failed to copy key:", err);
-        toast.error("Could not copy key. Please copy manually.");
+        showErrorToast("Could not copy key. Please copy manually.");
       });
   };
 
@@ -82,7 +82,7 @@ const Settings = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Backup key file downloaded!");
+    showSuccessToast("Backup key file downloaded!");
   };
 
   return (
@@ -320,7 +320,7 @@ const Settings = () => {
                   localStorage.removeItem("eventra_onboarding_completed_fired");
                   localStorage.removeItem("eventra_sandbox_executed");
                   localStorage.removeItem("eventra_ai_recommendation_generated");
-                  toast.success("Onboarding checklist reset successfully!");
+                  showSuccessToast("Onboarding checklist reset successfully!");
                   // Dispatch custom event to let widget know immediately if settings resets it
                   window.dispatchEvent(new CustomEvent("eventraOnboardingReset"));
                 }}

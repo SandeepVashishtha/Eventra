@@ -6,9 +6,11 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
+import { eventService } from '../services/eventService';
 import { logger } from "../utils/logger";
 import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership } from '../utils/offlineQueue';
-import { isTokenValid } from '../utils/tokenUtils';
+// isTokenValid import removed; authentication is now checked via isAuthenticated()
+// from AuthContext, which handles both token-based and cookie-managed sessions.
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
 
 const MAX_RETRIES = 3;
@@ -33,7 +35,7 @@ const BASE_BACKOFF_MS = 1_000;
  */
 
 const useOfflineSync = () => {
-  const { token, user } = useAuth();
+  const { token, user, isAuthenticated, loading } = useAuth();
   const isSyncing = useRef(false);
   const isLockPending = useRef(false); // 🔥 FIX: Protects against asynchronous race conditions during Web Lock acquisition
   const conflictControllerRef = useRef(new AbortController());
@@ -189,8 +191,18 @@ const useOfflineSync = () => {
         return;
       }
 
-      // Refuse to replay queued actions under an expired or missing token.
-      if (!token || !isTokenValid(token)) {
+      // Wait for AuthContext to finish initial session validation before
+      // attempting to sync. During loading, token and user are still null even
+      // for valid cookie-managed sessions, so any check here would be premature.
+      if (loading) {
+        return;
+      }
+
+      // Use the same authentication check as the rest of the application.
+      // isAuthenticated() correctly handles both token-based and cookie-managed
+      // sessions, avoiding the false "session expired" failure that occurred
+      // when useOfflineSync called isTokenValid("cookie-managed") directly.
+      if (!isAuthenticated()) {
         toast.warning(
           "Offline actions are pending but your session has expired. Please log in again to sync them.",
           { autoClose: 6000 }
@@ -231,6 +243,12 @@ const useOfflineSync = () => {
         return;
       }
 
+      // Cookie-managed sessions authenticate via the HttpOnly session cookie
+      // sent automatically by the browser. Do not forward the "cookie-managed"
+      // sentinel string as a Bearer token value; pass null instead so the
+      // Authorization header is omitted and the session cookie is used.
+      const authToken = token === "cookie-managed" ? null : token;
+
       isSyncing.current = true;
 
       try {
@@ -264,7 +282,7 @@ const useOfflineSync = () => {
             let res = await postWithBackoff(
               url,
               item.payload,
-              token,
+              authToken,
               0,
               false,
               conflictController.signal, 
@@ -350,10 +368,12 @@ const useOfflineSync = () => {
       }
 
       const heartbeatInterval = setInterval(() => {
+        if (syncLockAborted) { clearInterval(heartbeatInterval); return; }
         try {
           localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
         } catch (e) {}
       }, 10_000);
+      heartbeatIntervalRef.current = heartbeatInterval;
 
       try {
         await executeSync();
@@ -417,6 +437,8 @@ const useOfflineSync = () => {
 
     let idleId = null;
     let timeoutId = null;
+    const heartbeatIntervalRef = { current: null };
+    let syncLockAborted = false;
 
     if (navigator.onLine) {
       if (typeof window.requestIdleCallback === "function") {
@@ -441,6 +463,14 @@ const useOfflineSync = () => {
       // listener is removed and the sync loop exits cleanly on unmount.
       conflictController.abort();
       
+      // Signal the sync lock heartbeat to stop — it runs outside React's
+      // lifecycle and won't be caught by the normal finally block on unmount.
+      syncLockAborted = true;
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+
       if (idleId !== null) {
         window.cancelIdleCallback(idleId);
       }

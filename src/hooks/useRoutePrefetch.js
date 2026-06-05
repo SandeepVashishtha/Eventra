@@ -11,6 +11,8 @@ import { prefetchRoute } from "../utils/prefetchUtils";
  *
  * Automatically pre-fetches high-priority routes based on the current location.
  * For example, if the user is on the Home page, we might pre-fetch the Explore page.
+ * A custom React hook that automatically prefetches high-priority
+ * routes based on the current page location.
  *
  * Uses requestIdleCallback to avoid blocking the main thread.
  * Falls back to setTimeout on browsers that don't support it.
