@@ -18,10 +18,10 @@ describe('XSS Sanitization for Event Descriptions', () => {
   });
 
   it('should strip onerror handlers', () => {
-    const html = '<img src="invalid.jpg" onerror="alert(1)" />';
+    const html = '<img src="invalid.jpg" alt="" onerror="alert(1)" />';
     const sanitized = DOMPurify.sanitize(html);
     
-    expect(sanitized).toContain('<img src="invalid.jpg">');
+    expect(sanitized).toContain('<img src="invalid.jpg" alt="">');
     expect(sanitized).not.toContain('onerror');
   });
 });
