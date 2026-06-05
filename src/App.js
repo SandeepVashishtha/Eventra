@@ -137,17 +137,6 @@ function App() {
                   duration-300
                 "
               >
-<<<<<<< HEAD
-              <PageTransition>
-  <Suspense
-    fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
-      </div>
-    }
-  >
-    <Routes>
-=======
                 <PageTransition>
                   <Suspense
                     fallback={
@@ -158,16 +147,11 @@ function App() {
                   >
                     <Routes>
                       <Route path="/register/:id" element={<RegistrationPage />} />
-                      <Route
-                        path="/register/:id"
-                        element={<RegistrationPage />}
-                      />
 
                       <Route
                         path="/event-recommendation"
                         element={<EventRecommendation />}
                       />
->>>>>>> upstream/master
 
                       <Route
                         path="*"

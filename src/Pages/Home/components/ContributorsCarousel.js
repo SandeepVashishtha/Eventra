@@ -32,22 +32,24 @@ const getRoleByGitHubActivity = (contributor) => {
   return "New Contributor";
 };
 
+import { get, set } from 'idb-keyval';
+
 // Local storage helpers
-const getCachedContributors = () => {
+const getCachedContributors = async () => {
   try {
-    const cachedData = localStorage.getItem(STORAGE_KEY);
+    const cachedData = await get(STORAGE_KEY);
     if (!cachedData) return null;
-    const { data, timestamp } = JSON.parse(cachedData);
+    const { data, timestamp } = cachedData;
     return Date.now() - timestamp > CACHE_DURATION ? null : data;
   } catch {
     return null;
   }
 };
-const cacheContributors = (data) => {
+const cacheContributors = async (data) => {
   try {
-    localStorage.setItem(
+    await set(
       STORAGE_KEY,
-      JSON.stringify({ data, timestamp: Date.now() })
+      { data, timestamp: Date.now() }
     );
   } catch {}
 };
@@ -126,7 +128,7 @@ const Contributors = () => {
   // Fetch contributors
   const fetchContributors = useCallback(async () => {
     setLoading(true);
-    const cached = getCachedContributors();
+    const cached = await getCachedContributors();
     if (cached) {
       setContributors(cached);
       setLoading(false);
@@ -161,7 +163,7 @@ const Contributors = () => {
 
       enhanced.sort((a, b) => b.contributions - a.contributions);
       setContributors(enhanced);
-      cacheContributors(enhanced);
+      await cacheContributors(enhanced);
     } catch {
       setContributors([]);
     } finally {

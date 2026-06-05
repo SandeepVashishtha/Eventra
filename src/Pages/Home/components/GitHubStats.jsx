@@ -21,19 +21,21 @@ const GITHUB_REPO = "Eventra";
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
 
-const readCache = () => {
+import { get, set } from 'idb-keyval';
+
+const readCache = async () => {
   try {
-    const raw = localStorage.getItem(LS_KEY);
+    const raw = await get(LS_KEY);
     if (!raw) return null;
-    const { data, ts } = JSON.parse(raw);
+    const { data, ts } = raw;
     return Date.now() - ts > CACHE_MS ? null : data;
   } catch {
     return null;
   }
 };
-const writeCache = (data) => {
+const writeCache = async (data) => {
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify({ data, ts: Date.now() }));
+    await set(LS_KEY, { data, ts: Date.now() });
   } catch {}
 };
 
@@ -55,13 +57,13 @@ export default function GitHubStats() {
 
   useEffect(() => {
     let mounted = true;
-    const cached = readCache();
-    if (cached && mounted) {
-      setStats(cached);
-      setIsLoading(false);
-    }
 
     (async () => {
+      const cached = await readCache();
+      if (cached && mounted) {
+        setStats(cached);
+        setIsLoading(false);
+      }
       try {
         const repoRes = await fetch(`${process.env.REACT_APP_API_URL}/github/repo`);
         if (!repoRes.ok) throw new Error(`Repo ${repoRes.status}`);
@@ -105,11 +107,12 @@ export default function GitHubStats() {
 
         if (mounted) {
           setStats(next);
-          writeCache(next);
+          await writeCache(next);
           setIsLoading(false);
         }
       } catch (err) {
         console.warn("GitHub stats fetch failed", err);
+        const cached = await readCache();
         if (!cached && mounted) {
           setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
           setIsLoading(false);
