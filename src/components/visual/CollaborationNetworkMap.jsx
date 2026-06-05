@@ -306,15 +306,18 @@ export default function CollaborationNetworkMap() {
   return (
     <section className="bg-white dark:bg-slate-950 py-12 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="relative overflow-hidden">
-          {/* Header with Controls */}
-          <div className="mb-8 flex flex-col gap-6">
+        {/* ── Glassmorphic outer card — wraps the entire module ── */}
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl dark:bg-slate-950/70 dark:border-white/5">
+
+          {/* Header */}
+          <div className="mb-6 flex flex-col gap-3">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-2 text-sm font-medium text-blue-400">
                 <Globe className="h-4 w-4" />
                 <span>Global Connectivity</span>
               </div>
-              <div className="absolute top-6 right-6 flex items-center gap-3 z-10">
+              {/* Zoom controls — positioned relative to the card, not the page */}
+              <div className="flex items-center gap-3">
                 <button
                   className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg transition hover:scale-105 hover:bg-violet-500"
                   onClick={() => setZoom((z) => Math.min(z + 0.2, 2))}
@@ -332,135 +335,140 @@ export default function CollaborationNetworkMap() {
               </div>
             </div>
 
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Global Collaboration Network
+            <h2 className="text-3xl font-bold tracking-tight text-white">
+              Real-Time Global Collaboration Network
             </h2>
-            <p className="max-w-2xl text-slate-600 dark:text-slate-400">
-              Real-time collaboration across {stats.totalDevs.toLocaleString()} developers in{" "}
-              {stats.regions} regions.
+            <p className="max-w-2xl text-slate-400">
+              Connecting {stats.totalDevs.toLocaleString()} developers across{" "}
+              {stats.regions} regions in a unified ecosystem.
             </p>
+          </div>
 
-            {/* Filters */}
-            <div className="mb-10 flex flex-wrap items-center gap-4">
-              <div className="relative">
-                <Search
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
-                />
-                <input
-                  type="text"
-                  placeholder="Search hubs or technologies..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full md:w-80 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-3 pl-10 pr-4 text-slate-700 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  aria-label="Search hubs"
-                />
-              </div>
+          {/* ── Filters row — glass pill container so inputs stand clear of the map ── */}
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-slate-800/60 px-4 py-3 backdrop-blur-md">
+            <div className="relative">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="text"
+                placeholder="Search hubs or technologies..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full md:w-64 rounded-xl border border-slate-600 bg-slate-900/70 py-2.5 pl-10 pr-4 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                aria-label="Search hubs"
+              />
+            </div>
 
-              <div className="relative">
-                <Filter
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
-                />
-                <select
-                  value={selectedActivity}
-                  onChange={(e) => setSelectedActivity(e.target.value)}
-                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-3 pl-10 pr-4 text-slate-700 dark:text-slate-200 focus:outline-none"
-                  aria-label="Filter by activity"
-                >
-                  {["All", "Critical", "High", "Medium", "Low"].map((a) => (
-                    <option key={a} value={a}>
-                      {a} Activity
-                    </option>
-                  ))}
-                </select>
-              </div>
-
+            <div className="relative">
+              <Filter
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
               <select
                 value={selectedRegion}
                 onChange={(e) => setSelectedRegion(e.target.value)}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-700 focus:outline-none"
+                className="rounded-xl border border-slate-600 bg-slate-900/70 py-2.5 pl-10 pr-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
                 aria-label="Filter by region"
               >
                 {REGIONS.map((region) => (
                   <option key={region} value={region}>
-                    {region === "All" ? "All Regions" : region}
+                    {region === "All" ? "All" : region}
                   </option>
                 ))}
               </select>
-
-              <label className="flex items-center gap-2 text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={showConnections}
-                  onChange={(e) => setShowConnections(e.target.checked)}
-                  className=" h-5 w-5 rounded-lg border-slate-300 focus:ring-2 focus:ring-violet-500 cursor-pointer"
-                />
-                <span>Connections</span>
-              </label>
-
-              <label className="flex items-center gap-2 text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={particlesEnabled}
-                  onChange={(e) => setParticlesEnabled(e.target.checked)}
-                  disabled={prefersReducedMotion}
-                  className="h-5 w-5 rounded-lg border-slate-300 focus:ring-2 focus:ring-violet-500 cursor-pointer"
-                />
-                <span>Animated particles</span>
-              </label>
             </div>
+
+            <div className="relative">
+              <Activity
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <select
+                value={selectedActivity}
+                onChange={(e) => setSelectedActivity(e.target.value)}
+                className="rounded-xl border border-slate-600 bg-slate-900/70 py-2.5 pl-10 pr-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                aria-label="Filter by activity"
+              >
+                {["All", "Critical", "High", "Medium", "Low"].map((a) => (
+                  <option key={a} value={a}>
+                    {a} Activity
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <label className="flex items-center gap-2 text-slate-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showConnections}
+                onChange={(e) => setShowConnections(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-600 bg-slate-800 accent-violet-500 focus:ring-2 focus:ring-violet-500 cursor-pointer"
+              />
+              <span>Connections</span>
+            </label>
+
+            <label className="flex items-center gap-2 text-slate-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={particlesEnabled}
+                onChange={(e) => setParticlesEnabled(e.target.checked)}
+                disabled={prefersReducedMotion}
+                className="h-4 w-4 rounded border-slate-600 bg-slate-800 accent-violet-500 focus:ring-2 focus:ring-violet-500 cursor-pointer disabled:opacity-40"
+              />
+              <span>Particles</span>
+            </label>
           </div>
 
-          {/* Stats Summary */}
-          <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-            className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg"
-              <Users size={18} />
+          {/* ── Stats Summary ── */}
+          <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-800/50 p-5 shadow-inner backdrop-blur-sm">
+              <Users size={18} className="text-violet-400 shrink-0" />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
                   {stats.totalDevs.toLocaleString()}
                 </span>
-                <span className="mt-1 block text-sm text-slate-600">Developers</span>
+                <span className="mt-0.5 block text-xs uppercase tracking-wider text-slate-400">Developers</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
-              <Code size={18} />
+            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-800/50 p-5 shadow-inner backdrop-blur-sm">
+              <Code size={18} className="text-violet-400 shrink-0" />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
                   {stats.totalProjects}
                 </span>
-                <span className="mt-1 block text-sm text-slate-600">Projects</span>
+                <span className="mt-0.5 block text-xs uppercase tracking-wider text-slate-400">Projects</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
-              <GitBranch size={18} />
+            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-800/50 p-5 shadow-inner backdrop-blur-sm">
+              <GitBranch size={18} className="text-violet-400 shrink-0" />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
                   {CONNECTIONS.length}
                 </span>
-                <span className="mt-1 block text-sm text-slate-600">Connections</span>
+                <span className="mt-0.5 block text-xs uppercase tracking-wider text-slate-400">Connections</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
-              <TrendingUp size={18} />
+            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-800/50 p-5 shadow-inner backdrop-blur-sm">
+              <TrendingUp size={18} className="text-violet-400 shrink-0" />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
                   {stats.activeHubs}/{HUBS.length}
                 </span>
-                <span className="mt-1 block text-sm text-slate-600">Active Hubs</span>
+                <span className="mt-0.5 block text-xs uppercase tracking-wider text-slate-400">Active Hubs</span>
               </div>
             </div>
           </div>
 
-          {/* Map Frame */}
+          {/* ── Map Frame — z-0 keeps the SVG canvas below the filter/popup layer ── */}
           <div
-            className="relative mt-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900"
+            className="relative z-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/80"
             style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
           >
             <svg
               className="h-[420px] w-full"
               viewBox="0 0 1000 500"
-              
               preserveAspectRatio="xMidYMid meet"
               role="img"
               aria-label="Global collaboration network map"
@@ -554,7 +562,6 @@ export default function CollaborationNetworkMap() {
                       transition={{ duration: 2, repeat: Infinity }}
                       className="node-pulse"
                     />
-
                     {/* Glow effect */}
                     <circle
                       cx={hub.x}
@@ -565,7 +572,6 @@ export default function CollaborationNetworkMap() {
                       opacity={isActive ? 0.8 : 0.4}
                       className="node-glow"
                     />
-
                     {/* Core node */}
                     <circle
                       cx={hub.x}
@@ -576,7 +582,6 @@ export default function CollaborationNetworkMap() {
                       strokeWidth="2.5"
                       className="node-core"
                     />
-
                     {/* Pin indicator */}
                     {isPinned && (
                       <motion.path
@@ -587,14 +592,13 @@ export default function CollaborationNetworkMap() {
                         animate={{ scale: 1 }}
                       />
                     )}
-
                     {/* Label */}
                     <text
                       x={hub.x}
                       y={hub.y + hubSize + 18}
                       textAnchor="middle"
                       className="node-label"
-                      fill="#334155"
+                      fill="#cbd5e1"
                       fontSize="11"
                       fontWeight="500"
                     >
@@ -605,7 +609,7 @@ export default function CollaborationNetworkMap() {
               })}
             </svg>
 
-            {/* Popup Card */}
+            {/* ── Popup Card — z-50 ensures it renders above the SVG canvas ── */}
             <AnimatePresence>
               {(activeHub || pinnedHub) && (
                 <motion.div
@@ -613,13 +617,11 @@ export default function CollaborationNetworkMap() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.92, y: 8 }}
                   transition={{ duration: 0.18, ease: "easeOut" }}
-                  className={`absolute w-70 z-50 bg-white p-5 m-4 shadow-lg rounded-lg ${pinnedHub ? "pinned" : ""}`}
-                  style={getPopupStyle(activeHub || pinnedHub)}
+                  className={`absolute left-4 top-4 z-50 w-72 rounded-2xl border border-white/10 bg-slate-900/90 p-5 shadow-2xl backdrop-blur-xl ${pinnedHub ? "pinned" : ""}`}
                 >
-                  {/* Close button for pinned */}
                   {pinnedHub && (
                     <button
-                      className="popup-close"
+                      className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600"
                       onClick={(e) => {
                         e.stopPropagation();
                         setPinnedHub(null);
@@ -627,130 +629,102 @@ export default function CollaborationNetworkMap() {
                       }}
                       aria-label="Close popup"
                     >
-                      <X size={18} />
+                      <X size={14} />
                     </button>
                   )}
 
-                  {/* Header */}
                   <div className="mb-4">
-
                     <div className="flex items-center gap-2">
-                      <MapPin className="text-blue-500" size={18} />
-
-                      <h4 className="text-xl font-bold text-slate-800">
+                      <MapPin className="text-blue-400" size={18} />
+                      <h4 className="text-base font-bold text-white">
                         {(activeHub || pinnedHub).name}
                       </h4>
                     </div>
-
-                    <div className="mt-2 ml-7 text-xs text-slate-500 space-y-1">
-
+                    <div className="mt-2 ml-7 text-xs text-slate-400 space-y-1">
                       <div>
-                        {(activeHub || pinnedHub).lat}° N • {(activeHub || pinnedHub).lng}° E
+                        {(activeHub || pinnedHub).lat} • {(activeHub || pinnedHub).lng}
                       </div>
-
                       <div className="flex items-center gap-1">
                         <Clock size={13} />
                         {formatTimeInZone((activeHub || pinnedHub).timezone)}
                       </div>
-
                     </div>
-
                   </div>
 
-                  {/* Stats Grid */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="bg-slate-50 rounded-lg p-3">
-                      <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 flex-shrink-0" />
-                        <span className="mt-1 block text-sm text-slate-600">Developers</span>
+                    <div className="rounded-xl bg-slate-800/70 p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Users className="w-4 h-4 text-violet-400 shrink-0" />
+                        <span className="text-xs text-slate-400">Developers</span>
                       </div>
-                      <h4 className="block text-2xl font-bold text-emerald-400">
-                          {(activeHub || pinnedHub).devs.toLocaleString()}
-                      </h4>
+                      <span className="block text-xl font-bold text-emerald-400">
+                        {(activeHub || pinnedHub).devs.toLocaleString()}
+                      </span>
                     </div>
-                    <div className="bg-slate-50 rounded-lg p-3">
-                      <div className="flex items-center gap-2">
-                        <Code className="w-4 h-4 flex-shrink-0" />
-                        <span className="mt-1 block text-sm text-slate-600">Projects</span>
+                    <div className="rounded-xl bg-slate-800/70 p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Code className="w-4 h-4 text-violet-400 shrink-0" />
+                        <span className="text-xs text-slate-400">Projects</span>
                       </div>
-                      <h4 className="block text-2xl font-bold text-emerald-400">
-                          {(activeHub || pinnedHub).projects}
-                      </h4>
+                      <span className="block text-xl font-bold text-emerald-400">
+                        {(activeHub || pinnedHub).projects}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Categories */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {(activeHub || pinnedHub).categories.map((cat) => (
-                      <span key={cat} className="px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-600">
+                      <span key={cat} className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-slate-700/80 text-slate-300">
                         {cat}
                       </span>
                     ))}
                   </div>
 
-                  {/* Status & Region */}
-                  <div className="mb-4 flex items-center justify-between">
-
-                    <span className="text-sm text-slate-500">
-                      Activity Level
-                    </span>
-
-                    <div
-                      className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold
-                      ${(activeHub || pinnedHub).activity === "critical"
-                        ? "bg-red-100 text-red-600"
-                        : (activeHub || pinnedHub).activity === "high"
-                        ? "bg-orange-100 text-orange-600"
-                        : (activeHub || pinnedHub).activity === "medium"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-green-100 text-green-600"
-                      }`}
-                    >
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-sm text-slate-400">Activity</span>
+                    <div className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-700/60 text-slate-200">
                       <Activity size={12} />
                       {ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].label}
                     </div>
                   </div>
 
-                  {/* Region */}
-                  <div className="flex items-center justify-between border-t pt-3">
-
-                    <span className="text-sm font-medium text-slate-600">
+                  <div className="flex items-center justify-between border-t border-white/10 pt-3">
+                    <span className="text-sm font-medium text-slate-300">
                       {(activeHub || pinnedHub).region}
                     </span>
-
-                    <button className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    <button className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 text-sm font-medium">
                       <ExternalLink size={14} />
                       View Details
                     </button>
-
                   </div>
-                
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* Legend */}
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 text-sm text-slate-600">
-            <h5>Activity Levels</h5>
-            <div className="flex flex-wrap items-center gap-4">
+          {/* ── Footer row: legend left, zoom indicator right ── */}
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
+            {/* Activity legend — bottom-left */}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
+              <span className="font-medium text-slate-300">Activity Levels</span>
               {Object.entries(ACTIVITY_LEVELS).map(([key, config]) => (
                 <div key={key} className="flex items-center gap-2">
                   <span
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: config.color, boxShadow: `0 0 8px ${config.pulse}` }}
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: config.color, boxShadow: `0 0 6px ${config.pulse}` }}
                   />
                   <span>{config.label}</span>
                 </div>
               ))}
             </div>
+
+            {/* Zoom indicator — bottom-right */}
+            <div className="rounded-full border border-white/10 bg-slate-800/60 px-4 py-1.5 text-sm text-slate-300 backdrop-blur-sm">
+              Zoom: {Math.round(zoom * 100)}%
+            </div>
           </div>
 
-          {/* Zoom Indicator */}
-          <div className="absolute bottom-6 right-6 rounded-full bg-white border border-slate-200 px-4 py-2 text-sm text-slate-700 shadow-lg">
-            Zoom: {Math.round(zoom * 100)}%
-          </div>
-        </div>
+        </div>{/* end glass card */}
       </div>
     </section>
   );
