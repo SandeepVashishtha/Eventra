@@ -1,7 +1,16 @@
 FROM node:22-alpine AS build
 WORKDIR /app
+
+# Copy dependency manifests first for Docker layer caching
 COPY package*.json ./
-RUN npm ci --prefer-offline --no-audit --no-fund
+
+# Install dependencies with BuildKit cache mount for npm cache persistence
+# --mount=type=cache preserves ~/.npm across builds so npm doesn't re-download
+# packages that are already cached from previous builds
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline --no-audit --no-fund --cache /root/.npm
+
+# Copy source code and build
 COPY . .
 RUN npm run build
 
