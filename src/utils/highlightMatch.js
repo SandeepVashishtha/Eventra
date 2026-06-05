@@ -1,4 +1,3 @@
-import React from "react";
 
 /**
  * Escapes all special RegExp metacharacters in a string so it can be used
@@ -47,7 +46,7 @@ const highlightMatch = (text, query) => {
   return parts.map((part, index) =>
     part.toLowerCase() === query.toLowerCase() ? (
       <span
-        key={index}
+        key={`${part}-${index}`}
         className="
           bg-yellow-200
           dark:bg-yellow-500/30

@@ -8,7 +8,6 @@ import { X } from "lucide-react";
 const FilterBadge = ({
   label,
   onRemove,
-  type = "default",
   variant = "default",
 }) => {
   // Color variants for different filter types
@@ -71,4 +70,4 @@ const FilterBadge = ({
   );
 };
 
-export default FilterBadge;
+export default React.memo(FilterBadge);

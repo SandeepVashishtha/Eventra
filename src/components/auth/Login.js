@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
+import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 import useReducedMotion from "../../hooks/useReducedMotion";
-import GoogleLoginButton from './GoogleLoginButton';
 import FieldError from '../common/FieldError';
 import useLoginRateLimit from '../../hooks/useLoginRateLimit';
-import { MAX_LOGIN_ATTEMPTS } from '../../utils/rateLimitUtils';
+import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from '../../utils/rateLimitUtils';
 import '../../styles/auth.css';
 
 const Login = () => {
@@ -28,6 +28,7 @@ const Login = () => {
     recordAttempt,
     resetAttempts,
     isLockedOut,
+    applyServerLockout,
   } = useLoginRateLimit();
 
   // If ProtectedRoute redirected here because the JWT expired, show a notice.
@@ -74,12 +75,13 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    if (authRequest.loading) return;
     if (isLockedOut()) return;
     if (!validate()) return;
 
     try {
-      const ok = await login(formData.usernameOrEmail, formData.password);
+      const sanitizedUsernameOrEmail = formData.usernameOrEmail.trim();
+      const ok = await login(sanitizedUsernameOrEmail, formData.password);
       if (ok) {
         resetAttempts();
         showAuthToast("Login successful! Redirecting to dashboard...", () =>
@@ -87,8 +89,23 @@ const Login = () => {
         );
       }
     } catch (err) {
-      recordAttempt();
-      toast.error(err.message || 'Login failed. Please check your credentials.');
+      toast.error(getPublicErrorMessage(err, AUTH_ERRORS.loginFailed));
+      const retryAfterHeader =
+        err?.response?.headers?.['retry-after'] ||
+        err?.response?.headers?.['Retry-After'] ||
+        err?.retryAfter ||
+        null;
+
+      const serverDelayMs = parseRetryAfterMs(retryAfterHeader);
+      if (serverDelayMs > 0) {
+        applyServerLockout(serverDelayMs / 1000);
+        toast.error(
+          `Too many requests. Please wait ${Math.ceil(serverDelayMs / 1000)} seconds before trying again.`,
+        );
+      } else {
+        recordAttempt();
+        toast.error(err.message || 'Login failed. Please check your credentials.');
+      }
     }
   };
 
@@ -127,7 +144,7 @@ const Login = () => {
                   {introPoints.map((point) => (
                     <div
                       key={point}
-                      className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white backdrop-blur-sm"
+                      className="flex items-start gap-3 rounded-xl border border-white/30 bg-white/10 px-4 py-3 text-sm text-white backdrop-blur-sm ring-[0.5px] ring-white/10"
                     >
                       <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0" />
                       <span className="leading-relaxed">{point}</span>
@@ -191,7 +208,7 @@ const Login = () => {
                 <motion.div
                   whileHover={{ scale: 1.05, rotate: 5 }}
                   whileTap={{ scale: 0.95 }}
-                  className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-3xl flex items-center justify-center shadow-md border border-blue-100"
+                  className="mx-auto w-16 h-16 bg-white/10 dark:bg-white/5 rounded-3xl flex items-center justify-center shadow-md border border-white/20 dark:border-white/10"
                 >
                   <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -223,9 +240,8 @@ const Login = () => {
                       placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
                       aria-invalid={!!error.usernameOrEmail}
                       aria-describedby={error.usernameOrEmail ? 'usernameOrEmail-error' : undefined}
-                      className={`w-full pl-3 pr-4 py-3 bg-white dark:bg-gray-800 border ${
-                        error.usernameOrEmail ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-gray-600'
-                      } rounded-xl placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
+                      className={`w-full pl-3 pr-4 py-3 bg-white dark:bg-gray-800 border ${error.usernameOrEmail ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-gray-600'
+                        } rounded-xl placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
                     />
                   </div>
                   <FieldError id="usernameOrEmail-error" message={error.usernameOrEmail} />
@@ -253,9 +269,8 @@ const Login = () => {
                       placeholder="Enter secure password / Minimum 8 characters / Use strong password"
                       aria-invalid={!!error.password}
                       aria-describedby={error.password ? 'password-error' : undefined}
-                      className={`w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border ${
-                        error.password ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-gray-600'
-                      } rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border ${error.password ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-gray-600'
+                        } rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
                     />
                     <button
                       type="button"
@@ -316,12 +331,10 @@ const Login = () => {
 
               </motion.form>
 
-              <GoogleLoginButton />
-
               {/* Sign up link */}
               <div className="text-center">
                 <p style={{ color: "var(--text-color-light)" }}>
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <Link to="/signup" className="text-blue-600 hover:underline font-semibold">
                     Create one here
                   </Link>

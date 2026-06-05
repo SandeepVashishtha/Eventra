@@ -1,14 +1,12 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useTheme } from "../context/ThemeContext";
-import { Sun, Moon, MousePointer, Bell, ShieldCheck, ArrowRight, Palette, Key, Eye, EyeOff, Clipboard, Download, Check, ShieldAlert, RefreshCw } from "lucide-react";
+import { Sun, MousePointer, Bell, ShieldCheck, ArrowRight, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import useDocumentTitle from "../hooks/useDocumentTitle";
-import { toast } from "react-hot-toast";
+import { showSuccessToast, showErrorToast } from "../utils/toast";
 
 const Settings = () => {
   useDocumentTitle("Eventra | Settings");
-  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
 
   // Replace scattered localStorage.getItem / setItem calls with the hook
   const [cursorEnabled, setCursorEnabled] = useLocalStorage("cursor", "on");
@@ -43,16 +41,14 @@ const Settings = () => {
         "crypto", "kernel", "daemon", "syntax", "lexicon", "cosmos", "beacon", "vortex"
       ];
       
-      const phraseArr = [];
-      for (let i = 0; i < 12; i++) {
-        const idx = Math.floor(Math.random() * words.length);
-        phraseArr.push(words[idx]);
-      }
-      
+      const randomIndices = new Uint32Array(12);
+      crypto.getRandomValues(randomIndices);
+      const phraseArr = Array.from(randomIndices, (v) => words[v % words.length]);
+
       const keyMnemonic = phraseArr.join(" ");
-      const keyHex = Array.from({ length: 64 }, () => 
-        Math.floor(Math.random() * 16).toString(16)
-      ).join("");
+      const randomBytes = new Uint8Array(32);
+      crypto.getRandomValues(randomBytes);
+      const keyHex = Array.from(randomBytes, (b) => b.toString(16).padStart(2, "0")).join("");
       
       setBackupKey({
         mnemonic: keyMnemonic,
@@ -61,17 +57,17 @@ const Settings = () => {
       });
       setShowKey(true);
       setIsGenerating(false);
-      toast.success("New Advanced Backup Key generated successfully!");
+      showSuccessToast("New Advanced Backup Key generated successfully!");
     }, 850);
   };
 
   const handleCopyKey = () => {
     if (!backupKey) return;
     navigator.clipboard.writeText(`Mnemonic: ${backupKey.mnemonic}\nHex: ${backupKey.hex}`)
-      .then(() => toast.success("Backup key copied to clipboard!"))
+      .then(() => showSuccessToast("Backup key copied to clipboard!"))
       .catch((err) => {
         console.error("Failed to copy key:", err);
-        toast.error("Could not copy key. Please copy manually.");
+        showErrorToast("Could not copy key. Please copy manually.");
       });
   };
 
@@ -86,11 +82,11 @@ const Settings = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Backup key file downloaded!");
+    showSuccessToast("Backup key file downloaded!");
   };
 
   return (
-    <section className="min-h-screen bg-white dark:bg-black text-slate-900 dark:text-slate-100 py-24">
+    <section className="min-h-screen bg-bg text-text py-24">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="space-y-3">
           <p className="text-sm uppercase tracking-[0.3em] text-indigo-600 dark:text-indigo-400 font-semibold">
@@ -104,54 +100,23 @@ const Settings = () => {
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Appearance */}
-          <article className="rounded-3xl border border-slate-200/70 dark:border-slate-700/90 bg-slate-50 dark:bg-slate-950/70 p-6 shadow-sm">
+          <article className="rounded-3xl border border-slate-200/70 dark:border-slate-700/90 bg-card-bg/70 p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4 text-slate-900 dark:text-slate-100">
               <Sun className="w-6 h-6 text-yellow-500" aria-hidden="true" />
               <div>
                 <h2 className="text-lg font-semibold">Appearance</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Switch themes and customize visual behavior.
+                  Customize visual behavior.
                 </p>
               </div>
             </div>
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={toggleTheme}
-                aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-                aria-pressed={isDarkMode}
-                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
-              >
-                <span className="flex items-center gap-3">
-                  {isDarkMode ? (
-                    <Moon className="w-5 h-5 text-indigo-500" aria-hidden="true" />
-                  ) : (
-                    <Sun className="w-5 h-5 text-amber-500" aria-hidden="true" />
-                  )}
-                  {isDarkMode ? "Dark Mode" : "Light Mode"}
-                </span>
-                <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsCustomizerOpen(true)}
-                aria-label="Open theme customizer skins panel"
-                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition cursor-pointer"
-              >
-                <span className="flex items-center gap-3">
-                  <Palette className="w-5 h-5 text-indigo-500" aria-hidden="true" />
-                  Theme Customizer
-                </span>
-                <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
-              </button>
-
-              <button
-                type="button"
                 onClick={handleCursorToggle}
                 aria-label={cursorEnabled !== "off" ? "Disable fluid cursor" : "Enable fluid cursor"}
                 aria-pressed={cursorEnabled !== "off"}
-                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
+                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-bg px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
               >
                 <span className="flex items-center gap-3">
                   <MousePointer className="w-5 h-5 text-emerald-500" aria-hidden="true" />
@@ -163,7 +128,7 @@ const Settings = () => {
           </article>
 
           {/* Notifications */}
-          <article className="rounded-3xl border border-slate-200/70 dark:border-slate-700/90 bg-slate-50 dark:bg-slate-950/70 p-6 shadow-sm">
+          <article className="rounded-3xl border border-slate-200/70 dark:border-slate-700/90 bg-card-bg/70 p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4 text-slate-900 dark:text-slate-100">
               <Bell className="w-6 h-6 text-cyan-500" aria-hidden="true" />
               <div>
@@ -181,7 +146,7 @@ const Settings = () => {
                   notificationsEnabled ? "Pause notifications" : "Enable notifications"
                 }
                 aria-pressed={!!notificationsEnabled}
-                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
+                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-bg px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
               >
                 <span className="flex items-center gap-3">
                   <Bell className="w-5 h-5 text-cyan-500" aria-hidden="true" />
@@ -190,13 +155,23 @@ const Settings = () => {
                 <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
               </button>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                We'll keep you updated about new events, hackathons, and important account alerts.
+                We&apos;ll keep you updated about new events, hackathons, and important account alerts.
               </p>
+              <Link
+                to="/settings/notifications"
+                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-bg px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
+              >
+                <span className="flex items-center gap-3">
+                  <SlidersHorizontal className="w-5 h-5 text-cyan-500" aria-hidden="true" />
+                  Notification Preferences
+                </span>
+                <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
+              </Link>
             </div>
           </article>
 
           {/* Privacy */}
-          <article className="rounded-3xl border border-slate-200/70 dark:border-slate-700/90 bg-slate-50 dark:bg-slate-950/70 p-6 shadow-sm">
+          <article className="rounded-3xl border border-slate-200/70 dark:border-slate-700/90 bg-card-bg/70 p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4 text-slate-900 dark:text-slate-100">
               <ShieldCheck className="w-6 h-6 text-teal-500" aria-hidden="true" />
               <div>
@@ -212,7 +187,7 @@ const Settings = () => {
                 onClick={() => setPrivacyMode((prev) => !prev)}
                 aria-label={privacyMode ? "Disable privacy mode" : "Enable privacy mode"}
                 aria-pressed={!!privacyMode}
-                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
+                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-bg px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
               >
                 <span className="flex items-center gap-3">
                   <ShieldCheck className="w-5 h-5 text-teal-500" aria-hidden="true" />
@@ -228,7 +203,7 @@ const Settings = () => {
         </div>
 
         {/* Advanced Backup Recovery Key Generator Card */}
-        <section className="rounded-3xl border border-slate-200/70 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-6 shadow-sm space-y-6 animate-fadeIn">
+        <section className="rounded-3xl border border-slate-200/70 dark:border-slate-800 bg-card-bg/70 p-6 shadow-sm space-y-6 animate-fadeIn">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
               <Key className="w-6 h-6" />
@@ -241,7 +216,7 @@ const Settings = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl p-5 space-y-4">
+          <div className="bg-card-bg/50 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl p-5 space-y-4">
             {backupKey ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
@@ -250,7 +225,7 @@ const Settings = () => {
                 </div>
 
                 <div className="relative">
-                  <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-850 font-mono text-xs break-all select-all pr-20 leading-relaxed">
+                  <div className="bg-bg p-4 rounded-xl border border-slate-200 dark:border-slate-850 font-mono text-xs break-all select-all pr-20 leading-relaxed">
                     {showKey ? (
                       <div className="space-y-2.5">
                         <div>
@@ -329,7 +304,7 @@ const Settings = () => {
           </div>
         </section>
 
-        <div className="rounded-3xl border border-slate-200/70 dark:border-slate-700/90 bg-slate-50 dark:bg-slate-950/70 p-6 shadow-sm">
+        <div className="rounded-3xl border border-slate-200/70 dark:border-slate-700/90 bg-card-bg/70 p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-semibold">Account Settings</h2>
@@ -345,11 +320,11 @@ const Settings = () => {
                   localStorage.removeItem("eventra_onboarding_completed_fired");
                   localStorage.removeItem("eventra_sandbox_executed");
                   localStorage.removeItem("eventra_ai_recommendation_generated");
-                  toast.success("Onboarding checklist reset successfully!");
+                  showSuccessToast("Onboarding checklist reset successfully!");
                   // Dispatch custom event to let widget know immediately if settings resets it
                   window.dispatchEvent(new CustomEvent("eventraOnboardingReset"));
                 }}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-sm font-medium hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition cursor-pointer text-slate-800 dark:text-slate-100"
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-bg px-4 py-3 text-sm font-medium hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition cursor-pointer text-slate-800 dark:text-slate-100"
               >
                 Reset Onboarding
               </button>

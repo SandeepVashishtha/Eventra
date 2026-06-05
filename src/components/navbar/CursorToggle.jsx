@@ -1,4 +1,3 @@
-import React from "react";
 import { MousePointer } from "lucide-react";
 
 const CursorToggle = ({ cursorEnabled, toggleCursor }) => {
@@ -13,13 +12,13 @@ const CursorToggle = ({ cursorEnabled, toggleCursor }) => {
           ? "Turn off background cursor effects"
           : "Turn on background cursor effects"
       }
-      className={`rounded-lg border px-1 py-1 transition-colors flex items-center justify-center ${
+      className={`h-9 w-9 rounded-full border transition-colors flex items-center justify-center shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
         cursorEnabled
-          ? "border-indigo-500 bg-indigo-600 text-white shadow-sm"
-          : "border-gray-300 bg-gray-100 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+          ? "border-primary/40 bg-primary/10 text-primary"
+          : "border-border bg-card-bg text-text-light hover:bg-bg-secondary"
       }`}
     >
-      <MousePointer aria-hidden="true" />
+      <MousePointer className="h-4 w-4" aria-hidden="true" />
     </button>
   );
 };

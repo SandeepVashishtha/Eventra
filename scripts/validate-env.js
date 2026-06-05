@@ -3,23 +3,11 @@
  * scripts/validate-env.js
  *
  * Build-time environment variable sanitation and validation script.
- *
- * SECURITY PURPOSE:
- * Prevents accidental leakage of private backend credentials (API keys,
- * database URLs, secret keys) into the client-side JavaScript bundle.
- *
- * HOW IT WORKS:
- * 1. Scans all REACT_APP_* vars (the only ones CRA bundles into JS).
- * 2. Detects variable names or values matching common secret patterns.
- * 3. If any leaks are found, exits with code 1 — stopping the webpack build.
- *
- * USAGE: Called automatically via the "prebuild" npm script hook.
+ * Prevents accidental leakage of private credentials into client bundles.
  */
 
-'use strict';
+"use strict";
 
-// ── Sensitive key-name patterns ───────────────────────────────────────────────
-// If a REACT_APP_ variable's NAME matches any of these, it is likely a secret.
 const SENSITIVE_KEY_PATTERNS = [
   /private[_\-]?key/i,
   /secret[_\-]?key/i,
@@ -41,129 +29,125 @@ const SENSITIVE_KEY_PATTERNS = [
   /ssh[_\-]?key/i,
   /encryption[_\-]?key/i,
   /signing[_\-]?key/i,
+  /github[_\-]?token/i,
+  /access[_\-]?token/i,
+  /bearer[_\-]?token/i,
+  /personal[_\-]?access/i,
+  /api[_\-]?token/i,
+  /auth[_\-]?token/i,
+  /[_\-]?password$/i,
+  /[_\-]?passwd$/i,
+  /[_\-]?credential/i,
+  /webhook[_\-]?secret/i,
+  /client[_\-]?secret/i,
+  /app[_\-]?secret/i,
 ];
 
-// ── Sensitive value patterns ──────────────────────────────────────────────────
-// If a REACT_APP_ variable's VALUE matches these, it is almost certainly a secret.
 const SENSITIVE_VALUE_PATTERNS = [
   { pattern: /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, label: 'PEM private key' },
   { pattern: /AIza[0-9A-Za-z\-_]{35}/, label: 'Google API key' },
-  { pattern: /sk-[a-zA-Z0-9]{48}/, label: 'OpenAI secret key' },
+  { pattern: /sk-[A-Za-z0-9_-]{32,}/, label: 'OpenAI secret key' },
   { pattern: /rk_live_[0-9a-zA-Z]{24}/, label: 'Stripe restricted key' },
   { pattern: /SK[0-9a-f]{32}/, label: 'Twilio auth token' },
   { pattern: /xox[baprs]-[0-9a-zA-Z]{10,}/, label: 'Slack API token' },
-  { pattern: /mongodb\+srv:\/\/[^:]+:[^@]+@/, label: 'MongoDB Atlas URI with credentials' },
-  { pattern: /postgres:\/\/[^:]+:[^@]+@/, label: 'PostgreSQL URI with credentials' },
-  { pattern: /mysql:\/\/[^:]+:[^@]+@/, label: 'MySQL URI with credentials' },
-  { pattern: /ghp_[a-zA-Z0-9]{36}/, label: 'GitHub personal access token' },
-  { pattern: /eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\./, label: 'JWT token (should not be hardcoded in env)' },
+  { pattern: /mongodb(\+srv)?:\/\/[^:\s]+:[^@\s]+@/, label: 'MongoDB URI with credentials' },
+  { pattern: /postgres(ql)?:\/\/[^:\s]+:[^@\s]+@/, label: 'PostgreSQL URI with credentials' },
+  { pattern: /mysql:\/\/[^:\s]+:[^@\s]+@/, label: 'MySQL URI with credentials' },
+  { pattern: /gh[pousr]_[A-Za-z0-9_]{20,}/, label: 'GitHub personal access token' },
+  { pattern: /github_pat_[A-Za-z0-9_]{22,}/, label: 'GitHub fine-grained personal access token' },
+  { pattern: /eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\./, label: 'JWT token (hardcoded)' },
 ];
 
-// Variables that are expected and safe even if they match sensitive key patterns.
-// For example, Google Client ID is public — it is safe to expose in the browser.
 const ALLOWED_EXCEPTIONS = new Set([
-  'REACT_APP_GOOGLE_CLIENT_ID',
-  'REACT_APP_EMAILJS_PUBLIC_KEY',
+  "REACT_APP_API_URL",
+  "REACT_APP_GITHUB_REPO",
+  "REACT_APP_PUBLIC_URL",
+  "REACT_APP_VAPID_PUBLIC_KEY",
+  "REACT_APP_CSP_REPORT_URI",
 ]);
 
-// Required REACT_APP_ variables that MUST be present for the app to function.
-const REQUIRED_VARS = [
-  'REACT_APP_API_URL',
-];
+const REQUIRED_VARS = ["VITE_API_URL"];
 
-// Variables that require proper format validation
 const FORMAT_VALIDATED_VARS = {
-  'REACT_APP_API_URL': {
+  VITE_API_URL: {
     pattern: /^https?:\/\/.+/,
-    message: 'REACT_APP_API_URL must be a valid HTTP/HTTPS URL (e.g., https://api.example.com)',
-  },
-  'REACT_APP_GOOGLE_CLIENT_ID': {
-    pattern: /^[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$/,
-    message: 'REACT_APP_GOOGLE_CLIENT_ID must be a valid Google OAuth client ID format',
-  },
-  'REACT_APP_SSE_URL': {
-    pattern: /^https?:\/\/.+/,
-    message: 'REACT_APP_SSE_URL must be a valid HTTP/HTTPS URL',
+    message: "VITE_API_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
   },
 };
 
-// Optional REACT_APP_ variables that may enable extra features.
-const OPTIONAL_VARS = [
-  'REACT_APP_GOOGLE_CLIENT_ID',
-  'REACT_APP_EMAILJS_SERVICE_ID',
-  'REACT_APP_EMAILJS_TEMPLATE_ID',
-  'REACT_APP_EMAILJS_PUBLIC_KEY',
-  'REACT_APP_SSE_URL',
-];
-
-// ── Validation logic ──────────────────────────────────────────────────────────
+const OPTIONAL_VARS = [];
 
 let hasErrors = false;
 const errors = [];
 const warnings = [];
 
-console.log('\n🔍 [validate-env] Scanning environment variables for security issues...\n');
+console.log("\n[validate-env] Scanning environment variables for security issues...\n");
 
-// Check required variables
-console.log('📋 Required variables:');
+console.log("Required variables:");
 for (const varName of REQUIRED_VARS) {
   if (!process.env[varName]) {
-    console.warn(`  ⚠  MISSING: ${varName} (app may fail to connect to backend)`);
+    console.warn(`  WARNING: missing ${varName} (app may fail to connect to backend)`);
     warnings.push(`Required variable ${varName} is not set`);
   } else {
-    console.log(`  ✓  ${varName} = [set]`);
+    console.log(`  OK: ${varName} = [set]`);
   }
 }
 
-// Check optional variables
-console.log('\n📋 Optional variables:');
-for (const varName of OPTIONAL_VARS) {
-  if (!process.env[varName]) {
-    console.log(`  -  ${varName} (not set — feature may be disabled)`);
-  } else {
-    console.log(`  ✓  ${varName} = [set]`);
+if (process.env.REACT_APP_GROQ_API_KEY) {
+  const msg =
+    "[SECURITY LEAK] REACT_APP_GROQ_API_KEY must not be exposed via REACT_APP_. Move it server-side only.";
+  errors.push(msg);
+  hasErrors = true;
+}
+
+console.log("\nOptional variables:");
+if (OPTIONAL_VARS.length === 0) {
+  console.log("  (none configured)");
+} else {
+  for (const varName of OPTIONAL_VARS) {
+    if (!process.env[varName]) {
+      console.log(`  - ${varName} (not set)`);
+    } else {
+      console.log(`  OK: ${varName} = [set]`);
+    }
   }
 }
 
-// Format validation for specific variables
-console.log('\n🔍 Validating format of specific environment variables...');
+console.log("\nValidating variable formats...");
 for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   const value = process.env[varName];
-  if (value) {
-    if (!config.pattern.test(value)) {
-      const msg = `[FORMAT ERROR] ${varName}: ${config.message}`;
-      errors.push(msg);
-      hasErrors = true;
-      console.error(`  ✗  ${msg}`);
-    } else {
-      console.log(`  ✓  ${varName} format is valid`);
-    }
+  if (!value) continue;
+
+  if (!config.pattern.test(value)) {
+    const msg = `[FORMAT ERROR] ${varName}: ${config.message}`;
+    errors.push(msg);
+    hasErrors = true;
+    console.error(`  ERROR: ${msg}`);
+  } else {
+    console.log(`  OK: ${varName} format is valid`);
   }
 }
 
-// Scan all REACT_APP_ variables for credential leaks
-console.log('\n🔐 Scanning REACT_APP_* variables for credential leaks...');
-const reactAppVars = Object.keys(process.env).filter(k => k.startsWith('REACT_APP_'));
+console.log("\nScanning VITE_* variables for credential leaks...");
+const viteVars = Object.keys(process.env).filter((k) => k.startsWith("VITE_"));
 
-for (const key of reactAppVars) {
+for (const key of viteVars) {
   if (ALLOWED_EXCEPTIONS.has(key)) continue;
 
-  const value = process.env[key] || '';
+  const value = process.env[key] || "";
 
-  // Check variable name against sensitive patterns
   for (const pattern of SENSITIVE_KEY_PATTERNS) {
     if (pattern.test(key)) {
-      const msg = `[SECURITY LEAK] ${key}: variable name matches sensitive pattern "${pattern}". Private keys MUST NOT be prefixed with REACT_APP_ — they will be bundled into the JS output visible to all users.`;
+      const msg = `[SECURITY LEAK] ${key}: variable name matches sensitive pattern "${pattern}".`;
       errors.push(msg);
       hasErrors = true;
       break;
     }
   }
 
-  // Check variable value against known secret token formats
   for (const { pattern, label } of SENSITIVE_VALUE_PATTERNS) {
     if (pattern.test(value)) {
-      const msg = `[SECURITY LEAK] ${key}: value matches a known ${label} pattern. This secret will be embedded in the client-side JavaScript bundle and exposed to all users.`;
+      const msg = `[SECURITY LEAK] ${key}: value matches known ${label} pattern.`;
       errors.push(msg);
       hasErrors = true;
       break;
@@ -171,43 +155,31 @@ for (const key of reactAppVars) {
   }
 }
 
-// Print warnings (non-blocking)
 if (warnings.length > 0) {
-  console.log('');
+  console.log("");
   for (const warning of warnings) {
-    console.warn(`  ⚠  ${warning}`);
+    console.warn(`  WARNING: ${warning}`);
   }
 }
 
-// Print errors (blocking — will stop the build)
 if (errors.length > 0) {
-  console.log('');
+  console.log("");
   for (const err of errors) {
-    console.error(`  ✗  ${err}`);
+    console.error(`  ERROR: ${err}`);
   }
 }
 
-// Exit with result
-const criticalErrors = errors.filter(e => e.includes('[SECURITY LEAK]') || e.includes('[FORMAT ERROR]'));
-if (criticalErrors.length > 0) {
+const criticalErrors = errors.filter(
+  (e) => e.includes("[SECURITY LEAK]") || e.includes("[FORMAT ERROR]")
+);
+if (criticalErrors.length > 0 || hasErrors) {
   console.error(
-    `\n❌ [validate-env] BUILD ABORTED: ${criticalErrors.length} critical issue(s) detected.\n` +
-    '  ─────────────────────────────────────────────────────────────────────\n' +
-    '  Security Leaks (must fix before building):\n' +
-    errors.filter(e => e.includes('[SECURITY LEAK]')).map(e => `    • ${e}`).join('\n') + '\n' +
-    '  ─────────────────────────────────────────────────────────────────────\n' +
-    (errors.filter(e => e.includes('[FORMAT ERROR]')).length > 0
-      ? '  Format Errors (must fix before building):\n' +
-        errors.filter(e => e.includes('[FORMAT ERROR]')).map(e => `    • ${e}`).join('\n') + '\n' +
-        '  ─────────────────────────────────────────────────────────────────────\n'
-      : '') +
-    '  Private credentials must NEVER be prefixed with REACT_APP_.\n'
+    `\n[validate-env] BUILD ABORTED: ${criticalErrors.length} critical issue(s) detected.\n`
   );
   process.exit(1);
-} else {
-  console.log(
-    `\n✅ [validate-env] Environment check passed — no credential leaks detected.\n` +
-    `  Scanned ${reactAppVars.length} REACT_APP_* variable(s).\n`
-  );
-  process.exit(0);
 }
+
+console.log(
+  `\n[validate-env] Environment check passed. Scanned ${viteVars.length} VITE_* variable(s).\n`
+);
+process.exit(0);

@@ -10,6 +10,7 @@
  * are cached to prevent privacy leaks and stale data exposure.
  */
 const CACHE_NAME = 'eventra-cache-v3';
+const BACKGROUND_SYNC_TAG = 'eventra-offline-queue-sync';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -229,6 +230,76 @@ const notifyClientsToSyncOfflineQueue = async () => {
     });
   });
 };
+
+const isAllowedUrl = (url) => {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
+const openNotificationTarget = async (targetUrl) => {
+  const allClients = await self.clients.matchAll({
+    includeUncontrolled: true,
+    type: 'window',
+  });
+
+  const appOrigin = self.location.origin;
+  const fallbackUrl = `${appOrigin}/settings/notifications`;
+
+  let destination = fallbackUrl;
+  if (targetUrl && isAllowedUrl(targetUrl)) {
+    const resolved = new URL(targetUrl, appOrigin).href;
+    if (resolved.startsWith(appOrigin)) {
+      destination = resolved;
+    }
+  }
+
+  for (const client of allClients) {
+    if ('focus' in client) {
+      if ('navigate' in client) {
+        await client.navigate(destination);
+      }
+      return client.focus();
+    }
+  }
+
+  if (self.clients.openWindow) {
+    return self.clients.openWindow(destination);
+  }
+};
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data?.text() };
+  }
+
+  const title = payload.title || 'Eventra notification';
+  const options = {
+    body: payload.body || payload.message || 'You have a new update.',
+    icon: payload.icon || '/favicon.png',
+    badge: payload.badge || '/favicon.png',
+    tag: payload.tag || payload.category || 'eventra-notification',
+    data: {
+      url: payload.url || '/settings/notifications',
+      notificationId: payload.id || null,
+      category: payload.category || 'general',
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(openNotificationTarget(event.notification.data?.url));
+});
 
 // Background Sync wakes the app after connectivity returns. The authenticated
 // replay still happens in the page context so tokens and conflict UI stay there.

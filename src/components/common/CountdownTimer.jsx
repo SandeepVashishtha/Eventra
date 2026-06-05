@@ -1,8 +1,26 @@
 import { useEffect, useState, useMemo } from "react";
 import { Clock } from "lucide-react";
+import { getServerTime } from "../../utils/timeSync";
+import { resolveEventInstant } from "../../utils/timezoneUtils";
+
+/**
+ * Resolves the countdown deadline anchored to the event's own timezone so the
+ * countdown is identical regardless of the viewer's location. Falls back to
+ * naive parsing only when the timezone-aware resolver cannot parse the inputs,
+ * preserving behaviour for malformed legacy data.
+ *
+ * @param {string} date - Event date
+ * @param {string} time - Event time
+ * @param {string} [timezone] - IANA timezone the event time is expressed in
+ * @returns {Date} Deadline instant
+ */
+const resolveDeadline = (date, time, timezone) => {
+  const resolved = resolveEventInstant(date, time, timezone);
+  return resolved || new Date(`${date}T${time}`);
+};
 
 const calculateTimeLeft = (deadline) => {
-  const diff = new Date(deadline) - new Date();
+  const diff = new Date(deadline) - getServerTime();
   if (isNaN(diff) || diff <= 0) return null;
   return {
     days: Math.floor(diff / (1000 * 60 * 60 * 24)),
@@ -15,8 +33,11 @@ const calculateTimeLeft = (deadline) => {
 const pad = (n) => String(n).padStart(2, "0");
 
 // Compact version for EventCard
-export const CountdownBadge = ({ date, time }) => {
-  const deadline = useMemo(() => new Date(`${date}T${time}`), [date, time]);
+export const CountdownBadge = ({ date, time, timezone }) => {
+  const deadline = useMemo(
+    () => resolveDeadline(date, time, timezone),
+    [date, time, timezone]
+  );
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
@@ -45,8 +66,11 @@ export const CountdownBadge = ({ date, time }) => {
 };
 
 // Large version for EventDetailsPage
-const CountdownTimer = ({ date, time }) => {
-  const deadline = useMemo(() => new Date(`${date}T${time}`), [date, time]);
+const CountdownTimer = ({ date, time, timezone }) => {
+  const deadline = useMemo(
+    () => resolveDeadline(date, time, timezone),
+    [date, time, timezone]
+  );
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {

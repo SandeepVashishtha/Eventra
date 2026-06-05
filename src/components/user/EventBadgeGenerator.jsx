@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef } from "react";
+import { motion } from "framer-motion";
 import { 
   Sparkles, 
   Download, 
@@ -342,7 +342,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
                 <span className={`absolute -inset-1 rounded-full bg-gradient-to-r ${currentTemplate.ringClass} blur-xs opacity-80 animate-pulse`} />
                 <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-slate-800 bg-slate-900 flex items-center justify-center">
                   {avatar ? (
-                    <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={avatar} alt="Avatar" className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     <User className="w-8 h-8 text-slate-655" />
                   )}
