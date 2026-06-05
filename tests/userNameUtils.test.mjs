@@ -26,3 +26,23 @@ assert.equal(
   "Ada Lovelace",
   "complete names are trimmed and joined"
 );
+
+// Format with special characters (hyphenated, apostrophes)
+assert.equal(
+  getUserFullName({ firstName: "Jean-Luc", lastName: "Picard" }),
+  "Jean-Luc Picard",
+  "names with hyphens are preserved correctly"
+);
+
+assert.equal(
+  getUserFullName({ firstName: "O'Connor" }),
+  "O'Connor",
+  "names with apostrophes are preserved correctly"
+);
+
+// Handling boolean/non-string properties
+assert.equal(
+  getUserFullName({ firstName: true, lastName: false }),
+  "",
+  "boolean inputs map to blank name"
+);
