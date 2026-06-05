@@ -255,7 +255,7 @@ const EventCard = ({ event }) => {
           {randomIcon}
         </div>
 
-        <h3 id={titleId} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1">
+        <h3 id={titleId} title={event.title} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 break-words group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1 min-w-0">
           {event.title}
         </h3>
         <div className="ml-auto flex items-center gap-2">

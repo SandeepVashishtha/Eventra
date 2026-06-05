@@ -347,8 +347,8 @@ export default function UserDashboard() {
                       ) : (
                         upcomingEvents.map(ev => (
                           <div key={ev.id} className="ud-list-item">
-                            <div>
-                              <p className="ud-list-title">{ev.title}</p>
+                            <div className="min-w-0 flex-1">
+                              <p title={ev.title} className="ud-list-title">{ev.title}</p>
                               <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(ev.date)}</p>
                             </div>
                             <StatusBadge status={ev.participationType} />
@@ -374,8 +374,8 @@ export default function UserDashboard() {
                       ) : (
                         upcomingHackathons.map(h => (
                           <div key={h.id} className="ud-list-item">
-                            <div>
-                              <p className="ud-list-title">{h.title}</p>
+                            <div className="min-w-0 flex-1">
+                              <p title={h.title} className="ud-list-title">{h.title}</p>
                               <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(h.date)}</p>
                             </div>
                             <StatusBadge status={h.participationType} />
@@ -401,8 +401,8 @@ export default function UserDashboard() {
                       ) : (
                         activeProjects.map(p => (
                           <div key={p.id} className="ud-list-item">
-                            <div>
-                              <p className="ud-list-title">{p.title}</p>
+                            <div className="min-w-0 flex-1">
+                              <p title={p.title} className="ud-list-title">{p.title}</p>
                               <p className="ud-list-meta">Updated: {p.lastUpdate}</p>
                             </div>
                             <StatusBadge status={p.projectStatus} />

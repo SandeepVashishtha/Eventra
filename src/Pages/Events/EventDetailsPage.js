@@ -273,7 +273,8 @@ const EventDetailsPage = () => {
                   </div>
                   <h1
                     id="event-details-title"
-                    className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl"
+                    title={event.title}
+                    className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl break-words"
                   >
                     {event.title}
                   </h1>

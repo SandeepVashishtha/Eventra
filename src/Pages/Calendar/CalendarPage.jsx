@@ -385,7 +385,7 @@ const CalendarPage = () => {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                          <p title={event.title} className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 break-words min-w-0">
                             {event.title}
                           </p>
                           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
