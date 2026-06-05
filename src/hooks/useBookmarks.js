@@ -3,6 +3,7 @@
  * @module hooks/useBookmarks
  */
 import { useState, useEffect, useCallback, useRef } from "react";
+import { getServerNow } from "../utils/timeSync";
 
 /**
  * A custom React hook that manages bookmarked events for a user,
@@ -28,7 +29,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 // Limits
 // ---------------------------------------------------------------------------
 export const MAX_BOOKMARKS = 200;
-
 const toBookmarkEntry = (event) => ({
   id: event?.id,
   title: event?.title ?? "",
@@ -37,9 +37,8 @@ const toBookmarkEntry = (event) => ({
   type: event?.type ?? event?.category ?? "",
   image: event?.image ?? event?.imageUrl ?? "",
   status: event?.status ?? "",
-  savedAt: Date.now(),
+  savedAt: getServerNow(),
 });
-
 const useBookmarks = (userId = "guest") => {
   const storageKey = `bookmarks_${userId}`;
 
@@ -56,7 +55,6 @@ const useBookmarks = (userId = "guest") => {
 
   const storageKeyRef = useRef(storageKey);
   storageKeyRef.current = storageKey;
-
   const isInitialLoad = useRef(true);
 
   useEffect(() => {
