@@ -47,8 +47,7 @@ const useBookmarks = (userId = "guest") => {
     try {
       const stored = localStorage.getItem(storageKey);
       if (!stored) return [];
-      const parsed = JSON.parse(stored);
-      return Array.isArray(parsed) ? parsed : [];
+      return JSON.parse(stored) || [];
     } catch {
       return [];
     }
