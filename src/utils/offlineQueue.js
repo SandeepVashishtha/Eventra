@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 import { safeJsonParse } from "./safeJsonParse.js";
 import { logger } from "./logger.js";
+import offlineSyncConfig from "../config/offlineSyncConfig.json";
 
 const QUEUE_KEY = "eventra_offline_queue";
 const DB_NAME = "eventra_offline_db";
@@ -327,6 +328,9 @@ export const pushToQueue = async (item, userId = null) => {
     eventId: item.eventId || null,
     payload: item.payload || {},
     endpoint: item.endpoint || null,
+    conflictStrategy:
+      item.conflictStrategy ||
+      offlineSyncConfig.defaultConflictStrategy,
     // SECURITY: Attach user ID to validate ownership on replay
     userId: userId || null,
     sessionId:
@@ -356,12 +360,12 @@ export const pushToQueue = async (item, userId = null) => {
 
   // 1. Sync mirror updates immediately (Synchronous fallback)
   const queue = getQueue();
-  if (queue.length >= 15) {
+  if (queue.length >= offlineSyncConfig.maxQueueSize) {
     logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
     if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
       window.dispatchEvent(
         new CustomEvent("eventra-offline-queue-full", {
-          detail: { eventId: item.eventId, limit: 15 },
+          detail: { eventId: item.eventId, limit: offlineSyncConfig.maxQueueSize },
         })
       );
     }
