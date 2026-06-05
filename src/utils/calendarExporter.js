@@ -75,7 +75,9 @@ export const downloadICSFile = (event) => {
     if (document.body.contains(link)) {
       document.body.removeChild(link);
     }
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 200);
   }
 };
 
@@ -187,7 +189,9 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     if (document.body.contains(link)) {
       document.body.removeChild(link);
     }
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 200);
   }
 };
 
