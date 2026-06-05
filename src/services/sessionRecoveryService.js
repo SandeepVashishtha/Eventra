@@ -53,6 +53,21 @@ const inferRecoveryType = (state = {}) => {
   return RECOVERY_TYPES.has(rawType) ? rawType : "generic";
 };
 
+const getSessionName = (session = {}, type = "generic") => {
+  const draft = session.draftData || session.data || session;
+  const explicit = session.name || session.sessionName || draft.sessionName || draft.name;
+  if (explicit) return String(explicit).trim().slice(0, 120);
+
+  if (type === "event-creation") {
+    const title = draft.title || draft.eventTitle || draft.eventName;
+    return title ? `Event Draft - ${String(title).trim()}` : "Event Draft";
+  }
+  if (type === "registration-form") return "Registration Form";
+  if (type === "profile-edit") return "Profile Update Draft";
+  if (type === "multi-step-workflow") return "Workflow Draft";
+  return "Recovered Draft";
+};
+
 export const normalizeRecoverySession = (
   session = {},
   {
@@ -69,6 +84,7 @@ export const normalizeRecoverySession = (
     session.lastUpdated || session.updatedAt || session.timestamp,
     now,
   );
+  const createdAt = getIsoString(session.createdAt || session.created || lastUpdated, new Date(lastUpdated));
   const type = inferRecoveryType(session);
   const draftData = sanitizeSessionState(session.draftData || session.data || session);
 
@@ -83,8 +99,11 @@ export const normalizeRecoverySession = (
   return {
     sessionId,
     userId: String(userId || session.userId || "").trim(),
+    name: getSessionName(session, type),
     type,
     draftData,
+    createdAt,
+    updatedAt: lastUpdated,
     lastUpdated,
     expiresAt: getIsoString(
       session.expiresAt,
@@ -204,6 +223,7 @@ export const createRecoveryPayload = ({
   state,
   userId,
   sessionId,
+  name,
   type,
   retentionDays = DEFAULT_RECOVERY_RETENTION_DAYS,
   now = new Date(),
@@ -212,6 +232,7 @@ export const createRecoveryPayload = ({
     {
       sessionId,
       userId,
+      name: name || state?.sessionName || state?.name,
       type: type || inferRecoveryType(state),
       draftData: state,
       lastUpdated: now.toISOString(),

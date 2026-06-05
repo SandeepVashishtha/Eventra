@@ -110,6 +110,7 @@ export const useCloudSessionRecovery = ({
         state,
         userId,
         sessionId: options.sessionId || state?.sessionId,
+        name: options.name || state?.sessionName || state?.name,
         type: options.type || state?.recoveryType || state?.page,
         retentionDays: options.retentionDays,
       });

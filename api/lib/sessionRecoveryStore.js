@@ -52,6 +52,16 @@ const createExpiresAt = (lastUpdated, retentionDays = DEFAULT_RETENTION_DAYS) =>
   return date.toISOString();
 };
 
+const getSessionName = (payload, type) => {
+  const draft = payload.draftData || {};
+  const explicit = payload.name || payload.sessionName || draft.sessionName || draft.name;
+  if (explicit) return String(explicit).trim().slice(0, 120);
+  if (type === "event-creation") return draft.title ? `Event Draft - ${draft.title}` : "Event Draft";
+  if (type === "registration-form") return "Registration Form";
+  if (type === "profile-edit") return "Profile Update Draft";
+  return "Recovered Draft";
+};
+
 export const normalizeSession = (payload, userId) => {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
 
@@ -63,6 +73,9 @@ export const normalizeSession = (payload, userId) => {
   const lastUpdated = payload.lastUpdated
     ? new Date(payload.lastUpdated).toISOString()
     : now;
+  const createdAt = payload.createdAt
+    ? new Date(payload.createdAt).toISOString()
+    : lastUpdated;
 
   if (!payload.draftData || typeof payload.draftData !== "object") {
     return null;
@@ -71,8 +84,11 @@ export const normalizeSession = (payload, userId) => {
   return {
     sessionId,
     userId,
+    name: getSessionName(payload, type),
     type,
     draftData: payload.draftData,
+    createdAt,
+    updatedAt: lastUpdated,
     lastUpdated,
     expiresAt: payload.expiresAt
       ? new Date(payload.expiresAt).toISOString()
