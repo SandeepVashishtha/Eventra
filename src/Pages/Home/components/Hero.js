@@ -18,6 +18,38 @@ import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 
 const MotionLink = motion(Link);
 
+// ─── FLOATING SHAPE SUB-COMPONENT ────────────────────────────────────────────
+// Fix for #7243: Each shape owns its own useTransform hook call at the top
+// level of its own component — hooks must never be called inside .map() loops.
+/**
+ * @param {{ shape: object, index: number, scrollYProgress: object, isDark: boolean, floatShape: function, prefersReducedMotion: boolean }} props
+ */
+const PARALLAX_OFFSETS = [220, -150, 100, -180, 130, -80, 250, -120, 70];
+
+const FloatingShape = ({ shape, index, scrollYProgress, isDark, floatShape, prefersReducedMotion }) => {
+  const yShape = useTransform(scrollYProgress, [0, 1], [0, PARALLAX_OFFSETS[index]]);
+
+  return (
+    <motion.div
+      style={{
+        position: "absolute",
+        top: shape.pos.top,
+        left: shape.pos.left,
+        width: shape.size,
+        height: shape.size,
+        borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%",
+        background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
+        filter: "blur(2px)",
+        boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
+        y: prefersReducedMotion ? 0 : yShape,
+        willChange: "transform",
+      }}
+      animate={prefersReducedMotion ? {} : floatShape(index)}
+    />
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 // Moved outside component to prevent expensive re-instantiation on every render
 const createSearchItem = (item, type, searchType) => ({
@@ -84,18 +116,8 @@ const Hero = () => {
   const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  // Different parallax speeds for each shape
-  const yShape0 = useTransform(scrollYProgress, [0, 1], [0, 220]);
-  const yShape1 = useTransform(scrollYProgress, [0, 1], [0, -150]);
-  const yShape2 = useTransform(scrollYProgress, [0, 1], [0, 100]);
-  const yShape3 = useTransform(scrollYProgress, [0, 1], [0, -180]);
-  const yShape4 = useTransform(scrollYProgress, [0, 1], [0, 130]);
-  const yShape5 = useTransform(scrollYProgress, [0, 1], [0, -80]);
-  const yShape6 = useTransform(scrollYProgress, [0, 1], [0, 250]);
-  const yShape7 = useTransform(scrollYProgress, [0, 1], [0, -120]);
-  const yShape8 = useTransform(scrollYProgress, [0, 1], [0, 70]);
-
-  const shapeTransforms = [yShape0, yShape1, yShape2, yShape3, yShape4, yShape5, yShape6, yShape7, yShape8];
+  // Parallax transforms are now handled inside the FloatingShape subcomponent
+  // to comply with React Rules of Hooks (no hook calls inside .map loops).
 
   const [index, setIndex] = useState(0);
   const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
@@ -250,25 +272,17 @@ dark:from-slate-950 dark:via-slate-900 dark:to-black
 text-slate-900 dark:text-gray-100 
 pb-16 sm:pb-20 md:pb-24
 border-b border-gray-100 dark:border-slate-900">
-      {/* Decorative Parallax Shapes */}
+      {/* Decorative Parallax Shapes — each shape is its own component that owns its useTransform hook */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {!isTouch && shapes.map((shape, i) => (
-          <motion.div
+          <FloatingShape
             key={i}
-            style={{
-              position: "absolute",
-              top: shape.pos.top,
-              left: shape.pos.left,
-              width: shape.size,
-              height: shape.size,
-              borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%", // Organic blob shape
-              background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
-              filter: "blur(2px)",
-              boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
-              y: prefersReducedMotion ? 0 : shapeTransforms[i],
-              willChange: "transform",
-            }}
-            animate={prefersReducedMotion ? {} : floatShape(i)}
+            index={i}
+            shape={shape}
+            scrollYProgress={scrollYProgress}
+            isDark={isDark}
+            floatShape={floatShape}
+            prefersReducedMotion={prefersReducedMotion}
           />
         ))}
       </div>
