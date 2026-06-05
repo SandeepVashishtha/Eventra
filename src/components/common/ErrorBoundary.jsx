@@ -94,32 +94,41 @@ function persistErrorLog(errorId, error, errorInfo) {
 
 /** Build a readable diagnostic text report with enhanced information */
 function buildDiagnosticReport(errorId, error, errorInfo) {
+  // Fix for #7246: each IIFE must fully close its try/catch block before the
+  // next declaration so the parser does not misread subsequent class methods
+  // (e.g. handleTryAgain) as being inside this function's scope.
   const lsSnapshot = (() => {
     try {
-      const snap = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && !k.includes("token") && !k.includes("password")) {
-          snap[k] = localStorage.getItem(k)?.slice(0, 200);
-        }
-      }
-      return JSON.stringify(snap, null, 2);
-    } catch (_) {
+      const stored = localStorage;
+      const safeLocalStorage = JSON.stringify(
+        Object.fromEntries(
+          Array.from({ length: stored.length }, (_, i) => stored.key(i))
+            .filter((k) => k && !k.includes("token") && !k.includes("password"))
+            .map((k) => [k, stored.getItem(k)?.slice(0, 200)])
+        ),
+        null,
+        2
+      ) || "{}";
+      return safeLocalStorage;
+    } catch (err) {
       return "Unable to read localStorage";
     }
   })();
 
   const sessionSnapshot = (() => {
     try {
-      const snap = {};
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const k = sessionStorage.key(i);
-        if (k && !k.includes("token") && !k.includes("password")) {
-          snap[k] = sessionStorage.getItem(k)?.slice(0, 200);
-        }
-      }
-      return JSON.stringify(snap, null, 2);
-    } catch (_) {
+      const stored = sessionStorage;
+      const safeSessionStorage = JSON.stringify(
+        Object.fromEntries(
+          Array.from({ length: stored.length }, (_, i) => stored.key(i))
+            .filter((k) => k && !k.includes("token") && !k.includes("password"))
+            .map((k) => [k, stored.getItem(k)?.slice(0, 200)])
+        ),
+        null,
+        2
+      ) || "{}";
+      return safeSessionStorage;
+    } catch (err) {
       return "Unable to read sessionStorage";
     }
   })();
