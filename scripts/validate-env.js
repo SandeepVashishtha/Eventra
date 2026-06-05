@@ -44,17 +44,18 @@ const SENSITIVE_KEY_PATTERNS = [
 ];
 
 const SENSITIVE_VALUE_PATTERNS = [
-  { pattern: /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, label: "PEM private key" },
-  { pattern: /AIza[0-9A-Za-z\-_]{35}/, label: "Google API key" },
-  { pattern: /sk-[a-zA-Z0-9]{48}/, label: "OpenAI secret key" },
-  { pattern: /rk_live_[0-9a-zA-Z]{24}/, label: "Stripe restricted key" },
-  { pattern: /SK[0-9a-f]{32}/, label: "Twilio auth token" },
-  { pattern: /xox[baprs]-[0-9a-zA-Z]{10,}/, label: "Slack API token" },
-  { pattern: /mongodb\+srv:\/\/[^:]+:[^@]+@/, label: "MongoDB Atlas URI with credentials" },
-  { pattern: /postgres:\/\/[^:]+:[^@]+@/, label: "PostgreSQL URI with credentials" },
-  { pattern: /mysql:\/\/[^:]+:[^@]+@/, label: "MySQL URI with credentials" },
-  { pattern: /ghp_[a-zA-Z0-9]{36}/, label: "GitHub personal access token" },
-  { pattern: /eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\./, label: "JWT token (hardcoded)" },
+  { pattern: /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, label: 'PEM private key' },
+  { pattern: /AIza[0-9A-Za-z\-_]{35}/, label: 'Google API key' },
+  { pattern: /sk-[A-Za-z0-9_-]{32,}/, label: 'OpenAI secret key' },
+  { pattern: /rk_live_[0-9a-zA-Z]{24}/, label: 'Stripe restricted key' },
+  { pattern: /SK[0-9a-f]{32}/, label: 'Twilio auth token' },
+  { pattern: /xox[baprs]-[0-9a-zA-Z]{10,}/, label: 'Slack API token' },
+  { pattern: /mongodb(\+srv)?:\/\/[^:\s]+:[^@\s]+@/, label: 'MongoDB URI with credentials' },
+  { pattern: /postgres(ql)?:\/\/[^:\s]+:[^@\s]+@/, label: 'PostgreSQL URI with credentials' },
+  { pattern: /mysql:\/\/[^:\s]+:[^@\s]+@/, label: 'MySQL URI with credentials' },
+  { pattern: /gh[pousr]_[A-Za-z0-9_]{20,}/, label: 'GitHub personal access token' },
+  { pattern: /github_pat_[A-Za-z0-9_]{22,}/, label: 'GitHub fine-grained personal access token' },
+  { pattern: /eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\./, label: 'JWT token (hardcoded)' },
 ];
 
 const ALLOWED_EXCEPTIONS = new Set([

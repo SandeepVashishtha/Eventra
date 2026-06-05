@@ -1,5 +1,8 @@
 import axios from "axios";
 import { ENV } from "./env";
+import { syncServerTimeFromHeader } from "../utils/timeSync";
+import { getCSRFToken } from "../utils/csrfToken";
+import { logger } from "../utils/logger";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -28,7 +31,7 @@ const resolveEnvApiBaseUrl = () => {
     return normalizeApiBaseUrl(envUrl);
   }
   if (!isDev) {
-    console.warn(`VITE_API_URL environment variable is missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
+    logger.warn(`VITE_API_URL environment variable is missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
     return "";
   }
   return "http://localhost:8080";
@@ -103,9 +106,14 @@ const API = axios.create({
 });
 
 let onUnauthorized = null;
+let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
+};
+
+export const setAuthToken = (token) => {
+  _authToken = token;
 };
 
 /**
@@ -199,24 +207,32 @@ const normalizeApiError = (error) => {
 // We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
 API.interceptors.request.use((config) => {
   if (isDev) {
-    console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
+    logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
-  
+
+  if (_authToken && _authToken !== "cookie-managed") {
+    config.headers["Authorization"] = `Bearer ${_authToken}`;
+  }
+
   const method = config.method?.toUpperCase();
-  if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-    if (!config.headers['Idempotency-Key'] && !config.headers['X-Idempotency-Key']) {
-      const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID 
-        ? crypto.randomUUID() 
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-      config.headers['Idempotency-Key'] = generateId();
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    const csrf = getCSRFToken();
+    if (csrf) {
+      config.headers["X-CSRF-Token"] = csrf;
     }
   }
-  
+
   return config;
 });
 
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
+    if (headerValue) {
+      syncServerTimeFromHeader(headerValue);
+    }
+    return response;
+  },
   async (error) => {
     const config = error.config || {};
     const status = error?.response?.status;
@@ -226,7 +242,7 @@ API.interceptors.response.use(
     }
 
     const retryCount = config._retryCount || 0;
-    const isNonMutating = config.method?.toUpperCase() === 'GET';
+    const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
     const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
     
     // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
@@ -236,7 +252,7 @@ API.interceptors.response.use(
       const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
       if (isDev) {
-        console.debug(
+        logger.info(
           `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
         );
       }
@@ -266,6 +282,7 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+    AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
 
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
@@ -317,6 +334,14 @@ export const API_ENDPOINTS = {
 };
 
 
+const buildAxiosConfig = (url, options = {}) => {
+  const { signal, headers, ...rest } = options;
+  const config = normalizeRequestConfig(rest);
+  if (signal) config.signal = signal;
+  if (headers) config.headers = { ...config.headers, ...headers };
+  return { url, config };
+};
+
 export const apiUtils = {
   get: (url, config = {}) =>
     API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
@@ -328,6 +353,23 @@ export const apiUtils = {
     API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
   delete: (url, config = {}) =>
     API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+
+  request: async (method, url, data = null, options = {}) => {
+    const config = normalizeRequestConfig(options);
+    if (options.signal) config.signal = options.signal;
+    if (options.headers) config.headers = { ...config.headers, ...options.headers };
+    config.method = method.toLowerCase();
+    const axiosResponse = await API.request({ url, method: config.method, data, ...config });
+    const wrappedHeaders = wrapHeaders(axiosResponse.headers);
+    return {
+      response: {
+        status: axiosResponse.status,
+        ok: axiosResponse.status >= 200 && axiosResponse.status < 300,
+        headers: wrappedHeaders,
+      },
+      data: axiosResponse.data,
+    };
+  },
 };
 
 export default API;
@@ -337,6 +379,16 @@ export { normalizeApiError };
 // Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {
   store: new Map(),
-  get(key) { return this.store.get(key); },
-  set(key, val) { this.store.set(key, val); }
+
+  get(key) {
+    return this.store.get(key);
+  },
+
+  set(key, val) {
+    this.store.set(key, val);
+  },
+
+  clear() {
+    this.store.clear();
+  },
 };

@@ -1,38 +1,79 @@
 import { useCallback, useRef, useState, useEffect } from "react";
 
 /**
- * A drop-in replacement for useState that skips state updates when the new
- * value is deeply equal to the current value.
+ * A custom React hook that acts as a drop-in replacement for `useState`, designed to skip
+ * state updates when the incoming value is semantically (deeply) equal to the current state.
  *
- * WHY THIS EXISTS
- * ───────────────
- * React's useState always triggers a re-render when setState is called with a
- * new object reference, even if the object's contents are identical. In
- * useEventListing, setAdvancedFilters({}) called on filter clear creates a new
- * {} reference every time, causing the filteredEvents useMemo to recompute
- * across all search/filter/sort dependencies even though the filter state has
- * not semantically changed.
+ * ### Purpose
+ * Prevent unnecessary component re-renders and computation cascades when state setters are called
+ * with new object or array references containing identical values. 
  *
- * useStableFilters compares the incoming value to the current one using a fast
- * JSON.stringify equality check. When the values are deeply equal, the setState
- * call is skipped and no re-render is scheduled. This prevents the filteredEvents
- * → paginatedEvents → totalPages cascade from running unnecessarily.
+ * In complex components like `useEventListing`, invoking `setAdvancedFilters({})` to clear filters
+ * creates a new empty object reference (`{}`) on every call. In a standard React `useState`, this
+ * triggers a re-render and re-runs heavy computation pipelines (like filtering and sorting thousands 
+ * of events). This hook intercepts semantically identical updates and short-circuits them.
  *
- * TRADE-OFFS
- * ──────────
- * - JSON.stringify is O(n) in the size of the filter object. For the small
- *   advancedFilters objects used here (< 10 keys, primitive values) this is
- *   negligible compared to the cost of re-running the filter pipeline over
- *   potentially thousands of events.
- * - Circular references and non-serialisable values (e.g. functions) would
- *   make JSON.stringify throw — guard with a try/catch fallback.
- * - Key order in JSON.stringify is not guaranteed across all JS engines for
- *   arbitrary objects, but for the filter shape used here (string/number
- *   values, consistent key order from UI interactions) it is reliable.
+ * ### Filter Stability & Deep Equality Behavior
+ * Comparison is performed by serializing the current state and the incoming state using 
+ * `JSON.stringify`. When both serialized strings match exactly:
+ * 1. The state setter call is aborted.
+ * 2. React is prevented from scheduling a re-render.
+ *
+ * ### Memoization & Referential Stability
+ * - The returned setter function `setStableValue` is wrapped in `useCallback` with an empty 
+ *   dependency array `[]`. It retains referential identity across the lifetime of the component,
+ *   making it safe to pass to child components or include in dependency lists without causing re-renders.
+ * - To prevent stale closure bugs while maintaining setter stability, the hook utilizes a `useRef`
+ *   to track the latest committed state value dynamically inside a `useEffect`.
+ *
+ * ### Performance Considerations & Complexity
+ * - `JSON.stringify` runs in O(n) time complexity, where n is the size/depth of the object.
+ *   For typical filter objects (small key-value pairs, primitive values), this serialization is
+ *   extremely fast and negligible compared to DOM re-renders and full filter pipeline computations.
+ * - **Caveat**: Key order in `JSON.stringify` is technically not guaranteed in JavaScript for arbitrary
+ *   objects. However, for plain filter objects constructed via user interactions, key insertion order 
+ *   remains highly consistent.
+ * - **Caveat**: Non-serializable values (e.g., functions, symbols, or circular references) will cause 
+ *   `JSON.stringify` to throw. The hook wraps the comparison in a `try...catch` block. If serialization 
+ *   fails, it gracefully falls back to React's default referential equality (`Object.is`) checking.
  *
  * @template T
- * @param {T} initialValue - Initial state value (same as useState).
- * @returns {[T, (newValue: T) => void]} - [state, stableSetState] pair.
+ * @param {T} initialValue - The initial state value, matching the signature of standard `useState`.
+ * @returns {[T, function(T): void]} A tuple containing:
+ *   - The current stable state value.
+ *   - A referentially stable setter function that updates the state only if the value has changed.
+ *
+ * @example
+ * import React, { useMemo } from 'react';
+ * import { useStableFilters } from './hooks/useStableFilters';
+ *
+ * const FilterComponent = ({ events }) => {
+ *   // Setup stable filter state
+ *   const [filters, setFilters] = useStableFilters({ search: '', category: 'all' });
+ *
+ *   // Compute filtered events list.
+ *   // Re-runs only when filters are semantically changed.
+ *   const filteredEvents = useMemo(() => {
+ *     return events.filter(event => {
+ *       const matchesSearch = event.title.toLowerCase().includes(filters.search.toLowerCase());
+ *       const matchesCategory = filters.category === 'all' || event.category === filters.category;
+ *       return matchesSearch && matchesCategory;
+ *     });
+ *   }, [events, filters]);
+ *
+ *   const clearFilters = () => {
+ *     // In normal useState, this causes a recompute even if filters are already empty.
+ *     // With useStableFilters, this call is a safe no-op.
+ *     setFilters({ search: '', category: 'all' });
+ *   };
+ *
+ *   return (
+ *     <div>
+ *       <button onClick={clearFilters}>Reset Filters</button>
+ *       {/* render filteredEvents ... *\/
+ *     </div>
+ *   );
+ * };
  */
 export function useStableFilters(initialValue) {
   const [value, setValueInternal] = useState(initialValue);

@@ -2,7 +2,7 @@ import { Code, Star, ChevronLeft, ChevronRight, Users, ArrowUp, ArrowDown, Minus
 // src/features/leaderboard/LeaderBoard.tsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
 import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
@@ -20,17 +20,14 @@ import {
   applyAchievementBonus,
 } from "../../utils/leaderboardUtils";
 import { getAchievementBadge } from "../../utils/leaderboardUtils";
+import { useTranslation } from "react-i18next";
 import { logger } from "../../utils/logger";
 import { storageManager } from "../../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
 import { validators } from "../../utils/storage/storageValidators";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
-const CATEGORY_FILTERS = [
-  { id: "overall", label: "Overall Leaders", icon: "🏆", description: "All-time top contributors" },
-  { id: "monthly", label: "Monthly Stars", icon: "⭐", description: "This month's active contributors" },
-  { id: "mentors", label: "Project Mentors", icon: "🎓", description: "Guiding the next generation" },
-];
+// Moved inside component for i18n access
 
 // ─── Constants ───────────────────────────────────────────────
 const LEADERBOARD_CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -46,14 +43,14 @@ const CONFETTI_CONFIG = {
   colors: ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b"],
 };
 
-const formatLastUpdated = (timestamp) => {
+const formatLastUpdated = (timestamp, t) => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
 
-  if (diffMinutes < 1) return "Just now";
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
-  if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
+  if (diffMinutes < 1) return t("leaderboard.timeJustNow");
+  if (diffMinutes < 60) return t("leaderboard.timeMinutesAgo", { minutes: diffMinutes });
+  if (diffMinutes < 1440) return t("leaderboard.timeHoursAgo", { hours: Math.floor(diffMinutes / 60) });
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
@@ -97,6 +94,7 @@ const useLocalStorage = (key, initialValue) => {
 // ─── Sub-Components ───────────────────────────────────────────────
 
 const RankMovementIndicator = React.memo(({ liveDifference }) => {
+  const { t } = useTranslation();
   const diff = liveDifference ?? 0;
 
   if (diff > 0) {
@@ -105,10 +103,10 @@ const RankMovementIndicator = React.memo(({ liveDifference }) => {
         initial={{ opacity: 0, x: -4 }}
         animate={{ opacity: 1, x: 0 }}
         className="inline-flex items-center gap-0.5 text-[10px] font-black text-emerald-500"
-        aria-label={`Rank improved by ${diff} position${diff > 1 ? "s" : ""}`}
+        aria-label={t("leaderboard.rankMovementImproved", { diff })}
       >
         <ArrowUp className="w-2.5 h-2.5 animate-bounce" />
-        <span className="sr-only">Up</span>
+        <span className="sr-only">{t("leaderboard.rankMovementUp")}</span>
         {diff}
       </motion.span>
     );
@@ -120,16 +118,16 @@ const RankMovementIndicator = React.memo(({ liveDifference }) => {
         initial={{ opacity: 0, x: -4 }}
         animate={{ opacity: 1, x: 0 }}
         className="inline-flex items-center gap-0.5 text-[10px] font-black text-rose-500"
-        aria-label={`Rank dropped by ${absDiff} position${absDiff > 1 ? "s" : ""}`}
+        aria-label={t("leaderboard.rankMovementDropped", { diff: absDiff })}
       >
         <ArrowDown className="w-2.5 h-2.5" />
-        <span className="sr-only">Down</span>
+        <span className="sr-only">{t("leaderboard.rankMovementDown")}</span>
         {absDiff}
       </motion.span>
     );
   }
   return (
-    <span className="inline-flex items-center text-[10px] font-bold text-slate-400" aria-label="No rank change">
+    <span className="inline-flex items-center text-[10px] font-bold text-slate-400" aria-label={t("leaderboard.rankMovementNoChange")}>
       <Minus className="w-2 h-2" aria-hidden="true" />
     </span>
   );
@@ -178,21 +176,22 @@ const AnimatedCounter = React.memo(
 AnimatedCounter.displayName = "AnimatedCounter";
 
 const LiveStatusBadge = ({ status }) => {
+  const { t } = useTranslation();
   const statusConfig = {
     [SSE_STATUS.CONNECTED]: {
-      label: "Live",
+      label: t("leaderboard.liveStatusConnected"),
       color: "text-emerald-600 dark:text-emerald-400",
       dotColor: "bg-emerald-500",
       pingColor: "bg-emerald-400",
     },
     [SSE_STATUS.RECONNECTING]: {
-      label: "Reconnecting…",
+      label: t("leaderboard.liveStatusReconnecting"),
       color: "text-amber-500 dark:text-amber-400",
       dotColor: "bg-amber-400",
       pingColor: "bg-amber-300",
     },
     [SSE_STATUS.DISCONNECTED]: {
-      label: "Offline",
+      label: t("leaderboard.liveStatusOffline"),
       color: "text-gray-400 dark:text-gray-500",
       dotColor: "bg-gray-300 dark:bg-gray-600",
       pingColor: "bg-gray-200 dark:bg-gray-700",
@@ -210,12 +209,13 @@ const LiveStatusBadge = ({ status }) => {
         <span className={`relative inline-flex h-2 w-2 rounded-full ${config.dotColor}`} />
       </span>
       {config.label}
-      <span className="sr-only">Connection status: {config.label}</span>
+      <span className="sr-only">{t("leaderboard.liveStatusSrLabel", { status: config.label })}</span>
     </span>
   );
 };
 
 const PodiumCard = React.memo(({ contributor, position, orderClass, styling, isFirst = false }) => {
+  const { t } = useTranslation();
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -224,7 +224,7 @@ const PodiumCard = React.memo(({ contributor, position, orderClass, styling, isF
       whileHover={{ y: -6, scale: 1.02 }}
       className={`flex flex-col items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl p-6 border-b-8 ${styling.borderClass} border border-slate-200/50 dark:border-slate-800/40 shadow-xl ${orderClass}`}
       role="listitem"
-      aria-label={`${position} place: ${contributor.username}`}
+      aria-label={`${position} place: ${contributor?.username || "Unknown"}`}
     >
       <div className="relative mb-4">
         <span className={`absolute -inset-1 rounded-full bg-gradient-to-r ${styling.ringClass} blur-sm opacity-80`} aria-hidden="true" />
@@ -262,13 +262,13 @@ const PodiumCard = React.memo(({ contributor, position, orderClass, styling, isF
 
       <div className="mt-4 flex items-center justify-around w-full border-t border-slate-200/50 dark:border-slate-800/40 pt-4">
         <div className="text-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Points</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t("leaderboard.podiumPoints")}</span>
           <p className={`text-lg font-black mt-0.5 ${styling.pointsClass}`}>
             <AnimatedCounter value={contributor.points} />
           </p>
         </div>
         <div className="text-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">PRs</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t("leaderboard.podiumPrs")}</span>
           <p className="text-lg font-black text-indigo-500 mt-0.5">
             <AnimatedCounter value={contributor.prs} />
           </p>
@@ -281,7 +281,14 @@ PodiumCard.displayName = "PodiumCard";
 
 // ─── Main Component ───────────────────────────────────────────────
 export default function LeaderBoard() {
-  useDocumentTitle("Eventra | Leaderboard");
+  const { t } = useTranslation();
+  useDocumentTitle(t("leaderboard.pageTitle"));
+
+  const CATEGORY_FILTERS = useMemo(() => [
+    { id: "overall", label: t("leaderboard.filters.overall"), icon: "🏆", description: t("leaderboard.filters.overallDesc") },
+    { id: "monthly", label: t("leaderboard.filters.monthly"), icon: "⭐", description: t("leaderboard.filters.monthlyDesc") },
+    { id: "mentors", label: t("leaderboard.filters.mentors"), icon: "🎓", description: t("leaderboard.filters.mentorsDesc") },
+  ], [t]);
 
   // State
   const [contributors, setContributors] = useState([]);
@@ -302,6 +309,7 @@ export default function LeaderBoard() {
   // Refs
   const lastAppliedSyncRef = useRef(null);
   const searchInputRef = useRef(null);
+  const prevContributorsRef = useRef([]); // Added for safe streak calculation
 
   // Context
   const {
@@ -343,15 +351,19 @@ export default function LeaderBoard() {
     [contributors]
   );
 
-  const top3 = useMemo(() => filteredContributors.slice(0, 3), [filteredContributors]);
+  // Podium always reflects the active sort criterion so the #1/#2/#3 positions
+  // match what the user sees in the table below.  filteredContributors is the
+  // pre-sort array; reading top-3 from it caused the podium to show the wrong
+  // contributors whenever the sort was set to anything other than the default.
+  const top3 = useMemo(() => sortedContributors.slice(0, 3), [sortedContributors]);
 
   const sortOptions = useMemo(
     () => [
-      { label: "Points (High → Low)", value: "points" },
-      { label: "PRs (High → Low)", value: "prs" },
-      { label: "Username (A → Z)", value: "username" },
+      { label: t("leaderboard.sortOptions.points"), value: "points" },
+      { label: t("leaderboard.sortOptions.prs"), value: "prs" },
+      { label: t("leaderboard.sortOptions.username"), value: "username" },
     ],
-    []
+    [t]
   );
 
   // ─── Effects ───────────────────────────────────────────────
@@ -369,37 +381,10 @@ export default function LeaderBoard() {
     if (streamContributors.length === 0 || lastSynced === lastAppliedSyncRef.current) return;
 
     lastAppliedSyncRef.current = lastSynced;
-
     const preparedContributors = prepareLeaderboardEntries(streamContributors);
 
-    setContributors((prev) => {
-      setStreaks((prevStreaks) => {
-        const updatedStreaks = { ...prevStreaks };
-        const prevRanks = new Map(prev.map((c, idx) => [c.username, idx + 1]));
-
-        preparedContributors.forEach((c, newIdx) => {
-          const username = c.username;
-          const newRank = newIdx + 1;
-          const prevRank = prevRanks.get(username);
-          const currentStreak = prevStreaks[username] || { consecutiveUp: 0, onFire: false, rankDifference: 0 };
-
-          if (prevRank !== undefined) {
-            const rankDifference = prevRank - newRank;
-            let consecutiveUp = rankDifference > 0 ? currentStreak.consecutiveUp + 1 : rankDifference < 0 ? 0 : currentStreak.consecutiveUp;
-            const onFire = rankDifference >= 3 || consecutiveUp >= 3;
-
-            updatedStreaks[username] = { consecutiveUp, onFire, rankDifference };
-          } else {
-            updatedStreaks[username] = { consecutiveUp: 0, onFire: false, rankDifference: 0 };
-          }
-        });
-
-        return updatedStreaks;
-      });
-      return preparedContributors;
-    });
-
-    setLastUpdated(`Live: ${formatLastUpdated(lastSynced)}`);
+    setContributors(preparedContributors);
+    setLastUpdated(t("leaderboard.statusLive", { time: formatLastUpdated(lastSynced, t) }));
 
     // Update cache
     try {
@@ -411,6 +396,40 @@ export default function LeaderBoard() {
       logger.warn("Failed to update leaderboard cache:", err);
     }
   }, [streamContributors, lastSynced]);
+
+  // FIX: Safe streak calculation without nested state updates
+  useEffect(() => {
+    if (contributors.length === 0) {
+      prevContributorsRef.current = [];
+      setStreaks({});
+      return;
+    }
+
+    setStreaks((prevStreaks) => {
+      const updatedStreaks = { ...prevStreaks };
+      const prevRanks = new Map(prevContributorsRef.current.map((c, idx) => [c.username, idx + 1]));
+
+      contributors.forEach((c, newIdx) => {
+        const username = c.username;
+        const newRank = newIdx + 1;
+        const prevRank = prevRanks.get(username);
+        const currentStreak = prevStreaks[username] || { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+
+        if (prevRank !== undefined) {
+          const rankDifference = prevRank - newRank;
+          let consecutiveUp = rankDifference > 0 ? currentStreak.consecutiveUp + 1 : rankDifference < 0 ? 0 : currentStreak.consecutiveUp;
+          const onFire = rankDifference >= 3 || consecutiveUp >= 3;
+          updatedStreaks[username] = { consecutiveUp, onFire, rankDifference };
+        } else {
+          updatedStreaks[username] = { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+        }
+      });
+
+      return updatedStreaks;
+    });
+
+    prevContributorsRef.current = contributors;
+  }, [contributors]);
 
   // Load initial data
   useEffect(() => {
@@ -432,7 +451,7 @@ export default function LeaderBoard() {
           if (age < LEADERBOARD_CACHE_TTL) {
             if (isMounted) {
               setContributors(cached.data);
-              setLastUpdated(`Cached: ${formatLastUpdated(cached.timestamp)}`);
+              setLastUpdated(t("leaderboard.statusCached", { time: formatLastUpdated(cached.timestamp, t) }));
               setLoading(false);
               return;
             }
@@ -451,7 +470,7 @@ export default function LeaderBoard() {
         if (isMounted) {
           const sorted = [...preparedData].sort((a, b) => b.points - a.points);
           setContributors(sorted);
-          setLastUpdated(`Updated: ${formatLastUpdated(Date.now())}`);
+          setLastUpdated(t("leaderboard.statusUpdated", { time: formatLastUpdated(Date.now(), t) }));
 
           // Cache the fresh data
           storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
@@ -462,7 +481,7 @@ export default function LeaderBoard() {
       } catch (err) {
         logger.error("Failed to load leaderboard:", err);
         if (isMounted) {
-          setError("Unable to load leaderboard. Please try again.");
+          setError(t("leaderboard.errorLoadFailed"));
           setContributors([]);
         }
       } finally {
@@ -502,7 +521,7 @@ export default function LeaderBoard() {
         const preparedData = prepareLeaderboardEntries(data);
         const sorted = [...preparedData].sort((a, b) => b.points - a.points);
         setContributors(sorted);
-        setLastUpdated(`Refreshed: ${formatLastUpdated(Date.now())}`);
+        setLastUpdated(t("leaderboard.statusRefreshed", { time: formatLastUpdated(Date.now(), t) }));
 
         storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
           data: sorted,
@@ -570,16 +589,24 @@ export default function LeaderBoard() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  // Reset to page 1 whenever the sort criterion or active category changes.
+  // Without this a user on page 5 who switches sort stays on page 5 — which
+  // may now have no rows if the sorted list is shorter, or shows a confusing
+  // mid-list entry point that does not correspond to the new ranking.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy, activeCategory]);
+
   // ─── Podium Configuration ───────────────────────────────────────────────
   const podiumConfig = useMemo(() => [
     {
-      position: "2nd",
+      position: t("leaderboard.podiumPositions.2nd"),
       contributor: top3[1],
       orderClass: "order-2 md:order-1",
       styling: {
         borderClass: "border-slate-300 dark:border-slate-700",
         ringClass: "from-slate-200 to-zinc-400",
-        title: "Platinum Contributor",
+        title: t("leaderboard.podiumTitles.2nd"),
         badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300",
         size: "h-18 w-18",
         pointsClass: "text-slate-800 dark:text-slate-100",
@@ -587,13 +614,13 @@ export default function LeaderBoard() {
       },
     },
     {
-      position: "1st",
+      position: t("leaderboard.podiumPositions.1st"),
       contributor: top3[0],
       orderClass: "order-1 md:order-2",
       styling: {
         borderClass: "border-yellow-400 dark:border-yellow-500",
         ringClass: "from-yellow-300 via-amber-400 to-yellow-500",
-        title: "Grandmaster / Diamond Tier",
+        title: t("leaderboard.podiumTitles.1st"),
         badgeClass: "bg-yellow-400 text-yellow-950 shadow-[0_2px_10px_rgba(234,179,8,0.3)]",
         size: "h-22 w-22",
         pointsClass: "text-amber-500",
@@ -602,24 +629,24 @@ export default function LeaderBoard() {
       isFirst: true,
     },
     {
-      position: "3rd",
+      position: t("leaderboard.podiumPositions.3rd"),
       contributor: top3[2],
       orderClass: "order-3 md:order-3",
       styling: {
         borderClass: "border-amber-600 dark:border-orange-700",
         ringClass: "from-amber-600 to-orange-500",
-        title: "Platinum Contributor",
+        title: t("leaderboard.podiumTitles.3rd"),
         badgeClass: "bg-orange-100 dark:bg-orange-950/30 text-orange-600 dark:text-orange-300 border border-orange-200/40",
         size: "h-18 w-18",
         pointsClass: "text-slate-800 dark:text-slate-100",
         medalClass: "bg-amber-600 text-white",
       },
     },
-  ].filter((p) => p.contributor), [top3]);
+  ].filter((p) => p.contributor), [top3, t]);
 
   // ─── Render ───────────────────────────────────────────────
   return (
-    <FeatureErrorBoundary>
+    <ErrorBoundary level="feature">
       <div
         className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(224,233,242,0.52),_transparent_42%),linear-gradient(180deg,#f8fbfe_0%,#eef4fa_100%)] pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300"
         role="main"
@@ -634,31 +661,31 @@ export default function LeaderBoard() {
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-600"
             >
               <Trophy className="w-3 h-3" aria-hidden="true" />
-              GSSoC&apos;26 Contribution Arena
+              {t("leaderboard.arenaBadge")}
             </motion.div>
 
             <h1 id="leaderboard-heading" className="mt-5 text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-950">
-              Community{" "}
+              {t("leaderboard.headingPrefix")}{" "}
               <span className="bg-gradient-to-r from-slate-700 via-slate-500 to-slate-300 bg-clip-text text-transparent">
-                Leaderboard
+                {t("leaderboard.headingHighlight")}
               </span>
             </h1>
 
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-500 sm:text-lg">
-              A concise view of active contributors, ranked by impact, with live updates and a clear breakdown of points, PRs, and achievement tiers.
+              {t("leaderboard.heroDescription")}
             </p>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs font-semibold text-slate-500">
-              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{stats.totalContributors} contributors</span>
-              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{stats.flooredTotalPRs} merged PRs</span>
-              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{currentContributors.length} shown on this page</span>
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{t("leaderboard.statsContributors", { count: stats.totalContributors })}</span>
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{t("leaderboard.statsMergedPRs", { count: stats.flooredTotalPRs })}</span>
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{t("leaderboard.statsShown", { count: currentContributors.length })}</span>
             </div>
           </header>
 
           {/* OLYMPIC PODIUM - Top 3 */}
           {!loading && top3.length > 0 && (
             <section className="mb-14" aria-labelledby="podium-heading">
-              <h2 id="podium-heading" className="sr-only">Top 3 Contributors</h2>
+              <h2 id="podium-heading" className="sr-only">{t("leaderboard.podiumHeading")}</h2>
               <div className="flex flex-col md:flex-row items-end justify-center gap-6 max-w-4xl mx-auto" role="list">
                 {podiumConfig.map((podium) => (
                   <PodiumCard
@@ -711,15 +738,15 @@ export default function LeaderBoard() {
                 type="search"
                 value={search}
                 onChange={handleSearchChange}
-                placeholder="Search contributors... (Press / to focus)"
+                placeholder={t("leaderboard.searchPlaceholder")}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-950 transition-all placeholder:text-slate-400 focus:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#E0E9F2]"
-                aria-label="Search contributors by username"
+                aria-label={t("leaderboard.searchAriaLabel")}
               />
             </div>
 
             <div className="flex items-center gap-3">
               <StyledDropdown
-                label="Sort By"
+                label={t("leaderboard.sortBy")}
                 value={sortOptions.find((opt) => opt.value === sortBy)?.label || "Sort by"}
                 options={sortOptions.map((opt) => opt.label)}
                 onChange={(value) => {
@@ -735,8 +762,8 @@ export default function LeaderBoard() {
                 whileTap={{ scale: 0.95 }}
                 disabled={isRefreshing}
                 className="rounded-2xl border border-slate-200 bg-white/70 p-2.5 text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-950 disabled:opacity-50"
-                aria-label="Refresh leaderboard data"
-                title="Refresh data"
+                aria-label={t("leaderboard.refreshAriaLabel")}
+                title={t("leaderboard.refreshTitle")}
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
               </motion.button>
@@ -746,8 +773,8 @@ export default function LeaderBoard() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="rounded-2xl border border-slate-200 bg-white/70 p-2.5 text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-950"
-                aria-label="Export leaderboard as CSV"
-                title="Export as CSV"
+                aria-label={t("leaderboard.exportAriaLabel")}
+                title={t("leaderboard.exportTitle")}
               >
                 <Download className="w-4 h-4" aria-hidden="true" />
               </motion.button>
@@ -756,10 +783,10 @@ export default function LeaderBoard() {
 
           <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm text-slate-600 backdrop-blur-xl">
             <span>
-              Showing <strong className="font-semibold text-slate-900">{currentContributors.length}</strong> of <strong className="font-semibold text-slate-900">{sortedContributors.length}</strong> contributors
+              {t("leaderboard.showingContributors", { count: currentContributors.length, total: sortedContributors.length })}
             </span>
             <span>
-              Page <strong className="font-semibold text-slate-900">{currentPage}</strong> of <strong className="font-semibold text-slate-900">{totalPages}</strong>
+              {t("leaderboard.pageOf", { current: currentPage, total: totalPages })}
             </span>
           </div>
 
@@ -767,28 +794,28 @@ export default function LeaderBoard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {[
               {
-                title: "Active Contributors",
+                title: t("leaderboard.statsCards.activeContributors"),
                 value: stats.totalContributors,
                 gradient: "from-blue-500/10 to-indigo-500/10",
                 border: "border-blue-100 dark:border-blue-900/30",
                 textColor: "text-blue-600 dark:text-blue-400",
-                icon: FaUsers,
+                icon: Users, // FIX: Replaced FaUsers
               },
               {
-                title: "Merged Pull Requests",
+                title: t("leaderboard.statsCards.mergedPRs"),
                 value: stats.flooredTotalPRs,
                 gradient: "from-emerald-500/10 to-teal-500/10",
                 border: "border-emerald-100 dark:border-emerald-900/30",
                 textColor: "text-emerald-600 dark:text-emerald-400",
-                icon: FaCode,
+                icon: Code, // FIX: Replaced FaCode
               },
               {
-                title: "Total Arena Points",
+                title: t("leaderboard.statsCards.totalPoints"),
                 value: stats.flooredTotalPoints,
                 gradient: "from-amber-500/10 to-orange-500/10",
                 border: "border-amber-100 dark:border-amber-900/30",
                 textColor: "text-amber-600 dark:text-amber-400",
-                icon: FaStar,
+                icon: Star, // FIX: Replaced FaStar
               },
             ].map((card, idx) => (
               <motion.div
@@ -822,7 +849,7 @@ export default function LeaderBoard() {
             className="overflow-hidden rounded-[32px] border border-slate-200/70 bg-white/90 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl"
             aria-labelledby="leaderboard-table-title"
           >
-            <h2 id="leaderboard-table-title" className="sr-only">Contributor Rankings</h2>
+            <h2 id="leaderboard-table-title" className="sr-only">{t("leaderboard.tableHeading")}</h2>
 
             {error ? (
               <div className="p-8 text-center">
@@ -831,12 +858,12 @@ export default function LeaderBoard() {
                   onClick={handleRefresh}
                   className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
-                  Try Again
+                  {t("leaderboard.errorTryAgain")}
                 </button>
               </div>
             ) : loading ? (
               <div role="status" aria-live="polite">
-                <span className="sr-only">Loading leaderboard...</span>
+                <span className="sr-only">{t("leaderboard.loading")}</span>
                 <SkeletonLeaderboard rows={CONTRIBUTORS_PER_PAGE} />
               </div>
             ) : (
@@ -844,7 +871,7 @@ export default function LeaderBoard() {
                 <table className="min-w-full divide-y divide-slate-100">
                   <thead className="bg-slate-50/90">
                     <tr>
-                      {["Rank", "Contributor", "Achievement", "Points", "PRs"].map((header) => (
+                      {[t("leaderboard.tableHeaders.rank"), t("leaderboard.tableHeaders.contributor"), t("leaderboard.tableHeaders.achievement"), t("leaderboard.tableHeaders.points"), t("leaderboard.tableHeaders.prs")].map((header) => (
                         <th
                           key={header}
                           scope="col"
@@ -1006,8 +1033,8 @@ export default function LeaderBoard() {
                           <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                             <div className="flex flex-col items-center gap-3">
                               <Search className="w-8 h-8 text-slate-300 dark:text-slate-700" aria-hidden="true" />
-                              <p className="font-medium">No contributors found</p>
-                              <p className="text-sm">Try adjusting your search or filters</p>
+                              <p className="font-medium">{t("leaderboard.emptyTitle")}</p>
+                              <p className="text-sm">{t("leaderboard.emptyDescription")}</p>
                               <button
                                 onClick={() => {
                                   setSearch("");
@@ -1016,7 +1043,7 @@ export default function LeaderBoard() {
                                 }}
                                 className="mt-2 px-4 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
                               >
-                                Clear filters
+                                {t("common.clearFilters")}
                               </button>
                             </div>
                           </td>
@@ -1030,14 +1057,14 @@ export default function LeaderBoard() {
                 {totalPages > 1 && (
                   <div className="flex justify-between items-center py-4 px-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                     <span className="text-xs font-medium text-slate-500">
-                      Page {currentPage} of {totalPages}
+                      {t("leaderboard.pageOf", { current: currentPage, total: totalPages })}
                     </span>
-                    <div className="flex items-center gap-2" role="navigation" aria-label="Pagination">
+                    <div className="flex items-center gap-2" role="navigation" aria-label={t("leaderboard.paginationLabel")}>
                       <button
                         onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                         disabled={currentPage === 1}
                         className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#E0E9F2] disabled:opacity-50"
-                        aria-label="Previous page"
+                        aria-label={t("common.previousPage")}
                       >
                         <ChevronLeft className="w-3 h-3" aria-hidden="true" />
                       </button>
@@ -1045,7 +1072,7 @@ export default function LeaderBoard() {
                         onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                         disabled={currentPage === totalPages}
                         className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#E0E9F2] disabled:opacity-50"
-                        aria-label="Next page"
+                        aria-label={t("common.nextPage")}
                       >
                         <ChevronRight className="w-3 h-3" aria-hidden="true" />
                       </button>
@@ -1069,15 +1096,13 @@ export default function LeaderBoard() {
           {/* Keyboard shortcuts hint */}
           <div className="mt-6 text-center">
             <p className="text-xs text-slate-400 dark:text-slate-500">
-              <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono">/</kbd> to search •{" "}
-              <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono">←</kbd>{" "}
-              <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono">→</kbd> to navigate pages
+              {t("leaderboard.keyboardShortcuts")}
             </p>
           </div>
         </div>
 
         <GSSoCContribution />
       </div>
-    </FeatureErrorBoundary>
+    </ErrorBoundary>
   );
 }

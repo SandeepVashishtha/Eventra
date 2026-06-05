@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Sparkles,
@@ -11,6 +11,8 @@ import {
   Clock,
 } from "lucide-react";
 import mockEvents from "../../Pages/Events/eventsMockData.json";
+import { syncSecureStorage } from "../../utils/secureStorage";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // =========================================================================
 // INLINE VECTOR GRAPHIC CONSTANTS (FALLBACK PLACEHOLDER IMAGES)
@@ -29,9 +31,15 @@ const INLINE_SVG_PLACEHOLDER =
  * 💀 SHIMMER SKELETON CARD MODULE
  * Matches the newly padded structural card dimensions precisely to eliminate layout shifting.
  */
-const RecommendationSkeleton = memo(() => {
+const RecommendationSkeleton = memo(({ visibleCount = 3 }) => {
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm w-[calc(33.333%-12px)] flex flex-col justify-between animate-pulse select-none">
+    <div
+      className="bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between animate-pulse select-none"
+      style={{
+        width: `calc(${100 / visibleCount}% - ${((visibleCount - 1) * 16) / visibleCount}px)`,
+        flexShrink: 0,
+      }}
+    >
       <div>
         {/* Shimmer Image Wrapper Layout */}
         <div className="w-full h-32 bg-slate-200 dark:bg-slate-800 rounded-xl mb-4" />
@@ -112,23 +120,58 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
   const [recommendedEvents, setRecommendedEvents] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(3);
+
+  // Dynamic visible count calculation based on viewport width
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width < 640) {
+        setVisibleCount(1);
+      } else if (width < 1024) {
+        setVisibleCount(2);
+      } else {
+        setVisibleCount(3);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Clamp currentIndex when visibleCount or recommendedEvents changes
+  useEffect(() => {
+    setCurrentIndex((prev) => {
+      const maxIndex = Math.max(0, recommendedEvents.length - visibleCount);
+      return Math.min(prev, maxIndex);
+    });
+  }, [visibleCount, recommendedEvents.length]);
 
   // Core processing effect tracing profile parameters
   useEffect(() => {
     setLoading(true);
+    let active = true;
 
-    const computationalTimer = setTimeout(() => {
+    const loadRecommendations = async () => {
       let userInterests = ["Coding", "Tech", "AI", "Development"];
 
       // Sync and extract client custom telemetry interests log from localStorage safely
       try {
-        const storedInterests = localStorage.getItem("user_interests");
-        if (storedInterests) {
-          userInterests = JSON.parse(storedInterests);
+        const storedUser = await syncSecureStorage.getItemAsync("user");
+        if (storedUser) {
+          const parsed = safeJsonParse(storedUser, null);
+          if (parsed && Array.isArray(parsed.skills) && parsed.skills.length > 0) {
+            userInterests = parsed.skills;
+          }
         }
       } catch (error) {
-        console.error("Failsafe tracking intercept: localStorage parsing collapsed safely.", error);
+        console.error("Failsafe tracking intercept: secureStorage parsing collapsed safely.", error);
       }
+
+      if (!active) return;
 
       // Ensure mock data arrays pass standard validation checks
       const validMockEvents = Array.isArray(mockEvents) ? mockEvents : [];
@@ -169,22 +212,36 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
         (a, b) => b.recommendationScore - a.recommendationScore
       );
 
-      // Select topmost 6 scoring matches for the carousel limits
-      setRecommendedEvents(sortedResultMatrix.slice(0, 6));
-      setLoading(false);
+      if (active) {
+        // Select topmost 6 scoring matches for the carousel limits
+        setRecommendedEvents(sortedResultMatrix.slice(0, 6));
+        setLoading(false);
+      }
+    };
+
+    const computationalTimer = setTimeout(() => {
+      loadRecommendations();
     }, 800);
 
-    return () => clearTimeout(computationalTimer);
+    return () => {
+      active = false;
+      clearTimeout(computationalTimer);
+    };
   }, [currentEventId, currentCategory]);
 
   // Carousel slider boundary movement methods
   const nextSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1 >= recommendedEvents.length - 2 ? 0 : prev + 1));
-  }, [recommendedEvents.length]);
+    setCurrentIndex((prev) =>
+      prev + 1 >= recommendedEvents.length - (visibleCount - 1) ? 0 : prev + 1
+    );
+  }, [recommendedEvents.length, visibleCount]);
 
+  // Prevent sliding back if recommendedEvents is smaller than visibleCount
   const prevSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev === 0 ? Math.max(0, recommendedEvents.length - 3) : prev - 1));
-  }, [recommendedEvents.length]);
+    setCurrentIndex((prev) =>
+      prev === 0 ? Math.max(0, recommendedEvents.length - visibleCount) : prev - 1
+    );
+  }, [recommendedEvents.length, visibleCount]);
 
   // Handle loading interface states
   if (loading) {
@@ -211,9 +268,9 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
         {/* LOADING SHIMMER MAPPING CONTAINER */}
         <div className="relative overflow-hidden w-full">
           <div className="flex gap-4 w-full">
-            <RecommendationSkeleton />
-            <RecommendationSkeleton />
-            <RecommendationSkeleton />
+            {Array.from({ length: visibleCount }).map((_, idx) => (
+              <RecommendationSkeleton key={idx} visibleCount={visibleCount} />
+            ))}
           </div>
         </div>
       </div>
@@ -241,7 +298,7 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
         </div>
 
         {/* Action navigation toggle links */}
-        {recommendedEvents.length > 3 && (
+        {recommendedEvents.length > visibleCount && (
           <div className="flex items-center gap-1.5 navigation-buttons-row">
             <button
               onClick={prevSlide}
@@ -264,10 +321,9 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
       {/* HORIZONTAL CAROUSEL CARDS WRAPPER GRID */}
       <div className="relative overflow-hidden w-full content-slider-envelope-view">
         <div
-          className="flex transition-transform duration-500 ease-out gap-4 slider-film-strip-axis"
+          className="flex flex-nowrap transition-transform duration-500 ease-out gap-4 slider-film-strip-axis"
           style={{
-            transform: `translateX(-${currentIndex * (100 / 3)}%)`,
-            width: `${Math.max(100, (recommendedEvents.length / 3) * 100)}%`,
+            transform: `translateX(calc(-${currentIndex} * (100% + 16px) / ${visibleCount}))`,
           }}
         >
           {recommendedEvents.map((event) => {
@@ -280,7 +336,11 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
             return (
               <div
                 key={event.id}
-                className="bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-slate-300/40 dark:hover:border-slate-700/50 transition-all duration-300 w-[calc(33.333%-12px)] flex flex-col justify-between transform hover:-translate-y-0.5"
+                className="bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-slate-300/40 dark:hover:border-slate-700/50 transition-all duration-300 flex flex-col justify-between transform hover:-translate-y-0.5"
+                style={{
+                  width: `calc(${100 / visibleCount}% - ${((visibleCount - 1) * 16) / visibleCount}px)`,
+                  flexShrink: 0,
+                }}
               >
                 <div>
                   {/* INJECTED CARD BANNER: Implements robust a11y image onError error fallbacks */}

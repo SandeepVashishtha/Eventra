@@ -1,5 +1,7 @@
 import Fuse from "fuse.js";
 
+const fuseCache = new WeakMap();
+
 /**
  * Normalizes text for searching: lowercase, remove accents, and strip special chars.
  */
@@ -29,6 +31,10 @@ export const normalizeSearchText = (value) => {
  * @param {Object} options - Fuse.js options
  */
 export const getRouteSearchResults = (items, query, keys, options = {}) => {
+  if (!Array.isArray(items)) {
+    throw new TypeError("items must be an array");
+  }
+
   if (!query || query.trim() === "") {
     return items;
   }
@@ -40,22 +46,60 @@ export const getRouteSearchResults = (items, query, keys, options = {}) => {
     { name: "description", weight: 0.1 },
   ];
 
-  const fuse = new Fuse(items, {
-    keys: keys || defaultKeys,
-    threshold: 0.4,
-    distance: 100,
-    ignoreLocation: true,
-    findAllMatches: true,
-    includeScore: true,
-    useExtendedSearch: true,
-    ...options,
-  });
+  const searchKeys = keys || defaultKeys;
 
-  const results = fuse.search(query);
-  
-  // Return just the items, sorted by Fuse.js score (lower is better)
-  return results.map(result => ({
-    ...result.item,
-    _searchScore: result.score,
-  }));
+  const getKeyName = (key) => (typeof key === "string" ? key : key.name);
+
+  const getSearchableValue = (item, key) => {
+    const keyName = getKeyName(key);
+    if (!keyName) return "";
+
+    return keyName.split(".").reduce((value, part) => {
+      if (value === null || value === undefined) return "";
+      return value[part];
+    }, item);
+  };
+
+   const normalizedQuery = normalizeSearchText(query);
+   const queryTokens = normalizedQuery.split(" ").filter(Boolean);
+
+   // Get or create Fuse instance for this items array
+   let fuse = fuseCache.get(items);
+   if (!fuse) {
+     fuse = new Fuse(items, {
+       keys: searchKeys,
+       threshold: 0.4,
+       distance: 100,
+       ignoreLocation: true,
+       findAllMatches: true,
+       includeScore: true,
+       useExtendedSearch: true,
+       ...options,
+     });
+     fuseCache.set(items, fuse);
+   }
+
+   const fuseResults = fuse.search(query).map((result) => ({
+     ...result.item,
+     _searchScore: result.score,
+   }));
+
+  const matchedIds = new Set(fuseResults.map((item) => item.id));
+
+  const tokenResults = items
+    .filter((item) => {
+      if (matchedIds.has(item.id)) return false;
+
+      const combinedText = normalizeSearchText(
+        searchKeys.map((key) => getSearchableValue(item, key)).join(" ")
+      );
+
+      return queryTokens.every((token) => combinedText.includes(token));
+    })
+    .map((item) => ({
+      ...item,
+      _searchScore: 1,
+    }));
+
+  return [...fuseResults, ...tokenResults];
 };
