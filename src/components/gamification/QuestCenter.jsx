@@ -146,6 +146,7 @@ const playClaimSound = () => {
 // ─── Main QuestCenter component ────────────────────────────────────────────────
 export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
   const confettiRef = useRef(null);
+  const claimedGuardRef = useRef({});
   const [activeTab, setActiveTab] = useState('daily');
 
   // Initialise quest progress from localStorage or fresh defaults
@@ -227,12 +228,15 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
   // ─── Claim handler ───────────────────────────────────────────────────────────
   const claimXP = (questId, xp, isWeekly) => {
     const claimedKey = isWeekly ? 'weeklyClaimed' : 'dailyClaimed';
-    
-    // 🔥 FIX 1: Moved the check INSIDE the functional setState.
-    // Checking the closure 'state' allows spam-click double-claiming exploits.
-    // Checking 'prev' guarantees atomic verification.
+    const guardKey = `${claimedKey}:${questId}`;
+
+    // Synchronous guard — blocks side effects on rapid double-click
+    // before React has had a chance to re-render with updated claimed state
+    if (claimedGuardRef.current[guardKey]) return;
+    claimedGuardRef.current[guardKey] = true;
+
     setState(prev => {
-      if (prev[claimedKey][questId]) return prev; // Already claimed, block exploit
+      if (prev[claimedKey][questId]) return prev;
 
       return {
         ...prev,
