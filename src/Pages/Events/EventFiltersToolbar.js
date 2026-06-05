@@ -1,8 +1,9 @@
-import { Grid, List, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw } from "lucide-react";
+import { Grid, List, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw, Download } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import StyledDropdown from "../../components/StyledDropdown";
 import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
 import useEventFilterPresets from "../../hooks/useEventFilterPresets";
+import { exportEventsResultFile } from "../../utils/eventResultsExport";
 
 const CATEGORY_OPTIONS = [
   { id: "all", label: "All Categories" },
@@ -37,11 +38,14 @@ const EventFiltersToolbar = ({
   onResetFilters,
   currentFilterConfig,
   onApplyPreset,
+  visibleEvents = [],
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const [presetName, setPresetName] = useState("");
   const [editingPresetId, setEditingPresetId] = useState("");
   const [editingPresetName, setEditingPresetName] = useState("");
+  const [exportMessage, setExportMessage] = useState("");
+  const [exportError, setExportError] = useState("");
   const debounceRef = useRef(null);
   const {
     presets,
@@ -110,6 +114,30 @@ const EventFiltersToolbar = ({
       )
     ) {
       deletePreset(preset.id);
+    }
+  };
+
+  const handleExport = (format) => {
+    setExportMessage("");
+    setExportError("");
+
+    try {
+      const result = exportEventsResultFile({
+        events: visibleEvents,
+        filters: currentFilterConfig,
+        format,
+      });
+
+      if (!result.ok) {
+        setExportError(result.error);
+        return;
+      }
+
+      setExportMessage(
+        `Exported ${result.count} event${result.count === 1 ? "" : "s"} to ${result.filename}.`,
+      );
+    } catch {
+      setExportError("Unable to export events right now.");
     }
   };
 
@@ -307,6 +335,57 @@ const EventFiltersToolbar = ({
             })
           )}
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/45 p-4 shadow-inner">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-100">
+              <Download size={16} className="text-emerald-300" />
+              Export Results
+            </h4>
+            <p className="mt-1 text-xs text-slate-500">
+              Download the currently visible filtered events.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => handleExport("csv")}
+              disabled={visibleEvents.length === 0}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900/50 disabled:text-slate-600"
+            >
+              <Download size={14} />
+              Export CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExport("json")}
+              disabled={visibleEvents.length === 0}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900/50 disabled:text-slate-600"
+            >
+              <Download size={14} />
+              Export JSON
+            </button>
+          </div>
+        </div>
+
+        {visibleEvents.length === 0 && (
+          <p className="mt-3 text-xs text-slate-500">
+            Export is disabled because there are no visible events.
+          </p>
+        )}
+        {exportMessage && (
+          <p className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-950/20 px-3 py-2 text-xs font-medium text-emerald-300">
+            {exportMessage}
+          </p>
+        )}
+        {exportError && (
+          <p className="mt-3 rounded-xl border border-red-500/20 bg-red-950/20 px-3 py-2 text-xs font-medium text-red-300">
+            {exportError}
+          </p>
+        )}
       </section>
 
       {/* 2. Interactive Search & Timing row */}

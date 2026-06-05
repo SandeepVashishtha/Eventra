@@ -342,6 +342,7 @@ const EventsPage = () => {
             onResetFilters={clearSearchAndFilters}
             currentFilterConfig={currentFilterConfig}
             onApplyPreset={applyFilterPreset}
+            visibleEvents={listing.paginatedEvents}
           />
         </div>
 
