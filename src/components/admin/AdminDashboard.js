@@ -32,7 +32,7 @@ import StatusBadge from "../common/StatusBadge";
 import "./AdminDashboard.css";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import TicketScanner from "./TicketScanner";
-import SectionErrorBoundary from "../common/SectionErrorBoundary";
+import ErrorBoundary from "../common/ErrorBoundary";
 import { toast } from "react-toastify";
 
 import { ROLES, PERMISSIONS } from "../../config/roles";
@@ -43,6 +43,7 @@ import {
   deleteAdminEvent,
   fetchAdminStats,
 } from "../../services/adminService";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -131,7 +132,7 @@ const AdminDashboard = () => {
   const loadWaitlist = useCallback((eventId) => {
     import("../../utils/waitlistUtils.js").then(({ getEventWaitlist }) => {
       setWaitlistUsers(getEventWaitlist(eventId));
-    });
+    }).catch(() => setWaitlistUsers([]));
   }, []);
 
   const openWaitlistModal = (event) => {
@@ -304,6 +305,14 @@ const AdminDashboard = () => {
 
   const handleConfirmDelete = async () => {
     const { type, id } = confirmModal;
+    setConfirmModal({ open: false, type: "", id: null });
+
+    if (type === "logout") {
+      logout();
+      navigate("/login", { replace: true });
+      return;
+    }
+
     try {
       if (type === "user") {
         await deleteAdminUser(id);
@@ -320,7 +329,6 @@ const AdminDashboard = () => {
     } catch (error) {
       toast.error(error.message || `Failed to delete ${type}.`);
     }
-    setConfirmModal({ open: false, type: "", id: null });
   };
 
   const confirmDelete = (type, id) => setConfirmModal({ open: true, type, id });
@@ -683,18 +691,18 @@ const AdminDashboard = () => {
                       ))}
                 </motion.div>
                 <div style={{ marginTop: "1.5rem" }}>
-                  <SectionErrorBoundary label="Analytics Dashboard">
+                  <ErrorBoundary level="section" label="Analytics Dashboard">
                     <AnalyticsDashboard />
-                  </SectionErrorBoundary>
+                  </ErrorBoundary>
                 </div>
               </motion.div>
             )}
 
             {activeTab === "scanner" && (
               <motion.div key="scanner" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ad-section">
-                <SectionErrorBoundary label="Ticket Scanner">
+                <ErrorBoundary level="section" label="Ticket Scanner">
                   <TicketScanner />
-                </SectionErrorBoundary>
+                </ErrorBoundary>
               </motion.div>
             )}
           </AnimatePresence>
