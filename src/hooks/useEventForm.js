@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast } from "react-toastify";
-import { API_ENDPOINTS, apiUtils } from "../config/api";
+import { API_ENDPOINTS } from "../config/api";
+import { eventService } from "../services/eventService";
 import { useFormSubmit } from "./useFormSubmit";
 import {
   DRAFT_KEY,
@@ -295,7 +296,7 @@ export const useEventForm = () => {
       return { id: "mock-event-id", success: true };
     }
 
-    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, sanitized);
+    const response = await eventService.createEvent(sanitized);
     const result = response.data;
 
     if (!(response.status === 200 && result?.success)) {

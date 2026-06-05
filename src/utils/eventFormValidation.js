@@ -1,5 +1,4 @@
 import { parseTimeToMinutes } from "./eventCreationUtils";
-
 export const validateForm = (formData) => {
   const newErrors = {};
 
@@ -40,10 +39,9 @@ export const validateForm = (formData) => {
     newErrors.location = "Location name is required for offline events";
   }
 
-  if (formData.isVirtual && !formData.virtualLink.trim()) {
+  if (formData.isVirtual && !formData.virtualLink?.trim()) {
     newErrors.virtualLink = "Virtual link is required for online events";
   }
-
   if (formData.capacity) {
     const capacity = Number(formData.capacity);
     if (!capacity || capacity <= 0) {
