@@ -258,7 +258,7 @@ API.interceptors.response.use(
       }
 
       await new Promise((resolve) => setTimeout(resolve, delay));
-      return API(config);
+      return API(newConfig);
     }
     throw normalizeApiError(error);
   }
