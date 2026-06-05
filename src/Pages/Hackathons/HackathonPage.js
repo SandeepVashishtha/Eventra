@@ -417,25 +417,6 @@ const HackathonHub = () => {
         onTagSelect={handleTagSelect}
       />
 
-      <motion.div
-        ref={cardsSectionRef}
-        key={activeTab}
-        className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-        variants={{
-          hidden: { opacity: 0 },
-          show: {
-            opacity: 1,
-            transition: { staggerChildren: 0.1, delayChildren: 0.3 },
-          },
-        }}
-        initial="hidden"
-        animate="show"
-        exit={{ opacity: 0 }}
-      >
-        {hackathons.map((hackathon) => (
-          <div key={hackathon.id}>{/* HackathonCard component unchanged */}</div>
-        ))}
-      </motion.div>
 
       {/* TEAM MATCHMAKING SECTION */}
       <TeamMatchmaking />
