@@ -21,20 +21,22 @@
 
 const API_RATE_LIMIT = 60;     // max requests
 const API_RATE_WINDOW_S = 60;  // per window in seconds
+const AUTH_RATE_LIMIT = 5;     // max requests for auth routes
+const AUTH_RATE_WINDOW_S = 60; // per window in seconds
 
 // ---------------------------------------------------------------------------
 // Distributed rate limiter — calls the KV REST API via fetch (Edge-safe).
 // Returns false (not limited) when KV is not configured.
 // ---------------------------------------------------------------------------
 
-const isRateLimited = async (ip) => {
+const isRateLimited = async (ip, limit, windowSeconds, prefix = "rl") => {
   const kvUrl = process.env.KV_REST_API_URL;
   const kvToken = process.env.KV_REST_API_TOKEN;
 
   // Graceful degradation: no KV store provisioned → skip rate limiting
   if (!kvUrl || !kvToken) return false;
 
-  const key = `rl:${ip}`;
+  const key = `${prefix}:${ip}`;
   const headers = {
     Authorization: `Bearer ${kvToken}`,
     "Content-Type": "application/json",
@@ -51,13 +53,13 @@ const isRateLimited = async (ip) => {
 
   if (count === 1) {
     // First request in this window: set TTL so the key auto-evicts
-    await fetch(`${kvUrl}/expire/${key}/${API_RATE_WINDOW_S}`, {
+    await fetch(`${kvUrl}/expire/${key}/${windowSeconds}`, {
       method: "POST",
       headers,
     });
   }
 
-  return count > API_RATE_LIMIT;
+  return count > limit;
 };
 
 // ---------------------------------------------------------------------------
@@ -94,10 +96,15 @@ export default async function middleware(request) {
     request.headers.get("x-real-ip") ||
     "unknown";
 
-  if (await isRateLimited(ip)) {
+  const isAuthRoute = url.pathname.startsWith("/api/auth/");
+  const limit = isAuthRoute ? AUTH_RATE_LIMIT : API_RATE_LIMIT;
+  const windowSeconds = isAuthRoute ? AUTH_RATE_WINDOW_S : API_RATE_WINDOW_S;
+  const prefix = isAuthRoute ? "auth_rl" : "rl";
+
+  if (await isRateLimited(ip, limit, windowSeconds, prefix)) {
     const responseHeaders = new Headers({
       "Content-Type": "application/json",
-      "Retry-After": String(API_RATE_WINDOW_S),
+      "Retry-After": String(windowSeconds),
     });
     addSecurityHeaders(responseHeaders);
     responseHeaders.set("Access-Control-Allow-Origin", url.origin);
