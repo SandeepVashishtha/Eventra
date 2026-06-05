@@ -1,26 +1,89 @@
-name: Feature request
-description: Suggest an idea for this project
-labels: enhancement
+name: ✨ Feature Request
+description: Suggest a new feature or improvement for Eventra
+labels: ["enhancement", "mentor:Ayushh-Sharmaa"]
 body:
-  - type: textarea
+  - type: markdown
     attributes:
-      label: Is your feature request related to a problem or challenge?
-      description: Please describe what you are trying to do.
-      placeholder: >
-        A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
-        (This section helps developers understand the context and *why* for this feature, in addition to the *what*)
+      value: |
+        ## ✨ Feature Request
+        Got a great idea? We'd love to hear it! Please describe your suggestion clearly so we can evaluate and prioritize it.
+        > **GSSoC Contributors:** Please wait to be assigned before opening a PR for this feature.
+
   - type: textarea
+    id: problem
     attributes:
-      label: Describe the solution you'd like
-      placeholder: >
-        A clear and concise description of what you want to happen.
+      label: 🔍 Problem Statement
+      description: Is your feature request related to a problem? Please describe it clearly.
+      placeholder: "Ex. It's frustrating that I can't filter events by category on the dashboard..."
+    validations:
+      required: true
+
   - type: textarea
+    id: solution
     attributes:
-      label: Describe alternatives you've considered
-      placeholder: >
-        A clear and concise description of any alternative solutions or features you've considered.
+      label: 💡 Proposed Solution
+      description: Describe the solution you'd like to see.
+      placeholder: "Ex. Add a filter dropdown on the events dashboard that allows filtering by category, date range, and status."
+    validations:
+      required: true
+
   - type: textarea
+    id: alternatives
     attributes:
-      label: Additional context
-      placeholder: >
-        Add any other context or screenshots about the feature request here.
+      label: 🔄 Alternatives Considered
+      description: Describe any alternative solutions or features you've considered.
+      placeholder: "Ex. I considered a search bar instead, but a filter gives more control."
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 🏗️ Feature Area
+      description: Which part of the project does this feature relate to?
+      options:
+        - "UI / Frontend"
+        - "Backend / API"
+        - "Database / Models"
+        - "Authentication"
+        - "Performance"
+        - "DevOps / CI-CD"
+        - "Documentation"
+        - "Other"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 📊 Perceived Priority
+      description: How important do you think this feature is?
+      options:
+        - "🔴 High — Core functionality, blocks workflows"
+        - "🟡 Medium — Improves experience significantly"
+        - "🟢 Low — Nice to have"
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockup
+    attributes:
+      label: 🎨 Mockups / References
+      description: Add any wireframes, screenshots, or links to similar implementations.
+      placeholder: "Paste images or links here..."
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 📎 Additional Context
+      placeholder: "Any other context, related issues, or implementation ideas."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ Contributor Checklist
+      options:
+        - label: I have searched existing issues and this is not a duplicate
+          required: true
+        - label: I have read the [Contributing Guide](https://github.com/Ayushh-Sharmaa/Eventra/blob/main/CONTRIBUTING.md)
+          required: true
+        - label: I am a GSSoC'26 contributor and will only raise a PR after being assigned
+          required: false

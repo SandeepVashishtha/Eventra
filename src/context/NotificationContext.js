@@ -23,12 +23,19 @@ import {
   urlBase64ToUint8Array,
   writeNotificationPreferences,
 } from "../utils/notificationPreferences";
+import { logger } from "../utils/logger";
 
 const NotificationContext = createContext();
 
 const POLLING_INTERVAL_MS = 60_000;
+const runtimeEnv =
+  typeof import.meta !== "undefined" && import.meta.env
+    ? import.meta.env
+    : typeof process !== "undefined" && process.env
+      ? process.env
+      : {};
 const VAPID_PUBLIC_KEY =
-  process.env.REACT_APP_VAPID_PUBLIC_KEY || process.env.VITE_VAPID_PUBLIC_KEY || "";
+  runtimeEnv.VITE_VAPID_PUBLIC_KEY || runtimeEnv.REACT_APP_VAPID_PUBLIC_KEY || "";
 
 const isValidEndpoint = (endpoint) =>
   endpoint && typeof endpoint === "string" && !endpoint.includes("undefined");
@@ -486,7 +493,7 @@ export const NotificationProvider = ({ children }) => {
           try {
             const parsed = JSON.parse(existing);
             if (parsed?.keys) {
-              console.info("[NotificationContext] Migrating legacy push subscription record.");
+              logger.info("[NotificationContext] Migrating legacy push subscription record.");
             }
           } catch {
             // Ignore invalid legacy data and continue with the safe record.

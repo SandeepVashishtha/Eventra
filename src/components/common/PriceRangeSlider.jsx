@@ -67,6 +67,7 @@ const PriceRangeSlider = ({
         {/* Min slider — visual updates on onChange, parent notified on release */}
         <input
           type="range"
+          aria-label="Minimum Price"
           min={minLimit}
           max={maxLimit}
           value={min}
@@ -81,6 +82,7 @@ const PriceRangeSlider = ({
         {/* Max slider — visual updates on onChange, parent notified on release */}
         <input
           type="range"
+          aria-label="Maximum Price"
           min={minLimit}
           max={maxLimit}
           value={max}

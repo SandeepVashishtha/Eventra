@@ -8,24 +8,24 @@ import {
   validatePasswordStrength,
 } from "../../../validation";
 
-jest.mock("../../../config/api", () => ({
+vi.mock("../../../config/api", () => ({
   API_ENDPOINTS: {
     AUTH: {
       SIGNUP: "/auth/signup",
     },
   },
   apiUtils: {
-    post: jest.fn(),
+    post: vi.fn(),
   },
 }));
 
-jest.mock("../../../context/AuthContext", () => ({
+vi.mock("../../../context/AuthContext", () => ({
   useAuth: () => ({
-    setAuthSession: jest.fn(),
+    setAuthSession: vi.fn(),
   }),
 }));
 
-jest.mock("../../../validation", () => ({
+vi.mock("../../../validation", () => ({
   validate: {
     email: (value) =>
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || "Invalid email format",
@@ -41,9 +41,14 @@ jest.mock("../../../validation", () => ({
       if (value.length > 50) return "Less than 50 characters";
       return true;
     },
+    confirmPassword: (value, { password }) => {
+      if (!value) return "Confirm password is required";
+      if (value !== password) return "Passwords do not match";
+      return true;
+    },
   },
-  validateEmailAvailability: jest.fn(),
-  validatePasswordStrength: jest.fn(),
+  validateEmailAvailability: vi.fn(),
+  validatePasswordStrength: vi.fn(),
 }));
 
 let container;
@@ -101,8 +106,8 @@ const fillValidSignupForm = () => {
 };
 
 beforeEach(() => {
-  jest.useFakeTimers();
-  window.scrollTo = jest.fn();
+  vi.useFakeTimers();
+  window.scrollTo = vi.fn();
   validateEmailAvailability.mockResolvedValue({ isValid: true, message: "" });
   validatePasswordStrength.mockResolvedValue({ isValid: true, message: "" });
   apiUtils.post.mockResolvedValue({
@@ -125,8 +130,8 @@ afterEach(() => {
     });
   }
   document.body.innerHTML = "";
-  jest.clearAllMocks();
-  jest.useRealTimers();
+  vi.clearAllMocks();
+  vi.useRealTimers();
 });
 
 describe("SignupForm integration", () => {
@@ -161,7 +166,7 @@ describe("SignupForm integration", () => {
 
     changeInput("email", "ada@example.com");
     act(() => {
-      jest.advanceTimersByTime(500);
+      vi.advanceTimersByTime(500);
     });
 
     expect(container.textContent).toContain("Checking email availability...");
@@ -173,7 +178,7 @@ describe("SignupForm integration", () => {
 
     changeInput("email", "ada@example.com");
     await act(async () => {
-      jest.advanceTimersByTime(500);
+      vi.advanceTimersByTime(500);
     });
 
     expect(input("email").getAttribute("aria-invalid")).toBe("false");
@@ -189,7 +194,7 @@ describe("SignupForm integration", () => {
 
     changeInput("email", "taken@example.com");
     await act(async () => {
-      jest.advanceTimersByTime(500);
+      vi.advanceTimersByTime(500);
     });
 
     expect(container.textContent).toContain("Email is already registered");
