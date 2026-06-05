@@ -92,6 +92,8 @@ export const getDeviceFingerprint = () => {
   }
 };
 
+let _memoizedFastFingerprint = null;
+
 /**
  * Generates a faster device fingerprint without using GPU canvas rendering.
  * Useful when performance is critical and high uniqueness isn't required.
@@ -99,13 +101,25 @@ export const getDeviceFingerprint = () => {
  * @returns {string} SHA-256 hex string representing the basic device fingerprint.
  */
 export const getFastFingerprint = () => {
-  if (typeof window === "undefined" || typeof document === "undefined") {
-    return CryptoJS.SHA256("eventra-fast-fingerprint-fallback").toString();
+  if (_memoizedFastFingerprint !== null) {
+    return _memoizedFastFingerprint;
   }
-  const screenInfo = `${window.screen?.width || 0}x${window.screen?.height || 0}x${window.screen?.colorDepth || 0}`;
-  const navInfo = `${window.navigator?.userAgent || ""}_${window.navigator?.language || ""}_${window.navigator?.hardwareConcurrency || 0}`;
-  const salt = `eventra:fast-fingerprint:${window.location.origin}`;
-  return CryptoJS.SHA256(`${screenInfo}_${navInfo}_${salt}`).toString();
+
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    _memoizedFastFingerprint = CryptoJS.SHA256("eventra-fast-fingerprint-fallback").toString();
+    return _memoizedFastFingerprint;
+  }
+
+  try {
+    const screenInfo = `${window.screen?.width || 0}x${window.screen?.height || 0}x${window.screen?.colorDepth || 0}`;
+    const navInfo = `${window.navigator?.userAgent || ""}_${window.navigator?.language || ""}_${window.navigator?.hardwareConcurrency || 0}`;
+    const salt = `eventra:fast-fingerprint:${window.location.origin}`;
+    _memoizedFastFingerprint = CryptoJS.SHA256(`${screenInfo}_${navInfo}_${salt}`).toString();
+    return _memoizedFastFingerprint;
+  } catch {
+    _memoizedFastFingerprint = CryptoJS.SHA256("eventra-fast-fingerprint-ultimate-fallback").toString();
+    return _memoizedFastFingerprint;
+  }
 };
 
 /**
@@ -116,6 +130,7 @@ export const getFastFingerprint = () => {
  */
 export const _clearFingerprintCache = () => {
   _memoizedFingerprint = null;
+  _memoizedFastFingerprint = null;
 };
 
 /**
