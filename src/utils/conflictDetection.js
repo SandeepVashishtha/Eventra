@@ -202,10 +202,9 @@ export const suggestAlternativeEvents = (
   const tz = timezone || getUserTimezone();
 
   // Exclude the target event and already-registered events
+  const registeredIds = new Set(registeredEvents.map((reg) => reg.event?.id || reg.id));
   const availableEvents = allEvents.filter((event) => {
-    const isTargetEvent = event.id === targetEvent.id;
-    const isRegistered = registeredEvents.some((reg) => (reg.event?.id || reg.id) === event.id);
-    return !isTargetEvent && !isRegistered;
+    return event.id !== targetEvent.id && !registeredIds.has(event.id);
   });
 
   // Keep only events that don't conflict with existing registrations

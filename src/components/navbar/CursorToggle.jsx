@@ -12,7 +12,7 @@ const CursorToggle = ({ cursorEnabled, toggleCursor }) => {
           ? "Turn off background cursor effects"
           : "Turn on background cursor effects"
       }
-      className={`h-9 w-9 rounded-full border transition-colors flex items-center justify-center shadow-none ${
+      className={`h-9 w-9 rounded-full border transition-colors flex items-center justify-center shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
         cursorEnabled
           ? "border-primary/40 bg-primary/10 text-primary"
           : "border-border bg-card-bg text-text-light hover:bg-bg-secondary"
