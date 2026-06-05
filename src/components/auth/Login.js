@@ -30,7 +30,6 @@ const Login = () => {
     isLockedOut,
     applyServerLockout,
   } = useLoginRateLimit();
-
   // If ProtectedRoute redirected here because the JWT expired, show a notice.
   const sessionExpired = location.state?.sessionExpired ?? false;
   const introPoints = [
@@ -89,7 +88,6 @@ const Login = () => {
         );
       }
     } catch (err) {
-      recordAttempt();
       toast.error(getPublicErrorMessage(err, AUTH_ERRORS.loginFailed));
       // If the server returned 429, respect the Retry-After header rather than
       // computing our own backoff — the server-side window may be longer.
@@ -101,6 +99,7 @@ const Login = () => {
 
       const serverDelayMs = parseRetryAfterMs(retryAfterHeader);
       if (serverDelayMs > 0) {
+        recordAttempt();
         applyServerLockout(serverDelayMs / 1000);
         toast.error(
           `Too many requests. Please wait ${Math.ceil(serverDelayMs / 1000)} seconds before trying again.`,
