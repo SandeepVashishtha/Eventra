@@ -865,12 +865,6 @@ curl -N http://localhost:8080/api/events/stream
 ```text
 event:connected
 data:Stream connected successfully
-```
-
-#### Backend Implementation PR
-[SandeepVashishtha/Eventra-Backend#BACKEND_PR_NUMBER](https://github.com/SandeepVashishtha/Eventra-Backend/pull/BACKEND_PR_NUMBER)
-
----
 
 # Project APIs
 
@@ -1096,6 +1090,45 @@ Status: `200 OK`
 
 # Hackathon APIs
 
+*This documentation corresponds to the backend Hackathon API updates.*
+
+## List Hackathons
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/hackathons` |
+
+Fetches the list of available hackathons.
+
+### Authentication
+Public. No authentication required.
+
+### Example Request
+```bash
+curl http://localhost:8080/api/hackathons
+```
+
+### Successful Response (200)
+Returns a JSON array of hackathon objects. Returns `[]` if no hackathons exist.
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Hackathon Name",
+    "description": "Hackathon description",
+    "organizer": "Organizer Name",
+    "startDate": "2026-06-10",
+    "endDate": "2026-06-12",
+    "location": "Bhopal",
+    "mode": "Offline",
+    "prizePool": "50000",
+    "registrationDeadline": "2026-06-05",
+    "imageUrl": "https://example.com/hackathon.png"
+  }
+]
+```
+
 ## Get Hackathon By ID
 
 | Method | Endpoint |
@@ -1144,6 +1177,251 @@ GET /api/hackathons/1
   "timestamp": "2026-06-02T02:41:32.8274901"
 }
 ```
+
+## Create Hackathon
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/hackathons` |
+
+Creates a new hackathon. Restricted to authorized roles: `ORGANIZER`, `ADMIN`, `SUPER_ADMIN`.
+
+### Authentication
+Protected endpoint. Requires Bearer JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "title": "CodeSprint 2026",
+  "description": "A beginner-friendly hackathon for building full-stack projects.",
+  "organizer": "Eventra Team",
+  "startDate": "2026-07-10T00:00:00",
+  "endDate": "2026-07-12T00:00:00",
+  "location": "Bhopal",
+  "mode": "Offline",
+  "prizePool": "50000",
+  "registrationDeadline": "2026-07-05T00:00:00",
+  "imageUrl": "https://example.com/hackathon.png"
+}
+```
+
+- `title`: required
+- `description`: required
+- `organizer`: required
+- `startDate`: required
+- `endDate`: required
+- `location`: required
+- `mode`: required
+- `registrationDeadline`: required
+- `prizePool`: optional
+- `imageUrl`: optional
+
+### Successful Response (201)
+
+```json
+{
+  "id": 1,
+  "title": "CodeSprint 2026",
+  "description": "A beginner-friendly hackathon for building full-stack projects.",
+  "organizer": "Eventra Team",
+  "startDate": "2026-07-10T00:00:00",
+  "endDate": "2026-07-12T00:00:00",
+  "location": "Bhopal",
+  "mode": "Offline",
+  "prizePool": "50000",
+  "registrationDeadline": "2026-07-05T00:00:00",
+  "imageUrl": "https://example.com/hackathon.png"
+}
+```
+
+### Error Responses
+
+- **400 Bad Request**: Validation errors for invalid payloads.
+- **401 Unauthorized**: JWT is missing or invalid.
+- **403 Forbidden**: Authenticated user does not have the required role (`ORGANIZER`, `ADMIN`, or `SUPER_ADMIN`).
+
+## Update Hackathon
+
+| Method | Endpoint |
+|--------|----------|
+| PUT | `/api/hackathons/{id}` |
+
+Updates an existing hackathon by id. Restricted to authorized roles: `ORGANIZER`, `ADMIN`, `SUPER_ADMIN`.
+
+### Authentication
+Protected endpoint. Requires Bearer JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "title": "Updated Hackathon",
+  "description": "Updated hackathon description",
+  "organizer": "IEEE OIST Updated",
+  "startDate": "2026-10-10T10:00:00",
+  "endDate": "2026-10-11T18:00:00",
+  "location": "Bhopal",
+  "mode": "Hybrid",
+  "prizePool": "75000 INR",
+  "registrationDeadline": "2026-10-01T23:59:59",
+  "imageUrl": "https://example.com/updated.png"
+}
+```
+
+- `title`: required
+- `description`: required
+- `organizer`: required
+- `startDate`: required
+- `endDate`: required
+- `location`: required
+- `mode`: required
+- `registrationDeadline`: required
+- `prizePool`: optional
+- `imageUrl`: optional
+
+### Successful Response (200)
+
+```json
+{
+  "id": 2,
+  "title": "Updated Hackathon",
+  "description": "Updated hackathon description",
+  "organizer": "IEEE OIST Updated",
+  "startDate": "2026-10-10T10:00:00",
+  "endDate": "2026-10-11T18:00:00",
+  "location": "Bhopal",
+  "mode": "Hybrid",
+  "prizePool": "75000 INR",
+  "registrationDeadline": "2026-10-01T23:59:59",
+  "imageUrl": "https://example.com/updated.png"
+}
+```
+
+### Error Responses
+
+- **400 Bad Request**: Validation errors for invalid payloads.
+- **401 Unauthorized**: JWT is missing or invalid.
+- **403 Forbidden**: Authenticated user does not have the required role (`ORGANIZER`, `ADMIN`, or `SUPER_ADMIN`).
+- **404 Not Found**: Hackathon id does not exist.
+
+## Delete Hackathon
+
+| Method | Endpoint |
+|--------|----------|
+| DELETE | `/api/hackathons/{id}` |
+
+Deletes an existing hackathon by id. Restricted to authorized roles: `ADMIN`, `SUPER_ADMIN`.
+
+### Authentication
+Protected endpoint. Requires Bearer JWT authentication.
+
+### Path Parameter
+- `id`: Long, hackathon id
+
+### Successful Response (204)
+No response body.
+
+### Error Responses
+- **401 Unauthorized**: JWT is missing or invalid.
+- **403 Forbidden**: Authenticated user does not have the required role (`ADMIN` or `SUPER_ADMIN`).
+- **404 Not Found**: Hackathon id does not exist.
+
+## Register for Hackathon
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/hackathons/{id}/register` |
+
+Registers the authenticated user for a hackathon by id.
+
+### Authentication
+Protected endpoint. Requires Bearer JWT authentication. Any authenticated user can register.
+
+### Path Parameter
+- `id`: Long, hackathon id
+
+### Request Body
+No request body required.
+
+### Successful Response (201)
+
+```json
+{
+  "registrationId": 1,
+  "hackathonId": 1,
+  "hackathonTitle": "Manual Register Test Hackathon",
+  "userEmail": "hackregisteruser@example.com",
+  "registeredAt": "2026-06-04T23:50:18.742152",
+  "status": "CONFIRMED"
+}
+```
+
+### Error Responses
+- **400 Bad Request**: Registration deadline has passed / registration is closed.
+- **401 Unauthorized**: JWT is missing or invalid.
+- **404 Not Found**: Hackathon id does not exist.
+- **409 Conflict**: User is already registered for the hackathon.
+
+*Note: The backend implementation is handled in the Eventra-Backend repository. This docs PR only syncs API documentation with the backend behavior.*
+
+---
+
+# Analytics APIs
+
+## Get Admin Analytics
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/admin/analytics` |
+
+Returns high-level system analytics and dashboard statistics.
+
+*This documentation update corresponds to the backend implementation for GET /api/admin/analytics.*
+
+### Authentication
+
+Requires a valid Bearer JWT in the `Authorization` header. This endpoint is restricted to users with `ADMIN`, `ORGANIZER`, or `SUPER_ADMIN` roles.
+
+### Successful Response (200)
+
+```json
+{
+  "monthlyRegistrations": [
+    { "month": "Jan", "count": 120 },
+    { "month": "Feb", "count": 150 }
+  ],
+  "categoryBreakdown": [
+    { "category": "Technology", "count": 20 },
+    { "category": "Design", "count": 8 }
+  ],
+  "registrationTrend": "up",
+  "topEvents": [
+    { "id": 1, "title": "Tech Conference 2026", "participants": 300 }
+  ]
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `401 Unauthorized` | JWT token is missing, invalid, or expired |
+| `403 Forbidden` | Authenticated user does not have the required administrative role |
 
 ---
 

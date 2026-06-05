@@ -6,11 +6,13 @@ import {
   AlertCircle,
   Sparkles,
   ChevronRight,
+  FilterX,
 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import { showSuccessToast } from "../../utils/toast";
 import {
   generateAIInsights
 } from "../../services/aiRecommendationService";
+import EmptyState from "../../components/common/EmptyState";
 
 import {
   getUserProfile
@@ -28,6 +30,7 @@ import {
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
 import mockEvents from "../Events/eventsMockData.json";
+import { EventCardSkeleton, SkeletonBlock } from "../../components/common/SkeletonLoaders";
 
 
 const EventRecommendation = () => {
@@ -391,17 +394,16 @@ const EventRecommendation = () => {
 
             {/* Loading */}
             {loading ? (
-
-              <div className="flex flex-col items-center justify-center py-20">
-
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-
-                <p className="mt-5 text-text-light">
+              <>
+                <div className="sr-only" role="status" aria-live="polite">
                   Searching recommendations...
-                </p>
-
-              </div>
-
+                </div>
+                <div className="grid md:grid-cols-2 gap-4" aria-hidden="true">
+                  {[...Array(4)].map((_, i) => (
+                    <EventCardSkeleton key={i} />
+                  ))}
+                </div>
+              </>
             ) : recommendedEvents.length > 0 ? (
 
               <>
@@ -503,69 +505,40 @@ const EventRecommendation = () => {
               </>
 
             ) : !hasSearched ? (
-
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-
-                <h3 className="text-xl font-semibold text-text">
-                  Ready to Discover Events?
-                </h3>
-
-                <p className="mt-2 text-sm text-text-light max-w-md">
-                  Select your preferences and generate personalized recommendations.
-                </p>
-
-              </div>
-
+              <EmptyState
+                type="default"
+                icon={<Sparkles size={48} className="text-primary animate-pulse" />}
+                title="Ready to Discover Events?"
+                message="Select your preferences and generate personalized recommendations."
+              />
             ) : (
-
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-
-                <h3 className="text-xl font-semibold text-text">
-                  No Relevant Events Found
-                </h3>
-
-                <p className="mt-2 text-sm text-text-light max-w-md">
-                  Try changing your interests, skill level, or event type.
-                </p>
-
-                <button
-                  onClick={() =>
-                    setShowOtherEvents(!showOtherEvents)
-                  }
-                  className="mt-6 px-5 py-3 rounded-xl bg-primary hover:opacity-90 text-white text-sm font-medium transition-all"
-                >
-                  Explore All Events
-                </button>
+              <>
+                <EmptyState
+                  type="filters"
+                  icon={<FilterX size={48} className="text-gray-400" />}
+                  title="No Relevant Events Found"
+                  message="Try changing your interests, skill level, or recommendation weights to discover more events."
+                  onBrowseAll={() => setShowOtherEvents(!showOtherEvents)}
+                />
 
                 {showOtherEvents && (
-
                   <div className="mt-8 w-full grid md:grid-cols-2 gap-4">
-
                     {events.map((event, index) => (
-
                       <div
                         key={index}
                         className="rounded-2xl border border-border p-5 bg-bg text-left"
                       >
-
                         <h3 className="text-lg font-bold text-text">
                           {event.title}
                         </h3>
-
                         <p className="mt-2 text-sm text-text-light">
                           {event.description}
                         </p>
-
                       </div>
-
                     ))}
-
                   </div>
-
                 )}
-
-              </div>
-
+              </>
             )}
 
           </div>
@@ -676,13 +649,16 @@ const EventRecommendation = () => {
   </h3>
 
   {insightLoading ? (
-
-    <p className="text-text-light">
-
-      Generating AI insights...
-
-    </p>
-
+    <>
+      <div className="sr-only" role="status" aria-live="polite">
+        Generating AI insights...
+      </div>
+      <div className="space-y-3 py-4" aria-hidden="true">
+        <SkeletonBlock className="h-4 w-full" />
+        <SkeletonBlock className="h-4 w-5/6" />
+        <SkeletonBlock className="h-4 w-4/5" />
+      </div>
+    </>
   ) : (
 
     <div
@@ -717,7 +693,7 @@ const EventRecommendation = () => {
               <button
                 onClick={() => {
                   addRegistration(selectedEvent, { source: "recommendation" });
-                  toast.success(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
+                  showSuccessToast(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
                   setSelectedEvent(null);
                 }}
                 className="flex-1 px-4 py-2.5 rounded-xl bg-primary hover:opacity-90 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
@@ -729,7 +705,6 @@ const EventRecommendation = () => {
         </div>
       )}
       
-      <Toaster position="bottom-right" />
     </div>
   );
 };

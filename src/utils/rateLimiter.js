@@ -27,7 +27,7 @@ export function createRateLimiter({
 
   function refill() {
     const now = Date.now();
-    const elapsed = (now - lastRefill) / 1000;
+    const elapsed = Math.max(0, (now - lastRefill) / 1000);
     tokens = Math.min(maxTokens, tokens + elapsed * refillRate);
     lastRefill = now;
   }

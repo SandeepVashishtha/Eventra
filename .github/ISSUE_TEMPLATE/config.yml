@@ -1,1 +1,11 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GSSoC Discord
+    url: https://discord.gg/gssoc
+    about: Ask questions, get help from the community, and connect with mentors.
+  - name: 📖 Documentation
+    url: https://github.com/Ayushh-Sharmaa/Eventra/tree/main/docs
+    about: Read the architecture docs, setup guide, and workflow reference.
+  - name: 🤝 Contributing Guide
+    url: https://github.com/Ayushh-Sharmaa/Eventra/blob/main/CONTRIBUTING.md
+    about: Learn how to contribute, branch naming, commit format, and the PR pipeline.
