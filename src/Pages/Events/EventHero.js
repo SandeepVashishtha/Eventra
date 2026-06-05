@@ -143,39 +143,39 @@ export default function EventHero({
             above the CTA buttons (z-10), letting the absolute dropdown float over them */}
        {/* FIX 1: Added stacking context so dropdown appears above CTA buttons */}
 <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0 relative z-50">
-  <ModernSearchInput
-    value={searchQuery}
-    onChange={(e) => handleSearch(e.target.value)}
-    onFocus={() => setIsSearchFocused(true)}
-    onBlur={handleSearchBlur}
-    onKeyDown={handleSearchKeyDown}
-    autoFocus
-    placeholder="Search events by name, location, or tags..."
-    aria-expanded={isSearchFocused}
-    aria-haspopup="listbox"
-  />
+  <div ref={searchContainerRef} className="relative">
+    <ModernSearchInput
+      value={searchQuery}
+      onChange={(e) => handleSearch(e.target.value)}
+      onFocus={() => setIsSearchFocused(true)}
+      onBlur={handleSearchBlur}
+      onKeyDown={handleSearchKeyDown}
+      autoFocus
+      placeholder="Search events by name, location, or tags..."
+      aria-expanded={isSearchFocused}
+      aria-haspopup="listbox"
+    />
 
-  <AnimatePresence>
-    {showDropdown && (
-      <motion.div
-        ref={dropdownRef}
-        role="listbox"
-                  initial={{ opacity: 0, y: 12, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                  transition={{ duration: prefersReducedMotion ? 0 : 0.18, ease: "easeOut" }}
-                  className={`
-                    absolute left-0 right-0 top-full z-30 mt-3 overflow-hidden rounded-3xl
-                    border border-slate-200 dark:border-slate-700/60
-                    bg-white dark:bg-slate-900
-                    text-left shadow-2xl ring-1 ring-black/5 dark:ring-white/10
-                  `}
-                  // FIX 2: Replaced `${darkTheme.card} backdrop-blur-xl` with explicit
-                  // `bg-white dark:bg-slate-900` — darkTheme.card often has bg opacity/transparency
-                  // which caused the dropdown to visually bleed into the buttons beneath it.
-                  // Solid background ensures the dropdown floats cleanly over all content below.
-                  onMouseDown={(e) => e.preventDefault()}
-                >
+    <AnimatePresence>
+      {showDropdown && (
+        <motion.div
+          ref={dropdownRef}
+          role="listbox"
+          initial={{ opacity: 0, y: 12, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 8, scale: 0.98 }}
+          transition={{
+            duration: prefersReducedMotion ? 0 : 0.18,
+            ease: "easeOut",
+          }}
+          className="
+            absolute left-0 right-0 top-full z-30 mt-3 overflow-hidden rounded-3xl
+            border border-slate-200 dark:border-slate-700/60
+            bg-white dark:bg-slate-900
+            text-left shadow-2xl ring-1 ring-black/5 dark:ring-white/10
+          "
+          onMouseDown={(e) => e.preventDefault()}
+        >
                   {searchQuery.trim().length > 0 && searchQuery.trim().length < 3 && (
                     <div className="border-b border-slate-100 dark:border-slate-800 p-4">
                       <p className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${darkTheme.textSecondary}`}>
