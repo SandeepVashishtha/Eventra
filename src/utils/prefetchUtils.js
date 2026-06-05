@@ -8,10 +8,11 @@ const prefetchMap = new Map();
 const MAX_CONCURRENT_PREFETCHES = 4;
 
 async function asyncPool(iterable, iteratorFn, concurrency) {
+  const items = Array.isArray(iterable) ? iterable : [...iterable];
   const results = [];
   const executing = new Set();
 
-  for (const [index, item] of iterable.entries()) {
+  for (const [index, item] of items.entries()) {
     const promise = Promise.resolve().then(() => iteratorFn(item, index));
     results.push(promise);
     executing.add(promise);
