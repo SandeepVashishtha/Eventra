@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import InteractiveWhiteboard from "./InteractiveWhiteboard";
+import { logger } from "../../utils/logger";
 
 // Initial constants removed to support real-time sync database values
 
@@ -54,12 +55,12 @@ const TeamWorkspace = () => {
 
     // 1. Attempt Server-Sent Events (EventSource) connection
     try {
-      console.log(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
+      logger.info(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
       sseSource = new EventSource("/api/hackathons/team/sync");
 
       sseSource.onopen = () => {
         setConnectionStatus("sse");
-        console.log(`${logPrefix} Connection opened. Realtime SSE stream active.`);
+        logger.info(`${logPrefix} Connection opened. Realtime SSE stream active.`);
       };
 
       sseSource.onmessage = (event) => {
@@ -77,13 +78,13 @@ const TeamWorkspace = () => {
             setChatHistory(data.chat || []);
           }
         } catch (e) {
-          console.error("Failed to parse SSE payload", e);
+          logger.error("Failed to parse SSE payload", e);
         }
       };
 
       sseSource.onerror = () => {
         // SSE error! Initiate immediate polling fallback.
-        console.warn(
+        logger.warn(
           `${logPrefix} Server-Sent Events stream interrupted. Fallback to short-polling activated.`
         );
         setConnectionStatus("polling_fallback");
@@ -91,7 +92,7 @@ const TeamWorkspace = () => {
         triggerPollingFallback();
       };
     } catch (e) {
-      console.error(`${logPrefix} SSE not supported by browser. Falling back to HTTP polling.`, e);
+      logger.error(`${logPrefix} SSE not supported by browser. Falling back to HTTP polling.`, e);
       setConnectionStatus("polling_fallback");
       triggerPollingFallback();
     }

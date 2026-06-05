@@ -24,6 +24,7 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
+import { getAuthRoutes, getProtectedRoutes } from "./components/routes/ProtectedRoutes";
 import {
   AuthFormSkeleton,
   ExploreEventsSkeleton,
@@ -208,6 +209,12 @@ function App() {
                             </Suspense>
                           }
                         />
+                        {getAuthRoutes()}
+                        {getProtectedRoutes()}
+                        <Route
+                          path="/event-recommendation"
+                          element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
+                        />
                         <Route
                           path="/saved-events"
                           element={
@@ -228,6 +235,7 @@ function App() {
                             </Suspense>
                           }
                         />
+
                       </Routes>
                     </ErrorBoundary>
                   </PageTransition>

@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
-import SignupForm from "../SignupForm";
+import SignupForm, { normalizeSignupRoles } from "../SignupForm";
 import { apiUtils } from "../../../config/api";
 import {
   validateEmailAvailability,
@@ -135,6 +135,19 @@ afterEach(() => {
 });
 
 describe("SignupForm integration", () => {
+  it("preserves server-assigned signup roles arrays", () => {
+    expect(
+      normalizeSignupRoles({
+        role: "ATTENDEE",
+        roles: ["ORGANIZER"],
+      }),
+    ).toEqual(["ORGANIZER"]);
+  });
+
+  it("falls back to a valid app role when signup response has no roles", () => {
+    expect(normalizeSignupRoles({})).toEqual(["ATTENDEE"]);
+  });
+
   it("blocks submission and marks required fields invalid", async () => {
     renderSignup();
 

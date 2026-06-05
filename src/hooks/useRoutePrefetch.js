@@ -7,7 +7,10 @@ import { useLocation } from "react-router-dom";
 import { prefetchRoute } from "../utils/prefetchUtils";
 
 /**
-<<<<<<< HEAD
+ * useRoutePrefetch Hook
+ *
+ * Automatically pre-fetches high-priority routes based on the current location.
+ * For example, if the user is on the Home page, we might pre-fetch the Explore page.
  * A custom React hook that automatically prefetches high-priority
  * routes based on the current page location.
  *
@@ -20,14 +23,7 @@ import { prefetchRoute } from "../utils/prefetchUtils";
  *
  * @example
  * const { prefetchManual } = useRoutePrefetch();
- * // Manually prefetch a route on hover
  * prefetchManual(() => import('../Pages/Events/EventDetails'), 'details');
-=======
- * useRoutePrefetch Hook
- *
- * Automatically pre-fetches high-priority routes based on the current location.
- * For example, if the user is on the Home page, we might pre-fetch the Explore page.
->>>>>>> upstream/master
  */
 
 export const useRoutePrefetch = (config = {}) => {
