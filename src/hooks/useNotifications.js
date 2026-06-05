@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { get as idbGet } from "idb-keyval";
+import { get as idbGet, set as idbSet } from "idb-keyval";
 import { logger } from "../utils/logger";
 import { safeJsonParse } from "../utils/safeJsonParse";
 // Fix (Issue #6525): Import queue utilities instead of writing to IndexedDB directly.
@@ -66,7 +66,6 @@ export const useNotifications = () => {
     return () =>
       window.removeEventListener("eventra-notifications-updated", handleUpdate);
   }, []);
-
   // Fix (Issue #6525): Replace direct idbSet with enqueueNotification().
   // Previously: direct IndexedDB write fired on every call — 5000 simultaneous
   // notifications caused 5000 concurrent IndexedDB writes with no retry or
@@ -77,15 +76,13 @@ export const useNotifications = () => {
   }, []);
 
   const markAllAsRead = useCallback(() => {
-    setNotifications((prev) =>
-      prev.map((item) => ({
-        ...item,
-        read: true,
-      }))
-    );
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
-    }, 50);
+    setNotifications((prev) => {
+      const updated = prev.map((item) => ({ ...item, read: true }));
+      idbSet(STORAGE_KEY, JSON.stringify(updated)).catch((err) =>
+        logger.error("Failed to persist markAllAsRead to IndexedDB", err)
+      );
+      return updated;
+    });
   }, []);
 
   const requestPermission = async () => {
