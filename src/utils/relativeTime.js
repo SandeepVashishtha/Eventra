@@ -1,5 +1,5 @@
+import { getServerNow } from "./timeSync";
 const RELATIVE_TIME_FALLBACK = "—";
-
 export function getRelativeTime(dateInput) {
   if (typeof dateInput === 'number') {
     return null;
@@ -67,19 +67,16 @@ export function getSmartDateLabel(dateInput, timeInput = "") {
     year: "numeric",
   });
 }
-
-// RELIABILITY ENHANCEMENT: Added automated Jest unit test coverage for past/future date offsets and singular/plural formats.
-
 export function isPast(dateInput) {
   if (!dateInput) return false;
   const parsed = new Date(dateInput);
   if (isNaN(parsed.getTime())) return false;
-  return parsed.getTime() < Date.now();
+  return parsed.getTime() < getServerNow();
 }
 
 export function isFuture(dateInput) {
   if (!dateInput) return false;
   const parsed = new Date(dateInput);
   if (isNaN(parsed.getTime())) return false;
-  return parsed.getTime() > Date.now();
+  return parsed.getTime() > getServerNow();
 }
