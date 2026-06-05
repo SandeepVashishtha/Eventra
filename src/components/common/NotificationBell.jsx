@@ -38,7 +38,7 @@ const NotificationBell = () => {
 
   return (
     <div className="notification-wrapper" ref={wrapperRef}>
-      <button className="notification-bell" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="true">
+      <button className="notification-bell" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="true" aria-label="Notifications">
         <Bell size={22} />
 
         {unreadCount > 0 && (

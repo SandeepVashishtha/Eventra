@@ -38,6 +38,21 @@ const safeStorage = {
   },
 };
 
+const getSystemTheme = () =>
+  typeof window !== "undefined" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+
+const getInitialTheme = () => {
+  const stored = safeStorage.getItem("theme");
+  if (stored === "light" || stored === "dark" || stored === "system") {
+    return stored;
+  }
+  return "system";
+};
+
+// ✅ FIXED: Yahan se duplicate line hata di gayi hai
 export const ThemeProvider = ({ children }) => {
   const [theme, setThemeState] = useState(() => getInitialTheme());
 

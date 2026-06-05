@@ -2,8 +2,8 @@ import { useState, useRef, useEffect, useCallback, useId } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, Info, HelpCircle, LogIn } from "lucide-react";
 
-const prefetchLogin = () => import("../../Pages/Auth/Login");
-const prefetchSignup = () => import("../../Pages/Auth/Signup");
+const prefetchLogin = () => import("../../components/auth/Login");
+const prefetchSignup = () => import("../../components/auth/Signup");
 
 const AuthButtons = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,7 +29,6 @@ const AuthButtons = () => {
         buttonRef.current?.focus();
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
@@ -102,7 +101,7 @@ const AuthButtons = () => {
       <Link
         to="/signup"
         onMouseEnter={() => prefetchSignup()}
-        className="px-4 py-2 rounded-full text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-colors whitespace-nowrap shadow-none"
+        className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-all duration-200 whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
       >
         Get Started
       </Link>

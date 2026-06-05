@@ -65,6 +65,8 @@ and this project adheres to Semantic Versioning.
 - Improved release documentation readability and maintainability
 - Fixed authorization bypass in ticket token generation via dynamic memory recovery.
 - Fixed cross-event ticket validation via request body eventId override.
+- Fixed TicketScanner crash on valid JSON primitive QR code scans.
+- Fixed offline queue limit bypass via localStorage/IndexedDB desync.
 
 ### Phase Validation Checklist
 - Build production bundles to verify bundle size before release.

@@ -29,10 +29,7 @@ import { logger } from "../utils/logger";
 
 const useLocalStorage = (key, initialValue) => {
   const initialValueRef = useRef(initialValue);
-
-  useEffect(()=>{
-    initialValueRef.current = initialValue;
-  },[initialValue]);
+  initialValueRef.current = initialValue; //sync update — always current during render
 
   // 🔥 FIX: Track when WE fired the event so we don't react to ourselves
   const isInternalWrite = useRef(false);
