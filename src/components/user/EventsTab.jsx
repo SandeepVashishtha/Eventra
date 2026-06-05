@@ -286,7 +286,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         const userId = user.id || user.email;
         const userWaitlists = records.filter(r => r.userId === userId && r.status === 'waiting');
         
-        import("../../Pages/Events/eventsMockData.json").then(({ default: mockEvents }) => {
+        import("../../Pages/Events/eventsMockData.js").then(({ default: mockEvents }) => {
           const resolved = userWaitlists.map(w => {
             const foundEvent = mockEvents.find(e => e.id === w.eventId);
             if (foundEvent) {

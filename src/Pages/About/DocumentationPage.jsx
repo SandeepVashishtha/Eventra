@@ -271,7 +271,7 @@ export default function DocumentationPage() {
 │   │   ├── Contact/           # Contact page
 │   │   │   └── ContactUs.js
 │   │   ├── Events/            # Events pages
-│   │   │   ├── eventsMockData.json
+│   │   │   ├── eventsMockData.js
 │   │   │   └── EventsPage.js
 │   │   ├── Hackathons/        # Hackathons section
 │   │   │   ├── HackathonHero.js

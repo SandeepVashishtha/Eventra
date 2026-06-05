@@ -24,7 +24,8 @@ import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
-import mockEvents from "./eventsMockData.json";
+import mockEventsRaw from "./eventsMockData.js";
+const mockEvents = Array.isArray(mockEventsRaw) ? mockEventsRaw : (mockEventsRaw.events || mockEventsRaw.data || Object.values(mockEventsRaw)[0] || []);;
 
 const EventDetails = () => {
   const { eventId } = useParams();

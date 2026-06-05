@@ -1,11 +1,9 @@
-import { Link } from "react-router-dom";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
-import { getGoogleCalendarUrl, getOutlookCalendarUrl } from "../../utils/calendarUrlUtils";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
-import hackathonsData from "../Hackathons/hackathonMockData.json";
+import hackathonsData from "../Hackathons/hackathonMockData.js";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import {
@@ -53,50 +51,9 @@ const EventRegistration = () => {
   const isHackathonPath = location.pathname.startsWith("/register");
   const registrationPath = location.pathname;
 
-  const [event, setEvent] = useState(null);
-  const [availability, setAvailability] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [registered, setRegistered] = useState(false);
-  const [waitlistPosition, setWaitlistPosition] = useState(-1);
-  const isSubmittingRef = useRef(false);
 
-  // Conflict detection state
-  const [showConflictModal, setShowConflictModal] = useState(false);
-  const [conflictData, setConflictData] = useState({
-    conflicts: [],
-    suggestions: [],
-  });
 
-  const validationRules = useMemo(() => ({
-    fullName: validate.fullName,
-    email: validate.email,
-    phone: validate.phone,
-  }), []);
 
-  const {
-    event,
-    loading,
-    submitting,
-    registered,
-    isEventFull,
-    isPastEvent,
-    formData,
-    errors,
-    touched,
-    isFormValid,
-    handleChange,
-    handleBlur,
-    showConflictModal,
-    conflictData,
-    handleSubmit,
-    handleConflictCancel,
-    handleConflictProceed,
-    handleSelectAlternative,
-    myEvents,
-  } = useEventRegistration();
-
-  const isHackathonPath = window.location.pathname.startsWith("/register");
 
   if (loading) {
     return (
@@ -123,6 +80,8 @@ const EventRegistration = () => {
       </div>
     );
   }
+
+  const {
     validateAll,
     setValues,
   } = useFormValidation(

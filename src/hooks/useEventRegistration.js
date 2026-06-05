@@ -1,22 +1,22 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useFormValidation } from "../../hooks/useFormValidation";
-import { getEventStatus } from "../../utils/eventUtils";
-import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
-import { useAuth } from "../../context/AuthContext";
-import { useMyEvents } from "../../context/MyEventsContext";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
-import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { validate } from "../../validation";
+import { useFormValidation } from "./useFormValidation";
+import { getEventStatus } from "../utils/eventUtils";
+import { checkRegistrationConflict, suggestAlternativeEvents } from "../utils/conflictDetection";
+import { useAuth } from "../context/AuthContext";
+import { useMyEvents } from "../context/MyEventsContext";
+import { API_ENDPOINTS, apiUtils } from "../config/api";
+import { useSessionRecovery } from "../context/SessionRecoveryContext";
+import { validate } from "../validation";
 import {
   getCacheAgeLabel,
   getCachedEventDetail,
   saveCachedEventDetail,
-} from "../../utils/offlineEventCache";
-import { pushToQueue } from "../../utils/offlineQueue";
-import { logger } from "../../utils/logger";
-import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
+} from "../utils/offlineEventCache";
+import { pushToQueue } from "../utils/offlineQueue";
+import { logger } from "../utils/logger";
+import hackathonsData from "../Pages/Hackathons/hackathonMockData.js";
 
 const MAX_NOTES_CHARS = 500;
 

@@ -20,7 +20,7 @@ import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
-import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
@@ -40,8 +40,8 @@ const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
 const ExploreEvents = lazy(() => import("./Pages/Events/ExploreEvents"));
-const Login = lazy(() => import("./Pages/Auth/Login"));
-const Signup = lazy(() => import("./Pages/Auth/Signup"));
+const Login = lazy(() => import("./components/auth/Login"));
+const Signup = lazy(() => import("./components/auth/Signup"));
 const Profile = lazy(() => import("./Pages/User/Profile"));
 const Dashboard = lazy(() => import("./Pages/Dashboard/Dashboard"));
 const AdminPanel = lazy(() => import("./Pages/Admin/AdminPanel"));
@@ -55,6 +55,7 @@ const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
+const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -220,7 +221,11 @@ function App() {
                           } 
                         />
                         <Route 
-                          path="/dashboard" 
+                          path="/dashboard"
+              />
+              <Route
+                element={<ComparativeAnalytics />}
+                path="/analytics/comparative" 
                           element={
                             <ProtectedRoute>
                               <Suspense fallback={<DashboardHomeSkeleton />}>

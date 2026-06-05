@@ -11,7 +11,7 @@ import { getEventStatus } from "../../utils/eventUtils";
 import { logError } from "../../utils/errorLogger";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
-// Note: eventsMockData.json is NOT statically imported here.
+// Note: eventsMockData.js is NOT statically imported here.
 // It is loaded dynamically (and only in development/fallback mode) so that
 // the mock JSON is not bundled into the production build.
 

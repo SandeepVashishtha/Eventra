@@ -18,7 +18,8 @@ import RespawningText from "../../../components/visual/RespawningText";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
-import eventsData from "../../Events/eventsMockData.json";
+import eventsDataRaw from "../../Events/eventsMockData.js";
+const eventsData = Array.isArray(eventsDataRaw) ? eventsDataRaw : (eventsDataRaw.events || eventsDataRaw.data || Object.values(eventsDataRaw)[0] || []);;
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 

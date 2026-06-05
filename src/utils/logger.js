@@ -1,6 +1,6 @@
 /* eslint-disable-next-line no-console */
 const isDevelopment =
-  typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production";
+  typeof process !== "undefined" && process.env && import.meta.env.NODE_ENV !== "production";
 
 const formatMessage = (level, message) => {
   return `[${level.toUpperCase()}] ${message}`;

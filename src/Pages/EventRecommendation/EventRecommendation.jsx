@@ -29,7 +29,8 @@ import {
   getBookmarkedEvents,
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
-import mockEvents from "../Events/eventsMockData.json";
+import mockEventsRaw from "../Events/eventsMockData.js";
+const mockEvents = Array.isArray(mockEventsRaw) ? mockEventsRaw : (mockEventsRaw.events || mockEventsRaw.data || Object.values(mockEventsRaw)[0] || []);;
 import { EventCardSkeleton, SkeletonBlock } from "../../components/common/SkeletonLoaders";
 
 

@@ -19,7 +19,7 @@ initializeGlobalErrorHandling();
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
 initCspReporting();
 // Register in production for PWA/offline support; keep dev/test cache-free.
-if (process.env.NODE_ENV === "production") {
+if (import.meta.env.NODE_ENV === "production") {
   serviceWorkerRegistration.register();
 } else {
   serviceWorkerRegistration.unregister();

@@ -38,7 +38,7 @@ const KEYWORD_MESSAGES = {
  * @returns {string} Safe message suitable for display in the UI
  */
 export function getPublicErrorMessage(err, fallback = "An unexpected error occurred. Please try again.") {
-  if (process.env.NODE_ENV !== "production") {
+  if (import.meta.env.NODE_ENV !== "production") {
     console.error("[Eventra error]", err);
   }
 

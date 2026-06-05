@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import mockEvents from "../Events/eventsMockData.json";
+import mockEventsRaw from "../Events/eventsMockData.js";
+const mockEvents = Array.isArray(mockEventsRaw) ? mockEventsRaw : (mockEventsRaw.events || mockEventsRaw.data || Object.values(mockEventsRaw)[0] || []);;
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
 
@@ -23,7 +24,7 @@ const useCalendarEvents = () => {
       const apiEvents = Array.isArray(response.data) ? response.data : [];
       setEvents(normalizeEvents(apiEvents));
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
+      if (import.meta.env.NODE_ENV === "development") {
         console.warn("Failed to fetch events. Falling back to mock data.", error);
         setLoadError(error?.message || "Failed to load events.");
         setEvents(normalizeEvents(mockEvents));

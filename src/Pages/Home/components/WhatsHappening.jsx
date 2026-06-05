@@ -7,7 +7,8 @@ import { CheckCircle2, Hourglass } from "lucide-react";
 
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
 // Import mock data
-import eventsData from "../../Events/eventsMockData.json";
+import eventsDataRaw from "../../Events/eventsMockData.js";
+const eventsData = Array.isArray(eventsDataRaw) ? eventsDataRaw : (eventsDataRaw.events || eventsDataRaw.data || Object.values(eventsDataRaw)[0] || []);;
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 
 const WhatsHappening = () => {

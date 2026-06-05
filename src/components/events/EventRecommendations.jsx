@@ -10,7 +10,8 @@ import {
   Layers,
   Clock,
 } from "lucide-react";
-import mockEvents from "../../Pages/Events/eventsMockData.json";
+import mockEventsRaw from "../../Pages/Events/eventsMockData.js";
+const mockEvents = Array.isArray(mockEventsRaw) ? mockEventsRaw : (mockEventsRaw.events || mockEventsRaw.data || Object.values(mockEventsRaw)[0] || []);;
 
 // =========================================================================
 // INLINE VECTOR GRAPHIC CONSTANTS (FALLBACK PLACEHOLDER IMAGES)

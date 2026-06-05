@@ -23,7 +23,7 @@ if (isSentryEnabled && typeof window !== "undefined") {
       tracesSampleRate: 0.25,
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
-      environment: process.env.NODE_ENV || "development",
+      environment: import.meta.env.NODE_ENV || "development",
     });
   } catch {
     // Sentry SDK unavailable — local-only logging will still work

@@ -20,8 +20,8 @@
  * silently breaking the UI.
  */
 
-const isDev = process.env.NODE_ENV === 'development';
-const reportUri = process.env.REACT_APP_CSP_REPORT_URI || null;
+const isDev = import.meta.env.NODE_ENV === 'development';
+const reportUri = import.meta.env.REACT_APP_CSP_REPORT_URI || null;
 
 /**
  * Formats a SecurityPolicyViolationEvent into a structured report object

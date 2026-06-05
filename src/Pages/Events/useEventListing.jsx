@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import mockEvents from "./eventsMockData.json";
+import mockEventsRaw from "./eventsMockData.js";
+const mockEvents = Array.isArray(mockEventsRaw) ? mockEventsRaw : (mockEventsRaw.events || mockEventsRaw.data || Object.values(mockEventsRaw)[0] || []);;
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
@@ -126,7 +127,7 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
+      if (import.meta.env.NODE_ENV === "development") {
         const normalizedMockEvents = mockEvents.map(normalizeEvent);
         setEvents(normalizedMockEvents);
         setPagination({

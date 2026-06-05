@@ -244,4 +244,9 @@ export const getAchievementBadge = (rank) => {
       description: "Rank 4-10 - Gold contributor"
     };
   }
-  return {
+  return {    label: 'Bronze Tier',
+    color: 'from-orange-300 via-amber-500 to-orange-400 text-orange-950 border-orange-300/40 shadow-[0_0_6px_rgba(251,146,60,0.2)]',
+    icon: null,
+    description: 'Rank 11+ - Rising contributor'
+  };
+}

@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Calendar, MapPin, Users, Info } from "lucide-react";
 import FloorPlanDesigner from "../../components/events/FloorPlanDesigner";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import eventsMockData from "./eventsMockData.json";
+import eventsMockDataRaw from "./eventsMockData.js";
+const eventsMockData = Array.isArray(eventsMockDataRaw) ? eventsMockDataRaw : (eventsMockDataRaw.events || eventsMockDataRaw.data || Object.values(eventsMockDataRaw)[0] || []);;
 
 const FloorPlanDesignerPage = () => {
   const { eventId } = useParams();
