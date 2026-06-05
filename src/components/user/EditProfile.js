@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Modal Portal
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -203,7 +203,7 @@ const EditProfile = () => {
     return Math.round((filled / 10) * 100);
   };
 
-  const completionPercentage = calculateCompletion();
+  const completionPercentage = useMemo(() => calculateCompletion(), [form, user]);
 
   const addSkill = (skill) => {
     const trimmedSkill = skill.trim();
