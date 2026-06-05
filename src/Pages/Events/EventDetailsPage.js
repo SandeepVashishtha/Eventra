@@ -108,6 +108,11 @@ const EventDetailsPage = () => {
       latestRequestIdRef.current === requestId && !controller.signal.aborted;
 
     const fetchEvent = async () => {
+      // Guard: only update state if this is still the latest request.
+      // Without this check, a stale request starting after a newer one has
+      // already begun would unconditionally reset loading/error state,
+      // causing the race condition described in issue #5077.
+      if (!isLatestRequest()) return;
       setLoading(true);
       setCacheInfo(null);
       setError(null);
