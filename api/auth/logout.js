@@ -76,10 +76,6 @@ startCleanupInterval();
 // CORS Headers (delegated to shared cors.js)
 // ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
-// Extract token from Authorization header
-// ---------------------------------------------------------------------------
-
 const extractToken = (authHeader) => {
   if (!authHeader) {
     return null;
@@ -193,7 +189,7 @@ async function handler(req, res) {
 
     res.setHeader(
       "Set-Cookie",
-      "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict"
+      `token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Strict${process.env.NODE_ENV === "production" ? "; Secure" : ""}`
     );
 
     // -----------------------------------------------------------------------
