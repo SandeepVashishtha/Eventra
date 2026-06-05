@@ -124,6 +124,13 @@ const EventCard = ({ event, cacheInfo = null }) => {
       });
   }, [event.id]);
 
+  /**
+   * Toggles the bookmark state for this event.
+   * Fix for #7242: useCallback closing parenthesis and dependency array
+   * must both be present — missing either causes an "Unexpected token" parse error.
+   *
+   * @param {React.MouseEvent} e - The click event from the bookmark button
+   */
   const handleBookmarkToggle = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -144,7 +151,7 @@ const EventCard = ({ event, cacheInfo = null }) => {
       autoClose: 1800,
       className: "custom-toast",
     });
-  }, [computedStatus, event, isBookmarked]);
+  }, [isBookmarked, event, computedStatus]); // closing parenthesis — fix for #7242
 
   return (
     <article
