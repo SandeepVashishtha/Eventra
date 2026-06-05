@@ -445,7 +445,7 @@ export const setQueue = async (newQueue) => {
         newQueue.forEach((item) => store.put(item));
 
         tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
+        tx.onerror = (e) => reject(e.target?.error || new Error('IndexedDB transaction failed'));
       };
       clearReq.onerror = () => reject(clearReq.error);
     });
