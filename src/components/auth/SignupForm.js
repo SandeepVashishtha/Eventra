@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { authService } from "../../services/authService";
@@ -55,6 +55,9 @@ const parseSignupResponse = async (response) => {
 const SignupForm = () => {
   const navigate = useNavigate();
   const { setAuthSession } = useAuth();
+  // useRef-based guard prevents double-click submissions even when
+  // the loading state update hasn't propagated yet (setState is async).
+  const isSubmittingRef = useRef(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -232,18 +235,24 @@ const SignupForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (loading) return;
+    // Dual-layer double-submit prevention:
+    // 1. isSubmittingRef — synchronous, blocks re-entry immediately.
+    // 2. loading state — keeps the button disabled in the UI.
+    if (isSubmittingRef.current || loading) return;
+    isSubmittingRef.current = true;
 
     setSubmitError("");
     setSuccess("");
     setLoading(true);
 
-    const valid = await runValidation();
-    if (!valid) {
-      setLoading(false);
-      return;
-    }
     try {
+      const valid = await runValidation();
+      if (!valid) {
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
+
       const response = await authService.register({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -258,6 +267,7 @@ const SignupForm = () => {
         const backendMessage = data?.message || data?.error || "Registration failed";
         setSubmitError(`${backendMessage} (${status})`);
         setLoading(false);
+        isSubmittingRef.current = false;
         return;
       }
 
@@ -265,6 +275,7 @@ const SignupForm = () => {
       if (!sessionToken) {
         setSubmitError("Signup completed but no token was returned.");
         setLoading(false);
+        isSubmittingRef.current = false;
         return;
       }
 
@@ -287,6 +298,7 @@ const SignupForm = () => {
     } catch (err) {
       setSubmitError(err?.message || "Network error. Please try again.");
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
