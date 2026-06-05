@@ -75,7 +75,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  if (loading) return;
+    if (authRequest.loading) return;
     if (isLockedOut()) return;
     if (!validate()) return;
 
@@ -89,7 +89,6 @@ const Login = () => {
         );
       }
     } catch (err) {
-      recordAttempt();
       toast.error(getPublicErrorMessage(err, AUTH_ERRORS.loginFailed));
       // If the server returned 429, respect the Retry-After header rather than
       // computing our own backoff — the server-side window may be longer.
@@ -243,9 +242,8 @@ const Login = () => {
                       placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
                       aria-invalid={!!error.usernameOrEmail}
                       aria-describedby={error.usernameOrEmail ? 'usernameOrEmail-error' : undefined}
-                      className={`w-full pl-3 pr-4 py-3 bg-white dark:bg-gray-800 border ${
-                        error.usernameOrEmail ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-gray-600'
-                      } rounded-xl placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
+                      className={`w-full pl-3 pr-4 py-3 bg-white dark:bg-gray-800 border ${error.usernameOrEmail ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-gray-600'
+                        } rounded-xl placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
                     />
                   </div>
                   <FieldError id="usernameOrEmail-error" message={error.usernameOrEmail} />
@@ -273,9 +271,8 @@ const Login = () => {
                       placeholder="Enter secure password / Minimum 8 characters / Use strong password"
                       aria-invalid={!!error.password}
                       aria-describedby={error.password ? 'password-error' : undefined}
-                      className={`w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border ${
-                        error.password ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-gray-600'
-                      } rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border ${error.password ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-gray-600'
+                        } rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
                     />
                     <button
                       type="button"

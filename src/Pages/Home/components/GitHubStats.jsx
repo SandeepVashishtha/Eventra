@@ -20,6 +20,8 @@ import {
   fetchPullRequests,
 } from "../../../utils/githubApiClient";
 
+const fetchStat = fetchRepository;
+
 const repoPath = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
 const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
 
@@ -70,15 +72,24 @@ export default function GitHubStats() {
       try {
         // Fire all three requests in parallel — none depends on the others,
         // so sequential awaits would triple the load time unnecessarily.
-        const [repoResult, contributorsResult, pullRequestsResult] =
+        const [repoResult, contributorsResult, prResult] =
           await Promise.allSettled([
-            fetchRepository(GITHUB_USER, GITHUB_REPO),
-            fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1),
-            fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+            fetchStat(GITHUB_USER, GITHUB_REPO),
+            fetchStat(GITHUB_USER, GITHUB_REPO, 1, 1),
+            fetchStat(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
           ]);
 
         // Repository data is required; bail out if it failed
+        // repoResult.status === "rejected"
+        // contributorsResult.status === "rejected"
+        // prResult.status === "rejected"
         if (repoResult.status === "rejected") {
+          const cached = readCache();
+          if (cached) {
+            setStats(cached);
+            setIsLoading(false);
+            return;
+          }
           throw repoResult.reason;
         }
         const repoData = repoResult.value;
@@ -90,19 +101,21 @@ export default function GitHubStats() {
           if (Array.isArray(contributors) && contributors.length > 0) {
             contribCount = contributors.length;
           }
-        } else {
-          //console.warn("Failed to fetch contributor count:", contributorsResult.reason);
+        } else if (contributorsResult.status === "rejected") {
+          contribCount = "—";
         }
 
         // Pull request count — graceful fallback on failure
         let prCount = "—";
-        if (pullRequestsResult.status === "fulfilled") {
-          const pullRequests = pullRequestsResult.value;
+        if (prResult.status === "fulfilled") {
+          const pullRequests = prResult.value;
           if (Array.isArray(pullRequests) && pullRequests.length > 0) {
             prCount = pullRequests.length;
           }
+        } else if (prResult.status === "rejected") {
+          prCount = "—";
         } else {
-         //console.warn("Failed to fetch pull request count:", pullRequestsResult.reason);
+         //console.warn("Failed to fetch pull request count:", prResult.reason);
         }
 
         const next = {
