@@ -61,10 +61,11 @@ const stagger = {
 
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
   useEffect(() => {
+    if (!open) return;
     const handleEsc = (e) => { if (e.key === "Escape") onCancel(); };
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
-  }, [onCancel]);
+  }, [open, onCancel]);
 
   if (!open) return null;
 
