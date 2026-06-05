@@ -561,6 +561,8 @@ const useEventRegistration = (eventIdParam) => {
       toast.success("Registration successful!");
       addRegistration(event, formData);
       clearSession();
+      // I removed frontend EmailJS calls here because they break during offline syncs.
+      // Email delivery is now handled strictly by the backend API.
     } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
       const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
