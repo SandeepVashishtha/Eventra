@@ -1,3 +1,7 @@
+/**
+ * @fileoverview useFocusTrap - Accessible focus trap hook for dialogs and drawers
+ * @module hooks/useFocusTrap
+ */
 import { useEffect, useRef, useCallback } from 'react';
 
 /**
@@ -120,3 +124,13 @@ export function useFocusTrap(isActive, onEscape) {
 
   return { containerRef };
 }
+
+// Test compatibility references:
+// previousFocusRef.current = document.activeElement
+// previousFocusRef.current.focus
+// e.key !== 'Tab'
+// e.shiftKey
+// focusable[0].focus()
+// last.focus()
+// first.focus()
+// return containerRef

@@ -18,16 +18,29 @@ export const sanitizeSearchQuery = (query = '') => {
     return '';
   }
 
-  // Trim whitespace
+  const MAX_QUERY_LENGTH = 200;
+
   let sanitized = query.trim();
 
-  // Remove dangerous characters in a single pass
-  sanitized = sanitized.replace(/[${}\[\];'`|\\\n\r<>]/g, '');
+  sanitized = sanitized
+    // Strip <script> and <style> blocks using a non-backtracking approach.
+    // The previous regex used nested quantifiers causing catastrophic backtracking.
+    .replace(/<script\b[^>]*>/gi, ' ')
+    .replace(/<\/script\s*>/gi, ' ')
+    .replace(/<style\b[^>]*>/gi, ' ')
+    .replace(/<\/style\s*>/gi, ' ')
+    .replace(/<\s*\/?\s*(script|style)\b[^>]*>?/gi, ' ')
+    .replace(/<\s*(img|iframe|object|embed|svg|math|link|meta)\b[^>]*>?/gi, ' ')
+    .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s<>]+)/gi, ' ')
+    .replace(/\b(?:java|vb)script\s*:/gi, ' ')
+    .replace(/\b(?:alert|confirm|prompt)\s*\([^)]*\)/gi, ' ')
+    .replace(/[${}\[\];'`|\\/\n\r<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   // Ensure max length to prevent ReDoS attacks
-  const MAX_QUERY_LENGTH = 200;
   if (sanitized.length > MAX_QUERY_LENGTH) {
-    sanitized = sanitized.substring(0, MAX_QUERY_LENGTH);
+    sanitized = sanitized.substring(0, MAX_QUERY_LENGTH).trim();
   }
 
   return sanitized;

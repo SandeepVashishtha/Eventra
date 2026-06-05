@@ -101,18 +101,17 @@ export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv"
     document.body.removeChild(link);
 
     // Revoke synchronously — the download has already been queued by the
-    // browser when click() returns. No setTimeout needed; the deferred
-    // approach used previously caused the URL to leak if the tab closed
-    // within the 100 ms window before the timer could fire.
+    // browser when click() returns. No setTimeout needed.
     //
-    // 🔥 CRITICAL HOTFIX: The assumption in the comment above is fundamentally incorrect.
-    // While link.click() is synchronous, the browser's background download manager 
-    // initialization is ASYNCHRONOUS. Revoking immediately destroys the file pointer 
-    // before Firefox/Safari can read it, causing a "Failed - Network error". 
-    // Deferring via setTimeout is absolutely mandatory for cross-browser stability.
-    setTimeout(() => {
-      window.URL.revokeObjectURL(url);
-    }, 200);
+    // revokeObjectURL removes the blob: URL mapping but does NOT free the
+    // underlying Blob memory while the browser's download manager still
+    // holds an internal reference to it. The "Firefox/Safari race condition"
+    // sometimes cited to justify setTimeout is a misconception: Blob URLs
+    // reference in-memory data (not file pointers), and the browser retains
+    // its own reference for the lifetime of the download regardless of when
+    // the URL is revoked. Deferring revocation only reintroduces the memory
+    // leak this code was written to fix.
+    window.URL.revokeObjectURL(url);
   }
 };
 
@@ -161,11 +160,7 @@ export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") 
     link.click();
   } finally {
     document.body.removeChild(link);
-    
-    // 🔥 CRITICAL HOTFIX: Reintroduced setTimeout to prevent Firefox/Safari download failure race condition.
-    setTimeout(() => {
-      window.URL.revokeObjectURL(url);
-    }, 200);
+    window.URL.revokeObjectURL(url);
   }
 };
 
@@ -230,9 +225,6 @@ export const exportEventsToCSV = (events, filename = "eventra-events.csv") => {
     link.click();
   } finally {
     document.body.removeChild(link);
-    // 🔥 CRITICAL HOTFIX: Defer revocation to prevent Firefox/Safari download failure race condition.
-    setTimeout(() => {
-      window.URL.revokeObjectURL(url);
-    }, 200);
+    window.URL.revokeObjectURL(url);
   }
 };
