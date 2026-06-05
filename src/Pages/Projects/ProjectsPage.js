@@ -8,7 +8,8 @@ import ProjectCard from "./ProjectCard";
 import ProjectCTA from "./ProjectCTA";
 
 import mockProjects from "./mockProjectsData.json";
-import { apiUtils, API_ENDPOINTS } from "../../config/api";
+import { API_ENDPOINTS } from "../../config/api";
+import { projectService } from "../../services/projectService";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 
 
@@ -140,10 +141,7 @@ const InnerGallery = () => {
         };
 
         // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
-        const response = await apiUtils.get(
-          API_ENDPOINTS.PROJECTS.LIST,
-          publicRequestConfig
-        );
+        const response = await projectService.getAllProjects(publicRequestConfig);
         const projectsData = response.data;
 const projectsList = Array.isArray(projectsData)
   ? projectsData
@@ -152,10 +150,7 @@ if (projectsList.length > 0) {
   setProjects(projectsList);
           // Attempt to fetch categories from API
           try {
-            const categoriesResponse = await apiUtils.get(
-              API_ENDPOINTS.PROJECTS.CATEGORIES,
-              publicRequestConfig
-            );
+            const categoriesResponse = await projectService.getCategories(publicRequestConfig);
             const categoriesData = categoriesResponse.data;
             setCategories(["all", ...(Array.isArray(categoriesData) ? categoriesData : [])]);
           } catch {

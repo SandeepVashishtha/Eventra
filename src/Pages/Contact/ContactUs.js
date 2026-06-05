@@ -1,3 +1,4 @@
+import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import { Star, MessageSquare } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -189,10 +190,13 @@ const ContactUsInner = () => {
 
     // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Show success toast
-      toast.success(t("contactUs.toastSuccess"));
+  await apiUtils.post(API_ENDPOINTS.CONTACT, {
+    name: formData.name,
+    email: formData.email,
+    subject: formData.subject,
+    message: formData.message,
+  });
+  toast.success(t("contactUs.toastSuccess"));
 
       // Reset form
       setFormData({

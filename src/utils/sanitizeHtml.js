@@ -88,10 +88,16 @@ const getDOMPurify = () => {
  * @param {string} dirty - Raw HTML from an untrusted source (API, user input)
  * @returns {string} Sanitised HTML safe for injection into the DOM
  */
+const stripAllHtml = (text) =>
+  text.replace(/<[^>]*>/g, '');
+
 export function sanitizeHtml(dirty) {
   if (!dirty || typeof dirty !== "string") return "";
   const purifier = getDOMPurify();
-  if (!purifier) return "";
+  if (!purifier) {
+    console.warn('[sanitizeHtml] DOMPurify unavailable - falling back to HTML tag stripping');
+    return stripAllHtml(dirty);
+  }
   return purifier.sanitize(dirty, PURIFY_CONFIG);
 }
 
