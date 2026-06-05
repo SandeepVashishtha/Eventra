@@ -295,14 +295,18 @@ const EditProfile = () => {
     }
   };
 
-  const filteredSuggestions = allSkillSuggestions
-    .filter(
-      (suggestion) =>
-        currentSkillInput &&
-        suggestion.toLowerCase().includes(currentSkillInput.toLowerCase()) &&
-        !form.skills.some((s) => s.toLowerCase() === suggestion.toLowerCase())
-    )
-    .slice(0, 7);
+  const filteredSuggestions = useMemo(
+    () =>
+      allSkillSuggestions
+        .filter(
+          (suggestion) =>
+            currentSkillInput &&
+            suggestion.toLowerCase().includes(currentSkillInput.toLowerCase()) &&
+            !form.skills.some((s) => s.toLowerCase() === suggestion.toLowerCase())
+        )
+        .slice(0, 7),
+    [currentSkillInput, form.skills]
+  );
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 py-10 px-4">
