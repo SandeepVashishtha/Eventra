@@ -12,6 +12,11 @@ const SessionRecovery = () => {
     dismissRecoveryPrompt,
     clearSession,
     sessionData,
+    cloudSessions = [],
+    hasCloudSessions,
+    isCloudSyncing,
+    restoreCloudSession,
+    dismissCloudSession,
   } = useSessionRecovery() || {};
 
   const [isRestoring, setIsRestoring] = useState(false);
@@ -59,6 +64,22 @@ const SessionRecovery = () => {
     dismissRecoveryPrompt?.();
   };
 
+  const handleCloudRestore = async (sessionId) => {
+    setIsRestoring(true);
+    try {
+      const session = await restoreCloudSession?.(sessionId);
+      if (session && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('sessionRestored', { detail: session.draftData || session }));
+        window.dispatchEvent(new CustomEvent('cloudSessionRestored', { detail: session }));
+      }
+      dismissRecoveryPrompt?.();
+    } catch (error) {
+      console.error('Failed to restore cloud session:', error);
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
   // 🔥 FIX: Do not render dynamic UI until hydration is complete to prevent SSR crashes
   if (!isMounted) return null;
 
@@ -98,6 +119,72 @@ const SessionRecovery = () => {
           <div>
             <p className="font-semibold text-sm">You&apos;re back online</p>
             <p className="text-xs opacity-90">Connection restored</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showRecoveryPrompt && hasCloudSessions) {
+    return (
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
+        <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl p-6 max-w-xl w-full mx-4">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                Restore unfinished work?
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                We found {cloudSessions.length} recoverable draft{cloudSessions.length === 1 ? '' : 's'} saved to your account.
+              </p>
+              <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                {cloudSessions.map((session) => {
+                  const updated = new Date(session.lastUpdated);
+                  const label = session.type?.replace(/-/g, ' ') || 'draft';
+                  return (
+                    <div key={session.sessionId} className="rounded-lg border border-gray-200 dark:border-slate-700 p-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="capitalize font-semibold text-gray-900 dark:text-white truncate">{label}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Updated {Number.isNaN(updated.getTime()) ? 'recently' : updated.toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleCloudRestore(session.sessionId)}
+                            disabled={isRestoring || isCloudSyncing}
+                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                          >
+                            Restore
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => dismissCloudSession?.(session.sessionId)}
+                            className="bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                          >
+                            Dismiss
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={dismissRecoveryPrompt}
+                className="mt-4 text-sm font-semibold text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+              >
+                Not now
+              </button>
+            </div>
           </div>
         </div>
       </div>

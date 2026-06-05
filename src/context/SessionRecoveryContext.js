@@ -3,6 +3,8 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 import { logger } from "../utils/logger";
 import { sanitizeSessionState } from "../utils/sessionSanitization";
 import { getDeviceFingerprint } from "../utils/deviceFingerprint";
+import { useAuth } from "./AuthContext";
+import useCloudSessionRecovery from "../hooks/useCloudSessionRecovery";
 
 // ---------------------------------------------------------------------------
 // CryptoJS has been removed from this module.
@@ -27,7 +29,6 @@ const SessionRecoveryContext = createContext();
 
 const SESSION_KEY = "eventra_session_state";
 const SESSION_TIMEOUT = 30 * 60 * 1000;
-const RECOVERY_KEY_NAME = "eventra_session_recovery_key";
 
 // ---------------------------------------------------------------------------
 // Web Crypto helpers — PBKDF2 + AES-256-GCM
@@ -158,6 +159,7 @@ export const useSessionRecovery = () => {
 };
 
 export const SessionRecoveryProvider = ({ children }) => {
+  const { user, isAuthenticated } = useAuth();
   const [hasSession, setHasSession] = useState(false);
   const [sessionData, setSessionData] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
@@ -168,6 +170,10 @@ export const SessionRecoveryProvider = ({ children }) => {
   const lastActivityRef = useRef(Date.now());
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
+  const cloudRecovery = useCloudSessionRecovery({
+    user,
+    isAuthenticated: isAuthenticated?.() || false,
+  });
 
   const updateActivity = useCallback(() => {
     const now = Date.now();
@@ -300,12 +306,13 @@ export const SessionRecoveryProvider = ({ children }) => {
           localStorage.setItem(SESSION_KEY, ciphertext);
           setSessionData(currentSession);
           setHasSession(true);
+          cloudRecovery.saveCloudSession(currentSession);
         } catch (e) {
           logger.error("Failed to save session:", e);
         }
       }, 1000);
     },
-    [],
+    [cloudRecovery],
   );
 
   const clearSession = useCallback(() => {
@@ -343,6 +350,12 @@ export const SessionRecoveryProvider = ({ children }) => {
   }, [hasSession, clearSession]);
 
   useEffect(() => {
+    if (cloudRecovery.hasCloudSessions) {
+      setShowRecoveryPrompt(true);
+    }
+  }, [cloudRecovery.hasCloudSessions]);
+
+  useEffect(() => {
     const saveTimeout = saveTimeoutRef.current;
     const activityTimeout = activityTimeoutRef.current;
     return () => {
@@ -357,9 +370,16 @@ export const SessionRecoveryProvider = ({ children }) => {
     isOnline,
     isReconnecting,
     showRecoveryPrompt,
+    cloudSessions: cloudRecovery.cloudSessions,
+    hasCloudSessions: cloudRecovery.hasCloudSessions,
+    isCloudSyncing: cloudRecovery.isCloudSyncing,
+    cloudSyncError: cloudRecovery.cloudSyncError,
     saveSession,
     clearSession,
     restoreSession,
+    restoreCloudSession: cloudRecovery.restoreCloudSession,
+    dismissCloudSession: cloudRecovery.dismissCloudSession,
+    refreshCloudSessions: cloudRecovery.refreshCloudSessions,
     dismissRecoveryPrompt,
     lastActivity,
   };
