@@ -1,3 +1,4 @@
+import { createRateLimiter } from "../../utils/rateLimiter";
 /**
  * @file useEventRegistration.js
  * @module hooks/useEventRegistration
@@ -42,14 +43,18 @@ import {
   saveCachedEventDetail,
 } from "../../utils/offlineEventCache";
 import { pushToQueue } from "../../utils/offlineQueue";
-import { logger } from "../../utils/logger";
 import { logError } from "../../utils/errorLogger";
 import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
+import { logAbuseAttempt } from "../../utils/abuseLogger";
 
-const MAX_NOTES_CHARS = 500;
+export const MAX_NOTES_CHARS = 500;
 
 // Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
+const registrationLimiter = createRateLimiter({
+  maxTokens: 3,
+  refillRate: 0.2, // roughly 1 token every 5 seconds
+});
 
 /**
  * Derives a user-facing error message from a failed registration API response.
@@ -305,7 +310,6 @@ const useEventRegistration = (eventIdParam) => {
   const { user, token, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
-  const isHackathonPath = location.pathname.startsWith("/register");
   const registrationPath = location.pathname;
 
   const [event, setEvent] = useState(null);
@@ -332,7 +336,7 @@ const useEventRegistration = (eventIdParam) => {
     errors,
     touched,
     isFormValid,
-    handleChange,
+    handleChange: handleFormChange,
     handleBlur,
     validateAll,
     setValues,
@@ -349,6 +353,21 @@ const useEventRegistration = (eventIdParam) => {
     validationRules,
     { debounceMs: 300 }
   );
+
+  const handleRegistrationChange = useCallback((event) => {
+    if (event.target.name !== "additionalInfo") {
+      handleFormChange(event);
+      return;
+    }
+
+    handleFormChange({
+      ...event,
+      target: {
+        ...event.target,
+        value: event.target.value.slice(0, MAX_NOTES_CHARS),
+      },
+    });
+  }, [handleFormChange]);
 
   // Load event data from backend API
   useEffect(() => {
@@ -491,6 +510,22 @@ const useEventRegistration = (eventIdParam) => {
 
   // Proceed with registration after conflict check or user confirmation
   const proceedWithRegistration = useCallback(async () => {
+    if (!registrationLimiter.tryConsume()) {
+      const retryMs = registrationLimiter.getRetryAfterMs();
+
+      logAbuseAttempt("event-registration-rate-limit", {
+        eventId,
+        userId: user?.id,
+      });
+
+      toast.error(
+        `Too many registration attempts. Please wait ${Math.ceil(
+          retryMs / 1000
+        )} seconds and try again.`
+      );
+
+      return;
+    }
     if (!isAuthenticated() || !user?.id) {
       toast.error("Please log in to register for events.");
       navigate("/login", {
@@ -517,6 +552,7 @@ const useEventRegistration = (eventIdParam) => {
         endpoint,
         {
           ...formData,
+          additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
           priority: formData.priority,
           eventId: parseInt(eventId),
           userId: user.id,
@@ -536,6 +572,7 @@ const useEventRegistration = (eventIdParam) => {
       if (isOfflineFailure) {
         const payload = {
           ...formData,
+          additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
           eventId: parseInt(eventId),
           userId: user.id,
         };
@@ -649,7 +686,7 @@ const useEventRegistration = (eventIdParam) => {
     errors,
     touched,
     isFormValid,
-    handleChange,
+    handleChange: handleRegistrationChange,
     handleBlur,
     validateAll,
     setValues,

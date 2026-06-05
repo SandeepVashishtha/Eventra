@@ -138,25 +138,28 @@ export default function EventHero({
           .
         </p>
 
+
         {/* FIX 1: Added `relative z-20` so this container creates a stacking context
             above the CTA buttons (z-10), letting the absolute dropdown float over them */}
-        <div className="relative z-20 w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0">
-          <ModernSearchInput
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-            onFocus={() => setIsSearchFocused(true)}
-            onBlur={handleSearchBlur}
-            onKeyDown={handleSearchKeyDown}
-            autoFocus
-            placeholder="Search events by name, location, or tags..."
-            aria-expanded={isSearchFocused}
-            aria-haspopup="listbox"
-          >
-            <AnimatePresence>
-              {showDropdown && (
-                <motion.div
-                  ref={dropdownRef}
-                  role="listbox"
+       {/* FIX 1: Added stacking context so dropdown appears above CTA buttons */}
+<div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0 relative z-50">
+  <ModernSearchInput
+    value={searchQuery}
+    onChange={(e) => handleSearch(e.target.value)}
+    onFocus={() => setIsSearchFocused(true)}
+    onBlur={handleSearchBlur}
+    onKeyDown={handleSearchKeyDown}
+    autoFocus
+    placeholder="Search events by name, location, or tags..."
+    aria-expanded={isSearchFocused}
+    aria-haspopup="listbox"
+  />
+
+  <AnimatePresence>
+    {showDropdown && (
+      <motion.div
+        ref={dropdownRef}
+        role="listbox"
                   initial={{ opacity: 0, y: 12, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
