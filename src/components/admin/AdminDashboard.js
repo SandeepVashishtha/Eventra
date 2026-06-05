@@ -546,7 +546,7 @@ const AdminDashboard = () => {
                                   <span key={r} style={{ marginRight: '4px' }}><StatusBadge status={r} /></span>
                                 ))}
                               </td>
-                              <td className="ad-muted">{u.createdAt || u.createdAt}</td>
+                              <td className="ad-muted">{u.createdAt || u.joinedAt || "—"}</td>
                               <td><StatusBadge status={u.status || "Active"} /></td>
                               <td>
                                 <div className="ad-action-btns">
