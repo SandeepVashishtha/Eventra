@@ -205,7 +205,7 @@ const ContactUsInner = () => {
         subject: "",
         message: "",
       });
-    } catch (error) {
+    } catch {
       toast.error(t("contactUs.toastError"));
     } finally {
       setIsSubmitting(false);

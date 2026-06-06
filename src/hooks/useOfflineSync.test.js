@@ -51,7 +51,7 @@ describe("useOfflineSync", () => {
   });
 
   afterEach(() => {
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     act(() => {
       if (root) {
         root.unmount();
@@ -78,7 +78,7 @@ describe("useOfflineSync", () => {
       return null;
     };
 
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
@@ -86,7 +86,7 @@ describe("useOfflineSync", () => {
     const startTime = Date.now();
 
     // Trigger online event to run the sync
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     await act(async () => {
       window.dispatchEvent(new Event("online"));
 
@@ -117,13 +117,13 @@ describe("useOfflineSync", () => {
       return null;
     };
 
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
 
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     await act(async () => {
       window.dispatchEvent(new Event("online"));
       await new Promise((resolve) => setTimeout(resolve, 100));

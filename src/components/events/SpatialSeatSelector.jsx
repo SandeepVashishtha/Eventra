@@ -168,7 +168,7 @@ const SpatialSeatSelector = ({
         } else {
           initialElements = DEFAULT_PRESETS.banquet;
         }
-      } catch (e) {
+      } catch {
         initialElements = DEFAULT_PRESETS.banquet;
       }
     } else {

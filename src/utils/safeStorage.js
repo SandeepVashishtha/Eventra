@@ -6,7 +6,7 @@ const isBrowserStorageAvailable = (storage) => {
     storage.setItem(testKey, testKey);
     storage.removeItem(testKey);
     return true;
-  } catch (_) {
+  } catch {
     return false;
   }
 };
@@ -15,7 +15,7 @@ const createSafeStorage = (getStorage) => {
   const getStorageOrNull = () => {
     try {
       return getStorage();
-    } catch (_) {
+    } catch {
       return null;
     }
   };
@@ -24,7 +24,7 @@ const createSafeStorage = (getStorage) => {
     get length() {
       try {
         return getStorageOrNull()?.length ?? 0;
-      } catch (_) {
+      } catch {
         return 0;
       }
     },
@@ -36,7 +36,7 @@ const createSafeStorage = (getStorage) => {
     getItem(key, fallback = null) {
       try {
         return getStorageOrNull()?.getItem(key) ?? fallback;
-      } catch (_) {
+      } catch {
         return fallback;
       }
     },
@@ -45,7 +45,7 @@ const createSafeStorage = (getStorage) => {
       try {
         getStorageOrNull()?.setItem(key, value);
         return true;
-      } catch (_) {
+      } catch {
         return false;
       }
     },
@@ -54,7 +54,7 @@ const createSafeStorage = (getStorage) => {
       try {
         getStorageOrNull()?.removeItem(key);
         return true;
-      } catch (_) {
+      } catch {
         return false;
       }
     },
@@ -63,7 +63,7 @@ const createSafeStorage = (getStorage) => {
       try {
         getStorageOrNull()?.clear();
         return true;
-      } catch (_) {
+      } catch {
         return false;
       }
     },
@@ -71,7 +71,7 @@ const createSafeStorage = (getStorage) => {
     key(index) {
       try {
         return getStorageOrNull()?.key(index) ?? null;
-      } catch (_) {
+      } catch {
         return null;
       }
     },
@@ -82,7 +82,7 @@ const createSafeStorage = (getStorage) => {
 
       try {
         return JSON.parse(raw);
-      } catch (_) {
+      } catch {
         // Stored values can be user-edited or corrupted; callers should keep running.
         return fallback;
       }
@@ -91,7 +91,7 @@ const createSafeStorage = (getStorage) => {
     setJson(key, value) {
       try {
         return this.setItem(key, JSON.stringify(value));
-      } catch (_) {
+      } catch {
         return false;
       }
     },

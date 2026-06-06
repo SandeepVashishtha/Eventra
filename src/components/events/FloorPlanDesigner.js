@@ -164,7 +164,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     if (savedLayout) {
       try {
         initialElements = JSON.parse(savedLayout);
-      } catch (e) {
+      } catch {
         toast.error("Invalid floor plan format");
         initialElements = PRESETS.banquet;
       }

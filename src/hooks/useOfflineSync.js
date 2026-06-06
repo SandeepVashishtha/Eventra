@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
-import { eventService } from '../services/eventService';
+
 import { logger } from "../utils/logger";
 import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership } from '../utils/offlineQueue';
 // isTokenValid import removed; authentication is now checked via isAuthenticated()
@@ -353,7 +353,7 @@ const useOfflineSync = () => {
             logger.log("[useOfflineSync] Local sync lock is held by another active tab. Skipping.");
             return;
           }
-        } catch (e) {}
+        } catch {}
       }
 
       const currentTabId = Math.random().toString(36).slice(2, 9);
@@ -361,7 +361,7 @@ const useOfflineSync = () => {
       
       try {
         localStorage.setItem(LOCK_KEY, lockData);
-      } catch (e) {
+      } catch {
         // If localStorage fails (private mode etc.), run sync directly to avoid blocking
         await executeSync();
         return;
@@ -371,7 +371,7 @@ const useOfflineSync = () => {
         if (syncLockAborted) { clearInterval(heartbeatInterval); return; }
         try {
           localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
-        } catch (e) {}
+        } catch {}
       }, 10_000);
       heartbeatIntervalRef.current = heartbeatInterval;
 
@@ -387,7 +387,7 @@ const useOfflineSync = () => {
               localStorage.removeItem(LOCK_KEY);
             }
           }
-        } catch (e) {}
+        } catch {}
       }
     };
 
@@ -478,6 +478,7 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, user?.id]);
 };
 

@@ -232,7 +232,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         try {
           const saved = localStorage.getItem(CACHE_KEY);
           cache = saved ? JSON.parse(saved) : {};
-        } catch (e) {
+        } catch {
           cache = {};
         }
 

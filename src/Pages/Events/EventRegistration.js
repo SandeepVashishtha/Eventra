@@ -195,6 +195,7 @@ const EventRegistration = () => {
     return () => {
       isCancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
   const refreshEventAvailability = useCallback(async (id) => {
@@ -373,6 +374,7 @@ const EventRegistration = () => {
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     eventId,
     event,
@@ -437,7 +439,7 @@ const EventRegistration = () => {
         }
       }
       conflictDetected = await checkAndHandleConflicts();
-    } catch (err) {
+    } catch {
       isSubmittingRef.current = false;
       registrationLocks.delete(eventId);
       return;
@@ -452,12 +454,14 @@ const EventRegistration = () => {
     }
 
     proceedWithRegistration();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
 
   // Handle conflict modal actions
   const handleConflictCancel = useCallback(() => {
     setShowConflictModal(false);
     toast.info(t("eventRegistration.toastConflictCancelled"));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleConflictProceed = useCallback(() => {
@@ -476,10 +480,11 @@ const EventRegistration = () => {
     setShowConflictModal(false);
     navigate(`/events/${alternativeEvent.id}/register`);
     toast.info(t("eventRegistration.toastRedirectingTo", { title: alternativeEvent.title }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const isEventFull = useMemo(() => event ? event.attendees >= event.maxAttendees : false, [event]);
-  const isPastEvent = useMemo(() => getEventStatus(event) === "past" || getEventStatus(event) === "ended", [event]);
+
   const isCancelledEvent = useMemo(() => getEventStatus(event) === "cancelled", [event]);
   const isRegistrationBlocked = useMemo(() => isEventRegistrationClosed(event), [event]);
 

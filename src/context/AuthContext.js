@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler, setAuthToken } from "../config/api";
+import { setOnUnauthorizedHandler, setAuthToken } from "../config/api";
 import { authService } from "../services/authService";
 import { userService } from "../services/userService";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";

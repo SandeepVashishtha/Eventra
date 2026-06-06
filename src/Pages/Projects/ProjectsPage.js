@@ -8,7 +8,7 @@ import ProjectCard from "./ProjectCard";
 import ProjectCTA from "./ProjectCTA";
 
 import mockProjects from "./mockProjectsData.json";
-import { API_ENDPOINTS } from "../../config/api";
+
 import { projectService } from "../../services/projectService";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 

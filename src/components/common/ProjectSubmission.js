@@ -3,7 +3,7 @@ import { getPublicErrorMessage, FORM_ERRORS } from "../../utils/errorMessages";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { API_ENDPOINTS } from "../../config/api";
+
 import { projectService } from "../../services/projectService";
 import { getUserFullName } from "../../utils/userNameUtils.mjs";
 import CharacterCounter from "./CharacterCounter";
