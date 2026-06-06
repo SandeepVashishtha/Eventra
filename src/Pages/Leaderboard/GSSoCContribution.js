@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useDebounce from "../../hooks/useDebounce.js";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // ============ CONSTANTS ============
@@ -388,6 +389,7 @@ const GSSoCContribution = () => {
   
   // State with localStorage persistence
   const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
   const [userStats] = useState(() => {
     const saved = localStorage.getItem("gssoc.userStats");
@@ -444,17 +446,17 @@ const timeLeft = useCountdown(
   // Filtered resources with difficulty filter
   const filteredResources = useMemo(() => {
     let result = RESOURCES;
-    if (searchQuery) {
+    if (debouncedSearchQuery) {
       result = result.filter(r => 
-        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.type.toLowerCase().includes(searchQuery.toLowerCase())
+        r.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        r.type.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
       );
     }
     if (selectedDifficulty !== "all") {
       result = result.filter(r => r.difficulty === selectedDifficulty);
     }
     return result;
-  }, [searchQuery, selectedDifficulty]);
+  }, [debouncedSearchQuery, selectedDifficulty]);
   
   // Handlers
   const handleMentorConnect = useCallback((mentor) => {

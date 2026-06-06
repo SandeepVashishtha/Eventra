@@ -11,6 +11,7 @@ import mockProjects from "./mockProjectsData.json";
 import { API_ENDPOINTS } from "../../config/api";
 import { projectService } from "../../services/projectService";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import useDebounce from "../../hooks/useDebounce.js";
 
 
 // Modern custom styled search input
@@ -86,6 +87,7 @@ const InnerGallery = () => {
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [categories, setCategories] = useState(["all"]);
   const [error, setError] = useState("");
 
@@ -205,8 +207,8 @@ if (projectsList.length > 0) {
         return false;
       }
 
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+      if (debouncedSearchQuery) {
+        const query = debouncedSearchQuery.toLowerCase();
 
         return (
           project?.title?.toLowerCase()?.includes(query) ||
