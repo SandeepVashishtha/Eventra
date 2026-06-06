@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
 import { eventService } from '../services/eventService';
 import { logger } from "../utils/logger";
-import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership } from '../utils/offlineQueue';
+import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership, validateQueueSession } from '../utils/offlineQueue';
 // isTokenValid import removed; authentication is now checked via isAuthenticated()
 // from AuthContext, which handles both token-based and cookie-managed sessions.
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
@@ -252,6 +252,32 @@ const useOfflineSync = () => {
         return;
       }
 
+      // SECURITY (Issue #5727): Re-validate session IDs — actions queued under a
+      // previous session must not replay under a new session even if the userId
+      // matches (e.g. same user, different device/tab login cycle).
+      const currentSession =
+        typeof sessionStorage !== "undefined"
+          ? sessionStorage.getItem("session_id") || null
+          : null;
+      const sessionValidatedQueue = validateQueueSession(validatedQueue, currentSession);
+
+      if (sessionValidatedQueue.length === 0 && validatedQueue.length > 0) {
+        logger.warn(
+          "[Security] Clearing offline queue: all actions have stale session IDs. " +
+            "This prevents stale-session cross-user action replay."
+        );
+        await clearQueue();
+        toast.warning(
+          "Offline actions from a previous login session have been cleared for security.",
+          { autoClose: 5000 }
+        );
+        return;
+      }
+
+      if (sessionValidatedQueue.length === 0) {
+        return;
+      }
+
       // Cookie-managed sessions authenticate via the HttpOnly session cookie
       // sent automatically by the browser. Do not forward the "cookie-managed"
       // sentinel string as a Bearer token value; pass null instead so the
@@ -261,7 +287,7 @@ const useOfflineSync = () => {
       isSyncing.current = true;
 
       try {
-        toast.info(`Syncing ${validatedQueue.length} cached offline action(s)...`, {
+        toast.info(`Syncing ${sessionValidatedQueue.length} cached offline action(s)...`, {
           autoClose: 2000,
         });
 
@@ -269,7 +295,7 @@ const useOfflineSync = () => {
         let successCount = 0;
         let droppedCount = 0;
 
-        for (const item of validatedQueue) {
+        for (const item of sessionValidatedQueue) {
           // Halt the zombie loop immediately if the session changed or component unmounted.
           // This prevents making requests with stale tokens and protects IndexedDB from being falsely overwritten below.
           if (conflictController.signal.aborted) {
