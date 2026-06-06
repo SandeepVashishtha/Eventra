@@ -27,7 +27,7 @@ import {
   normalizeEventAvailability,
 } from "../../utils/eventAvailabilityUtils.mjs";
 import { useFormValidation } from "../../hooks/useFormValidation";
-import { getEventStatus } from "../../utils/eventUtils";
+import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -39,8 +39,34 @@ import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 import { SkeletonEventCard, WaitlistSkeleton, WaitlistPositionSkeleton } from "../../components/common/SkeletonLoaders";
 import { logger } from "../../utils/logger";
 import { validate } from "../../validation";
+import { getCacheAgeLabel, getCachedEventDetail, saveCachedEventDetail } from "../../utils/offlineEventCache";
+import { pushToQueue } from "../../utils/offlineQueue";
+import registrationLocks from "../../utils/registrationLocks";
 
 const MAX_NOTES_CHARS = 500;
+
+const getRegistrationFailureMessage = (error) => {
+  const message = error?.data?.message || error?.data?.error || error?.message || "";
+  const normalizedMessage = message.toLowerCase();
+
+  if (error?.status === 409 && /already registered|duplicate/.test(normalizedMessage)) {
+    return "You are already registered for this event.";
+  }
+
+  if (
+    error?.status === 409 ||
+    error?.status === 423 ||
+    /capacity|full|sold out|max(?:imum)? capacity/.test(normalizedMessage)
+  ) {
+    return "This event has reached maximum capacity. Please choose another event.";
+  }
+
+  if (/conflict/.test(normalizedMessage)) {
+    return "Registration could not be completed because the server reported a conflict.";
+  }
+
+  return message || "Registration failed. Please try again.";
+};
 
 const EventRegistration = () => {
   const { t } = useTranslation();
@@ -60,6 +86,7 @@ const EventRegistration = () => {
   const [registered, setRegistered] = useState(false);
   const [waitlistPosition, setWaitlistPosition] = useState(-1);
   const isSubmittingRef = useRef(false);
+  const registrationLocksRef = useRef(new Map());
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -195,6 +222,7 @@ const EventRegistration = () => {
     return () => {
       isCancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
   const refreshEventAvailability = useCallback(async (id) => {
@@ -262,7 +290,7 @@ const EventRegistration = () => {
 
     setShowConflictModal(false);
 
-    registrationLocks.set(eventId, true);
+    registrationLocksRef.current.set(eventId, true);
     isSubmittingRef.current = true;
     setSubmitting(true);
 
@@ -282,7 +310,7 @@ const EventRegistration = () => {
         toast.error(err.message || t("eventRegistration.toastRegistrationError"));
         return;
       } finally {
-        registrationLocks.delete(eventId);
+        registrationLocksRef.current.delete(eventId);
         isSubmittingRef.current = false;
         setSubmitting(false);
       }
@@ -299,9 +327,7 @@ const EventRegistration = () => {
           ...formData,
           priority: formData.priority,
           eventId: parseInt(eventId),
-          userId: user.id,
-        },
-        token
+        }
       );
 
       const regData = response.data || {};
@@ -327,7 +353,6 @@ const EventRegistration = () => {
         const payload = {
           ...formData,
           eventId: parseInt(eventId),
-          userId: user.id,
         };
 
         const success = await pushToQueue(
@@ -360,7 +385,11 @@ const EventRegistration = () => {
         setRegistered(true);
         toast.success(isEventFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
         const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
-        addRegistration(event, formData, existingRegId, "");
+        // Do not pass the current form values — the server rejected this
+        // submission as a duplicate, so formData is unconfirmed. Storing it
+        // would overwrite the locally-cached registration with values that
+        // may differ from the authoritative server record.
+        addRegistration(event, {}, existingRegId, "");
         clearSession();
         toast.info(failureMessage);
         return;
@@ -368,10 +397,11 @@ const EventRegistration = () => {
 
       toast.error(failureMessage);
     } finally {
-      registrationLocks.delete(eventId);
+      registrationLocksRef.current.delete(eventId);
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     eventId,
     event,
@@ -408,47 +438,82 @@ const EventRegistration = () => {
       return;
     }
 
-    if (registrationLocks.has(eventId)) {
+    if (registrationLocksRef.current.has(eventId)) {
       toast.error(t("eventRegistration.toastAnotherInProgress"));
       return;
     }
 
-    const isFull = await checkEventCapacity(eventId, event);
-    if (isFull) {
-      const { getGlobalWaitlist } = await import("../../utils/waitlistUtils");
-      const records = getGlobalWaitlist();
-      const onWaitlist = records.some(
-        (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
-      );
-      if (onWaitlist) {
-        toast.error(t("eventRegistration.toastAlreadyWaitlisted"));
-        return;
+    // Acquire both locks before any async work so that a concurrent submission
+    // arriving during capacity checks or conflict detection is blocked by the
+    // guards above rather than being allowed to start a parallel flow.
+    isSubmittingRef.current = true;
+    registrationLocks.set(eventId, true);
+
+    let conflictDetected = false;
+    try {
+      const isFull = await checkEventCapacity(eventId, event);
+      if (isFull) {
+        const { getGlobalWaitlist } = await import("../../utils/waitlistUtils");
+        const records = getGlobalWaitlist();
+        const onWaitlist = records.some(
+          (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
+        );
+        if (onWaitlist) {
+          isSubmittingRef.current = false;
+          registrationLocks.delete(eventId);
+          toast.error(t("eventRegistration.toastAlreadyWaitlisted"));
+          return;
+        }
       }
+      conflictDetected = await checkAndHandleConflicts();
+    } catch {
+      isSubmittingRef.current = false;
+      registrationLocks.delete(eventId);
+      return;
     }
 
-    if (await checkAndHandleConflicts()) return;
+    if (conflictDetected) {
+      // The conflict modal is visible; release the lock so the user can review
+      // without blocking future attempts. handleConflictProceed re-acquires.
+      isSubmittingRef.current = false;
+      registrationLocks.delete(eventId);
+      return;
+    }
 
     proceedWithRegistration();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
 
   // Handle conflict modal actions
   const handleConflictCancel = useCallback(() => {
     setShowConflictModal(false);
     toast.info(t("eventRegistration.toastConflictCancelled"));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleConflictProceed = useCallback(() => {
+    if (isSubmittingRef.current) {
+      return;
+    }
+    if (registrationLocks.has(eventId)) {
+      return;
+    }
+    isSubmittingRef.current = true;
+    registrationLocks.set(eventId, true);
     proceedWithRegistration();
-  }, [proceedWithRegistration]);
+  }, [eventId, proceedWithRegistration]);
 
   const handleSelectAlternative = useCallback((alternativeEvent) => {
     setShowConflictModal(false);
     navigate(`/events/${alternativeEvent.id}/register`);
     toast.info(t("eventRegistration.toastRedirectingTo", { title: alternativeEvent.title }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const isEventFull = useMemo(() => event ? event.attendees >= event.maxAttendees : false, [event]);
-  const isPastEvent = useMemo(() => getEventStatus(event) === "past" || getEventStatus(event) === "ended", [event]);
+
+  const isCancelledEvent = useMemo(() => getEventStatus(event) === "cancelled", [event]);
+  const isRegistrationBlocked = useMemo(() => isEventRegistrationClosed(event), [event]);
 
   if (loading) {
     return (
@@ -476,14 +541,16 @@ const EventRegistration = () => {
     );
   }
 
-  if (isPastEvent) {
+  if (isRegistrationBlocked) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           {t("eventRegistration.pastEventTitle")}
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
-          {t("eventRegistration.pastEventDescription")}
+          {isCancelledEvent
+            ? "This event has been cancelled."
+            : t("eventRegistration.pastEventDescription")}
         </p>
         <Link
           to={isHackathonPath ? `/hackathons/${event.id}` : `/events/${event.id}`}
@@ -576,7 +643,7 @@ const EventRegistration = () => {
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 truncate">
+            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 break-words min-w-0">
               {event.title}
             </h3>
 
@@ -722,7 +789,7 @@ const EventRegistration = () => {
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
+              <h1 title={event.title} className="text-3xl font-bold mb-2 break-words">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />

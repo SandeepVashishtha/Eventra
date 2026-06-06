@@ -429,7 +429,7 @@ const EventRecommendation = () => {
 
                       </div>
 
-                      <h3 className="text-lg font-bold text-text">
+                      <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">
                         {event.title}
                       </h3>
 
@@ -484,7 +484,7 @@ const EventRecommendation = () => {
                           className="rounded-2xl border border-border p-5 bg-bg"
                         >
 
-                          <h3 className="text-lg font-bold text-text">
+                          <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">
                             {event.title}
                           </h3>
 
@@ -528,7 +528,7 @@ const EventRecommendation = () => {
                         key={index}
                         className="rounded-2xl border border-border p-5 bg-bg text-left"
                       >
-                        <h3 className="text-lg font-bold text-text">
+                        <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">
                           {event.title}
                         </h3>
                         <p className="mt-2 text-sm text-text-light">

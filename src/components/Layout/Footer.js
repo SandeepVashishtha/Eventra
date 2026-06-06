@@ -2,6 +2,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
+import { SiDiscord } from "react-icons/si";
+
 import {
   FaBook,
   FaBookOpen,
@@ -113,6 +115,16 @@ const socialLinks = [
       />
     ),
   },
+  {
+  name: "Discord",
+  href: "https://discord.com/users/sandeep_vashishtha",
+  icon: (
+    <SiDiscord
+      className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+      size={20}
+      />
+    ),
+ },
 ].filter(Boolean);
 
 /* ================================
@@ -206,7 +218,7 @@ const Newsletter = () => {
 
         setEmail("");
       }
-    } catch (error) {
+    } catch {
       // 🔥 FIX: Guard state updates
       if (isMounted.current) {
         setFeedback({

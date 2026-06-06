@@ -37,7 +37,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
-import { safeJsonParse } from "../utils/safeJsonParse";
+
 import { saveToOfflineCache, getFromOfflineCache } from "../utils/indexedDB";
 
 const MyEventsContext = createContext(null);

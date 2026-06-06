@@ -113,7 +113,7 @@ export default function Chatbot() {
         setMessages(INITIAL_MESSAGES);
       }
       localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
-    } catch (e) {
+    } catch {
       console.warn("localStorage unavailable for Chatbot expiration check");
     }
   }, [setMessages]);
@@ -128,7 +128,7 @@ export default function Chatbot() {
   useEffect(() => {
     try {
       localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
-    } catch (e) {
+    } catch {
       console.warn("localStorage unavailable for Chatbot sync");
     }
   }, [messages]);

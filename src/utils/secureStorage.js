@@ -1,4 +1,4 @@
-/* eslint-disable-next-line no-console */
+ 
 /**
  * @file secureStorage.js
  * @module utils/secureStorage
@@ -273,12 +273,11 @@ export const syncSecureStorage = {
    * @returns {Promise<boolean>} `true` on success; `false` when the write
    *   could not be persisted (localStorage full, encryption error, etc.).
    */
-  setItem: (key, value) => {
+  setItem: async (key, value) => {
     try {
       pendingWrites.set(key, value);
-      writeWithEncryption(key, value).then(() => {
-        pendingWrites.delete(key);
-      });
+      await writeWithEncryption(key, value);
+      pendingWrites.delete(key);
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
@@ -373,13 +372,24 @@ export const syncSecureStorage = {
   },
 
   /**
-   * Clears all localStorage data for the current origin.
-   * Use with caution: this removes ALL keys, not just Eventra's.
+   * Clears all Eventra-managed keys from localStorage.
+   *
+   * Iterates only over keys starting with the Eventra prefix ('eventra:')
+   * so data from other applications on the same origin is never touched.
    */
   clear: () => {
     try {
       pendingWrites.clear();
-      localStorage.clear();
+      writeQueue.clear();
+
+      const prefix = "eventra:";
+      const toRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(prefix)) toRemove.push(k);
+      }
+      toRemove.forEach((k) => localStorage.removeItem(k));
+
       _keyPromise = null;
     } catch (error) {
       console.error('[secureStorage] clear failed:', error);

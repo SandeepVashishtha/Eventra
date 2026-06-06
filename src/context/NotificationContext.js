@@ -24,6 +24,7 @@ import {
   writeNotificationPreferences,
 } from "../utils/notificationPreferences";
 import { logger } from "../utils/logger";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const NotificationContext = createContext();
 
@@ -48,7 +49,7 @@ const ensureServiceWorkerRegistration = async () => {
 
   try {
     return await navigator.serviceWorker.register("/service-worker.js");
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -491,7 +492,7 @@ export const NotificationProvider = ({ children }) => {
         const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
         if (existing) {
           try {
-            const parsed = JSON.parse(existing);
+            const parsed = safeJsonParse(existing, {});
             if (parsed?.keys) {
               logger.info("[NotificationContext] Migrating legacy push subscription record.");
             }
@@ -500,7 +501,7 @@ export const NotificationProvider = ({ children }) => {
           }
         }
         window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-      } catch (error) {
+      } catch {
         // Non-fatal — the subscription is still active; local status just won't persist.
       }
 

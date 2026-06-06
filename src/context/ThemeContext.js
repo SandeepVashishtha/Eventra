@@ -10,6 +10,7 @@ import { MotionConfig } from "framer-motion";
 import { THEMES } from "../components/styles/theme";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { safeJsonParse } from "../utils/safeJsonParse";
+const THEME_STORAGE_KEY = "eventra_theme";
 
 export const ThemeContext = createContext(null);
 
@@ -45,7 +46,7 @@ const getSystemTheme = () =>
     : "light";
 
 const getInitialTheme = () => {
-  const stored = safeStorage.getItem("theme");
+  const stored = safeStorage.getItem(THEME_STORAGE_KEY);
   if (stored === "light" || stored === "dark" || stored === "system") {
     return stored;
   }
@@ -106,9 +107,9 @@ export const ThemeProvider = ({ children }) => {
     root.classList.add(resolvedTheme);
 
     if (theme === "system") {
-      safeStorage.removeItem("theme");
+      safeStorage.removeItem(THEME_STORAGE_KEY);
     } else {
-      safeStorage.setItem("theme", theme);
+      safeStorage.setItem(THEME_STORAGE_KEY, theme);
     }
 
     // Apply active skin theme colors
@@ -187,7 +188,7 @@ export const ThemeProvider = ({ children }) => {
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      if (!safeStorage.getItem("theme")) {
+      if (!safeStorage.getItem(THEME_STORAGE_KEY)) {
         setTheme("system");
       }
     };

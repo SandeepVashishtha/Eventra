@@ -61,7 +61,6 @@ const isRateLimited = async (ip) => {
 };
 
 // ---------------------------------------------------------------------------
-
 export const config = {
   matcher: "/api/:path*",
 };
@@ -114,10 +113,9 @@ export default async function middleware(request) {
   // RBAC for ticket routes
   if (url.pathname.startsWith("/api/tickets/")) {
     const cookieHeader = request.headers.get("cookie") || "";
-    const tokenMatch = cookieHeader.match(/(?:(?:^|.*;\s*)token\s*\=\s*([^;]*).*$)|^.*$/);
+    const tokenMatch = cookieHeader.match(/(?:^|;\s*)token\s*=\s*([^;]*)/);
     const token = tokenMatch ? tokenMatch[1] : null;
     let roles = [];
-    
     if (token) {
       try {
         const payloadStr = atob(token.split('.')[1]);
@@ -127,7 +125,6 @@ export default async function middleware(request) {
         // Ignore parsing errors (treat as unauthenticated)
       }
     }
-    
     const hasAccess = roles.some(role => 
       ["ORGANIZER", "VOLUNTEER", "ADMIN", "SUPER_ADMIN", "EVENT_MANAGER"].includes(role.toUpperCase())
     );
