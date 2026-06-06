@@ -68,3 +68,5 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+      - name: Check bundle size
+        run: npx bundlesize
