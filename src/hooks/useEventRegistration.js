@@ -468,7 +468,7 @@ const useEventRegistration = (eventIdParam) => {
     return () => {
       isCancelled = true;
     };
-  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+  }, [eventId, user?.id, isAuthenticated, setValues, location.pathname]);
 
   const checkEventCapacity = useCallback(async (id, currentEvent) => {
     try {
@@ -546,7 +546,6 @@ const useEventRegistration = (eventIdParam) => {
       additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
       priority: formData.priority,
       eventId: parseInt(eventId),
-      userId: user.id,
     };
 
     try {
@@ -561,6 +560,8 @@ const useEventRegistration = (eventIdParam) => {
       toast.success("Registration successful!");
       addRegistration(event, formData);
       clearSession();
+      // I removed frontend EmailJS calls here because they break during offline syncs.
+      // Email delivery is now handled strictly by the backend API.
     } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
       const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
@@ -571,7 +572,6 @@ const useEventRegistration = (eventIdParam) => {
           ...formData,
           additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
           eventId: parseInt(eventId),
-          userId: user.id,
         };
 
         const isFullLocal = event ? event.attendees >= event.maxAttendees : false;
