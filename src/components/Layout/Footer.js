@@ -1,16 +1,14 @@
 // Enforced dynamic copyright rendering under issue #2211
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-<<<<<<< HEAD
-import { SiDiscord } from "react-icons/si";
-=======
 
->>>>>>> master
+
 import {
   FaBook,
   FaBookOpen,
   FaCalendarAlt,
   FaComments,
+  FaDiscord,
   FaEnvelope,
   FaFolder,
   FaGithub,
@@ -117,16 +115,17 @@ const socialLinks = [
       />
     ),
   },
-<<<<<<< HEAD
   {
     name: "Discord",
-    href: "https://discord.gg/6MQ9r5nHT",
-    icon: SiDiscord,
+    href: "https://discord.gg/eventra",
+    icon: (
+      <FaDiscord
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        size={20}
+      />
+    ),
   },
-];
-=======
 ].filter(Boolean);
->>>>>>> master
 
 /* ================================
    Secure External Link Handling
