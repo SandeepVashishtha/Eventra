@@ -1,7 +1,8 @@
 import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
+
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
 
@@ -204,6 +205,7 @@ const Hero = () => {
     const Icon = icons[type] || Search;
     return <Icon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />;
   };
+
 
   // ─── ANIMATION VARIANTS ────────────────────────────────────────────────────
 

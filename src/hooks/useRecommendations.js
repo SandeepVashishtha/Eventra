@@ -41,10 +41,11 @@ const useRecommendations = (events = []) => {
   // dependency check to see a "change" on every render and re-run the full
   // map-and-sort over all events — including on every keystroke in the search
   // box or every SSE tick from the notification context.
+  const profileKeyString = typeof localStorage !== "undefined" ? localStorage.getItem(USER_PROFILE_KEY) : null;
   const userProfile = useMemo(
     () => getUserProfile(),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [typeof localStorage !== "undefined" ? localStorage.getItem(USER_PROFILE_KEY) : null]
+    [profileKeyString]
   );
 
   const recommendations = useMemo(() => {
@@ -59,7 +60,7 @@ const useRecommendations = (events = []) => {
             recommendationScore: result.score,
             recommendationReasons: result.reasons,
           };
-        } catch {
+        } catch (e) {
           return {
             ...event,
             recommendationScore: 0,
