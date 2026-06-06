@@ -67,39 +67,13 @@ const getResultIcon = (type) => {
 };
 
 const Hero = () => {
-   const prefersReducedMotion = useReducedMotion();
-  const controls = useAnimation();
-
-  const HEADLINE_PHRASES = phrases;
-
-  const TAGLINE_TEXTS = [
-    "Build. Connect. Innovate.",
-    "Discover Opportunities.",
-    "Join the Tech Community.",
-  ];
-
-  const SEARCH_RESULT_LIMIT = 5;
-
-  const HERO_STATS = [
-    {
-      value: 1500,
-      label: "Developers",
-      suffix: "+",
-      icon: Users,
-    },
-    {
-      value: 75,
-      label: "Events",
-      suffix: "+",
-      icon: Calendar,
-    },
-    {
-      value: 30,
-      label: "Partners",
-      suffix: "+",
-      icon: Handshake,
-    },
-  ];
+  const fadeUp = (prefersReducedMotion) => ({
+  hidden: { opacity: 0, y: 24 },
+  visible: (i = 0) => ({
+    opacity: 1, y: 0,
+    transition: { delay: prefersReducedMotion ? 0 : i * 0.07, duration: prefersReducedMotion ? 0 : 0.45, ease: "easeOut" }
+  })
+});
 
   const SEARCH_ROUTES = {
     event: "/events",
@@ -112,8 +86,6 @@ const Hero = () => {
     hackathon: Trophy,
     project: Code,
   };
-
-  const MotionLink = motion(Link);
   
   useDocumentTitle("Eventra | Home");
   const controls = useAnimation();
