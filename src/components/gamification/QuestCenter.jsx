@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
-import {
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import {
   Zap, CheckCircle, Gift, Target,
   Flame, Star, Trophy, Sparkles, Timer,
 } from 'lucide-react';
