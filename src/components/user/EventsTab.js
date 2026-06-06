@@ -52,42 +52,37 @@ const getEventStatus = (event) => {
 const EmptyState = () => {
   const prefersReducedMotion = useReducedMotion();
   return (
-    <motion.div
-      className="my-events-empty"
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
-    >
-      <div className="my-events-empty-icon">
-        <Ticket size={40} />
-      </div>
-      <h3 className="my-events-empty-title">No events yet</h3>
-      <p className="my-events-empty-sub">
-        You have not registered for or hosted any events yet. Explore upcoming events to get started.
-      </p>
-      <Link
-        to="/events"
-        className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800 my-events-empty-cta"
-      >
-        <span className="relative z-10 flex items-center">
-          Explore Events
-          <svg
-            className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </span>
-      </Link>
-    </motion.div>
-  );
-};
+  <motion.div
+    className="flex flex-col items-center justify-center text-center py-20 px-6"
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: prefersReducedMotion ? 0 : 0.4 }}
+  >
+    <div className="w-24 h-24 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-6 shadow-md">
+      <Calendar
+        size={42}
+        className="text-indigo-600 dark:text-indigo-400"
+      />
+    </div>
 
+    <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white mb-3">
+      No Events Available
+    </h2>
+
+    <p className="max-w-md text-slate-500 dark:text-slate-400 text-sm sm:text-base leading-relaxed mb-8">
+      There are currently no events to display. Explore upcoming events or
+      check back later for new activities and community events.
+    </p>
+
+    <Link
+      to="/events"
+      className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+    >
+      Explore Events
+    </Link>
+  </motion.div>
+);
+};
 const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const isOffline = useOfflineStatus();
