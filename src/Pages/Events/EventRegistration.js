@@ -327,7 +327,8 @@ const EventRegistration = () => {
           ...formData,
           priority: formData.priority,
           eventId: parseInt(eventId),
-        }
+        },
+        token
       );
 
       const regData = response.data || {};

@@ -47,7 +47,6 @@
     "react-toastify": "^11.1.0",
     "react-window": "^1.8.10",
     "recharts": "^3.8.1",
-    "vite": "8.0.16",
     "zustand": "^5.0.14"
   },
   "scripts": {
@@ -116,6 +115,7 @@
     "storybook": "^10.4.1",
     "tailwindcss": "^4.3.0",
     "typescript": "^4.9.5",
+    "vite": "^8.0.16",
     "vitest": "^4.1.8",
     "webpack": "^5.107.2"
   },

@@ -6,8 +6,8 @@ import "./NotificationBell.css";
 
 const NotificationBell = () => {
   const [open, setOpen] = useState(false);
-
   const wrapperRef = useRef(null);
+  const { notifications, unreadCount, markAllAsRead } = useNotifications();
 
   // Close on Escape key
   useEffect(() => {
@@ -30,12 +30,6 @@ const NotificationBell = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
-
-  const {
-    notifications,
-    unreadCount,
-    markAllAsRead,
-  } = useNotifications();
 
   return (
     <div className="notification-wrapper" ref={wrapperRef}>

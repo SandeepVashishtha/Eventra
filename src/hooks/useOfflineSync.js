@@ -40,6 +40,8 @@ const useOfflineSync = () => {
   const isSyncing = useRef(false);
   const isLockPending = useRef(false); // 🔥 FIX: Protects against asynchronous race conditions during Web Lock acquisition
   const conflictControllerRef = useRef(new AbortController());
+  const heartbeatIntervalRef = useRef(null);
+  const syncLockAborted = useRef(false);
 
   // Use a mutable ref to hold auth parameters to prevent stale closures
   // inside listeners without re-creating event listeners on every auth update.
@@ -52,10 +54,14 @@ const useOfflineSync = () => {
   useEffect(() => {
     return () => {
       conflictControllerRef.current.abort();
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+      }
     };
   }, []);
 
   useEffect(() => {
+    syncLockAborted.current = false;
   /**
    * resolveConflict
    *
@@ -403,7 +409,7 @@ const useOfflineSync = () => {
       }
 
       const heartbeatInterval = setInterval(() => {
-        if (syncLockAborted) { clearInterval(heartbeatInterval); return; }
+        if (syncLockAborted.current) { clearInterval(heartbeatInterval); return; }
         try {
           localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
         } catch {}
@@ -472,8 +478,6 @@ const useOfflineSync = () => {
 
     let idleId = null;
     let timeoutId = null;
-    const heartbeatIntervalRef = { current: null };
-    let syncLockAborted = false;
 
     if (navigator.onLine) {
       if (typeof window.requestIdleCallback === "function") {
@@ -500,7 +504,7 @@ const useOfflineSync = () => {
       
       // Signal the sync lock heartbeat to stop — it runs outside React's
       // lifecycle and won't be caught by the normal finally block on unmount.
-      syncLockAborted = true;
+      syncLockAborted.current = true;
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
         heartbeatIntervalRef.current = null;

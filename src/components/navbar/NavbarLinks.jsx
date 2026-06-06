@@ -90,7 +90,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
-          : "items-center gap-4 lg:gap-5 mx-2 lg:mx-4 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
+          : "items-center justify-start gap-2 min-w-max flex-nowrap overflow-visible"
       }`}
       aria-label={vertical ? "Mobile primary links" : "Primary links"}
     >
@@ -105,11 +105,11 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           return (
             <div
               key={item.name}
-              className={`relative group/nav flex items-center shrink-0 ${
+              className={`relative group/nav flex items-center ${
                 vertical ? "w-full flex-col items-start" : "flex-none"
               } ${!vertical && secondaryItemNames.includes(item.name) ? "hidden lg:flex" : ""}`}
             >
-              <div className="flex w-full items-center gap-0.5">
+              <div className={`flex w-full items-center gap-0.5 ${vertical ? "" : "justify-center"}`}>
                 <NavLink
                   to={item.href}
                   onClick={(e) => handleNavbarLinkClick(item.href, e)}
@@ -224,7 +224,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             onClick={(e) => handleNavbarLinkClick(item.href, e)}
             onMouseEnter={() => handlePrefetch(item.href)}
             className={({ isActive }) =>
-              getNavLinkClasses(isActive, secondaryItemNames.includes(item.name))
+              `${!vertical ? "flex-none min-w-max" : ""} ${getNavLinkClasses(isActive, secondaryItemNames.includes(item.name))}`
             }
           >
             <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">
