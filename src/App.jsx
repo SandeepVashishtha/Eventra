@@ -50,6 +50,7 @@ const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
+const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
 
 
 const OfflineSyncManager = () => {
