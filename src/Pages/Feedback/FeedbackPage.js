@@ -450,7 +450,7 @@ const FeedbackPage = () => {
       setSentimentScore(0);
       setErrors({});
       setIsSubmitting(false);
-    } catch (error) {
+    } catch {
       toast.error(t("feedback.toastError"));
       setIsSubmitting(false);
     }

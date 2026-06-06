@@ -17,6 +17,38 @@ import projectsData from "../../Projects/mockProjectsData.json";
 
 const CountUp = CountUpLib.default || CountUpLib;
 
+// ─── FLOATING SHAPE SUB-COMPONENT ────────────────────────────────────────────
+// Fix for #7243: Each shape owns its own useTransform hook call at the top
+// level of its own component — hooks must never be called inside .map() loops.
+/**
+ * @param {{ shape: object, index: number, scrollYProgress: object, isDark: boolean, floatShape: function, prefersReducedMotion: boolean }} props
+ */
+const PARALLAX_OFFSETS = [220, -150, 100, -180, 130, -80, 250, -120, 70];
+
+const FloatingShape = ({ shape, index, scrollYProgress, isDark, floatShape, prefersReducedMotion }) => {
+  const yShape = useTransform(scrollYProgress, [0, 1], [0, PARALLAX_OFFSETS[index]]);
+
+  return (
+    <motion.div
+      style={{
+        position: "absolute",
+        top: shape.pos.top,
+        left: shape.pos.left,
+        width: shape.size,
+        height: shape.size,
+        borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%",
+        background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
+        filter: "blur(2px)",
+        boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
+        y: prefersReducedMotion ? 0 : yShape,
+        willChange: "transform",
+      }}
+      animate={prefersReducedMotion ? {} : floatShape(index)}
+    />
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
   id: item.id,
@@ -35,19 +67,34 @@ const allSearchItems = [
   ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
 ];
 
-const HEADLINE_PHRASES = [
+const phrases = [
   "Amazing Tech Events",
   "Exciting Hackathons Today",
   "Innovative Dev Workshops",
   "Cutting-Edge Tech Meetups",
 ];
-const TAGLINE_TEXTS = ["Discover & Join"];
-const SEARCH_RESULT_LIMIT = 5;
-const HERO_STATS = [
-  { icon: Users, value: 1500, label: "Developers Joined", suffix: "+" },
-  { icon: Calendar, value: 75, label: "Events Organized", suffix: "+" },
-  { icon: Handshake, value: 30, label: "Partners & Sponsors", suffix: "+" },
+
+const TAGLINE_TEXTS = [
+  "Build",
+  "Learn",
+  "Connect",
+  "Grow",
 ];
+
+const SEARCH_RESULT_LIMIT = 8;
+
+const SEARCH_ROUTES = {
+  event: "/events",
+  hackathon: "/hackathons",
+  project: "/projects",
+};
+
+const SEARCH_ICONS = {
+  event: Calendar,
+  hackathon: Trophy,
+  project: Code,
+};
+
 const MotionLink = motion(Link);
 
 const searchIndex = new Fuse(allSearchItems, {
@@ -82,32 +129,6 @@ const Hero = () => {
   const [searchResults, setSearchResults] = useState([]);
   
   const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
-
-  const prefersReducedMotion = useReducedMotion();
-const controls = useAnimation();
-
-const SEARCH_RESULT_LIMIT = 8;
-
-const TAGLINE_TEXTS = [
-  "Build",
-  "Learn",
-  "Connect",
-  "Grow",
-];
-
-const MotionLink = motion(Link);
-
-const SEARCH_ROUTES = {
-  event: "/events",
-  hackathon: "/hackathons",
-  project: "/projects",
-};
-
-const SEARCH_ICONS = {
-  event: Calendar,
-  hackathon: Trophy,
-  project: Code,
-};
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -190,7 +211,6 @@ const SEARCH_ICONS = {
     show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
   };
 
-
   const floatShape = (i) => ({
     y: [0, -15 - i * 4, 0],
     x: [0, 12 + i * 3, 0],
@@ -238,7 +258,7 @@ const SEARCH_ICONS = {
 ];
 
   const primaryBtn = "relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900";
-  const secondaryBtn = `${primaryBtn} border border-transparent`;
+
 
   return (
     <>
