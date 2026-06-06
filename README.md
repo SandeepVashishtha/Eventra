@@ -111,6 +111,29 @@ npm run dev
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
 
+## Docker Development
+
+You can run Eventra fully containerized using Docker Compose to ensure a consistent environment:
+
+1. Clone the repository and setup your environment variables:
+```bash
+git clone https://github.com/SandeepVashishtha/Eventra.git
+cd Eventra
+cp .env.example .env
+```
+
+2. Start the local development container:
+```bash
+docker-compose up eventra-dev
+```
+The app will be available at `http://localhost:3000` with hot-reloading enabled.
+
+3. Build and test the production container locally:
+```bash
+docker-compose up --build eventra-prod
+```
+The production-optimized build will be served via Nginx at `http://localhost:8080`.
+
 ## Environment Variables
 
 Use `.env.example` as the source of truth.
