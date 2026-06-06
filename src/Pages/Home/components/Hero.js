@@ -116,8 +116,6 @@ const Hero = () => {
   const MotionLink = motion(Link);
   
   useDocumentTitle("Eventra | Home");
-  const controls = useAnimation();
-  const prefersReducedMotion = useReducedMotion();
 
   const containerRef = useRef(null);
 
