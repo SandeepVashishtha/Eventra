@@ -311,7 +311,7 @@ const EventRegistration = () => {
       setRegistered(true);
       toast.success(t("eventRegistration.toastRegistrationSuccess"));
       // addRegistration(event, formData)
-      addRegistration(event, formData, registrationId, qrToken);
+          addRegistration(event, formData);
       clearSession();
         } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
@@ -343,7 +343,7 @@ const EventRegistration = () => {
         if (success) {
           setRegistered(true);
           const offlineRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-offline-${Date.now()}`;
-          addRegistration(event, formData, offlineRegId, "");
+          addRegistration(event, formData);
           clearSession();
           toast.warning(t("eventRegistration.toastNetworkQueued"), {
             autoClose: 4000,
@@ -360,7 +360,7 @@ const EventRegistration = () => {
         setRegistered(true);
         toast.success(isEventFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
         const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
-        addRegistration(event, formData, existingRegId, "");
+        addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
         return;
@@ -920,7 +920,7 @@ const EventRegistration = () => {
                   htmlFor="additionalInfo"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  {t("eventRegistration.formAdditionalInfo")}
+                  Additional Information (Optional)
                 </label>
                 <textarea
                   id="additionalInfo"

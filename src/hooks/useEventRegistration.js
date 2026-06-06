@@ -550,8 +550,8 @@ const useEventRegistration = (eventIdParam) => {
     };
 
     try {
-      const isEventFull = event ? event.attendees >= event.maxAttendees : false;
-      if (isEventFull) {
+      const isFullLocal = event ? event.attendees >= event.maxAttendees : false;
+      if (isFullLocal) {
         await eventService.waitlistForEvent(eventId, payload);
       } else {
         await eventService.registerForEvent(eventId, payload);
@@ -574,10 +574,11 @@ const useEventRegistration = (eventIdParam) => {
           userId: user.id,
         };
 
+        const isFullLocal = event ? event.attendees >= event.maxAttendees : false;
         const success = await pushToQueue(
           {
-            actionType: isEventFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
-            endpoint,
+            actionType: isFullLocal ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            endpoint: isFullLocal ? `/api/events/${eventId}/waitlist` : `/api/events/${eventId}/register`,
             eventId: parseInt(eventId),
             payload,
           },
@@ -601,7 +602,8 @@ const useEventRegistration = (eventIdParam) => {
 
       if (isAlreadyRegistered) {
         setRegistered(true);
-        toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
+        const isFullLocal = event ? event.attendees >= event.maxAttendees : false;
+        toast.success(isFullLocal ? "Successfully joined waitlist!" : "Registration successful!");
         addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);

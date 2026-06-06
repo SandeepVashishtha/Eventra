@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
+import { apiUtils, API_ENDPOINTS } from '../../config/api';
 import { motion } from "framer-motion";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { RESET_COOLDOWN_SECONDS, secondsUntilUnlock } from '../../utils/rateLimitUtils';
@@ -70,7 +71,7 @@ const PasswordReset = () => {
 
     setLoading(true);
     try {
-      const response = await authService.resetPassword(email);
+      const response = await apiUtils.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email });
       setMessage(response.data?.message || 'Password reset link sent! Check your email.');
       lastSubmitRef.current = Date.now();
       startCooldownTimer();
