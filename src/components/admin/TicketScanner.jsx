@@ -119,7 +119,10 @@ export default function TicketScanner() {
           const items = Array.isArray(data) ? data : data.content || data.checkins || [];
           setCheckinHistory(items);
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.error("Failed to load check-in history:", err);
+          toast.error("Failed to load check-in history. The data shown may be stale.");
+        });
     }
   }, [selectedEventId, fetchStats]);
 
