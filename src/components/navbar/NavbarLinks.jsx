@@ -2,7 +2,7 @@ import { useRef, useState, useEffect} from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { NAV_ITEMS } from "./constants/navItems";
-import { prefetchRoute } from "../../utils/prefetchUtils";
+import { prefetchRoute } from "../../utils/routePrefetch";
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
@@ -14,13 +14,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     if (href === "/events") {
       try {
         window.sessionStorage.removeItem("eventra:event-filters:v1");
-      } catch (err) {
+      } catch {
         // Ignored
       }
     } else if (href === "/hackathons") {
       try {
         window.sessionStorage.removeItem("eventra:hackathon-filters:v1");
-      } catch (err) {
+      } catch {
         // Ignored
       }
     }
@@ -30,9 +30,12 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   };
 
   const handlePrefetch = (href) => {
-    if (href === "/events")prefetchRoute(() => import("../../Pages/Events/EventsPage"), "explore");
-    if (href === "/events") prefetchRoute(() => import("../../Pages/Events/EventsPage"), "explore");
-    if (href === "/saved-events") prefetchRoute(() => import("../../Pages/SavedEventsPage"), "saved");
+    if (href === "/events") prefetchRoute("events");
+    if (href === "/dashboard") prefetchRoute("dashboard");
+    if (href === "/hackathons") prefetchRoute("hackathons");
+    if (href === "/projects") prefetchRoute("projects");
+    if (href === "/profile" || href === "/dashboard/profile") prefetchRoute("profile");
+    if (href === "/") prefetchRoute("home");
   };
 
   useEffect(() => {

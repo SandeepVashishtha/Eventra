@@ -293,7 +293,7 @@ class SseMultiplexer {
   handleBroadcastMessage(msg) {
     if (!isValidBroadcastMessage(msg) || msg.tabId === this.tabId) return;
 
-    if (this.isLeader && this.lastSeenFollowers) {
+    if (this.isLeader && this.lastSeenFollowers instanceof Map) {
       this.lastSeenFollowers.set(msg.tabId, Date.now());
     }
 

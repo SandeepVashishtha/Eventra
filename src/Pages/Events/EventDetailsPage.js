@@ -11,6 +11,7 @@ import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtil
 import { logError } from "../../utils/errorLogger";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
+import LazyImage from "../../components/common/LazyImage";
 // Note: eventsMockData.json is NOT statically imported here.
 // It is loaded dynamically (and only in development/fallback mode) so that
 // the mock JSON is not bundled into the production build.
@@ -101,7 +102,7 @@ const EventDetailsPage = () => {
       await navigator.clipboard.writeText(shareUrl);
       toast.success("Share not supported. Link copied to clipboard!");
     }
-  } catch (error) {
+  } catch {
     toast.error("Failed to share event");
   }
 };
@@ -115,6 +116,11 @@ const EventDetailsPage = () => {
       latestRequestIdRef.current === requestId && !controller.signal.aborted;
 
     const fetchEvent = async () => {
+      // Guard: only update state if this is still the latest request.
+      // Without this check, a stale request starting after a newer one has
+      // already begun would unconditionally reset loading/error state,
+      // causing the race condition described in issue #5077.
+      if (!isLatestRequest()) return;
       setLoading(true);
       setCacheInfo(null);
       setError(null);
@@ -259,11 +265,12 @@ const EventDetailsPage = () => {
           >
             <section className="min-w-0 lg:col-span-2" aria-labelledby="event-details-title">
               <div className="relative mb-5 aspect-[4/3] overflow-hidden rounded-2xl shadow-xl xs:aspect-video sm:mb-8">
-                <img
+                <LazyImage
                   src={event.image}
                   alt={`${event.title} event banner`}
-                  className="w-full h-96 object-cover"
-                  loading="lazy"
+                  className="w-full h-96"
+                  imgClassName="object-cover"
+                  loading="eager"
                 />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -283,7 +290,8 @@ const EventDetailsPage = () => {
                   </div>
                   <h1
                     id="event-details-title"
-                    className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl"
+                    title={event.title}
+                    className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl break-words"
                   >
                     {event.title}
                   </h1>
