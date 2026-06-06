@@ -429,7 +429,6 @@ export class P2PFileTransferCoordinator {
     }
   }
 
-  // Regulate chunk transmission using DataChannel flow control
   async sendChunks(fileChunks) {
     const total = fileChunks.length;
     const channel = this.channel;
@@ -437,34 +436,34 @@ export class P2PFileTransferCoordinator {
 
     // Monitor bufferedAmount and pause sending when the buffer is congested
     channel.bufferedAmountLowThreshold = 65536; // 64 KB
-    let index = 0;
 
-    const sendNext = () => {
-      while (index < total) {
-        if (!channel || channel.readyState !== "open") {
-          break;
-        }
+    for (let index = 0; index < total; index++) {
+      if (channel.readyState !== "open") {
+        break;
+      }
 
-        // Check if browser DataChannel buffer is congested
-        if (channel.bufferedAmount > channel.bufferedAmountLowThreshold) {
+      // Check if browser DataChannel buffer is congested
+      if (channel.bufferedAmount > channel.bufferedAmountLowThreshold) {
+        // Await the drain event asynchronously without blocking the main thread or creating runaway timers
+        await new Promise((resolve) => {
           channel.onbufferedamountlow = () => {
             channel.onbufferedamountlow = null;
-            sendNext();
+            resolve();
           };
-          return;
-        }
-
-        const chunk = fileChunks[index];
-        channel.send(JSON.stringify({
-          chunkIndex: chunk.chunkIndex,
-          totalChunks: total,
-          data: chunk.data
-        }));
-        index++;
+        });
       }
-    };
 
-    sendNext();
+      if (channel.readyState !== "open") {
+        break;
+      }
+
+      const chunk = fileChunks[index];
+      channel.send(JSON.stringify({
+        chunkIndex: chunk.chunkIndex,
+        totalChunks: total,
+        data: chunk.data
+      }));
+    }
   }
 
   // Setup WebRTC DataChannel handlers for transferring chunks
