@@ -1,6 +1,6 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import { Search, X } from "lucide-react";
+import EmptyState from "./EmptyState";
 
 const DEFAULT_SUGGESTIONS = [
   "Check your spelling",
@@ -24,37 +24,47 @@ const SearchEmptyState = ({
   popularTags = [],
 }) => {
   const hasQuery = Boolean(query?.trim());
+  const title = hasQuery ? `No results found for "${query}"` : `No ${itemLabel} found`;
+  const description = "Try one of these suggestions or explore other sections on Eventra.";
 
   return (
-    <div className="relative z-10 mx-auto max-w-2xl text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
-        <Search size={30} />
-      </div>
-
-      <h3 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
-        {hasQuery ? `No results found for "${query}"` : `No ${itemLabel} found`}
-      </h3>
-      <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
-        Try one of these quick actions to keep exploring Eventra.
-      </p>
-
-      <ul className="mt-5 grid gap-2 text-left text-sm text-gray-700 dark:text-gray-300 sm:grid-cols-3">
+    <EmptyState
+      title={title}
+      description={description}
+      icon={Search}
+    >
+      {/* Suggestions */}
+      <ul className="mt-6 grid gap-3 text-left text-sm text-slate-700 dark:text-slate-300 sm:grid-cols-3">
         {suggestions.map((suggestion) => (
           <li
             key={suggestion}
-            className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-900/70"
+            className="
+              rounded-xl
+              border border-slate-200 dark:border-slate-700
+              bg-white dark:bg-slate-900
+              px-4 py-3
+              shadow-sm
+            "
           >
             {suggestion}
           </li>
         ))}
       </ul>
 
+      {/* Tags */}
       {popularTags.length > 0 && (
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
           {popularTags.slice(0, 6).map((tag) => (
             <span
               key={tag}
-              className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-700"
+              className="
+                rounded-full
+                border border-slate-200 dark:border-slate-700
+                bg-slate-100 dark:bg-slate-800
+                px-3 py-1
+                text-xs font-medium
+                text-slate-700 dark:text-slate-200
+              "
             >
               {tag}
             </span>
@@ -62,37 +72,71 @@ const SearchEmptyState = ({
         </div>
       )}
 
-      <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+      {/* Buttons */}
+      <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
         <button
           type="button"
           onClick={onClear}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+          className="
+            inline-flex items-center justify-center gap-2
+            rounded-xl
+            bg-blue-600
+            px-5 py-3
+            text-sm font-semibold
+            text-white
+            transition-all duration-200
+            hover:bg-blue-700
+            shadow-sm
+          "
+          aria-label="button"
         >
-          <X size={16} />
+          <X size={16} aria-hidden="true" />
           Clear Search
         </button>
+
         <Link
           to={browsePath}
           onClick={onClear}
-          className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+          className="
+            inline-flex items-center justify-center
+            rounded-xl
+            border border-slate-200 dark:border-slate-700
+            bg-white dark:bg-slate-900
+            px-5 py-3
+            text-sm font-semibold
+            text-slate-800 dark:text-white
+            transition-all duration-200
+            hover:bg-slate-50 dark:hover:bg-slate-800
+          "
         >
           {browseLabel}
         </Link>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+      {/* Footer Links */}
+      <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
         <span>Search across</span>
         {SEARCH_LINKS.map((link) => (
           <Link
             key={link.to}
-            to={hasQuery ? `${link.to}?search=${encodeURIComponent(query)}` : link.to}
-            className="font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200"
+            to={
+              hasQuery
+                ? `${link.to}?search=${encodeURIComponent(query)}`
+                : link.to
+            }
+            className="
+              font-medium
+              text-blue-600
+              hover:text-blue-700
+              dark:text-blue-400
+              dark:hover:text-blue-300
+            "
           >
             {link.label}
           </Link>
         ))}
       </div>
-    </div>
+    </EmptyState>
   );
 };
 

@@ -1,492 +1,516 @@
-import { useEffect, useState } from "react";
-import {
-  FaCode,
-  FaStar,
-  FaChevronLeft,
-  FaChevronRight,
-  FaUsers,
-} from "react-icons/fa";
+import { useMemo, useRef, useState, useEffect, useCallback } from "react";
+
+import ErrorBoundary from "../../components/common/ErrorBoundary";
+import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
-import StyledDropdown from "../../components/StyledDropdown";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { useLeaderboardStream } from "../../context/RealTimeContext";
+import {
+  filterContributors,
+  sortContributors,
+  paginateContributors,
+  totalLeaderboardPages,
+  buildRanksMap,
+  computeLeaderboardStats,
+  applyAchievementBonus,
+} from "../../utils/leaderboardUtils";
 
-// Repository constant — update if the leaderboard should point to another repo
-const GITHUB_REPO = "SandeepVashishtha/Eventra";
-// Token read from env for higher rate limits (optional)
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
-const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
+import { useTranslation } from "react-i18next";
+import { logger } from "../../utils/logger";
+import { storageManager } from "../../utils/storage/storageManager";
+import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
+import { validators } from "../../utils/storage/storageValidators";
 
-// Points mapping for PR labels (keeps scoring logic centralized)
-const POINTS = {
-  level1: 3,
-  level2: 7,
-  level3: 10,
+import LeaderboardHero from "./components/LeaderboardHero";
+import LeaderboardPodium from "./components/LeaderboardPodium";
+import LeaderboardCategoryFilters from "./components/LeaderboardCategoryFilters";
+import LeaderboardControls from "./components/LeaderboardControls";
+import LeaderboardStatsCards from "./components/LeaderboardStatsCards";
+import LeaderboardTable from "./components/LeaderboardTable";
+
+const LEADERBOARD_CACHE_TTL = 60 * 60 * 1000;
+const CONTRIBUTORS_PER_PAGE = 10;
+const SEARCH_DEBOUNCE_MS = 400;
+const CONFETTI_CONFIG = {
+  particleCount: 120,
+  spread: 75,
+  origin: { x: 0.5, y: 0.65 },
+  startVelocity: 40,
+  gravity: 0.85,
+  scalar: 1.15,
+  colors: ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b"],
 };
-const DEFAULT_MERGED_PR_POINTS = 1;
 
-const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
+const formatLastUpdated = (timestamp, t) => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
 
-const calculatePrPoints = (labels) => {
-  const levelPoints = labels.reduce((total, label) => {
-    const normalized = normalizeLabel(label);
-    return total + (POINTS[normalized] || 0);
-  }, 0);
-
-  return levelPoints || DEFAULT_MERGED_PR_POINTS;
+  if (diffMinutes < 1) return t("leaderboard.timeJustNow");
+  if (diffMinutes < 60) return t("leaderboard.timeMinutesAgo", { minutes: diffMinutes });
+  if (diffMinutes < 1440) return t("leaderboard.timeHoursAgo", { hours: Math.floor(diffMinutes / 60) });
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
+const prepareLeaderboardEntries = (entries = []) =>
+  entries.map((entry) => applyAchievementBonus({ ...entry }));
+
+const useDebouncedValue = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+const useLocalStorage = (key, initialValue) => {
+  const [storedValue, setStoredValue] = useState(() => {
+    try {
+      const item = storageManager.get(key, validators.isObject);
+      return item ?? initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  const setValue = useCallback((value) => {
+    try {
+      storageManager.set(key, value);
+      setStoredValue(value);
+    } catch (error) {
+      logger.error(`Error saving to localStorage (${key}):`, error);
+    }
+  }, [key]);
+
+  return [storedValue, setValue];
+};
+
+// ─── Main Component ───────────────────────────────────────────────
 export default function LeaderBoard() {
-  useDocumentTitle("Eventra | Leaderboard");
-  // Local state: contributors list and UI state
+  const { t } = useTranslation();
+  useDocumentTitle(t("leaderboard.pageTitle"));
+
+  const CATEGORY_FILTERS = useMemo(() => [
+    { id: "overall", label: t("leaderboard.filters.overall"), icon: "🏆", description: t("leaderboard.filters.overallDesc") },
+    { id: "monthly", label: t("leaderboard.filters.monthly"), icon: "⭐", description: t("leaderboard.filters.monthlyDesc") },
+    { id: "mentors", label: t("leaderboard.filters.mentors"), icon: "🎓", description: t("leaderboard.filters.mentorsDesc") },
+  ], [t]);
+
   const [contributors, setContributors] = useState([]);
+  const [streaks, setStreaks] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState("");
   const [search, setSearch] = useState("");
+  const [, setRecentSearches] = useLocalStorage(
+    STORAGE_KEYS.RECENT_SEARCHES,
+    { queries: [], lastUpdated: Date.now() }
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
+  const [activeCategory, setActiveCategory] = useState("overall");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Constants for pagination and UI
-  const CONTRIBUTORS_PER_PAGE = 10;
+  const lastAppliedSyncRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const prevContributorsRef = useRef([]);
 
-  // 🎉 Confetti on page load — small celebratory effect
+  const {
+    contributors: streamContributors,
+    lastSynced,
+    status: streamStatus,
+  } = useLeaderboardStream();
+
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+
+  const filteredContributors = useMemo(
+    () => filterContributors(contributors, debouncedSearch, activeCategory),
+    [contributors, debouncedSearch, activeCategory]
+  );
+
+  const sortedContributors = useMemo(
+    () => sortContributors(filteredContributors, sortBy),
+    [filteredContributors, sortBy]
+  );
+
+  const currentContributors = useMemo(
+    () => paginateContributors(sortedContributors, currentPage, CONTRIBUTORS_PER_PAGE),
+    [sortedContributors, currentPage]
+  );
+
+  const totalPages = useMemo(
+    () => totalLeaderboardPages(filteredContributors.length, CONTRIBUTORS_PER_PAGE),
+    [filteredContributors.length]
+  );
+
+  const ranksMap = useMemo(
+    () => buildRanksMap(contributors),
+    [contributors]
+  );
+
+  const stats = useMemo(
+    () => computeLeaderboardStats(contributors),
+    [contributors]
+  );
+
+  const top3 = useMemo(() => sortedContributors.slice(0, 3), [sortedContributors]);
+
+  const sortOptions = useMemo(
+    () => [
+      { label: t("leaderboard.sortOptions.points"), value: "points" },
+      { label: t("leaderboard.sortOptions.prs"), value: "prs" },
+      { label: t("leaderboard.sortOptions.username"), value: "username" },
+    ],
+    [t]
+  );
+
+  // ─── Effects ───────────────────────────────────────────────
+
+  // Initial confetti celebration
   useEffect(() => {
-    // Only visual — does not affect data or app logic
-    confetti({
-      particleCount: 150,
-      spread: 80,
-      origin: { x: 0.5, y: 0.6 },
-      startVelocity: 45,
-      gravity: 0.9,
-      scalar: 1.2,
-    });
+    const timer = setTimeout(() => {
+      confetti(CONFETTI_CONFIG);
+    }, 1000);
+    return () => clearTimeout(timer);
   }, []);
 
-  // Load data from cache or network
-  const loadLeaderboardData = async () => {
-    setLoading(true);
-    const cachedData = localStorage.getItem(LEADERBOARD_CACHE_KEY);
-    const now = Date.now();
+  useEffect(() => {
+    if (streamContributors.length === 0 || lastSynced === lastAppliedSyncRef.current) return;
 
-    // If cached data exists and is fresh (1 hour), use it to avoid rate limits
-    if (cachedData) {
-      try {
-        const { data, timestamp } = JSON.parse(cachedData);
-        if (now - timestamp < 60 * 60 * 1000) {
-          setContributors(data);
-          setLastUpdated(
-            `Last updated: ${new Date(timestamp).toLocaleString()} (cached)`
-          );
-          setLoading(false);
-          return;
-        }
-      } catch (error) {
-        // If cache parse fails, proceed to fetch fresh data
-        console.error("Error parsing cached data:", error);
-      }
-    }
-    await fetchContributors();
-  };
+    lastAppliedSyncRef.current = lastSynced;
+    const preparedContributors = prepareLeaderboardEntries(streamContributors);
 
-  // Fetch contributors and PRs from GitHub REST API
-  const fetchContributors = async () => {
+    setContributors(preparedContributors);
+    setLastUpdated(t("leaderboard.statusLive", { time: formatLastUpdated(lastSynced, t) }));
+
     try {
-      // contributorsMap accumulates scoring per username
-      let contributorsMap = {};
-      let page = 1;
-      let hasMore = true;
+      storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
+        data: preparedContributors,
+        timestamp: lastSynced,
+      });
+    } catch (err) {
+      logger.warn("Failed to update leaderboard cache:", err);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streamContributors, lastSynced]);
 
-      // Fetch contributor metadata (avatar, profile)
-      const contributorsRes = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/contributors`,
-        { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
-      );
+  useEffect(() => {
+    if (contributors.length === 0) {
+      prevContributorsRef.current = [];
+      setStreaks({});
+      return;
+    }
 
-      if (!contributorsRes.ok) throw new Error("Failed to fetch contributors");
-      const contributorsData = await contributorsRes.json();
-      const contributorsInfo = {};
+    setStreaks((prevStreaks) => {
+      const updatedStreaks = { ...prevStreaks };
+      const prevRanks = new Map(prevContributorsRef.current.map((c, idx) => [c.username, idx + 1]));
 
-      // Store basic contributor info for later use when building the map
-      contributorsData.forEach((contributor) => {
-        // Note: contributor.name might be undefined in this endpoint response
-        contributorsInfo[contributor.login] = {
-          name: contributor.name || contributor.login,
-          avatar: contributor.avatar_url,
-          profile: contributor.html_url,
-        };
+      contributors.forEach((c, newIdx) => {
+        const username = c.username;
+        const newRank = newIdx + 1;
+        const prevRank = prevRanks.get(username);
+        const currentStreak = prevStreaks[username] || { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+
+        if (prevRank !== undefined) {
+          const rankDifference = prevRank - newRank;
+          let consecutiveUp = rankDifference > 0 ? currentStreak.consecutiveUp + 1 : rankDifference < 0 ? 0 : currentStreak.consecutiveUp;
+          const onFire = rankDifference >= 3 || consecutiveUp >= 3;
+          updatedStreaks[username] = { consecutiveUp, onFire, rankDifference };
+        } else {
+          updatedStreaks[username] = { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+        }
       });
 
-      // Paginate through closed PRs to find merged GSoc-related PRs
-      while (hasMore) {
-        const res = await fetch(
-          `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
-          { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
+      return updatedStreaks;
+    });
+
+    prevContributorsRef.current = contributors;
+  }, [contributors]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const cached = storageManager.get(
+          STORAGE_KEYS.LEADERBOARD_CACHE,
+          validators.isObject
         );
 
-        if (!res.ok) {
-          console.warn(`GitHub API request failed with status: ${res.status}`);
-          hasMore = false;
-          break;
-        }
-
-        const prs = await res.json();
-        
-        // Ensure standard array shape to avoid runtime TypeError crash
-        if (!Array.isArray(prs) || prs.length === 0) {
-          hasMore = false;
-          break;
-        }
-
-        prs.forEach((pr) => {
-          // Only count merged PRs
-          if (!pr.merged_at) return;
-
-          // Normalize labels for matching against POINTS map
-          const labels = pr.labels.map((l) => l.name.toLowerCase());
-          const hasGsocLabel = labels.some(
-            (label) => label.includes("gssoc") || label.includes("gsoc")
-          );
-          // Skip PRs that are not GSoc-related
-          if (!hasGsocLabel) return;
-
-          const author = pr.user.login;
-          const points = calculatePrPoints(labels);
-
-          // Initialize contributor entry if needed
-          if (!contributorsMap[author]) {
-            const contributorInfo = contributorsInfo[author] || {
-              name: author,
-              avatar: pr.user.avatar_url,
-              profile: pr.user.html_url,
-            };
-            contributorsMap[author] = {
-              username: author,
-              name: contributorInfo.name,
-              avatar: contributorInfo.avatar,
-              profile: contributorInfo.profile,
-              points: 0,
-              prs: 0,
-            };
+        if (cached?.data && cached?.timestamp) {
+          const age = Date.now() - cached.timestamp;
+          if (age < LEADERBOARD_CACHE_TTL) {
+            if (isMounted) {
+              setContributors(cached.data);
+              setLastUpdated(t("leaderboard.statusCached", { time: formatLastUpdated(cached.timestamp, t) }));
+              setLoading(false);
+              return;
+            }
           }
+        }
 
-          // Increment totals for this contributor
-          contributorsMap[author].points += points;
-          contributorsMap[author].prs += 1;
-        });
+        const { data } = await fetchWithTimeout("/api/leaderboard", {}, 15000);
 
-        // Proceed to next page of PRs
-        page++;
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid leaderboard data format");
+        }
+
+        const preparedData = prepareLeaderboardEntries(data);
+
+        if (isMounted) {
+          const sorted = [...preparedData].sort((a, b) => b.points - a.points);
+          setContributors(sorted);
+          setLastUpdated(t("leaderboard.statusUpdated", { time: formatLastUpdated(Date.now(), t) }));
+
+          storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
+            data: sorted,
+            timestamp: Date.now(),
+          });
+        }
+      } catch (err) {
+        logger.error("Failed to load leaderboard:", err);
+        if (isMounted) {
+          setError(t("leaderboard.errorLoadFailed"));
+          setContributors([]);
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
+    };
 
-      // Convert map to array and sort by points descending
-      const sortedContributors = Object.values(contributorsMap).sort(
-        (a, b) => b.points - a.points
-      );
-
-      // Update UI state and cache the results for future loads
-      setContributors(sortedContributors);
-      setLastUpdated(new Date().toLocaleString());
-      localStorage.setItem(
-        LEADERBOARD_CACHE_KEY,
-        JSON.stringify({ data: sortedContributors, timestamp: Date.now() })
-      );
-    } catch (err) {
-      // Log errors but keep the app functional (shows empty state)
-      console.error("Error fetching contributors:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Initial data load on component mount
-  useEffect(() => {
-    loadLeaderboardData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Filter & sort
-  const filteredContributors = contributors.filter((c) => {
-    // Simple search across username and name
-    const q = search.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      c.username.toLowerCase().includes(q) ||
-      (c.name && c.name.toLowerCase().includes(q))
-    );
-  });
+  const handleSearchChange = useCallback((e) => {
+    const query = e.target.value;
+    setSearch(query);
+    setCurrentPage(1);
 
-  const sortedContributors = [...filteredContributors].sort((a, b) => {
-    // Sorting options: points, prs, username
-    if (sortBy === "points") return b.points - a.points;
-    if (sortBy === "prs") return b.prs - a.prs;
-    if (sortBy === "username") return a.username.localeCompare(b.username);
-    return 0;
-  });
+    if (query.trim().length >= 2) {
+      setRecentSearches((prev) => {
+        const queries = [query, ...prev.queries.filter((q) => q !== query)].slice(0, 5);
+        return { queries, lastUpdated: Date.now() };
+      });
+    }
+  }, [setRecentSearches]);
 
-  // Pagination calculations
-  const indexOfLast = currentPage * CONTRIBUTORS_PER_PAGE;
-  const indexOfFirst = indexOfLast - CONTRIBUTORS_PER_PAGE;
-  const currentContributors = sortedContributors.slice(
-    indexOfFirst,
-    indexOfLast
-  );
-  const totalPages = Math.ceil(
-    sortedContributors.length / CONTRIBUTORS_PER_PAGE
-  );
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
 
-  // Build a quick lookup for ranks based on the original sorted list
-  const ranksMap = {};
-  contributors.forEach((c, i) => {
-    ranksMap[c.username] = i + 1;
-  });
+    setIsRefreshing(true);
+    try {
+      const { data } = await fetchWithTimeout("/api/leaderboard", {}, 10000);
+      if (Array.isArray(data)) {
+        const preparedData = prepareLeaderboardEntries(data);
+        const sorted = [...preparedData].sort((a, b) => b.points - a.points);
+        setContributors(sorted);
+        setLastUpdated(t("leaderboard.statusRefreshed", { time: formatLastUpdated(Date.now(), t) }));
 
-  // Calculate aggregate stats used in the dashboard cards
-  const stats = {
-    totalContributors: contributors.length,
-    flooredTotalPRs: contributors.reduce((sum, c) => sum + c.prs, 0),
-    flooredTotalPoints: contributors.reduce((sum, c) => sum + c.points, 0),
-  };
+        storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
+          data: sorted,
+          timestamp: Date.now(),
+        });
 
-  const sortOptions = [
-    { label: "Points", value: "points" },
-    { label: "PRs", value: "prs" },
-    { label: "Username", value: "username" },
-  ];
+        confetti({ ...CONFETTI_CONFIG, particleCount: 50, spread: 50 });
+      }
+    } catch (err) {
+      logger.error("Refresh failed:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRefreshing]);
+
+  const handleExport = useCallback(() => {
+    const exportData = sortedContributors.map((c) => ({
+      rank: ranksMap[c.username],
+      username: c.username,
+      name: c.name || "",
+      points: c.points,
+      prs: c.prs,
+      profile: c.profile,
+    }));
+
+    const csv = [
+      ["Rank", "Username", "Name", "Points", "PRs", "Profile"],
+      ...exportData.map((row) => [
+        row.rank,
+        row.username,
+        row.name,
+        row.points,
+        row.prs,
+        row.profile,
+      ]),
+    ]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const objectUrl = URL.createObjectURL(blob);
+    link.href = objectUrl;
+    link.download = `eventra-leaderboard-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 100);
+  }, [sortedContributors, ranksMap]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    }
+    if (e.key === "ArrowLeft" && currentPage > 1) {
+      setCurrentPage((p) => p - 1);
+    }
+    if (e.key === "ArrowRight" && currentPage < totalPages) {
+      setCurrentPage((p) => p + 1);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy, activeCategory]);
+
+  const handleCategoryChange = useCallback((id) => {
+    setActiveCategory(id);
+    setCurrentPage(1);
+  }, []);
+
+  const handleSortChange = useCallback((value) => {
+    setSortBy(value);
+  }, []);
+
+  // ─── Podium Configuration ───────────────────────────────────────────────
+  const podiumConfig = useMemo(() => [
+    {
+      position: t("leaderboard.podiumPositions.2nd"),
+      contributor: top3[1],
+      orderClass: "order-2 md:order-1",
+      styling: {
+        borderClass: "border-slate-300 dark:border-slate-700",
+        ringClass: "from-slate-200 to-zinc-400",
+        title: t("leaderboard.podiumTitles.2nd"),
+        badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300",
+        size: "h-18 w-18",
+        pointsClass: "text-slate-800 dark:text-slate-100",
+        medalClass: "bg-slate-300 text-slate-800",
+      },
+    },
+    {
+      position: t("leaderboard.podiumPositions.1st"),
+      contributor: top3[0],
+      orderClass: "order-1 md:order-2",
+      styling: {
+        borderClass: "border-yellow-400 dark:border-yellow-500",
+        ringClass: "from-yellow-300 via-amber-400 to-yellow-500",
+        title: t("leaderboard.podiumTitles.1st"),
+        badgeClass: "bg-yellow-400 text-yellow-950 shadow-[0_2px_10px_rgba(234,179,8,0.3)]",
+        size: "h-22 w-22",
+        pointsClass: "text-amber-500",
+        medalClass: "bg-gradient-to-r from-yellow-400 to-amber-500 text-amber-950",
+      },
+      isFirst: true,
+    },
+    {
+      position: t("leaderboard.podiumPositions.3rd"),
+      contributor: top3[2],
+      orderClass: "order-3 md:order-3",
+      styling: {
+        borderClass: "border-amber-600 dark:border-orange-700",
+        ringClass: "from-amber-600 to-orange-500",
+        title: t("leaderboard.podiumTitles.3rd"),
+        badgeClass: "bg-orange-100 dark:bg-orange-950/30 text-orange-600 dark:text-orange-300 border border-orange-200/40",
+        size: "h-18 w-18",
+        pointsClass: "text-slate-800 dark:text-slate-100",
+        medalClass: "bg-amber-600 text-white",
+      },
+    },
+  ].filter((p) => p.contributor), [top3, t]);
 
   return (
-    <div className="bg-white dark:bg-black pt-20 md:pt-24 py-12 sm:py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          {/* UPDATED: Header text */}
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            <span className="block text-indigo-700 dark:text-indigo-400">
-              GSSoC'25
-            </span>
-            <span className="text-gray-800 dark:text-gray-200">
-              Contributor Leaderboard
-            </span>
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Recognizing the amazing contributions from our open source community
-          </p>
-        </div>
+    <ErrorBoundary level="feature">
+      <div
+        className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(224,233,242,0.52),_transparent_42%),linear-gradient(180deg,#f8fbfe_0%,#eef4fa_100%)] pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300"
+        role="main"
+        aria-labelledby="leaderboard-heading"
+      >
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <LeaderboardHero stats={stats} loading={loading} currentContributors={currentContributors} />
 
-        {/* Search + Modern Dropdown */}
-        <div className="flex justify-center items-end mb-6 space-x-4">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => {
-              // When searching, reset to first page to show results from start
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            placeholder="Search contributors..."
-            className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-gray-800 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          <LeaderboardPodium top3={top3} podiumConfig={podiumConfig} />
+
+          <LeaderboardCategoryFilters
+            activeCategory={activeCategory}
+            onCategoryChange={handleCategoryChange}
           />
-          <StyledDropdown
-            label="Sort by"
-            value={sortOptions.find((opt) => opt.value === sortBy)?.label || "Select Sort"}
-            options={sortOptions.map((opt) => opt.label)}
-            onChange={(value) => {
-              const selectedOption = sortOptions.find(
-                (opt) => opt.label === value
-              );
-              if (selectedOption) setSortBy(selectedOption.value);
-            }}
-            placeholder="Sort by"
+
+          <LeaderboardControls
+            search={search}
+            onSearchChange={handleSearchChange}
+            sortBy={sortBy}
+            onSortChange={handleSortChange}
+            onRefresh={handleRefresh}
+            onExport={handleExport}
+            isRefreshing={isRefreshing}
+            searchInputRef={searchInputRef}
           />
-        </div>
 
-        {/* stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Contributors Card */}
-          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center">
-              <div className="p-3 rounded-xl mr-4 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
-                <FaUsers className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Contributors
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loading ? "..." : stats.totalContributors}
-                </p>
-              </div>
-            </div>
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm text-slate-600 backdrop-blur-xl">
+            <span>
+              {t("leaderboard.showingContributors", { count: currentContributors.length, total: sortedContributors.length })}
+            </span>
+            <span>
+              {t("leaderboard.pageOf", { current: currentPage, total: totalPages })}
+            </span>
           </div>
-          {/* Pull Requests Card */}
-          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center">
-              <div className="p-3 rounded-xl mr-4 bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400">
-                <FaCode className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Pull Requests
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loading ? "..." : stats.flooredTotalPRs}
-                </p>
-              </div>
-            </div>
-          </div>
-          {/* Total Points Card */}
-          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center">
-              <div className="p-3 rounded-xl mr-4 bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400">
-                <FaStar className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Points
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loading ? "..." : stats.flooredTotalPoints}
-                </p>
-              </div>
-            </div>
+
+          <LeaderboardStatsCards stats={stats} loading={loading} />
+
+          <LeaderboardTable
+            loading={loading}
+            error={error}
+            currentContributors={currentContributors}
+            sortedContributors={sortedContributors}
+            ranksMap={ranksMap}
+            streaks={streaks}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            setCurrentPage={setCurrentPage}
+            setSearch={setSearch}
+            setActiveCategory={setActiveCategory}
+            setSortBy={setSortBy}
+            streamStatus={streamStatus}
+            lastUpdated={lastUpdated}
+            onRefresh={handleRefresh}
+          />
+
+          <div className="mt-6 text-center">
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono">/</kbd> to search &bull;{" "}
+              <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono">&larr;</kbd>{" "}
+              <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono">&rarr;</kbd> to navigate pages
+            </p>
           </div>
         </div>
 
-        {/* UPDATED: Table container */}
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden">
-          {loading ? (
-            <div className="overflow-x-auto">{/* Skeleton loader */}</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-500">
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Rank
-                    </th>
-                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Contributor
-                    </th>
-                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Points
-                    </th>
-                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      PRs
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-gradient-to-b from-indigo-50 to-white dark:from-gray-900  dark:to-black  divide-y divide-gray-400 dark:divide-gray-500">
-                  {currentContributors.map((c) => {
-                    const rank = ranksMap[c.username];
-                    return (
-                      <tr
-                        key={c.username}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 border-b border-gray-100 dark:border-gray-700"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            // UPDATED: Rank badges
-                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-medium ${
-                              rank === 1
-                                ? "bg-yellow-500 text-white"
-                                : rank === 2
-                                ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
-                                : rank === 3
-                                ? "bg-amber-800 text-white"
-                                : "bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
-                            }`}
-                          >
-                            {rank}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <img loading="lazy"
-                                className="h-10 w-10 rounded-full border-2 border-indigo-200 dark:border-gray-600"
-                                src={c.avatar}
-                                alt={c.username}
-                              />
-                            </div>
-                            <div className="ml-4">
-                              <a
-                                href={c.profile}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                              >
-                                {c.username}
-                              </a>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {c.name && c.name !== c.username ? c.name : ""}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <FaStar className="text-yellow-400 mr-1" />
-                            <span className="font-medium">{c.points}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <FaCode className="text-indigo-500 mr-1" />
-                            <span className="font-medium">{c.prs}</span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center space-x-2 py-4 bg-white dark:bg-black/80">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 flex items-center bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                  >
-                    <FaChevronLeft />
-                  </button>
-                  {[...Array(totalPages)].map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`px-3 py-1 text-sm rounded-lg border ${
-                        currentPage === i + 1
-                          ? "bg-indigo-500 text-white border-indigo-500"
-                          : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(p + 1, totalPages))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 flex items-center bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                  >
-                    <FaChevronRight />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* UPDATED: Table footer */}
-          <div className="bg-gray-50 dark:bg-black/70 px-6 py-2 text-right border-t border-gray-200 dark:border-gray-700">
-            {lastUpdated && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {lastUpdated}
-              </span>
-            )}
-          </div>
-        </div>
+        <GSSoCContribution />
       </div>
-      <GSSoCContribution />
-    </div>
+    </ErrorBoundary>
   );
 }
