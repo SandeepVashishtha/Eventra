@@ -7,6 +7,7 @@ import { showAuthToast } from "../../utils/toast";
 import { ValidationMessage } from "../forms";
 import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { validate as fieldValidators } from "../../validation";
+import { getSafeRedirectPath } from "../../utils/redirectValidation";
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
@@ -21,12 +22,14 @@ const LoginForm = () => {
   const location = useLocation();
   const { login, authRequest } = useAuth();
   const from = location.state?.from;
-  const redirectPath =
+  const redirectPath = getSafeRedirectPath(
     typeof from === "string"
       ? from
       : from?.pathname
         ? `${from.pathname}${from.search || ""}${from.hash || ""}`
-        : "/dashboard";
+        : "/dashboard",
+    "/dashboard"
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;

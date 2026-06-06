@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import { getSafeRedirectPath } from '../../utils/redirectValidation';
 
 const LoginForm = lazy(() => import('./LoginForm'));
 const SignupForm = lazy(() => import('./SignupForm'));
@@ -35,10 +36,8 @@ const AuthPage = () => {
     if (isAuthenticated()) {
       // 🔥 FIX 1B: The Infinite Redirect Guard
       // Prevents redirecting authenticated users back into an auth-loop.
-      const safeRedirectPath = 
-        rawRedirectPath.includes('/login') || rawRedirectPath.includes('/register')
-          ? '/dashboard' 
-          : rawRedirectPath;
+      // Protected by an allowlist-based validation mechanism to prevent unvalidated redirects.
+      const safeRedirectPath = getSafeRedirectPath(rawRedirectPath, '/dashboard');
 
       navigate(safeRedirectPath, { replace: true });
     }
