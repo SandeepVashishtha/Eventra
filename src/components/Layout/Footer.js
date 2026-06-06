@@ -88,7 +88,7 @@ const footerLinks = {
     },
     {
       name: "API Docs",
-      href: "/apiDocs",
+      href: "/api-docs",
       icon: <FaBookOpen size={14} />,
     },
   ],
@@ -218,7 +218,7 @@ const Newsletter = () => {
 
         setEmail("");
       }
-    } catch (error) {
+    } catch {
       // 🔥 FIX: Guard state updates
       if (isMounted.current) {
         setFeedback({

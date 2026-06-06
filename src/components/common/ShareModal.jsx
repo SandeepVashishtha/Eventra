@@ -32,6 +32,11 @@ const ShareModal = ({ isOpen, onClose, event }) => {
       return null;
     }
 
+    if (!event.id) {
+      console.warn("[ShareModal] event.id is missing — share URL cannot be constructed.");
+      return null;
+    }
+
     const shareUrl = `${window.location.origin}/events/${event.id}`;
     if (!isValidShareUrl(shareUrl)) {
       console.warn("[ShareModal] Rejected invalid share URL:", shareUrl);
@@ -109,7 +114,7 @@ const ShareModal = ({ isOpen, onClose, event }) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.2 }}
-            onClick={(event) => event.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800/40">
               <h2 id="share-modal-title" className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
@@ -125,6 +130,9 @@ const ShareModal = ({ isOpen, onClose, event }) => {
                   alt={shareData.title}
                   className="h-full w-full object-cover"
                   loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
                 />
               </div>
 

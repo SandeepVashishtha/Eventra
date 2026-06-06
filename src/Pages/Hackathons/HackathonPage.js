@@ -10,6 +10,7 @@ import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 import BackToTopButton from "../../components/common/BackToTopButton";
+import VirtualizedHackathonGrid from "../../components/common/VirtualizedHackathonGrid";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { filterHackathons } from "./hackathonFilterUtils.mjs";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
@@ -17,6 +18,7 @@ import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import useDebounce from "../../hooks/useDebounce";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -127,9 +129,8 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
             {options.map((opt) => (
               <li
                 key={opt}
-                className={`px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-primary/10 text-text-light text-sm transition-colors ${
-                  opt === value ? "font-semibold bg-primary/10 text-primary" : ""
-                }`}
+                className={`px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-primary/10 text-text-light text-sm transition-colors ${opt === value ? "font-semibold bg-primary/10 text-primary" : ""
+                  }`}
                 onClick={() => {
                   onChange(opt);
                   setOpen(false);
@@ -179,7 +180,7 @@ const HackathonHub = () => {
 
     let savedFilters = {};
     try {
-      savedFilters = JSON.parse(
+      savedFilters = safeJsonParse(
         window.sessionStorage.getItem(HACKATHON_FILTER_STORAGE_KEY) || "{}"
       );
     } catch {
@@ -417,25 +418,6 @@ const HackathonHub = () => {
         onTagSelect={handleTagSelect}
       />
 
-      <motion.div
-        ref={cardsSectionRef}
-        key={activeTab}
-        className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-        variants={{
-          hidden: { opacity: 0 },
-          show: {
-            opacity: 1,
-            transition: { staggerChildren: 0.1, delayChildren: 0.3 },
-          },
-        }}
-        initial="hidden"
-        animate="show"
-        exit={{ opacity: 0 }}
-      >
-        {hackathons.map((hackathon) => (
-          <div key={hackathon.id}>{/* HackathonCard component unchanged */}</div>
-        ))}
-      </motion.div>
 
       {/* TEAM MATCHMAKING SECTION */}
       <TeamMatchmaking />
@@ -497,11 +479,10 @@ const HackathonHub = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
-                  showFilters
-                    ? "bg-primary text-white border-primary shadow-glow-sm"
-                    : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 shadow-sm dark:shadow-none"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${showFilters
+                  ? "bg-primary text-white border-primary shadow-glow-sm"
+                  : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 shadow-sm dark:shadow-none"
+                  }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -517,14 +498,14 @@ const HackathonHub = () => {
                 filters.prize ||
                 filters.location ||
                 selectedTags.length > 0) && (
-                <button
-                  onClick={resetFilters}
-                  className="text-xs text-primary hover:opacity-90 font-semibold border border-primary/20 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all"
-                  aria-label="Clear hackathon filters"
-                >
-                  Clear filters
-                </button>
-              )}
+                  <button
+                    onClick={resetFilters}
+                    className="text-xs text-primary hover:opacity-90 font-semibold border border-primary/20 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all"
+                    aria-label="Clear hackathon filters"
+                  >
+                    Clear filters
+                  </button>
+                )}
             </div>
           </div>
 
@@ -601,11 +582,10 @@ const HackathonHub = () => {
                         <button
                           key={tag}
                           onClick={() => handleTagSelect(tag)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${
-                            selectedTags.includes(tag)
-                              ? "bg-primary text-white border-primary shadow-glow-sm"
-                              : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 hover:text-primary shadow-sm dark:shadow-none"
-                          }`}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${selectedTags.includes(tag)
+                            ? "bg-primary text-white border-primary shadow-glow-sm"
+                            : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 hover:text-primary shadow-sm dark:shadow-none"
+                            }`}
                         >
                           {tag}
                         </button>
@@ -635,11 +615,10 @@ const HackathonHub = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${
-                  activeTab === tab.key
-                    ? "bg-gradient-to-r from-primary via-primary to-secondary text-white border-primary/50 shadow-glow-sm scale-105"
-                    : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/30 hover:text-primary shadow-sm dark:shadow-none"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${activeTab === tab.key
+                  ? "bg-gradient-to-r from-primary via-primary to-secondary text-white border-primary/50 shadow-glow-sm scale-105"
+                  : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/30 hover:text-primary shadow-sm dark:shadow-none"
+                  }`}
               >
                 {tab.label}
               </button>
@@ -671,23 +650,27 @@ const HackathonHub = () => {
                 ))}
               </div>
             ) : filteredHackathons.length > 0 ? (
-              <motion.div
-                key={activeTab}
-                className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-                exit={{ opacity: 0 }}
-              >
-                {filteredHackathons.map((hackathon, index) => (
-                  <HackathonCard
-                    key={hackathon.id}
-                    hackathon={hackathon}
-                    data-aos="flip-up"
-                    data-aos-delay={index * 100}
-                  />
-                ))}
-              </motion.div>
+              filteredHackathons.length > 50 ? (
+                <VirtualizedHackathonGrid hackathons={filteredHackathons} />
+              ) : (
+                <motion.div
+                  key={activeTab}
+                  className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit={{ opacity: 0 }}
+                >
+                  {filteredHackathons.map((hackathon, index) => (
+                    <HackathonCard
+                      key={hackathon.id}
+                      hackathon={hackathon}
+                      data-aos="flip-up"
+                      data-aos-delay={index * 100}
+                    />
+                  ))}
+                </motion.div>
+              )
             ) : (
               <motion.div
                 className="relative overflow-hidden rounded-3xl p-10 text-center shadow-md dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-border bg-card-bg"
@@ -767,10 +750,10 @@ const HackathonHub = () => {
 
                   <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                     {debouncedSearchQuery ||
-                    filters.difficulty ||
-                    filters.prize ||
-                    filters.location ||
-                    selectedTags.length > 0
+                      filters.difficulty ||
+                      filters.prize ||
+                      filters.location ||
+                      selectedTags.length > 0
                       ? "No hackathons match your current filters. Try adjusting your search or filters."
                       : "Check back later for exciting new hackathons!"}
                   </p>
@@ -789,7 +772,7 @@ const HackathonHub = () => {
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => {}}
+                      onClick={() => { }}
                       className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-bg hover:bg-card-bg shadow-md transition-all"
                     >
                       Explore Hackathons
