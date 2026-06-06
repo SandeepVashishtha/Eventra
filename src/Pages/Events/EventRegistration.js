@@ -481,7 +481,12 @@ const EventRegistration = () => {
       return;
     }
 
-    proceedWithRegistration();
+    try {
+      await proceedWithRegistration();
+    } finally {
+      isSubmittingRef.current = false;
+      registrationLocks.delete(eventId);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
 
