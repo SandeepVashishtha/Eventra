@@ -117,7 +117,7 @@ const socialLinks = [
   },
   {
     name: "Discord",
-    href: "https://discord.gg/eventra",
+    href: "https://discord.gg/6MQ9r5nHT", 
     icon: (
       <FaDiscord
         className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
