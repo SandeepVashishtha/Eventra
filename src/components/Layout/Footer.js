@@ -40,7 +40,7 @@ const footerLinks = {
     },
     {
       name: "Community Events",
-      href: "/communityEvent",
+      href: "/community-event",
       icon: <FaUsers size={14} />,
     },
     {
@@ -88,7 +88,7 @@ const footerLinks = {
     },
     {
       name: "API Docs",
-      href: "/apiDocs",
+      href: "/api-docs",
       icon: <FaBookOpen size={14} />,
     },
   ],
