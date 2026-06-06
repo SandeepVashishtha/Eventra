@@ -176,7 +176,7 @@ export const MyEventsProvider = ({ children }) => {
     setMyEvents((prev) => prev.filter((r) => r.eventId !== eventId));
     // Trigger automatic promotion from the waitlist
     import("../utils/waitlistUtils.js").then(({ promoteNextUser }) => {
-      promoteNextUser(eventId);
+      return promoteNextUser(eventId);
     }).catch(() => {});
   }, []);
 
