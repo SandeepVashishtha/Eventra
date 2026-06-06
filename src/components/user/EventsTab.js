@@ -21,8 +21,10 @@ import StatusBadge from "../common/StatusBadge";
 import { safeParseJson } from "../../utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
+import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import LazyImage from "../common/LazyImage";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -49,40 +51,8 @@ const getEventStatus = (event) => {
   return "Upcoming";
 };
 
-const EmptyState = () => {
-  const prefersReducedMotion = useReducedMotion();
-  return (
-  <motion.div
-    className="flex flex-col items-center justify-center text-center py-20 px-6"
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: prefersReducedMotion ? 0 : 0.4 }}
-  >
-    <div className="w-24 h-24 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-6 shadow-md">
-      <Calendar
-        size={42}
-        className="text-indigo-600 dark:text-indigo-400"
-      />
-    </div>
 
-    <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white mb-3">
-      No Events Available
-    </h2>
 
-    <p className="max-w-md text-slate-500 dark:text-slate-400 text-sm sm:text-base leading-relaxed mb-8">
-      There are currently no events to display. Explore upcoming events or
-      check back later for new activities and community events.
-    </p>
-
-    <Link
-      to="/events"
-      className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
-    >
-      Explore Events
-    </Link>
-  </motion.div>
-);
-};
 const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const isOffline = useOfflineStatus();
@@ -113,10 +83,12 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
 
       {event?.image && (
         <div className="relative h-48 overflow-hidden">
-          <img
+          <LazyImage
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            aspectRatio="16/9"
+            className="w-full h-full"
+            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
         </div>
@@ -246,10 +218,12 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
     >
       {event?.image && (
         <div className="relative h-48 overflow-hidden">
-          <img
+          <LazyImage
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            aspectRatio="16/9"
+            className="w-full h-full"
+            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
         </div>
@@ -547,7 +521,13 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
       )}
 
       {registeredCount + hostedCount === 0 ? (
-        <EmptyState />
+        <EmptyState
+          title="No events yet"
+          description="You have not registered for or hosted any events yet. Explore upcoming events to get started."
+          icon={Ticket}
+          actionLabel="Explore Events"
+          actionPath="/events"
+        />
       ) : filteredEvents.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }}

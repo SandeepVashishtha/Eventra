@@ -14,6 +14,7 @@ import {
   Eye,
   Languages,
 } from "lucide-react";
+import { safeJsonParse } from "../../../utils/safeJsonParse";
 import {
   fetchRepository,
   fetchContributors,
@@ -32,7 +33,7 @@ const readCache = () => {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
-    const { data, ts } = JSON.parse(raw);
+    const { data, ts } = safeJsonParse(raw, {});
     return Date.now() - ts > CACHE_MS ? null : data;
   } catch {
     return null;

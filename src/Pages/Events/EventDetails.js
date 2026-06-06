@@ -53,11 +53,21 @@ const EventDetails = () => {
     const requestId = ++latestRequestIdRef.current;
     const isLatestRequest = () => latestRequestIdRef.current === requestId;
 
+    // FIX (#5077): AbortController cancels the in-flight network request when
+    // the user navigates away before it completes, preventing the response
+    // from a stale request from ever reaching setState.
+    const controller = new AbortController();
+
+    // Guard: only reset state for the latest request. A stale in-flight
+    // request must not clobber the loading state started by a newer one.
+    if (!isLatestRequest()) return;
     setFetchLoading(true);
     setFetchError(null);
 
     try {
-      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), {
+        signal: controller.signal,
+      });
       if (!isLatestRequest()) return;
       if (res.ok && res.data) {
         const raw = res.data?.data ?? res.data;
@@ -65,7 +75,10 @@ const EventDetails = () => {
       } else {
         throw new Error(res.data?.message || `Event not found (${res.status})`);
       }
-    } catch {
+    } catch (err) {
+      // AbortError means the request was intentionally cancelled — do not
+      // update state or show an error to the user.
+      if (err?.name === 'AbortError') return;
       if (!isLatestRequest()) return;
       // Fall back to bundled mock data when the API is unreachable
       const fallback = mockEvents.find((item) => String(item.id) === eventId);
@@ -79,10 +92,17 @@ const EventDetails = () => {
         setFetchLoading(false);
       }
     }
+
+    // Return the abort function so the useEffect cleanup can cancel the request
+    return () => controller.abort();
   }, [eventId]);
 
   useEffect(() => {
-    loadEvent();
+    // loadEvent returns an abort function; wire it up as the cleanup so
+    // navigating away mid-request cancels the in-flight fetch (#5077).
+    let cancel;
+    loadEvent().then((abortFn) => { cancel = abortFn; });
+    return () => { if (cancel) cancel(); };
   }, [loadEvent]);
 
   // Safely handle localStorage cache updates via hook
@@ -217,7 +237,7 @@ const EventDetails = () => {
            toast.success("Event link copied to clipboard!");   
            setLinkCopied(true);                                
            setTimeout(() => setLinkCopied(false), 2000);
-    } catch (err) {
+    } catch {
        toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
@@ -282,7 +302,7 @@ const EventDetails = () => {
                 {event.type}
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">{event.title}</h1>
+                <h1 title={event.title} className="text-4xl sm:text-5xl font-extrabold tracking-tight break-words">{event.title}</h1>
                 <button
                   onClick={handleCopy}
                   className={`p-2 rounded-full transition-colors ${linkCopied 
@@ -380,7 +400,7 @@ const EventDetails = () => {
                                   }
                                 }
                                 exportToCSV(allRegistrants, `${event.title}_registrants`);
-                              } catch (error) {
+                              } catch {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -418,7 +438,7 @@ const EventDetails = () => {
                                   }
                                 }
                                 exportToJSON(allRegistrants, `${event.title}_registrants`);
-                              } catch (error) {
+                              } catch {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);

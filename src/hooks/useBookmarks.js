@@ -2,7 +2,20 @@
  * @fileoverview useBookmarks - Event bookmarks management hook
  * @module hooks/useBookmarks
  */
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { safeJsonParse } from "../utils/safeJsonParse";
+
+// Simple synchronous hash to avoid exposing raw userId (email) in localStorage keys.
+const hashUserId = (userId) => {
+  if (!userId || userId === "guest") return "guest";
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    const chr = userId.charCodeAt(i);
+    hash = (hash << 5) - hash + chr;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+};
 
 /**
  * A custom React hook that manages bookmarked events for a user,
@@ -41,13 +54,14 @@ const toBookmarkEntry = (event) => ({
 });
 
 const useBookmarks = (userId = "guest") => {
-  const storageKey = `bookmarks_${userId}`;
+  const storageKey = `bookmarks_${hashUserId(userId)}`;
 
   const [bookmarks, setBookmarks] = useState(() => {
     try {
       const stored = localStorage.getItem(storageKey);
       if (!stored) return [];
-      const parsed = JSON.parse(stored);
+//       return JSON.parse(stored) || [];
+      const parsed = safeJsonParse(stored, {});
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
@@ -57,11 +71,12 @@ const useBookmarks = (userId = "guest") => {
   const storageKeyRef = useRef(storageKey);
   storageKeyRef.current = storageKey;
 
+  const isInitialSave = useRef(true);
   const isInitialLoad = useRef(true);
 
   useEffect(() => {
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false;
+    if (isInitialSave.current) {
+      isInitialSave.current = false;
       return;
     }
     try {
@@ -72,15 +87,24 @@ const useBookmarks = (userId = "guest") => {
   }, [bookmarks]);
 
   useEffect(() => {
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
     try {
       const stored = localStorage.getItem(storageKey);
       if (!stored) { setBookmarks([]); return; }
-      const parsed = JSON.parse(stored);
+      const parsed = safeJsonParse(stored, {});
       setBookmarks(Array.isArray(parsed) ? parsed : []);
     } catch {
       setBookmarks([]);
     }
   }, [storageKey]);
+
+  // Cache bookmarks in a Set for O(1) lookups
+  const bookmarksSet = useMemo(() => {
+    return new Set(bookmarks.map(e => e.id));
+  }, [bookmarks]);
 
   /**
    * Toggles bookmark state for an event.
@@ -119,8 +143,8 @@ const useBookmarks = (userId = "guest") => {
    * Returns true if an event with the given id is currently bookmarked.
    */
   const isBookmarked = useCallback(
-    (id) => bookmarks.some((e) => e.id === id),
-    [bookmarks],
+    (id) => bookmarksSet.has(id),
+    [bookmarksSet],
   );
 
   /**
