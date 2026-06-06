@@ -180,7 +180,7 @@ const ContributorsInner = () => {
         return;
       }
 
-      const enhanced = await Promise.all(
+      const results = await Promise.allSettled(
         allContributors.map(async (c, idx) => {
           await new Promise((resolve) => setTimeout(resolve, idx * PROFILE_FETCH_DELAY_MS));
           const profile = await fetchGitHubProfile(c.login);
@@ -191,6 +191,15 @@ const ContributorsInner = () => {
           };
         }),
       );
+
+      const enhanced = results
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => r.value);
+
+      if (results.some((r) => r.status === "rejected")) {
+        const failCount = results.filter((r) => r.status === "rejected").length;
+        console.warn(`[Contributors] ${failCount} profile(s) failed to load, using partial data`);
+      }
 
       enhanced.sort((a, b) => b.contributions - a.contributions);
       setContributors(enhanced);

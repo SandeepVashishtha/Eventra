@@ -15,10 +15,13 @@ import {
   Languages,
 } from "lucide-react";
 import {
+import { safeJsonParse } from "../../../utils/safeJsonParse";
   fetchRepository,
   fetchContributors,
   fetchPullRequests,
 } from "../../../utils/githubApiClient";
+
+const fetchStat = fetchRepository;
 
 const repoPath = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
 const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
@@ -30,7 +33,7 @@ const readCache = () => {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
-    const { data, ts } = JSON.parse(raw);
+    const { data, ts } = safeJsonParse(raw, {});
     return Date.now() - ts > CACHE_MS ? null : data;
   } catch {
     return null;
@@ -72,9 +75,9 @@ export default function GitHubStats() {
         // so sequential awaits would triple the load time unnecessarily.
         const [repoResult, contributorsResult, prResult] =
           await Promise.allSettled([
-            fetchRepository(GITHUB_USER, GITHUB_REPO), // fetchStat(
-            fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1), // fetchStat(
-            fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }), // fetchStat(
+            fetchStat(GITHUB_USER, GITHUB_REPO),
+            fetchStat(GITHUB_USER, GITHUB_REPO, 1, 1),
+            fetchStat(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
           ]);
 
         // Repository data is required; bail out if it failed
@@ -82,6 +85,12 @@ export default function GitHubStats() {
         // contributorsResult.status === "rejected"
         // prResult.status === "rejected"
         if (repoResult.status === "rejected") {
+          const cached = readCache();
+          if (cached) {
+            setStats(cached);
+            setIsLoading(false);
+            return;
+          }
           throw repoResult.reason;
         }
         const repoData = repoResult.value;
@@ -93,8 +102,8 @@ export default function GitHubStats() {
           if (Array.isArray(contributors) && contributors.length > 0) {
             contribCount = contributors.length;
           }
-        } else {
-          //console.warn("Failed to fetch contributor count:", contributorsResult.reason);
+        } else if (contributorsResult.status === "rejected") {
+          contribCount = "—";
         }
 
         // Pull request count — graceful fallback on failure
@@ -104,6 +113,8 @@ export default function GitHubStats() {
           if (Array.isArray(pullRequests) && pullRequests.length > 0) {
             prCount = pullRequests.length;
           }
+        } else if (prResult.status === "rejected") {
+          prCount = "—";
         } else {
          //console.warn("Failed to fetch pull request count:", prResult.reason);
         }

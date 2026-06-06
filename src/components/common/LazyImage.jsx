@@ -55,54 +55,65 @@ const LazyImage = ({
     if (onError) onError(e);
   };
 
-  const webpSrc = useWebP && src && src.match(/\.(jpe?g|png)$/i)
-    ? src.replace(/\.(jpe?g|png)$/i, '.webp')
+const webpSrc =
+  useWebP && src && src.match(/\.(jpe?g|png)$/i)
+    ? src.replace(/\.(jpe?g|png)$/i, ".webp")
     : null;
 
-  // Resolve container styles to prevent Cumulative Layout Shift (CLS)
-  const containerStyle = {
-    position: 'relative',
-    overflow: 'hidden',
-    ...style,
-  };
+// Resolve container styles to prevent Cumulative Layout Shift (CLS)
+const containerStyle = {
+  position: "relative",
+  overflow: "hidden",
+  ...style,
+};
 
-  if (width !== undefined) containerStyle.width = typeof width === 'number' ? `${width}px` : width;
-  if (height !== undefined) containerStyle.height = typeof height === 'number' ? `${height}px` : height;
-  if (aspectRatio) containerStyle.aspectRatio = aspectRatio;
+if (width !== undefined) {
+  containerStyle.width =
+    typeof width === "number" ? `${width}px` : width;
+}
 
-  if (error) {
-    return (
-      <div
-        className={`lazy-img-error ${className}`}
-        style={containerStyle}
-        role="img"
-        aria-label={alt || 'Image failed to load'}
-      >
-        <ImageIcon className="lazy-img-error-icon" size={24} />
-      </div>
-    );
-  }
+if (height !== undefined) {
+  containerStyle.height =
+    typeof height === "number" ? `${height}px` : height;
+}
 
-  const imgElement = (
-    <img
-      ref={imgRef}
-      src={src}
-      alt={alt}
-      loading={loading}
-      decoding={decoding}
-      onLoad={handleLoad}
-      onError={handleError}
-      className={`lazy-img ${loaded ? 'lazy-img--loaded' : 'lazy-img--loading'} ${imgClassName}`}
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'block',
-        ...imgStyle,
-      }}
-      {...props}
-    />
-  );
+if (aspectRatio) {
+  containerStyle.aspectRatio = aspectRatio;
+}
 
+const handleOnError = (e) => {
+  handleError?.(e);
+  onError?.(e);
+
+  e.target.onerror = null;
+  e.target.src =
+    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" fill="%23f3f4f6"><rect width="100%" height="100%"/><text x="50%" y="50%" fill="%239ca3af" font-family="sans-serif" font-size="24" text-anchor="middle" dominant-baseline="middle">Image Not Available</text></svg>';
+};
+
+const imgElement = (
+  <img
+    ref={imgRef}
+    src={src}
+    alt={alt}
+    loading={loading}
+    decoding={decoding}
+    onLoad={(e) => {
+      setLoaded(true);
+      handleLoad?.(e);
+    }}
+    onError={handleOnError}
+    className={`lazy-img ${
+      loaded ? "lazy-img--loaded" : "lazy-img--loading"
+    } ${imgClassName || className || ""}`}
+    style={{
+      width: "100%",
+      height: "100%",
+      display: "block",
+      ...imgStyle,
+    }}
+    {...props}
+  />
+);
   return (
     <div className={`lazy-img-container ${className}`} style={containerStyle}>
       {/* Shimmer skeleton layer */}

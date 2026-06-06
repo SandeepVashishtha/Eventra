@@ -1,4 +1,4 @@
-import DOMPurify from "dompurify";
+import createDOMPurify from "dompurify";
 
 /**
  * Allowed HTML tags for event descriptions and user-supplied rich text.
@@ -40,13 +40,44 @@ const PURIFY_CONFIG = {
   ADD_ATTR: ["target"],
 };
 
-// Force all links to open in a new tab securely
-DOMPurify.addHook("afterSanitizeAttributes", (node) => {
-  if ("target" in node) {
-    node.setAttribute("target", "_blank");
-    node.setAttribute("rel", "noopener noreferrer");
+let purifyInstance;
+let hookRegistered = false;
+
+const getDOMWindow = () => {
+  if (typeof window !== "undefined" && window?.document) return window;
+  if (typeof globalThis !== "undefined" && globalThis.window?.document) {
+    return globalThis.window;
   }
-});
+  return null;
+};
+
+const getDOMPurify = () => {
+  if (purifyInstance) return purifyInstance;
+
+  const domWindow = getDOMWindow();
+  if (typeof createDOMPurify?.sanitize === "function") {
+    purifyInstance = createDOMPurify;
+  } else if (domWindow && typeof createDOMPurify === "function") {
+    purifyInstance = createDOMPurify(domWindow);
+  }
+
+  if (!purifyInstance || typeof purifyInstance.sanitize !== "function") {
+    return null;
+  }
+
+  // Force all links to open in a new tab securely.
+  if (!hookRegistered && typeof purifyInstance.addHook === "function") {
+    purifyInstance.addHook("afterSanitizeAttributes", (node) => {
+      if ("target" in node) {
+        node.setAttribute("target", "_blank");
+        node.setAttribute("rel", "noopener noreferrer");
+      }
+    });
+    hookRegistered = true;
+  }
+
+  return purifyInstance;
+};
 
 /**
  * Sanitise untrusted HTML before rendering via dangerouslySetInnerHTML.
@@ -57,9 +88,17 @@ DOMPurify.addHook("afterSanitizeAttributes", (node) => {
  * @param {string} dirty - Raw HTML from an untrusted source (API, user input)
  * @returns {string} Sanitised HTML safe for injection into the DOM
  */
+const stripAllHtml = (text) =>
+  text.replace(/<[^>]*>/g, '');
+
 export function sanitizeHtml(dirty) {
   if (!dirty || typeof dirty !== "string") return "";
-  return DOMPurify.sanitize(dirty, PURIFY_CONFIG);
+  const purifier = getDOMPurify();
+  if (!purifier) {
+    console.warn('[sanitizeHtml] DOMPurify unavailable - falling back to HTML tag stripping');
+    return stripAllHtml(dirty);
+  }
+  return purifier.sanitize(dirty, PURIFY_CONFIG);
 }
 
 /**
@@ -75,7 +114,7 @@ export function sanitizeMarkdown(markdown, parseMarkdown) {
   if (!markdown || typeof markdown !== "string") return "";
   if (typeof parseMarkdown !== "function") return sanitizeHtml(markdown);
   const rawHtml = parseMarkdown(markdown);
-  return DOMPurify.sanitize(rawHtml, PURIFY_CONFIG);
+  return sanitizeHtml(rawHtml);
 }
 
 export default sanitizeHtml;
