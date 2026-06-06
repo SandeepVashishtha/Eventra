@@ -87,14 +87,14 @@ RecommendationSkeleton.displayName = "RecommendationSkeleton";
  * 🖼️ SAFE FALLBACK IMAGE LAYOUT MODULE
  * Intercepts broken external URLs natively and updates sources to a fallback vector.
  */
-const CardBannerImage = memo(({ src, alt }) => {
-  const handleImageLoadingError = (e) => {
-    e.target.onerror = null; // Prevent infinite fallback trigger loops
-    e.target.src = INLINE_SVG_PLACEHOLDER;
-    e.target.className =
-      "h-full w-full object-cover opacity-60 filter grayscale dark:brightness-75";
-  };
+const handleImageLoadingError = (e) => {
+  e.target.onerror = null;
+  e.target.src = INLINE_SVG_PLACEHOLDER;
+  e.target.className =
+    "h-full w-full object-cover opacity-60 filter grayscale dark:brightness-75";
+};
 
+const CardBannerImage = memo(({ src, alt }) => {
   return (
     <div className="relative w-full h-32 rounded-xl overflow-hidden mb-3.5 bg-slate-100 dark:bg-slate-900 border border-slate-200/20 shadow-inner group">
       <img
