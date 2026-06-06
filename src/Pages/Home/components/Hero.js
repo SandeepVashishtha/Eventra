@@ -67,6 +67,54 @@ const getResultIcon = (type) => {
 };
 
 const Hero = () => {
+   const prefersReducedMotion = useReducedMotion();
+  const controls = useAnimation();
+
+  const HEADLINE_PHRASES = phrases;
+
+  const TAGLINE_TEXTS = [
+    "Build. Connect. Innovate.",
+    "Discover Opportunities.",
+    "Join the Tech Community.",
+  ];
+
+  const SEARCH_RESULT_LIMIT = 5;
+
+  const HERO_STATS = [
+    {
+      value: 1500,
+      label: "Developers",
+      suffix: "+",
+      icon: Users,
+    },
+    {
+      value: 75,
+      label: "Events",
+      suffix: "+",
+      icon: Calendar,
+    },
+    {
+      value: 30,
+      label: "Partners",
+      suffix: "+",
+      icon: Handshake,
+    },
+  ];
+
+  const SEARCH_ROUTES = {
+    event: "/events",
+    hackathon: "/hackathons",
+    project: "/projects",
+  };
+
+  const SEARCH_ICONS = {
+    event: Calendar,
+    hackathon: Trophy,
+    project: Code,
+  };
+
+  const MotionLink = motion(Link);
+  
   useDocumentTitle("Eventra | Home");
   const controls = useAnimation();
   const prefersReducedMotion = useReducedMotion();
@@ -150,11 +198,6 @@ const Hero = () => {
     clearSearchTerm();
   }, [clearSearchTerm]);
 
-  const getResultHref = (item) => {
-    const query = encodeURIComponent(item.title || debouncedTerm);
-    const routes = { event: "/events", hackathon: "/hackathons", project: "/projects" };
-    return `${routes[item.type] || "/"}?search=${query}`;
-  };
 
   const getResultIcon = (type) => {
     const icons = { event: Calendar, hackathon: Trophy, project: Code };
@@ -163,19 +206,6 @@ const Hero = () => {
   };
 
   // ─── ANIMATION VARIANTS ────────────────────────────────────────────────────
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-  };
-
-  const fadeUp = {
-    hidden: { y: 32, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
-    },
-  };
 
   const floatShape = (i) => ({
     y: [0, -15 - i * 4, 0],

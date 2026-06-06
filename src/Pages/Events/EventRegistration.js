@@ -39,8 +39,34 @@ import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 import { SkeletonEventCard, WaitlistSkeleton, WaitlistPositionSkeleton } from "../../components/common/SkeletonLoaders";
 import { logger } from "../../utils/logger";
 import { validate } from "../../validation";
+import { getCacheAgeLabel, getCachedEventDetail, saveCachedEventDetail } from "../../utils/offlineEventCache";
+import { pushToQueue } from "../../utils/offlineQueue";
+import registrationLocks from "../../utils/registrationLocks";
 
 const MAX_NOTES_CHARS = 500;
+
+const getRegistrationFailureMessage = (error) => {
+  const message = error?.data?.message || error?.data?.error || error?.message || "";
+  const normalizedMessage = message.toLowerCase();
+
+  if (error?.status === 409 && /already registered|duplicate/.test(normalizedMessage)) {
+    return "You are already registered for this event.";
+  }
+
+  if (
+    error?.status === 409 ||
+    error?.status === 423 ||
+    /capacity|full|sold out|max(?:imum)? capacity/.test(normalizedMessage)
+  ) {
+    return "This event has reached maximum capacity. Please choose another event.";
+  }
+
+  if (/conflict/.test(normalizedMessage)) {
+    return "Registration could not be completed because the server reported a conflict.";
+  }
+
+  return message || "Registration failed. Please try again.";
+};
 
 const EventRegistration = () => {
   const { t } = useTranslation();
@@ -616,7 +642,7 @@ const EventRegistration = () => {
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 truncate">
+            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 break-words min-w-0">
               {event.title}
             </h3>
 
@@ -762,7 +788,7 @@ const EventRegistration = () => {
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
+              <h1 title={event.title} className="text-3xl font-bold mb-2 break-words">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
