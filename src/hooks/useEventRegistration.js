@@ -18,7 +18,8 @@ import { createRateLimiter } from "../../utils/rateLimiter";
  *   and opens a conflict-resolution modal when one is found.
  * - Checks live event capacity immediately before submission and routes the
  *   request to the waitlist endpoint when the event is full.
- * - Uses a module-level `Map` lock (`registrationLocks`) and a ref
+ * - Uses a shared module-level `Map` lock (`registrationLocks` from
+ *   `utils/registrationLocks`) and a ref
  *   (`isSubmittingRef`) to guard against duplicate concurrent submissions.
  * - Falls back to an offline queue (`offlineQueue`) when a network/timeout
  *   error is detected, so the registration syncs automatically once
@@ -46,6 +47,10 @@ import {
 import { pushToQueue } from "../../utils/offlineQueue";
 import { logError } from "../../utils/errorLogger";
 import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
+import registrationLocks from "../../utils/registrationLocks";
+
+export const MAX_NOTES_CHARS = 500;
+
 import { logAbuseAttempt } from "../../utils/abuseLogger";
 
 export const MAX_NOTES_CHARS = 500;
@@ -555,6 +560,18 @@ const useEventRegistration = (eventIdParam) => {
       } else {
         await eventService.registerForEvent(eventId, payload);
       }
+      await apiUtils.post(
+        endpoint,
+        {
+          ...formData,
+          priority: formData.priority,
+          eventId: parseInt(eventId),
+          userId: user.id,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       setRegistered(true);
       toast.success("Registration successful!");
@@ -650,9 +667,9 @@ const useEventRegistration = (eventIdParam) => {
       toast.info("This event is full. You will be added to the waitlist.");
     }
 
-    if (await checkAndHandleConflicts()) return;
+      if (await checkAndHandleConflicts()) return;
 
-    proceedWithRegistration();
+    await proceedWithRegistration();
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
 
   // Handle conflict modal actions

@@ -12,6 +12,7 @@ import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership } from 
 // isTokenValid import removed; authentication is now checked via isAuthenticated()
 // from AuthContext, which handles both token-based and cookie-managed sessions.
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
@@ -348,7 +349,7 @@ const useOfflineSync = () => {
 
       if (lockVal) {
         try {
-          const parsed = JSON.parse(lockVal);
+          const parsed = safeJsonParse(lockVal, {});
           if (parsed && parsed.timestamp && now - parsed.timestamp < LOCK_TIMEOUT_MS) {
             logger.log("[useOfflineSync] Local sync lock is held by another active tab. Skipping.");
             return;
@@ -382,7 +383,7 @@ const useOfflineSync = () => {
         try {
           const checkVal = localStorage.getItem(LOCK_KEY);
           if (checkVal) {
-            const parsed = JSON.parse(checkVal);
+            const parsed = safeJsonParse(checkVal, {});
             if (parsed && parsed.tabId === currentTabId) {
               localStorage.removeItem(LOCK_KEY);
             }

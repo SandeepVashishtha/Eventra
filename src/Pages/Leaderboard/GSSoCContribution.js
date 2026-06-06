@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // ============ CONSTANTS ============
 const GSSOC_TIMELINE = [
@@ -390,7 +391,7 @@ const GSSoCContribution = () => {
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
   const [userStats] = useState(() => {
     const saved = localStorage.getItem("gssoc.userStats");
-    return saved ? JSON.parse(saved) : {
+    return saved ? safeJsonParse(saved, {}) : {
       issuesClaimed: 3,
       prsMerged: 2,
       points: 450,

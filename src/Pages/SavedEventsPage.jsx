@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Download } from "lucide-react";
 import EmptyState from "../components/common/EmptyState";
 import useBookmarks from "../hooks/useBookmarks";
 import { exportToCSV } from "../utils/exportUtils";
+import { toast } from "react-toastify";
 
 const SavedEventsPage = () => {
   const navigate = useNavigate();
@@ -11,8 +12,11 @@ const SavedEventsPage = () => {
   const [sortBy, setSortBy] = useState("savedAt");
   const [exporting, setExporting] = useState(false);
 
-  const sorted = [...bookmarks].sort((a, b) =>
-    sortBy === "savedAt" ? b.savedAt - a.savedAt : new Date(a.date) - new Date(b.date)
+  const sorted = useMemo(
+    () => [...bookmarks].sort((a, b) =>
+      sortBy === "savedAt" ? b.savedAt - a.savedAt : new Date(a.date) - new Date(b.date)
+    ),
+    [bookmarks, sortBy]
   );
 
   const handleExportCSV = () => {
@@ -20,6 +24,8 @@ const SavedEventsPage = () => {
     setExporting(true);
     try {
       exportToCSV(sorted, `eventra-saved-events-${new Date().toISOString().slice(0, 10)}`);
+    } catch {
+      toast.error("Failed to export saved events. Please try again.");
     } finally {
       // Brief visual feedback before resetting
       setTimeout(() => setExporting(false), 800);
