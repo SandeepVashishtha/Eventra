@@ -26,6 +26,7 @@ import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
+import MatchScoreBadge from "../../components/common/MatchScoreBadge";
 import {
   addBookmarkedEvent,
   isEventBookmarked,
@@ -53,7 +54,7 @@ const getCapacityStyles = (ratio, isFull) => {
   };
 };
 
-const EventCard = ({ event }) => {
+const EventCard = ({ event, matchScore, matchReasons }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
@@ -284,6 +285,16 @@ const EventCard = ({ event }) => {
             </div>
           )}
           <StatusBadge status={computedStatus} />
+
+          {/* AI match confidence badge — rendered when matchScore is supplied
+              (e.g. from useRecommendations / EventsPage sort-by-match) */}
+          {matchScore !== undefined && matchScore !== null && (
+            <MatchScoreBadge
+              score={matchScore}
+              reasons={matchReasons}
+              className="mt-1"
+            />
+          )}
         </div>
       </div>
 

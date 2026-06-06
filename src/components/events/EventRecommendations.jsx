@@ -13,6 +13,7 @@ import {
 import mockEvents from "../../Pages/Events/eventsMockData.json";
 import { syncSecureStorage } from "../../utils/secureStorage";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import MatchScoreBadge from "../common/MatchScoreBadge";
 
 // =========================================================================
 // INLINE VECTOR GRAPHIC CONSTANTS (FALLBACK PLACEHOLDER IMAGES)
@@ -328,7 +329,6 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
         >
           {recommendedEvents.map((event) => {
             if (!event) return null;
-            const hasStrongMatchingScore = event.recommendationScore > 10;
             const targetFormattedDateString = event.date
               ? new Date(event.date.replace(/-/g, "/")).toLocaleDateString()
               : "Upcoming";
@@ -347,16 +347,17 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
                   <CardBannerImage src={event.image || event.banner} alt={event.title} />
 
                   {/* Badge Row Overlay Elements */}
-                  <div className="flex items-center justify-between gap-2 categories-meta-container">
+                  <div className="flex items-center justify-between gap-2 categories-meta-container flex-wrap">
                     <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200/10">
                       {event.category || "General Context"}
                     </span>
-                    {hasStrongMatchingScore && (
-                      <span className="text-[9px] font-black uppercase tracking-wide text-amber-500 flex items-center gap-0.5 bg-amber-500/5 dark:bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                        <Sparkles className="w-2.5 h-2.5 fill-amber-500/20 animate-spin-slow" />
-                        Top Match
-                      </span>
-                    )}
+                    {/* AI confidence badge — replaces the old static "Top Match" label.
+                        MatchScoreBadge maps the 0–100 score to Great/Good/Might Like tiers
+                        and shows a tooltip with the match reasons on hover (#7437). */}
+                    <MatchScoreBadge
+                      score={event.recommendationScore}
+                      reasons={event.recommendationReasons}
+                    />
                   </div>
 
                   <h4 className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100 mt-3 line-clamp-1">
