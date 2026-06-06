@@ -220,6 +220,11 @@ export const promoteRecord = async (record, event) => {
   if (match) {
     match.status = "promoted";
     match.promotedAt = new Date().toISOString();
+    
+    // Sync the passed record reference so callers get the updated status
+    record.status = "promoted";
+    record.promotedAt = match.promotedAt;
+    
     saveGlobalWaitlist(records);
 
     // 1. Add registration record to user's storage
