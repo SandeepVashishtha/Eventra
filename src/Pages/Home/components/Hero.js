@@ -115,6 +115,7 @@ const getResultIcon = (type) => {
 
 const Hero = () => {
   const prefersReducedMotion = useReducedMotion();
+  const controls = useAnimation();
 
   const SEARCH_ROUTES = {
     event: "/events",

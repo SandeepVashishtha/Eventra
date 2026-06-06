@@ -2,7 +2,7 @@
  * @fileoverview useBookmarks - Event bookmarks management hook
  * @module hooks/useBookmarks
  */
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse";
 
 // Simple synchronous hash to avoid exposing raw userId (email) in localStorage keys.

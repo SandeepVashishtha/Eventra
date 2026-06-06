@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from "react";
-import { Grid } from "react-window";
-import AutoSizer from "react-virtualized-auto-sizer";
+import { FixedSizeGrid as Grid } from "react-window";
+import { AutoSizer } from "react-virtualized-auto-sizer";
 import HackathonCard from "../../Pages/Hackathons/HackathonCard";
 
 const CARD_HEIGHT = 320;
@@ -25,7 +25,8 @@ const getColumnCount = (width) => {
  */
 const VirtualizedHackathonGrid = ({ hackathons }) => {
     const Cell = useCallback(
-        ({ columnIndex, rowIndex, style, items, columnCount, columnWidth }) => {
+        ({ columnIndex, rowIndex, style, data }) => {
+            const { items, columnCount, columnWidth } = data;
             const index = rowIndex * columnCount + columnIndex;
             if (index >= items.length) return null;
 
@@ -67,10 +68,12 @@ const VirtualizedHackathonGrid = ({ hackathons }) => {
                             rowHeight={rowHeight}
                             width={width}
                             height={height}
-                            cellProps={{ items: hackathons, columnCount, columnWidth }}
-                            overscanCount={2}
-                            cellComponent={Cell}
-                        />
+                            itemData={{ items: hackathons, columnCount, columnWidth }}
+                            overscanRowCount={2}
+                            overscanColumnCount={2}
+                        >
+                            {Cell}
+                        </Grid>
                     );
                 }}
             </AutoSizer>
