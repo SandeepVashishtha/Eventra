@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNotification } from '../context/NotificationContext';
 import useDocumentTitle from '../hooks/useDocumentTitle';
@@ -46,7 +46,7 @@ export default function UserAchievements() {
   }, [activeShareBadge]);
 
   // Fallback / Normalized list of milestone achievements with progress metrics
-  const fallbackBadges = [
+  const fallbackBadges = useMemo(() => [
     {
       id: 'first-step',
       name: 'First Step',
@@ -107,7 +107,7 @@ export default function UserAchievements() {
       details: 'Dive deep into AI integrations, blockchain, and next-generation Web3 protocols.',
       log: ['+400 XP awarded', 'AI Specialist badge enabled'],
     },
-  ];
+  ], [achievements.totalEvents, achievements.currentStreak]);
 
   const operationalBadges = achievements.badges && achievements.badges.length > 0
     ? achievements.badges.map((b, idx) => ({
@@ -178,6 +178,8 @@ export default function UserAchievements() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    // Free browser memory after download triggers (100ms ensures download starts first)
+    setTimeout(() => URL.revokeObjectURL(url), 100);
     toast.success(t("userAchievements.toastCertificateDownloaded"));
   };
 

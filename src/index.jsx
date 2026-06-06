@@ -33,6 +33,7 @@ const router = createBrowserRouter([
   }
 ]);
 
+// Mount the React application to the DOM
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
@@ -49,11 +50,3 @@ root.render(
 </GlobalErrorBoundary>
   </React.StrictMode>
 );
-
-// [GSSoC-Critical-Landmark-5] Critical execution routing pathway tracking
-
-
-
-
-
-

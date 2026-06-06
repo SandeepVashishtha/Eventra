@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import useDebounce from "../../hooks/useDebounce.js";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
@@ -67,6 +68,7 @@ export default function UserDashboard() {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [filterType, setFilterType] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [greeting, setGreeting] = useState("");
@@ -140,7 +142,7 @@ export default function UserDashboard() {
 
   const filteredData = useMemo(() =>
     MOCK_DATA.filter(item => {
-      const matchSearch = (item.title || "").toLowerCase().includes(searchQuery.toLowerCase());
+      const matchSearch = (item.title || "").toLowerCase().includes(debouncedSearchQuery.toLowerCase());
       const matchType = filterType === "All" || item.type === filterType;
       const matchStatus = filterStatus === "All"
         || item.status === filterStatus
@@ -152,7 +154,7 @@ export default function UserDashboard() {
       if (!b.date) return -1;
       return new Date(b.date) - new Date(a.date);
     }),
-  [searchQuery, filterType, filterStatus]);
+  [debouncedSearchQuery, filterType, filterStatus]);
 
   const notifications = [
     { id: 1, text: "React Conference 2025 registration opens soon", time: "2h ago", unread: true },
@@ -347,8 +349,8 @@ export default function UserDashboard() {
                       ) : (
                         upcomingEvents.map(ev => (
                           <div key={ev.id} className="ud-list-item">
-                            <div>
-                              <p className="ud-list-title">{ev.title}</p>
+                            <div className="min-w-0 flex-1">
+                              <p title={ev.title} className="ud-list-title">{ev.title}</p>
                               <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(ev.date)}</p>
                             </div>
                             <StatusBadge status={ev.participationType} />
@@ -374,8 +376,8 @@ export default function UserDashboard() {
                       ) : (
                         upcomingHackathons.map(h => (
                           <div key={h.id} className="ud-list-item">
-                            <div>
-                              <p className="ud-list-title">{h.title}</p>
+                            <div className="min-w-0 flex-1">
+                              <p title={h.title} className="ud-list-title">{h.title}</p>
                               <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(h.date)}</p>
                             </div>
                             <StatusBadge status={h.participationType} />
@@ -401,8 +403,8 @@ export default function UserDashboard() {
                       ) : (
                         activeProjects.map(p => (
                           <div key={p.id} className="ud-list-item">
-                            <div>
-                              <p className="ud-list-title">{p.title}</p>
+                            <div className="min-w-0 flex-1">
+                              <p title={p.title} className="ud-list-title">{p.title}</p>
                               <p className="ud-list-meta">Updated: {p.lastUpdate}</p>
                             </div>
                             <StatusBadge status={p.projectStatus} />

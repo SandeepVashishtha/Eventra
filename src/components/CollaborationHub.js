@@ -2,6 +2,7 @@ import StatusBadge from "./common/StatusBadge";
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import useDebounce from '../hooks/useDebounce.js';
 import { toast } from 'react-toastify';
 import './components.css';
 import CharacterCounter from "../../components/common/CharacterCounter";
@@ -9,12 +10,14 @@ import { sanitizeInputText } from "../utils/inputSanitization";
 import EventMaterials from "./common/EventMaterials";
 import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send } from 'lucide-react';
 import CollaborativeWhiteboard from './common/CollaborativeWhiteboard';
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 
 const CollaborationHub = () => {
   const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState('opportunities');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const mockMaterials = [
     { id: 'slides-1', title: 'Tech Summit 2025 Keynote Presentation', type: 'ppt', size: '14.2 MB', url: '#' },
@@ -49,7 +52,7 @@ const CollaborationHub = () => {
     }
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = safeJsonParse(saved, {});
         if (Array.isArray(parsed)) {
           return parsed.filter(item => item && typeof item === 'object');
         }
@@ -205,7 +208,7 @@ const CollaborationHub = () => {
   };
 
   // Filtering opportunities dynamically
-  const query = searchQuery.toLowerCase();
+  const query = debouncedSearchQuery.toLowerCase();
 
   const filteredOpportunities = collaborationOpportunities.filter((opp) => {
     const matchesSearch =

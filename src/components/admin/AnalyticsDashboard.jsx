@@ -190,8 +190,11 @@ const [activeTab, setActiveTab] = useState('analytics');
   // Processing real-time production SSE streams via data consumer pipeline
   useEffect(() => {
     const latest = streamCheckins[0];
-    if (!latest || latest === lastStreamCheckinRef.current) return;
-    lastStreamCheckinRef.current = latest;
+    // Compare by event ID rather than object reference so that a reconnect
+    // (which rebuilds the context array as new objects) does not re-trigger
+    // processing for the same logical event.
+    if (!latest || latest.id === lastStreamCheckinRef.current) return;
+    lastStreamCheckinRef.current = latest.id;
 
     processIncomingCheckin(latest);
   }, [streamCheckins, processIncomingCheckin]);
