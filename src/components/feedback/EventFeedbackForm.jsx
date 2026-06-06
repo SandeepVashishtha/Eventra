@@ -1,5 +1,6 @@
-import { Star, MessageSquare, Send, CheckCircle } from "lucide-react";
+import { Star, MessageSquare, Send, CheckCircle, LogIn } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Loader2 } from "lucide-react";
@@ -8,8 +9,10 @@ import { useAuth } from "../../context/AuthContext";
 import { fetchEventFeedback, submitEventFeedback } from "../../utils/feedbackUtils";
 
 const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const authenticated = isAuthenticated();
   const userId = user?.id || user?.email || "";
+
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -47,12 +50,32 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
     };
   }, [eventId, userId]);
 
+  // Render a login prompt for unauthenticated visitors
+  if (!authenticated) {
+    return (
+      <div className="w-full max-w-2xl mx-auto p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl text-center space-y-4">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
+          <LogIn className="w-7 h-7" />
+        </div>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+          Sign in to leave feedback
+        </h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+          Your feedback helps event organizers improve future events. Please log in to share your experience.
+        </p>
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors"
+        >
+          <LogIn className="w-4 h-4" />
+          Log in to submit feedback
+        </Link>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!userId) {
-      toast.error("Please log in to submit feedback.");
-      return;
-    }
     if (rating === 0) {
       toast.error("Please provide a rating from 1 to 5 stars");
       return;

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 import {
+import { safeJsonParse } from "../../../utils/safeJsonParse";
   fetchRepository,
   fetchContributors,
   fetchPullRequests,
