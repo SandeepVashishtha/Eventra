@@ -17,14 +17,11 @@ import path from 'node:path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(
-  path.resolve(__dirname, '../src/Pages/Leaderboard/Leaderboard.jsx'),
+  path.resolve(__dirname, '../src/Pages/Leaderboard/components/AnimatedCounter.jsx'),
   'utf8',
 );
 
-// Extract the AnimatedCounter section
-const counterStart = src.indexOf('const AnimatedCounter');
-const counterEnd = src.indexOf('\n});', counterStart) + 4;
-const counterSrc = src.slice(counterStart, counterEnd);
+const counterSrc = src;
 
 // ---------------------------------------------------------------------------
 // Static analysis: component structure
