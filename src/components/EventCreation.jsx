@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import { ArrowRight, Pencil, CheckCircle, AlertCircle, Calendar, Users, MapPin, Ticket as TicketIcon } from "lucide-react";
+import { ArrowRight, Pencil, CheckCircle, AlertCircle, Calendar, MapPin, Ticket as TicketIcon } from "lucide-react";
+import { API_ENDPOINTS, apiUtils } from "../config/api";
 
 import { useEventForm } from "../hooks/useEventForm";
 import EventBasicInfo from "./common/EventCreation/EventBasicInfo";
@@ -52,7 +53,19 @@ const EventCreation = () => {
   };
 
   const handlePublish = async () => {
-    await submitEventForm(formData);
+    const eventData = formData;
+    try {
+      if (!API_ENDPOINTS.EVENTS.CREATE) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        toast.success("🎉 Mock event creation successful!");
+        return;
+      }
+      await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
+      toast.success("🎉 Event published successfully!");
+      setCurrentStep("form");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to create event.");
+    }
   };
 
   useEffect(() => {

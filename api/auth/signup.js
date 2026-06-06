@@ -3,8 +3,6 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 
 import { buildCorsHeaders, corsResponse } from "./cors.js";
-import { createRateLimiter } from "../lib/rateLimit.js";
-import { getClientIp } from "../lib/getClientIp.js";
 
 
 // ---------------------------------------------------------------------------
@@ -21,16 +19,10 @@ import { getClientIp } from "../lib/getClientIp.js";
 // See GitHub issue #4195 for full details on the production impact.
 // ---------------------------------------------------------------------------
 
-// Guard: prevent unintentional production use of the in-memory store.
-// When NODE_ENV=production but no DATABASE_URL is configured, any
-// registration would be lost on the next cold start, causing confusing 401
-// errors for users. This guard proactively returns 503 on write operations
-// so the misconfiguration is surfaced immediately rather than silently
-// accepting registrations that will vanish.
-const isUsingInMemoryStore = () =>
-  process.env.NODE_ENV === "production" && !process.env.DATABASE_URL;
-
-if (isUsingInMemoryStore()) {
+if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
+  // Emit a clear error rather than silently accepting registrations that will
+  // vanish on the next cold start. This prevents the confusing 401 behaviour
+  // that users experience after a serverless function restart.
   console.error(
     "[signup.js] FATAL: In-memory user store is active in a production environment. " +
     "Set DATABASE_URL to a persistent database to prevent data loss on cold starts."
@@ -73,7 +65,7 @@ const validateName = (name) => {
 const validatePassword = (password) => {
   if (!password) return { valid: false, message: "Password is required" };
   if (password.length < 8) return { valid: false, message: "Password must be at least 8 characters long" };
-
+  
   // Check password strength (must meet all 5 criteria)
   const criteria = [
     { test: /.{8,}/, name: "8+ characters" },
@@ -82,7 +74,7 @@ const validatePassword = (password) => {
     { test: /\d/, name: "number" },
     { test: /[!@#$%^&*(),.?":{}|<>]/, name: "special character" },
   ];
-
+  
   const metCriteria = criteria.filter(c => c.test.test(password));
   if (metCriteria.length < 5) {
     return {
@@ -90,7 +82,7 @@ const validatePassword = (password) => {
       message: "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character"
     };
   }
-
+  
   return { valid: true };
 };
 
@@ -199,26 +191,17 @@ async function handler(req, res) {
     // Run after input validation so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
-    const clientIp = getClientIp(req);
-    const clientIp = req.headers?.["x-vercel-forwarded-for"]
+    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
       || req.headers?.["x-real-ip"]
       || req.socket?.remoteAddress
       || "unknown";
+
+    signupRateLimiter.evictStale();
 
     if (!signupRateLimiter.check(clientIp)) {
       return corsResponse(req, res, 429, {
         error: "Too many signup attempts. Please try again later.",
         retryAfter: 60,
-      });
-    }
-
-    // -----------------------------------------------------------------------
-    // Guard: reject writes in production without a persistent store
-    // -----------------------------------------------------------------------
-
-    if (isUsingInMemoryStore()) {
-      return corsResponse(req, res, 503, {
-        error: "Service temporarily unavailable. The server is starting up with a temporary storage configuration. Please try again shortly.",
       });
     }
 
@@ -249,7 +232,9 @@ async function handler(req, res) {
       updatedAt: createdAt,
       emailVerified: false,
       isActive: true,
-    };    // Store user (in production, replace with a persistent database write)
+    };
+
+    // Store user (in production, save to database)
     users.set(normalizedEmail, newUser);
     usersById.set(userId, newUser);
     if (newUser.username) {
@@ -298,11 +283,10 @@ async function handler(req, res) {
       // Ignore write errors on test response objects
     }
 
-    // The JWT is delivered exclusively via the HttpOnly Set-Cookie header set
-    // above. Including it in the JSON body would expose it to JavaScript,
-    // defeating the XSS-theft protection that HttpOnly provides.
     return corsResponse(req, res, 201, {
       message: "Account created successfully",
+      token,
+      tokenType: "Bearer",
       ...userResponse,
     });
 
@@ -318,9 +302,5 @@ async function handler(req, res) {
 // ---------------------------------------------------------------------------
 
 export default handler;
+export { users, usersById, usersByUsername };
 
-export { users };
-
-export { usersById, usersByUsername };
-
-export { isUsingInMemoryStore };

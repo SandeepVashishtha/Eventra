@@ -15,100 +15,21 @@ import {
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
 import SEOHead from "../../components/SEOHead";
+import { useTranslation } from "react-i18next";
 import { logger } from "../../utils/logger";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
-// Centralized FAQ entries classified under General, Hackathons, or Account categories
-const faqs = [
-  {
-    category: "GETTING STARTED",
-    tab: "Hackathons",
-    icon: <Sparkles size={16} />,
-    question: "How do I register for a hackathon or event?",
-    answer:
-      "Registering for events on Eventra is simple! Browse available events on our Events or Hackathons pages, click on the event you're interested in, and click the 'Register' or 'Join Event' button. You'll need to create an account if you don't have one. Follow the registration prompts, provide any required information, and you'll receive a confirmation email with event details.",
-  },
-  {
-    category: "EVENT CREATION",
-    tab: "Hackathons",
-    icon: <Calendar size={16} />,
-    question: "How can I create and host my own event on Eventra?",
-    answer:
-      "Creating your own event is easy! Sign up for an account, navigate to your dashboard, and click 'Create Event'. Choose your event type, fill in the event details like title, description, date, location, and capacity. Once published, your event will be visible to the community and you'll have access to management tools and analytics.",
-  },
-  {
-    category: "EVENT TYPES",
-    tab: "General",
-    icon: <BookOpen size={16} />,
-    question: "What is the difference between a workshop and a hackathon?",
-    answer:
-      "Workshops are typically educational sessions focused on learning specific topics or techniques (a few hours to a full day). Hackathons are competitive coding events where teams build hardware/software prototypes within a limited timeframe (usually 24-48 hours) often ending with judging and prizes.",
-  },
-  {
-    category: "PRICING",
-    tab: "General",
-    icon: <Zap size={16} />,
-    question: "Is it free to participate in or create an event?",
-    answer:
-      "Yes! Eventra is an open-source platform that's completely free to use for both participants and event organizers. You can join events, create your own events, and access most features without any cost. Core features remain completely free for communities and individual organizers.",
-  },
-  {
-    category: "COMMUNITY",
-    tab: "Hackathons",
-    icon: <Users size={16} />,
-    question: "How do the community links (Discord, Telegram, etc.) work?",
-    answer:
-      "Our community links connect you to chat platforms where Eventra users gather to discuss events, share opportunities, network, and find teammates. You can join these communities to stay updated and connect with like-minded people in your field of interest.",
-  },
-  {
-    category: "ACCOUNT MANAGEMENT",
-    tab: "Account",
-    icon: <Shield size={16} />,
-    question: "How do I edit my profile and manage my account?",
-    answer:
-      "After logging in, click on your profile picture in the top navigation bar and select 'Edit Profile'. From there, you can update your personal information, profile picture, bio, interests, and notification preferences. You can also track your participation history.",
-  },
-  {
-    category: "TECHNICAL SUPPORT",
-    tab: "General",
-    icon: <MessageCircle size={16} />,
-    question: "What should I do if I encounter technical issues?",
-    answer:
-      "If you experience problems, try refreshing your browser or clearing your cache. For persistent issues, contact our support team through the Contact page, join our Discord for real-time help, or report bugs directly on our GitHub repository.",
-  },
-  {
-    category: "EVENT FEATURES",
-    tab: "General",
-    icon: <Globe size={16} />,
-    question: "Can I host virtual or hybrid events?",
-    answer:
-      "Absolutely! Eventra supports in-person, virtual, and hybrid events. When creating an event, specify the format and add relevant video meeting links or platform requirements. Our platform handles registration and check-ins seamlessly for all styles.",
-  },
-  {
-    category: "EVENT MANAGEMENT",
-    tab: "Hackathons",
-    icon: <Calendar size={16} />,
-    question: "How do I manage attendees and check-ins?",
-    answer:
-      "Organizers gain access to a comprehensive dashboard with attendee lists, announcement systems, QR code generation for quick check-ins, real-time tracking, and analytics tools to review engagement and improvement data.",
-  },
-  {
-    category: "PRIVACY & SECURITY",
-    tab: "Account",
-    icon: <Shield size={16} />,
-    question: "How is my personal data protected?",
-    answer:
-      "We take security seriously. Eventra uses industry-standard encryption, secure user authentication, and GDPR compliance parameters. Your personal information is only used for coordinating platform functionality and event matching.",
-  },
-];
+
 
 const NAVBAR_HEIGHT = 65;
 
 export default function FAQSection() {
+  const { t } = useTranslation();
   return (
     <>
       <SEOHead
-        title="FAQ"
-        description="Frequently asked questions about Eventra — get answers about events, hackathons, registration, and community."
+        title={t("faq.pageTitle")}
+        description={t("faq.pageDescription")}
         url={window.location.href}
       />
       <FAQSectionInner />
@@ -117,6 +38,80 @@ export default function FAQSection() {
 }
 
 function FAQSectionInner() {
+  const { t } = useTranslation();
+
+  const faqs = useMemo(() => [
+    {
+      category: t("faq.categories.gettingStarted"),
+      tab: "Hackathons",
+      icon: <Sparkles size={16} />,
+      question: t("faqQuestions.q1"),
+      answer: t("faqQuestions.a1"),
+    },
+    {
+      category: t("faq.categories.eventCreation"),
+      tab: "Hackathons",
+      icon: <Calendar size={16} />,
+      question: t("faqQuestions.q2"),
+      answer: t("faqQuestions.a2"),
+    },
+    {
+      category: t("faq.categories.eventTypes"),
+      tab: "General",
+      icon: <BookOpen size={16} />,
+      question: t("faqQuestions.q3"),
+      answer: t("faqQuestions.a3"),
+    },
+    {
+      category: t("faq.categories.pricing"),
+      tab: "General",
+      icon: <Zap size={16} />,
+      question: t("faqQuestions.q4"),
+      answer: t("faqQuestions.a4"),
+    },
+    {
+      category: t("faq.categories.community"),
+      tab: "Hackathons",
+      icon: <Users size={16} />,
+      question: t("faqQuestions.q5"),
+      answer: t("faqQuestions.a5"),
+    },
+    {
+      category: t("faq.categories.accountManagement"),
+      tab: "Account",
+      icon: <Shield size={16} />,
+      question: t("faqQuestions.q6"),
+      answer: t("faqQuestions.a6"),
+    },
+    {
+      category: t("faq.categories.technicalSupport"),
+      tab: "General",
+      icon: <MessageCircle size={16} />,
+      question: t("faqQuestions.q7"),
+      answer: t("faqQuestions.a7"),
+    },
+    {
+      category: t("faq.categories.eventFeatures"),
+      tab: "General",
+      icon: <Globe size={16} />,
+      question: t("faqQuestions.q8"),
+      answer: t("faqQuestions.a8"),
+    },
+    {
+      category: t("faq.categories.eventManagement"),
+      tab: "Hackathons",
+      icon: <Calendar size={16} />,
+      question: t("faqQuestions.q9"),
+      answer: t("faqQuestions.a9"),
+    },
+    {
+      category: t("faq.categories.privacySecurity"),
+      tab: "Account",
+      icon: <Shield size={16} />,
+      question: t("faqQuestions.q10"),
+      answer: t("faqQuestions.a10"),
+    },
+  ], [t]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -139,6 +134,7 @@ function FAQSectionInner() {
 
       return matchesCategory && matchesSearch;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, selectedCategory]);
 
   const suggestions = faqs
@@ -152,7 +148,7 @@ function FAQSectionInner() {
   const [ratings, setRatings] = useState(() => {
     try {
       const saved = localStorage.getItem("eventra_faq_ratings");
-      if (saved) return JSON.parse(saved);
+      if (saved) return safeJsonParse(saved, {});
     } catch (e) {
       logger.error("Failed to load FAQ ratings", e);
     }
@@ -701,10 +697,9 @@ function FAQSectionInner() {
         
         
        <div className="faq-heading-inner">
-            <h2>Frequently Asked Questions</h2>
+            <h2>{t("faq.heading")}</h2>
             <p className="mb-6">
-              Everything you need to know about using Eventra, from getting started to hosting your
-              own events.
+              {t("faq.subtitle")}
             </p>
             <div className="search-wrap">
               <Search className="search-icon w-4 h-4" />
@@ -716,7 +711,7 @@ function FAQSectionInner() {
                 }}
                 onFocus={() => setShowSuggestions(true)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                placeholder="Search FAQs..."
+                placeholder={t("faq.searchPlaceholder")}
                 className="search-input"
               />
               {searchTerm && (
@@ -749,17 +744,22 @@ function FAQSectionInner() {
             </div>
             {/* CATEGORY FILTER */}
             <div className="flex gap-2 justify-center mt-4 flex-wrap">
-              {["All", "General", "Hackathons", "Account"].map((c) => (
+              {[
+                { key: "All", label: t("faq.filterAll") },
+                { key: "General", label: t("faq.filterGeneral") },
+                { key: "Hackathons", label: t("faq.filterHackathons") },
+                { key: "Account", label: t("faq.filterAccount") },
+              ].map((c) => (
                 <button
-                  key={c}
-                  onClick={() => setSelectedCategory(c)}
+                  key={c.key}
+                  onClick={() => setSelectedCategory(c.key)}
                   className={`btn px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${
-                    selectedCategory === c
+                    selectedCategory === c.key
                       ? "bg-indigo-600 text-white border-indigo-600 shadow-md"
                       : "bg-white/70 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`}
                 >
-                  {c}
+                  {c.label}
                 </button>
               ))}
             </div>
@@ -775,11 +775,10 @@ function FAQSectionInner() {
                 <HelpCircle className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">
-                No matching FAQs found
+                {t("faq.emptyTitle")}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6 leading-relaxed">
-                We couldn&apos;t find any questions matching &quot;{searchTerm}&quot; under the {selectedCategory}{" "}
-                category. Try broadening your keywords.
+                {t("faq.emptyDescription", { searchTerm, selectedCategory })}
               </p>
               <button
                 onClick={() => {
@@ -788,7 +787,7 @@ function FAQSectionInner() {
                 }}
                 className="px-5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-full transition-all shadow-md hover:shadow-lg"
               >
-                Clear Active Filters
+                {t("faq.emptyClearFilters")}
               </button>
             </div>
           ) : (
@@ -835,7 +834,7 @@ function FAQSectionInner() {
                         {/* Helpfulness Rating Widget */}
                         <div className="faq-helpfulness">
                           <span className="faq-helpfulness-label">
-                            Was this answer helpful?
+                            {t("faq.helpfulnessLabel")}
                           </span>
                           <div className="faq-vote-buttons">
                             <button
@@ -845,7 +844,7 @@ function FAQSectionInner() {
                               }`}
                               aria-pressed={ratings[faq.question]?.voted === "yes"}
                             >
-                              👍 Yes ({ratings[faq.question]?.yes || 0})
+                              👍 {t("common.yes")} ({ratings[faq.question]?.yes || 0})
                             </button>
                             <button
                               onClick={() => handleVote(faq.question, "no")}
@@ -854,7 +853,7 @@ function FAQSectionInner() {
                               }`}
                               aria-pressed={ratings[faq.question]?.voted === "no"}
                             >
-                              👎 No ({ratings[faq.question]?.no || 0})
+                              👎 {t("common.no")} ({ratings[faq.question]?.no || 0})
                             </button>
                           </div>
                         </div>

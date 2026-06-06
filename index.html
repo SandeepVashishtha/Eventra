@@ -1,46 +1,73 @@
-
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<title>Eventra — Platform for Builders</title>
-		<meta name="description" content="A premium, modern platform for organizing and attending events, hackathons, and projects." />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-		<!-- Icons & manifest -->
-		<link rel="icon" href="/favicon.png" />
-		<link rel="apple-touch-icon" href="/Eventra.png" />
-		<link rel="manifest" href="/manifest.json" />
-		<meta name="theme-color" content="#4f46e5" />
+    <!-- Theme -->
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Eventra" />
 
-		<!-- Social -->
-		<meta property="og:site_name" content="Eventra" />
-		<meta property="og:title" content="Eventra — Platform for Builders" />
-		<meta property="og:description" content="A premium, modern platform for organizing and attending events, hackathons, and projects." />
-		<meta property="og:image" content="/logo_transparent.png" />
-		<meta name="twitter:card" content="summary_large_image" />
+    <!-- Preconnect for faster external resource loading -->
+    <link rel="preconnect" href="https://api.github.com" />
+    <link rel="dns-prefetch" href="https://api.github.com" />
+    <link rel="preconnect" href="https://accounts.google.com" crossorigin />
+    <link rel="dns-prefetch" href="https://accounts.google.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-		<!-- Prevent flash of wrong theme; runs early from /public -->
-		<script src="/theme-init.js"></script>
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
 
-		<!-- Performance hints -->
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Prevent Theme Flickering -->
+    <script src="/theme-init.js"></script>
 
-		<!-- Vite will inject dev client & HMR in development automatically -->
-	</head>
-	<body>
-		<a class="skip-to-content" href="#main">Skip to content</a>
-		<div id="root"></div>
+    <!-- Title -->
+    <title>Eventra - Open Source Event Management Platform</title>
+    <meta property="og:title" content="Eventra - Platform for Builders" />
+    <meta property="og:description" content="A premium, modern platform for organizing and attending events, hackathons, and projects." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://eventra.vercel.app/" />
+    <meta property="og:image" content="https://eventra.sandeepvashishtha.in/logo_transparent.png" />
 
-		<noscript>
-			<div style="padding:1rem;text-align:center;">
-				<strong>Eventra requires JavaScript to run. Please enable JavaScript in your browser.</strong>
-			</div>
-		</noscript>
+    <!-- Google Sign In -->
+    <meta
+      name="google-signin-client_id"
+      content="%VITE_GOOGLE_CLIENT_ID%"
+    />
 
-		<!-- App entry (Vite) -->
-		<script type="module" src="/src/index.jsx"></script>
-	</body>
+    <script
+      src="https://accounts.google.com/gsi/client"
+      async
+      defer
+    ></script>
+
+    <!-- EmailJS -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
+      async
+    ></script>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <noscript>
+      <div style="padding: 1rem; text-align: center">
+        <strong>Eventra requires JavaScript to run. Please enable JavaScript in your browser.</strong>
+      </div>
+    </noscript>
+
+    <script type="module" src="/src/index.jsx"></script>
+  </body>
 </html>
-

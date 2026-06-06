@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";  
 import { Bell } from "lucide-react";
 import { useNotifications } from "../../hooks/useNotifications";
+import EmptyState from "./EmptyState";
 import "./NotificationBell.css";
 
 const NotificationBell = () => {
@@ -59,9 +60,12 @@ const NotificationBell = () => {
           </div>
 
           {notifications.length === 0 ? (
-            <p className="empty-text">
-              No notifications yet
-            </p>
+            <EmptyState
+              compact={true}
+              icon={Bell}
+              title="No notifications yet"
+              description="We'll let you know when we have updates for you."
+            />
           ) : (
             notifications.map((item) => (
               <div

@@ -62,17 +62,28 @@ const getPopularityScore = (event) => {
 };
 
 const _tagCache = new Map();
+const _cacheOrder = [];
+const MAX_CACHE_SIZE = 100;
 
 const _getCachedTags = (event) => {
   const id = getEventId(event);
   if (!id) return [];
-  if (_tagCache.has(id)) return _tagCache.get(id);
+  if (_tagCache.has(id)) {
+    const tags = _tagCache.get(id);
+    const idx = _cacheOrder.indexOf(id);
+    if (idx > -1) _cacheOrder.splice(idx, 1);
+    _cacheOrder.push(id);
+    return tags;
+  }
+  if (_cacheOrder.length >= MAX_CACHE_SIZE) {
+    const oldest = _cacheOrder.shift();
+    _tagCache.delete(oldest);
+  }
   const tags = getEventTags(event);
   _tagCache.set(id, tags);
+  _cacheOrder.push(id);
   return tags;
 };
-
-const clearTagCache = () => _tagCache.clear();
 
 const getSimilarityScore = (candidate, interactedEvents) => {
   if (!interactedEvents.length) return 0;
@@ -283,7 +294,6 @@ export const buildPersonalizedRecommendations = ({
   includeInteracted = false,
   limit = 8,
 } = {}) => {
-  clearTagCache();
   const interactionProfile = buildInteractionProfile({
     registeredEvents,
     bookmarkedEvents,

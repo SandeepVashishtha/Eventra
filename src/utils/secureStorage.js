@@ -1,4 +1,33 @@
-/* eslint-disable-next-line no-console */
+ 
+/**
+ * @file secureStorage.js
+ * @module utils/secureStorage
+ *
+ * @description
+ * AES-GCM encrypted localStorage wrapper built on the Web Crypto API.
+ *
+ * **Security model**
+ * - The AES-256-GCM key is derived with PBKDF2 (100 000 iterations, SHA-256)
+ *   from two random 256-bit values that are generated once per browser and
+ *   persisted in localStorage. Neither value is derived from any public
+ *   constant such as the origin URL.
+ * - Each write uses a fresh random 12-byte IV, so identical values produce
+ *   different ciphertext on every call (preventing pattern analysis).
+ * - No plaintext is ever written to localStorage. In-flight values (between
+ *   the `setItem` call and encryption completion) are held only in the
+ *   `pendingWrites` in-memory Map.
+ * - If the page is closed before encryption completes the data is not
+ *   persisted — data loss is the intentional tradeoff versus silent plaintext
+ *   exposure.
+ * - If Web Crypto is unavailable (non-HTTPS context, very old browser) the
+ *   module degrades gracefully to unencrypted localStorage and
+ *   `isEncryptionActive()` returns `false`.
+ *
+ * **Migration**
+ * Earlier versions of this module wrote a `key + ':plaintext'` fallback entry
+ * to localStorage before async encryption completed. `cleanupPlaintextFallbacks`
+ * runs automatically at module load to remove any such keys left on disk.
+ */
 // ---------------------------------------------------------------------------
 // AES-GCM Encryption Engine (Web Crypto API)
 // ---------------------------------------------------------------------------
@@ -62,7 +91,7 @@ const getOrCreateSecret = (storageKey) => {
 // Both values are initialised eagerly at module load so every call to
 // getDerivedKey() within a page session operates on the same key.
 const DERIVED_KEY_MATERIAL = getOrCreateSecret(MATERIAL_STORAGE_KEY);
-const DERIVED_KEY_SALT     = getOrCreateSecret(SALT_STORAGE_KEY);
+const DERIVED_KEY_SALT = getOrCreateSecret(SALT_STORAGE_KEY);
 
 let _keyPromise = null;
 
@@ -99,12 +128,12 @@ const getDerivedKey = () => {
   return _keyPromise;
 };
 
-const encryptValue = async (plaintext) => {
+const encryptValue = async (storageKey, plaintext) => {
   const key = await getDerivedKey();
   const encoder = new TextEncoder();
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
   const encrypted = await crypto.subtle.encrypt(
-    { name: CRYPTO_ALGORITHM, iv },
+    { name: CRYPTO_ALGORITHM, iv, additionalData: encoder.encode(storageKey) },
     key,
     encoder.encode(plaintext),
   );
@@ -113,8 +142,9 @@ const encryptValue = async (plaintext) => {
   return `${ivBase64}:${ctBase64}`;
 };
 
-const decryptValue = async (stored) => {
+const decryptValue = async (storageKey, stored) => {
   const key = await getDerivedKey();
+  const encoder = new TextEncoder();
   const colonIdx = stored.indexOf(':');
   if (colonIdx === -1) throw new Error('Invalid ciphertext format');
   const ivBase64 = stored.slice(0, colonIdx);
@@ -122,7 +152,7 @@ const decryptValue = async (stored) => {
   const iv = Uint8Array.from(atob(ivBase64), (c) => c.charCodeAt(0));
   const ciphertext = Uint8Array.from(atob(ctBase64), (c) => c.charCodeAt(0));
   const decrypted = await crypto.subtle.decrypt(
-    { name: CRYPTO_ALGORITHM, iv },
+    { name: CRYPTO_ALGORITHM, iv, additionalData: encoder.encode(storageKey) },
     key,
     ciphertext,
   );
@@ -149,62 +179,102 @@ const cryptoSupported = isCryptoAvailable();
 // Encrypted key-value storage wrapper (localStorage — AES-GCM encrypted)
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Legacy plaintext-fallback cleanup
+// ---------------------------------------------------------------------------
+// Previous versions of this module wrote `key + ':plaintext'` to localStorage
+// synchronously before encryption completed so that data would survive a
+// page close. This left sensitive values permanently in plaintext whenever
+// the page was closed during the async encryption window.
+//
+// PLAINTEXT_SUFFIX is kept ONLY so that cleanupPlaintextFallbacks() can
+// identify and remove those legacy keys on load. It must NOT be used for
+// any new localStorage write.
+// ---------------------------------------------------------------------------
 
-// In-memory cache for pending writes to prevent race conditions during async encryption
-const pendingWrites = new Map();
-
-/**
- * syncSecureStorage
- *
- * Encrypts values at rest in localStorage using AES-GCM (256-bit) via the
- * Web Crypto API. Each write generates a random IV so identical values
- * produce different ciphertext every time, preventing pattern analysis.
- *
- * The encryption key is derived per-origin using PBKDF2 — no hardcoded
- * secrets exist in source code.
- *
- * Falls back to plain localStorage when Web Crypto is unavailable
- * (non-HTTPS contexts or very old browsers).
- */
 const PLAINTEXT_SUFFIX = ':plaintext';
 
 /**
- * Write plaintext immediately so data survives tab close, then
- * replace with encrypted version asynchronously. If encryption
- * is not supported or the page closes before it completes, the
- * plaintext fallback is available on next load.
+ * Scans localStorage for keys ending in `':plaintext'` left behind by
+ * the previous write strategy and removes them. Called once at module load.
+ *
+ * This is a one-time migration helper. Once all active clients have loaded
+ * this version at least once, there will be no legacy keys left to clean up.
+ *
+ * @private
+ */
+const cleanupPlaintextFallbacks = () => {
+  try {
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.endsWith(PLAINTEXT_SUFFIX)) toRemove.push(k);
+    }
+    toRemove.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // localStorage unavailable — nothing to clean up
+  }
+};
+
+if (typeof window !== 'undefined') {
+  // Best-effort: errors here must never prevent module load
+  try { cleanupPlaintextFallbacks(); } catch { /* ignore */ }
+}
+
+// In-memory cache for pending writes — the sole mechanism for serving reads
+// that arrive while async encryption is in progress. No plaintext is ever
+// written to localStorage, so this Map is the only in-flight plaintext store.
+const pendingWrites = new Map();
+
+/**
+ * Encrypts `value` and writes the ciphertext to localStorage under `key`.
+ *
+ * When Web Crypto is unavailable the raw value is written directly (the
+ * caller's JSDoc documents this degraded mode explicitly).
+ *
+ * Errors from `encryptValue` are intentionally NOT caught here — they
+ * propagate to `setItem`, which returns `false` so the caller knows the
+ * write did not persist. Silently keeping a plaintext fallback on encryption
+ * failure would undermine the entire security model.
+ *
+ * @private
+ * @param {string} key   - localStorage key.
+ * @param {string} value - Plaintext value to encrypt and store.
+ * @returns {Promise<void>}
  */
 const writeWithEncryption = async (key, value) => {
   if (!cryptoSupported) {
     localStorage.setItem(key, value);
     return;
   }
-  try {
-    const encrypted = await encryptValue(value);
-    localStorage.setItem(key, encrypted);
-    localStorage.removeItem(key + PLAINTEXT_SUFFIX);
-  } catch (err) {
-    console.error('[secureStorage] Encryption failed:', err);
-    // Plaintext is already in the fallback key — keep it
-  }
+  const encrypted = await encryptValue(key, value);
+  localStorage.setItem(key, encrypted);
 };
 
 export const syncSecureStorage = {
   /**
-   * Stores a value encrypted under the given key.
+   * Encrypts `value` and stores it under `key` in localStorage.
    *
-   * Data is written to localStorage synchronously as a plaintext fallback
-   * before encryption begins. If the page closes before encryption
-   * completes, the plaintext fallback survives. On next load, getItemAsync
-   * prefers the fallback if present.
+   * While encryption is in progress the value is held in the in-memory
+   * `pendingWrites` Map so that concurrent `getItem` / `getItemAsync` calls
+   * within the same page session return the correct value immediately.
    *
-   * @param {string} key
-   * @param {string} value
-   * @returns {Promise<boolean>} true on success, false on storage failure
+   * **No plaintext is written to localStorage at any point.** If the page
+   * is closed or navigated away before encryption completes, the data will
+   * not be persisted — this is an intentional tradeoff: data loss is
+   * preferable to permanent plaintext exposure.
+   *
+   * When Web Crypto is unavailable (non-HTTPS / legacy browser) the raw
+   * value is stored directly; `isEncryptionActive()` will return `false`
+   * so callers can surface a warning to the user if needed.
+   *
+   * @param {string} key   - localStorage key.
+   * @param {string} value - Plaintext string to encrypt and store.
+   * @returns {Promise<boolean>} `true` on success; `false` when the write
+   *   could not be persisted (localStorage full, encryption error, etc.).
    */
   setItem: async (key, value) => {
     try {
-      localStorage.setItem(key + PLAINTEXT_SUFFIX, value);
       pendingWrites.set(key, value);
       await writeWithEncryption(key, value);
       pendingWrites.delete(key);
@@ -217,20 +287,23 @@ export const syncSecureStorage = {
   },
 
   /**
-   * Returns the raw stored bytes for the key without decrypting.
+   * Returns the raw stored bytes for the given key without decrypting.
    *
-   * For actual values use getItemAsync().
+   * If a write for this key is currently in progress, the pending
+   * plaintext value is returned from the in-memory Map so callers always
+   * see the latest value within a session.
+   *
+   * For decrypted values use `getItemAsync()`.
    *
    * @param {string} key
-   * @returns {string|null}
+   * @returns {string|null} Raw ciphertext string, in-flight plaintext from
+   *   `pendingWrites`, or `null` when the key does not exist.
    */
   getItem: (key) => {
     try {
       if (pendingWrites.has(key)) {
         return pendingWrites.get(key);
       }
-      const fallback = localStorage.getItem(key + PLAINTEXT_SUFFIX);
-      if (fallback !== null) return fallback;
       return localStorage.getItem(key);
     } catch (error) {
       console.error('[secureStorage] getItem failed:', error);
@@ -241,11 +314,19 @@ export const syncSecureStorage = {
   /**
    * Retrieves and decrypts the value stored under the given key.
    *
-   * Falls back to the plaintext fallback (if available) or to the raw
-   * stored value when decryption fails.
+   * Resolution order:
+   * 1. `pendingWrites` Map — returns the in-flight plaintext immediately if
+   *    a `setItem` for this key is still running.
+   * 2. localStorage ciphertext — decrypted with the derived AES-GCM key.
+   *    If decryption fails (e.g. key material was lost between sessions) the
+   *    raw stored string is returned as a best-effort fallback so callers
+   *    can surface an error rather than silently returning `null`.
+   * 3. When Web Crypto is unavailable the raw stored value is returned
+   *    directly (plaintext was written by `setItem` in degraded mode).
    *
    * @param {string} key
-   * @returns {Promise<string|null>}
+   * @returns {Promise<string|null>} Decrypted value, raw fallback, or `null`
+   *   when the key does not exist or an unrecoverable error occurs.
    */
   getItemAsync: async (key) => {
     try {
@@ -253,15 +334,12 @@ export const syncSecureStorage = {
         return pendingWrites.get(key);
       }
 
-      const fallback = localStorage.getItem(key + PLAINTEXT_SUFFIX);
-      if (fallback !== null) return fallback;
-
       const stored = localStorage.getItem(key);
       if (stored === null) return null;
 
       if (cryptoSupported) {
         try {
-          return await decryptValue(stored);
+          return await decryptValue(key, stored);
         } catch {
           return stored;
         }
@@ -275,7 +353,12 @@ export const syncSecureStorage = {
   },
 
   /**
-   * Removes the encrypted blob stored under the given key.
+   * Removes the value stored under the given key.
+   *
+   * Also removes the legacy `key + ':plaintext'` entry if one exists on
+   * disk from a previous version of this module, ensuring no stale
+   * plaintext survives a targeted delete.
+   *
    * @param {string} key
    */
   removeItem: (key) => {
@@ -289,13 +372,24 @@ export const syncSecureStorage = {
   },
 
   /**
-   * Clears all localStorage data for the current origin.
-   * Use with caution: this removes ALL keys, not just Eventra's.
+   * Clears all Eventra-managed keys from localStorage.
+   *
+   * Iterates only over keys starting with the Eventra prefix ('eventra:')
+   * so data from other applications on the same origin is never touched.
    */
   clear: () => {
     try {
       pendingWrites.clear();
-      localStorage.clear();
+      writeQueue.clear();
+
+      const prefix = "eventra:";
+      const toRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(prefix)) toRemove.push(k);
+      }
+      toRemove.forEach((k) => localStorage.removeItem(k));
+
       _keyPromise = null;
     } catch (error) {
       console.error('[secureStorage] clear failed:', error);

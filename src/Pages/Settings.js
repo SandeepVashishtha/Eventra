@@ -4,6 +4,7 @@ import { Sun, MousePointer, Bell, ShieldCheck, ArrowRight, Key, Eye, EyeOff, Cli
 import useLocalStorage from "../hooks/useLocalStorage";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { toast } from "react-hot-toast";
+import KeyboardShortcutsHelp from "../components/accessibility/KeyboardShortcutsHelp";
 
 const Settings = () => {
   useDocumentTitle("Eventra | Settings");
@@ -200,6 +201,9 @@ const Settings = () => {
               </p>
             </div>
           </article>
+
+          {/* Keyboard Shortcuts Help */}
+          <KeyboardShortcutsHelp />
         </div>
 
         {/* Advanced Backup Recovery Key Generator Card */}
