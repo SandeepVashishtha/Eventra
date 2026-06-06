@@ -5,7 +5,7 @@ const sourcePath = "src/Pages/Events/EventRegistration.js";
 const source = readFileSync(sourcePath, "utf8");
 
 const additionalInfoLabelMatches =
-  source.match(/Additional Information \(Optional\)/g) || [];
+  source.match(/(?:Additional Information \(Optional\)|t\("eventRegistration\.formAdditionalInfo"\))/g) || [];
 const additionalInfoTextareaMatches =
   source.match(/<textarea[\s\S]*?name="additionalInfo"[\s\S]*?>/g) || [];
 const additionalInfoIdMatches =
