@@ -8,6 +8,8 @@ import {
   useState,
 } from "react";
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler, setAuthToken } from "../config/api";
+import { authService } from "../services/authService";
+import { userService } from "../services/userService";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
 import { syncSecureStorage } from "../utils/secureStorage";
 import { toast } from "react-toastify";
@@ -144,7 +146,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const validateSession = async () => {
       try {
-        const res = await apiUtils.get(API_ENDPOINTS.USERS.PROFILE);
+        const res = await userService.getProfile();
         if (!isMountedRef.current) return;
 
         if (res.ok && res.data) {
@@ -155,9 +157,26 @@ export const AuthProvider = ({ children }) => {
         } else {
           clearSession();
         }
-      } catch {
+      } catch (err) {
         if (!isMountedRef.current) return;
-        clearSession();
+        
+        const isAuthError = err?.status === 401 || err?.status === 403;
+        if (isAuthError) {
+          clearSession();
+        } else {
+          console.warn("[AuthContext] Network error during session validation. Preserving local session.");
+          try {
+            const cachedUser = syncSecureStorage.getItem("user");
+            if (cachedUser) {
+              setUser(JSON.parse(cachedUser));
+              setToken("cookie-managed");
+            } else {
+              clearSession();
+            }
+          } catch {
+            clearSession();
+          }
+        }
       } finally {
         if (isMountedRef.current) {
           setLoading(false);
@@ -289,7 +308,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
+        const res = await authService.login({
           usernameOrEmail,
           password,
         });

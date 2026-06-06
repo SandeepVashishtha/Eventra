@@ -17,6 +17,7 @@ import FAQCTA from "./FaqCTA";
 import SEOHead from "../../components/SEOHead";
 import { useTranslation } from "react-i18next";
 import { logger } from "../../utils/logger";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 
 
@@ -146,7 +147,7 @@ function FAQSectionInner() {
   const [ratings, setRatings] = useState(() => {
     try {
       const saved = localStorage.getItem("eventra_faq_ratings");
-      if (saved) return JSON.parse(saved);
+      if (saved) return safeJsonParse(saved, {});
     } catch (e) {
       logger.error("Failed to load FAQ ratings", e);
     }
