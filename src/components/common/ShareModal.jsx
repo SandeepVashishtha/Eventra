@@ -32,6 +32,11 @@ const ShareModal = ({ isOpen, onClose, event }) => {
       return null;
     }
 
+    if (!event.id) {
+      console.warn("[ShareModal] event.id is missing — share URL cannot be constructed.");
+      return null;
+    }
+
     const shareUrl = `${window.location.origin}/events/${event.id}`;
     if (!isValidShareUrl(shareUrl)) {
       console.warn("[ShareModal] Rejected invalid share URL:", shareUrl);
