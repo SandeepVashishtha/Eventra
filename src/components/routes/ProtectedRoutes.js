@@ -23,6 +23,7 @@ const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPl
 const UIInventory = lazy(() => import("../admin/UIInventory"));
 const SponsorDashboard = lazy(() => import("../../Pages/Sponsors/SponsorDashboard"));
 const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard.jsx"));
+const EventSchedulerCalendar = lazy(() => import("../../Pages/Calendar/EventSchedulerCalendar.jsx"));
 
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
@@ -161,6 +162,20 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute requiredRoles={[ROLES.ADMIN]}>
         {withModuleBoundary(<UIInventory />, "UI Inventory")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/scheduler"
+    path="/events/scheduler"
+    element={
+      <ProtectedRoute
+        requiredPermissions={[
+          PERMISSIONS.CREATE_EVENT,
+          PERMISSIONS.HOST_HACKATHON,
+        ]}
+      >
+        {withModuleBoundary(<EventSchedulerCalendar />, "Event Scheduler")}
       </ProtectedRoute>
     }
   />,
