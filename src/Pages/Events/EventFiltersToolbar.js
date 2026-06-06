@@ -547,7 +547,7 @@ const EventFiltersToolbar = ({
             label=""
             value={sortType === "" ? "" : sortType}
             onChange={onSortChange}
-            options={["Newest", "Upcoming"]}
+            options={["Newest", "Upcoming", "Best Match"]}
             placeholder="Sort by Date"
           />
         </div>

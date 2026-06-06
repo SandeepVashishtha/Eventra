@@ -4,6 +4,7 @@ import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
 import { useStableFilters } from "../../hooks/useStableFilters";
+import useRecommendations from "../../hooks/useRecommendations";
 import {
   applyAdvancedFilters,
   getDateRange,
@@ -19,6 +20,8 @@ const DEFAULT_EVENTS_PER_PAGE = 12;
 const SORT_MAPPING = {
   Newest: "date,desc",
   Upcoming: "date,asc",
+  // FIX (#7437): sort by AI recommendation score, highest first
+  "Best Match": "match,desc",
   Oldest: "date,asc",
   "Title A-Z": "title,asc",
   "Title Z-A": "title,desc",
@@ -257,8 +260,33 @@ const useEventListing = () => {
  
     
 
+  // FIX (#7437): Enrich all events with AI recommendation scores so the
+  // "Best Match" sort can rank events by personalised relevance.
+  // useRecommendations is memoised internally and only re-runs when `events`
+  // or the stored user profile changes — no extra network requests.
+  const scoredEvents = useRecommendations(events);
+
+  // Build a lookup map: eventId → { score, reasons } for downstream consumers
+  // (e.g. EventCard badge rendering) without re-sorting the whole list twice.
+  const matchScoreMap = useMemo(() => {
+    const map = new Map();
+    scoredEvents.forEach((e) => {
+      map.set(String(e.id), {
+        score: e.recommendationScore ?? 0,
+        reasons: e.recommendationReasons ?? [],
+      });
+    });
+    return map;
+  }, [scoredEvents]);
+
   const sortedEvents = useMemo(() => {
-    return [...filteredEvents].sort((a, b) => {
+    const base = sortType === "Best Match" ? scoredEvents : filteredEvents;
+    return [...base].sort((a, b) => {
+      // Best Match: sort by AI recommendation score descending
+      if (sortType === "Best Match") {
+        return (b.recommendationScore ?? 0) - (a.recommendationScore ?? 0);
+      }
+
       const dateA = new Date(a.date || a.startDate);
       const dateB = new Date(b.date || b.startDate);
 
@@ -268,7 +296,7 @@ const useEventListing = () => {
       // Default: Newest (Latest first)
       return dateB - dateA;
     });
-  }, [filteredEvents, sortType]);
+  }, [filteredEvents, scoredEvents, sortType]);
 
   const paginatedEvents = useMemo(() => {
     const startIndex = (currentPage - 1) * eventsPerPage;
@@ -288,6 +316,7 @@ const useEventListing = () => {
     categoryFilter,
     loadError,
     isLoading,
+    matchScoreMap,      // eventId → { score, reasons } for badge rendering
     paginatedEvents,
     searchQuery,
     sortType,
