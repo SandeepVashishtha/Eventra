@@ -17,6 +17,13 @@ export async function resolve(specifier, context, nextResolve) {
       shortCircuit: true
     };
   }
+  if (specifier === "react-router-dom") {
+    const mockRouterPath = path.resolve("tests/helpers/mockReactRouter.js");
+    return {
+      url: pathToFileURL(mockRouterPath).href,
+      shortCircuit: true
+    };
+  }
   if (specifier === "idb-keyval") {
     const mockIdbPath = path.resolve("tests/helpers/mockIdbKeyval.js");
     return {
