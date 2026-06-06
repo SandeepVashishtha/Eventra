@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import {
+import { safeJsonParse } from "../../utils/safeJsonParse";
   Zap, CheckCircle, Gift, Target,
   Flame, Star, Trophy, Sparkles, Timer,
 } from 'lucide-react';
@@ -13,7 +14,7 @@ function loadQuestState() {
   try {
     const raw = localStorage.getItem(QUEST_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    return safeJsonParse(raw, {});
   } catch { return null; }
 }
 

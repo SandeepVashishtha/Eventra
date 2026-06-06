@@ -12,7 +12,7 @@ import {
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
-import { logger } from "../../utils/logger";
+
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
@@ -45,8 +45,7 @@ const useEventListing = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
 
-  // useStableFilters({})
-  const [advancedFilters, setAdvancedFiltersState] = useStableFilters(getDefaultFilters);
+  const [advancedFilters, setAdvancedFiltersState] = useStableFilters({});
 
   const [pagination, setPagination] = useState({
     totalPages: 1,
@@ -161,9 +160,6 @@ const useEventListing = () => {
     }
   }, [buildQueryParams]);
 
-  // RACE CONDITION FIX: Call fetchEvents immediately on mount, without scheduling
-  // mock data concurrently. This prevents race conditions where mock data could
-  // overwrite real API responses based on timing.
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
@@ -190,6 +186,7 @@ const useEventListing = () => {
 
   const setAdvancedFilters = useCallback((filters) => {
     setAdvancedFiltersState(normalizeAdvancedFilters(filters));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const priceStats = useMemo(() => getPriceStats(events), [events]);
@@ -255,16 +252,14 @@ const useEventListing = () => {
     return applyAdvancedFilters(filtered, advancedFilters);
   }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
 
-
   const sortedEvents = useMemo(() => {
     return [...filteredEvents].sort((a, b) => {
       const dateA = new Date(a.date || a.startDate);
       const dateB = new Date(b.date || b.startDate);
 
       if (sortType === "Upcoming") {
-        return dateA - dateB; // Earliest first
+        return dateA - dateB;
       }
-      // Default: Newest (Latest first)
       return dateB - dateA;
     });
   }, [filteredEvents, sortType]);
@@ -274,7 +269,6 @@ const useEventListing = () => {
     return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
   }, [sortedEvents, currentPage, eventsPerPage]);
 
-  // Derive pagination totals based on the filtered dataset
   const totalElements = pagination.totalPages > 1 ? pagination.totalElements : sortedEvents.length;
   const totalPages = pagination.totalPages > 1 ? pagination.totalPages : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
 

@@ -85,11 +85,6 @@ const _getCachedTags = (event) => {
   return tags;
 };
 
-const clearTagCache = () => {
-  _tagCache.clear();
-  _cacheOrder.length = 0;
-};
-
 const getSimilarityScore = (candidate, interactedEvents) => {
   if (!interactedEvents.length) return 0;
 
@@ -299,7 +294,6 @@ export const buildPersonalizedRecommendations = ({
   includeInteracted = false,
   limit = 8,
 } = {}) => {
-  clearTagCache();
   const interactionProfile = buildInteractionProfile({
     registeredEvents,
     bookmarkedEvents,

@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler, setAuthToken } from "../config/api";
+import { setOnUnauthorizedHandler, setAuthToken } from "../config/api";
 import { authService } from "../services/authService";
 import { userService } from "../services/userService";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
@@ -157,9 +157,26 @@ export const AuthProvider = ({ children }) => {
         } else {
           clearSession();
         }
-      } catch {
+      } catch (err) {
         if (!isMountedRef.current) return;
-        clearSession();
+        
+        const isAuthError = err?.status === 401 || err?.status === 403;
+        if (isAuthError) {
+          clearSession();
+        } else {
+          console.warn("[AuthContext] Network error during session validation. Preserving local session.");
+          try {
+            const cachedUser = syncSecureStorage.getItem("user");
+            if (cachedUser) {
+              setUser(JSON.parse(cachedUser));
+              setToken("cookie-managed");
+            } else {
+              clearSession();
+            }
+          } catch {
+            clearSession();
+          }
+        }
       } finally {
         if (isMountedRef.current) {
           setLoading(false);
