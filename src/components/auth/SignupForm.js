@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { authService } from "../../services/authService";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+
 import { ROLES } from "../../config/roles";
 import { useAuth } from "../../context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
@@ -223,7 +223,7 @@ const SignupForm = () => {
           setErrors((prev) => ({ ...prev, email: result?.message || "Email is already registered" }));
           setFieldState("email", "error");
         }
-      } catch (err) {
+      } catch {
         setErrors((prev) => ({ ...prev, email: "Validation failed" }));
         setFieldState("email", "error");
       }
@@ -261,11 +261,9 @@ const SignupForm = () => {
         confirmPassword: formData.confirmPassword,
       });
 
-      const { ok, status, data } = await parseSignupResponse(response);
-
-      if (!ok) {
-        const backendMessage = data?.message || data?.error || "Registration failed";
-        setSubmitError(`${backendMessage} (${status})`);
+      if (!response.ok) {
+        const backendMessage = response.data?.message || response.data?.error || "Registration failed";
+        setSubmitError(`${backendMessage} (${response.status})`);
         setLoading(false);
         isSubmittingRef.current = false;
         return;
@@ -278,7 +276,10 @@ const SignupForm = () => {
         isSubmittingRef.current = false;
         return;
       }
+      // Under the HttpOnly-cookie auth model the server sets the session
+      // cookie on the signup response. The client never sees a raw JWT.
 
+      const data = response.data || {};
       const sessionRoles = normalizeSignupRoles(data);
       const sessionUser = {
         id: data?.id,

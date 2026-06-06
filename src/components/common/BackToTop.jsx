@@ -41,7 +41,7 @@ const BackToTop = ({ threshold = SCROLL_THRESHOLD }) => {
       try {
         // disconnect observer if present
         // noop — observer variable not in scope here; rely on GC for simple page lifecycles
-      } catch (e) {
+      } catch {
         // ignore
       }
     };

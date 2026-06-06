@@ -1,19 +1,9 @@
 import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import {
-  AnimatePresence,
-  MotionConfig,
-  motion,
-  useAnimation,
-  useScroll,
-  useTransform,
-} from "framer-motion";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -45,6 +35,21 @@ const allSearchItems = [
   ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
 ];
 
+const HEADLINE_PHRASES = [
+  "Amazing Tech Events",
+  "Exciting Hackathons Today",
+  "Innovative Dev Workshops",
+  "Cutting-Edge Tech Meetups",
+];
+const TAGLINE_TEXTS = ["Discover & Join"];
+const SEARCH_RESULT_LIMIT = 5;
+const HERO_STATS = [
+  { icon: Users, value: 1500, label: "Developers Joined", suffix: "+" },
+  { icon: Calendar, value: 75, label: "Events Organized", suffix: "+" },
+  { icon: Handshake, value: 30, label: "Partners & Sponsors", suffix: "+" },
+];
+const MotionLink = motion(Link);
+
 const searchIndex = new Fuse(allSearchItems, {
   keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
   threshold: 0.3,
@@ -62,14 +67,57 @@ const getResultIcon = (type) => {
 };
 
 const Hero = () => {
-  useDocumentTitle("Eventra | Home");
-  
-  const phrases = [
-    "Amazing Tech Events",
-    "Exciting Hackathons Today",
-    "Innovative Dev Workshops",
-    "Cutting-Edge Tech Meetups",
+   const prefersReducedMotion = useReducedMotion();
+  const controls = useAnimation();
+
+  const HEADLINE_PHRASES = phrases;
+
+  const TAGLINE_TEXTS = [
+    "Build. Connect. Innovate.",
+    "Discover Opportunities.",
+    "Join the Tech Community.",
   ];
+
+  const SEARCH_RESULT_LIMIT = 5;
+
+  const HERO_STATS = [
+    {
+      value: 1500,
+      label: "Developers",
+      suffix: "+",
+      icon: Users,
+    },
+    {
+      value: 75,
+      label: "Events",
+      suffix: "+",
+      icon: Calendar,
+    },
+    {
+      value: 30,
+      label: "Partners",
+      suffix: "+",
+      icon: Handshake,
+    },
+  ];
+
+  const SEARCH_ROUTES = {
+    event: "/events",
+    hackathon: "/hackathons",
+    project: "/projects",
+  };
+
+  const SEARCH_ICONS = {
+    event: Calendar,
+    hackathon: Trophy,
+    project: Code,
+  };
+
+  const MotionLink = motion(Link);
+  
+  useDocumentTitle("Eventra | Home");
+  const controls = useAnimation();
+  const prefersReducedMotion = useReducedMotion();
 
   const containerRef = useRef(null);
 
@@ -92,15 +140,6 @@ const Hero = () => {
   const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  const container = {
-    hidden: { opacity: 1 },
-    show: { opacity: 1, transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-  };
-
-  const fadeUp = {
-    hidden: { y: 0, opacity: 1 },
-    show: { y: 0, opacity: 1 },
-  };
 
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
@@ -159,11 +198,6 @@ const Hero = () => {
     clearSearchTerm();
   }, [clearSearchTerm]);
 
-  const getResultHref = (item) => {
-    const query = encodeURIComponent(item.title || debouncedTerm);
-    const routes = { event: "/events", hackathon: "/hackathons", project: "/projects" };
-    return `${routes[item.type] || "/"}?search=${query}`;
-  };
 
   const getResultIcon = (type) => {
     const icons = { event: Calendar, hackathon: Trophy, project: Code };
@@ -172,19 +206,6 @@ const Hero = () => {
   };
 
   // ─── ANIMATION VARIANTS ────────────────────────────────────────────────────
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-  };
-
-  const fadeUp = {
-    hidden: { y: 32, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
-    },
-  };
 
   const floatShape = (i) => ({
     y: [0, -15 - i * 4, 0],
@@ -218,7 +239,7 @@ const Hero = () => {
   ];
 
   const primaryBtn = "relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900";
-  const secondaryBtn = `${primaryBtn} border border-transparent`;
+
 
   return (
     <section
