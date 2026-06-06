@@ -554,12 +554,18 @@ const useEventRegistration = (eventIdParam) => {
     };
 
     try {
-      const isEventFull = event ? event.attendees >= event.maxAttendees : false;
-      if (isEventFull) {
-        await eventService.waitlistForEvent(eventId, payload);
-      } else {
-        await eventService.registerForEvent(eventId, payload);
-      }
+      await apiUtils.post(
+        endpoint,
+        {
+          ...formData,
+          priority: formData.priority,
+          eventId: parseInt(eventId),
+          userId: user.id,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       setRegistered(true);
       toast.success("Registration successful!");
