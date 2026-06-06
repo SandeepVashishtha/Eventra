@@ -1,6 +1,6 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 
-export default function AnimatedCounter({ value, duration = 1200 }) {
+const AnimatedCounter = React.memo(function AnimatedCounter({ value, duration = 1200 }) {
   const [count, setCount] = useState(0);
   const rafRef = useRef();
   const end = useMemo(() => {
@@ -36,4 +36,6 @@ export default function AnimatedCounter({ value, duration = 1200 }) {
   }, [end, duration]);
 
   return <span aria-live="polite">{count.toLocaleString()}</span>;
-}
+});
+
+export default AnimatedCounter;
