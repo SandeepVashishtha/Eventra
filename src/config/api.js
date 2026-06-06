@@ -219,6 +219,8 @@ API.interceptors.request.use((config) => {
     const csrf = getCSRFToken();
     if (csrf) {
       config.headers["X-CSRF-Token"] = csrf;
+    } else if (process.env.NODE_ENV !== "production") {
+      console.warn("[CSRF] Token missing for mutating request:", method, config.url);
     }
   }
 
