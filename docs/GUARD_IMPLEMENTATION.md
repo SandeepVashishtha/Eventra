@@ -101,6 +101,7 @@ From `src/config/roles.js`:
 ### Example 1: Admin-Only Delete Button
 
 **Before (Manual Check):**
+
 ```jsx
 export function DeleteEventButton({ eventId }) {
   const { hasRole } = useAuth();
@@ -118,6 +119,7 @@ export function DeleteEventButton({ eventId }) {
 ```
 
 **After (Guard Component):**
+
 ```jsx
 export function DeleteEventButton({ eventId }) {
   return (
@@ -135,6 +137,7 @@ export function DeleteEventButton({ eventId }) {
 ### Example 2: Dashboard Conditional Rendering
 
 **Before (Dashboard.js):**
+
 ```jsx
 export default function Dashboard() {
   const { isAdmin } = useAuth() || {};
@@ -148,6 +151,7 @@ export default function Dashboard() {
 ```
 
 **After (Using Guard):**
+
 ```jsx
 export default function Dashboard() {
   return (
@@ -288,16 +292,19 @@ grep -r "includes(ROLES\." src/
 **Current patterns to replace:**
 
 1. **Inline ternary checks**
+
    ```jsx
    {isAdmin?.() ? <AdminUI /> : <UserUI />}
    ```
 
 2. **Conditional rendering**
+
    ```jsx
    if (!hasRole('ADMIN')) return null;
    ```
 
 3. **Manual role array checks**
+
    ```jsx
    const isAdmin = userRoles.includes(ROLES.ADMIN);
    ```
@@ -309,6 +316,7 @@ grep -r "includes(ROLES\." src/
 **File: `src/components/Dashboard.js`**
 
 **Current:**
+
 ```jsx
 const { isAdmin } = useAuth() || {};
 return (
@@ -319,6 +327,7 @@ return (
 ```
 
 **Updated:**
+
 ```jsx
 return (
   <>
@@ -341,11 +350,13 @@ return (
 **File: `src/components/admin/AdminDashboard.js`**
 
 **Current (line 104):**
+
 ```jsx
 const isAdmin = userRoles.includes(ROLES.ADMIN) || userRoles.includes(ROLES.SUPER_ADMIN);
 ```
 
 **Updated:**
+
 ```jsx
 // Remove the manual check, use Guard at component boundaries instead
 // Inside rendering:

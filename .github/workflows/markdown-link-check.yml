@@ -88,13 +88,11 @@ jobs:
         with:
           # Feed the resolved file list; lychee accepts newline-separated paths
           args: >-
-            --config .github/markdown-link-check-config.json
             --cache
-            --cache-path .lychee-cache
             --no-progress
-            --format markdown
-            --output /tmp/lychee-report.md
+            --scheme http,https
             $(cat /tmp/md-targets.txt | tr '\n' ' ')
+          output: /tmp/lychee-report.md
           fail: false          # We handle failure ourselves to post a PR comment first
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -103,6 +101,7 @@ jobs:
         if: >
           github.event_name == 'pull_request' &&
           steps.targets.outputs.has_files == 'true'
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
