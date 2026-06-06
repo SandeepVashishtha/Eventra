@@ -659,9 +659,9 @@ const useEventRegistration = (eventIdParam) => {
       toast.info("This event is full. You will be added to the waitlist.");
     }
 
-    if (await checkAndHandleConflicts()) return;
+      if (await checkAndHandleConflicts()) return;
 
-    proceedWithRegistration();
+    await proceedWithRegistration();
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
 
   // Handle conflict modal actions
