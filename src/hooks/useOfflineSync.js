@@ -337,10 +337,10 @@ const useOfflineSync = () => {
 
               if (resolution.resolution === "local") {
                 // Retry with force flag
-                res = await postWithBackoff(url, item.payload, currentToken, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff(url, item.payload, authToken, 0, true, conflictController.signal, item.id);
               } else if (resolution.resolution === "merge") {
                 // Post merged content
-                res = await postWithBackoff(url, resolution.mergedPayload, currentToken, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff(url, resolution.mergedPayload, authToken, 0, true, conflictController.signal, item.id);
               } else {
                 // Discard local (treated as handled success so we proceed)
                 res = { status: "success" };
