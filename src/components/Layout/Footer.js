@@ -88,7 +88,7 @@ const footerLinks = {
     },
     {
       name: "API Docs",
-      href: "/apiDocs",
+      href: "/api-docs",
       icon: <FaBookOpen size={14} />,
     },
   ],
