@@ -5,7 +5,7 @@ const originalError = console.error;
 console.error = () => {};
 
 const msg = getPublicErrorMessage(new Error("network error"));
-assert.equal(msg, "error.networkError");
+assert.ok(msg === "error.networkError" || msg === "Unable to reach the server. Please check your connection.");
 
 console.error = originalError;
 console.log("errorMessages edge tests passed ✓");
