@@ -22,6 +22,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: npm-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Lint
@@ -35,6 +40,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: npm-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: TypeScript check
@@ -48,6 +58,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: npm-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Unit tests
@@ -62,6 +77,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: npm-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Build
