@@ -11,6 +11,7 @@
  */
 
 // --- IndexedDB Cache Configuration ---
+import { logger } from "./logger.js";
 const DB_NAME = "eventra_p2p_cache";
 const DB_VERSION = 2;
 const STORE_NAME = "file_chunks";
@@ -42,7 +43,7 @@ const getDB = () => {
       resolve(dbInstance);
     };
     request.onerror = (e) => {
-      console.error("IndexedDB initialization error:", e);
+      logger.error("IndexedDB initialization error:", e);
       reject(e);
     };
   });
@@ -51,15 +52,15 @@ const getDB = () => {
 // Helper to attach error/abort handlers to an IndexedDB transaction and request
 const attachIdbReadHandlers = (transaction, request, resolve, fallbackValue, functionName) => {
   transaction.onerror = (err) => {
-    console.error(`${functionName} transaction error:`, err);
+    logger.error(`${functionName} transaction error:`, err);
     resolve(fallbackValue);
   };
   transaction.onabort = (err) => {
-    console.error(`${functionName} transaction aborted:`, err);
+    logger.error(`${functionName} transaction aborted:`, err);
     resolve(fallbackValue);
   };
   request.onerror = (err) => {
-    console.error(`${functionName} request error:`, err);
+    logger.error(`${functionName} request error:`, err);
     resolve(fallbackValue);
   };
 };
@@ -91,7 +92,7 @@ export async function isFileCached(fileId) {
       };
     });
   } catch (error) {
-    console.error("Failed checking file cache:", error);
+    logger.error("Failed checking file cache:", error);
     return false;
   }
 }
@@ -123,7 +124,7 @@ export async function getCachedFile(fileId) {
       };
     });
   } catch (error) {
-    console.error("Failed retrieving cached file chunks:", error);
+    logger.error("Failed retrieving cached file chunks:", error);
     return null;
   }
 }
@@ -152,7 +153,7 @@ export async function saveChunkToCache(fileId, fileName, chunkIndex, totalChunks
       request.onerror = (e) => reject(e);
     });
   } catch (error) {
-    console.error("Failed saving chunk:", error);
+    logger.error("Failed saving chunk:", error);
     return false;
   }
 }
@@ -276,14 +277,10 @@ export class P2PFileTransferCoordinator {
         case "P2P_ICE":
           // Received ICE candidate
           if (msg.to === peerId && this.pc) {
-            if (this.pc.remoteDescription && this.pc.remoteDescription.type) {
-              try {
-                await this.pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
-              } catch (err) {
-                console.error("Error adding ICE candidate:", err);
-              }
-            } else {
-              this.queuedRemoteCandidates.push(msg.candidate);
+            try {
+              await this.pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+            } catch (err) {
+              logger.error("Error adding ICE candidate:", err);
             }
           }
           break;
@@ -516,7 +513,7 @@ this.channel.onmessage = async (e) => {
   try {
     chunkMsg = JSON.parse(e.data);
   } catch (err) {
-    console.error("Failed to parse incoming P2P message:", err);
+    logger.error("Failed to parse incoming P2P message:", err);
     return;
   }
 
@@ -528,7 +525,7 @@ this.channel.onmessage = async (e) => {
       typeof chunkMsg.totalChunks !== "number" ||
       chunkMsg.totalChunks !== this.expectedTotalChunks
     ) {
-      console.error(
+      logger.error(
         `[P2P Security] Chunk count mismatch! Expected ${this.expectedTotalChunks}, ` +
         `peer claims ${chunkMsg.totalChunks}. Dropping chunk and aborting transfer.`
       );
@@ -545,7 +542,7 @@ this.channel.onmessage = async (e) => {
     chunkMsg.chunkIndex < 0 ||
     chunkMsg.chunkIndex >= maxChunks
   ) {
-    console.error(
+    logger.error(
       `[P2P Security] Invalid chunkIndex ${chunkMsg.chunkIndex} for totalChunks ${maxChunks}. Dropping.`
     );
     return;
@@ -556,7 +553,7 @@ this.channel.onmessage = async (e) => {
     (c) => c.chunkIndex === chunkMsg.chunkIndex
   );
   if (alreadyReceived) {
-    console.warn(`[P2P Security] Duplicate chunk ${chunkMsg.chunkIndex} received. Dropping.`);
+    logger.warn(`[P2P Security] Duplicate chunk ${chunkMsg.chunkIndex} received. Dropping.`);
     return;
   }
 
@@ -586,7 +583,7 @@ this.channel.onmessage = async (e) => {
 };
 
     this.channel.onerror = (err) => {
-      console.error("DataChannel error:", err);
+      logger.error("DataChannel error:", err);
       this.updateState("failed");
       this.cleanup();
     };
