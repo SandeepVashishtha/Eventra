@@ -6,7 +6,7 @@ import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2, Check } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2, Check, Printer, Download } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { DRAFT_KEY } from "../../constants/eventDefaults";
@@ -350,7 +350,7 @@ const EventDetails = () => {
                 className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                 aria-label="Print or save as PDF"
               >
-                {isPrinting ? "Preparing..." : "≡ƒû¿∩╕Å Print / Save as PDF"}
+                {isPrinting ? "Preparing..." : <><Printer size={18} className="inline-block" /> Print / Save as PDF</>}
               </button>
 
               {isOrganizer && (
@@ -368,7 +368,7 @@ const EventDetails = () => {
                       className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                       aria-label="Export registrant data"
                     >
-                      ≡ƒôÑ Export Registrants
+                      <Download size={18} className="inline-block" /> Export Registrants
                     </button>
                     {showExportDropdown && (
                       <>
