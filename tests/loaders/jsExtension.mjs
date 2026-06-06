@@ -31,6 +31,20 @@ export async function resolve(specifier, context, nextResolve) {
       shortCircuit: true
     };
   }
+  if (
+    specifier.includes("Pages/Home/HomePage") ||
+    specifier.includes("Pages/Events/EventsPage") ||
+    specifier.includes("components/Dashboard") ||
+    specifier.includes("Pages/Hackathons/HackathonPage") ||
+    specifier.includes("components/user/UserProfile") ||
+    specifier.includes("Pages/Projects/ProjectsPage")
+  ) {
+    const mockPagePath = path.resolve("tests/helpers/mockPage.js");
+    return {
+      url: pathToFileURL(mockPagePath).href,
+      shortCircuit: true
+    };
+  }
 
   // Only patch relative imports that lack an extension
   if (specifier.startsWith(".") && !path.extname(specifier)) {
