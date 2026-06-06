@@ -10,6 +10,7 @@ import { sanitizeInputText } from "../utils/inputSanitization";
 import EventMaterials from "./common/EventMaterials";
 import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send } from 'lucide-react';
 import CollaborativeWhiteboard from './common/CollaborativeWhiteboard';
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 
 const CollaborationHub = () => {
@@ -51,7 +52,7 @@ const CollaborationHub = () => {
     }
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = safeJsonParse(saved, {});
         if (Array.isArray(parsed)) {
           return parsed.filter(item => item && typeof item === 'object');
         }
