@@ -23,6 +23,7 @@ import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import LazyImage from "../common/LazyImage";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -118,10 +119,12 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
 
       {event?.image && (
         <div className="relative h-48 overflow-hidden">
-          <img
+          <LazyImage
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            aspectRatio="16/9"
+            className="w-full h-full"
+            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
         </div>
@@ -251,10 +254,12 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
     >
       {event?.image && (
         <div className="relative h-48 overflow-hidden">
-          <img
+          <LazyImage
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            aspectRatio="16/9"
+            className="w-full h-full"
+            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
         </div>
