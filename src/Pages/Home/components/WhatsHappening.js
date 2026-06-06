@@ -23,7 +23,7 @@ const WhatsHappening = () => {
 
   useEffect(() => {
     if (prefersReducedMotion) {
-      // eslint-disable-next-line
+       
       setIsAutoPlaying(false);
     }
   }, [prefersReducedMotion]);
@@ -350,7 +350,7 @@ const WhatsHappening = () => {
                               </span>
                             </div>
 
-                            <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2 leading-snug group-hover:text-sky-700 transition-colors">
+                            <h3 title={event.title} className="text-lg sm:text-xl font-semibold text-slate-900 mb-2 leading-snug group-hover:text-sky-700 transition-colors line-clamp-2 break-words min-w-0">
                               {event.title}
                             </h3>
                             

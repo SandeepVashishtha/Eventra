@@ -5,7 +5,7 @@ const STORAGE_KEY = "event_creation_draft";
 const isStorageAvailable = () => {
   try {
     return typeof localStorage !== "undefined" && localStorage !== null;
-  } catch (e) {
+  } catch {
     return false;
   }
 };

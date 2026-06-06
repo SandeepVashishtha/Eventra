@@ -16,7 +16,7 @@ const isStorageAvailable = () => {
       localStorage.removeItem(testKey);
     }
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 };

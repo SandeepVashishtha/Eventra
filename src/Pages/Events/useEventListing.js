@@ -12,7 +12,7 @@ import {
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
-import { logger } from "../../utils/logger";
+
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
@@ -56,6 +56,7 @@ const useEventListing = () => {
 
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const isInitialMount = useRef(true);
+  const latestRequestRef = useRef(0);
 
   const buildQueryParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -99,6 +100,7 @@ const useEventListing = () => {
   ]);
 
   const fetchEvents = useCallback(async () => {
+    const requestId = ++latestRequestRef.current;
     setIsLoading(true);
     setLoadError("");
 
@@ -108,6 +110,9 @@ const useEventListing = () => {
       const response = await apiUtils.get(
         `${API_ENDPOINTS.EVENTS.LIST}?${query}`,
       );
+
+      // Discard stale responses from earlier requests
+      if (requestId !== latestRequestRef.current) return;
 
       const responseData = response?.data || {};
 
@@ -186,6 +191,7 @@ const useEventListing = () => {
 
   const setAdvancedFilters = useCallback((filters) => {
     setAdvancedFiltersState(normalizeAdvancedFilters(filters));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const priceStats = useMemo(() => getPriceStats(events), [events]);

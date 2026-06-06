@@ -58,7 +58,7 @@ function persistToLocalStorage(entry) {
   existing.unshift(entry);
   try {
     localStorage.setItem("eventra_error_log", JSON.stringify(existing.slice(0, 10)));
-  } catch (_) {
+  } catch {
   }
 }
 

@@ -102,7 +102,7 @@ const EventDetailsPage = () => {
       await navigator.clipboard.writeText(shareUrl);
       toast.success("Share not supported. Link copied to clipboard!");
     }
-  } catch (error) {
+  } catch {
     toast.error("Failed to share event");
   }
 };
@@ -116,6 +116,11 @@ const EventDetailsPage = () => {
       latestRequestIdRef.current === requestId && !controller.signal.aborted;
 
     const fetchEvent = async () => {
+      // Guard: only update state if this is still the latest request.
+      // Without this check, a stale request starting after a newer one has
+      // already begun would unconditionally reset loading/error state,
+      // causing the race condition described in issue #5077.
+      if (!isLatestRequest()) return;
       setLoading(true);
       setCacheInfo(null);
       setError(null);
@@ -285,7 +290,8 @@ const EventDetailsPage = () => {
                   </div>
                   <h1
                     id="event-details-title"
-                    className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl"
+                    title={event.title}
+                    className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl break-words"
                   >
                     {event.title}
                   </h1>

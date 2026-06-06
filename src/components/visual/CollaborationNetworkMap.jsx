@@ -753,6 +753,5 @@ export default function CollaborationNetworkMap() {
                </div>
               </div>
     </section>
-  
-  )
+  );
 }

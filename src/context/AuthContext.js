@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler, setAuthToken } from "../config/api";
+import { setOnUnauthorizedHandler, setAuthToken } from "../config/api";
 import { authService } from "../services/authService";
 import { userService } from "../services/userService";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
@@ -324,7 +324,7 @@ export const AuthProvider = ({ children }) => {
         // body. There is no longer a missing-token failure path here.
         const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
 
-        const persisted = persistSession(sessionToken, sessionUser);
+        const persisted = await persistSession(sessionToken, sessionUser);
         if (!persisted) return false;
 
         setAuthRequestState({ loading: false, error: null });
