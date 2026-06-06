@@ -20,7 +20,7 @@
   --card-bg-color: rgba(17, 24, 39, 0.92);
   --border-color: rgba(148, 163, 184, 0.18);
   --text-color: #f8fafc;
-  --text-color-light: #cbd5e1;
+  --text-color-light: #94a3b8; /* was #cbd5e1 — too dim on dark card backgrounds */
 }
 
 /* Dark mode root */
@@ -530,6 +530,10 @@
   letter-spacing: 0.4px;
 }
 
+.dark .ud-stat-label {
+  color: #94a3b8;
+}
+
 .ud-stat-value {
   font-size: 1.75rem;
   font-weight: 700;
@@ -538,12 +542,18 @@
   line-height: 1.1;
 }
 
-/* removed dark mode override (handled by CSS variables) */
+.dark .ud-stat-value {
+  color: #f1f5f9;
+}
 
 .ud-stat-sub {
   font-size: 0.75rem;
   color: var(--text-color-light);
   margin: 0;
+}
+
+.dark .ud-stat-sub {
+  color: #94a3b8;
 }
 
 /* ── Quick Actions ── */
