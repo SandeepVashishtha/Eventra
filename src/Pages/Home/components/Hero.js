@@ -217,8 +217,7 @@ const Hero = () => {
     <section
       ref={containerRef}
       aria-label="Hero section"
-      className="relative overflow-hidden border-b border-gray-100 pb-16 text-slate-900 sm:pb-20 md:pb-24"
-      style={{ background: "linear-gradient(180deg, #F8FBFD 0%, #F3F7FA 10%, #EAF1F7 42%, #DAE3ED 100%)" }}
+      className="relative overflow-hidden border-b border-gray-100 pb-16 text-slate-900 dark:bg-black dark:text-white sm:pb-20 md:pb-24"
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         
@@ -409,7 +408,7 @@ const Hero = () => {
                     key={stat.label}
                     variants={fadeUp}
                     whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                    className="flex flex-col items-center justify-center rounded-md border border-gray-100 bg-white p-4 shadow-sm transition-shadow sm:p-5"
+                    className="flex flex-col items-center justify-center rounded-md border border-gray-100 bg-white dark:bg-slate-900 p-4 shadow-sm transition-shadow sm:p-5"
                   >
                     <div className="mb-2 rounded-full bg-gray-100 p-2 text-gray-700">
                       <stat.icon className="h-5 w-5" aria-hidden="true" />

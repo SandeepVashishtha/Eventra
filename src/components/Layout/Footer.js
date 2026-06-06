@@ -383,7 +383,7 @@ const FooterLinksRender = () => (
 
 const Footer = () => {
   return (
-    <footer className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors duration-500">
+    <footer className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100  dark:border-gray-800 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           <div className="space-y-4 lg:col-span-2">
@@ -397,7 +397,7 @@ const Footer = () => {
               Eventra
             </h2>
 
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
+            <p className="text-gray-600 dark:text-white text-sm">
               Open-source event management for communities worldwide.
             </p>
 

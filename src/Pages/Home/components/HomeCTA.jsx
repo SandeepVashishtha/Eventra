@@ -21,9 +21,9 @@ export default function CTASection() {
             className="inline-flex items-center gap-2 border border-indigo-100 dark:border-indigo-950/60 bg-indigo-50/50 dark:bg-indigo-950/30 rounded-xl px-4 py-1.5 justify-center mx-auto mb-6 shadow-sm"
           >
             <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            <span className="text-indigo-700 dark:text-indigo-300 text-xs sm:text-sm font-semibold">
+            <div className="text-indigo-700 dark:text-indigo-300 text-xs sm:text-sm font-semibold">
               Innovate Ideas, Build Projects, Join Events
-            </span>
+            </div>
           </motion.div>
 
           {/* Main heading */}
@@ -34,10 +34,12 @@ export default function CTASection() {
             transition={{ delay: 0.1 }}
             className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white mb-6 tracking-tight leading-tight"
           >
+            <div className="inline-block text-black dark:text-white">
             Ignite Ideas,{" "}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400">
+            </div>
+            <div className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400">
               Connect Innovators
-            </span>
+            </div>
           </motion.h2>
 
           {/* Description paragraph */}
@@ -46,11 +48,13 @@ export default function CTASection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-base sm:text-lg mb-10 leading-relaxed"
+            className=" max-w-2xl mx-auto text-base sm:text-lg mb-10 leading-relaxed"
           >
+            <div className="text-slate-600 dark:text-slate-400">
             Participate in hackathons, showcase your projects, and collaborate
             with creators around the world. Eventra makes it effortless, fun,
             and inspiring.
+            </div>
           </motion.p>
 
           {/* Buttons container */}
@@ -85,9 +89,11 @@ export default function CTASection() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.4 }}
-            className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm font-medium"
+            className="text-xs sm:text-sm font-medium"
           >
+            <div className="text-slate-500 dark:text-slate-500">
             Connect, create, and grow with your community today.
+            </div>
           </motion.p>
         </div>
       </section>

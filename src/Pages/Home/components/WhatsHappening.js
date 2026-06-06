@@ -179,10 +179,7 @@ const WhatsHappening = () => {
   return (
     <section
       ref={ref}
-      className="relative overflow-hidden py-16 sm:py-20 text-slate-900 border-t border-slate-200/60"
-      style={{
-        background: "linear-gradient(180deg, #F8FBFD 0%, #F3F7FA 10%, #EAF1F7 42%, #DCE5EF 100%)",
-      }}
+      className="relative overflow-hidden py-16 sm:py-20 text-slate-900 border-t border-slate-200/60 dark:text-white dark:bg-black"
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-white/80 to-transparent" />
@@ -211,7 +208,7 @@ const WhatsHappening = () => {
         </motion.div>
 
         {/* Carousel */}
-        <div className="relative w-full max-w-7xl mx-auto rounded-[28px] border border-slate-200/70 bg-white/70 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md px-3 sm:px-5 py-4 sm:py-5">
+        <div className="relative w-full max-w-7xl mx-auto rounded-[28px] border border-slate-200/70 bg-white/70 dark:bg-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md px-3 sm:px-5 py-4 sm:py-5">
           {/* Play/Pause Button */}
           <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20">
             <button
@@ -330,7 +327,7 @@ const WhatsHappening = () => {
                           whileHover={prefersReducedMotion ? {} : { scale: 1.02, y: -6 }}
                           whileTap={prefersReducedMotion ? {} : { scale: 0.995 }}
                           transition={{ type: "spring", stiffness: 300, damping: 24 }}
-                          className="group relative w-full flex flex-col rounded-[24px] overflow-hidden bg-white border border-slate-200/80 p-5 sm:p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.10)] transition-transform duration-300 flex-1 min-h-[340px] pointer-events-auto"
+                          className="group relative w-full flex flex-col rounded-[24px] overflow-hidden bg-white border border-slate-200/80 dark:bg-slate-900 p-5 sm:p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.10)] transition-transform duration-300 flex-1 min-h-[340px] pointer-events-auto"
                           onMouseEnter={() => setIsAutoPlaying(false)}
                           onMouseLeave={() => setIsAutoPlaying(true)}
                         >
@@ -348,7 +345,7 @@ const WhatsHappening = () => {
                               >
                                 {event.status}
                               </span>
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200/70">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border dark:bg-gray-600 border-slate-200/70">
                                 {event.type}
                               </span>
                             </div>

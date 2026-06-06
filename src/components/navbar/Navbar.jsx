@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
+import ThemeToggleButton from "../Layout/ThemeToggleButton";
 import AuthButtons from "./AuthButtons";
 import InstallAppButton from "../common/InstallAppButton";
 import ProfileMenu from "./ProfileMenu";
@@ -15,6 +16,14 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef(null);
+  const [isDarkMode, setIsDarkMode] = useState(
+  document.documentElement.classList.contains("dark")
+);
+
+const toggleTheme = () => {
+  document.documentElement.classList.toggle("dark");
+  setIsDarkMode(document.documentElement.classList.contains("dark"));
+};
 
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
@@ -121,6 +130,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               <InstallAppButton />
               <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             </div>
+            <ThemeToggleButton 
+              isDarkMode={isDarkMode}
+  toggleTheme={toggleTheme}
+  isMobile={false}
+            />
 
             <div className="lg:hidden">
               <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
