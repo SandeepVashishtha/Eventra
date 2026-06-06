@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import mockEvents from "../Events/eventsMockData.json";
-import { API_ENDPOINTS } from "../../config/api";
+
 import { eventService } from "../../services/eventService";
 import { getEventStatus } from "../../utils/eventUtils";
 

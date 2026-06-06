@@ -86,6 +86,7 @@ const EventRegistration = () => {
   const [registered, setRegistered] = useState(false);
   const [waitlistPosition, setWaitlistPosition] = useState(-1);
   const isSubmittingRef = useRef(false);
+  const registrationLocksRef = useRef(new Map());
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -221,6 +222,7 @@ const EventRegistration = () => {
     return () => {
       isCancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
   const refreshEventAvailability = useCallback(async (id) => {
@@ -288,7 +290,7 @@ const EventRegistration = () => {
 
     setShowConflictModal(false);
 
-    registrationLocks.set(eventId, true);
+    registrationLocksRef.current.set(eventId, true);
     isSubmittingRef.current = true;
     setSubmitting(true);
 
@@ -308,7 +310,7 @@ const EventRegistration = () => {
         toast.error(err.message || t("eventRegistration.toastRegistrationError"));
         return;
       } finally {
-        registrationLocks.delete(eventId);
+        registrationLocksRef.current.delete(eventId);
         isSubmittingRef.current = false;
         setSubmitting(false);
       }
@@ -325,7 +327,8 @@ const EventRegistration = () => {
           ...formData,
           priority: formData.priority,
           eventId: parseInt(eventId),
-        }
+        },
+        token
       );
 
       const regData = response.data || {};
@@ -395,10 +398,11 @@ const EventRegistration = () => {
 
       toast.error(failureMessage);
     } finally {
-      registrationLocks.delete(eventId);
+      registrationLocksRef.current.delete(eventId);
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     eventId,
     event,
@@ -435,7 +439,7 @@ const EventRegistration = () => {
       return;
     }
 
-    if (registrationLocks.has(eventId)) {
+    if (registrationLocksRef.current.has(eventId)) {
       toast.error(t("eventRegistration.toastAnotherInProgress"));
       return;
     }
@@ -463,7 +467,7 @@ const EventRegistration = () => {
         }
       }
       conflictDetected = await checkAndHandleConflicts();
-    } catch (err) {
+    } catch {
       isSubmittingRef.current = false;
       registrationLocks.delete(eventId);
       return;
@@ -478,12 +482,14 @@ const EventRegistration = () => {
     }
 
     proceedWithRegistration();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
 
   // Handle conflict modal actions
   const handleConflictCancel = useCallback(() => {
     setShowConflictModal(false);
     toast.info(t("eventRegistration.toastConflictCancelled"));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleConflictProceed = useCallback(() => {
@@ -502,10 +508,11 @@ const EventRegistration = () => {
     setShowConflictModal(false);
     navigate(`/events/${alternativeEvent.id}/register`);
     toast.info(t("eventRegistration.toastRedirectingTo", { title: alternativeEvent.title }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const isEventFull = useMemo(() => event ? event.attendees >= event.maxAttendees : false, [event]);
-  const isPastEvent = useMemo(() => getEventStatus(event) === "past" || getEventStatus(event) === "ended", [event]);
+
   const isCancelledEvent = useMemo(() => getEventStatus(event) === "cancelled", [event]);
   const isRegistrationBlocked = useMemo(() => isEventRegistrationClosed(event), [event]);
 
@@ -637,7 +644,7 @@ const EventRegistration = () => {
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 truncate">
+            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 break-words min-w-0">
               {event.title}
             </h3>
 
@@ -783,7 +790,7 @@ const EventRegistration = () => {
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
+              <h1 title={event.title} className="text-3xl font-bold mb-2 break-words">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />

@@ -57,8 +57,13 @@ function renderMarkdownToReact(text) {
       } else if (match[6]) {
         inlineParts.push(<code key={inlineKey++} className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-xs">{match[6]}</code>);
       } else if (match[9]) {
+        const rawUrl = match[9].trim();
+        const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(rawUrl);
+        const isSafeScheme = /^(https?:|mailto:|tel:)/i.test(rawUrl);
+        const isSafeUrl = !hasScheme || isSafeScheme;
+        const safeUrl = isSafeUrl ? rawUrl : "#";
         inlineParts.push(
-          <a key={inlineKey++} href={match[9]} target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline">
+          <a key={inlineKey++} href={safeUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline">
             {match[8]}
           </a>
         );
@@ -113,7 +118,7 @@ export default function Chatbot() {
         setMessages(INITIAL_MESSAGES);
       }
       localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
-    } catch (e) {
+    } catch {
       console.warn("localStorage unavailable for Chatbot expiration check");
     }
   }, [setMessages]);
@@ -128,7 +133,7 @@ export default function Chatbot() {
   useEffect(() => {
     try {
       localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
-    } catch (e) {
+    } catch {
       console.warn("localStorage unavailable for Chatbot sync");
     }
   }, [messages]);

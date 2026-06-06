@@ -189,7 +189,7 @@ export const copyToClipboard = async (text) => {
       return successful;
     }
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error("Failed to copy text: ", err);
     return false;
   }

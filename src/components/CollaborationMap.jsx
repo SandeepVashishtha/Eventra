@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 
 const CITIES = [
-  { id: "nyc", name: "New York", x: 250, y: 180, contributors: "1,250", projects: "340" },
-  { id: "lon", name: "London", x: 480, y: 140, contributors: "940", projects: "210" },
-  { id: "ber", name: "Berlin", x: 520, y: 135, contributors: "720", projects: "180" },
-  { id: "blr", name: "Bangalore", x: 690, y: 260, contributors: "2,100", projects: "550" },
-  { id: "tok", name: "Tokyo", x: 830, y: 170, contributors: "850", projects: "190" },
-  { id: "syd", name: "Sydney", x: 880, y: 380, contributors: "540", projects: "120" },
+  { id: "nyc", name: "New York", x: 250, y: 180, contributors: "1,250", projects: "340", region: "Americas" },
+  { id: "lon", name: "London", x: 480, y: 140, contributors: "940", projects: "210", region: "Europe" },
+  { id: "ber", name: "Berlin", x: 520, y: 135, contributors: "720", projects: "180", region: "Europe" },
+  { id: "blr", name: "Bangalore", x: 690, y: 260, contributors: "2,100", projects: "550", region: "Asia" },
+  { id: "tok", name: "Tokyo", x: 830, y: 170, contributors: "850", projects: "190", region: "Asia" },
+  { id: "syd", name: "Sydney", x: 880, y: 380, contributors: "540", projects: "120", region: "Oceania" },
 ];
 
 const CONNECTIONS = [
@@ -192,28 +192,51 @@ export default function CollaborationMap() {
               })}
             </svg>
 
-            {/* Absolute Hover Tooltip */}
+            {/* Structured Hub Card Popup */}
             {hoveredCity && (
               <div
-                className="absolute bg-slate-950/90 backdrop-blur-xl border border-indigo-500/30 rounded-2xl p-4 shadow-xl text-left min-w-50 transition-all duration-300 pointer-events-none z-30"
+                className="absolute z-30 pointer-events-none"
                 style={{
                   left: `${(hoveredCity.x / 1000) * 100}%`,
                   top: `${(hoveredCity.y / 500) * 100}%`,
                   transform: "translate(-50%, -120%)",
+                  minWidth: "210px",
+                  borderRadius: "14px",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                  border: "1px solid #c7d7fd",
+                  overflow: "hidden",
+                  background: "#fff",
                 }}
               >
-                <div className="flex items-center justify-between gap-3 mb-2">
-                  <span className="font-bold text-slate-100 text-sm">{hoveredCity.name}</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                </div>
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between text-slate-400 gap-4">
-                    <span>Contributors:</span>
-                    <span className="font-mono font-bold text-indigo-400">{hoveredCity.contributors}</span>
+                <div style={{ background: "#2563eb", padding: "10px 14px 8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontWeight: 700, color: "#fff", fontSize: "13px" }}>{hoveredCity.name}</span>
+                    <span style={{ background: "rgba(255,255,255,0.2)", color: "#e0e7ff", fontSize: "9px", fontWeight: 700, borderRadius: "20px", padding: "2px 8px" }}>{hoveredCity.region}</span>
                   </div>
-                  <div className="flex justify-between text-slate-400 gap-4">
-                    <span>Active Projects:</span>
-                    <span className="font-mono font-bold text-indigo-400">{hoveredCity.projects}</span>
+                  <div style={{ color: "#bfdbfe", fontSize: "9px", marginTop: "3px" }}>📍 {hoveredCity.x}° N · {hoveredCity.y}° E</div>
+                </div>
+                <div style={{ padding: "10px 14px 12px", background: "#fff" }}>
+                  <div style={{ fontSize: "9px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>Hub Stats</div>
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+                    <div style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: "8px", padding: "5px 8px" }}>
+                      <div style={{ fontSize: "9px", color: "#9ca3af", fontWeight: 700, textTransform: "uppercase" }}>Developers</div>
+                      <div style={{ fontSize: "16px", fontWeight: 800, color: "#1e293b" }}>{hoveredCity.contributors}</div>
+                    </div>
+                    <div style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: "8px", padding: "5px 8px" }}>
+                      <div style={{ fontSize: "9px", color: "#9ca3af", fontWeight: 700, textTransform: "uppercase" }}>Projects</div>
+                      <div style={{ fontSize: "16px", fontWeight: 800, color: "#1e293b" }}>{hoveredCity.projects}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: "9px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "5px" }}>Focus Areas</div>
+                  <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "10px" }}>
+                    {["EdTech", "AgriTech", "HealthTech"].map((tag, i) => {
+                      const styles = [{ background: "#dbeafe", color: "#2563eb" }, { background: "#dcfce7", color: "#16a34a" }, { background: "#fef9c3", color: "#b45309" }];
+                      return <span key={tag} style={{ ...styles[i], fontSize: "10px", fontWeight: 700, borderRadius: "20px", padding: "2px 8px" }}>{tag}</span>;
+                    })}
+                  </div>
+                  <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "9px", color: "#9ca3af" }}>🌏 {hoveredCity.region} region</span>
+                    <span style={{ fontSize: "10px", color: "#2563eb", fontWeight: 700 }}>View details →</span>
                   </div>
                 </div>
               </div>
@@ -224,3 +247,10 @@ export default function CollaborationMap() {
     </section>
   );
 }
+
+
+
+
+
+
+

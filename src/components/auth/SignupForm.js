@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { authService } from "../../services/authService";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+
 import { ROLES } from "../../config/roles";
 import { useAuth } from "../../context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
@@ -55,6 +55,9 @@ const parseSignupResponse = async (response) => {
 const SignupForm = () => {
   const navigate = useNavigate();
   const { setAuthSession } = useAuth();
+  // useRef-based guard prevents double-click submissions even when
+  // the loading state update hasn't propagated yet (setState is async).
+  const isSubmittingRef = useRef(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -220,7 +223,7 @@ const SignupForm = () => {
           setErrors((prev) => ({ ...prev, email: result?.message || "Email is already registered" }));
           setFieldState("email", "error");
         }
-      } catch (err) {
+      } catch {
         setErrors((prev) => ({ ...prev, email: "Validation failed" }));
         setFieldState("email", "error");
       }
@@ -232,18 +235,24 @@ const SignupForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (loading) return;
+    // Dual-layer double-submit prevention:
+    // 1. isSubmittingRef — synchronous, blocks re-entry immediately.
+    // 2. loading state — keeps the button disabled in the UI.
+    if (isSubmittingRef.current || loading) return;
+    isSubmittingRef.current = true;
 
     setSubmitError("");
     setSuccess("");
     setLoading(true);
 
-    const valid = await runValidation();
-    if (!valid) {
-      setLoading(false);
-      return;
-    }
     try {
+      const valid = await runValidation();
+      if (!valid) {
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
+
       const response = await authService.register({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -256,12 +265,19 @@ const SignupForm = () => {
         const backendMessage = response.data?.message || response.data?.error || "Registration failed";
         setSubmitError(`${backendMessage} (${response.status})`);
         setLoading(false);
+        isSubmittingRef.current = false;
         return;
       }
 
+      const sessionToken = data?.token;
+      if (!sessionToken) {
+        setSubmitError("Signup completed but no token was returned.");
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
       // Under the HttpOnly-cookie auth model the server sets the session
       // cookie on the signup response. The client never sees a raw JWT.
-      const sessionToken = "cookie-managed";
 
       const data = response.data || {};
       const sessionRoles = normalizeSignupRoles(data);
@@ -283,6 +299,7 @@ const SignupForm = () => {
     } catch (err) {
       setSubmitError(err?.message || "Network error. Please try again.");
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -369,7 +386,7 @@ const SignupForm = () => {
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
+              className="flex items-center justify-center text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
               aria-label={showPassword ? "Hide password" : "Show password"}
               aria-controls="password"
               aria-pressed={showPassword ? "true" : "false"}
@@ -402,7 +419,7 @@ const SignupForm = () => {
             <button
               type="button"
               onClick={() => setShowConfirmPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
+              className="flex items-center justify-center text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
               aria-label={showConfirmPassword ? "Hide password" : "Show password"}
               aria-controls="confirmPassword"
               aria-pressed={showConfirmPassword ? "true" : "false"}

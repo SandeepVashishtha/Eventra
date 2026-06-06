@@ -277,7 +277,7 @@ const EditProfile = () => {
       
       try {
         await syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
-      } catch (e) {
+      } catch {
         console.warn("Could not save to secure storage, quota exceeded.");
       }
 

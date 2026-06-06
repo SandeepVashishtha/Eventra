@@ -1,11 +1,11 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
+import { useLeaderboardStream } from "../../context/RealTimeContext";
 import {
   filterContributors,
   sortContributors,
@@ -15,7 +15,7 @@ import {
   computeLeaderboardStats,
   applyAchievementBonus,
 } from "../../utils/leaderboardUtils";
-import { getAchievementBadge } from "../../utils/leaderboardUtils";
+
 import { useTranslation } from "react-i18next";
 import { logger } from "../../utils/logger";
 import { storageManager } from "../../utils/storage/storageManager";
@@ -195,6 +195,7 @@ export default function LeaderBoard() {
     } catch (err) {
       logger.warn("Failed to update leaderboard cache:", err);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streamContributors, lastSynced]);
 
   useEffect(() => {
@@ -288,6 +289,7 @@ export default function LeaderBoard() {
     return () => {
       isMounted = false;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearchChange = useCallback((e) => {
@@ -327,6 +329,7 @@ export default function LeaderBoard() {
     } finally {
       setIsRefreshing(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRefreshing]);
 
   const handleExport = useCallback(() => {

@@ -169,7 +169,7 @@ const SpatialSeatSelector = ({
         } else {
           initialElements = DEFAULT_PRESETS.banquet;
         }
-      } catch (e) {
+      } catch {
         initialElements = DEFAULT_PRESETS.banquet;
       }
     } else {
@@ -360,7 +360,7 @@ const SpatialSeatSelector = ({
       seatLabel: `${el.label} - ${label}`,
       tier: tier,
     });
-  };
+  }, [onSelectSeat, readOnly]);
 
   return (
     <div className="ssp-container">
