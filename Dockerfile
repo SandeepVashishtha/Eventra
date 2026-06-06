@@ -1,4 +1,5 @@
 FROM node:22-alpine AS build
+LABEL maintainer="Eventra Community"
 WORKDIR /app
 
 # Copy dependency manifests first for Docker layer caching
