@@ -88,9 +88,7 @@ jobs:
         with:
           # Feed the resolved file list; lychee accepts newline-separated paths
           args: >-
-            --config .github/markdown-link-check-config.json
             --cache
-            --cache-path .lychee-cache
             --no-progress
             $(cat /tmp/md-targets.txt | tr '\n' ' ')
           output: /tmp/lychee-report.md

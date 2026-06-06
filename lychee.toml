@@ -1,0 +1,6 @@
+exclude = [
+  "^https://linkedin.com/",
+  "^https://www.linkedin.com/",
+  "^https://eventra.sandeepvashishtha.in/",
+  "^https://eventra-backend-springboot"
+]
