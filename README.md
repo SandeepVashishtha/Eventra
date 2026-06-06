@@ -103,6 +103,8 @@ npm install
 cp .env.example .env
 ```
 
+> **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
+
 3. Start dev server:
 
 ```bash

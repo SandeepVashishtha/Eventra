@@ -1,6 +1,6 @@
 .skip-to-content {
   position: absolute;
-  top: -100%;
+  top: -100px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10000;
@@ -16,7 +16,7 @@
 }
 
 .skip-to-content:focus {
-  top: 0;
+  top: 1rem;
   outline: 3px solid #facc15;
   outline-offset: 2px;
 }

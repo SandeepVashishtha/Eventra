@@ -1,3 +1,4 @@
+import { safeJsonParse } from "../utils/safeJsonParse";
 const isBrowserStorageAvailable = (storage) => {
   if (!storage) return false;
 
@@ -81,8 +82,8 @@ const createSafeStorage = (getStorage) => {
       if (raw == null) return fallback;
 
       try {
-        return JSON.parse(raw);
-      } catch {
+        return safeJsonParse(raw, {});
+      } catch (_) {
         // Stored values can be user-edited or corrupted; callers should keep running.
         return fallback;
       }

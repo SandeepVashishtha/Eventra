@@ -10,12 +10,14 @@ import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 import BackToTopButton from "../../components/common/BackToTopButton";
+import VirtualizedHackathonGrid from "../../components/common/VirtualizedHackathonGrid";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { filterHackathons } from "./hackathonFilterUtils.mjs";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import useDebounce from "../../hooks/useDebounce";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -246,7 +248,7 @@ const HackathonHub = () => {
 
     let savedFilters = {};
     try {
-      savedFilters = JSON.parse(
+      savedFilters = safeJsonParse(
         window.sessionStorage.getItem(HACKATHON_FILTER_STORAGE_KEY) || "{}"
       );
     } catch {
@@ -661,11 +663,10 @@ const HackathonHub = () => {
                           key={tag}
                           type="button"
                           onClick={() => handleTagSelect(tag)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${
-                            selectedTags.includes(tag)
-                              ? "bg-primary text-white border-primary shadow-glow-sm"
-                              : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 hover:text-primary shadow-sm dark:shadow-none"
-                          }`}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${selectedTags.includes(tag)
+                            ? "bg-primary text-white border-primary shadow-glow-sm"
+                            : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 hover:text-primary shadow-sm dark:shadow-none"
+                            }`}
                         >
                           {tag}
                         </button>
@@ -696,11 +697,10 @@ const HackathonHub = () => {
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${
-                  activeTab === tab.key
-                    ? "bg-gradient-to-r from-primary via-primary to-secondary text-white border-primary/50 shadow-glow-sm scale-105"
-                    : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/30 hover:text-primary shadow-sm dark:shadow-none"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${activeTab === tab.key
+                  ? "bg-gradient-to-r from-primary via-primary to-secondary text-white border-primary/50 shadow-glow-sm scale-105"
+                  : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/30 hover:text-primary shadow-sm dark:shadow-none"
+                  }`}
               >
                 {tab.label}
               </button>

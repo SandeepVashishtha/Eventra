@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
 import { ContributorCardSkeleton } from "../../../components/common/SkeletonLoaders";
+import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
@@ -70,7 +71,7 @@ const getCachedContributors = () => {
   try {
     const cachedData = localStorage.getItem(STORAGE_KEY);
     if (!cachedData) return { data: null, isStale: false };
-    const { data, timestamp } = JSON.parse(cachedData);
+    const { data, timestamp } = safeJsonParse(cachedData, {});
     const age = Date.now() - timestamp;
     if (age <= CACHE_DURATION) return { data, isStale: false };
     if (age <= CACHE_DURATION + STALE_REVALIDATE_WINDOW) {

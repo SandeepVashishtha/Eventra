@@ -80,6 +80,9 @@ function saveAppStateSnapshot() {
 }
 
 function buildDiagnosticReport(errorId, error, errorInfo) {
+  // Fix for #7246: each IIFE must fully close its try/catch block before the
+  // next declaration so the parser does not misread subsequent class methods
+  // (e.g. handleTryAgain) as being inside this function's scope.
   const lsSnapshot = (() => {
     try {
       const snap = {};
