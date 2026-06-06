@@ -736,6 +736,8 @@
   font-weight: 600;
   color: var(--text-color);
   margin: 0 0 var(--ud-space-xxs);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -878,6 +880,8 @@
   color: var(--text-color);
   margin: 0;
   line-height: 1.3;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* removed dark mode override (handled by CSS variables) */

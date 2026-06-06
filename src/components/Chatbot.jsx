@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useMemo, useState, Fragment } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import { quickPrompts, getAssistantReply, INITIAL_MESSAGES } from "../config/chatbotKnowledge";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 const ICON_MAP = {
   CalendarDays,
@@ -27,6 +28,64 @@ const ICON_MAP = {
   Navigation,
   Ticket,
 };
+
+function renderMarkdownToReact(text) {
+  if (!text) return null;
+  const segments = [];
+  let remaining = text;
+  let key = 0;
+
+  const parseInline = (str) => {
+    const inlineParts = [];
+    let inlineRemaining = str;
+    let inlineKey = 0;
+
+    const inlineRegex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`(.+?)`)|(\[(.+?)\]\((.+?)\))/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = inlineRegex.exec(inlineRemaining)) !== null) {
+      if (match.index > lastIndex) {
+        inlineParts.push(
+          <Fragment key={inlineKey++}>{inlineRemaining.slice(lastIndex, match.index)}</Fragment>
+        );
+      }
+      if (match[2]) {
+        inlineParts.push(<strong key={inlineKey++}>{match[2]}</strong>);
+      } else if (match[4]) {
+        inlineParts.push(<em key={inlineKey++}>{match[4]}</em>);
+      } else if (match[6]) {
+        inlineParts.push(<code key={inlineKey++} className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-xs">{match[6]}</code>);
+      } else if (match[9]) {
+        const rawUrl = match[9].trim();
+        const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(rawUrl);
+        const isSafeScheme = /^(https?:|mailto:|tel:)/i.test(rawUrl);
+        const isSafeUrl = !hasScheme || isSafeScheme;
+        const safeUrl = isSafeUrl ? rawUrl : "#";
+        inlineParts.push(
+          <a key={inlineKey++} href={safeUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline">
+            {match[8]}
+          </a>
+        );
+      }
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < inlineRemaining.length) {
+      inlineParts.push(<Fragment key={inlineKey++}>{inlineRemaining.slice(lastIndex)}</Fragment>);
+    }
+    return inlineParts.length ? inlineParts : str;
+  };
+
+  const lines = remaining.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (i > 0) {
+      segments.push(<br key={key++} />);
+    }
+    segments.push(<Fragment key={key++}>{parseInline(line)}</Fragment>);
+  }
+  return segments;
+}
 
 // Maximum number of messages retained in localStorage.
 // Older messages beyond this cap are dropped from the front of the array so
@@ -55,11 +114,11 @@ export default function Chatbot() {
     try {
       const lastActive = localStorage.getItem("eventra_chatbot_last_active");
       const twoHours = 2 * 60 * 60 * 1000;
-      if (lastActive && Date.now() - parseInt(lastActive) > twoHours) {
+      if (lastActive && Date.now() - parseInt(lastActive, 10) > twoHours) {
         setMessages(INITIAL_MESSAGES);
       }
       localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
-    } catch (e) {
+    } catch {
       console.warn("localStorage unavailable for Chatbot expiration check");
     }
   }, [setMessages]);
@@ -74,7 +133,7 @@ export default function Chatbot() {
   useEffect(() => {
     try {
       localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
-    } catch (e) {
+    } catch {
       console.warn("localStorage unavailable for Chatbot sync");
     }
   }, [messages]);
@@ -131,6 +190,12 @@ export default function Chatbot() {
     setIsMinimized(false);
   }, [clearReplyTimer]);
 
+  // Trap keyboard focus inside the chat panel while it's expanded
+  const { containerRef: chatTrapRef } = useFocusTrap(
+    isOpen && !isMinimized,
+    handleClose
+  );
+
   // Listen for Escape key to close the chatbot (accessibility)
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -176,7 +241,9 @@ export default function Chatbot() {
   }, [messages]);
 
   const sendMessage = (messageText = draft) => {
-    const cleanMessage = messageText.trim();
+    // 🔥 FIX: Guard against React Synthetic Events to prevent fatal .trim() crashes
+    const safeText = typeof messageText === "string" ? messageText : draft;
+    const cleanMessage = safeText.trim();
     if (!cleanMessage || isTyping) return;
 
     // Append User Message, pruning the oldest entries when the cap is exceeded.
@@ -218,7 +285,7 @@ export default function Chatbot() {
             <div
               className="
                 fixed bottom-6 right-6 z-[100]
-                hidden sm:flex               /* hide strip on mobile, show FAB instead */
+                hidden sm:flex              /* hide strip on mobile, show FAB instead */
                 items-center justify-between gap-3
                 w-72 rounded-2xl
                 border border-slate-700
@@ -280,6 +347,7 @@ export default function Chatbot() {
       <AnimatePresence>
         {isOpen && !isMinimized && (
           <motion.section
+            ref={chatTrapRef}
             data-chatbot-open
             data-lenis-prevent
             aria-label="Eventra assistant"
@@ -325,7 +393,8 @@ export default function Chatbot() {
                 <button
                   type="button"
                   onClick={handleClearConversation}
-                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  disabled={messages.length <= 1}
+                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Clear conversation"
                   aria-label="Clear conversation"
                 >
@@ -374,7 +443,13 @@ export default function Chatbot() {
                         : "bg-slate-100 dark:bg-slate-800/80 backdrop-blur-sm text-slate-800 dark:text-slate-100 rounded-bl-sm border border-slate-200/30 dark:border-slate-700/20"
                     }`}
                   >
-                    {message.content}
+                    {message.role === "user" ? (
+                      message.content
+                    ) : (
+                      <div className="chatbot-markdown">
+                        {renderMarkdownToReact(message.content)}
+                      </div>
+                    )}
                   </motion.div>
                 </div>
               ))}
@@ -404,7 +479,9 @@ export default function Chatbot() {
                   </motion.div>
                 </div>
               )}
-
+              
+              {/* 🔥 FIX: Added the missing dummy div to act as the scroll target for messagesEndRef */}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Footer controls */}

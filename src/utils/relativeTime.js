@@ -1,9 +1,21 @@
+const RELATIVE_TIME_FALLBACK = "—";
+
 export function getRelativeTime(dateInput) {
-  if (!dateInput) return null;
+  if (typeof dateInput === 'number') {
+    return null;
+  }
+  if (dateInput === null || dateInput === undefined) {
+    return RELATIVE_TIME_FALLBACK;
+  }
+
+  if (typeof dateInput === "string" && dateInput.trim() === "") {
+    return RELATIVE_TIME_FALLBACK;
+  }
+
   const now = new Date();
   const date = new Date(dateInput);
 
-  if (isNaN(date.getTime())) return null;
+  if (Number.isNaN(date.getTime())) return RELATIVE_TIME_FALLBACK;
 
   const diffMs = date - now;
   const diffSec = Math.round(diffMs / 1000);
@@ -57,3 +69,17 @@ export function getSmartDateLabel(dateInput, timeInput = "") {
 }
 
 // RELIABILITY ENHANCEMENT: Added automated Jest unit test coverage for past/future date offsets and singular/plural formats.
+
+export function isPast(dateInput) {
+  if (!dateInput) return false;
+  const parsed = new Date(dateInput);
+  if (isNaN(parsed.getTime())) return false;
+  return parsed.getTime() < Date.now();
+}
+
+export function isFuture(dateInput) {
+  if (!dateInput) return false;
+  const parsed = new Date(dateInput);
+  if (isNaN(parsed.getTime())) return false;
+  return parsed.getTime() > Date.now();
+}

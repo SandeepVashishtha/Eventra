@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   Zap, CheckCircle, Gift, Target,
   Flame, Star, Trophy, Sparkles, Timer,
@@ -13,7 +14,7 @@ function loadQuestState() {
   try {
     const raw = localStorage.getItem(QUEST_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    return safeJsonParse(raw, {});
   } catch { return null; }
 }
 
@@ -146,6 +147,7 @@ const playClaimSound = () => {
 // ─── Main QuestCenter component ────────────────────────────────────────────────
 export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
   const confettiRef = useRef(null);
+  const claimedGuardRef = useRef({});
   const [activeTab, setActiveTab] = useState('daily');
 
   // Initialise quest progress from localStorage or fresh defaults
@@ -227,12 +229,15 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
   // ─── Claim handler ───────────────────────────────────────────────────────────
   const claimXP = (questId, xp, isWeekly) => {
     const claimedKey = isWeekly ? 'weeklyClaimed' : 'dailyClaimed';
-    
-    // 🔥 FIX 1: Moved the check INSIDE the functional setState.
-    // Checking the closure 'state' allows spam-click double-claiming exploits.
-    // Checking 'prev' guarantees atomic verification.
+    const guardKey = `${claimedKey}:${questId}`;
+
+    // Synchronous guard — blocks side effects on rapid double-click
+    // before React has had a chance to re-render with updated claimed state
+    if (claimedGuardRef.current[guardKey]) return;
+    claimedGuardRef.current[guardKey] = true;
+
     setState(prev => {
-      if (prev[claimedKey][questId]) return prev; // Already claimed, block exploit
+      if (prev[claimedKey][questId]) return prev;
 
       return {
         ...prev,

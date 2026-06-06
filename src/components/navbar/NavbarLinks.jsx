@@ -1,11 +1,8 @@
-import { useRef, useState, useEffect } from "react";
-
+import { useRef, useState, useEffect} from "react";
 import { NavLink, useLocation } from "react-router-dom";
-
 import { ChevronDown } from "lucide-react";
 import { NAV_ITEMS } from "./constants/navItems";
-
-
+import { prefetchRoute } from "../../utils/routePrefetch";
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
@@ -13,6 +10,33 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
 
   const [openGroup, setOpenGroup] = useState(null);
 
+  const handleNavbarLinkClick = (href, e) => {
+    if (href === "/events") {
+      try {
+        window.sessionStorage.removeItem("eventra:event-filters:v1");
+      } catch {
+        // Ignored
+      }
+    } else if (href === "/hackathons") {
+      try {
+        window.sessionStorage.removeItem("eventra:hackathon-filters:v1");
+      } catch {
+        // Ignored
+      }
+    }
+    if (onClick) {
+      onClick(e);
+    }
+  };
+
+  const handlePrefetch = (href) => {
+    if (href === "/events") prefetchRoute("events");
+    if (href === "/dashboard") prefetchRoute("dashboard");
+    if (href === "/hackathons") prefetchRoute("hackathons");
+    if (href === "/projects") prefetchRoute("projects");
+    if (href === "/profile" || href === "/dashboard/profile") prefetchRoute("profile");
+    if (href === "/") prefetchRoute("home");
+  };
 
   useEffect(() => {
     setOpenGroup(null);
@@ -42,16 +66,20 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     };
   }, [vertical]);
 
-  const getNavLinkClasses = (active) => {
+  const secondaryItemNames = ["Saved", "About", "FAQ", "Contact"];
+
+  const getNavLinkClasses = (active, isSecondary = false, isDropdown = false) => {
     return vertical
       ? `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-all duration-200 w-full py-2 px-3 border-l-2 rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
           active
             ? "text-text border-primary font-semibold bg-bg-secondary"
             : "text-text-light hover:text-text border-transparent hover:bg-bg"
         }`
-      : `flex gap-1.5 items-center text-[12px] xl:text-[13px] font-medium uppercase tracking-[0.03em] transition-all duration-200 px-1.5 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
+      : `flex gap-1.5 items-center text-[12px] lg:text-[13px] font-normal uppercase tracking-[0.03em] transition-all duration-200 px-3 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
           active
             ? "text-text border-primary"
+            : isDropdown
+            ? "text-text-light/75 hover:text-text border-transparent hover:border-border"
             : "text-text-light hover:text-text border-transparent hover:border-border"
         }`;
   };
@@ -62,7 +90,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
-          : "items-center gap-0.5 xl:gap-1 mx-0.5 xl:mx-1 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
+          : "items-center justify-start gap-2 min-w-max flex-nowrap overflow-visible"
       }`}
       aria-label={vertical ? "Mobile primary links" : "Primary links"}
     >
@@ -77,14 +105,14 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           return (
             <div
               key={item.name}
-              className={`relative group/nav flex items-center shrink-0 ${
+              className={`relative group/nav flex items-center ${
                 vertical ? "w-full flex-col items-start" : "flex-none"
-              }`}
+              } ${!vertical && secondaryItemNames.includes(item.name) ? "hidden lg:flex" : ""}`}
             >
-              <div className="flex w-full items-center">
+              <div className={`flex w-full items-center gap-0.5 ${vertical ? "" : "justify-center"}`}>
                 <NavLink
                   to={item.href}
-                  onClick={onClick}
+                  onClick={(e) => handleNavbarLinkClick(item.href, e)}
                   aria-haspopup={!vertical ? "menu" : undefined}
                   aria-expanded={!vertical ? isOpen : undefined}
                   aria-controls={
@@ -95,7 +123,11 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                       : undefined
                   }
                   className={({ isActive }) =>
-                    getNavLinkClasses(isActive || isSubItemActive)
+                    getNavLinkClasses(
+                      isActive || isSubItemActive,
+                      secondaryItemNames.includes(item.name),
+                      true
+                    )
                   }
                 >
                   {vertical ? item.icon : null}
@@ -129,14 +161,14 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     aria-label={`${
                       isOpen ? "Collapse" : "Expand"
                     } ${item.name} submenu`}
-                    className={`ml-auto inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
+                    className={`ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md p-1 transition-colors hover:bg-bg-secondary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
                       isSubItemActive
                         ? "text-text"
-                        : "text-text-light hover:text-text"
+                        : "text-text-light/75 hover:text-text"
                     }`}
                   >
                     <ChevronDown
-                      className={`w-4 h-4 opacity-70 transition-transform duration-200 ${
+                      className={`w-3 h-3 transition-transform duration-200 ${
                         isOpen
                           ? "rotate-180"
                           : "group-hover/nav:rotate-180"
@@ -166,17 +198,17 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                   <NavLink
                     key={sub.name}
                     to={sub.href}
-                    onClick={onClick}
+                    onClick={(e) => handleNavbarLinkClick(sub.href, e)}
                     role={!vertical ? "menuitem" : undefined}
                     className={({ isActive }) =>
-                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-md p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
+                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
                         isActive
                           ? "bg-bg-secondary text-text font-semibold"
                           : "text-text-light hover:text-text hover:bg-bg"
                       }`
                     }
                   >
-                    {vertical ? sub.icon : null}
+                    <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">{sub.icon}</span>
                     <span>{sub.name}</span>
                   </NavLink>
                 ))}
@@ -189,18 +221,19 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           <NavLink
             key={item.name}
             to={item.href}
-            onClick={onClick}
+            onClick={(e) => handleNavbarLinkClick(item.href, e)}
+            onMouseEnter={() => handlePrefetch(item.href)}
             className={({ isActive }) =>
-              getNavLinkClasses(isActive)
+              `${!vertical ? "flex-none min-w-max" : ""} ${getNavLinkClasses(isActive, secondaryItemNames.includes(item.name))}`
             }
           >
-            {item.icon}
+            <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">
+              {item.icon}
+            </span>
             <span>{item.name}</span>
           </NavLink>
         );
       })}
-
-
     </nav>
   );
 };

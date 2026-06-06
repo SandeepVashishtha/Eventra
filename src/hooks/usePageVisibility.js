@@ -1,3 +1,7 @@
+/**
+ * @fileoverview usePageVisibility - Page Visibility API hook
+ * @module hooks/usePageVisibility
+ */
 import { useState, useEffect } from "react";
 
 /**
