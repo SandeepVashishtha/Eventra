@@ -5,6 +5,7 @@
  */
 
 import { safeJsonParse } from './safeJsonParse';
+import { sanitizeHtml } from './sanitizeHtml';
 
 const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
 
@@ -16,7 +17,11 @@ const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
 export const getEventFeedback = (eventId) => {
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
-    return allFeedback[eventId] || [];
+    const rawFeedback = allFeedback[eventId] || [];
+    return rawFeedback.map(f => ({
+      ...f,
+      comment: f.comment ? sanitizeHtml(f.comment) : f.comment
+    }));
   } catch (error) {
     //console.error('Error retrieving feedback:', error);
     return [];

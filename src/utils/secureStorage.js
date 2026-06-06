@@ -128,12 +128,12 @@ const getDerivedKey = () => {
   return _keyPromise;
 };
 
-const encryptValue = async (plaintext) => {
+const encryptValue = async (storageKey, plaintext) => {
   const key = await getDerivedKey();
   const encoder = new TextEncoder();
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
   const encrypted = await crypto.subtle.encrypt(
-    { name: CRYPTO_ALGORITHM, iv },
+    { name: CRYPTO_ALGORITHM, iv, additionalData: encoder.encode(storageKey) },
     key,
     encoder.encode(plaintext),
   );
@@ -142,8 +142,9 @@ const encryptValue = async (plaintext) => {
   return `${ivBase64}:${ctBase64}`;
 };
 
-const decryptValue = async (stored) => {
+const decryptValue = async (storageKey, stored) => {
   const key = await getDerivedKey();
+  const encoder = new TextEncoder();
   const colonIdx = stored.indexOf(':');
   if (colonIdx === -1) throw new Error('Invalid ciphertext format');
   const ivBase64 = stored.slice(0, colonIdx);
@@ -151,7 +152,7 @@ const decryptValue = async (stored) => {
   const iv = Uint8Array.from(atob(ivBase64), (c) => c.charCodeAt(0));
   const ciphertext = Uint8Array.from(atob(ctBase64), (c) => c.charCodeAt(0));
   const decrypted = await crypto.subtle.decrypt(
-    { name: CRYPTO_ALGORITHM, iv },
+    { name: CRYPTO_ALGORITHM, iv, additionalData: encoder.encode(storageKey) },
     key,
     ciphertext,
   );
@@ -246,7 +247,7 @@ const writeWithEncryption = async (key, value) => {
     localStorage.setItem(key, value);
     return;
   }
-  const encrypted = await encryptValue(value);
+  const encrypted = await encryptValue(key, value);
   localStorage.setItem(key, encrypted);
 };
 
@@ -272,12 +273,11 @@ export const syncSecureStorage = {
    * @returns {Promise<boolean>} `true` on success; `false` when the write
    *   could not be persisted (localStorage full, encryption error, etc.).
    */
-  setItem: (key, value) => {
+  setItem: async (key, value) => {
     try {
       pendingWrites.set(key, value);
-      writeWithEncryption(key, value).then(() => {
-        pendingWrites.delete(key);
-      });
+      await writeWithEncryption(key, value);
+      pendingWrites.delete(key);
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
@@ -339,7 +339,7 @@ export const syncSecureStorage = {
 
       if (cryptoSupported) {
         try {
-          return await decryptValue(stored);
+          return await decryptValue(key, stored);
         } catch {
           return stored;
         }
