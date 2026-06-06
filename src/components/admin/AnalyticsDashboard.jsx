@@ -538,6 +538,7 @@ const [activeTab, setActiveTab] = useState('analytics');
             </div>
           ))}
         </div>
+        {/* Closing tag for line 502 wrapper — fix for #7244 */}
       </div>
       </>
   )}
