@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Download } from "lucide-react";
+import { Download, Inbox } from "lucide-react";
 import EmptyState from "../components/common/EmptyState";
 import useBookmarks from "../hooks/useBookmarks";
 import { exportToCSV } from "../utils/exportUtils";
@@ -37,10 +37,11 @@ const SavedEventsPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] px-4 py-12 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100 sm:px-6 lg:px-8">
         <section className="mx-auto max-w-4xl">
           <EmptyState
-            type="bookmarks"
             title="No saved events yet!"
-            message="Bookmark events you're interested in to find them here later."
-            onBrowseAll={() => navigate("/events")}
+            description="Bookmark events you're interested in to find them here later."
+            icon={Inbox}
+            actionLabel="Browse Events"
+            actionPath="/events"
           />
         </section>
       </div>

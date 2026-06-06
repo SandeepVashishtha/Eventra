@@ -371,9 +371,9 @@ const CalendarPage = () => {
               {!isLoading && selectedEvents.length === 0 ? (
                 <EmptyState
                   compact={true}
-                  icon={<CalendarDays size={32} className="text-slate-400 dark:text-slate-500" />}
+                  icon={CalendarDays}
                   title="No events scheduled"
-                  message="No upcoming events scheduled for this day."
+                  description="No upcoming events scheduled for this day."
                 />
               ) : null}
 
