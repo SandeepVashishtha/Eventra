@@ -17,6 +17,7 @@ import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import useDebounce from "../../hooks/useDebounce";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -179,7 +180,7 @@ const HackathonHub = () => {
 
     let savedFilters = {};
     try {
-      savedFilters = JSON.parse(
+      savedFilters = safeJsonParse(
         window.sessionStorage.getItem(HACKATHON_FILTER_STORAGE_KEY) || "{}"
       );
     } catch {

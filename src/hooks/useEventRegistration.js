@@ -1,3 +1,4 @@
+import { createRateLimiter } from "../../utils/rateLimiter";
 /**
  * @file useEventRegistration.js
  * @module hooks/useEventRegistration
@@ -17,7 +18,8 @@
  *   and opens a conflict-resolution modal when one is found.
  * - Checks live event capacity immediately before submission and routes the
  *   request to the waitlist endpoint when the event is full.
- * - Uses a module-level `Map` lock (`registrationLocks`) and a ref
+ * - Uses a shared module-level `Map` lock (`registrationLocks` from
+ *   `utils/registrationLocks`) and a ref
  *   (`isSubmittingRef`) to guard against duplicate concurrent submissions.
  * - Falls back to an offline queue (`offlineQueue`) when a network/timeout
  *   error is detected, so the registration syncs automatically once
@@ -33,7 +35,8 @@ import { getEventStatus } from "../../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { API_ENDPOINTS } from "../../config/api";
+import { eventService } from "../../services/eventService";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { validate } from "../../validation";
 import {
@@ -44,11 +47,20 @@ import {
 import { pushToQueue } from "../../utils/offlineQueue";
 import { logError } from "../../utils/errorLogger";
 import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
+import registrationLocks from "../../utils/registrationLocks";
+
+export const MAX_NOTES_CHARS = 500;
+
+import { logAbuseAttempt } from "../../utils/abuseLogger";
 
 export const MAX_NOTES_CHARS = 500;
 
 // Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
+const registrationLimiter = createRateLimiter({
+  maxTokens: 3,
+  refillRate: 0.2, // roughly 1 token every 5 seconds
+});
 
 /**
  * Derives a user-facing error message from a failed registration API response.
@@ -407,7 +419,7 @@ const useEventRegistration = (eventIdParam) => {
       }
 
       try {
-        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+        const response = await eventService.getEventDetails(eventId);
 
         if (response.status === 200 && response.data) {
           if (isCancelled) return;
@@ -461,11 +473,11 @@ const useEventRegistration = (eventIdParam) => {
     return () => {
       isCancelled = true;
     };
-  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+  }, [eventId, user?.id, isAuthenticated, setValues, location.pathname]);
 
   const checkEventCapacity = useCallback(async (id, currentEvent) => {
     try {
-      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(id));
+      const freshRes = await eventService.getEventDetails(id);
       if (freshRes.status === 200) {
         const freshEvent = freshRes.data;
         return freshEvent.attendees >= freshEvent.maxAttendees;
@@ -482,7 +494,7 @@ const useEventRegistration = (eventIdParam) => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
     if (conflictCheck.hasConflict) {
       try {
-        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+        const res = await eventService.getAllEvents();
         const realEvents = res.status === 200 ? res.data : [];
         const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
         setConflictData({
@@ -504,6 +516,22 @@ const useEventRegistration = (eventIdParam) => {
 
   // Proceed with registration after conflict check or user confirmation
   const proceedWithRegistration = useCallback(async () => {
+    if (!registrationLimiter.tryConsume()) {
+      const retryMs = registrationLimiter.getRetryAfterMs();
+
+      logAbuseAttempt("event-registration-rate-limit", {
+        eventId,
+        userId: user?.id,
+      });
+
+      toast.error(
+        `Too many registration attempts. Please wait ${Math.ceil(
+          retryMs / 1000
+        )} seconds and try again.`
+      );
+
+      return;
+    }
     if (!isAuthenticated() || !user?.id) {
       toast.error("Please log in to register for events.");
       navigate("/login", {
@@ -518,30 +546,27 @@ const useEventRegistration = (eventIdParam) => {
     isSubmittingRef.current = true;
     setSubmitting(true);
 
-    const isEventFull = event ? event.attendees >= event.maxAttendees : false;
-    const endpoint = isEventFull
-      ? `/api/events/${eventId}/waitlist`
-      : API_ENDPOINTS.EVENTS?.REGISTER
-        ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
-        : `/api/events/${eventId}/register`;
+    const payload = {
+      ...formData,
+      additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
+      priority: formData.priority,
+      eventId: parseInt(eventId),
+    };
 
     try {
-      await apiUtils.post(
-        endpoint,
-        {
-          ...formData,
-          additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
-          priority: formData.priority,
-          eventId: parseInt(eventId),
-          userId: user.id,
-        },
-        token
-      );
+      const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+      if (isEventFull) {
+        await eventService.waitlistForEvent(eventId, payload);
+      } else {
+        await eventService.registerForEvent(eventId, payload);
+      }
 
       setRegistered(true);
       toast.success("Registration successful!");
       addRegistration(event, formData);
       clearSession();
+      // I removed frontend EmailJS calls here because they break during offline syncs.
+      // Email delivery is now handled strictly by the backend API.
     } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
       const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
@@ -552,7 +577,6 @@ const useEventRegistration = (eventIdParam) => {
           ...formData,
           additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
           eventId: parseInt(eventId),
-          userId: user.id,
         };
 
         const success = await pushToQueue(

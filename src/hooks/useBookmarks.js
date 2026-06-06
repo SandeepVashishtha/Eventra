@@ -3,6 +3,7 @@
  * @module hooks/useBookmarks
  */
 import { useState, useEffect, useCallback, useRef } from "react";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 /**
  * A custom React hook that manages bookmarked events for a user,
@@ -47,7 +48,7 @@ const useBookmarks = (userId = "guest") => {
     try {
       const stored = localStorage.getItem(storageKey);
       if (!stored) return [];
-      const parsed = JSON.parse(stored);
+      const parsed = safeJsonParse(stored, {});
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
@@ -75,7 +76,7 @@ const useBookmarks = (userId = "guest") => {
     try {
       const stored = localStorage.getItem(storageKey);
       if (!stored) { setBookmarks([]); return; }
-      const parsed = JSON.parse(stored);
+      const parsed = safeJsonParse(stored, {});
       setBookmarks(Array.isArray(parsed) ? parsed : []);
     } catch {
       setBookmarks([]);
