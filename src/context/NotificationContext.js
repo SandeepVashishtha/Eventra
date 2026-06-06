@@ -49,7 +49,7 @@ const ensureServiceWorkerRegistration = async () => {
 
   try {
     return await navigator.serviceWorker.register("/service-worker.js");
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -501,7 +501,7 @@ export const NotificationProvider = ({ children }) => {
           }
         }
         window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-      } catch (error) {
+      } catch {
         // Non-fatal — the subscription is still active; local status just won't persist.
       }
 

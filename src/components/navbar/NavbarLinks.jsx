@@ -14,13 +14,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     if (href === "/events") {
       try {
         window.sessionStorage.removeItem("eventra:event-filters:v1");
-      } catch (err) {
+      } catch {
         // Ignored
       }
     } else if (href === "/hackathons") {
       try {
         window.sessionStorage.removeItem("eventra:hackathon-filters:v1");
-      } catch (err) {
+      } catch {
         // Ignored
       }
     }

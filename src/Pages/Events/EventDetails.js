@@ -217,7 +217,7 @@ const EventDetails = () => {
            toast.success("Event link copied to clipboard!");   
            setLinkCopied(true);                                
            setTimeout(() => setLinkCopied(false), 2000);
-    } catch (err) {
+    } catch {
        toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
@@ -380,7 +380,7 @@ const EventDetails = () => {
                                   }
                                 }
                                 exportToCSV(allRegistrants, `${event.title}_registrants`);
-                              } catch (error) {
+                              } catch {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -418,7 +418,7 @@ const EventDetails = () => {
                                   }
                                 }
                                 exportToJSON(allRegistrants, `${event.title}_registrants`);
-                              } catch (error) {
+                              } catch {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);

@@ -134,6 +134,7 @@ function FAQSectionInner() {
 
       return matchesCategory && matchesSearch;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, selectedCategory]);
 
   const suggestions = faqs

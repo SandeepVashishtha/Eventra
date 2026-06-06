@@ -51,7 +51,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
       localStorage.setItem(`feedback-submitted-${eventId}`, "true");
       setSubmitted(true);
       toast.success("Feedback submitted! Thank you for sharing your thoughts.");
-    } catch (err) {
+    } catch {
       toast.error("Failed to submit feedback. Please try again.");
     } finally {
       setIsSubmitting(false);

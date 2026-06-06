@@ -1,4 +1,4 @@
-import React from "react";
+
 import Tooltip from "../common/Tooltip";
 import { Info, Package, MessageCircle } from "lucide-react";
 

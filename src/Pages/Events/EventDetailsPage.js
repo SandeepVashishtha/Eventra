@@ -102,7 +102,7 @@ const EventDetailsPage = () => {
       await navigator.clipboard.writeText(shareUrl);
       toast.success("Share not supported. Link copied to clipboard!");
     }
-  } catch (error) {
+  } catch {
     toast.error("Failed to share event");
   }
 };

@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+ 
 /**
  * src/utils/p2pFileTransfer.js
  *

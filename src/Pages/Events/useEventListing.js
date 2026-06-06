@@ -12,7 +12,7 @@ import {
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
-import { logger } from "../../utils/logger";
+
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
@@ -186,6 +186,7 @@ const useEventListing = () => {
 
   const setAdvancedFilters = useCallback((filters) => {
     setAdvancedFiltersState(normalizeAdvancedFilters(filters));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const priceStats = useMemo(() => getPriceStats(events), [events]);

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { authService } from "../../services/authService";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+
 import { ROLES } from "../../config/roles";
 import { useAuth } from "../../context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
@@ -220,7 +220,7 @@ const SignupForm = () => {
           setErrors((prev) => ({ ...prev, email: result?.message || "Email is already registered" }));
           setFieldState("email", "error");
         }
-      } catch (err) {
+      } catch {
         setErrors((prev) => ({ ...prev, email: "Validation failed" }));
         setFieldState("email", "error");
       }

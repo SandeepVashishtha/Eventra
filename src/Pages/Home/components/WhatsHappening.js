@@ -23,7 +23,7 @@ const WhatsHappening = () => {
 
   useEffect(() => {
     if (prefersReducedMotion) {
-      // eslint-disable-next-line
+       
       setIsAutoPlaying(false);
     }
   }, [prefersReducedMotion]);
