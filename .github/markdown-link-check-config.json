@@ -8,6 +8,9 @@
     },
     {
       "pattern": "^https://eventra.sandeepvashishtha.in/"
+    },
+    {
+      "pattern": "^https://eventra-backend-springboot"
     }
   ],
   "timeout": "10s",

@@ -205,7 +205,6 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
 ## Contributing
 
-- Read [CONTRIBUTING.md](CONTRIBUTING.md)
 - Follow [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - Open focused pull requests with clear scope and test notes
 - Issues may be auto-unassigned after inactivity by workflow: [auto-unassign-stale-issues.yml](.github/workflows/auto-unassign-stale-issues.yml)

@@ -92,9 +92,8 @@ jobs:
             --cache
             --cache-path .lychee-cache
             --no-progress
-            --format markdown
-            --output /tmp/lychee-report.md
             $(cat /tmp/md-targets.txt | tr '\n' ' ')
+          output: /tmp/lychee-report.md
           fail: false          # We handle failure ourselves to post a PR comment first
           token: ${{ secrets.GITHUB_TOKEN }}
 
