@@ -86,7 +86,6 @@ const EventRegistration = () => {
   const [registered, setRegistered] = useState(false);
   const [waitlistPosition, setWaitlistPosition] = useState(-1);
   const isSubmittingRef = useRef(false);
-  const registrationLocksRef = useRef(new Map());
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -290,7 +289,7 @@ const EventRegistration = () => {
 
     setShowConflictModal(false);
 
-    registrationLocksRef.current.set(eventId, true);
+    registrationLocks.set(eventId, true);
     isSubmittingRef.current = true;
     setSubmitting(true);
 
@@ -310,7 +309,7 @@ const EventRegistration = () => {
         toast.error(err.message || t("eventRegistration.toastRegistrationError"));
         return;
       } finally {
-        registrationLocksRef.current.delete(eventId);
+      registrationLocks.delete(eventId);
         isSubmittingRef.current = false;
         setSubmitting(false);
       }
@@ -439,7 +438,7 @@ const EventRegistration = () => {
       return;
     }
 
-    if (registrationLocksRef.current.has(eventId)) {
+    if (registrationLocks.has(eventId)) {
       toast.error(t("eventRegistration.toastAnotherInProgress"));
       return;
     }
@@ -481,7 +480,12 @@ const EventRegistration = () => {
       return;
     }
 
-    proceedWithRegistration();
+    try {
+      await proceedWithRegistration();
+    } finally {
+      isSubmittingRef.current = false;
+      registrationLocks.delete(eventId);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
 

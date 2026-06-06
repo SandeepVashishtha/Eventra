@@ -1,9 +1,9 @@
 import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -16,6 +16,38 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 
 const CountUp = CountUpLib.default || CountUpLib;
+
+// ─── FLOATING SHAPE SUB-COMPONENT ────────────────────────────────────────────
+// Fix for #7243: Each shape owns its own useTransform hook call at the top
+// level of its own component — hooks must never be called inside .map() loops.
+/**
+ * @param {{ shape: object, index: number, scrollYProgress: object, isDark: boolean, floatShape: function, prefersReducedMotion: boolean }} props
+ */
+const PARALLAX_OFFSETS = [220, -150, 100, -180, 130, -80, 250, -120, 70];
+
+const FloatingShape = ({ shape, index, scrollYProgress, isDark, floatShape, prefersReducedMotion }) => {
+  const yShape = useTransform(scrollYProgress, [0, 1], [0, PARALLAX_OFFSETS[index]]);
+
+  return (
+    <motion.div
+      style={{
+        position: "absolute",
+        top: shape.pos.top,
+        left: shape.pos.left,
+        width: shape.size,
+        height: shape.size,
+        borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%",
+        background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
+        filter: "blur(2px)",
+        boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
+        y: prefersReducedMotion ? 0 : yShape,
+        willChange: "transform",
+      }}
+      animate={prefersReducedMotion ? {} : floatShape(index)}
+    />
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
@@ -35,19 +67,34 @@ const allSearchItems = [
   ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
 ];
 
-const HEADLINE_PHRASES = [
+const phrases = [
   "Amazing Tech Events",
   "Exciting Hackathons Today",
   "Innovative Dev Workshops",
   "Cutting-Edge Tech Meetups",
 ];
-const TAGLINE_TEXTS = ["Discover & Join"];
-const SEARCH_RESULT_LIMIT = 5;
-const HERO_STATS = [
-  { icon: Users, value: 1500, label: "Developers Joined", suffix: "+" },
-  { icon: Calendar, value: 75, label: "Events Organized", suffix: "+" },
-  { icon: Handshake, value: 30, label: "Partners & Sponsors", suffix: "+" },
+
+const TAGLINE_TEXTS = [
+  "Build",
+  "Learn",
+  "Connect",
+  "Grow",
 ];
+
+const SEARCH_RESULT_LIMIT = 8;
+
+const SEARCH_ROUTES = {
+  event: "/events",
+  hackathon: "/hackathons",
+  project: "/projects",
+};
+
+const SEARCH_ICONS = {
+  event: Calendar,
+  hackathon: Trophy,
+  project: Code,
+};
+
 const MotionLink = motion(Link);
 
 const searchIndex = new Fuse(allSearchItems, {
@@ -67,39 +114,13 @@ const getResultIcon = (type) => {
 };
 
 const Hero = () => {
-   const prefersReducedMotion = useReducedMotion();
-  const controls = useAnimation();
-
-  const HEADLINE_PHRASES = phrases;
-
-  const TAGLINE_TEXTS = [
-    "Build. Connect. Innovate.",
-    "Discover Opportunities.",
-    "Join the Tech Community.",
-  ];
-
-  const SEARCH_RESULT_LIMIT = 5;
-
-  const HERO_STATS = [
-    {
-      value: 1500,
-      label: "Developers",
-      suffix: "+",
-      icon: Users,
-    },
-    {
-      value: 75,
-      label: "Events",
-      suffix: "+",
-      icon: Calendar,
-    },
-    {
-      value: 30,
-      label: "Partners",
-      suffix: "+",
-      icon: Handshake,
-    },
-  ];
+  const fadeUp = (prefersReducedMotion) => ({
+  hidden: { opacity: 0, y: 24 },
+  visible: (i = 0) => ({
+    opacity: 1, y: 0,
+    transition: { delay: prefersReducedMotion ? 0 : i * 0.07, duration: prefersReducedMotion ? 0 : 0.45, ease: "easeOut" }
+  })
+});
 
   const SEARCH_ROUTES = {
     event: "/events",
@@ -112,12 +133,8 @@ const Hero = () => {
     hackathon: Trophy,
     project: Code,
   };
-
-  const MotionLink = motion(Link);
   
   useDocumentTitle("Eventra | Home");
-  const controls = useAnimation();
-  const prefersReducedMotion = useReducedMotion();
 
   const containerRef = useRef(null);
 
@@ -140,6 +157,14 @@ const Hero = () => {
   const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
+  const fadeUp = {
+    hidden: { y: 32, opacity: 0 },
+    show: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
+    },
+  };
 
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
@@ -164,7 +189,7 @@ const Hero = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setPhraseIndex((prev) => (prev + 1) % HEADLINE_PHRASES.length);
+      setPhraseIndex((prev) => (prev + 1) % phrases.length);
     }, 3000);
 
     return () => clearInterval(interval);
@@ -198,14 +223,11 @@ const Hero = () => {
     clearSearchTerm();
   }, [clearSearchTerm]);
 
-
-  const getResultIcon = (type) => {
-    const icons = { event: Calendar, hackathon: Trophy, project: Code };
-    const Icon = icons[type] || Search;
-    return <Icon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />;
-  };
-
   // ─── ANIMATION VARIANTS ────────────────────────────────────────────────────
+  const container = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+  };
 
   const floatShape = (i) => ({
     y: [0, -15 - i * 4, 0],
@@ -232,16 +254,32 @@ const Hero = () => {
     { size: 34, pos: { top: "48%", left: "80%" }, light: "#eab308", dark: "#fcd34d" },
   ];
 
-  const stats = [
-    { value: 1500, label: "Developers Joined", suffix: "+" },
-    { value: 75, label: "Events Organized", suffix: "+" },
-    { value: 30, label: "Partners & Sponsors", suffix: "+" },
-  ];
+  const HERO_STATS = [
+  {
+    value: 1500,
+    label: "Developers Joined",
+    suffix: "+",
+    icon: Users,
+  },
+  {
+    value: 75,
+    label: "Events Organized",
+    suffix: "+",
+    icon: Calendar,
+  },
+  {
+    value: 30,
+    label: "Partners & Sponsors",
+    suffix: "+",
+    icon: Handshake,
+  },
+];
 
   const primaryBtn = "relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900";
 
 
   return (
+    <>
     <section
       ref={containerRef}
       aria-label="Hero section"
@@ -321,7 +359,7 @@ const Hero = () => {
                     }}
                     whileHover={prefersReducedMotion ? {} : { scale: 1.01 }}
                   >
-                    {HEADLINE_PHRASES[phraseIndex]}
+                    {phrases[phraseIndex]}
                   </motion.span>
                 </AnimatePresence>
               </div>
@@ -444,9 +482,8 @@ const Hero = () => {
                     </div>
                     <p className="mb-1 text-2xl font-semibold tabular-nums text-gray-900 sm:text-3xl">
                       {statsReady ? (
-                        <CountUp
-                          start={0}
-                          end={Number.isFinite(stat.value) ? stat.value : 0}
+  <CountUp
+    end={stat.value}
                           duration={2.2}
                           suffix={stat.suffix || ""}
                         />
@@ -489,7 +526,7 @@ const Hero = () => {
         </motion.div>
       </motion.div>
     </section>
+    </>
   );
 };
-
 export default Hero;

@@ -54,8 +54,19 @@ export const downloadICSFile = (event) => {
     `SUMMARY:${escapeICSText(title || "Eventra Scheduled Event")}`,
     `DESCRIPTION:${escapeICSText(description || "Event organized through the Eventra Platform.")}`,
     `LOCATION:${escapeICSText(location || "Virtual / Online Event")}`,
+    ...(event.joiningLink ? [`URL:${event.joiningLink}`] : []),
     "STATUS:CONFIRMED",
     "SEQUENCE:0",
+    "BEGIN:VALARM",
+    "TRIGGER:-PT1H",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Reminder: Your event starts in 1 hour",
+    "END:VALARM",
+    "BEGIN:VALARM",
+    "TRIGGER:-PT1D",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Reminder: Your event starts tomorrow",
+    "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR"
   ];
@@ -168,6 +179,11 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
       `LOCATION:${escapeICSText(location || "Virtual / Online Event")}`,
       "STATUS:CONFIRMED",
       "SEQUENCE:0",
+      "BEGIN:VALARM",
+      "TRIGGER:-PT1H",
+      "ACTION:DISPLAY",
+      "DESCRIPTION:Reminder: Your event starts in 1 hour",
+      "END:VALARM",
       "END:VEVENT"
     );
   });

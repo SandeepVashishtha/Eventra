@@ -81,9 +81,13 @@ export default async function registrationHandler(req, res, deps = {}) {
         return;
       }
       // Never allow the owner id to be reassigned through an update.
-      const patch = { ...(req.body || {}) };
-      delete patch.userId;
-      delete patch.id;
+      const ALLOWED_FIELDS = ['notes', 'status', 'dietaryRestrictions', 'specialRequests'];
+      const patch = {};
+      for (const field of ALLOWED_FIELDS) {
+        if (req.body?.[field] !== undefined) {
+          patch[field] = req.body[field];
+        }
+      }
 
       const updated = await updateRegistration(registrationId, patch);
       res.status(200).json({ registration: updated });

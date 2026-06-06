@@ -226,6 +226,13 @@ if (typeof window !== 'undefined') {
 // written to localStorage, so this Map is the only in-flight plaintext store.
 const pendingWrites = new Map();
 
+// Per-key write queue — chains encryption operations so concurrent writes to
+// the same key complete sequentially. When a newer write is queued before the
+// previous encryption finishes, the older write skips its localStorage write
+// entirely, preventing stale ciphertext from overwriting newer values.
+const writeQueue = new Map();
+const writeCounters = new Map();
+
 /**
  * Encrypts `value` and writes the ciphertext to localStorage under `key`.
  *
@@ -276,12 +283,32 @@ export const syncSecureStorage = {
   setItem: async (key, value) => {
     try {
       pendingWrites.set(key, value);
-      await writeWithEncryption(key, value);
+
+      const counter = (writeCounters.get(key) || 0) + 1;
+      writeCounters.set(key, counter);
+      const ourCounter = counter;
+
+      const prev = (writeQueue.get(key) || Promise.resolve())
+        .catch(() => {});
+      const next = prev.then(async () => {
+        if (writeCounters.get(key) !== ourCounter) return;
+        await writeWithEncryption(key, value);
+      });
+      writeQueue.set(key, next);
+
+      await next;
+
+      if (writeCounters.get(key) !== ourCounter) return true;
+
+      writeCounters.delete(key);
       pendingWrites.delete(key);
+      writeQueue.delete(key);
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
       pendingWrites.delete(key);
+      writeQueue.delete(key);
+      writeCounters.delete(key);
       return false;
     }
   },
@@ -364,6 +391,8 @@ export const syncSecureStorage = {
   removeItem: (key) => {
     try {
       pendingWrites.delete(key);
+      writeQueue.delete(key);
+      writeCounters.delete(key);
       localStorage.removeItem(key);
       localStorage.removeItem(key + PLAINTEXT_SUFFIX);
     } catch (error) {
@@ -381,6 +410,7 @@ export const syncSecureStorage = {
     try {
       pendingWrites.clear();
       writeQueue.clear();
+      writeCounters.clear();
 
       const prefix = "eventra:";
       const toRemove = [];

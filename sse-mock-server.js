@@ -32,7 +32,11 @@ const MOCK_EVENTS = [
   { id: "event-3", title: "Web Dev Workshop" }
 ];
 
-const JWT_SECRET = process.env.JWT_SECRET || "mock-secret-key-123456";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error("FATAL: JWT_SECRET environment variable is required.");
+  process.exit(1);
+}
 
 // Mock registration store for ticket check-in testing
 const mockRegistrations = new Map([

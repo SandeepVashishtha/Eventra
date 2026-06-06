@@ -217,8 +217,8 @@ export const suggestAlternativeEvents = (
   // filter(Boolean) drops null/undefined entries before accessing .event?.id.
   const safeRegistered = (registeredEvents || []).filter(Boolean);
   const registeredIds = new Set(safeRegistered.map((reg) => reg.event?.id || reg.id));
-  const availableEvents = allEvents.filter(Boolean).filter((event) => {
-    return event.id !== targetEvent.id && !registeredIds.has(event.id);
+  const availableEvents = allEvents.filter((event) => {
+    return event && event.id !== targetEvent.id && !registeredIds.has(event.id);
   });
 
   // Keep only events that don't conflict with existing registrations
