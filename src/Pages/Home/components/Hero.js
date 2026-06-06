@@ -115,8 +115,6 @@ const getResultIcon = (type) => {
 
 const Hero = () => {
   useDocumentTitle("Eventra | Home");
-  const controls = useAnimation();
-  const prefersReducedMotion = useReducedMotion();
 
   const containerRef = useRef(null);
 
