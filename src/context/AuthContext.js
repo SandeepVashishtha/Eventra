@@ -307,7 +307,7 @@ export const AuthProvider = ({ children }) => {
         // body. There is no longer a missing-token failure path here.
         const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
 
-        const persisted = persistSession(sessionToken, sessionUser);
+        const persisted = await persistSession(sessionToken, sessionUser);
         if (!persisted) return false;
 
         setAuthRequestState({ loading: false, error: null });
