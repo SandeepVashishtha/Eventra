@@ -17,10 +17,8 @@ import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
-
 import { safeJsonParse } from "../../utils/safeJsonParse";
-
-import{
+import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
   getDefaultFilters,
