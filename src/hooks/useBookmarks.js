@@ -3,6 +3,19 @@
  * @module hooks/useBookmarks
  */
 import { useState, useEffect, useCallback, useRef } from "react";
+import { safeJsonParse } from "../utils/safeJsonParse";
+
+// Simple synchronous hash to avoid exposing raw userId (email) in localStorage keys.
+const hashUserId = (userId) => {
+  if (!userId || userId === "guest") return "guest";
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    const chr = userId.charCodeAt(i);
+    hash = (hash << 5) - hash + chr;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+};
 
 /**
  * A custom React hook that manages bookmarked events for a user,
@@ -41,13 +54,15 @@ const toBookmarkEntry = (event) => ({
 });
 
 const useBookmarks = (userId = "guest") => {
-  const storageKey = `bookmarks_${userId}`;
+  const storageKey = `bookmarks_${hashUserId(userId)}`;
 
   const [bookmarks, setBookmarks] = useState(() => {
     try {
       const stored = localStorage.getItem(storageKey);
       if (!stored) return [];
-      return JSON.parse(stored) || [];
+//       return JSON.parse(stored) || [];
+      const parsed = safeJsonParse(stored, {});
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
@@ -74,7 +89,7 @@ const useBookmarks = (userId = "guest") => {
     try {
       const stored = localStorage.getItem(storageKey);
       if (!stored) { setBookmarks([]); return; }
-      const parsed = JSON.parse(stored);
+      const parsed = safeJsonParse(stored, {});
       setBookmarks(Array.isArray(parsed) ? parsed : []);
     } catch {
       setBookmarks([]);
