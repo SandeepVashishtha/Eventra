@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { STORAGE_KEYS } from "./storageKeys";
 import { validators } from "./storageValidators";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const DEFAULT_EXPIRY = 1000 * 60 * 60; // 1 hour
 
@@ -24,7 +25,7 @@ export const storageManager = {
       const raw = localStorage.getItem(key);
       if (!raw) return null;
 
-      const parsed = JSON.parse(raw);
+      const parsed = safeJsonParse(raw, {});
 
       // 1. Check for expected structure
       if (!parsed || typeof parsed !== 'object' || !('value' in parsed)) {

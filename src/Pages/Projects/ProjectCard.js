@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { fetchGitHubRepo, getGitHubRepoDetails } from "../../utils/githubApiClient.js";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Cache Keys & Constants
 const CACHE_KEY = "eventra_github_metrics_cache";
@@ -179,7 +180,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       try {
         let cache = {};
         const saved = localStorage.getItem(CACHE_KEY);
-        cache = saved ? JSON.parse(saved) : {};
+        cache = saved ? safeJsonParse(saved, {}) : {};
         cache[key] = { data: updated, timestamp: Date.now() };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
       } catch {}
@@ -199,7 +200,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       try {
         let cache = {};
         const saved = localStorage.getItem(CACHE_KEY);
-        cache = saved ? JSON.parse(saved) : {};
+        cache = saved ? safeJsonParse(saved, {}) : {};
         cache[key] = { data: updated, timestamp: Date.now() };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
       } catch {}
@@ -231,7 +232,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         let cache = {};
         try {
           const saved = localStorage.getItem(CACHE_KEY);
-          cache = saved ? JSON.parse(saved) : {};
+          cache = saved ? safeJsonParse(saved, {}) : {};
         } catch (e) {
           cache = {};
         }
