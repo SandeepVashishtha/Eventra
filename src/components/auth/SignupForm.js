@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { authService } from "../../services/authService";
+
+import { ROLES } from "../../config/roles";
 import { useAuth } from "../../context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
@@ -9,6 +11,22 @@ import { User, AtSign, Lock, Eye, EyeOff, Zap } from "lucide-react";
 import { validate, validateEmailAvailability, validatePasswordStrength } from "../../validation";
 
 const getResultMessage = (result, fallback) => (result?.isValid ? "" : result?.message || fallback);
+
+export const normalizeSignupRoles = (data) => {
+  const responseRoles = Array.isArray(data?.roles)
+    ? data.roles.filter((role) => typeof role === "string" && role.trim())
+    : [];
+
+  if (responseRoles.length > 0) {
+    return responseRoles;
+  }
+
+  if (typeof data?.role === "string" && data.role.trim()) {
+    return [data.role];
+  }
+
+  return [ROLES.ATTENDEE];
+};
 
 const parseSignupResponse = async (response) => {
   if (typeof response?.text === "function") {
@@ -202,7 +220,7 @@ const SignupForm = () => {
           setErrors((prev) => ({ ...prev, email: result?.message || "Email is already registered" }));
           setFieldState("email", "error");
         }
-      } catch (err) {
+      } catch {
         setErrors((prev) => ({ ...prev, email: "Validation failed" }));
         setFieldState("email", "error");
       }
@@ -226,8 +244,7 @@ const SignupForm = () => {
       return;
     }
     try {
-      const signupEndpoint = API_ENDPOINTS.AUTH.REGISTER || API_ENDPOINTS.AUTH.SIGNUP;
-      const response = await apiUtils.post(signupEndpoint, {
+      const response = await authService.register({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
@@ -235,30 +252,27 @@ const SignupForm = () => {
         confirmPassword: formData.confirmPassword,
       });
 
-      const { ok, status, data } = await parseSignupResponse(response);
-
-      if (!ok) {
-        const backendMessage = data?.message || data?.error || "Registration failed";
-        setSubmitError(`${backendMessage} (${status})`);
+      if (!response.ok) {
+        const backendMessage = response.data?.message || response.data?.error || "Registration failed";
+        setSubmitError(`${backendMessage} (${response.status})`);
         setLoading(false);
         return;
       }
 
-      const sessionToken = data?.token;
-      if (!sessionToken) {
-        setSubmitError("Signup completed but no token was returned.");
-        setLoading(false);
-        return;
-      }
+      // Under the HttpOnly-cookie auth model the server sets the session
+      // cookie on the signup response. The client never sees a raw JWT.
+      const sessionToken = "cookie-managed";
 
+      const data = response.data || {};
+      const sessionRoles = normalizeSignupRoles(data);
       const sessionUser = {
         id: data?.id,
         firstName: data?.firstName ?? formData.firstName.trim(),
         lastName: data?.lastName ?? formData.lastName.trim(),
         email: data?.email ?? formData.email.trim(),
         username: data?.username ?? formData.email.trim(),
-        role: data?.role ?? "USER",
-        roles: data?.role ? [data.role] : ["USER"],
+        role: sessionRoles[0],
+        roles: sessionRoles,
         permissions: data?.permissions ?? [],
       };
 

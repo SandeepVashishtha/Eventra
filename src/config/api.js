@@ -2,6 +2,7 @@ import axios from "axios";
 import { ENV } from "./env";
 import { syncServerTimeFromHeader } from "../utils/timeSync";
 import { getCSRFToken } from "../utils/csrfToken";
+import { logger } from "../utils/logger";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -30,7 +31,7 @@ const resolveEnvApiBaseUrl = () => {
     return normalizeApiBaseUrl(envUrl);
   }
   if (!isDev) {
-    console.warn(`VITE_API_URL environment variable is missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
+    logger.warn(`VITE_API_URL environment variable is missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
     return "";
   }
   return "http://localhost:8080";
@@ -206,7 +207,7 @@ const normalizeApiError = (error) => {
 // We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
 API.interceptors.request.use((config) => {
   if (isDev) {
-    console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
+    logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
 
   if (_authToken && _authToken !== "cookie-managed") {
@@ -218,6 +219,8 @@ API.interceptors.request.use((config) => {
     const csrf = getCSRFToken();
     if (csrf) {
       config.headers["X-CSRF-Token"] = csrf;
+    } else if (process.env.NODE_ENV !== "production") {
+      console.warn("[CSRF] Token missing for mutating request:", method, config.url);
     }
   }
 
@@ -251,7 +254,7 @@ API.interceptors.response.use(
       const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
       if (isDev) {
-        console.debug(
+        logger.info(
           `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
         );
       }
@@ -280,6 +283,7 @@ export const API_ENDPOINTS = {
     ALL: buildApiUrl("/api/events"),
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
+    SCHEDULE: (id) => buildApiUrl(`/api/events/${id}/schedule`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
     AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
 
@@ -313,6 +317,14 @@ export const API_ENDPOINTS = {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
   },
+  SESSION_RECOVERY: {
+    BASE: buildApiUrl("/api/session-recovery"),
+    SESSION: (sessionId) =>
+      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}`),
+    RESTORE: (sessionId) =>
+      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}/restore`),
+    CLEANUP_EXPIRED: buildApiUrl("/api/session-recovery/expired"),
+  },
   TICKETS: {
     VALIDATE: buildApiUrl("/api/tickets/validate"),
     CHECK_IN: buildApiUrl("/api/tickets/checkin"),
@@ -329,6 +341,7 @@ export const API_ENDPOINTS = {
     EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
     USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
     PHONE: buildApiUrl("/api/validate/phone"),
+    CONTACT: buildApiUrl("/api/contact"),
   },
 };
 

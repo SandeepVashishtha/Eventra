@@ -23,6 +23,7 @@ const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPl
 const UIInventory = lazy(() => import("../admin/UIInventory"));
 const SponsorDashboard = lazy(() => import("../../Pages/Sponsors/SponsorDashboard"));
 const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard.jsx"));
+const EventSchedulerCalendar = lazy(() => import("../../Pages/Calendar/EventSchedulerCalendar.jsx"));
 
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
@@ -165,6 +166,20 @@ export const getProtectedRoutes = () => [
     }
   />,
   <Route
+    key="/events/scheduler"
+    path="/events/scheduler"
+    element={
+      <ProtectedRoute
+        requiredPermissions={[
+          PERMISSIONS.CREATE_EVENT,
+          PERMISSIONS.HOST_HACKATHON,
+        ]}
+      >
+        {withModuleBoundary(<EventSchedulerCalendar />, "Event Scheduler")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
     key="/events/:eventId/floorplan-editor"
     path="/events/:eventId/floorplan-editor"
     element={
@@ -196,6 +211,7 @@ export const getProtectedRoutes = () => [
 export const getAuthRoutes = () => [
   // 🔥 FIX: Safely suspended lazy-loaded auth routes
   <Route key="/login" path="/login" element={withAuthSuspense(<AuthPage />)} />,
+  <Route key="/register" path="/register" element={withAuthSuspense(<AuthPage />)} />,
   <Route key="/signup" path="/signup" element={withAuthSuspense(<AuthPage />)} />,
   <Route key="/unauthorized" path="/unauthorized" element={withAuthSuspense(<Unauthorized />)} />,
   <Route key="/password-reset" path="/password-reset" element={withAuthSuspense(<PasswordReset />)} />,
