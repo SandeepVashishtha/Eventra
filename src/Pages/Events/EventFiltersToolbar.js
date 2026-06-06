@@ -1,5 +1,5 @@
 import { Grid, List, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw, Download } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo, useCallback } from "react";
 import StyledDropdown from "../../components/StyledDropdown";
 import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
 import useEventFilterPresets from "../../hooks/useEventFilterPresets";
@@ -468,29 +468,7 @@ const EventFiltersToolbar = ({
             { key: "live", label: "Live Now", pulse: true },
             { key: "upcoming", label: "Upcoming" },
             { key: "past", label: "Past Events" },
-          ].map((tab) => {
-            const isActive = filterType === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => onFilterChange(tab.key)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition duration-300 border cursor-pointer ${
-                  isActive
-                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.02]"
-                    : "bg-slate-900/40 hover:bg-slate-850/60 text-slate-400 hover:text-slate-200 border-slate-800/80 hover:border-slate-700/80"
-                }`}
-              >
-                {tab.pulse && (
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                )}
-                {tab.label}
-              </button>
-            );
-          })}
+          ].map(renderFilterTab)}
         </div>
       </div>
 
@@ -502,23 +480,7 @@ const EventFiltersToolbar = ({
         
         {/* Desktop Scrolling Category Tabs */}
         <div className="hidden md:flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none max-w-full">
-          {CATEGORY_OPTIONS.map((cat) => {
-            const isActive = categoryFilter === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => onCategoryChange(cat.id)}
-                className={`px-4 py-2 text-xs font-semibold rounded-full border whitespace-nowrap transition duration-300 cursor-pointer ${
-                  isActive
-                    ? "bg-slate-100 text-slate-950 border-slate-200 shadow-sm font-bold scale-[1.02]"
-                    : "bg-slate-900/50 hover:bg-slate-850/80 text-slate-400 hover:text-slate-200 border-slate-800/60"
-                }`}
-              >
-                {cat.label}
-              </button>
-            );
-          })}
+          {CATEGORY_OPTIONS.map(renderCategoryButton)}
         </div>
 
         {/* Mobile Dropdown Category Select */}
@@ -587,4 +549,46 @@ const EventFiltersToolbar = ({
   );
 };
 
-export default EventFiltersToolbar;
+const renderFilterTab = useCallback((tab) => {
+  const isActive = filterType === tab.key;
+  return (
+    <button
+      key={tab.key}
+      type="button"
+      onClick={() => onFilterChange(tab.key)}
+      className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition duration-300 border cursor-pointer ${
+        isActive
+          ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.02]"
+          : "bg-slate-900/40 hover:bg-slate-850/60 text-slate-400 hover:text-slate-200 border-slate-800/80 hover:border-slate-700/80"
+      }`}
+    >
+      {tab.pulse && (
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+      )}
+      {tab.label}
+    </button>
+  );
+}, [filterType, onFilterChange]);
+
+const renderCategoryButton = useCallback((cat) => {
+  const isActive = categoryFilter === cat.id;
+  return (
+    <button
+      key={cat.id}
+      type="button"
+      onClick={() => onCategoryChange(cat.id)}
+      className={`px-4 py-2 text-xs font-semibold rounded-full border whitespace-nowrap transition duration-300 cursor-pointer ${
+        isActive
+          ? "bg-slate-100 text-slate-950 border-slate-200 shadow-sm font-bold scale-[1.02]"
+          : "bg-slate-900/50 hover:bg-slate-850/80 text-slate-400 hover:text-slate-200 border-slate-800/60"
+      }`}
+    >
+      {cat.label}
+    </button>
+  );
+}, [categoryFilter, onCategoryChange]);
+
+export default memo(EventFiltersToolbar);
