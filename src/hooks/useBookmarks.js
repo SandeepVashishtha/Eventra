@@ -71,11 +71,12 @@ const useBookmarks = (userId = "guest") => {
   const storageKeyRef = useRef(storageKey);
   storageKeyRef.current = storageKey;
 
+  const isInitialSave = useRef(true);
   const isInitialLoad = useRef(true);
 
   useEffect(() => {
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false;
+    if (isInitialSave.current) {
+      isInitialSave.current = false;
       return;
     }
     try {
@@ -86,6 +87,10 @@ const useBookmarks = (userId = "guest") => {
   }, [bookmarks]);
 
   useEffect(() => {
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
     try {
       const stored = localStorage.getItem(storageKey);
       if (!stored) { setBookmarks([]); return; }
@@ -95,6 +100,11 @@ const useBookmarks = (userId = "guest") => {
       setBookmarks([]);
     }
   }, [storageKey]);
+
+  // Cache bookmarks in a Set for O(1) lookups
+  const bookmarksSet = useMemo(() => {
+    return new Set(bookmarks.map(e => e.id));
+  }, [bookmarks]);
 
   /**
    * Toggles bookmark state for an event.
@@ -133,8 +143,8 @@ const useBookmarks = (userId = "guest") => {
    * Returns true if an event with the given id is currently bookmarked.
    */
   const isBookmarked = useCallback(
-    (id) => bookmarks.some((e) => e.id === id),
-    [bookmarks],
+    (id) => bookmarksSet.has(id),
+    [bookmarksSet],
   );
 
   /**
