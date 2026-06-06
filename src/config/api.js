@@ -330,6 +330,13 @@ export const API_ENDPOINTS = {
     CHECK_IN: buildApiUrl("/api/tickets/checkin"),
     HISTORY: buildApiUrl("/api/tickets/checkins"),
   },
+  FEEDBACK: {
+    BASE: buildApiUrl("/api/feedback"),
+    BY_EVENT: (eventId) => {
+      const params = new URLSearchParams({ eventId: String(eventId) });
+      return buildApiUrl(`/api/feedback?${params.toString()}`);
+    },
+  },
   ADMIN: {
     USERS: buildApiUrl("/api/admin/users"),
     USER: (id) => buildApiUrl(`/api/admin/users/${id}`),
