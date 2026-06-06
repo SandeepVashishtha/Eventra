@@ -6,7 +6,7 @@ const TEMPLATES_KEY = "eventra_event_templates";
  * Generate a unique template ID
  */
 const generateTemplateId = () => {
-  return `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `template_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 };
 
 /**
@@ -68,12 +68,24 @@ export const saveTemplate = (templateName, formData) => {
     return null;
   }
 
+  const trimmedName = templateName.trim();
+
+  // Guard against duplicate template names before persisting. Without this
+  // check two templates with identical names can be created, making it
+  // impossible for the user to distinguish them in the UI.
+  if (templateNameExists(trimmedName)) {
+    console.warn(
+      `[EventTemplates] A template named "${trimmedName}" already exists. Use a unique name.`
+    );
+    return null;
+  }
+
   try {
     const templates = getTemplates();
 
     const newTemplate = {
       id: generateTemplateId(),
-      name: templateName.trim(),
+      name: trimmedName,
       createdAt: new Date().toISOString(),
       data: sanitizeTemplateData(formData),
     };

@@ -1,19 +1,9 @@
 import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import {
-  AnimatePresence,
-  MotionConfig,
-  motion,
-  useAnimation,
-  useScroll,
-  useTransform,
-} from "framer-motion";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -45,6 +35,21 @@ const allSearchItems = [
   ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
 ];
 
+const HEADLINE_PHRASES = [
+  "Amazing Tech Events",
+  "Exciting Hackathons Today",
+  "Innovative Dev Workshops",
+  "Cutting-Edge Tech Meetups",
+];
+const TAGLINE_TEXTS = ["Discover & Join"];
+const SEARCH_RESULT_LIMIT = 5;
+const HERO_STATS = [
+  { icon: Users, value: 1500, label: "Developers Joined", suffix: "+" },
+  { icon: Calendar, value: 75, label: "Events Organized", suffix: "+" },
+  { icon: Handshake, value: 30, label: "Partners & Sponsors", suffix: "+" },
+];
+const MotionLink = motion(Link);
+
 const searchIndex = new Fuse(allSearchItems, {
   keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
   threshold: 0.3,
@@ -62,14 +67,57 @@ const getResultIcon = (type) => {
 };
 
 const Hero = () => {
-  useDocumentTitle("Eventra | Home");
-  
-  const phrases = [
-    "Amazing Tech Events",
-    "Exciting Hackathons Today",
-    "Innovative Dev Workshops",
-    "Cutting-Edge Tech Meetups",
+   const prefersReducedMotion = useReducedMotion();
+  const controls = useAnimation();
+
+  const HEADLINE_PHRASES = phrases;
+
+  const TAGLINE_TEXTS = [
+    "Build. Connect. Innovate.",
+    "Discover Opportunities.",
+    "Join the Tech Community.",
   ];
+
+  const SEARCH_RESULT_LIMIT = 5;
+
+  const HERO_STATS = [
+    {
+      value: 1500,
+      label: "Developers",
+      suffix: "+",
+      icon: Users,
+    },
+    {
+      value: 75,
+      label: "Events",
+      suffix: "+",
+      icon: Calendar,
+    },
+    {
+      value: 30,
+      label: "Partners",
+      suffix: "+",
+      icon: Handshake,
+    },
+  ];
+
+  const SEARCH_ROUTES = {
+    event: "/events",
+    hackathon: "/hackathons",
+    project: "/projects",
+  };
+
+  const SEARCH_ICONS = {
+    event: Calendar,
+    hackathon: Trophy,
+    project: Code,
+  };
+
+  const MotionLink = motion(Link);
+  
+  useDocumentTitle("Eventra | Home");
+  const controls = useAnimation();
+  const prefersReducedMotion = useReducedMotion();
 
   const containerRef = useRef(null);
 
@@ -92,19 +140,6 @@ const Hero = () => {
   const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-  };
-
-  const fadeUp = {
-    hidden: { y: 32, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
-    },
-  };
 
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
@@ -137,7 +172,7 @@ const Hero = () => {
 
   useEffect(() => {
     controls.start("show");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    
   }, [controls]);
 
   useEffect(() => {
@@ -163,11 +198,6 @@ const Hero = () => {
     clearSearchTerm();
   }, [clearSearchTerm]);
 
-  const getResultHref = (item) => {
-    const query = encodeURIComponent(item.title || debouncedTerm);
-    const routes = { event: "/events", hackathon: "/hackathons", project: "/projects" };
-    return `${routes[item.type] || "/"}?search=${query}`;
-  };
 
   const getResultIcon = (type) => {
     const icons = { event: Calendar, hackathon: Trophy, project: Code };
@@ -176,19 +206,6 @@ const Hero = () => {
   };
 
   // ─── ANIMATION VARIANTS ────────────────────────────────────────────────────
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-  };
-
-  const fadeUp = {
-    hidden: { y: 32, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
-    },
-  };
 
   const floatShape = (i) => ({
     y: [0, -15 - i * 4, 0],
@@ -232,16 +249,7 @@ const Hero = () => {
       style={{ background: "linear-gradient(180deg, #F8FBFD 0%, #F3F7FA 10%, #EAF1F7 42%, #DAE3ED 100%)" }}
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 150,
-            background: "linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.2) 100%)",
-          }}
-        />
+        
         <div
           style={{
             position: "absolute",
@@ -291,18 +299,13 @@ const Hero = () => {
           willChange: "transform, opacity",
         }}
       >
-        <motion.div className="mx-auto max-w-5xl text-center" variants={container} initial="hidden" animate={controls}>
+        <motion.div className="mx-auto max-w-5xl text-center">
           <MotionConfig reducedMotion="never">
             <motion.h1
               className="flex flex-col items-center gap-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-4xl lg:text-5xl"
               style={{ fontFamily: "\"Inter\", system-ui, sans-serif" }}
             >
-              <motion.span
-                className="block text-sm font-medium text-gray-500"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.08 }}
-              >
+              <motion.span className="block text-sm font-medium text-gray-500">
                 <RespawningText texts={TAGLINE_TEXTS} />
               </motion.span>
 
@@ -311,12 +314,6 @@ const Hero = () => {
                   <motion.span
                     key={phraseIndex}
                     className="block text-2xl font-extrabold text-gray-900 sm:text-3xl md:text-4xl lg:text-5xl"
-                    initial={{ opacity: 0, y: 24 }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" },
-                    }}
                     exit={{
                       opacity: 0,
                       y: -16,
