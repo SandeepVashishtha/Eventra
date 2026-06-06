@@ -86,6 +86,7 @@ const EventRegistration = () => {
   const [registered, setRegistered] = useState(false);
   const [waitlistPosition, setWaitlistPosition] = useState(-1);
   const isSubmittingRef = useRef(false);
+  const registrationLocksRef = useRef(new Map());
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -289,7 +290,7 @@ const EventRegistration = () => {
 
     setShowConflictModal(false);
 
-    registrationLocks.set(eventId, true);
+    registrationLocksRef.current.set(eventId, true);
     isSubmittingRef.current = true;
     setSubmitting(true);
 
@@ -309,7 +310,7 @@ const EventRegistration = () => {
         toast.error(err.message || t("eventRegistration.toastRegistrationError"));
         return;
       } finally {
-        registrationLocks.delete(eventId);
+        registrationLocksRef.current.delete(eventId);
         isSubmittingRef.current = false;
         setSubmitting(false);
       }
@@ -396,7 +397,7 @@ const EventRegistration = () => {
 
       toast.error(failureMessage);
     } finally {
-      registrationLocks.delete(eventId);
+      registrationLocksRef.current.delete(eventId);
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
@@ -437,7 +438,7 @@ const EventRegistration = () => {
       return;
     }
 
-    if (registrationLocks.has(eventId)) {
+    if (registrationLocksRef.current.has(eventId)) {
       toast.error(t("eventRegistration.toastAnotherInProgress"));
       return;
     }
