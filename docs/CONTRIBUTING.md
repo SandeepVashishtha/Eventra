@@ -37,13 +37,13 @@ cd Eventra
 npm install
 ```
 
-3. Copy environment variables:
+1. Copy environment variables:
 
 ```bash
 cp .env.example .env
 ```
 
-4. Start development server:
+1. Start development server:
 
 ```bash
 npm run dev
@@ -60,21 +60,21 @@ The app runs on `http://localhost:3000`.
 git checkout -b feature/short-description
 ```
 
-3. Make your changes in small, reviewable commits.
-4. Run quality checks locally:
+1. Make your changes in small, reviewable commits.
+2. Run quality checks locally:
 
 ```bash
 npm run lint
 npm test
 ```
 
-5. Run E2E tests when your change affects key flows:
+1. Run E2E tests when your change affects key flows:
 
 ```bash
 npm run test:e2e
 ```
 
-6. Push your branch and open a pull request.
+1. Push your branch and open a pull request.
 
 ## Coding Standards
 
@@ -134,6 +134,7 @@ This repository runs an automation workflow that unassigns stale issues.
 - If you need more time, comment on the issue and request reassignment.
 
 Reference workflow:
+
 - [.github/workflows/auto-unassign-stale-issues.yml](.github/workflows/auto-unassign-stale-issues.yml)
 
 ## Automated PR Labels

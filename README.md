@@ -9,6 +9,7 @@ Modern event and hackathon platform for communities, organizers, and contributor
 ---
 
 > [!IMPORTANT]
+>
 > ## Project Status Notice
 >
 > Due to time constraints and other commitments, **I ([@SandeepVashishtha](https://github.com/SandeepVashishtha)) will no longer be actively contributing to or managing this project** going forward. I sincerely apologize for any inconvenience this may cause to contributors and users.
@@ -20,6 +21,7 @@ Modern event and hackathon platform for communities, organizers, and contributor
 > ### Interested in becoming a maintainer?
 >
 > If you are passionate about this project and willing to take on a maintainer role, please reach out by:
+>
 > - Opening an issue titled **"Maintainer Volunteer - [Your Name]"**
 > - Or contacting via the existing community channels
 >
@@ -34,10 +36,10 @@ Eventra is an open-source frontend application built with React and Vite. It sup
 This repository contains the frontend and serverless API helpers under `api/`.
 The Spring Boot backend is maintained in a separate repository.
 
-- Frontend repo: https://github.com/SandeepVashishtha/Eventra
-- Backend repo: https://github.com/SandeepVashishtha/Eventra-Backend
-- Backend API base: https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net
-- Swagger: https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html
+- Frontend repo: <https://github.com/SandeepVashishtha/Eventra>
+- Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
+- Backend API base: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net>
+- Swagger: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html>
 
 ## Key Features
 
@@ -97,13 +99,13 @@ cd Eventra
 npm install
 ```
 
-2. Create your env file:
+1. Create your env file:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Start dev server:
+1. Start dev server:
 
 ```bash
 npm run dev
@@ -116,22 +118,27 @@ App runs at `http://localhost:3000` (configured in `vite.config.js`).
 You can run Eventra fully containerized using Docker Compose to ensure a consistent environment:
 
 1. Clone the repository and setup your environment variables:
+
 ```bash
 git clone https://github.com/SandeepVashishtha/Eventra.git
 cd Eventra
 cp .env.example .env
 ```
 
-2. Start the local development container:
+1. Start the local development container:
+
 ```bash
 docker-compose up eventra-dev
 ```
+
 The app will be available at `http://localhost:3000` with hot-reloading enabled.
 
-3. Build and test the production container locally:
+1. Build and test the production container locally:
+
 ```bash
 docker-compose up --build eventra-prod
 ```
+
 The production-optimized build will be served via Nginx at `http://localhost:8080`.
 
 ## Environment Variables
