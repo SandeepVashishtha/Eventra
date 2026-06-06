@@ -17,6 +17,38 @@ import projectsData from "../../Projects/mockProjectsData.json";
 
 const CountUp = CountUpLib.default || CountUpLib;
 
+// ─── FLOATING SHAPE SUB-COMPONENT ────────────────────────────────────────────
+// Fix for #7243: Each shape owns its own useTransform hook call at the top
+// level of its own component — hooks must never be called inside .map() loops.
+/**
+ * @param {{ shape: object, index: number, scrollYProgress: object, isDark: boolean, floatShape: function, prefersReducedMotion: boolean }} props
+ */
+const PARALLAX_OFFSETS = [220, -150, 100, -180, 130, -80, 250, -120, 70];
+
+const FloatingShape = ({ shape, index, scrollYProgress, isDark, floatShape, prefersReducedMotion }) => {
+  const yShape = useTransform(scrollYProgress, [0, 1], [0, PARALLAX_OFFSETS[index]]);
+
+  return (
+    <motion.div
+      style={{
+        position: "absolute",
+        top: shape.pos.top,
+        left: shape.pos.left,
+        width: shape.size,
+        height: shape.size,
+        borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%",
+        background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
+        filter: "blur(2px)",
+        boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
+        y: prefersReducedMotion ? 0 : yShape,
+        willChange: "transform",
+      }}
+      animate={prefersReducedMotion ? {} : floatShape(index)}
+    />
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
   id: item.id,
