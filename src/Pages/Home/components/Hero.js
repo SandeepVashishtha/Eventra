@@ -70,8 +70,6 @@ const Hero = () => {
    const prefersReducedMotion = useReducedMotion();
   const controls = useAnimation();
 
-  const HEADLINE_PHRASES = phrases;
-
   const TAGLINE_TEXTS = [
     "Build. Connect. Innovate.",
     "Discover Opportunities.",
@@ -115,9 +113,16 @@ const Hero = () => {
 
   const MotionLink = motion(Link);
   
+  const fadeUp = {
+    hidden: { y: 32, opacity: 0 },
+    show: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
+    },
+  };
+
   useDocumentTitle("Eventra | Home");
-  const controls = useAnimation();
-  const prefersReducedMotion = useReducedMotion();
 
   const containerRef = useRef(null);
 
