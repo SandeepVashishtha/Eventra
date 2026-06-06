@@ -21,4 +21,4 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v16
         with:
           globs: '**/*.md'
-          config: '.github/markdownlint.json'
+          config: '.github/.markdownlint.json'
