@@ -17,6 +17,38 @@ import projectsData from "../../Projects/mockProjectsData.json";
 
 const CountUp = CountUpLib.default || CountUpLib;
 
+// ─── FLOATING SHAPE SUB-COMPONENT ────────────────────────────────────────────
+// Fix for #7243: Each shape owns its own useTransform hook call at the top
+// level of its own component — hooks must never be called inside .map() loops.
+/**
+ * @param {{ shape: object, index: number, scrollYProgress: object, isDark: boolean, floatShape: function, prefersReducedMotion: boolean }} props
+ */
+const PARALLAX_OFFSETS = [220, -150, 100, -180, 130, -80, 250, -120, 70];
+
+const FloatingShape = ({ shape, index, scrollYProgress, isDark, floatShape, prefersReducedMotion }) => {
+  const yShape = useTransform(scrollYProgress, [0, 1], [0, PARALLAX_OFFSETS[index]]);
+
+  return (
+    <motion.div
+      style={{
+        position: "absolute",
+        top: shape.pos.top,
+        left: shape.pos.left,
+        width: shape.size,
+        height: shape.size,
+        borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%",
+        background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
+        filter: "blur(2px)",
+        boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
+        y: prefersReducedMotion ? 0 : yShape,
+        willChange: "transform",
+      }}
+      animate={prefersReducedMotion ? {} : floatShape(index)}
+    />
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
   id: item.id,
@@ -67,6 +99,54 @@ const getResultIcon = (type) => {
 };
 
 const Hero = () => {
+   const prefersReducedMotion = useReducedMotion();
+  const controls = useAnimation();
+
+  const HEADLINE_PHRASES = phrases;
+
+  const TAGLINE_TEXTS = [
+    "Build. Connect. Innovate.",
+    "Discover Opportunities.",
+    "Join the Tech Community.",
+  ];
+
+  const SEARCH_RESULT_LIMIT = 5;
+
+  const HERO_STATS = [
+    {
+      value: 1500,
+      label: "Developers",
+      suffix: "+",
+      icon: Users,
+    },
+    {
+      value: 75,
+      label: "Events",
+      suffix: "+",
+      icon: Calendar,
+    },
+    {
+      value: 30,
+      label: "Partners",
+      suffix: "+",
+      icon: Handshake,
+    },
+  ];
+
+  const SEARCH_ROUTES = {
+    event: "/events",
+    hackathon: "/hackathons",
+    project: "/projects",
+  };
+
+  const SEARCH_ICONS = {
+    event: Calendar,
+    hackathon: Trophy,
+    project: Code,
+  };
+
+  const MotionLink = motion(Link);
+  
   useDocumentTitle("Eventra | Home");
   const controls = useAnimation();
   const prefersReducedMotion = useReducedMotion();
@@ -150,11 +230,6 @@ const Hero = () => {
     clearSearchTerm();
   }, [clearSearchTerm]);
 
-  const getResultHref = (item) => {
-    const query = encodeURIComponent(item.title || debouncedTerm);
-    const routes = { event: "/events", hackathon: "/hackathons", project: "/projects" };
-    return `${routes[item.type] || "/"}?search=${query}`;
-  };
 
   const getResultIcon = (type) => {
     const icons = { event: Calendar, hackathon: Trophy, project: Code };
@@ -163,19 +238,6 @@ const Hero = () => {
   };
 
   // ─── ANIMATION VARIANTS ────────────────────────────────────────────────────
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-  };
-
-  const fadeUp = {
-    hidden: { y: 32, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
-    },
-  };
 
   const floatShape = (i) => ({
     y: [0, -15 - i * 4, 0],
@@ -209,7 +271,7 @@ const Hero = () => {
   ];
 
   const primaryBtn = "relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900";
-  const secondaryBtn = `${primaryBtn} border border-transparent`;
+
 
   return (
     <section

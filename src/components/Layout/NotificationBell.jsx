@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Bell, CheckCheck, Settings } from "lucide-react";
 import { useNotification } from "../../context/NotificationContext";
+import EmptyState from "../common/EmptyState";
 import { NOTIFICATION_CATEGORIES } from "../../utils/notificationPreferences";
 import { getRelativeTime } from "../../utils/relativeTime";
 
@@ -105,7 +106,12 @@ export default function NotificationBell() {
         <div className="max-h-96 overflow-y-auto">
           {/* 🔥 FIX: Added optional chaining (?.) to prevent crashes if arrays are undefined */}
           {notifications?.length === 0 || visibleGroups?.length === 0 ? (
-            <div className="p-4 text-center text-sm text-gray-400">No alerts found</div>
+            <EmptyState
+              compact={true}
+              icon={Bell}
+              title="No alerts found"
+              description="You have no notifications or alerts at this time."
+            />
           ) : (
             visibleGroups?.map(([category, categoryNotifications]) => (
               <section key={category} className="border-b border-gray-100 last:border-b-0">

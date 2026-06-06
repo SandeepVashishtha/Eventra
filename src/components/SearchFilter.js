@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import useDebounce from "../hooks/useDebounce";
+import EmptyState from "./common/EmptyState";
+import { FilterX } from "lucide-react";
 import "./styles/components.css";
 
 const SearchFilter = () => {
@@ -286,16 +288,18 @@ const SearchFilter = () => {
       </motion.div>
 
       {filteredEvents.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="no-results"
-        >
-          {/* 🔥 FIX: Added aria-hidden to decorative emoji */}
-          <div className="no-results-icon" aria-hidden="true">😞</div>
-          <h3>No events found</h3>
-          <p>Try adjusting your search criteria</p>
-        </motion.div>
+        <EmptyState
+          icon={FilterX}
+          title="No events found"
+          description="Try adjusting your search criteria or clearing your filters."
+          actionLabel="Clear Filters"
+          onAction={() => {
+            setSearchTerm("");
+            setSelectedCategory("all");
+            setSelectedLocation("all");
+            setPriceFilter("all");
+          }}
+        />
       )}
     </div>
   );
