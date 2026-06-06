@@ -12,7 +12,7 @@
 
 // --- IndexedDB Cache Configuration ---
 const DB_NAME = "eventra_p2p_cache";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "file_chunks";
 
 let dbInstance = null;
@@ -27,8 +27,14 @@ const getDB = () => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = (e) => {
       const db = e.target.result;
+      let store;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: "chunkId" });
+        store = db.createObjectStore(STORE_NAME, { keyPath: "chunkId" });
+      } else {
+        store = e.target.transaction.objectStore(STORE_NAME);
+      }
+      if (!store.indexNames.contains("fileId")) {
+        store.createIndex("fileId", "fileId", { unique: false });
       }
     };
     request.onsuccess = (e) => {
@@ -65,8 +71,9 @@ export async function isFileCached(fileId) {
     return new Promise((resolve) => {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
+      const index = store.index("fileId");
       
-      const request = store.openCursor();
+      const request = index.openCursor(IDBKeyRange.only(fileId));
       let chunksCount = 0;
       let totalChunks = 0;
       
@@ -75,10 +82,8 @@ export async function isFileCached(fileId) {
       request.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
-          if (cursor.value.fileId === fileId) {
-            chunksCount++;
-            totalChunks = cursor.value.totalChunks;
-          }
+          chunksCount++;
+          totalChunks = cursor.value.totalChunks;
           cursor.continue();
         } else {
           resolve(chunksCount > 0 && chunksCount === totalChunks);
@@ -98,8 +103,9 @@ export async function getCachedFile(fileId) {
     return new Promise((resolve) => {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
+      const index = store.index("fileId");
 
-      const request = store.openCursor();
+      const request = index.openCursor(IDBKeyRange.only(fileId));
       const chunks = [];
       
       attachIdbReadHandlers(transaction, request, resolve, null, "getCachedFile");
@@ -107,9 +113,7 @@ export async function getCachedFile(fileId) {
       request.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
-          if (cursor.value.fileId === fileId) {
-            chunks.push(cursor.value);
-          }
+          chunks.push(cursor.value);
           cursor.continue();
         } else {
           // Sort chunks by index
