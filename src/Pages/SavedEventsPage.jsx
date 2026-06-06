@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Download } from "lucide-react";
 import EmptyState from "../components/common/EmptyState";
@@ -12,8 +12,11 @@ const SavedEventsPage = () => {
   const [sortBy, setSortBy] = useState("savedAt");
   const [exporting, setExporting] = useState(false);
 
-  const sorted = [...bookmarks].sort((a, b) =>
-    sortBy === "savedAt" ? b.savedAt - a.savedAt : new Date(a.date) - new Date(b.date)
+  const sorted = useMemo(
+    () => [...bookmarks].sort((a, b) =>
+      sortBy === "savedAt" ? b.savedAt - a.savedAt : new Date(a.date) - new Date(b.date)
+    ),
+    [bookmarks, sortBy]
   );
 
   const handleExportCSV = () => {
