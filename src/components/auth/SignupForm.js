@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { authService } from "../../services/authService";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { ROLES } from "../../config/roles";
 import { useAuth } from "../../context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
@@ -9,6 +11,22 @@ import { User, AtSign, Lock, Eye, EyeOff, Zap } from "lucide-react";
 import { validate, validateEmailAvailability, validatePasswordStrength } from "../../validation";
 
 const getResultMessage = (result, fallback) => (result?.isValid ? "" : result?.message || fallback);
+
+export const normalizeSignupRoles = (data) => {
+  const responseRoles = Array.isArray(data?.roles)
+    ? data.roles.filter((role) => typeof role === "string" && role.trim())
+    : [];
+
+  if (responseRoles.length > 0) {
+    return responseRoles;
+  }
+
+  if (typeof data?.role === "string" && data.role.trim()) {
+    return [data.role];
+  }
+
+  return [ROLES.ATTENDEE];
+};
 
 const parseSignupResponse = async (response) => {
   if (typeof response?.text === "function") {
@@ -226,8 +244,7 @@ const SignupForm = () => {
       return;
     }
     try {
-      const signupEndpoint = API_ENDPOINTS.AUTH.REGISTER || API_ENDPOINTS.AUTH.SIGNUP;
-      const response = await apiUtils.post(signupEndpoint, {
+      const response = await authService.register({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
@@ -251,14 +268,15 @@ const SignupForm = () => {
         return;
       }
 
+      const sessionRoles = normalizeSignupRoles(data);
       const sessionUser = {
         id: data?.id,
         firstName: data?.firstName ?? formData.firstName.trim(),
         lastName: data?.lastName ?? formData.lastName.trim(),
         email: data?.email ?? formData.email.trim(),
         username: data?.username ?? formData.email.trim(),
-        role: data?.role ?? "USER",
-        roles: data?.role ? [data.role] : ["USER"],
+        role: sessionRoles[0],
+        roles: sessionRoles,
         permissions: data?.permissions ?? [],
       };
 

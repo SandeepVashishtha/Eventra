@@ -1319,6 +1319,64 @@ Content-Type: application/json
 - **403 Forbidden**: Authenticated user does not have the required role (`ORGANIZER`, `ADMIN`, or `SUPER_ADMIN`).
 - **404 Not Found**: Hackathon id does not exist.
 
+## Delete Hackathon
+
+| Method | Endpoint |
+|--------|----------|
+| DELETE | `/api/hackathons/{id}` |
+
+Deletes an existing hackathon by id. Restricted to authorized roles: `ADMIN`, `SUPER_ADMIN`.
+
+### Authentication
+Protected endpoint. Requires Bearer JWT authentication.
+
+### Path Parameter
+- `id`: Long, hackathon id
+
+### Successful Response (204)
+No response body.
+
+### Error Responses
+- **401 Unauthorized**: JWT is missing or invalid.
+- **403 Forbidden**: Authenticated user does not have the required role (`ADMIN` or `SUPER_ADMIN`).
+- **404 Not Found**: Hackathon id does not exist.
+
+## Register for Hackathon
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/hackathons/{id}/register` |
+
+Registers the authenticated user for a hackathon by id.
+
+### Authentication
+Protected endpoint. Requires Bearer JWT authentication. Any authenticated user can register.
+
+### Path Parameter
+- `id`: Long, hackathon id
+
+### Request Body
+No request body required.
+
+### Successful Response (201)
+
+```json
+{
+  "registrationId": 1,
+  "hackathonId": 1,
+  "hackathonTitle": "Manual Register Test Hackathon",
+  "userEmail": "hackregisteruser@example.com",
+  "registeredAt": "2026-06-04T23:50:18.742152",
+  "status": "CONFIRMED"
+}
+```
+
+### Error Responses
+- **400 Bad Request**: Registration deadline has passed / registration is closed.
+- **401 Unauthorized**: JWT is missing or invalid.
+- **404 Not Found**: Hackathon id does not exist.
+- **409 Conflict**: User is already registered for the hackathon.
+
 *Note: The backend implementation is handled in the Eventra-Backend repository. This docs PR only syncs API documentation with the backend behavior.*
 
 ---
