@@ -36,7 +36,7 @@ const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
-const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
@@ -197,7 +197,7 @@ function App() {
                           path="/explore"
                           element={
                             <Suspense fallback={<ExploreEventsSkeleton />}>
-                              <ExploreEvents />
+                              <EventsPage />
                             </Suspense>
                           }
                         />
