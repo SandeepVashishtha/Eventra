@@ -13,6 +13,7 @@ import {
 import { sanitizeHtml } from "../utils/sanitizeHtml";
 import { logger } from "../utils/logger";
 import { useAuth } from "../context/AuthContext";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 // 🎯 Constants for better maintainability
 const MAX_CAPACITY = 100000;
@@ -534,7 +535,7 @@ export const useEventForm = () => {
     try {
       const saved = localStorage.getItem(scopedDraftKey);
       if (saved) {
-        setFormData((prev) => ({ ...prev, ...JSON.parse(saved), banner: null, bannerPreview: null }));
+        setFormData((prev) => ({ ...prev, ...safeJsonParse(saved, {}), banner: null, bannerPreview: null }));
         toast.success("Draft restored successfully!");
       }
     } catch (error) {

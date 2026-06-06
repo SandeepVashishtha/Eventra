@@ -218,7 +218,7 @@ const Newsletter = () => {
 
         setEmail("");
       }
-    } catch (error) {
+    } catch {
       // 🔥 FIX: Guard state updates
       if (isMounted.current) {
         setFeedback({

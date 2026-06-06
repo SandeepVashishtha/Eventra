@@ -10,6 +10,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import "./SpatialSeatSelector.css";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Fallback presets if no venue layout is stored yet
 const DEFAULT_PRESETS = {
@@ -140,7 +141,7 @@ const SpatialSeatSelector = ({
     let initialElements = [];
     if (savedLayout) {
       try {
-        const parsed = JSON.parse(savedLayout);
+        const parsed = safeJsonParse(savedLayout, {});
         if (Array.isArray(parsed)) {
           // Strict schema validation and sanitization
           initialElements = parsed.map((el) => ({
@@ -168,7 +169,7 @@ const SpatialSeatSelector = ({
         } else {
           initialElements = DEFAULT_PRESETS.banquet;
         }
-      } catch (e) {
+      } catch {
         initialElements = DEFAULT_PRESETS.banquet;
       }
     } else {
@@ -346,20 +347,24 @@ const SpatialSeatSelector = ({
 
   // Selection callback
   const handleSeatClick = useCallback((el, seat, seatIdx) => {
-    if (readOnly) return;
-    const isOccupied = el.assignedAttendees[seatIdx];
-    if (isOccupied) return;
+  if (readOnly) return;
 
-    const label = (el.seatLabels && el.seatLabels[seatIdx]) || `Seat ${seatIdx + 1}`;
-    const tier = el.tier || "General Seating";
+  const isOccupied = el.assignedAttendees?.[seatIdx];
+  if (isOccupied) return;
 
-    onSelectSeat({
-      elementId: el.id,
-      seatIndex: seatIdx,
-      seatLabel: `${el.label} - ${label}`,
-      tier: tier,
-    });
-  };
+  const label =
+    (el.seatLabels && el.seatLabels[seatIdx]) ||
+    `Seat ${seatIdx + 1}`;
+
+  const tier = el.tier || "General Seating";
+
+  onSelectSeat({
+    elementId: el.id,
+    seatIndex: seatIdx,
+    seatLabel: `${el.label} - ${label}`,
+    tier,
+  });
+}, [readOnly, onSelectSeat]);
 
   return (
     <div className="ssp-container">

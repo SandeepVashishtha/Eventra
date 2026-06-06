@@ -69,7 +69,7 @@ export function formatEventDate(date, options = {}) {
     }
 
     return new Intl.DateTimeFormat(locale, formatOptions).format(d);
-  } catch (err) {
+  } catch {
     // Fallback for environments without Intl support
     const d = date instanceof Date ? date : new Date(date);
     return d.toLocaleString();
