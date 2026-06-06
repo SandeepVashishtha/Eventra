@@ -347,24 +347,20 @@ const SpatialSeatSelector = ({
 
   // Selection callback
   const handleSeatClick = useCallback((el, seat, seatIdx) => {
-  if (readOnly) return;
+    if (readOnly) return;
+    const isOccupied = el.assignedAttendees[seatIdx];
+    if (isOccupied) return;
 
-  const isOccupied = el.assignedAttendees?.[seatIdx];
-  if (isOccupied) return;
+    const label = (el.seatLabels && el.seatLabels[seatIdx]) || `Seat ${seatIdx + 1}`;
+    const tier = el.tier || "General Seating";
 
-  const label =
-    (el.seatLabels && el.seatLabels[seatIdx]) ||
-    `Seat ${seatIdx + 1}`;
-
-  const tier = el.tier || "General Seating";
-
-  onSelectSeat({
-    elementId: el.id,
-    seatIndex: seatIdx,
-    seatLabel: `${el.label} - ${label}`,
-    tier,
-  });
-}, [readOnly, onSelectSeat]);
+    onSelectSeat({
+      elementId: el.id,
+      seatIndex: seatIdx,
+      seatLabel: `${el.label} - ${label}`,
+      tier: tier,
+    });
+  }, [readOnly, onSelectSeat]);
 
   return (
     <div className="ssp-container">
