@@ -386,7 +386,7 @@ const SignupForm = () => {
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
+              className="flex items-center justify-center text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
               aria-label={showPassword ? "Hide password" : "Show password"}
               aria-controls="password"
               aria-pressed={showPassword ? "true" : "false"}
@@ -419,7 +419,7 @@ const SignupForm = () => {
             <button
               type="button"
               onClick={() => setShowConfirmPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
+              className="flex items-center justify-center text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
               aria-label={showConfirmPassword ? "Hide password" : "Show password"}
               aria-controls="confirmPassword"
               aria-pressed={showConfirmPassword ? "true" : "false"}
