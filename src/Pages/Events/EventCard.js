@@ -255,7 +255,7 @@ const EventCard = ({ event }) => {
           {randomIcon}
         </div>
 
-        <h3 id={titleId} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1">
+        <h3 id={titleId} title={event.title} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 break-words group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1 min-w-0">
           {event.title}
         </h3>
         <div className="ml-auto flex items-center gap-2">
@@ -292,9 +292,9 @@ const EventCard = ({ event }) => {
         <LazyImage
           src={event.image}
           alt={event.imageAlt || `${event.title} event thumbnail`}
-          width={800}
-          height={160}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          aspectRatio="5/1"
+          className="w-full h-full"
+          imgClassName="object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
       </div>

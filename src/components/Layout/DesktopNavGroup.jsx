@@ -30,6 +30,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
     return () => {
       window.removeEventListener("resize", updatePosition);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const handleKeyDown = (event) => {

@@ -10,6 +10,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import "./SpatialSeatSelector.css";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Fallback presets if no venue layout is stored yet
 const DEFAULT_PRESETS = {
@@ -140,7 +141,7 @@ const SpatialSeatSelector = ({
     let initialElements = [];
     if (savedLayout) {
       try {
-        const parsed = JSON.parse(savedLayout);
+        const parsed = safeJsonParse(savedLayout, {});
         if (Array.isArray(parsed)) {
           // Strict schema validation and sanitization
           initialElements = parsed.map((el) => ({
@@ -168,7 +169,7 @@ const SpatialSeatSelector = ({
         } else {
           initialElements = DEFAULT_PRESETS.banquet;
         }
-      } catch (e) {
+      } catch {
         initialElements = DEFAULT_PRESETS.banquet;
       }
     } else {

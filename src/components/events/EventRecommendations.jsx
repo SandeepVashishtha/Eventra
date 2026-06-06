@@ -329,7 +329,7 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
                     )}
                   </div>
 
-                  <h4 className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100 mt-3 line-clamp-1">
+                  <h4 title={event.title} className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100 mt-3 line-clamp-2 break-words min-w-0">
                     {event.title}
                   </h4>
 
