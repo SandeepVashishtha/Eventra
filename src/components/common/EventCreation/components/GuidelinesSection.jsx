@@ -9,12 +9,16 @@ export default function GuidelinesSection({ prefersReducedMotion }) {
       viewport={{ once: true }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
       className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
+      role="region"
+      aria-labelledby="guidelines-heading"
     >
       <div className="flex items-center gap-2 mb-3">
-        <ClipboardDocumentListIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-        <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-400">
+        {/* Deep Fix: aria-hidden="true" stops screen readers from reading decorative icons */}
+        <ClipboardDocumentListIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+        {/* Deep Fix: Changed h2 to h3 to maintain proper semantic document structure */}
+        <h3 id="guidelines-heading" className="text-xl font-semibold text-indigo-700 dark:text-indigo-400">
           Guidelines
-        </h2>
+        </h3>
       </div>
       <ul className="list-disc pl-6 space-y-3 text-gray-700 dark:text-gray-300 text-sm sm:text-base">
         <li>
