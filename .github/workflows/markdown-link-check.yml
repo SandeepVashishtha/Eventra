@@ -90,6 +90,7 @@ jobs:
           args: >-
             --cache
             --no-progress
+            --scheme http,https
             $(cat /tmp/md-targets.txt | tr '\n' ' ')
           output: /tmp/lychee-report.md
           fail: false          # We handle failure ourselves to post a PR comment first
