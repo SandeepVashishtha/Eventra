@@ -22,7 +22,10 @@ export const sanitizeSearchQuery = (query = '') => {
 
   const MAX_QUERY_LENGTH = 200;
 
-  let sanitized = query.trim();
+  let sanitized = query.trim().slice(0, MAX_QUERY_LENGTH);
+
+  // Apply length cap BEFORE sanitization so DOMPurify and regex never
+  // process unbounded input (prevents ReDoS via long query strings).
 
   // Use DOMPurify to strip ALL HTML tags (including SVG, math, data URI,
   // obfuscated event handlers) instead of a fragile regex cascade.
@@ -46,11 +49,6 @@ export const sanitizeSearchQuery = (query = '') => {
     .replace(/[${}\[\];'`|\\/\n\r<>]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
-
-  // Ensure max length to prevent ReDoS attacks
-  if (sanitized.length > MAX_QUERY_LENGTH) {
-    sanitized = sanitized.substring(0, MAX_QUERY_LENGTH).trim();
-  }
 
   return sanitized;
 };
