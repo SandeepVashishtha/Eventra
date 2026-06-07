@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
@@ -515,10 +515,11 @@ const EventRegistration = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
-  const isEventFull = useMemo(() => event ? event.attendees >= event.maxAttendees : false, [event]);
-
-  const isCancelledEvent = useMemo(() => getEventStatus(event) === "cancelled", [event]);
-  const isRegistrationBlocked = useMemo(() => isEventRegistrationClosed(event), [event]);
+  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+  const status = getEventStatus(event);
+  const isPastEvent = status === "past" || status === "ended";
+  const isCancelledEvent = status === "cancelled";
+  const isRegistrationBlocked = isEventRegistrationClosed(event);
 
   if (loading) {
     return (
