@@ -4,7 +4,23 @@
  * Then set REACT_APP_API_URL=http://localhost:8080 in .env.local and restart the dev server.
  */
 import http from "http";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const loadJson = (relativePath) => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, relativePath), "utf8"));
+  } catch {
+    return [];
+  }
+};
+
+const MOCK_EVENT_CATALOG = loadJson("src/Pages/Events/eventsMockData.json");
+const MOCK_PROJECT_CATALOG = loadJson("src/Pages/Projects/mockProjectsData.json");
 
 // Updated default fallback port to 8080 to match your api.js default config
 const PORT = parseInt(process.env.SSE_MOCK_PORT || process.env.PORT || "8080", 10);
@@ -32,7 +48,9 @@ const MOCK_EVENTS = [
   { id: "event-3", title: "Web Dev Workshop" }
 ];
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET =
+  process.env.JWT_SECRET ||
+  (process.env.NODE_ENV !== "production" ? "eventra-dev-jwt-secret" : null);
 if (!JWT_SECRET) {
   console.error("FATAL: JWT_SECRET environment variable is required.");
   process.exit(1);
@@ -137,9 +155,36 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Get all events
+  // Get all events (paginated Spring-style response)
   if ((pathname === "/api/events" || pathname === "/events") && req.method === "GET") {
-    return jsonResponse(res, 200, MOCK_EVENTS);
+    const page = Math.max(0, parseInt(searchParams.get("page") || "0", 10));
+    const size = Math.max(1, parseInt(searchParams.get("size") || "12", 10));
+    const start = page * size;
+    const content = MOCK_EVENT_CATALOG.slice(start, start + size);
+    const totalElements = MOCK_EVENT_CATALOG.length;
+    const totalPages = Math.max(1, Math.ceil(totalElements / size));
+
+    return jsonResponse(res, 200, {
+      content,
+      totalElements,
+      totalPages,
+      size,
+      number: page,
+      first: page === 0,
+      last: page >= totalPages - 1,
+    });
+  }
+
+  // Projects list for local development
+  if ((pathname === "/api/projects" || pathname === "/projects") && req.method === "GET") {
+    return jsonResponse(res, 200, MOCK_PROJECT_CATALOG);
+  }
+
+  if (pathname === "/api/projects/categories" && req.method === "GET") {
+    const categories = [
+      ...new Set(MOCK_PROJECT_CATALOG.map((project) => project.category).filter(Boolean)),
+    ];
+    return jsonResponse(res, 200, categories);
   }
 
   // Get statistics
