@@ -36,6 +36,9 @@ function TableRow({ c, rank, badge, streak, index }) {
             {rank}
           </span>
           <RankMovementIndicator liveDifference={streak?.rankDifference} />
+          {c.points > 1000 && <span className="ml-2 text-xs bg-gradient-to-r from-blue-400 to-purple-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">DIAMOND</span>}
+          {c.points > 500 && c.points <= 1000 && <span className="ml-2 text-xs bg-yellow-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">GOLD</span>}
+          {c.points > 100 && c.points <= 500 && <span className="ml-2 text-xs bg-gray-400 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">SILVER</span>}
         </div>
       </td>
 
