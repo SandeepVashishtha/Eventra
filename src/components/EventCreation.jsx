@@ -182,7 +182,10 @@ const EventCreation = () => {
                     Preview Event
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
-                  <p className="text-center text-sm text-gray-500 mt-4 italic">
+                  <p
+                    className="text-center text-sm text-gray-500 mt-4 italic"
+                    aria-live="polite"
+                  >
                     Progress is auto-saved as you type ✨
                   </p>
                 </div>
