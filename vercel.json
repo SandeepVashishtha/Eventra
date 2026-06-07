@@ -1,7 +1,8 @@
 {
-  "buildCommand": "CI=false DISABLE_ESLINT_PLUGIN=true GENERATE_SOURCEMAP=false npm run build",
+  "installCommand": "rm -f package-lock.json && npm install",
+  "buildCommand": "npm run lint && GENERATE_SOURCEMAP=false npm run build",
   "outputDirectory": "build",
-  "framework": "create-react-app",
+  "framework": "vite",
   "env": {
     "REACT_APP_API_URL": "/api"
   },
@@ -31,6 +32,10 @@
       "source": "/(.*)",
       "headers": [
         {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
           "key": "X-Frame-Options",
           "value": "DENY"
         },
@@ -47,8 +52,20 @@
           "value": "camera=(), microphone=(), geolocation=(), browsing-topics=(), interest-cohort=(), payment=(), usb=(), bluetooth=()"
         },
         {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin-allow-popups"
+        },
+        {
+          "key": "Cross-Origin-Resource-Policy",
+          "value": "same-site"
+        },
+        {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net https://accounts.google.com https://www.googleapis.com https://api.emailjs.com https://api.github.com; font-src 'self' data: https://fonts.gstatic.com; frame-src 'self' https://accounts.google.com"
+          "value": "default-src 'self'; script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net https://accounts.google.com https://www.googleapis.com https://api.emailjs.com https://api.github.com; font-src 'self' data: https://fonts.gstatic.com; frame-src 'self' https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+        },
+        {
+          "key": "Vary",
+          "value": "Origin"
         }
       ]
     },
@@ -62,23 +79,11 @@
       ]
     },
     {
-      "source": "/api/(.*)",
+      "source": "/assets/(.*)",
       "headers": [
         {
-          "key": "Access-Control-Allow-Origin",
-          "value": "https://eventra.sandeepvashishtha.tech"
-        },
-        {
-          "key": "Access-Control-Allow-Credentials",
-          "value": "true"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     }

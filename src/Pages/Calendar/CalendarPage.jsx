@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import {
   addDays,
@@ -26,6 +26,8 @@ import { Link } from "react-router-dom";
 import { darkTheme } from "../../components/styles/theme";
 import { getEventStatus } from "../../utils/eventUtils";
 import useCalendarEvents from "./useCalendarEvents";
+import { SkeletonBlock } from "../../components/common/SkeletonLoaders";
+import EmptyState from "../../components/common/EmptyState";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./CalendarPage.css";
 
@@ -293,7 +295,7 @@ const CalendarPage = () => {
               type="button"
               onClick={refresh}
               className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
-            >
+             aria-label="button">
               <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
             </button>
@@ -308,33 +310,34 @@ const CalendarPage = () => {
                 type="button"
                 onClick={refresh}
                 className="inline-flex items-center gap-2 rounded-full bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
-              >
+               aria-label="button">
                 Try again
               </button>
             </div>
           </div>
         ) : null}
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="mt-8 grid gap-6 grid-cols-1 lg:grid-cols-2 items-start">
           <div className="eventra-calendar rounded-3xl bg-white/80 p-4 shadow-lg backdrop-blur-sm dark:bg-slate-950/80">
-            <Calendar
-              localizer={localizer}
-              events={calendarEvents}
-              defaultView="month"
-              views={["month"]}
-              toolbar
-              popup
-              selectable
-              onSelectSlot={handleSelectSlot}
-              onSelectEvent={handleSelectEvent}
-              onNavigate={handleNavigate}
-              dayPropGetter={dayPropGetter}
-              style={{ height: 620 }}
-              components={{ toolbar: CalendarToolbar }}
-            />
+            <div className="h-[450px] lg:h-[620px]">
+              <Calendar
+                localizer={localizer}
+                events={calendarEvents}
+                defaultView="month"
+                views={["month"]}
+                toolbar
+                popup
+                selectable
+                onSelectSlot={handleSelectSlot}
+                onSelectEvent={handleSelectEvent}
+                onNavigate={handleNavigate}
+                dayPropGetter={dayPropGetter}
+                components={{ toolbar: CalendarToolbar }}
+              />
+            </div>
           </div>
 
-          <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-950">
+          <aside className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-lg dark:border-slate-800 dark:bg-slate-950 mt-2 lg:mt-0">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
@@ -348,18 +351,30 @@ const CalendarPage = () => {
                 {selectedEvents.length} event{selectedEvents.length === 1 ? "" : "s"}
               </div>
             </div>
-
             <div className="mt-6 space-y-4">
               {isLoading ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                  Loading events for this day...
-                </div>
+                <>
+                  <div className="sr-only" role="status" aria-live="polite">
+                    Loading events for this day...
+                  </div>
+                  <div className="space-y-4" aria-hidden="true">
+                    {[...Array(2)].map((_, i) => (
+                      <div key={i} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 animate-pulse">
+                        <SkeletonBlock className="h-5 w-3/4 mb-3" />
+                        <SkeletonBlock className="h-4 w-1/2" />
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : null}
 
               {!isLoading && selectedEvents.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                  No upcoming events scheduled for this day.
-                </div>
+                <EmptyState
+                  compact={true}
+                  icon={CalendarDays}
+                  title="No events scheduled"
+                  description="No upcoming events scheduled for this day."
+                />
               ) : null}
 
               {!isLoading && selectedEvents.length > 0
@@ -370,7 +385,7 @@ const CalendarPage = () => {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                          <p title={event.title} className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 break-words min-w-0">
                             {event.title}
                           </p>
                           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">

@@ -1,11 +1,13 @@
-import React, { useState } from "react";
-import { Check, AlertTriangle, User, Briefcase, Award, Zap, Code, Plus, X, ExternalLink, Settings } from "lucide-react";
+import { useState } from "react";
+import { Check, AlertTriangle, User, Briefcase, Zap, Code, Plus, ExternalLink, Settings, Rocket } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import WorkspaceBootstrapModal from "../../../components/hackathons/WorkspaceBootstrapModal";
 
 const TeamMatchmaking = () => {
   const [showForm, setShowForm] = useState(false);
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [expandedSkillsCard, setExpandedSkillsCard] = useState(null);
+  const [bootstrapTarget, setBootstrapTarget] = useState(null);
 
   // User's own match profile
   const [myProfile, setMyProfile] = useState({
@@ -131,8 +133,11 @@ const TeamMatchmaking = () => {
     const missingSkills = [];
     
     if (teamSkills.length > 0) {
+      const loweredUserSkills = userSkills.map(s => s.toLowerCase());
       teamSkills.forEach(skill => {
-        if (userSkills.some(us => us.includes(skill) || skill.includes(us))) {
+        const lowered = skill.toLowerCase();
+        const isMatch = loweredUserSkills.some(us => us.includes(lowered) || lowered.includes(us));
+        if (isMatch) {
           matchedSkills.push(skill);
         } else {
           missingSkills.push(skill);
@@ -163,13 +168,23 @@ const TeamMatchmaking = () => {
     };
   };
 
+  const sanitizeUrl = (url) => {
+    if (!url) return "#";
+    const sanitized = url.trim();
+    const lower = sanitized.toLowerCase();
+    if (lower.startsWith("javascript:") || lower.startsWith("data:") || lower.startsWith("vbscript:")) {
+      return "#";
+    }
+    return sanitized;
+  };
+
   const getScoreColorClass = (score) => {
     if (score >= 80) return "text-emerald-500 bg-emerald-500/10 border-emerald-500/20";
     if (score >= 50) return "text-amber-500 bg-amber-500/10 border-amber-500/20";
     return "text-rose-500 bg-rose-500/10 border-rose-500/20";
   };
 
-  return (
+  return (<>
     <section className="py-6">
       <div className="max-w-7xl mx-auto px-4 space-y-6">
 
@@ -200,15 +215,12 @@ const TeamMatchmaking = () => {
             </button>
             
             <button
-              onClick={() => {
-                setShowForm(!showForm);
-                setShowProfileSettings(false);
-              }}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-blue-500/10"
-            >
-              <Plus size={14} />
-              {showForm ? "Close Form" : "Create Request"}
-            </button>
+            onClick={() => { setShowForm(!showForm); setShowProfileSettings(false); }}
+            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-blue-500/10"
+          >
+            <Plus size={14} />
+            {showForm ? "Close Form" : "Create Request"}
+          </button>
           </div>
         </div>
 
@@ -376,6 +388,7 @@ const TeamMatchmaking = () => {
                 <button
                   type="submit"
                   className="md:col-span-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md shadow-blue-500/10"
+                  aria-label="Submit team matchmaking request"
                 >
                   Submit Team Request
                 </button>
@@ -490,8 +503,15 @@ const TeamMatchmaking = () => {
                   </div>
 
                   <div className="border-t border-slate-100 dark:border-slate-850/60 pt-4 flex items-center justify-between gap-3">
+                    <button
+                      onClick={() => setBootstrapTarget(team)}
+                      className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-500/10"
+                    >
+                      <Rocket size={12} />
+                      <span>Bootstrap Workspace</span>
+                    </button>
                     <a
-                      href={team.contact}
+                      href={sanitizeUrl(team.contact)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold flex items-center gap-1 transition"
@@ -508,7 +528,16 @@ const TeamMatchmaking = () => {
 
       </div>
     </section>
-  );
+
+    {/* Workspace Bootstrap Modal */}
+    {bootstrapTarget && (
+      <WorkspaceBootstrapModal
+        team={bootstrapTarget}
+        onClose={() => setBootstrapTarget(null)}
+      />
+    )}
+  </>
+);
 };
 
 export default TeamMatchmaking;

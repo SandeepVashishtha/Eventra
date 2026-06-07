@@ -1,9 +1,4 @@
 node_modules
 dist
 build
-public
 coverage
-*.md
-package-lock.json
-.next
-out

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +18,7 @@ import {
   ArrowDown,
   CornerDownLeft
 } from "lucide-react";
+import { useModalStack } from "../../hooks/useModalStack";
 
 const trendTags = ["AI", "Web3", "Hackathons", "Workshops", "Community", "Auth"];
 
@@ -36,6 +37,7 @@ export default function CommandPalette({
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
+  const { isTopmost } = useModalStack(isOpen);
 
   // Search Catalog containing navigations, quick system actions, events, and hackathons
   const searchCatalog = useMemo(() => [
@@ -43,7 +45,7 @@ export default function CommandPalette({
     { name: "Explore Events Portal", href: "/events", category: "Pages", type: "nav", icon: Calendar },
     { name: "Live Hackathons", href: "/hackathons", category: "Pages", type: "nav", icon: Sparkles },
     { name: "Platform Projects Hub", href: "/projects", category: "Pages", type: "nav", icon: Layers },
-    { name: "Leaderboard Standings", href: "/leaderBoard", category: "Pages", type: "nav", icon: Sparkles },
+    { name: "Leaderboard Standings", href: "/leaderboard", category: "Pages", type: "nav", icon: Sparkles },
     { name: "Eventra Bookmarks", href: "/bookmarks", category: "Pages", type: "nav", icon: Calendar },
     { name: "Contribute & Open Source Guide", href: "/contributorguide", category: "Pages", type: "nav", icon: Layers },
     { name: "Platform Frequently Asked Questions (FAQ)", href: "/faq", category: "Pages", type: "nav", icon: HelpCircle },
@@ -66,13 +68,13 @@ export default function CommandPalette({
       type: "action",
       icon: MousePointer
     },
-    {
-      name: "Sign Out / Logout of Account",
-      action: "logout",
-      category: "System Actions",
-      type: "action",
-      icon: LogOut
-    },
+    ...(isAuthenticated ? [{
+  name: "Sign Out / Logout of Account",
+  action: "logout",
+  category: "System Actions",
+  type: "action",
+  icon: LogOut
+}] : []),
 
     // ── Sample Events ────────────────────────────────────────────────────────
     { name: "Web3 Buildathon 2026", href: "/hackathons", category: "Hackathons", type: "nav", icon: Sparkles },
@@ -80,7 +82,7 @@ export default function CommandPalette({
     { name: "React Advanced Core Workshop", href: "/events", category: "Events", type: "nav", icon: Calendar },
     { name: "Next.js Fullstack Sprint", href: "/events", category: "Events", type: "nav", icon: Calendar },
     { name: "Global Open Source Hackfest", href: "/hackathons", category: "Hackathons", type: "nav", icon: Sparkles }
-  ], [isDarkMode, cursorEnabled]);
+  ], [isDarkMode, cursorEnabled, isAuthenticated]);
 
   // Fuzzy match query ranking helper
   const getFuzzyScore = (text, queryStr) => {
@@ -130,6 +132,8 @@ export default function CommandPalette({
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
+      setQuery("");
+      setActiveIndex(0);
     }
     return () => {
       document.body.style.overflow = "";
@@ -156,6 +160,8 @@ export default function CommandPalette({
     if (!isOpen) return;
 
     const handleKeyDown = (e) => {
+      if (!isTopmost()) return;
+
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setActiveIndex(prev => (prev + 1) % Math.max(1, filteredItems.length));
@@ -175,7 +181,7 @@ export default function CommandPalette({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, filteredItems, activeIndex, handleSelect, onClose]);
+  }, [isOpen, filteredItems, activeIndex, handleSelect, onClose, isTopmost]);
 
   // Categorized index mapper helper
   const categorizedItems = useMemo(() => {
@@ -294,7 +300,7 @@ export default function CommandPalette({
                           `}
                         >
                           <div className="flex items-center gap-3">
-                            <Icon className={`h-4.5 w-4.5 ${active ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600"}`} />
+                            <Icon className={`h-5 w-5 ${active ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600"}`} />
                             <span className="text-sm font-semibold tracking-tight">{name}</span>
                           </div>
                           {active && (

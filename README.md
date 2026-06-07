@@ -1,156 +1,65 @@
 # Eventra
 
-**A Modern Event Management Platform for Builders and Communities**
-
-Eventra is a comprehensive, open-source platform designed to empower organizers to create, manage, and track events seamlessly. Built with a modern tech stack featuring a React frontend and Spring Boot backend, Eventra provides a full suite of tools for running successful events, from initial creation to post-event analytics.
+Modern event and hackathon platform for communities, organizers, and contributors.
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
+[![React](https://img.shields.io/badge/React-19.x-blue.svg)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-8.x-646CFF.svg)](https://vitejs.dev/)
 
 ---
 
-## Table of Contents
+> [!IMPORTANT]
+>
+> ## Project Status Notice
+>
+> Due to time constraints and other commitments, **I ([@SandeepVashishtha](https://github.com/SandeepVashishtha)) will no longer be actively contributing to or managing this project** going forward. I sincerely apologize for any inconvenience this may cause to contributors and users.
+>
+> **The project will NOT be archived** - it remains open and active, especially for **GSSoC 2026** participants and the broader open-source community.
+>
+> There are mentors currently involved, and the project can continue to grow with community support. However, **we are looking for 2-3 dedicated volunteers to step up as maintainers** to help review PRs, triage issues, and guide contributors.
+>
+> ### Interested in becoming a maintainer?
+>
+> If you are passionate about this project and willing to take on a maintainer role, please reach out by:
+>
+> - Opening an issue titled **"Maintainer Volunteer - [Your Name]"**
+> - Or contacting via the existing community channels
+>
+> Your contributions and leadership would mean a lot to this project and the community around it. 🙏
 
-- [Overview](#overview)
-- [Live Demo](#live-demo)
-- [API Reference](#api-reference)
-- [Project Insights](#project-insights)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-
-- [Environment Variables](#environment-variables)
-- [Project Structure](#project-structure)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contributors](#contributors)
+---
 
 ## Overview
 
-Eventra helps communities and organizers run events end-to-end, including registrations, dashboards, hackathon workflows, and feedback collection.
+Eventra is an open-source frontend application built with React and Vite. It supports event discovery, registration, dashboards, hackathons, collaboration features, feedback flows, and role-based access experiences.
 
-This repository contains the React frontend application for Eventra. The backend services are maintained separately in the Eventra-Backend repository using Spring Boot and Java.
+This repository contains the frontend and serverless API helpers under `api/`.
+The Spring Boot backend is maintained in a separate repository.
 
-## Live Demo
+- Frontend repo: <https://github.com/SandeepVashishtha/Eventra>
+- Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
+- Backend API base: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net>
+- Swagger: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html>
 
-- **Website**: [https://eventra.sandeepvashishtha.in/](https://eventra.sandeepvashishtha.in/)
-- **Backend Repo**: [https://github.com/SandeepVashishtha/Eventra-Backend](https://github.com/SandeepVashishtha/Eventra-Backend)
-- **Backend API**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net)
-- **API Documentation**: [Swagger UI](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html)
+## Key Features
 
-## API Reference
-
-- **Base URL**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net)
-- **Swagger**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html)
-- Capacity and registration availability endpoints are documented in Swagger UI.
-
-### Backend API Setup Note
-
-The frontend communicates with the Spring Boot backend through `/api` routes. For local full-stack testing, run the backend service separately and configure the frontend API URL accordingly.
-
-Backend repository: https://github.com/SandeepVashishtha/Eventra-Backend
-
-## Project Insights
-
-<table align="center">
-  <thead align="center">
-    <tr>
-      <td><b>Stars</b></td>
-      <td><b>Forks</b></td>
-      <td><b>Issues</b></td>
-      <td><b>Open PRs</b></td>
-      <td><b>Closed PRs</b></td>
-      <td><b>Languages</b></td>
-      <td><b>Contributors</b></td>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><img alt="Stars" src="https://img.shields.io/github/stars/SandeepVashishtha/Eventra?style=flat&logo=github"/></td>
-      <td><img alt="Forks" src="https://img.shields.io/github/forks/SandeepVashishtha/Eventra?style=flat&logo=github"/></td>
-      <td><img alt="Issues" src="https://img.shields.io/github/issues/SandeepVashishtha/Eventra?style=flat&logo=github"/></td>
-      <td><img alt="Open PRs" src="https://img.shields.io/github/issues-pr/SandeepVashishtha/Eventra?style=flat&logo=github"/></td>
-      <td><img alt="Closed PRs" src="https://img.shields.io/github/issues-pr-closed/SandeepVashishtha/Eventra?style=flat&color=critical&logo=github"/></td>
-      <td><img alt="Languages Count" src="https://img.shields.io/github/languages/count/SandeepVashishtha/Eventra?style=flat&color=green&logo=github"></td>
-      <td><img alt="Contributors Count" src="https://img.shields.io/github/contributors/SandeepVashishtha/Eventra?style=flat&color=blue&logo=github"/></td>
-    </tr>
-  </tbody>
-</table>
-
-## Features
-
-### Core Functionality
-
-- **Event Creation & Management**: Easily create and customize events with rich details.
-- **User Authentication**: Secure JWT-based authentication with role-based access control.
-- **Admin & User Dashboards**: Personalized dashboards for seamless management and tracking.
-- **Real-time Analytics**: Track event performance and attendee engagement.
-
-### Platform Features
-
-- **Hackathon Hub**: Specialized features for managing hackathons.
-- **Project Gallery**: Showcase community projects and foster collaboration.
-- **Community Leaderboards**: Gamify participation and recognize top contributors.
-- **Feedback System**: Collect valuable post-event feedback through surveys.
-- **Responsive Design**: A mobile-first interface for a great experience on any device.
+- Event and hackathon discovery, filtering, and registration flows
+- Auth-aware routes with protected pages and role-aware behavior
+- Dashboard and profile surfaces for users and organizers
+- Real-time and offline-friendly UX utilities
+- Feedback, recommendation, and community engagement modules
+- Extensive utility and behavior test coverage
 
 ## Tech Stack
 
-| Frontend                         | DevOps & Infrastructure              |
-| :------------------------------- | :----------------------------------- |
-| **React 18.2**                   | **Git & GitHub** for Version Control |
-| **React Router** for Routing     | **Vercel** for Frontend Hosting      |
-| **Framer Motion** for Animations | **npm** for Package Management       |
-| **Tailwind CSS** for Styling     |                                      |
-| **Create React App**             |                                      |
-
-> **Note:** This repository strictly contains the frontend React application. The backend APIs, databases (MySQL/H2), and Java/Spring Boot services are maintained separately in the [Eventra-Backend](https://github.com/SandeepVashishtha/Eventra-Backend) repository.
-
-## Getting Started
-
-Follow these steps to set up and run the frontend application on your local machine.
-
-### Prerequisites
-
-- **Node.js**: Version 16.x or higher
-- **npm**: (usually comes with Node.js)
-- **Git**
-
-### Installation & Setup
-
-1.  **Clone the Repository:**
-
-    ```bash
-    git clone https://github.com/SandeepVashishtha/Eventra.git
-    cd Eventra
-    ```
-
-2.  **Install Dependencies:**
-
-    ```bash
-    npm install
-    ```
-
-3.  **Configure Environment Variables:**
-    Set up your local `.env` file as described in the [Environment Variables](#environment-variables) section. The backend server runs on port `8080` by default.
-
-> **Note:** For the backend setup instructions, please refer to the [backend repository's README](https://github.com/SandeepVashishtha/Eventra-Backend).
-
-4.  **Run the Development Server:**
-    ```bash
-    npm start
-    ```
-    The application will be available at `http://localhost:3000`.
-
-## Environment Variables
-
-Create a `.env` file in the project root and add the variables below.
-
-```env
-REACT_APP_API_URL=http://localhost:8080/api
-
-```
+- React 19
+- React Router 7
+- Vite 8
+- Tailwind CSS 4
+- Framer Motion
+- Lucide React
+- Playwright (E2E)
+- ESLint and Prettier
 
 ## Project Architecture
 
@@ -166,114 +75,171 @@ graph TD
 
 ## Project Structure
 
-The repository is organized into modular frontend components, contexts, configuration files, and utility helpers.
-
 ```text
 Eventra/
-|-- public/
+|-- api/                 # Serverless API routes and middleware
+|-- docs/                # Architecture, env setup, onboarding, security docs
+|-- public/              # Static assets
+|-- scripts/             # Validation and automation scripts
 |-- src/
-|   |-- assets/
-|   |-- components/
-|   |   |-- admin/
-|   |   |-- auth/
-|   |   |-- common/
-|   |   |-- Layout/
-|   |   |-- routes/
-|   |   |-- styles/
-|   |   `-- user/
-|   |-- config/
-|   |-- jhalak/
-|   |   |-- FluidCursor.js   # Fluid cursor animation effect (navbar)
-|   |   `-- RespawningText.js # Animated respawning/typewriter text effect
-|   |-- context/
-|   |-- Pages/
-|   |-- utils/
-|   |-- App.js
-|   |-- App.css
-|   |-- index.js
-|   `-- index.css
-|-- tests/
-|-- .env.example
-|-- package.json
-|-- tailwind.config.js
+|   |-- Pages/           # Route-level pages
+|   |-- components/      # Shared and feature components
+|   |-- context/         # React context providers
+|   |-- hooks/           # Custom hooks
+|   |-- utils/           # Utility modules
+|   |-- config/          # Runtime/env config helpers
+|   |-- App.jsx
+|   `-- index.jsx
+|-- tests/               # Node-based unit/integration tests
+|-- vite.config.js
+|-- vercel.json
 `-- README.md
 ```
 
+## Prerequisites
+
+- Node.js `>=22.x`
+- npm `>=9.6.4`
+
+## Local Development
+
+1. Clone and install:
+
+```bash
+git clone https://github.com/SandeepVashishtha/Eventra.git
+cd Eventra
+npm install
+```
+
+1. Create your env file:
+
+```bash
+cp .env.example .env
+```
+> **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
+
+1. Start dev server:
+
+3. Start dev server:
+
+```bash
+npm run dev
+```
+
+App runs at `http://localhost:3000` (configured in `vite.config.js`).
+
+## Docker Development
+
+You can run Eventra fully containerized using Docker Compose to ensure a consistent environment:
+
+1. Clone the repository and setup your environment variables:
+
+```bash
+git clone https://github.com/SandeepVashishtha/Eventra.git
+cd Eventra
+cp .env.example .env
+```
+
+1. Start the local development container:
+
+```bash
+docker-compose up eventra-dev
+```
+
+The app will be available at `http://localhost:3000` with hot-reloading enabled.
+
+1. Build and test the production container locally:
+
+```bash
+docker-compose up --build eventra-prod
+```
+
+The production-optimized build will be served via Nginx at `http://localhost:8080`.
+
+## Environment Variables
+
+Use `.env.example` as the source of truth.
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `REACT_APP_API_URL` | Yes | Backend API base URL used by client requests and SSE streams |
+| `REACT_APP_GITHUB_REPO` | No | Public repo identifier used in metadata |
+| `REACT_APP_PUBLIC_URL` | No | Canonical public app URL |
+| `REACT_APP_VAPID_PUBLIC_KEY` | No | Public web-push key |
+| `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
+| `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN, used only in production |
+
+Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variables because they are exposed to the client bundle.
+
+## Available Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start local dev server |
+| `npm run start` | Alias to Vite dev server |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | Run ESLint on `src/` |
+| `npm run lint:fix` | Auto-fix lint issues |
+| `npm run format` | Run Prettier on source files |
+| `npm run test` | Run unit test suite |
+| `npm run test:e2e` | Run Playwright E2E tests |
+| `npm run storybook` | Start Storybook |
+| `npm run build-storybook` | Build Storybook static output |
+
+## Testing and Quality
+
+```bash
+npm run lint
+npm run test
+npm run test:e2e
+```
+
+## SSE Mock Server (Optional)
+
+For local realtime testing:
+
+```bash
+node sse-mock-server.js
+```
+
+Optional environment flags:
+
+- `SSE_MOCK_PORT` (default `4001`)
+- `ALLOWED_ORIGIN` (default `http://localhost:3000`)
+- `SSE_DEBUG` (`true` or `false`)
+
 ## Deployment
 
-This project is configured for easy deployment on **Vercel**.
+Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
-1.  **Fork the repository** and connect it to your Vercel account.
-2.  **Configure the build settings**:
-    - **Build Command**: `npm run build`
-    - **Output Directory**: `build`
-3.  **Add Environment Variables** in the Vercel project settings:
-    - `REACT_APP_API_URL`: The URL of your deployed backend API.
-4.  Click **Deploy**. That's it!
+- Build command: `npm run lint && GENERATE_SOURCEMAP=false npm run build`
+- Output directory: `build`
+- `/api/*` is rewritten to the hosted Spring Boot backend
+
+## Documentation
+
+- [Architecture and Roles](docs/ARCHITECTURE_AND_ROLES.md)
+- [Environment Setup Guide](docs/ENV_SETUP_GUIDE.md)
+- [Frontend Onboarding](docs/frontend-onboarding.md)
+- [Security Migration Notes](docs/SECURITY_MIGRATION.md)
+- [API Documentation Notes](docs/API_DOCUMENTATION.md)
 
 ## Contributing
 
-We welcome contributions from the community! To get started, please follow these guidelines.
-
-### Development Workflow
-
-1.  **Fork** the repository.
-2.  **Create a new branch** for your feature or bug fix:
-    ```bash
-    git checkout -b feature/your-amazing-feature
-    ```
-3.  **Make your changes** and commit them with a meaningful message:
-    ```bash
-    git commit -m "feat: Add amazing new feature"
-    ```
-4.  **Push** your changes to your forked repository:
-    ```bash
-    git push origin feature/your-amazing-feature
-    ```
-5.  **Open a Pull Request** to the `master` branch of the original repository.
-
-### Issue Assignment Policy
-
-- To ensure active development, issues are **automatically unassigned after 7 days** of inactivity.
-- To keep your assignment, please **open a draft Pull Request** within the 7-day period to show progress.
-- For more details, see our [Auto-unassign Documentation](.github/AUTO_UNASSIGN.md).
-
-### Automatic PR Labels
-
-This repository uses GitHub Actions with `actions/labeler`
-to automatically apply labels to pull requests based on changed files.
-
-Examples:
-- `docs/**` → `type:docs`
-- `tests/**` → `type:testing`
-- `.github/**` → `type:devops`
-- `src/**` → `type:refactor`
-- `public/**` → `type:design`
-
-The workflow runs automatically whenever a pull request is opened,
-updated, or reopened.
+- Follow [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- Open focused pull requests with clear scope and test notes
+- Issues may be auto-unassigned after inactivity by workflow: [auto-unassign-stale-issues.yml](.github/workflows/auto-unassign-stale-issues.yml)
 
 ## License
 
-This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=sandeepvashishtha%2Feventra&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&legend=top-left" />
- </picture>
-</a>
+Licensed under Apache 2.0. See [LICENSE](LICENSE).
 
 ## Contributors
 
-A huge thank you to everyone who has contributed to Eventra! Your efforts make this project possible.
-
 <p align="left">
   <a href="https://github.com/SandeepVashishtha/Eventra/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=SandeepVashishtha/Eventra" alt="Contributors" />
+    <img src="https://contrib.rocks/image?repo=SandeepVashishtha/Eventra&max=1000" alt="Contributors" />
   </a>
 </p>
 
@@ -304,90 +270,42 @@ A huge thank you to everyone who has contributed to Eventra! Your efforts make t
 </tr>
 </table>
 
----
+## Star History
 
-## Environment Variables Setup
+<a href="https://www.star-history.com/?repos=sandeepvashishtha%2Feventra&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&legend=top-left" />
+ </picture>
+</a>
 
-Create a `.env` file in the project root by copying `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-Then replace the placeholder values with your own local configuration.
-
-Example:
-
-```env
-REACT_APP_API_URL=http://localhost:8080/api
-REACT_APP_USE_REAL_API=false
-GITHUB_TOKEN=your_github_token
-REACT_APP_EMAILJS_PUBLIC_KEY=your_emailjs_public_key
-REACT_APP_EMAILJS_SERVICE_ID=your_emailjs_service_id
-REACT_APP_EMAILJS_TEMPLATE_ID=your_emailjs_template_id
-REACT_APP_FACEBOOK_APP_ID=your_facebook_app_id_here
-REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
-DAYS_THRESHOLD=30
-```
-
-### Required Environment Variables
-
-| Variable | Required | Description |
-| --- | --- | --- |
-| `NODE_ENV` | Yes | Application environment |
-| `REACT_APP_API_URL` | Yes | Backend API base URL |
-| `REACT_APP_USE_REAL_API` | No | Enables real API calls in selected development flows |
-| `DAYS_THRESHOLD` | No | Threshold days configuration used by date-based features |
-| `GITHUB_TOKEN` | No | GitHub API token for higher rate limits on contributor and repository stats (configured in Vercel environment variables, not exposed to the client) |
-| `REACT_APP_EMAILJS_PUBLIC_KEY` | No | EmailJS public key for event registration emails |
-| `REACT_APP_EMAILJS_SERVICE_ID` | No | EmailJS service ID for event registration emails |
-| `REACT_APP_EMAILJS_TEMPLATE_ID` | No | EmailJS template ID for event registration emails |
-| `REACT_APP_FACEBOOK_APP_ID` | No | Facebook authentication/share dialog app ID |
-| `REACT_APP_GOOGLE_CLIENT_ID` | No | Google authentication client ID |
-
-The `.env.example` file contains all required environment variable names needed to run the project locally.
+Built by the Eventra community.
 
 ---
 
-## SSE Mock Server (Development Only)
+## 🧑‍🏫 Mentor
 
-For testing real-time leaderboard rank updates and analytics stream features in development, a local mock Server-Sent Events (SSE) server is provided.
+This project is mentored under **GSSoC'26** by:
 
-### 1. Start the SSE Server
-Run the following command to start the mock server:
-```bash
-node sse-mock-server.js
-```
+<table>
+<tr>
+<td align="center">
+<a href="https://github.com/Ayushh-Sharmaa">
+  <img src="https://avatars.githubusercontent.com/Ayushh-Sharmaa?v=4" height="140px" width="140px" alt="Ayush Sharma" style="border-radius:50%"/>
+</a><br>
+<sub><b>Ayush Sharma</b><br>
+<i>GSSoC'26 Mentor · Eventra</i><br><br>
+<a href="https://github.com/Ayushh-Sharmaa" target="_blank">
+  <img src="https://img.shields.io/badge/GitHub-Ayushh--Sharmaa-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"/>
+</a>
+&nbsp;
+<a href="https://www.linkedin.com/in/ayushh-sharmaa/" target="_blank">
+  <img src="https://img.shields.io/badge/LinkedIn-ayushh--sharmaa-0A66C2?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn"/>
+</a>
+</sub>
+</td>
+</tr>
+</table>
 
-### 2. Configure Environment Variables (Optional)
-The SSE mock server reads configuration from the environment:
-- `SSE_MOCK_PORT` (or `PORT`): The port the server listens on (default: `4001`).
-- `ALLOWED_ORIGIN`: Allowed CORS request origin (default: `http://localhost:3000`).
-- `SSE_DEBUG`: Set to `true` to print real-time logging for connections and events (default: `false` to reduce console noise).
-
-Example with custom settings:
-```bash
-# Windows PowerShell
-$env:SSE_MOCK_PORT="4005"; $env:ALLOWED_ORIGIN="http://localhost:3000"; $env:SSE_DEBUG="true"; node sse-mock-server.js
-
-# Linux/macOS
-SSE_MOCK_PORT=4005 ALLOWED_ORIGIN=http://localhost:3000 SSE_DEBUG=true node sse-mock-server.js
-```
-
-### 3. Configure the React Application
-Update `.env.local` to point to the mock server. You have two options:
-- **Option A (Recommended)**: Set `REACT_APP_SSE_URL` to route only real-time connections to the mock server, keeping the rest of the application pointing to the real API:
-  ```env
-  REACT_APP_SSE_URL=http://localhost:4001
-  ```
-- **Option B (Not Recommended)**: Set the general `REACT_APP_API_URL` to point to the mock server port (this routes all endpoints through port 4001):
-  ```env
-  REACT_APP_API_URL=http://localhost:4001
-  ```
-  > [!WARNING]
-  > **Side-effects of Option B:** Setting the general `REACT_APP_API_URL` to the mock server port will break standard REST API calls (like fetching events, logging in, etc.) because the mock server does not proxy these requests. Use Option A for standard local development to prevent breaking your local environment.
-
-
----
-
-Built with care by the Eventra Team
+> 💬 Have questions about contributing or the project? Reach out to the mentor on [LinkedIn](https://www.linkedin.com/in/ayushh-sharmaa/) or via the [GSSoC Discord](https://discord.gg/6MQ9r5nHT).

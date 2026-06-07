@@ -1,31 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import { Star, Github, ExternalLink, AlertCircle, GitPullRequest, Cpu, Code2, Layers, Bookmark } from "lucide-react";
+import { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
-import {
-  FiStar,
-  FiGithub,
-  FiExternalLink,
-  FiAlertCircle,
-  FiGitPullRequest,
-  FiCpu,
-  FiCode,
-  FiLayers,
-  FiBookmark,
-} from "react-icons/fi";
+import { fetchGitHubRepo, getGitHubRepoDetails } from "../../utils/githubApiClient.js";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Cache Keys & Constants
 const CACHE_KEY = "eventra_github_metrics_cache";
 const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour expiration
-
-// Parse Owner & Repo from GitHub URL
-const getRepoDetails = (url) => {
-  if (!url) return null;
-  const match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
-  if (match) {
-    return { owner: match[1], repo: match[2].replace(/\.git$/, "") };
-  }
-  return null;
-};
 
 // Status Badge Styling Helper
 const getStatusColor = (status) => {
@@ -129,7 +111,7 @@ const ConcentricTechRings = ({ techStack }) => {
           })}
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <FiLayers className="w-4 h-4 text-indigo-500/70 animate-pulse" />
+          <Layers className="w-4 h-4 text-indigo-500/70 animate-pulse" />
         </div>
       </div>
 
@@ -167,7 +149,7 @@ const ConcentricTechRings = ({ techStack }) => {
 };
 
 const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
-  const prefersReducedMotion = useReducedMotion();
+  useReducedMotion();
   const [isLoaded, setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -190,7 +172,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const repoDetails = getRepoDetails(project.githubUrl);
+    const repoDetails = getGitHubRepoDetails(project.githubUrl);
     const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
     
     setMetrics(prev => {
@@ -198,12 +180,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       try {
         let cache = {};
         const saved = localStorage.getItem(CACHE_KEY);
-        cache = saved ? JSON.parse(saved) : {};
+        cache = saved ? safeJsonParse(saved, {}) : {};
         cache[key] = { data: updated, timestamp: Date.now() };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-      } catch (err) {
-        console.error(err);
-      }
+      } catch {}
       return updated;
     });
   };
@@ -212,7 +192,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const repoDetails = getRepoDetails(project.githubUrl);
+    const repoDetails = getGitHubRepoDetails(project.githubUrl);
     const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
     
     setMetrics(prev => {
@@ -220,19 +200,17 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       try {
         let cache = {};
         const saved = localStorage.getItem(CACHE_KEY);
-        cache = saved ? JSON.parse(saved) : {};
+        cache = saved ? safeJsonParse(saved, {}) : {};
         cache[key] = { data: updated, timestamp: Date.now() };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-      } catch (err) {
-        console.error(err);
-      }
+      } catch {}
       return updated;
     });
   };
 
   // GitHub metrics loading with LocalStorage caching system
   useEffect(() => {
-    const repoDetails = getRepoDetails(project.githubUrl);
+    const repoDetails = getGitHubRepoDetails(project.githubUrl);
 
     if (!repoDetails) {
       // Fallback directly to mock data if there is no valid repo
@@ -254,7 +232,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         let cache = {};
         try {
           const saved = localStorage.getItem(CACHE_KEY);
-          cache = saved ? JSON.parse(saved) : {};
+          cache = saved ? safeJsonParse(saved, {}) : {};
         } catch (e) {
           cache = {};
         }
@@ -266,11 +244,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           return;
         }
 
-        // Fetch live metadata
-        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
-        if (!res.ok) throw new Error("API Failure");
-
-        const data = await res.json();
+        const data = await fetchGitHubRepo({ owner, repo });
         const freshMetrics = {
           stars: data.stargazers_count || 0,
           forks: data.forks_count || 0,
@@ -287,8 +261,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
 
         setMetrics(freshMetrics);
         setMetricsLoading(false);
-      } catch (err) {
-        console.warn(`GitHub fetch failed for ${cacheKeyString}, falling back to static project metadata.`, err);
+      } catch {
         setMetrics({
           stars: project.stars || 0,
           forks: project.forks || 0,
@@ -305,7 +278,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   if (!project) return null;
 
   // Header decorative random codes
-  const csIcons = [FiCode, FiCpu, FiGitPullRequest];
+ const csIcons = [Code2, Cpu, GitPullRequest];
   const RandomIcon = csIcons[(index || 0) % csIcons.length];
 
   return (
@@ -350,7 +323,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           }`}
           title={isBookmarked ? "Remove Bookmark" : "Bookmark Project"}
         >
-          <FiBookmark className={isBookmarked ? "fill-current" : ""} size={14} />
+          <Bookmark className={isBookmarked ? "fill-current" : ""} size={14} />
         </button>
       </div>
 
@@ -362,11 +335,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           aria-hidden="true"
           className={`absolute inset-0 w-full h-full object-cover blur-xl scale-110 transition-opacity duration-500 z-0 ${
             isLoaded ? "opacity-0" : "opacity-100"
-          }`}
-        />
+          }`} loading="lazy"/>
         <img
           src={project.image}
-          alt={project.title}
+          alt={project.title || "Project preview"}
           loading="lazy"
           decoding="async"
           onLoad={() => setIsLoaded(true)}
@@ -432,8 +404,8 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                   onClick={handleIncrementStar}
                   className="flex flex-col items-center justify-center bg-amber-50/50 hover:bg-amber-100/80 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border border-amber-100/20 dark:border-amber-900/10 rounded-xl py-1 text-amber-600 dark:text-amber-400 font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95"
                   title="Click to Star repository!"
-                >
-                  <FiStar className="mb-0.5" />
+                 aria-label="Star repository">
+                  <Star className="mb-0.5" />
                   <span>{metrics?.stars || 0}</span>
                 </button>
 
@@ -441,8 +413,8 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                   onClick={handleIncrementFork}
                   className="flex flex-col items-center justify-center bg-teal-50/50 hover:bg-teal-100/80 dark:bg-teal-950/20 dark:hover:bg-teal-950/40 border border-teal-100/20 dark:border-teal-900/10 rounded-xl py-1 text-teal-600 dark:text-teal-400 font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95"
                   title="Click to Fork repository!"
-                >
-                  <FiGithub className="mb-0.5" />
+                 aria-label="Fork repository">
+                  <Github className="mb-0.5" />
                   <span>{metrics?.forks || 0}</span>
                 </button>
 
@@ -450,7 +422,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                   className="flex flex-col items-center justify-center bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/20 dark:border-rose-900/10 rounded-xl py-1 text-rose-600 dark:text-rose-400 font-extrabold cursor-help"
                   title="Open Issues"
                 >
-                  <FiAlertCircle className="mb-0.5" />
+                  <AlertCircle className="mb-0.5" />
                   <span>{metrics?.issues || 0}</span>
                 </div>
 
@@ -458,7 +430,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                   className="flex flex-col items-center justify-center bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/20 dark:border-indigo-900/10 rounded-xl py-1 text-indigo-600 dark:text-indigo-400 font-extrabold cursor-help"
                   title="Pull Requests"
                 >
-                  <FiGitPullRequest className="mb-0.5" />
+                  <GitPullRequest className="mb-0.5" />
                   <span>{metrics?.pullRequests || 0}</span>
                 </div>
               </motion.div>
@@ -474,11 +446,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             href={project.githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            target="_blank" rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80 text-white text-xs font-black shadow-md hover:shadow-lg transition-all duration-300 border-none cursor-pointer"
           >
-            <FiGithub className="text-sm" />
+            <Github className="text-sm" />
             Repository
           </motion.a>
         ) : (
@@ -492,11 +463,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             href={project.liveDemo}
-            target="_blank"
-            rel="noopener noreferrer"
+            target="_blank" rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-200 hover:border-indigo-300 dark:border-indigo-800/50 dark:hover:border-indigo-700 bg-white/40 dark:bg-slate-900/20 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 text-xs font-black shadow-xs hover:shadow-sm transition-all duration-300 cursor-pointer"
           >
-            <FiExternalLink className="text-sm" />
+            <ExternalLink className="text-sm" />
             Live Demo
           </motion.a>
         ) : (
@@ -509,4 +479,5 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   );
 };
 
-export default ProjectCard;
+
+export default memo(ProjectCard);
