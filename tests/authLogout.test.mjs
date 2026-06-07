@@ -18,7 +18,7 @@ const TEST_SECRET = "test-secret-for-logout-tests-only";
 process.env.JWT_SECRET = TEST_SECRET;
 
 // We need to import AFTER setting env vars
-const { default: logout } = await import("./logout.js");
+const { default: logout } = await import("../api/auth/logout.js");
 
 function makeRes() {
   const res = {
