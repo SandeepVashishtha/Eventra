@@ -161,24 +161,36 @@ export const ThemeProvider = ({ children }) => {
     safeStorage.setItem("reducedMotion", reducedMotion);
 
     const styleId = "reduced-motion-override";
-    let styleEl = document.getElementById(styleId);
+    const css = `
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    `;
+
+    // Clean up any previously injected styles (from either method)
+    const existingStyle = document.getElementById(styleId);
+    if (existingStyle) existingStyle.remove();
+    if (typeof CSSStyleSheet !== "undefined") {
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
+        (s) => !s._rm
+      );
+    }
 
     if (reducedMotion) {
-      if (!styleEl) {
-        styleEl = document.createElement("style");
+      if (typeof CSSStyleSheet !== "undefined") {
+        const sheet = new CSSStyleSheet();
+        sheet.replaceSync(css);
+        sheet._rm = true;
+        document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+      } else {
+        const styleEl = document.createElement("style");
         styleEl.id = styleId;
-        styleEl.innerHTML = `
-          *, *::before, *::after {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-            scroll-behavior: auto !important;
-          }
-        `;
+        styleEl.innerHTML = css;
         document.head.appendChild(styleEl);
       }
-    } else {
-      if (styleEl) styleEl.remove();
     }
   }, [reducedMotion]);
 

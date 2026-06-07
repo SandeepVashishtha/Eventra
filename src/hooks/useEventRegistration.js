@@ -53,10 +53,8 @@ export const MAX_NOTES_CHARS = 500;
 
 import { logAbuseAttempt } from "../../utils/abuseLogger";
 
-export const MAX_NOTES_CHARS = 500;
-
 // Registration lock map to prevent concurrent registrations for the same event
-const registrationLocks = new Map();
+// const registrationLocks = new Map();
 const registrationLimiter = createRateLimiter({
   maxTokens: 3,
   refillRate: 0.2, // roughly 1 token every 5 seconds
@@ -339,20 +337,7 @@ const useEventRegistration = (eventIdParam) => {
     };
 
     try {
-      await apiUtils.post(
-        endpoint,
-        {
-          ...formData,
-          additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
-          priority: formData.priority,
-          eventId: parseInt(eventId),
-        },
-        token
-      );
-      const isEventFull = event ? event.attendees >= event.maxAttendees : false;
-      // Fixed: Removed local const isEventFull to prevent scope error in catch block.
-      // Now using the hook-level isEventFull variable.
-      if (isEventFull) {
+      if (event && event.attendees >= event.maxAttendees) {
         await eventService.waitlistForEvent(eventId, payload);
       } else {
         await eventService.registerForEvent(eventId, payload);

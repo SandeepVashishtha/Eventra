@@ -40,7 +40,7 @@ const footerLinks = {
     },
     {
       name: "Community Events",
-      href: "/communityEvent",
+      href: "/community-event",
       icon: <FaUsers size={14} />,
     },
     {
@@ -88,7 +88,7 @@ const footerLinks = {
     },
     {
       name: "API Docs",
-      href: "/apiDocs",
+      href: "/api-docs",
       icon: <FaBookOpen size={14} />,
     },
   ],
@@ -117,7 +117,7 @@ const socialLinks = [
   },
   {
   name: "Discord",
-  href: "https://discord.com/users/sandeep_vashishtha",
+  href: "https://discord.gg/6MQ9r5nHT",
   icon: (
     <SiDiscord
       className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"

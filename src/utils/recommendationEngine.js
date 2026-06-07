@@ -307,18 +307,27 @@ export const buildPersonalizedRecommendations = ({
   const resolveTags = createTagResolver();
 
   return events
-    .filter((event) => includeInteracted || !interactionProfile.registeredIds.has(getEventId(event)))
-    .map((event) => {
-      const result = calculateRecommendationScore(event, userProfile, interactionProfile, resolveTags);
-      return {
-        ...event,
-        calculatedMatch: result.score,
-        recommendationScore: result.score,
-        recommendationReasons: result.reasons,
-        breakdown: result.breakdown,
-      };
-    })
-    .filter((event) => event.recommendationScore > 0)
+    .reduce((acc, event) => {
+      if (includeInteracted || !interactionProfile.registeredIds.has(getEventId(event))) {
+        const result = calculateRecommendationScore(
+          event,
+          userProfile,
+          interactionProfile,
+          resolveTags,
+        );
+        const scored = {
+          ...event,
+          calculatedMatch: result.score,
+          recommendationScore: result.score,
+          recommendationReasons: result.reasons,
+          breakdown: result.breakdown,
+        };
+        if (scored.recommendationScore > 0) {
+          acc.push(scored);
+        }
+      }
+      return acc;
+    }, [])
     .sort((a, b) => b.recommendationScore - a.recommendationScore)
     .slice(0, limit);
 };
