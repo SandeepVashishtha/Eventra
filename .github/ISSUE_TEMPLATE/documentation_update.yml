@@ -1,71 +1,27 @@
-name: 📖 Documentation Update
+name: Documentation update
 description: Suggest improvements or updates to the project documentation
-labels: ["documentation", "mentor:Ayushh-Sharmaa"]
+labels: documentation
 body:
-  - type: markdown
+  - type: textarea
     attributes:
-      value: |
-        ## 📖 Documentation Update
-        Clear documentation helps everyone contribute more effectively. Thank you for helping improve ours!
-        > **GSSoC Contributors:** Please wait to be assigned before opening a PR for this documentation change.
-
-  - type: input
-    id: section
-    attributes:
-      label: 📂 Section / File Affected
+      label: What part of the documentation should be updated?
       description: Clearly mention the section, page, or file that needs updating.
-      placeholder: "Ex. CONTRIBUTING.md → Setup section; docs/architecture.md"
-    validations:
-      required: true
-
+      placeholder: >
+        Ex. The installation guide is missing steps for Windows setup.
   - type: textarea
-    id: changes
     attributes:
-      label: ✏️ Suggested Changes
+      label: What changes are you suggesting?
       description: Explain what needs to be added, removed, or modified.
-      placeholder: "Ex. Add detailed steps with screenshots for configuring environment variables on Windows."
-    validations:
-      required: true
-
+      placeholder: >
+        Ex. Add detailed steps with screenshots for configuring environment variables.
   - type: textarea
-    id: reason
     attributes:
-      label: 🎯 Why is this Update Needed?
+      label: Why is this update needed?
       description: Describe the benefit of this change for users or contributors.
-      placeholder: "Ex. This will help new contributors set up the project faster without errors."
-    validations:
-      required: true
-
-  - type: dropdown
-    id: doc_type
-    attributes:
-      label: 📑 Documentation Type
-      description: What kind of documentation needs updating?
-      options:
-        - "README"
-        - "CONTRIBUTING guide"
-        - "API documentation"
-        - "Setup / Installation guide"
-        - "Architecture docs"
-        - "Code comments / JSDoc"
-        - "Other"
-    validations:
-      required: true
-
+      placeholder: >
+        Ex. This will help new users set up the project faster without errors.
   - type: textarea
-    id: additional
     attributes:
-      label: 📎 Additional Context
-      placeholder: "Any other context, references, screenshots, or links that help explain the update."
-
-  - type: checkboxes
-    id: checklist
-    attributes:
-      label: ✅ Contributor Checklist
-      options:
-        - label: I have searched existing issues and this is not a duplicate
-          required: true
-        - label: I have read the [Contributing Guide](https://github.com/Ayushh-Sharmaa/Eventra/blob/main/CONTRIBUTING.md)
-          required: true
-        - label: I am a GSSoC'26 contributor and will only raise a PR after being assigned
-          required: false
+      label: Additional context
+      placeholder: >
+        Add any other context, references, or screenshots that help explain the update.

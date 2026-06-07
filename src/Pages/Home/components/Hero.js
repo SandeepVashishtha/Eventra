@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -16,6 +17,38 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 
 const CountUp = CountUpLib.default || CountUpLib;
+
+// ─── FLOATING SHAPE SUB-COMPONENT ────────────────────────────────────────────
+// Fix for #7243: Each shape owns its own useTransform hook call at the top
+// level of its own component — hooks must never be called inside .map() loops.
+/**
+ * @param {{ shape: object, index: number, scrollYProgress: object, isDark: boolean, floatShape: function, prefersReducedMotion: boolean }} props
+ */
+const PARALLAX_OFFSETS = [220, -150, 100, -180, 130, -80, 250, -120, 70];
+
+const FloatingShape = ({ shape, index, scrollYProgress, isDark, floatShape, prefersReducedMotion }) => {
+  const yShape = useTransform(scrollYProgress, [0, 1], [0, PARALLAX_OFFSETS[index]]);
+
+  return (
+    <motion.div
+      style={{
+        position: "absolute",
+        top: shape.pos.top,
+        left: shape.pos.left,
+        width: shape.size,
+        height: shape.size,
+        borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%",
+        background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
+        filter: "blur(2px)",
+        boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
+        y: prefersReducedMotion ? 0 : yShape,
+        willChange: "transform",
+      }}
+      animate={prefersReducedMotion ? {} : floatShape(index)}
+    />
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
@@ -35,6 +68,22 @@ const allSearchItems = [
   ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
 ];
 
+const SEARCH_RESULT_LIMIT = 8;
+
+const SEARCH_ROUTES = {
+  event: "/events",
+  hackathon: "/hackathons",
+  project: "/projects",
+};
+
+const SEARCH_ICONS = {
+  event: Calendar,
+  hackathon: Trophy,
+  project: Code,
+};
+
+const MotionLink = motion(Link);
+
 const searchIndex = new Fuse(allSearchItems, {
   keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
   threshold: 0.3,
@@ -52,14 +101,32 @@ const getResultIcon = (type) => {
 };
 
 const Hero = () => {
-  useDocumentTitle("Eventra | Home");
+  const { t, i18n } = useTranslation();
+  const prefersReducedMotion = useReducedMotion();
+  const controls = useAnimation();
+
+  const phrases = useMemo(
+    () => t("landing.hero.phrases", { returnObjects: true }),
+    [t, i18n.language]
+  );
+  const TAGLINE_TEXTS = useMemo(
+    () => t("landing.hero.taglines", { returnObjects: true }),
+    [t, i18n.language]
+  );
+
+  const SEARCH_ROUTES = {
+    event: "/events",
+    hackathon: "/hackathons",
+    project: "/projects",
+  };
+
+  const SEARCH_ICONS = {
+    event: Calendar,
+    hackathon: Trophy,
+    project: Code,
+  };
   
-  const phrases = [
-    "Amazing Tech Events",
-    "Exciting Hackathons Today",
-    "Innovative Dev Workshops",
-    "Cutting-Edge Tech Meetups",
-  ];
+  useDocumentTitle("Eventra | Home");
 
   const containerRef = useRef(null);
 
@@ -72,32 +139,6 @@ const Hero = () => {
   const [searchResults, setSearchResults] = useState([]);
   
   const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
-
-  const prefersReducedMotion = useReducedMotion();
-const controls = useAnimation();
-
-const SEARCH_RESULT_LIMIT = 8;
-
-const TAGLINE_TEXTS = [
-  "Build",
-  "Learn",
-  "Connect",
-  "Grow",
-];
-
-const MotionLink = motion(Link);
-
-const SEARCH_ROUTES = {
-  event: "/events",
-  hackathon: "/hackathons",
-  project: "/projects",
-};
-
-const SEARCH_ICONS = {
-  event: Calendar,
-  hackathon: Trophy,
-  project: Code,
-};
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -139,16 +180,21 @@ const SEARCH_ICONS = {
   }, []);
 
   useEffect(() => {
+    setPhraseIndex(0);
+  }, [phrases]);
+
+  useEffect(() => {
+    if (!Array.isArray(phrases) || phrases.length === 0) return undefined;
     const interval = setInterval(() => {
       setPhraseIndex((prev) => (prev + 1) % phrases.length);
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [phrases]);
 
   useEffect(() => {
     controls.start("show");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    
   }, [controls]);
 
   useEffect(() => {
@@ -180,7 +226,6 @@ const SEARCH_ICONS = {
     show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
   };
 
-
   const floatShape = (i) => ({
     y: [0, -15 - i * 4, 0],
     x: [0, 12 + i * 3, 0],
@@ -206,29 +251,32 @@ const SEARCH_ICONS = {
     { size: 34, pos: { top: "48%", left: "80%" }, light: "#eab308", dark: "#fcd34d" },
   ];
 
-  const HERO_STATS = [
-  {
-    value: 1500,
-    label: "Developers Joined",
-    suffix: "+",
-    icon: Users,
-  },
-  {
-    value: 75,
-    label: "Events Organized",
-    suffix: "+",
-    icon: Calendar,
-  },
-  {
-    value: 30,
-    label: "Partners & Sponsors",
-    suffix: "+",
-    icon: Handshake,
-  },
-];
+  const HERO_STATS = useMemo(
+    () => [
+      {
+        value: 1500,
+        label: t("landing.hero.stats.developers"),
+        suffix: "+",
+        icon: Users,
+      },
+      {
+        value: 75,
+        label: t("landing.hero.stats.events"),
+        suffix: "+",
+        icon: Calendar,
+      },
+      {
+        value: 30,
+        label: t("landing.hero.stats.partners"),
+        suffix: "+",
+        icon: Handshake,
+      },
+    ],
+    [t, i18n.language]
+  );
 
   const primaryBtn = "relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900";
-  const secondaryBtn = `${primaryBtn} border border-transparent`;
+
 
   return (
     <>
@@ -239,16 +287,7 @@ const SEARCH_ICONS = {
       style={{ background: "linear-gradient(180deg, #F8FBFD 0%, #F3F7FA 10%, #EAF1F7 42%, #DAE3ED 100%)" }}
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 150,
-            background: "linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.2) 100%)",
-          }}
-        />
+        
         <div
           style={{
             position: "absolute",
@@ -298,18 +337,13 @@ const SEARCH_ICONS = {
           willChange: "transform, opacity",
         }}
       >
-        <motion.div className="mx-auto max-w-5xl text-center" variants={container} initial="hidden" animate={controls}>
+        <motion.div className="mx-auto max-w-5xl text-center">
           <MotionConfig reducedMotion="never">
             <motion.h1
               className="flex flex-col items-center gap-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-4xl lg:text-5xl"
               style={{ fontFamily: "\"Inter\", system-ui, sans-serif" }}
             >
-              <motion.span
-                className="block text-sm font-medium text-gray-500"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.08 }}
-              >
+              <motion.span className="block text-sm font-medium text-gray-500">
                 <RespawningText texts={TAGLINE_TEXTS} />
               </motion.span>
 
@@ -318,12 +352,6 @@ const SEARCH_ICONS = {
                   <motion.span
                     key={phraseIndex}
                     className="block text-2xl font-extrabold text-gray-900 sm:text-3xl md:text-4xl lg:text-5xl"
-                    initial={{ opacity: 0, y: 24 }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" },
-                    }}
                     exit={{
                       opacity: 0,
                       y: -16,
@@ -342,20 +370,19 @@ const SEARCH_ICONS = {
             variants={fadeUp}
             className="mx-auto mb-8 mt-4 max-w-3xl text-base leading-relaxed text-gray-600 sm:mb-10 sm:mt-6 sm:text-lg md:text-lg"
           >
-            Connect with developers, learn new skills, and grow your network at curated tech events, hackathons, and
-            workshops.
+            {t("landing.hero.description")}
           </motion.p>
 
           <motion.div variants={fadeUp} className="mx-auto mb-10 w-full max-w-2xl">
             <div className="relative">
-              <div className="relative rounded-lg border border-gray-200 bg-white shadow-sm">
+             <div className="relative rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
                 <ModernSearchInput
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Search events, hackathons, projects..."
+                  placeholder={t("landing.hero.searchPlaceholder")}
                   onFocus={() => searchTerm && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
-                  className="border-0 bg-transparent text-gray-700 placeholder-gray-400 focus:ring-0"
+                  className="border-0 bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0"
                 >
                   <AnimatePresence>
                     {showResults && (
@@ -364,15 +391,15 @@ const SEARCH_ICONS = {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.98 }}
                         transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
-                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg"
+                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg"
                         role="listbox"
-                        aria-label="Search results"
+                        aria-label={t("landing.hero.searchResults")}
                       >
                         <div className="p-3">
                           {searchResults.length > 0 ? (
                             <>
                               <div className="px-2 py-1.5 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Results ({searchResults.length})
+                                {t("landing.hero.resultsCount", { count: searchResults.length })}
                               </div>
                               <div className="space-y-1">
                                 {searchResults.map((result, idx) => (
@@ -396,13 +423,15 @@ const SEARCH_ICONS = {
                                           {result.item.title}
                                         </h4>
                                         <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-slate-800 dark:text-gray-300">
-                                          {result.item.searchType}
+                                          {t(`landing.hero.searchTypes.${result.item.searchType}`, {
+                                            defaultValue: result.item.searchType,
+                                          })}
                                         </span>
                                       </div>
                                       <p className="line-clamp-1 text-xs text-gray-500 dark:text-gray-400">
                                         {result.item.description
                                           ? `${result.item.description.substring(0, 70)}...`
-                                          : "No description available"}
+                                          : t("landing.hero.noDescription")}
                                       </p>
                                     </div>
                                     <ExternalLink
@@ -420,7 +449,7 @@ const SEARCH_ICONS = {
                               exit={{ opacity: 0, y: 8 }}
                               className="py-8 text-center text-sm text-gray-500 dark:text-gray-400"
                             >
-                              No results for{" "}
+                              {t("landing.hero.noResults")}{" "}
                               <span className="font-medium text-gray-700 dark:text-gray-200">&quot;{searchTerm}&quot;</span>
                             </motion.div>
                           )}
@@ -440,7 +469,7 @@ const SEARCH_ICONS = {
                 style={{ y: isTouch || prefersReducedMotion ? 0 : yStats, willChange: "transform" }}
                 className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5"
                 role="region"
-                aria-label="Platform statistics"
+                aria-label={t("landing.hero.platformStats")}
               >
                 {HERO_STATS.map((stat) => (
                   <motion.div
@@ -484,7 +513,7 @@ const SEARCH_ICONS = {
         className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-gray-500 dark:text-gray-400 md:flex"
         aria-hidden="true"
       >
-        <span className="text-xs font-medium">Scroll to explore</span>
+        <span className="text-xs font-medium">{t("landing.hero.scrollToExplore")}</span>
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}

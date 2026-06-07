@@ -1,0 +1,430 @@
+
+> eventra-website@1.0.0 lint
+> eslint src --max-warnings=250
+
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Calendar/useCalendarEvents.js
+  3:10  warning  'API_ENDPOINTS' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Contact/ContactUs.js
+  208:14  warning  'error' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Events/EventDetails.js
+  220:14  warning  'err' is defined but never used    no-unused-vars
+  383:40  warning  'error' is defined but never used  no-unused-vars
+  421:40  warning  'error' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Events/EventDetailsPage.js
+  104:12  warning  'error' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Events/EventRegistration.js
+  198:6   warning  React Hook useEffect has a missing dependency: 't'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+  376:6   warning  React Hook useCallback has a missing dependency: 't'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  440:14  warning  'err' is defined but never used                                                                         no-unused-vars
+  455:6   warning  React Hook useCallback has a missing dependency: 't'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  461:6   warning  React Hook useCallback has a missing dependency: 't'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  479:6   warning  React Hook useCallback has a missing dependency: 't'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  482:9   warning  'isPastEvent' is assigned a value but never used                                                        no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Events/useEventListing.js
+   10:3   warning  'getDefaultFilters' is defined but never used                                                                                 no-unused-vars
+   15:10  warning  'logger' is defined but never used                                                                                            no-unused-vars
+  189:6   warning  React Hook useCallback has a missing dependency: 'setAdvancedFiltersState'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/FAQ/FAQPage.js
+  136:6  warning  React Hook useMemo has a missing dependency: 'faqs'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Feedback/FeedbackPage.js
+  453:14  warning  'error' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Hackathons/HackathonPage.js
+  166:10  warning  'isMounted' is assigned a value but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Hackathons/HostHackathon.js
+  9:10  warning  'API_ENDPOINTS' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Home/components/ContributorsCarousel.js
+  45:5  warning  Unused eslint-disable directive (no problems were reported from 'no-await-in-loop')
+  50:7  warning  Unused eslint-disable directive (no problems were reported from 'no-await-in-loop')
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Home/components/GitHubStats.jsx
+  19:3  warning  'fetchContributors' is defined but never used  no-unused-vars
+  20:3  warning  'fetchPullRequests' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Home/components/Hero.js
+  119:9  error  Parsing error: Identifier 'controls' has already been declared
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Home/components/WhatsHappening.js
+  26:7  warning  Unused eslint-disable directive (no problems were reported)
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Leaderboard/Leaderboard.jsx
+    2:10  warning  'motion' is defined but never used                                                                      no-unused-vars
+    8:32  warning  'SSE_STATUS' is defined but never used                                                                  no-unused-vars
+   18:10  warning  'getAchievementBadge' is defined but never used                                                         no-unused-vars
+   97:9   warning  'CATEGORY_FILTERS' is assigned a value but never used                                                   no-unused-vars
+  162:9   warning  'sortOptions' is assigned a value but never used                                                        no-unused-vars
+  198:6   warning  React Hook useEffect has a missing dependency: 't'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+  291:6   warning  React Hook useEffect has a missing dependency: 't'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+  330:6   warning  React Hook useCallback has a missing dependency: 't'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Leaderboard/components/LeaderboardHero.jsx
+  3:50  warning  'loading' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Leaderboard/components/LeaderboardTable.jsx
+  148:3  warning  'sortedContributors' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Projects/ProjectCard.js
+  235:18  warning  'e' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Projects/ProjectsPage.js
+  11:10  warning  'API_ENDPOINTS' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Projects/SubmitProject.js
+  8:10  warning  'API_ENDPOINTS' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/Pages/Terms.js
+  442:25  warning  'c' is assigned a value but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/Button.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/Chatbot.jsx
+  116:14  warning  'e' is defined but never used  no-unused-vars
+  131:14  warning  'e' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/EventCreation.jsx
+   1:8   warning  'React' is defined but never used                     no-unused-vars
+   4:66  warning  'Users' is defined but never used                     no-unused-vars
+  32:5   warning  'submitEventForm' is assigned a value but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/Layout/BrandMark.jsx
+  1:10  warning  'Link' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/Layout/DesktopNavGroup.jsx
+  33:6  warning  React Hook useEffect has a missing dependency: 'updatePosition'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/atulupadhyay/Contribution/Eventra/src/components/Layout/Footer.js
+    2:8   warning  'React' is defined but never used  no-unused-vars
+  221:14  warning  'error' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/Layout/Navbar.js
+    1:8   warning  'React' is defined but never used  no-unused-vars
+  146:14  warning  'e' is defined but never used      no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/Layout/PageLayout.js
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/Layout/navbarHelpers.js
+  19:12  warning  'e' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/StyledDropdown.test.jsx
+   9:1  warning  Unused eslint-disable directive (no problems were reported from 'no-undef')
+  19:3  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+  45:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+
+/home/atulupadhyay/Contribution/Eventra/src/components/admin/TicketScanner.test.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/admin/UIInventory.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/auth/PasswordReset.js
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/auth/SignupForm.js
+    5:10  warning  'API_ENDPOINTS' is defined but never used                 no-unused-vars
+    5:25  warning  'apiUtils' is defined but never used                      no-unused-vars
+   31:7   warning  'parseSignupResponse' is assigned a value but never used  no-unused-vars
+  223:16  warning  'err' is defined but never used                           no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/auth/__tests__/LoginForm.test.jsx
+  27:1  warning  Unused eslint-disable directive (no problems were reported from 'no-undef')
+  36:3  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+  78:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+
+/home/atulupadhyay/Contribution/Eventra/src/components/auth/__tests__/SignupForm.test.jsx
+   57:1  warning  Unused eslint-disable directive (no problems were reported from 'no-undef')
+   66:3  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+  127:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/BackToTop.jsx
+  44:16  warning  'e' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/Breadcrumbs.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/CharacterCounter.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/ConfirmationModal.js
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/ConfirmationModal.test.jsx
+   10:1  warning  Unused eslint-disable directive (no problems were reported from 'no-undef')
+   21:3  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+   53:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+  115:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/Drawer.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/EventCreation/DraftRestoreModal.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/EventCreation/EventBasicInfo.jsx
+  1:8   warning  'React' is defined but never used     no-unused-vars
+  3:10  warning  'Calendar' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/EventCreation/EventLocationSection.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/EventCreation/EventMediaSection.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/EventCreation/EventTicketSection.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/FocusTrap.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/InstallAppButton.jsx
+  26:11  warning  'result' is assigned a value but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/Modal.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/OptimizedImage.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/PasswordInput.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/ProjectSubmission.js
+  6:10  warning  'API_ENDPOINTS' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/Tooltip.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/common/VerticalScrollBar.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/events/CollaborativeFloorPlan.jsx
+  1:8   warning  'React' is defined but never used  no-unused-vars
+  4:10  warning  'Users' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/events/FloorPlan/ElementPalette.jsx
+   3:3   warning  'Save' is defined but never used           no-unused-vars
+   3:44  warning  'AlertTriangle' is defined but never used  no-unused-vars
+   4:3   warning  'Plus' is defined but never used           no-unused-vars
+   4:9   warning  'Minus' is defined but never used          no-unused-vars
+   4:16  warning  'Move' is defined but never used           no-unused-vars
+   4:22  warning  'Trash2' is defined but never used         no-unused-vars
+  12:3   warning  'loadPreset' is defined but never used     no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/events/FloorPlanDesigner.js
+  167:16  warning  'e' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/events/SpatialSeatSelector.jsx
+  362:4  error  Parsing error: Unexpected token ;
+
+/home/atulupadhyay/Contribution/Eventra/src/components/feedback/EventFeedbackForm.jsx
+  54:14  warning  'err' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/forms/__tests__/FormFieldWrapper.test.jsx
+   8:1  warning  Unused eslint-disable directive (no problems were reported from 'no-undef')
+  17:3  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+  27:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+
+/home/atulupadhyay/Contribution/Eventra/src/components/forms/__tests__/ValidationMessage.test.jsx
+   8:1  warning  Unused eslint-disable directive (no problems were reported from 'no-undef')
+  17:3  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+  27:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+
+/home/atulupadhyay/Contribution/Eventra/src/components/forms/__tests__/ValidationStatusIcon.test.jsx
+   8:1  warning  Unused eslint-disable directive (no problems were reported from 'no-undef')
+  17:3  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+  27:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+
+/home/atulupadhyay/Contribution/Eventra/src/components/hackathons/WorkspaceBootstrapModal.jsx
+  172:26  warning  'prev' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/navbar/MobileDrawer.jsx
+  6:8  warning  'AuthButtons' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/navbar/NavbarLinks.jsx
+  17:16  warning  'err' is defined but never used                   no-unused-vars
+  23:16  warning  'err' is defined but never used                   no-unused-vars
+  68:38  warning  'isSecondary' is assigned a value but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/user/AiProfileGeneratorModal.jsx
+  5:34  warning  'Loader2' is defined but never used  no-unused-vars
+  6:44  warning  'User' is defined but never used     no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/user/EditProfile.js
+  280:16  warning  'e' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/user/OnboardingChecklist.jsx
+  122:14  warning  'e' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/components/visual/CollaborationNetworkMap.jsx
+  280:38   warning  'hub' is defined but never used                                  no-unused-vars
+  417:23   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  417:162  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/home/atulupadhyay/Contribution/Eventra/src/config/api.js
+  346:7  warning  'buildAxiosConfig' is assigned a value but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/context/AuthContext.js
+  10:10  warning  'API_ENDPOINTS' is defined but never used  no-unused-vars
+  10:25  warning  'apiUtils' is defined but never used       no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/context/MyEventsContext.js
+  40:10  warning  'safeJsonParse' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/context/NotificationContext.js
+   51:12  warning  'error' is defined but never used  no-unused-vars
+  503:16  warning  'error' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/hooks/useEventRegistration.js
+   37:10  warning  'API_ENDPOINTS' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            no-unused-vars
+  471:6   warning  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/exhaustive-deps
+  617:6   warning  React Hook useCallback has a missing dependency: 'isEventFull'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+  672:23  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. This value was memoized in source but not in compilation output.
+
+  670 |   }, [navigate]);
+  671 |
+> 672 |   const isEventFull = useMemo(() => event ? event.attendees >= event.maxAttendees : false, [event]);
+      |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Could not preserve existing memoization
+  673 |   const isPastEvent = useMemo(() => getEventStatus(event) === "past" || getEventStatus(event) === "ended", [event]);
+  674 |
+  675 |   return {  react-hooks/preserve-manual-memoization
+
+/home/atulupadhyay/Contribution/Eventra/src/hooks/useLocalStorage.js
+  127:12  warning  'e' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/hooks/useLocalStorage.test.js
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+
+/home/atulupadhyay/Contribution/Eventra/src/hooks/useOfflineSync.js
+    9:10  warning  'eventService' is defined but never used                                                                                            no-unused-vars
+  356:18  warning  'e' is defined but never used                                                                                                       no-unused-vars
+  364:16  warning  'e' is defined but never used                                                                                                       no-unused-vars
+  374:18  warning  'e' is defined but never used                                                                                                       no-unused-vars
+  390:18  warning  'e' is defined but never used                                                                                                       no-unused-vars
+  481:6   warning  React Hook useEffect has missing dependencies: 'isAuthenticated' and 'loading'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/atulupadhyay/Contribution/Eventra/src/hooks/useOfflineSync.test.js
+   54:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+   81:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+   89:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+  120:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+  126:5  warning  Unused eslint-disable directive (no problems were reported from 'testing-library/no-unnecessary-act')
+
+/home/atulupadhyay/Contribution/Eventra/src/hooks/useRecommendations.js
+  47:6  error  Error: Expected the dependency list to be an array of simple expressions (e.g. `x`, `x.y.z`, `x?.y?.z`)
+
+Expected the dependency list to be an array of simple expressions (e.g. `x`, `x.y.z`, `x?.y?.z`).
+
+  45 |     () => getUserProfile(),
+  46 |     // eslint-disable-next-line react-hooks/exhaustive-deps
+> 47 |     [typeof localStorage !== "undefined" ? localStorage.getItem(USER_PROFILE_KEY) : null]
+     |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Expected the dependency list to be an array of simple expressions (e.g. `x`, `x.y.z`, `x?.y?.z`)
+  48 |   );
+  49 |
+  50 |   const recommendations = useMemo(() => {  react-hooks/use-memo
+
+/home/atulupadhyay/Contribution/Eventra/src/hooks/useRoutePrefetch.js
+  29:34  warning  'config' is assigned a value but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/middleware/rateLimiter.js
+  9:32  warning  '_ip' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/store/useNotificationStore.js
+  2:10  warning  'logger' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/activityTracker.js
+  18:12  warning  'e' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/aiProfileParser.js
+  16:12  warning  'e' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/dateFormatter.js
+  72:12  warning  'err' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/errorLogger.js
+  61:12  warning  '_' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/eventDraftUtils.js
+  8:12  warning  'e' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/feedbackUtils.js
+    1:1   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+   25:12  warning  'error' is defined but never used                                              no-unused-vars
+   54:12  warning  'error' is defined but never used                                              no-unused-vars
+   74:12  warning  'error' is defined but never used                                              no-unused-vars
+   92:12  warning  'error' is defined but never used                                              no-unused-vars
+  120:12  warning  'error' is defined but never used                                              no-unused-vars
+  153:12  warning  'error' is defined but never used                                              no-unused-vars
+  196:12  warning  'error' is defined but never used                                              no-unused-vars
+  221:12  warning  'error' is defined but never used                                              no-unused-vars
+  246:12  warning  'error' is defined but never used                                              no-unused-vars
+  276:12  warning  'error' is defined but never used                                              no-unused-vars
+  289:12  warning  'error' is defined but never used                                              no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/floorPlanExport.test.js
+   5:3   warning  'downloadLayoutJSON' is defined but never used  no-unused-vars
+  13:21  warning  'content' is assigned a value but never used    no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/inputSanitization.js
+  98:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/jsonUtils.js
+  12:12  warning  'error' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/lazyWithRetry.js
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/logger.js
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/p2pFileTransfer.js
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/recommendationEngine.js
+  50:7  warning  'buildLocationIndex' is assigned a value but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/registerUtils.js
+  18:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/safeJsonParse.js
+  11:12  warning  'error' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/safeStorage.js
+   9:12  warning  '_' is defined but never used  no-unused-vars
+  18:14  warning  '_' is defined but never used  no-unused-vars
+  27:16  warning  '_' is defined but never used  no-unused-vars
+  39:16  warning  '_' is defined but never used  no-unused-vars
+  48:16  warning  '_' is defined but never used  no-unused-vars
+  57:16  warning  '_' is defined but never used  no-unused-vars
+  66:16  warning  '_' is defined but never used  no-unused-vars
+  74:16  warning  '_' is defined but never used  no-unused-vars
+  85:16  warning  '_' is defined but never used  no-unused-vars
+  94:16  warning  '_' is defined but never used  no-unused-vars
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/secureStorage.js
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/shareUtils.js
+  181:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/storage/storageManager.js
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+/home/atulupadhyay/Contribution/Eventra/src/utils/waitlistUtils.test.js
+  10:3  warning  'saveGlobalWaitlist' is defined but never used  no-unused-vars
+
+✖ 194 problems (6 errors, 188 warnings)
+  0 errors and 40 warnings potentially fixable with the `--fix` option.
+

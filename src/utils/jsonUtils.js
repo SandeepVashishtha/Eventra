@@ -9,7 +9,7 @@ export const safeParseJson = (jsonString, fallback = null) => {
   if (!jsonString) return fallback;
   try {
     return JSON.parse(jsonString);
-  } catch (error) {
+  } catch {
     return fallback;
   }
 };
