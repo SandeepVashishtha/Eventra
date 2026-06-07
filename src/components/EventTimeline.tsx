@@ -11,7 +11,10 @@ import {
   MapPin,
   CheckCircle,
   HelpCircle,
+  Download,
+  ExternalLink,
 } from "lucide-react";
+import { downloadIcs, buildGoogleCalendarUrl } from "../utils/calendarExport";
 
 // 1. Explicit TypeScript Interface for Event
 export interface Event {
@@ -213,14 +216,75 @@ export const EventTimeline: React.FC = () => {
               Design your personalized conference day. Seamlessly schedule your registered events, track timing, and resolve conflicts instantly.
             </p>
           </div>
-          <div className="flex items-center gap-3 self-start md:self-center bg-slate-900/60 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-800">
-            <div className="flex flex-col">
-              <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
-                Timeline Slots
-              </span>
-              <span className="text-lg font-bold text-indigo-400 tabular-nums">
-                {timeline.length} {timeline.length === 1 ? "Event" : "Events"} Scheduled
-              </span>
+          <div className="flex flex-wrap items-center gap-3 self-start md:self-center">
+            {/* Events counter pill */}
+            <div className="flex items-center gap-3 bg-slate-900/60 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-800">
+              <div className="flex flex-col">
+                <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
+                  Timeline Slots
+                </span>
+                <span className="text-lg font-bold text-indigo-400 tabular-nums">
+                  {timeline.length} {timeline.length === 1 ? "Event" : "Events"} Scheduled
+                </span>
+              </div>
+            </div>
+
+            {/* ── Export to Calendar buttons (#7654) ── */}
+            <div className="flex items-center gap-2">
+              {/* Export .ics */}
+              <div className="relative group/ics">
+                <button
+                  onClick={() => downloadIcs(sortedTimeline)}
+                  disabled={sortedTimeline.length === 0}
+                  aria-label="Export timeline as .ics calendar file"
+                  className={`
+                    flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold
+                    border transition-all duration-200
+                    ${sortedTimeline.length === 0
+                      ? "bg-slate-900/40 border-slate-800 text-slate-600 cursor-not-allowed opacity-60"
+                      : "bg-indigo-600 hover:bg-indigo-500 border-indigo-500/40 text-white shadow-lg hover:shadow-indigo-500/25 cursor-pointer"
+                    }
+                  `}
+                >
+                  <Download size={15} />
+                  Export .ics
+                </button>
+                {/* Tooltip shown only when timeline is empty */}
+                {sortedTimeline.length === 0 && (
+                  <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-max max-w-[180px] rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-[11px] text-slate-300 text-center opacity-0 group-hover/ics:opacity-100 transition-opacity duration-150 shadow-xl">
+                    Add events to your timeline first
+                  </div>
+                )}
+              </div>
+
+              {/* Add to Google Calendar */}
+              <div className="relative group/gcal">
+                <button
+                  onClick={() => {
+                    if (sortedTimeline.length === 0) return;
+                    window.open(buildGoogleCalendarUrl(sortedTimeline[0]), "_blank", "noopener,noreferrer");
+                  }}
+                  disabled={sortedTimeline.length === 0}
+                  aria-label="Add first scheduled event to Google Calendar"
+                  className={`
+                    flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold
+                    border transition-all duration-200
+                    ${sortedTimeline.length === 0
+                      ? "bg-slate-900/40 border-slate-800 text-slate-600 cursor-not-allowed opacity-60"
+                      : "bg-slate-800 hover:bg-slate-700 border-slate-700/60 text-slate-200 hover:text-white shadow-md cursor-pointer"
+                    }
+                  `}
+                >
+                  <ExternalLink size={15} />
+                  Google Cal
+                </button>
+                {/* Tooltip — shown always on hover for context */}
+                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-max max-w-[200px] rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-[11px] text-slate-300 text-center opacity-0 group-hover/gcal:opacity-100 transition-opacity duration-150 shadow-xl">
+                  {sortedTimeline.length === 0
+                    ? "Add events to your timeline first"
+                    : "Opens your earliest event in Google Calendar"}
+                </div>
+              </div>
             </div>
           </div>
         </div>
