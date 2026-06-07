@@ -697,11 +697,11 @@ export default function CollaborationNetworkMap() {
 
                     <div
                       className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold
-                      ${(activeHub || pinnedHub).activity === "critical"
+                      ${(activeHub || pinnedHub).activity?.toLowerCase() === "critical"
                         ? "bg-red-100 text-red-600"
-                        : (activeHub || pinnedHub).activity === "high"
+                        : (activeHub || pinnedHub).activity?.toLowerCase() === "high"
                         ? "bg-orange-100 text-orange-600"
-                        : (activeHub || pinnedHub).activity === "medium"
+                        : (activeHub || pinnedHub).activity?.toLowerCase() === "medium"
                         ? "bg-yellow-100 text-yellow-700"
                         : "bg-green-100 text-green-600"
                       }`}
