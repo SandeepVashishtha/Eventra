@@ -222,6 +222,17 @@ API.interceptors.request.use((config) => {
     } else if (process.env.NODE_ENV !== "production") {
       console.warn("[CSRF] Token missing for mutating request:", method, config.url);
     }
+    
+    // Add idempotency key for critical state mutations
+    if (!config.headers["Idempotency-Key"]) {
+      config.headers["Idempotency-Key"] = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+    }
   }
 
   return config;
