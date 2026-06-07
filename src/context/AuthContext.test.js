@@ -17,9 +17,14 @@ vi.mock('../config/api', () => ({
   setAuthToken: vi.fn(),
 }));
 
+vi.mock('../hooks/useSessionExpiryMonitor', () => ({
+  useSessionExpiryMonitor: vi.fn(),
+}));
+
 vi.mock('../utils/tokenUtils', () => ({
   isTokenValid: vi.fn(),
   decodeTokenPayload: vi.fn(),
+  getTokenTTL: vi.fn(() => 3600),
 }));
 
 vi.mock('../utils/offlineQueue', () => ({
@@ -218,16 +223,12 @@ describe('AuthContext', () => {
   });
 
   describe('login', () => {
-    it('persists user to localStorage and ignores tokens returned in response after successful login', async () => {
+    it('persists user and stores JWT from login response for expiry tracking', async () => {
       apiUtils.post.mockResolvedValueOnce({
         status: 200,
         data: {
-          token: 'fresh-jwt',
-          accessToken: 'fresh-jwt',
+          token: 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig',
           user: { email: 'bob@example.com', roles: ['ATTENDEE'] },
-        },
-        headers: {
-          Authorization: 'Bearer fresh-jwt',
         },
       });
 
@@ -258,7 +259,7 @@ describe('AuthContext', () => {
       await waitFor(() =>
         expect(screen.getByTestId('user-status')).toHaveTextContent('logged-in')
       );
-      expect(screen.getByTestId('token-val')).toHaveTextContent('cookie-managed');
+      expect(screen.getByTestId('token-val')).toHaveTextContent('eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig');
       const storedUser = await syncSecureStorage.getItemAsync('user');
       expect(JSON.parse(storedUser).email).toBe('bob@example.com');
     });
@@ -349,6 +350,26 @@ describe('AuthContext', () => {
     });
 
     it('returns false when there is no user', async () => {
+      const onResult = vi.fn();
+
+      render(
+        <AuthProvider>
+          <AuthValueProbe compute={({ isAuthenticated }) => isAuthenticated()} onResult={onResult} />
+        </AuthProvider>
+      );
+      await waitFor(() => expect(onResult).toHaveBeenLastCalledWith(false));
+    });
+
+    it('returns false immediately when JWT token is expired', async () => {
+      isTokenValid.mockReturnValue(false);
+      apiUtils.get.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: {
+          token: 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig',
+          user: { email: 'user@example.com', roles: ['ATTENDEE'] },
+        },
+      });
       const onResult = vi.fn();
 
       render(

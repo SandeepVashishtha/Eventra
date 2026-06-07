@@ -10,8 +10,9 @@ import {
 import { setOnUnauthorizedHandler, setAuthToken } from "../config/api";
 import { authService } from "../services/authService";
 import { userService } from "../services/userService";
-import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
+import { isTokenValid } from "../utils/tokenUtils";
 import { syncSecureStorage } from "../utils/secureStorage";
+import { useSessionExpiryMonitor } from "../hooks/useSessionExpiryMonitor";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles";
 
@@ -33,10 +34,12 @@ export const AuthProvider = ({ children }) => {
     loading: false,
     error: null,
   });
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const isMountedRef = useRef(true);
   const needsExpiryCleanupRef = useRef(false);
   const expiryToastShownRef = useRef(false);
+  const expiryHandledRef = useRef(false);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -51,14 +54,18 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     setAuthToken(null);
+    setSessionExpired(false);
+    expiryHandledRef.current = false;
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     syncSecureStorage.removeItem("user");
     return true;
   }, []);
 
   const clearExpiredSession = useCallback(() => {
-    // 🔥 FIX: Check if a user was actually logged in before blasting them with an "Expired" toast.
-    // Anonymous users (who trigger a 401 on mount) shouldn't see this.
+    if (expiryHandledRef.current) return;
+    expiryHandledRef.current = true;
+
+    // Check if a user was actually logged in before showing the expired toast.
     let hadPreviousSession = false;
     try {
       hadPreviousSession = !!syncSecureStorage.getItem("user");
@@ -67,9 +74,13 @@ export const AuthProvider = ({ children }) => {
     }
 
     console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
-    clearSession();
+    setSessionExpired(true);
+    setUser(null);
+    setToken(null);
+    setAuthToken(null);
+    syncSecureStorage.removeItem("user");
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
 
-    // If they were never logged in, this is just a guest pinging the API. Silent exit.
     if (!hadPreviousSession) return;
 
     if (expiryToastShownRef.current) {
@@ -84,7 +95,7 @@ export const AuthProvider = ({ children }) => {
     setTimeout(() => {
       window.location.replace("/login");
     }, 1500);
-  }, [clearSession]);
+  }, []);
 
   const setAuthRequestState = useCallback((nextState) => {
     if (!isMountedRef.current) return false;
@@ -100,14 +111,23 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
+  const resolveSessionToken = useCallback((data) => {
+    const bodyToken = data?.token || data?.accessToken || null;
+    if (
+      bodyToken &&
+      typeof bodyToken === "string" &&
+      bodyToken !== "cookie-managed" &&
+      bodyToken.split(".").length === 3
+    ) {
+      return bodyToken;
+    }
+
+    return "cookie-managed";
+  }, []);
+
   const extractSession = useCallback(
     (res, data, fallbackEmail) => {
-      // Under a strict HttpOnly-cookie authentication model, the client-visible
-      // response body or headers (like data.token, data.accessToken, and Authorization
-      // response headers) are ignored entirely to prevent token-injection risks.
-      // Authenticated sessions are established solely through successful backend
-      // validation of the HttpOnly session cookie, using the sentinel value "cookie-managed".
-      const sessionToken = "cookie-managed";
+      const sessionToken = resolveSessionToken(data);
 
       const rawUser = data?.user ?? data?.data ?? data ?? null;
       const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
@@ -140,7 +160,7 @@ export const AuthProvider = ({ children }) => {
 
       return { sessionToken, sessionUser };
     },
-    [normalizeRoles]
+    [normalizeRoles, resolveSessionToken]
   );
 
   useEffect(() => {
@@ -168,7 +188,8 @@ export const AuthProvider = ({ children }) => {
           try {
             const cachedUser = syncSecureStorage.getItem("user");
             if (cachedUser) {
-              setUser(JSON.parse(cachedUser));
+              const parsedUser = JSON.parse(cachedUser);
+              setUser(parsedUser);
               setToken("cookie-managed");
             } else {
               clearSession();
@@ -214,53 +235,24 @@ export const AuthProvider = ({ children }) => {
     }
   }, [clearExpiredSession]);
 
-  // --- Smart Token Expiry Timeout ---
+  useSessionExpiryMonitor({
+    token,
+    user,
+    onExpired: clearExpiredSession,
+    enabled: !loading && !!user,
+  });
+
   useEffect(() => {
-    if (!token) return;
-
-    expiryToastShownRef.current = false;
-
-    if (token === "cookie-managed") {
-      return;
+    if (!user || !token || token === "cookie-managed") return;
+    if (!isTokenValid(token)) {
+      clearExpiredSession();
     }
-
-    const payload = decodeTokenPayload(token);
-    const expSeconds = payload?.exp;
-
-    let timeoutId;
-
-    if (typeof expSeconds === "number") {
-      const nowMs = Date.now();
-      const expiresAtMs = expSeconds * 1000;
-      const delayMs = Math.max(expiresAtMs - nowMs + 1000, 0);
-
-      timeoutId = setTimeout(() => {
-        if (!isTokenValid(token)) {
-          clearExpiredSession();
-        }
-      }, delayMs);
-    } else {
-      timeoutId = setInterval(() => {
-        if (!isTokenValid(token)) {
-          clearExpiredSession();
-        }
-      }, 60_000);
-
-      if (!isTokenValid(token)) {
-        clearExpiredSession();
-      }
-    }
-
-    return () => {
-      if (typeof expSeconds === "number") {
-        clearTimeout(timeoutId);
-      } else {
-        clearInterval(timeoutId);
-      }
-    };
-  }, [token, clearExpiredSession]);
+  }, [user, token, clearExpiredSession]);
 
   const persistSession = useCallback(async (sessionToken, sessionUser) => {
+    expiryHandledRef.current = false;
+    expiryToastShownRef.current = false;
+    setSessionExpired(false);
     setToken(sessionToken);
     setUser(sessionUser);
     setAuthToken(sessionToken);
@@ -347,28 +339,34 @@ export const AuthProvider = ({ children }) => {
 
   const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
+    if (sessionExpired) return false;
     if (token !== "cookie-managed" && !isTokenValid(token)) {
-      clearExpiredSession();
       return false;
     }
     return true;
-  }, [user, token, clearExpiredSession]);
+  }, [user, token, sessionExpired]);
+
+  const activeUser = useMemo(() => {
+    if (!user || !token || sessionExpired) return null;
+    if (token !== "cookie-managed" && !isTokenValid(token)) return null;
+    return user;
+  }, [user, token, sessionExpired]);
 
   const hasRole = useCallback(
     (roleName) => {
-      if (!user?.roles) return false;
+      if (!activeUser?.roles) return false;
       const targetRole = String(roleName).toUpperCase();
-      return normalizeRoles(user.roles).includes(targetRole);
+      return normalizeRoles(activeUser.roles).includes(targetRole);
     },
-    [normalizeRoles, user]
+    [normalizeRoles, activeUser]
   );
 
   const hasPermission = useCallback(
     (permissionName) => {
-      if (!user?.permissions) return false;
-      return user.permissions.includes(permissionName);
+      if (!activeUser?.permissions) return false;
+      return activeUser.permissions.includes(permissionName);
     },
-    [user]
+    [activeUser]
   );
 
   const hasAnyRole = useCallback(
@@ -390,14 +388,16 @@ export const AuthProvider = ({ children }) => {
 
   const value = useMemo(
     () => ({
-      user,
+      user: activeUser,
       token,
       loading,
       authRequest,
+      sessionExpired,
       login,
       logout,
       setAuthSession,
       setUser,
+      clearExpiredSession,
       isAuthenticated,
       hasRole,
       hasPermission,
@@ -411,14 +411,16 @@ export const AuthProvider = ({ children }) => {
       isAttendee,
     }),
     [
-      user,
+      activeUser,
       token,
       loading,
       authRequest,
+      sessionExpired,
       login,
       logout,
       setAuthSession,
       setUser,
+      clearExpiredSession,
       isAuthenticated,
       hasRole,
       hasPermission,

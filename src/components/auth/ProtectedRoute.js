@@ -13,21 +13,32 @@ const ProtectedRoute = ({
   validateContext = null,
   redirectTo = '/login'
 }) => {
-  const { isAuthenticated, hasRole, hasPermission, loading, user, token, logout } = useAuth();
+  const {
+    isAuthenticated,
+    hasRole,
+    hasPermission,
+    loading,
+    user,
+    token,
+    sessionExpired,
+    clearExpiredSession,
+  } = useAuth();
   const location = useLocation();
 
-  // SECURITY: Distinguish between "never had a token" and "had a token that expired".
-  // Passing sessionExpired lets the Login page show a contextual banner
-  // instead of silently dropping the user on the login form.
-  const sessionExpired = requireAuth && !loading && !isAuthenticated() && !!token && !isTokenValid(token);
+  const tokenExpired =
+    requireAuth &&
+    !loading &&
+    !!token &&
+    token !== 'cookie-managed' &&
+    !isTokenValid(token);
 
-  // Clean up stale session data cleanly via useEffect to avoid updating the
-  // AuthProvider component's state during the ProtectedRoute render phase.
+  const shouldRedirectForExpiry = sessionExpired || tokenExpired;
+
   useEffect(() => {
-    if (sessionExpired) {
-      logout();
+    if (shouldRedirectForExpiry && (user || token)) {
+      clearExpiredSession();
     }
-  }, [sessionExpired, logout]);
+  }, [shouldRedirectForExpiry, user, token, clearExpiredSession]);
 
   // Show loading spinner while checking authentication
   if (loading) {
@@ -44,7 +55,7 @@ const ProtectedRoute = ({
       <Navigate
         to={redirectTo}
         replace
-        state={{ from: location, sessionExpired }}
+        state={{ from: location, sessionExpired: shouldRedirectForExpiry }}
       />
     );
   }
@@ -59,7 +70,7 @@ const ProtectedRoute = ({
         <Navigate
           to={redirectTo}
           replace
-          state={{ from: location, sessionExpired }}
+          state={{ from: location, sessionExpired: shouldRedirectForExpiry }}
         />
       );
     }

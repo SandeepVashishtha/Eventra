@@ -11,4 +11,5 @@ export {
   decodeJwtPayload as decodeTokenPayload,
   isTokenExpired,
   isTokenValid,
+  getTokenTTL,
 } from './auth.js';

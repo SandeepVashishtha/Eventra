@@ -3,6 +3,7 @@ import { ENV } from "./env";
 import { syncServerTimeFromHeader } from "../utils/timeSync";
 import { getCSRFToken } from "../utils/csrfToken";
 import { logger } from "../utils/logger";
+import { isTokenValid } from "../utils/auth";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -208,6 +209,15 @@ const normalizeApiError = (error) => {
 API.interceptors.request.use((config) => {
   if (isDev) {
     logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
+  }
+
+  if (_authToken && _authToken !== "cookie-managed" && !isTokenValid(_authToken)) {
+    if (onUnauthorized) {
+      onUnauthorized();
+    }
+    return Promise.reject(
+      new ApiError("Session expired. Please log in again.", { status: 401 })
+    );
   }
 
   if (_authToken && _authToken !== "cookie-managed") {
