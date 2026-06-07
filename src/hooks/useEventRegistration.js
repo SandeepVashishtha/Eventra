@@ -53,10 +53,8 @@ export const MAX_NOTES_CHARS = 500;
 
 import { logAbuseAttempt } from "../../utils/abuseLogger";
 
-export const MAX_NOTES_CHARS = 500;
-
 // Registration lock map to prevent concurrent registrations for the same event
-const registrationLocks = new Map();
+// const registrationLocks = new Map();
 const registrationLimiter = createRateLimiter({
   maxTokens: 3,
   refillRate: 0.2, // roughly 1 token every 5 seconds

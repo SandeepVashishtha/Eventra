@@ -1,11 +1,12 @@
-import { Grid } from "react-window";
+import { FixedSizeGrid as Grid } from "react-window";
 import EventCard from "../../Pages/Events/EventCard";
 
 const COLUMN_COUNT = 3;
 const CARD_WIDTH = 380;
 const CARD_HEIGHT = 420;
 
-const EventGridCell = ({ columnIndex, rowIndex, style, events }) => {
+const EventGridCell = ({ columnIndex, rowIndex, style, data }) => {
+  const { events } = data;
   const index = rowIndex * COLUMN_COUNT + columnIndex;
   const event = events[index];
 
@@ -23,16 +24,17 @@ const VirtualizedEventGrid = ({ events }) => {
 
   return (
     <Grid
-      cellComponent={EventGridCell}
-      cellProps={{ events }}
+      itemData={{ events }}
       columnCount={COLUMN_COUNT}
       columnWidth={CARD_WIDTH}
-      defaultHeight={900}
-      defaultWidth={1200}
+      height={900}
+      width={1200}
       rowCount={rowCount}
       rowHeight={CARD_HEIGHT}
-      style={{ height: 900, width: "100%", maxWidth: 1200 }}
-    />
+      style={{ maxWidth: 1200 }}
+    >
+      {EventGridCell}
+    </Grid>
   );
 };
 

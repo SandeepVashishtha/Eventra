@@ -114,13 +114,8 @@ const getResultIcon = (type) => {
 };
 
 const Hero = () => {
-  const fadeUp = (prefersReducedMotion) => ({
-  hidden: { opacity: 0, y: 24 },
-  visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { delay: prefersReducedMotion ? 0 : i * 0.07, duration: prefersReducedMotion ? 0 : 0.45, ease: "easeOut" }
-  })
-});
+  const prefersReducedMotion = useReducedMotion();
+  const controls = useAnimation();
 
   const SEARCH_ROUTES = {
     event: "/events",

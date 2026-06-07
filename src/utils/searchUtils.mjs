@@ -39,7 +39,7 @@ export const stripTrailingYearTokens = (normalizedText) => {
   return normalizedText.replace(/(\s+(?:19|20)\d{2})+$/, "").trim();
 };
 
-
+/**
  * @param {Array} items - List of objects to search through
  * @param {string} query - Search query
  * @param {Array|Object} keys - Keys to search in, optionally with weights
