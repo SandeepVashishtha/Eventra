@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from "react";
-import { FixedSizeGrid } from "react-window";
-import AutoSizer from "react-virtualized-auto-sizer";
+import { FixedSizeGrid as Grid } from "react-window";
+import { AutoSizer } from "react-virtualized-auto-sizer";
 import HackathonCard from "../../Pages/Hackathons/HackathonCard";
 
 const CARD_HEIGHT = 320;
@@ -17,7 +17,7 @@ const getColumnCount = (width) => {
  * VirtualizedHackathonGrid
  *
  * Drop-in replacement for the filteredHackathons.map() render in HackathonPage.
- * Uses react-window FixedSizeGrid to render only the cards visible in the
+ * Uses react-window Grid to render only the cards visible in the
  * current viewport, preventing layout thrashing when the list exceeds 50 items.
  *
  * Props:
@@ -61,7 +61,7 @@ const VirtualizedHackathonGrid = ({ hackathons }) => {
                     const rowHeight = CARD_HEIGHT + GAP;
 
                     return (
-                        <FixedSizeGrid
+                        <Grid
                             columnCount={columnCount}
                             columnWidth={columnWidth + GAP / columnCount}
                             rowCount={rowCount}
@@ -70,9 +70,10 @@ const VirtualizedHackathonGrid = ({ hackathons }) => {
                             height={height}
                             itemData={{ items: hackathons, columnCount, columnWidth }}
                             overscanRowCount={2}
+                            overscanColumnCount={2}
                         >
                             {Cell}
-                        </FixedSizeGrid>
+                        </Grid>
                     );
                 }}
             </AutoSizer>

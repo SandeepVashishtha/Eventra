@@ -360,7 +360,7 @@ const SpatialSeatSelector = ({
       seatLabel: `${el.label} - ${label}`,
       tier: tier,
     });
-  }, [readOnly, onSelectSeat]);
+  }, [onSelectSeat, readOnly]);
 
   return (
     <div className="ssp-container">

@@ -1,8 +1,10 @@
 // Mock implementation for exporting an event ticket to PDF
 // Requires a PDF library like html2pdf.js or jspdf in a full implementation
 
+import { logger } from "./logger.js";
+
 export const exportTicketToPdf = async (event, userData) => {
-  console.log("Generating Scannable PDF Ticket for:", event?.title);
+  logger.log("Generating Scannable PDF Ticket for:", event?.title);
   
   // Create a synthetic blob to simulate downloading a PDF file
   const mockPdfContent = `

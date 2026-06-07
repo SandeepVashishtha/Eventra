@@ -179,11 +179,15 @@ export const getTopFeedbackTags = (eventId, limit = 5) => {
 export const getRecommendationStats = (eventId) => {
   try {
     const feedback = getEventFeedback(eventId);
-    const recommendations = feedback.map((f) => f.recommend).filter((r) => r !== undefined);
-
-    const recommendCount = recommendations.filter((r) => r === true).length;
-    const notRecommendCount = recommendations.filter((r) => r === false).length;
-    const total = recommendations.length;
+    const { recommendCount, notRecommendCount, total } = feedback.reduce(
+      (acc, f) => {
+        if (f.recommend === true) acc.recommendCount++;
+        else if (f.recommend === false) acc.notRecommendCount++;
+        if (f.recommend !== undefined) acc.total++;
+        return acc;
+      },
+      { recommendCount: 0, notRecommendCount: 0, total: 0 }
+    );
 
     const percentage = total > 0 ? Math.round((recommendCount / total) * 100) : 0;
 

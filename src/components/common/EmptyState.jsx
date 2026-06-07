@@ -1,3 +1,4 @@
+import React from "react";
 import { Search, FilterX, Inbox } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -52,12 +53,11 @@ const EmptyState = ({
 
   const renderIcon = () => {
     if (!rawIcon) return null;
-    if (typeof rawIcon === "function") {
-      const IconComponent = rawIcon;
-      return <IconComponent size={compact ? 32 : 48} className="text-gray-400 dark:text-gray-500" />;
+    if (React.isValidElement(rawIcon)) {
+      return rawIcon;
     }
-    // If it's already a rendered react element or something else, return as-is
-    return rawIcon;
+    const IconComponent = rawIcon;
+    return <IconComponent size={compact ? 32 : 48} className="text-gray-400 dark:text-gray-500" />;
   };
 
   // Determine main action handler
