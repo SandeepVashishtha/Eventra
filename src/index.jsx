@@ -5,7 +5,8 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
 import "./i18n/i18n";
 import App from "./App";
-import { ThemeProvider } from "./context/ThemeContext";
+// ThemeProvider is rendered inside AuthProvider in App.jsx (#7653)
+// so that it can call useAuth() for cross-device theme persistence.
 import GlobalErrorBoundary from "./components/common/ErrorBoundary";
 import { initializeGlobalErrorHandling } from "./utils/globalErrorHandler";
 import { initCspReporting } from "./utils/cspReporting";
@@ -41,11 +42,9 @@ root.render(
     {/* Global Application Error Boundary (Fixes #5060) */}
     <GlobalErrorBoundary>
   <HelmetProvider>
-    <ThemeProvider>
       <RealTimeProvider>
         <RouterProvider router={router} />
       </RealTimeProvider>
-    </ThemeProvider>
   </HelmetProvider>
 </GlobalErrorBoundary>
   </React.StrictMode>

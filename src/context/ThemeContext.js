@@ -4,13 +4,15 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { MotionConfig } from "framer-motion";
 import { THEMES } from "../components/styles/theme";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { safeJsonParse } from "../utils/safeJsonParse";
-const THEME_STORAGE_KEY = "eventra_theme";
+import { syncThemeToProfile, getProfileTheme } from "../utils/themeSync";
+import { useAuth } from "./AuthContext";
 
 export const ThemeContext = createContext(null);
 
@@ -46,7 +48,7 @@ const getSystemTheme = () =>
     : "light";
 
 const getInitialTheme = () => {
-  const stored = safeStorage.getItem(THEME_STORAGE_KEY);
+  const stored = safeStorage.getItem("theme");
   if (stored === "light" || stored === "dark" || stored === "system") {
     return stored;
   }
@@ -55,6 +57,8 @@ const getInitialTheme = () => {
 
 // ✅ FIXED: Yahan se duplicate line hata di gayi hai
 export const ThemeProvider = ({ children }) => {
+  const { user, isAuthenticated } = useAuth();
+
   const [theme, setThemeState] = useState(() => getInitialTheme());
 
   // States to preserve existing codebase drawer flow without breaking
@@ -87,15 +91,52 @@ export const ThemeProvider = ({ children }) => {
 
   const resolvedTheme = theme === "system" ? getSystemTheme() : theme;
   const isDarkMode = resolvedTheme === "dark";
+
+  // Track whether we have already applied the profile theme for this session
+  // so a re-render caused by other user-object changes doesn't override a
+  // user-initiated toggle that happened after login.
+  const profileThemeApplied = useRef(false);
+
+  // FIX (#7653): When validateSession() resolves and sets `user`, read
+  // user.preferences.theme and apply it as the active theme — within 200ms
+  // of the auth state being available, satisfying the acceptance criteria.
+  //
+  // We only apply once per session (profileThemeApplied ref) so subsequent
+  // re-renders from other profile changes don't clobber user-initiated toggles.
+  useEffect(() => {
+    if (!user || profileThemeApplied.current) return;
+
+    const profileTheme = getProfileTheme(user);
+    if (profileTheme && profileTheme !== theme) {
+      setThemeState(profileTheme);
+      // Also persist to localStorage so it survives the next cold load
+      // before the next validateSession() completes.
+      if (profileTheme === "system") {
+        safeStorage.removeItem("theme");
+      } else {
+        safeStorage.setItem("theme", profileTheme);
+      }
+    }
+
+    profileThemeApplied.current = true;
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ↑ Intentional: we only want this to run when `user` first becomes available,
+  //   not on every re-render. `theme` is intentionally excluded.
   const setTheme = useCallback((newTheme) => {
     setThemeState(newTheme);
-  }, []);
+    // FIX (#7653): Persist to profile in the background — non-blocking
+    syncThemeToProfile(newTheme, isAuthenticated);
+  }, [isAuthenticated]);
+
   const toggleTheme = useCallback(() => {
     setThemeState((prev) => {
       const resolved = prev === "system" ? getSystemTheme() : prev;
-      return resolved === "dark" ? "light" : "dark";
+      const next = resolved === "dark" ? "light" : "dark";
+      // FIX (#7653): Fire-and-forget sync so the UI toggle stays instant
+      syncThemeToProfile(next, isAuthenticated);
+      return next;
     });
-  }, []);
+  }, [isAuthenticated]);
 
   // Apply themes, custom HSL variable overrides, and sync storage
   useEffect(() => {
@@ -107,9 +148,9 @@ export const ThemeProvider = ({ children }) => {
     root.classList.add(resolvedTheme);
 
     if (theme === "system") {
-      safeStorage.removeItem(THEME_STORAGE_KEY);
+      safeStorage.removeItem("theme");
     } else {
-      safeStorage.setItem(THEME_STORAGE_KEY, theme);
+      safeStorage.setItem("theme", theme);
     }
 
     // Apply active skin theme colors
@@ -161,36 +202,24 @@ export const ThemeProvider = ({ children }) => {
     safeStorage.setItem("reducedMotion", reducedMotion);
 
     const styleId = "reduced-motion-override";
-    const css = `
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-      }
-    `;
-
-    // Clean up any previously injected styles (from either method)
-    const existingStyle = document.getElementById(styleId);
-    if (existingStyle) existingStyle.remove();
-    if (typeof CSSStyleSheet !== "undefined") {
-      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
-        (s) => !s._rm
-      );
-    }
+    let styleEl = document.getElementById(styleId);
 
     if (reducedMotion) {
-      if (typeof CSSStyleSheet !== "undefined") {
-        const sheet = new CSSStyleSheet();
-        sheet.replaceSync(css);
-        sheet._rm = true;
-        document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
-      } else {
-        const styleEl = document.createElement("style");
+      if (!styleEl) {
+        styleEl = document.createElement("style");
         styleEl.id = styleId;
-        styleEl.innerHTML = css;
+        styleEl.innerHTML = `
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+          }
+        `;
         document.head.appendChild(styleEl);
       }
+    } else {
+      if (styleEl) styleEl.remove();
     }
   }, [reducedMotion]);
 
@@ -200,7 +229,7 @@ export const ThemeProvider = ({ children }) => {
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      if (!safeStorage.getItem(THEME_STORAGE_KEY)) {
+      if (!safeStorage.getItem("theme")) {
         setTheme("system");
       }
     };

@@ -219,8 +219,6 @@ API.interceptors.request.use((config) => {
     const csrf = getCSRFToken();
     if (csrf) {
       config.headers["X-CSRF-Token"] = csrf;
-    } else if (process.env.NODE_ENV !== "production") {
-      console.warn("[CSRF] Token missing for mutating request:", method, config.url);
     }
   }
 
@@ -283,7 +281,6 @@ export const API_ENDPOINTS = {
     ALL: buildApiUrl("/api/events"),
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
-    SCHEDULE: (id) => buildApiUrl(`/api/events/${id}/schedule`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
     AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
 
@@ -316,14 +313,8 @@ export const API_ENDPOINTS = {
   USERS: {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
-  },
-  SESSION_RECOVERY: {
-    BASE: buildApiUrl("/api/session-recovery"),
-    SESSION: (sessionId) =>
-      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}`),
-    RESTORE: (sessionId) =>
-      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}/restore`),
-    CLEANUP_EXPIRED: buildApiUrl("/api/session-recovery/expired"),
+    // (#7653) Endpoint for persisting user preferences (theme, etc.) across devices
+    PREFERENCES: buildApiUrl("/api/users/preferences"),
   },
   TICKETS: {
     VALIDATE: buildApiUrl("/api/tickets/validate"),
@@ -341,7 +332,6 @@ export const API_ENDPOINTS = {
     EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
     USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
     PHONE: buildApiUrl("/api/validate/phone"),
-    CONTACT: buildApiUrl("/api/contact"),
   },
 };
 
