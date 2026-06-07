@@ -120,7 +120,7 @@ cp .env.example .env
 
 1. Start dev server:
 
-3. Start dev server:
+2. Start dev server:
 
 ```bash
 npm run dev
