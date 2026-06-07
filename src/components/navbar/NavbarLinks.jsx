@@ -2,7 +2,7 @@ import { useRef, useState, useEffect} from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { NAV_ITEMS } from "./constants/navItems";
-import { prefetchRoute } from "../../utils/prefetchUtils";
+import { prefetchRoute } from "../../utils/routePrefetch";
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
@@ -14,13 +14,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     if (href === "/events") {
       try {
         window.sessionStorage.removeItem("eventra:event-filters:v1");
-      } catch (err) {
+      } catch {
         // Ignored
       }
     } else if (href === "/hackathons") {
       try {
         window.sessionStorage.removeItem("eventra:hackathon-filters:v1");
-      } catch (err) {
+      } catch {
         // Ignored
       }
     }
@@ -30,9 +30,12 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   };
 
   const handlePrefetch = (href) => {
-    if (href === "/events")prefetchRoute(() => import("../../Pages/Events/EventsPage"), "explore");
-    if (href === "/events") prefetchRoute(() => import("../../Pages/Events/EventsPage"), "explore");
-    if (href === "/saved-events") prefetchRoute(() => import("../../Pages/SavedEventsPage"), "saved");
+    if (href === "/events") prefetchRoute("events");
+    if (href === "/dashboard") prefetchRoute("dashboard");
+    if (href === "/hackathons") prefetchRoute("hackathons");
+    if (href === "/projects") prefetchRoute("projects");
+    if (href === "/profile" || href === "/dashboard/profile") prefetchRoute("profile");
+    if (href === "/") prefetchRoute("home");
   };
 
   useEffect(() => {
@@ -87,7 +90,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
-          : "items-center gap-4 lg:gap-5 mx-2 lg:mx-4 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
+          : "items-center justify-start gap-2 min-w-max flex-nowrap overflow-visible"
       }`}
       aria-label={vertical ? "Mobile primary links" : "Primary links"}
     >
@@ -102,11 +105,11 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           return (
             <div
               key={item.name}
-              className={`relative group/nav flex items-center shrink-0 ${
+              className={`relative group/nav flex items-center ${
                 vertical ? "w-full flex-col items-start" : "flex-none"
               } ${!vertical && secondaryItemNames.includes(item.name) ? "hidden lg:flex" : ""}`}
             >
-              <div className="flex w-full items-center gap-0.5">
+              <div className={`flex w-full items-center gap-0.5 ${vertical ? "" : "justify-center"}`}>
                 <NavLink
                   to={item.href}
                   onClick={(e) => handleNavbarLinkClick(item.href, e)}
@@ -221,7 +224,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             onClick={(e) => handleNavbarLinkClick(item.href, e)}
             onMouseEnter={() => handlePrefetch(item.href)}
             className={({ isActive }) =>
-              getNavLinkClasses(isActive, secondaryItemNames.includes(item.name))
+              `${!vertical ? "flex-none min-w-max" : ""} ${getNavLinkClasses(isActive, secondaryItemNames.includes(item.name))}`
             }
           >
             <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">
