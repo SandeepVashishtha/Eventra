@@ -1,57 +1,57 @@
 {
   "app": {
     "name": "Eventra",
-    "tagline": "Your all-in-one event platform",
-    "loading": "Loading page...",
-    "backOnline": "Back online! Your connections have been restored and sync is complete.",
-    "offline": "You are currently offline. Running in secure local offline caching mode."
+    "tagline": "आपका ऑल-इन-वन इवेंट प्लेटफ़ॉर्म",
+    "loading": "पेज लोड हो रहा है...",
+    "backOnline": "वापस ऑनलाइन! आपके कनेक्शन बहाल हो गए हैं।",
+    "offline": "आप वर्तमान में ऑफ़लाइन हैं।"
   },
   "nav": {
-    "home": "Home",
-    "events": "Events",
-    "hackathons": "Hackathons",
-    "leaderboard": "Leaderboard",
-    "contributors": "Contributors",
-    "about": "About",
-    "contact": "Contact",
-    "dashboard": "Dashboard",
-    "admin": "Admin",
-    "signIn": "Sign In",
-    "signUp": "Sign Up",
-    "signOut": "Sign Out",
-    "profile": "Profile",
-    "settings": "Settings",
-    "projects": "Projects",
-    "networking": "Networking",
-    "saved": "Saved",
-    "community": "Community",
-    "more": "More",
-    "exploreEvents": "Explore Events",
-    "eventCalendar": "Event Calendar",
-    "scheduler": "Scheduler",
-    "communityEvents": "Community Events",
-    "contributorsGuide": "Contributors Guide",
+    "home": "होम",
+    "events": "इवेंट्स",
+    "hackathons": "हैकाथॉन",
+    "leaderboard": "लीडरबोर्ड",
+    "contributors": "योगदानकर्ता",
+    "about": "हमारे बारे में",
+    "contact": "संपर्क",
+    "dashboard": "डैशबोर्ड",
+    "admin": "एडमिन",
+    "signIn": "साइन इन",
+    "signUp": "साइन अप",
+    "signOut": "साइन आउट",
+    "profile": "प्रोफ़ाइल",
+    "settings": "सेटिंग्स",
+    "projects": "प्रोजेक्ट्स",
+    "networking": "नेटवर्किंग",
+    "saved": "सहेजे गए",
+    "community": "समुदाय",
+    "more": "और",
+    "exploreEvents": "इवेंट्स देखें",
+    "eventCalendar": "इवेंट कैलेंडर",
+    "scheduler": "शेड्यूलर",
+    "communityEvents": "सामुदायिक इवेंट्स",
+    "contributorsGuide": "योगदानकर्ता गाइड",
     "faq": "FAQ",
-    "getStarted": "Get Started",
-    "viewProfile": "View Profile",
-    "faqFull": "Frequently Asked Questions",
-    "expandSubmenu": "Expand {{name}} submenu",
-    "collapseSubmenu": "Collapse {{name}} submenu",
-    "mobilePrimaryLinks": "Mobile primary links",
-    "primaryLinks": "Primary links"
+    "getStarted": "शुरू करें",
+    "viewProfile": "प्रोफ़ाइल देखें",
+    "faqFull": "अक्सर पूछे जाने वाले प्रश्न",
+    "expandSubmenu": "{{name}} सबमेनू विस्तृत करें",
+    "collapseSubmenu": "{{name}} सबमेनू संकुचित करें",
+    "mobilePrimaryLinks": "मोबाइल प्राथमिक लिंक",
+    "primaryLinks": "प्राथमिक लिंक"
   },
   "auth": {
-    "email": "Email",
-    "password": "Password",
-    "confirmPassword": "Confirm Password",
-    "name": "Name",
-    "rememberMe": "Remember me",
-    "forgotPassword": "Forgot password?",
-    "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?",
-    "sessionExpired": "Session expired. Please log in again.",
-    "loginSuccess": "Welcome back!",
-    "signupSuccess": "Account created successfully!"
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "confirmPassword": "पासवर्ड की पुष्टि करें",
+    "name": "नाम",
+    "rememberMe": "मुझे याद रखें",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "noAccount": "खाता नहीं है?",
+    "hasAccount": "पहले से खाता है?",
+    "sessionExpired": "सत्र समाप्त। कृपया फिर से लॉग इन करें।",
+    "loginSuccess": "वापसी पर स्वागत है!",
+    "signupSuccess": "खाता सफलतापूर्वक बनाया गया!"
   },
   "validation": {
     "required": "This field is required",
@@ -115,28 +115,28 @@
     "featureFailed": "{{label}} failed to load"
   },
   "event": {
-    "create": "Create Event",
-    "edit": "Edit Event",
-    "delete": "Delete Event",
-    "register": "Register",
-    "registered": "Registered",
-    "details": "Event Details",
-    "date": "Date",
-    "time": "Time",
-    "location": "Location",
-    "category": "Category",
-    "description": "Description",
-    "organizer": "Organizer",
-    "price": "Price",
-    "free": "Free",
-    "noEvents": "No events found",
-    "search": "Search events...",
-    "filters": "Filters",
-    "clearFilters": "Clear Filters",
-    "viewMode": "View Mode",
-    "timeline": "Timeline",
-    "recommendations": "Recommendations for you",
-    "saved": "Saved Events"
+    "create": "इवेंट बनाएं",
+    "edit": "इवेंट संपादित करें",
+    "delete": "इवेंट हटाएं",
+    "register": "पंजीकरण",
+    "registered": "पंजीकृत",
+    "details": "इवेंट विवरण",
+    "date": "तिथि",
+    "time": "समय",
+    "location": "स्थान",
+    "category": "श्रेणी",
+    "description": "विवरण",
+    "organizer": "आयोजक",
+    "price": "मूल्य",
+    "free": "मुफ़्त",
+    "noEvents": "कोई इवेंट नहीं मिला",
+    "search": "इवेंट्स खोजें...",
+    "filters": "फ़िल्टर",
+    "clearFilters": "फ़िल्टर साफ़ करें",
+    "viewMode": "दृश्य मोड",
+    "timeline": "टाइमलाइन",
+    "recommendations": "आपके लिए सुझाव",
+    "saved": "सहेजे गए इवेंट्स"
   },
   "hackathon": {
     "title": "Hackathons",
@@ -152,99 +152,104 @@
     }
   },
   "common": {
-    "close": "Close",
-    "cancel": "Cancel",
-    "confirm": "Confirm",
-    "save": "Save",
-    "delete": "Delete",
-    "edit": "Edit",
-    "back": "Back",
-    "next": "Next",
-    "submit": "Submit",
-    "retry": "Retry",
-    "loading": "Loading...",
-    "search": "Search",
-    "noResults": "No results found",
-    "showMore": "Show more",
-    "showLess": "Show less",
-    "closeModal": "Close modal",
-    "yes": "Yes",
-    "no": "No",
-    "clearFilters": "Clear filters",
-    "previousPage": "Previous page",
-    "nextPage": "Next page"
+    "close": "बंद करें",
+    "cancel": "रद्द करें",
+    "confirm": "पुष्टि करें",
+    "save": "सहेजें",
+    "delete": "हटाएं",
+    "edit": "संपादित करें",
+    "back": "वापस",
+    "next": "अगला",
+    "submit": "जमा करें",
+    "retry": "पुनः प्रयास",
+    "loading": "लोड हो रहा है...",
+    "search": "खोजें",
+    "noResults": "कोई परिणाम नहीं",
+    "showMore": "और दिखाएं",
+    "showLess": "कम दिखाएं",
+    "closeModal": "मोडल बंद करें",
+    "yes": "हाँ",
+    "no": "नहीं",
+    "clearFilters": "फ़िल्टर साफ़ करें",
+    "previousPage": "पिछला पृष्ठ",
+    "nextPage": "अगला पृष्ठ"
   },
   "footer": {
-    "rights": "All rights reserved.",
-    "privacy": "Privacy Policy",
-    "terms": "Terms of Service",
-    "contact": "Contact Us",
-    "tagline": "Open-source event management for communities worldwide.",
+    "rights": "सर्वाधिकार सुरक्षित।",
+    "privacy": "गोपनीयता नीति",
+    "terms": "सेवा की शर्तें",
+    "contact": "संपर्क करें",
+    "tagline": "दुनिया भर के समुदायों के लिए ओपन-सोर्स इवेंट प्रबंधन।",
     "sections": {
-      "quickLinks": "Quick Links",
-      "community": "Community",
-      "support": "Support"
+      "quickLinks": "त्वरित लिंक",
+      "community": "समुदाय",
+      "support": "सहायता"
     },
     "links": {
-      "home": "Home",
-      "events": "Events",
-      "hackathons": "Hackathons",
-      "projects": "Projects",
-      "about": "About",
-      "createEvent": "Create Event",
-      "communityEvents": "Community Events",
-      "documentation": "Documentation",
-      "contributors": "Contributors",
-      "contributorsGuide": "Contributors Guide",
-      "leaderboard": "Leaderboard",
-      "helpCenter": "Help Center",
+      "home": "होम",
+      "events": "इवेंट्स",
+      "hackathons": "हैकाथॉन",
+      "projects": "प्रोजेक्ट्स",
+      "about": "हमारे बारे में",
+      "createEvent": "इवेंट बनाएं",
+      "communityEvents": "सामुदायिक इवेंट्स",
+      "documentation": "दस्तावेज़ीकरण",
+      "contributors": "योगदानकर्ता",
+      "contributorsGuide": "योगदानकर्ता गाइड",
+      "leaderboard": "लीडरबोर्ड",
+      "helpCenter": "सहायता केंद्र",
       "faq": "FAQ",
-      "contactUs": "Contact Us",
-      "feedback": "Feedback",
-      "apiDocs": "API Docs"
+      "contactUs": "संपर्क करें",
+      "feedback": "प्रतिक्रिया",
+      "apiDocs": "API दस्तावेज़"
     },
     "newsletter": {
-      "heading": "Subscribe to our newsletter",
-      "description": "Get the latest updates, event tips, and community news.",
-      "placeholder": "Enter your email",
-      "subscribe": "Subscribe",
-      "subscribing": "Subscribing...",
-      "privacy": "We respect your privacy. Unsubscribe at any time.",
-      "emailRequired": "Please enter your email address.",
-      "emailInvalid": "Please enter a valid email address.",
-      "success": "Thanks for subscribing!",
-      "error": "Something went wrong. Please try again."
+      "heading": "हमारे न्यूज़लेटर की सदस्यता लें",
+      "description": "नवीनतम अपडेट, इवेंट टिप्स और समुदाय समाचार प्राप्त करें।",
+      "placeholder": "अपना ईमेल दर्ज करें",
+      "subscribe": "सदस्यता लें",
+      "subscribing": "सदस्यता ली जा रही है...",
+      "privacy": "हम आपकी गोपनीयता का सम्मान करते हैं। कभी भी सदस्यता रद्द करें।",
+      "emailRequired": "कृपया अपना ईमेल पता दर्ज करें।",
+      "emailInvalid": "कृपया एक वैध ईमेल पता दर्ज करें।",
+      "success": "सदस्यता के लिए धन्यवाद!",
+      "error": "कुछ गलत हो गया। कृपया पुनः प्रयास करें।"
     },
-    "followUs": "Follow Us"
+    "followUs": "हमें फ़ॉलो करें"
   },
   "landing": {
     "hero": {
-      "title": "Discover & Join Amazing Events",
-      "subtitle": "The ultimate platform for event discovery, registration, and management.",
-      "description": "Connect with developers, learn new skills, and grow your network at curated tech events, hackathons, and workshops.",
-      "searchPlaceholder": "Search events, hackathons, projects...",
-      "searchResults": "Search results",
-      "resultsCount": "Results ({{count}})",
-      "noDescription": "No description available",
-      "noResults": "No results for",
-      "scrollToExplore": "Scroll to explore",
-      "platformStats": "Platform statistics",
-      "taglines": ["Build", "Learn", "Connect", "Grow"],
+      "title": "अद्भुत इवेंट्स खोजें और जुड़ें",
+      "subtitle": "इवेंट खोज, पंजीकरण और प्रबंधन के लिए अंतिम प्लेटफ़ॉर्म।",
+      "description": "डेवलपर्स से जुड़ें, नए कौशल सीखें, और क्यूरेटेड टेक इवेंट्स, हैकाथॉन और वर्कशॉप में अपना नेटवर्क बढ़ाएं।",
+      "searchPlaceholder": "इवेंट्स, हैकाथॉन, प्रोजेक्ट्स खोजें...",
+      "searchResults": "खोज परिणाम",
+      "resultsCount": "परिणाम ({{count}})",
+      "noDescription": "कोई विवरण उपलब्ध नहीं",
+      "noResults": "कोई परिणाम नहीं",
+      "scrollToExplore": "अन्वेषण के लिए स्क्रॉल करें",
+      "platformStats": "प्लेटफ़ॉर्म आंकड़े",
+      "taglines": [
+        "बनाएं",
+        "सीखें",
+        "जुड़ें",
+        "बढ़ें"
+      ],
       "phrases": [
-        "Amazing Tech Events",
-        "Exciting Hackathons Today",
-        "Innovative Dev Workshops",
-        "Cutting-Edge Tech Meetups"
+        "अद्भुत टेक इवेंट्स",
+        "आज के रोमांचक हैकाथॉन",
+        "नवीन डेव वर्कशॉप",
+        "अत्याधुनिक टेक मीटअप"
       ],
       "stats": {
-        "developers": "Developers Joined",
-        "events": "Events Organized",
-        "partners": "Partners & Sponsors"
+        "developers": "डेवलपर्स जुड़े",
+        "events": "इवेंट्स आयोजित",
+        "partners": "साझेदार और प्रायोजक"
       },
       "searchTypes": {
-        "Events": "Events",
-        "Hackathons": "Hackathons",
-        "Projects": "Projects"
+        "Events": "इवेंट्स",
+        "Hackathons": "हैकाथॉन",
+        "Projects": "प्रोजेक्ट्स"
       }
     },
     "stats": {
@@ -254,58 +259,58 @@
     }
   },
   "language": {
-    "switch": "Language",
+    "switch": "भाषा",
     "en": "English",
-    "hi": "Hindi",
-    "te": "Telugu",
-    "es": "Espa\u00f1ol"
+    "hi": "हिन्दी",
+    "te": "తెలుగు",
+    "es": "Español"
   },
   "chatbot": {
     "title": "Eventra Assist",
-    "subtitle": "Your event assistant",
-    "placeholder": "Ask about events, registration, hosting...",
-    "send": "Send message",
-    "open": "Open Eventra assistant",
-    "close": "Close assistant",
-    "expand": "Expand assistant",
-    "minimize": "Minimize assistant",
-    "clearHistory": "Clear conversation history?",
-    "clearWarning": "This action cannot be undone.",
-    "clearConfirm": "Yes, Clear",
-    "clearSuccess": "Conversation cleared!",
-    "typing": "Eventra Assist is typing...",
-    "quickPromptsLabel": "Quick prompts",
+    "subtitle": "आपका इवेंट सहायक",
+    "placeholder": "इवेंट्स, पंजीकरण, होस्टिंग के बारे में पूछें...",
+    "send": "संदेश भेजें",
+    "open": "Eventra सहायक खोलें",
+    "close": "सहायक बंद करें",
+    "expand": "सहायक विस्तृत करें",
+    "minimize": "सहायक छोटा करें",
+    "clearHistory": "बातचीत का इतिहास साफ़ करें?",
+    "clearWarning": "यह क्रिया पूर्ववत नहीं की जा सकती।",
+    "clearConfirm": "हाँ, साफ़ करें",
+    "clearSuccess": "बातचीत साफ़ हो गई!",
+    "typing": "Eventra Assist टाइप कर रहा है...",
+    "quickPromptsLabel": "त्वरित प्रॉम्प्ट",
     "prompts": {
-      "register": "How do I register for an event?",
-      "suggest": "Suggest an event for beginners",
-      "host": "How can I host a workshop?",
-      "help": "Where can I get platform help?"
+      "register": "मैं किसी इवेंट के लिए कैसे पंजीकरण करूं?",
+      "suggest": "शुरुआती के लिए कोई इवेंट सुझाएं",
+      "host": "मैं वर्कशॉप कैसे होस्ट कर सकता हूं?",
+      "help": "मुझे प्लेटफ़ॉर्म सहायता कहाँ मिलेगी?"
     },
     "knowledge": {
       "register": {
-        "answer": "To register, open the Events or Hackathons page, choose a card, and use the registration action. If the event requires an account, sign in first so Eventra can save your registration and check-in details.",
-        "browseEvents": "Browse events"
+        "answer": "पंजीकरण के लिए, इवेंट्स या हैकाथॉन पेज खोलें, कार्ड चुनें, और पंजीकरण बटन का उपयोग करें। यदि खाता आवश्यक है, तो पहले साइन इन करें।",
+        "browseEvents": "इवेंट्स देखें"
       },
       "suggest": {
-        "answer": "A good starting point is a workshop or beginner-friendly hackathon. Search by topic on the Events page, then compare format, date, tags, and location before registering."
+        "answer": "शुरुआती के लिए वर्कशॉप या हैकाथॉन एक अच्छी शुरुआत है। इवेंट्स पेज पर विषय से खोजें, फिर प्रारूप, तिथि और स्थान की तुलना करें।"
       },
       "host": {
-        "answer": "Organizers can create events from the dashboard after signing in. Add the event title, format, schedule, capacity, location or meeting details, then publish when the listing is ready."
+        "answer": "आयोजक साइन इन के बाद डैशबोर्ड से इवेंट बना सकते हैं। शीर्षक, प्रारूप, शेड्यूल, क्षमता और स्थान जोड़ें, फिर प्रकाशित करें।"
       },
       "help": {
-        "answer": "For platform questions, start with the FAQ. For account, registration, or technical problems, use Contact so the team has enough context to help."
+        "answer": "प्लेटफ़ॉर्म प्रश्नों के लिए FAQ से शुरू करें। खाता, पंजीकरण या तकनीकी समस्याओं के लिए संपर्क पेज का उपयोग करें।"
       },
-      "default": "I can help with event registration, recommendations, hosting guidance, and platform support. Try asking about the event you want to attend or what kind of workshop you are looking for.",
-      "exploreEvents": "Explore events"
+      "default": "मैं इवेंट पंजीकरण, सुझाव, होस्टिंग मार्गदर्शन और प्लेटफ़ॉर्म सहायता में मदद कर सकता हूं।",
+      "exploreEvents": "इवेंट्स देखें"
     },
     "actions": {
-      "events": "Events",
-      "hackathons": "Hackathons",
-      "dashboard": "Dashboard",
+      "events": "इवेंट्स",
+      "hackathons": "हैकाथॉन",
+      "dashboard": "डैशबोर्ड",
       "faq": "FAQ",
-      "contact": "Contact"
+      "contact": "संपर्क"
     },
-    "welcome": "Hi, I am Eventra Assist. Ask me about events, workshops, registration, hosting, or platform help."
+    "welcome": "नमस्ते, मैं Eventra Assist हूं। इवेंट्स, वर्कशॉप, पंजीकरण, होस्टिंग या प्लेटफ़ॉर्म सहायता के बारे में पूछें।"
   },
   "faq": {
     "pageTitle": "FAQ",
@@ -392,9 +397,9 @@
     "searchAriaLabel": "Search contributors by username",
     "sortBy": "Sort By",
     "sortOptions": {
-      "points": "Points (High \u2192 Low)",
-      "prs": "PRs (High \u2192 Low)",
-      "username": "Username (A \u2192 Z)"
+      "points": "Points (High → Low)",
+      "prs": "PRs (High → Low)",
+      "username": "Username (A → Z)"
     },
     "refreshAriaLabel": "Refresh leaderboard data",
     "refreshTitle": "Refresh data",
@@ -413,10 +418,10 @@
     "statusUpdated": "Updated: {{time}}",
     "statusRefreshed": "Refreshed: {{time}}",
     "liveStatusConnected": "Live",
-    "liveStatusReconnecting": "Reconnecting\u2026",
+    "liveStatusReconnecting": "Reconnecting…",
     "liveStatusDisconnected": "Offline",
     "liveStatusSrLabel": "Connection status: {{status}}",
-    "keyboardShortcuts": "/ to search \u2022 \u2190 \u2192 to navigate pages",
+    "keyboardShortcuts": "/ to search • ← → to navigate pages",
     "podiumPoints": "Points",
     "podiumPrs": "PRs",
     "podiumTitles": {
@@ -453,7 +458,14 @@
       "mergedPRs": "Merged Pull Requests",
       "totalPoints": "Total Arena Points"
     },
-    "exportHeaders": ["Rank", "Username", "Name", "Points", "PRs", "Profile"]
+    "exportHeaders": [
+      "Rank",
+      "Username",
+      "Name",
+      "Points",
+      "PRs",
+      "Profile"
+    ]
   },
   "eventRegistration": {
     "notFoundTitle": "Event Not Found",
@@ -542,7 +554,12 @@
     "modalInteractiveComposer": "Interactive Composer",
     "modalCharCount": "{{count}} characters",
     "modalQuickTags": "Quick Tags",
-    "modalTags": ["#GSSoC2026", "#OpenSource", "#DevLife", "#LearnToCode"],
+    "modalTags": [
+      "#GSSoC2026",
+      "#OpenSource",
+      "#DevLife",
+      "#LearnToCode"
+    ],
     "modalPostOnX": "Post on X",
     "modalShareLinkedIn": "Share LinkedIn",
     "modalCopyStory": "Copy Story to Clipboard",

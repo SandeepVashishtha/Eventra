@@ -308,6 +308,7 @@ export const API_ENDPOINTS = {
     BASE: buildApiUrl("/api/notifications"),
     ALL: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
+    DELETE: (id) => (id ? buildApiUrl(`/api/notifications/${id}`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
     PREFERENCES: buildApiUrl("/api/notifications/preferences"),
     PUSH_SUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions"),
