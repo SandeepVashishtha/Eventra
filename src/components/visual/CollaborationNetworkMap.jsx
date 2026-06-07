@@ -423,7 +423,7 @@ export default function CollaborationNetworkMap() {
                 <span className="mt-1 block text-sm text-slate-600">Developers</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
               <Code size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
@@ -432,7 +432,7 @@ export default function CollaborationNetworkMap() {
                 <span className="mt-1 block text-sm text-slate-600">Projects</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
               <GitBranch size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
@@ -441,7 +441,7 @@ export default function CollaborationNetworkMap() {
                 <span className="mt-1 block text-sm text-slate-600">Connections</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
               <TrendingUp size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
@@ -613,7 +613,7 @@ export default function CollaborationNetworkMap() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.92, y: 8 }}
                   transition={{ duration: 0.18, ease: "easeOut" }}
-                  className={`absolute w-70 z-50 bg-white p-5 m-4 shadow-lg rounded-lg ${pinnedHub ? "pinned" : ""}`}
+                  className={`absolute w-70 z-50 bg-white dark:bg-slate-900 p-5 m-4 shadow-lg rounded-lg ${pinnedHub ? "pinned" : ""}`}
                   style={getPopupStyle(activeHub || pinnedHub)}
                 >
                   {/* Close button for pinned */}
@@ -659,7 +659,7 @@ export default function CollaborationNetworkMap() {
 
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="bg-slate-50 rounded-lg p-3">
+                    <div className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
                       <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 flex-shrink-0" />
                         <span className="mt-1 block text-sm text-slate-600">Developers</span>
@@ -668,7 +668,7 @@ export default function CollaborationNetworkMap() {
                           {(activeHub || pinnedHub).devs.toLocaleString()}
                       </h4>
                     </div>
-                    <div className="bg-slate-50 rounded-lg p-3">
+                    <div className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
                       <div className="flex items-center gap-2">
                         <Code className="w-4 h-4 flex-shrink-0" />
                         <span className="mt-1 block text-sm text-slate-600">Projects</span>
@@ -682,7 +682,7 @@ export default function CollaborationNetworkMap() {
                   {/* Categories */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {(activeHub || pinnedHub).categories.map((cat) => (
-                      <span key={cat} className="px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-600">
+                      <span key={cat} className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md px-3 py-1 shadow-lg">
                         {cat}
                       </span>
                     ))}
