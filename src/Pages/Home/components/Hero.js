@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -67,20 +68,6 @@ const allSearchItems = [
   ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
 ];
 
-const phrases = [
-  "Amazing Tech Events",
-  "Exciting Hackathons Today",
-  "Innovative Dev Workshops",
-  "Cutting-Edge Tech Meetups",
-];
-
-const TAGLINE_TEXTS = [
-  "Build",
-  "Learn",
-  "Connect",
-  "Grow",
-];
-
 const SEARCH_RESULT_LIMIT = 8;
 
 const SEARCH_ROUTES = {
@@ -114,8 +101,18 @@ const getResultIcon = (type) => {
 };
 
 const Hero = () => {
+  const { t, i18n } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
   const controls = useAnimation();
+
+  const phrases = useMemo(
+    () => t("landing.hero.phrases", { returnObjects: true }),
+    [t, i18n.language]
+  );
+  const TAGLINE_TEXTS = useMemo(
+    () => t("landing.hero.taglines", { returnObjects: true }),
+    [t, i18n.language]
+  );
 
   const SEARCH_ROUTES = {
     event: "/events",
@@ -183,12 +180,17 @@ const Hero = () => {
   }, []);
 
   useEffect(() => {
+    setPhraseIndex(0);
+  }, [phrases]);
+
+  useEffect(() => {
+    if (!Array.isArray(phrases) || phrases.length === 0) return undefined;
     const interval = setInterval(() => {
       setPhraseIndex((prev) => (prev + 1) % phrases.length);
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [phrases]);
 
   useEffect(() => {
     controls.start("show");
@@ -249,26 +251,29 @@ const Hero = () => {
     { size: 34, pos: { top: "48%", left: "80%" }, light: "#eab308", dark: "#fcd34d" },
   ];
 
-  const HERO_STATS = [
-  {
-    value: 1500,
-    label: "Developers Joined",
-    suffix: "+",
-    icon: Users,
-  },
-  {
-    value: 75,
-    label: "Events Organized",
-    suffix: "+",
-    icon: Calendar,
-  },
-  {
-    value: 30,
-    label: "Partners & Sponsors",
-    suffix: "+",
-    icon: Handshake,
-  },
-];
+  const HERO_STATS = useMemo(
+    () => [
+      {
+        value: 1500,
+        label: t("landing.hero.stats.developers"),
+        suffix: "+",
+        icon: Users,
+      },
+      {
+        value: 75,
+        label: t("landing.hero.stats.events"),
+        suffix: "+",
+        icon: Calendar,
+      },
+      {
+        value: 30,
+        label: t("landing.hero.stats.partners"),
+        suffix: "+",
+        icon: Handshake,
+      },
+    ],
+    [t, i18n.language]
+  );
 
   const primaryBtn = "relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900";
 
@@ -364,8 +369,7 @@ const Hero = () => {
             variants={fadeUp}
             className="mx-auto mb-8 mt-4 max-w-3xl text-base leading-relaxed text-gray-600 sm:mb-10 sm:mt-6 sm:text-lg md:text-lg"
           >
-            Connect with developers, learn new skills, and grow your network at curated tech events, hackathons, and
-            workshops.
+            {t("landing.hero.description")}
           </motion.p>
 
           <motion.div variants={fadeUp} className="mx-auto mb-10 w-full max-w-2xl">
@@ -374,7 +378,7 @@ const Hero = () => {
                 <ModernSearchInput
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Search events, hackathons, projects..."
+                  placeholder={t("landing.hero.searchPlaceholder")}
                   onFocus={() => searchTerm && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
                   className="border-0 bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0"
@@ -388,13 +392,13 @@ const Hero = () => {
                         transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
                         className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg"
                         role="listbox"
-                        aria-label="Search results"
+                        aria-label={t("landing.hero.searchResults")}
                       >
                         <div className="p-3">
                           {searchResults.length > 0 ? (
                             <>
                               <div className="px-2 py-1.5 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Results ({searchResults.length})
+                                {t("landing.hero.resultsCount", { count: searchResults.length })}
                               </div>
                               <div className="space-y-1">
                                 {searchResults.map((result, idx) => (
@@ -418,13 +422,15 @@ const Hero = () => {
                                           {result.item.title}
                                         </h4>
                                         <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-slate-800 dark:text-gray-300">
-                                          {result.item.searchType}
+                                          {t(`landing.hero.searchTypes.${result.item.searchType}`, {
+                                            defaultValue: result.item.searchType,
+                                          })}
                                         </span>
                                       </div>
                                       <p className="line-clamp-1 text-xs text-gray-500 dark:text-gray-400">
                                         {result.item.description
                                           ? `${result.item.description.substring(0, 70)}...`
-                                          : "No description available"}
+                                          : t("landing.hero.noDescription")}
                                       </p>
                                     </div>
                                     <ExternalLink
@@ -442,7 +448,7 @@ const Hero = () => {
                               exit={{ opacity: 0, y: 8 }}
                               className="py-8 text-center text-sm text-gray-500 dark:text-gray-400"
                             >
-                              No results for{" "}
+                              {t("landing.hero.noResults")}{" "}
                               <span className="font-medium text-gray-700 dark:text-gray-200">&quot;{searchTerm}&quot;</span>
                             </motion.div>
                           )}
@@ -462,7 +468,7 @@ const Hero = () => {
                 style={{ y: isTouch || prefersReducedMotion ? 0 : yStats, willChange: "transform" }}
                 className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5"
                 role="region"
-                aria-label="Platform statistics"
+                aria-label={t("landing.hero.platformStats")}
               >
                 {HERO_STATS.map((stat) => (
                   <motion.div
@@ -506,7 +512,7 @@ const Hero = () => {
         className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-gray-500 dark:text-gray-400 md:flex"
         aria-hidden="true"
       >
-        <span className="text-xs font-medium">Scroll to explore</span>
+        <span className="text-xs font-medium">{t("landing.hero.scrollToExplore")}</span>
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
