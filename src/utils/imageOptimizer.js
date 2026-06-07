@@ -22,7 +22,7 @@
  * @returns {string}
  */
 export const getOptimizedImageUrl = (originalUrl, options = {}) => {
-  if (!originalUrl || typeof originalUrl !== "string") return originalUrl;
+  if (!originalUrl || typeof originalUrl !== "string") return "";
 
   // If already a Cloudinary URL, return as is
   if (originalUrl.includes("res.cloudinary.com")) {
