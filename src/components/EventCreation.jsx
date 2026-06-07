@@ -184,6 +184,7 @@ const EventCreation = () => {
                   </button>
                   <p className="text-center text-sm text-gray-500 mt-4 italic">
                     Progress is auto-saved as you type ✨
+                    {lastSavedAt && <span className="block text-xs text-gray-400 mt-1">Last saved {formatDraftAge(lastSavedAt)}</span>}
                   </p>
                 </div>
               </form>

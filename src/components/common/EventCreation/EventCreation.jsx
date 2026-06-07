@@ -17,6 +17,8 @@ import LocationFields from "./components/LocationFields";
 import RegistrationDatesFields from "./components/RegistrationDatesFields";
 import TagsInput from "./components/TagsInput";
 import StatsSection from "./components/StatsSection";
+import { useAutoSaveDraft } from "../../../hooks/useAutoSaveDraft";
+import { formatDraftAge } from "../../../utils/eventDraftUtils";
 import {
   DRAFT_KEY,
   CREATION_STEPS,
@@ -80,8 +82,9 @@ const EventCreation = () => {
   const [newTag, setNewTag] = useState("");
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
   const [restoreDraftMessage, setRestoreDraftMessage] = useState(
-    "A previously saved event draft was found. Would you like to restore it?"
+    `A previously saved event draft was found${lastSavedAt ? " (saved " + formatDraftAge(lastSavedAt) + ")" : ""}. Would you like to restore it?`
   );
   const location = useLocation();
 
@@ -336,7 +339,8 @@ const EventCreation = () => {
     delete saveable.banner;
     delete saveable.bannerPreview;
 
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ data: saveable, savedAt: new Date().toISOString() }));
+    setLastSavedAt(new Date().toISOString());
   }, [formData, isDraftLoaded]);
 
   useEffect(() => {
