@@ -152,6 +152,18 @@ REACT_APP_API_URL=http://localhost:8080/api
 
 ```
 
+## Project Architecture
+
+Below is the high-level architecture of Eventra:
+
+```mermaid
+graph TD
+    Client[Client: React/Vite] --> Assets[Assets: public/]
+    Client --> State[State: Context/Hooks]
+    Client --> API[API: Serverless Helpers]
+    API --> Backend[Backend: Spring Boot API]
+```
+
 ## Project Structure
 
 The repository is organized into modular frontend components, contexts, configuration files, and utility helpers.
