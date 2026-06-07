@@ -1,4 +1,4 @@
-import { apiUtils } from "../config/api";
+import { apiUtils } from "../config/api.js";
 
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRIES = 1;
