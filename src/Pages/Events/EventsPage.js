@@ -17,16 +17,15 @@ import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
-import {
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
   getDefaultFilters,
-  hasActiveFilters as hasActiveAdvancedFilters,
+  hasActiveAdvancedFilters,
   normalizeAdvancedFilters,
   serializeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
-
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
 const ExploreEventsSkeleton = () => (
