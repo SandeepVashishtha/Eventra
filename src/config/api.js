@@ -1,8 +1,8 @@
 import axios from "axios";
-import { ENV } from "./env";
-import { syncServerTimeFromHeader } from "../utils/timeSync";
-import { getCSRFToken } from "../utils/csrfToken";
-import { logger } from "../utils/logger";
+import { ENV } from "./env.js";
+import { syncServerTimeFromHeader } from "../utils/timeSync.js";
+import { getCSRFToken } from "../utils/csrfToken.js";
+import { logger } from "../utils/logger.js";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -221,6 +221,17 @@ API.interceptors.request.use((config) => {
       config.headers["X-CSRF-Token"] = csrf;
     } else if (process.env.NODE_ENV !== "production") {
       console.warn("[CSRF] Token missing for mutating request:", method, config.url);
+    }
+    
+    // Add idempotency key for critical state mutations
+    if (!config.headers["Idempotency-Key"]) {
+      config.headers["Idempotency-Key"] = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
     }
   }
 
