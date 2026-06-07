@@ -119,25 +119,25 @@ Follow these steps to set up and run the frontend application on your local mach
 
 ### Installation & Setup
 
-1.  **Clone the Repository:**
+1.**Clone the Repository:**
 
-    ```bash
-    git clone https://github.com/SandeepVashishtha/Eventra.git
-    cd Eventra
-    ```
+  ``bash
+  git clone https://github.com/SandeepVashishtha/Eventra.git
+  cd Eventra
+  ```
 
-2.  **Install Dependencies:**
+2.**Install Dependencies:**
 
-    ```bash
+    ``bash
     npm install
     ```
 
-3.  **Configure Environment Variables:**
+3.**Configure Environment Variables:**
     Set up your local `.env` file as described in the [Environment Variables](#environment-variables) section. The backend server runs on port `8080` by default.
 
 > **Note:** For the backend setup instructions, please refer to the [backend repository's README](https://github.com/SandeepVashishtha/Eventra-Backend).
 
-4.  **Run the Development Server:**
+4.**Run the Development Server:**
     ```bash
     npm start
     ```
