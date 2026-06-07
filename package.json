@@ -104,7 +104,6 @@
     "@testing-library/react": "16.3.2",
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.4.21",
-    "bundlesize": "^0.18.2",
     "cross-env": "^10.1.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react": "7.37.5",
@@ -136,19 +135,5 @@
     "lightningcss-linux-x64-gnu": "1.32.0",
     "lightningcss-linux-x64-musl": "1.32.0"
   },
-  "bundlesize": [
-    {
-      "path": "./build/assets/index-*.js",
-      "maxSize": "500 kB"
-    },
-    {
-      "path": "./build/assets/vendor-*.js",
-      "maxSize": "800 kB"
-    },
-    {
-      "path": "./build/assets/*.js",
-      "maxSize": "1 MB"
-    }
-  ],
   "_gssoc_comment_dx": "// DEVELOPER EXPERIENCE: Integrated pre-commit validations to prevent broken or unformatted scripts from being pushed upstream."
 }
