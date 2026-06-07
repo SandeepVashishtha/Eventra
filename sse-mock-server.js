@@ -22,6 +22,7 @@ const loadJson = (relativePath) => {
 const MOCK_EVENT_CATALOG = loadJson("src/Pages/Events/eventsMockData.json");
 const MOCK_PROJECT_CATALOG = loadJson("src/Pages/Projects/mockProjectsData.json");
 
+
 // Updated default fallback port to 8080 to match your api.js default config
 const PORT = parseInt(process.env.SSE_MOCK_PORT || process.env.PORT || "8080", 10);
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "http://localhost:3000";
@@ -129,7 +130,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Access-Control-Allow-Credentials": "true",
     });
@@ -420,6 +421,61 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
+  // Notifications REST API
+  if (pathname === "/api/notifications" && req.method === "GET") {
+    return jsonResponse(res, 200, notificationStore);
+  }
+
+  const readMatch = pathname.match(/^\/api\/notifications\/([^/]+)\/read$/);
+  if (readMatch && (req.method === "PUT" || req.method === "PATCH")) {
+    const id = decodeURIComponent(readMatch[1]);
+    notificationStore = notificationStore.map((item) =>
+      item.id === id ? { ...item, isRead: true } : item
+    );
+    return jsonResponse(res, 200, {
+      message: "Notification marked as read",
+      notificationId: id,
+    });
+  }
+
+  if (pathname === "/api/notifications/read-all" && (req.method === "PUT" || req.method === "PATCH")) {
+    notificationStore = notificationStore.map((item) => ({ ...item, isRead: true }));
+    return jsonResponse(res, 200, { message: "All notifications marked as read" });
+  }
+
+  const deleteMatch = pathname.match(/^\/api\/notifications\/([^/]+)$/);
+  if (deleteMatch && req.method === "DELETE") {
+    const id = decodeURIComponent(deleteMatch[1]);
+    notificationStore = notificationStore.filter((item) => item.id !== id);
+    return jsonResponse(res, 200, { message: "Notification deleted", notificationId: id });
+  }
+
+  if (pathname === "/stream/notifications" || pathname === "/api/stream/notifications") {
+    sseHeaders(res);
+    log("[SSE] notifications client connected");
+
+    notificationSseClients.add(res);
+
+    // Send current unread snapshot
+    const unread = notificationStore.filter((item) => !item.isRead).slice(0, 5);
+    if (unread.length > 0) {
+      send(res, { notifications: unread });
+    }
+
+    const interval = setInterval(() => {
+      const notification = pushLiveNotification();
+      send(res, { notification });
+      log(`[SSE] notification pushed: ${notification.title}`);
+    }, 20000);
+
+    req.on("close", () => {
+      clearInterval(interval);
+      notificationSseClients.delete(res);
+      log("[SSE] notifications client disconnected");
+    });
+    return;
+  }
+
   if (pathname === "/stream/leaderboard" || pathname === "/api/stream/leaderboard") {
     sseHeaders(res);
     log("[SSE] leaderboard client connected");
@@ -480,6 +536,11 @@ server.listen(PORT, () => {
   console.log(`\n[Dev Only] SSE mock server running on port ${PORT}`);
   console.log(`Allowed Origin: ${ALLOWED_ORIGIN}`);
   console.log("Streams and Endpoints available:");
+  console.log(`  GET http://localhost:${PORT}/api/notifications`);
+  console.log(`  PUT http://localhost:${PORT}/api/notifications/:id/read`);
+  console.log(`  PUT http://localhost:${PORT}/api/notifications/read-all`);
+  console.log(`  DELETE http://localhost:${PORT}/api/notifications/:id`);
+  console.log(`  GET http://localhost:${PORT}/api/stream/notifications`);
   console.log(`  GET http://localhost:${PORT}/api/users/profile`);
   console.log(`  GET http://localhost:${PORT}/api/stream/leaderboard`);
   console.log(`  GET http://localhost:${PORT}/api/stream/analytics`);

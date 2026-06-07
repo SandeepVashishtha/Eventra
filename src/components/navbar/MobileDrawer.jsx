@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { LogIn, UserPlus, Info, HelpCircle, Sun, Moon, MousePointer } from "lucide-react";
+
 import NavbarLinks from "./NavbarLinks";
 import LanguageSelector from "../LanguageSelector";
 import { useTheme } from "../../context/ThemeContext";
@@ -21,6 +21,7 @@ const MobileDrawer = ({
   const closeButtonRef = useRef(null);
   const isActive = (path) => location.pathname === path;
   const { isDarkMode, toggleTheme } = useTheme();
+  const { unreadCount } = useNotification();
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -160,6 +161,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   {t("nav.viewProfile")}
+
                 </Link>
                 <Link
                   to="/about"
