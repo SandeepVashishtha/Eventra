@@ -1,6 +1,8 @@
 import {
   Home,
   Calendar,
+  CalendarDays,
+  Clock,
   FolderKanban,
   Users,
   Trophy,
@@ -22,6 +24,23 @@ export const NAV_ITEMS = [
     name: "Events",
     href: "/events",
     icon: <Calendar className="w-5 h-5" />,
+    subItems: [
+      {
+        name: "Explore Events",
+        href: "/events",
+        icon: <Calendar className="w-5 h-5" />,
+      },
+      {
+        name: "Event Calendar",
+        href: "/calendar",
+        icon: <CalendarDays className="w-5 h-5" />,
+      },
+      {
+        name: "Scheduler",
+        href: "/events/scheduler",
+        icon: <Clock className="w-5 h-5" />,
+      },
+    ],
   },
   {
     name: "Hackathons",
