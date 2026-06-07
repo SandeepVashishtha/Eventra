@@ -1,145 +1,68 @@
-import CryptoJS from "crypto-js";
+const STORAGE_KEY = "eventra_device_fingerprint";
 
-/**
- * Generates a lightweight, stable cryptographic browser fingerprint using
- * non-invasive client attributes (screen info, navigator metadata, and an
- * offscreen canvas rendering hash). The result is salted and hashed with
- * SHA-256.
- *
- * SALT STRATEGY
- * ─────────────
- * The salt is derived from `window.location.origin` so that each deployment
- * (production, staging, localhost) produces a different fingerprint and
- * rainbow-table precomputation does not transfer across deployments.
- *
- * MEMOIZATION
- * ────────────
- * The previous implementation ran the full canvas allocation and GPU-rendered
- * draw on every call. `getDeviceFingerprint()` is invoked from `saveSession()`
- * in `SessionRecoveryContext.js` which fires up to once per second during user
- * activity. Each call created a 180×30 canvas element, called `fillRect`,
- * `fillText`, and `toDataURL()` — all synchronous main-thread GPU operations.
- *
- * The device fingerprint is stable for the lifetime of the page: the user's
- * screen resolution, user-agent, and canvas rendering do not change mid-session.
- * Memoizing after the first computation reduces the per-call cost from O(GPU)
- * to O(1) for all subsequent calls without changing the fingerprint value.
- *
- * The cache is module-level so it persists for the page lifetime and is reset
- * on navigation (new page load reinitialises the module).
- *
- * @returns {string} SHA-256 hex string representing the device fingerprint.
- */
+const hashString = (input) => {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash << 5) - hash + input.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+};
 
-let _memoizedFingerprint = null;
+export const parseDeviceInfo = (userAgent = navigator.userAgent) => {
+  const ua = String(userAgent);
+  let browser = "Unknown Browser";
+  let os = "Unknown OS";
+  let deviceType = "desktop";
+
+  if (/Edg\//i.test(ua)) browser = "Edge";
+  else if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) browser = "Chrome";
+  else if (/Firefox\//i.test(ua)) browser = "Firefox";
+  else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) browser = "Safari";
+  else if (/Opera|OPR\//i.test(ua)) browser = "Opera";
+
+  if (/Windows NT/i.test(ua)) os = "Windows";
+  else if (/Mac OS X/i.test(ua)) os = "macOS";
+  else if (/Android/i.test(ua)) os = "Android";
+  else if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
+  else if (/Linux/i.test(ua)) os = "Linux";
+
+  if (/Mobile|Android/i.test(ua) && !/iPad/i.test(ua)) deviceType = "mobile";
+  else if (/iPad|Tablet/i.test(ua)) deviceType = "tablet";
+
+  return { browser, os, deviceType, userAgent: ua };
+};
 
 export const getDeviceFingerprint = () => {
-  // Return cached value if already computed this page load
-  if (_memoizedFingerprint !== null) {
-    return _memoizedFingerprint;
+  try {
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (cached) return cached;
+  } catch {
+    // ignore storage errors
   }
 
-  // Graceful fallback for server-side rendering or unit testing (Node.js)
-  if (typeof window === "undefined" || typeof document === "undefined") {
-    const fallbackData = "eventra-node-test-environment-fingerprint-fallback";
-    _memoizedFingerprint = CryptoJS.SHA256(fallbackData).toString();
-    return _memoizedFingerprint;
-  }
+  const info = parseDeviceInfo();
+  const screenPart = typeof window !== "undefined"
+    ? `${window.screen?.width || 0}x${window.screen?.height || 0}`
+    : "unknown";
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown";
+  const fingerprint = hashString(
+    `${info.os}|${info.browser}|${info.deviceType}|${screenPart}|${timezone}`,
+  );
 
   try {
-    const screenInfo = `${window.screen?.width || 0}x${window.screen?.height || 0}x${window.screen?.colorDepth || 0}`;
-    const navInfo = `${window.navigator?.userAgent || ""}_${window.navigator?.language || ""}_${window.navigator?.hardwareConcurrency || 0}`;
-
-    // Offscreen canvas fingerprint — captures GPU/font rendering subtleties.
-    // Created once here and discarded; the resulting hash is memoized so
-    // no canvas element is allocated on subsequent calls.
-    let canvasHash = "";
-    try {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        canvas.width = 180;
-        canvas.height = 30;
-        ctx.textBaseline = "top";
-        ctx.font = "12px 'Arial'";
-        ctx.fillStyle = "#6366f1";
-        ctx.fillRect(5, 5, 50, 10);
-        ctx.fillStyle = "#ec4899";
-        ctx.fillText("Eventra-Secure-Session-Rec", 10, 15);
-        canvasHash = canvas.toDataURL();
-      }
-    } catch {
-      // Blocked by canvas privacy guards (Tor, some extensions) — continue without canvas
-    }
-
-    const fingerprintRaw = `${screenInfo}_${navInfo}_${canvasHash}`;
-
-    // Per-origin salt: different for each deployment and never a static literal
-    // in the bundle. Combining the origin with a domain-specific namespace
-    // avoids salt collisions if two deployments share the same hostname root.
-    const salt = `eventra:fingerprint:${window.location.origin}`;
-
-    _memoizedFingerprint = CryptoJS.SHA256(fingerprintRaw + salt).toString();
-    return _memoizedFingerprint;
+    localStorage.setItem(STORAGE_KEY, fingerprint);
   } catch {
-    // Ultimate fallback — still origin-scoped so cross-origin replay is harder
-    const fallbackSalt =
-      typeof window !== "undefined" ? window.location.origin : "eventra-fallback";
-    _memoizedFingerprint = CryptoJS.SHA256(
-      `eventra-fingerprint-fallback:${fallbackSalt}`,
-    ).toString();
-    return _memoizedFingerprint;
+    // ignore storage errors
   }
+
+  return fingerprint;
 };
 
-let _memoizedFastFingerprint = null;
-
-/**
- * Generates a faster device fingerprint without using GPU canvas rendering.
- * Useful when performance is critical and high uniqueness isn't required.
- *
- * @returns {string} SHA-256 hex string representing the basic device fingerprint.
- */
-export const getFastFingerprint = () => {
-  if (_memoizedFastFingerprint !== null) {
-    return _memoizedFastFingerprint;
-  }
-
-  if (typeof window === "undefined" || typeof document === "undefined") {
-    _memoizedFastFingerprint = CryptoJS.SHA256("eventra-fast-fingerprint-fallback").toString();
-    return _memoizedFastFingerprint;
-  }
-
-  try {
-    const screenInfo = `${window.screen?.width || 0}x${window.screen?.height || 0}x${window.screen?.colorDepth || 0}`;
-    const navInfo = `${window.navigator?.userAgent || ""}_${window.navigator?.language || ""}_${window.navigator?.hardwareConcurrency || 0}`;
-    const salt = `eventra:fast-fingerprint:${window.location.origin}`;
-    _memoizedFastFingerprint = CryptoJS.SHA256(`${screenInfo}_${navInfo}_${salt}`).toString();
-    return _memoizedFastFingerprint;
-  } catch {
-    _memoizedFastFingerprint = CryptoJS.SHA256("eventra-fast-fingerprint-ultimate-fallback").toString();
-    return _memoizedFastFingerprint;
-  }
-};
-
-/**
- * Clears the memoized fingerprint. Intended for use in tests only so each
- * test starts with a fresh computation.
- *
- * @internal
- */
-export const _clearFingerprintCache = () => {
-  _memoizedFingerprint = null;
-  _memoizedFastFingerprint = null;
-};
-
-/**
- * Returns the per-origin salt string used when computing fingerprints.
- * Exported only for testing; do not use in application code.
- *
- * @returns {string}
- */
-export const _getFingerprintSalt = () => {
-  if (typeof window === "undefined") return "eventra:fingerprint:test";
-  return `eventra:fingerprint:${window.location.origin}`;
+export const getDeviceMetadata = () => {
+  const info = parseDeviceInfo();
+  return {
+    ...info,
+    deviceFingerprint: getDeviceFingerprint(),
+  };
 };

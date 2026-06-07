@@ -8,6 +8,15 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
+import {
+  createSession,
+  getUserSessions,
+  touchSession,
+  revokeSession,
+  revokeAllSessions,
+  cleanupExpiredSessions,
+} from "./api/lib/sessionStore.js";
+import { getAuthenticatedUserId, getCurrentSessionId } from "./api/lib/authUtils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -129,8 +138,8 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Session-Id, X-User-Id, X-Eventra-User-Id",
       "Access-Control-Allow-Credentials": "true",
     });
     res.end();
@@ -150,9 +159,109 @@ const server = http.createServer(async (req, res) => {
     });
     res.end(JSON.stringify({
       success: true,
-      user: { id: "mock-dev-123", name: "Sadwika", role: "developer" }
+      user: { id: "mock-dev-123", name: "Sadwika", role: "developer", email: "dev@eventra.local" }
     }));
     return;
+  }
+
+  // Multi-device session management
+  if (pathname === "/api/sessions" && (req.method === "GET" || req.method === "POST")) {
+    cleanupExpiredSessions();
+    const userId = getAuthenticatedUserId(req) || "mock-dev-123";
+    const currentSessionId = getCurrentSessionId(req);
+
+    if (req.method === "GET") {
+      const sessions = getUserSessions(userId, currentSessionId);
+      return jsonResponse(res, 200, { sessions, currentSessionId });
+    }
+
+    const body = await getRequestBody(req);
+
+    if (body.action === "heartbeat" && body.sessionId) {
+      const updated = touchSession(body.sessionId);
+      if (!updated || String(updated.userId) !== String(userId)) {
+        return jsonResponse(res, 404, { message: "Session not found." });
+      }
+      return jsonResponse(res, 200, { session: { ...updated, isCurrent: true } });
+    }
+
+    const session = createSession(userId, {
+      sessionId: body.sessionId,
+      userAgent: body.userAgent || req.headers["user-agent"],
+      deviceFingerprint: body.deviceFingerprint,
+      browser: body.browser,
+      os: body.os,
+      deviceType: body.deviceType,
+    }, req);
+
+    return jsonResponse(res, 201, {
+      session: { ...session, isCurrent: true },
+      notifyNewDevice: session.suspicious,
+    });
+  }
+
+  if (pathname === "/api/sessions/logout-all" && req.method === "DELETE") {
+    const userId = getAuthenticatedUserId(req) || "mock-dev-123";
+    const currentSessionId = getCurrentSessionId(req);
+    const { revokedCount } = revokeAllSessions(userId, currentSessionId);
+    return jsonResponse(res, 200, {
+      revoked: true,
+      revokedCount,
+      keptCurrentSession: Boolean(currentSessionId),
+    });
+  }
+
+  const sessionIdMatch = pathname.match(/^\/api\/sessions\/([^/]+)$/);
+  if (sessionIdMatch && req.method === "DELETE") {
+    const userId = getAuthenticatedUserId(req) || "mock-dev-123";
+    const sessionId = decodeURIComponent(sessionIdMatch[1]);
+    const currentSessionId = getCurrentSessionId(req);
+    const result = revokeSession(sessionId, userId);
+
+    if (!result.ok) {
+      return jsonResponse(res, 404, { message: "Session not found." });
+    }
+
+    return jsonResponse(res, 200, {
+      revoked: true,
+      sessionId,
+      revokedCurrentSession: sessionId === currentSessionId,
+    });
+  }
+
+  // Mock auth login — creates a session for local development
+  if (pathname === "/api/auth/login" && req.method === "POST") {
+    const body = await getRequestBody(req);
+    const email = body.usernameOrEmail || body.email || "dev@eventra.local";
+    const userId = "mock-dev-123";
+    const token = jwt.sign(
+      { sub: userId, email, role: "ATTENDEE" },
+      JWT_SECRET,
+      { expiresIn: "7d" },
+    );
+
+    const session = createSession(userId, {
+      userAgent: req.headers["user-agent"],
+      deviceFingerprint: body.deviceFingerprint,
+    }, req);
+
+    return jsonResponse(res, 200, {
+      message: "Login successful",
+      token,
+      user: {
+        id: userId,
+        email,
+        firstName: "Sadwika",
+        lastName: "Dev",
+        role: "ATTENDEE",
+        roles: ["ATTENDEE"],
+      },
+      sessionId: session.id,
+    });
+  }
+
+  if (pathname === "/api/auth/logout" && req.method === "POST") {
+    return jsonResponse(res, 200, { message: "Logged out successfully" });
   }
 
   // Get all events (paginated Spring-style response)
@@ -481,6 +590,11 @@ server.listen(PORT, () => {
   console.log(`Allowed Origin: ${ALLOWED_ORIGIN}`);
   console.log("Streams and Endpoints available:");
   console.log(`  GET http://localhost:${PORT}/api/users/profile`);
+  console.log(`  GET http://localhost:${PORT}/api/sessions`);
+  console.log(`  POST http://localhost:${PORT}/api/sessions`);
+  console.log(`  DELETE http://localhost:${PORT}/api/sessions/:id`);
+  console.log(`  DELETE http://localhost:${PORT}/api/sessions/logout-all`);
+  console.log(`  POST http://localhost:${PORT}/api/auth/login`);
   console.log(`  GET http://localhost:${PORT}/api/stream/leaderboard`);
   console.log(`  GET http://localhost:${PORT}/api/stream/analytics`);
   console.log(`  GET http://localhost:${PORT}/api/events`);

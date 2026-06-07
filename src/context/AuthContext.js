@@ -9,6 +9,7 @@ import {
 } from "react";
 import { setOnUnauthorizedHandler, setAuthToken } from "../config/api";
 import { authService } from "../services/authService";
+import { sessionService, getStoredSessionId } from "../services/sessionService";
 import { userService } from "../services/userService";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
 import { syncSecureStorage } from "../utils/secureStorage";
@@ -53,6 +54,7 @@ export const AuthProvider = ({ children }) => {
     setAuthToken(null);
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     syncSecureStorage.removeItem("user");
+    sessionService.clearLocalSession();
     return true;
   }, []);
 
@@ -154,6 +156,7 @@ export const AuthProvider = ({ children }) => {
           if (!isMountedRef.current) return;
           setToken(sessionToken || "cookie-managed");
           setUser(sessionUser);
+          sessionService.register().catch(() => {});
         } else {
           clearSession();
         }
@@ -327,6 +330,8 @@ export const AuthProvider = ({ children }) => {
         const persisted = await persistSession(sessionToken, sessionUser);
         if (!persisted) return false;
 
+        sessionService.register().catch(() => {});
+
         setAuthRequestState({ loading: false, error: null });
         return true;
       } catch (error) {
@@ -340,7 +345,20 @@ export const AuthProvider = ({ children }) => {
 
 
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    const sessionId = getStoredSessionId();
+    if (sessionId) {
+      try {
+        await sessionService.revoke(sessionId);
+      } catch {
+        // Best-effort remote revocation; local session is cleared regardless.
+      }
+    }
+    try {
+      await authService.logout();
+    } catch {
+      // Ignore network errors during logout.
+    }
     clearSession();
     setAuthRequestState({ loading: false, error: null });
   }, [clearSession, setAuthRequestState]);
