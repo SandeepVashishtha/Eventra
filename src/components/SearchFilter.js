@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import useDebounce from "../hooks/useDebounce";
+import EmptyState from "./common/EmptyState";
+import { FilterX, Heart } from "lucide-react";
 import "./styles/components.css";
 
 const SearchFilter = () => {
@@ -9,6 +11,10 @@ const SearchFilter = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
+  const [favorites, setFavorites] = useState(() => {
+  const saved = localStorage.getItem("favoriteEvents");
+  return saved ? JSON.parse(saved) : [];
+});
 
   const categories = [
     { value: "all", label: "All Categories" },
@@ -30,6 +36,12 @@ const SearchFilter = () => {
     { value: "tokyo", label: "Tokyo" },
   ];
 
+  useEffect(() => {
+  localStorage.setItem(
+    "favoriteEvents",
+    JSON.stringify(favorites)
+  );
+}, [favorites]);
   const mockEvents = [
     {
       id: 1,
@@ -133,6 +145,7 @@ const SearchFilter = () => {
     
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
   });
+  useState(() => {});
 
   return (
     <div className="search-filter-container bg-gray-50 dark:bg-black">
@@ -153,6 +166,13 @@ const SearchFilter = () => {
 
       {/* Search Bar */}
       <motion.div
+      whileHover={{
+  scale: 1.03,
+  y: -5
+}}
+whileTap={{
+  scale: 0.98
+}}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
@@ -286,16 +306,18 @@ const SearchFilter = () => {
       </motion.div>
 
       {filteredEvents.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="no-results"
-        >
-          {/* 🔥 FIX: Added aria-hidden to decorative emoji */}
-          <div className="no-results-icon" aria-hidden="true">😞</div>
-          <h3>No events found</h3>
-          <p>Try adjusting your search criteria</p>
-        </motion.div>
+        <EmptyState
+          icon={FilterX}
+          title="No events found"
+          description="Try adjusting your search criteria or clearing your filters."
+          actionLabel="Clear Filters"
+          onAction={() => {
+            setSearchTerm("");
+            setSelectedCategory("all");
+            setSelectedLocation("all");
+            setPriceFilter("all");
+          }}
+        />
       )}
     </div>
   );
