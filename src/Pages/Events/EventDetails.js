@@ -535,7 +535,7 @@ const EventDetails = () => {
                 <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
                   <p><span className="font-semibold">Attendees:</span> {event.attendees}/{event.maxAttendees}</p>
                   <p><span className="font-semibold">Type:</span> {event.type}</p>
-                  <p><span className="font-semibold">Tags:</span> {event.tags.join(", ")}</p>
+                  <p><span className="font-semibold">Tags:</span> {(event.tags ?? []).join(", ")}</p>
                 </div>
               </div>
 
