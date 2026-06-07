@@ -1,4 +1,6 @@
 export const logAbuseAttempt = (type, details = {}) => {
+  if (typeof window === "undefined") return;
+
   try {
     let existing;
     try {
