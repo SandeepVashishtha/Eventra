@@ -49,6 +49,10 @@ export function useFocusTrap(isActive, onEscape) {
   // Remember the element that was focused before the trap activated so we can
   // restore it on close.
   const previouslyFocusedRef = useRef(null);
+  // Track setTimeout IDs so they can be cleared before scheduling new ones,
+  // preventing orphaned timeouts from firing on unmounted components.
+  const focusTrapIdRef = useRef(null);
+  const focusRestoreIdRef = useRef(null);
 
   const handleKeyDown = useCallback(
     (event) => {
@@ -100,9 +104,10 @@ export function useFocusTrap(isActive, onEscape) {
     // Move focus inside the container as soon as it becomes active.
     const focusableEls = getFocusableElements(containerRef.current);
     if (focusableEls.length > 0) {
+      // Clear any previous focus trap timeout before scheduling a new one.
+      clearTimeout(focusTrapIdRef.current);
       // Small timeout ensures the element is fully painted / transitioned.
-      const id = setTimeout(() => focusableEls[0].focus(), 0);
-      return () => clearTimeout(id);
+      focusTrapIdRef.current = setTimeout(() => focusableEls[0].focus(), 0);
     }
   }, [isActive]);
 
@@ -116,9 +121,10 @@ export function useFocusTrap(isActive, onEscape) {
     if (isActive) return;
     const el = previouslyFocusedRef.current;
     if (el && typeof el.focus === 'function') {
+      // Clear any previous focus restore timeout before scheduling a new one.
+      clearTimeout(focusRestoreIdRef.current);
       // Next tick so the DOM has settled after unmounting overlay elements.
-      const id = setTimeout(() => el.focus(), 0);
-      return () => clearTimeout(id);
+      focusRestoreIdRef.current = setTimeout(() => el.focus(), 0);
     }
   }, [isActive]);
 
