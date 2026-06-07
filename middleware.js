@@ -87,6 +87,53 @@ export default async function middleware(request) {
     return;
   }
 
+  // Strict Origin Validation
+  const origin = request.headers.get("origin");
+  const host = request.headers.get("host");
+  
+  if (origin) {
+    try {
+      const originUrl = new URL(origin);
+      if (originUrl.host !== host) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden: Invalid origin" }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: Malformed origin" }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }
+
+  // Session validation for API routes
+  if (url.pathname.startsWith("/api/")) {
+    const PUBLIC_PATHS = [
+      "/api/auth/login",
+      "/api/auth/signup",
+      "/api/auth/reset-password",
+      "/api/events",
+      "/api/hackathons",
+      "/api/projects",
+      "/api/validate"
+    ];
+
+    const isPublicPath = PUBLIC_PATHS.some(path => url.pathname.startsWith(path) && (request.method === "GET" || url.pathname.includes("/auth/") || url.pathname.includes("/validate/")));
+
+    if (!isPublicPath) {
+      const cookieHeader = request.headers.get("cookie") || "";
+      const tokenMatch = cookieHeader.match(/(?:^|;\s*)token\s*=\s*([^;]*)/);
+      if (!tokenMatch || !tokenMatch[1]) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized: Missing active user session" }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
+  }
+
   // Per-IP rate limiting at the edge
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
