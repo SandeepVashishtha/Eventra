@@ -27,7 +27,7 @@ export default function CTASection() {
             className="inline-flex items-center gap-2 border border-indigo-200 dark:border-indigo-500/50 bg-indigo-50 dark:bg-indigo-950/80 rounded-full px-4 py-1.5 justify-center mx-auto mb-6 shadow-sm"
           >
             <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-            <span className="text-indigo-800 dark:text-indigo-200 text-xs sm:text-sm font-bold tracking-wide uppercase">
+            <div className="text-indigo-800 dark:text-indigo-200 text-xs sm:text-sm font-bold tracking-wide uppercase">
               Innovate Ideas, Build Projects, Join Events
             </div>
           </motion.div>
