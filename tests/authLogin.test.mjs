@@ -59,7 +59,8 @@ const deps = {
     deps
   );
   assert.equal(res.statusCode, 200, "valid login returns 200");
-  assert.equal(res.body.token, "test-token", "token issued on success");
+  assert.equal(res.body.token, undefined, "token not in response body");
+  assert.ok(res.headers["Set-Cookie"].includes("token=test-token"), "token set in Set-Cookie header");
   assert.equal(res.body.user.email, "user@example.com", "user echoed back");
 }
 
