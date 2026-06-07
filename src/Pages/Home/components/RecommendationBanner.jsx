@@ -62,7 +62,7 @@ const RecommendationBanner = () => {
                 href="/event-recommendation"
                 className="px-6 py-3 rounded-full bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold transition-shadow shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-200"
               >
-                Try Recommendation Assistant
+                Open Recommendation Engine
               </a>
 
               <a

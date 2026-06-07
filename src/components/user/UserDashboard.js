@@ -27,6 +27,7 @@ import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
 import OfflineIndicator from "../common/OfflineIndicator";
+import RecommendedForYou from "../recommendations/RecommendedForYou";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 24 },
@@ -312,6 +313,17 @@ export default function UserDashboard() {
                       </motion.div>
                     ))}
                   </motion.div>
+
+                  <motion.section custom={1} variants={fadeUp(prefersReducedMotion)} className="ud-card" style={{ padding: "1.25rem" }}>
+                    <RecommendedForYou
+                      compact
+                      limit={4}
+                      showTrending={false}
+                      title="Recommended For You"
+                      subtitle="Events picked for your interests, skills, and participation history."
+                      className="!py-0"
+                    />
+                  </motion.section>
 
                   <motion.section custom={1} variants={fadeUp(prefersReducedMotion)}>
                     <h2 className="ud-section-title"><Zap size={17} /> Quick Actions</h2>

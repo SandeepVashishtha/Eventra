@@ -4,6 +4,7 @@ import Hero from "./components/Hero";
 import WhatsHappening from "./components/WhatsHappening";
 import HomeCTA from "./components/HomeCTA";
 import RecommendationBanner from "./components/RecommendationBanner";
+import RecommendedForYou from "../../components/recommendations/RecommendedForYou";
 import CollaborationNetworkMap from "../../components/visual/CollaborationNetworkMap";
 import CollaborationMap from "../../components/CollaborationMap";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -58,6 +59,9 @@ const HomePage = () => {
       <Hero />
       <WhatsHappening />
       <RecommendationBanner />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <RecommendedForYou limit={6} />
+      </div>
       <CollaborationNetworkMap />
       <CollaborationMap />
       <HomeCTA />
