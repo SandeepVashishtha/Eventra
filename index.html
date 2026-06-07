@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Theme -->
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Eventra" />
+
+    <!-- Preconnect for faster external resource loading -->
+    <link rel="preconnect" href="https://api.github.com" />
+    <link rel="dns-prefetch" href="https://api.github.com" />
+    <link rel="preconnect" href="https://accounts.google.com" crossorigin />
+    <link rel="dns-prefetch" href="https://accounts.google.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <!-- Prevent Theme Flickering -->
+    <script src="/theme-init.js"></script>
+
+    <!-- Title -->
+    <title>Eventra - Open Source Event Management Platform</title>
+    <meta property="og:title" content="Eventra - Platform for Builders" />
+    <meta property="og:description" content="A premium, modern platform for organizing and attending events, hackathons, and projects." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://eventra.vercel.app/" />
+    <meta property="og:image" content="https://eventra.sandeepvashishtha.in/logo_transparent.png" />
+
+    <!-- Google Sign In -->
+
+    <script
+      src="https://accounts.google.com/gsi/client"
+      async
+      defer
+    ></script>
+
+    <!-- EmailJS -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
+      async
+    ></script>
+  </head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/index.jsx"></script>
+</body>
+</html>

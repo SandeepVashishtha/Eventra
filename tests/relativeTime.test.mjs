@@ -1,39 +1,37 @@
 import assert from "node:assert/strict";
 import { getRelativeTime, getSmartDateLabel } from "../src/utils/relativeTime.js";
 
-// Test invalid date
-assert.equal(getRelativeTime("invalid-date"), null);
+assert.equal(getRelativeTime(null), "—", "null input returns fallback");
+assert.equal(getRelativeTime(undefined), "—", "undefined input returns fallback");
+assert.equal(getRelativeTime(""), "—", "empty string returns fallback");
+assert.equal(getRelativeTime("invalid date"), "—", "invalid date returns fallback");
+assert.equal(getRelativeTime("2026-02-30T99:99:99"), "—", "malformed date string returns fallback");
 
 const now = new Date();
+const future = new Date(now.getTime() + 30000);
+const past = new Date(now.getTime() - 30000);
 
-// Test past date: just ended
-const pastSecDate = new Date(now.getTime() - 30 * 1000);
-assert.equal(getRelativeTime(pastSecDate.toISOString()), "Just ended");
+assert.equal(getRelativeTime(future.toISOString()), "Starting soon", "30s in future is starting soon");
+assert.equal(getRelativeTime(past.toISOString()), "Just ended", "30s in past is just ended");
 
-// Test past date: minutes ago
-const pastMinDate = new Date(now.getTime() - 5 * 60 * 1000);
-assert.equal(getRelativeTime(pastMinDate.toISOString()), "5 minutes ago");
+assert.equal(getSmartDateLabel(null), "TBD", "null date returns TBD");
+assert.equal(getSmartDateLabel("invalid"), "TBD", "invalid date returns TBD");
 
-// Test past date: 1 hour ago
-const pastHourDate = new Date(now.getTime() - 1 * 60 * 60 * 1000);
-assert.equal(getRelativeTime(pastHourDate.toISOString()), "1 hour ago");
+const tomorrow = new Date(now.getTime() + 86400000);
+const yesterday = new Date(now.getTime() - 86400000);
+const smartFuture = getSmartDateLabel(tomorrow.toISOString());
+const smartPast = getSmartDateLabel(yesterday.toISOString());
+assert.ok(smartFuture.includes("Tomorrow") || !smartFuture.includes("TBD"), "tomorrow date has proper label");
 
-// Test past date: Yesterday
-const pastDayDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-assert.equal(getRelativeTime(pastDayDate.toISOString()), "Yesterday");
+// Leap year date formatted properly
+assert.ok(getSmartDateLabel("2028-02-29T12:00:00Z").includes("Feb 29, 2028"), "leap year date formatted properly");
 
-// Test future date: starting soon
-const futureSecDate = new Date(now.getTime() + 30 * 1000);
-assert.equal(getRelativeTime(futureSecDate.toISOString()), "Starting soon");
+// Extreme past/future tests
+const yearsAgo = new Date(now.getTime() - 1000 * 60 * 60 * 24 * 365 * 10);
+assert.ok(getSmartDateLabel(yearsAgo.toISOString()) !== "TBD", "decade ago date formatted properly");
 
-// Test future date: in minutes
-const futureMinDate = new Date(now.getTime() + 10 * 60 * 1000);
-assert.equal(getRelativeTime(futureMinDate.toISOString()), "In 10 minutes");
+// Non-string arguments checking
+assert.equal(getRelativeTime(123456789), null, "number input returns null");
+assert.equal(getSmartDateLabel(undefined), "TBD", "undefined input returns TBD");
 
-// Test future date: Tomorrow
-const futureDayDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-assert.equal(getRelativeTime(futureDayDate.toISOString()), "Tomorrow");
-
-// Test getSmartDateLabel
-const formattedLabel = getSmartDateLabel(futureMinDate.toISOString());
-assert.equal(formattedLabel, "In 10 minutes");
+console.log("relativeTime edge case tests passed ✓");

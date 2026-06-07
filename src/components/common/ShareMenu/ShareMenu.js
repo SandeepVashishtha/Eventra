@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Share2, Copy, Mail, Check } from 'lucide-react';
-import { FiFacebook, FiLinkedin } from 'react-icons/fi';
-import { FaWhatsapp, FaTelegram } from 'react-icons/fa';
+// Consolidated lucide-react imports for code cleanliness
+import { Facebook, Linkedin, MessageCircle, Send, Share2, Copy, Mail, Check } from 'lucide-react';
 import { generateSharingUrl, copyToClipboard } from '../../../utils/shareUtils';
+import { toast } from 'react-toastify';
 import './ShareMenu.css';
 
 /**
@@ -29,6 +29,7 @@ const ShareMenu = ({
   const [calculatedPosition, setCalculatedPosition] = useState('bottom');
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
+  const timeoutRef = useRef(null); // Ref to track timeouts and prevent memory leaks
 
   const toggleMenu = () => {
     if (!isOpen && buttonRef.current) {
@@ -80,8 +81,11 @@ const ShareMenu = ({
     copyToClipboard(url);
     setCopied(true);
     
-    // Reset copied status after 2 seconds
-    setTimeout(() => {
+    // Clear any existing timeouts to prevent memory leaks
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    
+    // Reset copied status after 2 seconds safely
+    timeoutRef.current = setTimeout(() => {
       setCopied(false);
     }, 2000);
   };
@@ -98,13 +102,21 @@ const ShareMenu = ({
         url: shareData.url || window.location.href,
       })
       .then(()=>setIsOpen(false))
-      .catch((err)=>console.error('Error sharing:', err));
+      .catch((err) => {
+        // Ignore AbortError caused by users intentionally closing the native share dialog
+        if (err.name !== 'AbortError') {
+          console.error('Error sharing:', err);
+          toast.error("Failed to share event", { autoClose: 2000 });
+        }
+      });
       return;
     }
     if (platform === 'copy') {
       copyToClipboard(url);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setCopied(false), 2000);
       return;
     }
 
@@ -117,6 +129,13 @@ const ShareMenu = ({
     setIsOpen(false);
   };
   
+  // Handle component unmount memory leak cleanup
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   // Handle click outside to close menu
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -217,7 +236,7 @@ const ShareMenu = ({
                 onClick={handleCopyLink}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
+               aria-label="Copy link to clipboard">
                 <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                   {copied ? (
                     <Check className="w-4 h-4 text-green-600" />
@@ -249,7 +268,7 @@ const ShareMenu = ({
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <FaWhatsapp className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  <MessageCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">WhatsApp</span>
               </button>
@@ -276,7 +295,7 @@ const ShareMenu = ({
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <FiFacebook className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <Facebook className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Facebook</span>
               </button>
@@ -288,7 +307,7 @@ const ShareMenu = ({
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <FiLinkedin className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                  <Linkedin className="w-4 h-4 text-blue-700 dark:text-blue-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">LinkedIn</span>
               </button>
@@ -300,7 +319,7 @@ const ShareMenu = ({
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <FaTelegram className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                  <Send className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Telegram</span>
               </button>

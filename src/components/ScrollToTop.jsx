@@ -1,32 +1,23 @@
 import { useEffect } from "react";
-
-import {
-  useLocation,
-} from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 const ScrollToTop = () => {
-  const { pathname } =
-    useLocation();
+  const { pathname } = useLocation();
 
   useEffect(() => {
-    // Disable browser automatic
-    // scroll restoration
-    if (
-      "scrollRestoration" in
-      window.history
-    ) {
-     window.scrollTo({
-  top: 0,
-  behavior: "smooth",
-});
+    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
     }
+  }, []);
 
-    // Scroll to top on route change
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "smooth",
-    });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (window.lenis && typeof window.lenis.scrollTo === "function") {
+        window.lenis.scrollTo(0, { immediate: true });
+      } else {
+        window.scrollTo(0, 0);
+      }
+    }
   }, [pathname]);
 
   return null;

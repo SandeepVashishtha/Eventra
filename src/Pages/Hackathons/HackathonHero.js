@@ -3,9 +3,11 @@ import { Award, Calendar, Code2, Sparkles, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { useAuth } from "../../context/AuthContext";
-import CountUp from "react-countup";
-
+import CountUpLib from "react-countup";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
+
+const CountUp = CountUpLib.default || CountUpLib;
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
   <motion.div
@@ -25,7 +27,6 @@ const Tag = ({ tag, onRemove }) => (
 );
 
 export default function HackathonHero({
-  hackathons = [],
   searchQuery,
   setSearchQuery,
   scrollToCards,
@@ -206,6 +207,7 @@ export default function HackathonHero({
 
       {/* STATS SECTION */}
       {searchQuery.trim() === "" && selectedTags.length === 0 && (
+        <ErrorBoundary level="section" label="Hackathon Statistics">
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-14 sm:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {[
             { label: "Hackathons Hosted", value: 120, suffix: "+", icon: Calendar, color: "from-blue-500 to-indigo-500" },
@@ -237,9 +239,7 @@ export default function HackathonHero({
                   duration={2.5}
                   prefix={stat.prefix}
                   suffix={stat.suffix}
-                  enableScrollSpy
-                  scrollSpyOnce
-                />
+                  />
               </p>
               <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
                 {stat.label}
@@ -247,7 +247,9 @@ export default function HackathonHero({
             </motion.div>
           ))}
         </div>
+        </ErrorBoundary>
       )}
     </div>
   );
 }
+

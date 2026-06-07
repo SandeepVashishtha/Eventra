@@ -1,19 +1,8 @@
-import React, { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import useReducedMotion from "../hooks/useReducedMotion.js";
-import {
-  Server,
-  AlertCircle,
-  BookOpen,
-  Users,
-  Trophy,
-  Play,
-  RefreshCw,
-  Terminal,
-  Settings,
-  ShieldAlert,
-} from "lucide-react";
+import { Server, AlertCircle, BookOpen, Users, Trophy, Play, RefreshCw, Terminal, Settings } from "lucide-react";
 
 const endpoints = [
   {
@@ -21,10 +10,10 @@ const endpoints = [
     title: "Hackathons",
     desc: "Fetch upcoming and ongoing hackathons.",
     method: "GET",
-    url: "/api/hackathons",
-    example: `fetch("/api/hackathons")
+    url: "/mock-api/hackathons",
+    example: `fetch("/mock-api/hackathons")
 .then(res => res.json())
-.then(data => console.log(data))
+.then(data => { /* handle response */ })
 .catch(err => console.error(err))`,
     response: `[
     
@@ -42,7 +31,7 @@ const endpoints = [
     title: "Projects",
     desc: "Retrieve projects submitted to hackathons.",
     method: "GET",
-    url: "/api/projects?hackathonId=<id>",
+    url: "/mock-api/projects?hackathonId=<id>",
 example: `curl -X GET ${process.env.REACT_APP_API_URL}/projects?hackathonId=1`,
     response: `[
   {
@@ -58,7 +47,7 @@ example: `curl -X GET ${process.env.REACT_APP_API_URL}/projects?hackathonId=1`,
     title: "Contributors",
     desc: "Get a list of top contributors and GSOC participants.",
     method: "GET",
-    url: "/api/contributors",
+    url: "/mock-api/contributors",
   example: `fetch("${process.env.REACT_APP_API_URL}/contributors", {
   headers: { Authorization: "Bearer <API_KEY>" }
 })`,
@@ -76,7 +65,7 @@ example: `curl -X GET ${process.env.REACT_APP_API_URL}/projects?hackathonId=1`,
     title: "Leaderboard",
     desc: "Fetch leaderboard rankings of participants.",
     method: "GET",
-    url: "/api/leaderboard?limit=10",
+    url: "/mock-api/leaderboard?limit=10",
     example: `curl -X GET \${process.env.REACT_APP_API_URL}/leaderboard?limit=10`,
     response: `[
   {
@@ -92,18 +81,26 @@ const ApiDocs = () => {
   const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | API Docs");
 
-  const [selectedEndpoint, setSelectedEndpoint] = useState("/api/hackathons");
+  const [selectedEndpoint, setSelectedEndpoint] = useState("/mock-api/hackathons");
   const [params, setParams] = useState({
     limit: "5",
     status: "all",
     hackathonId: "1",
     sortBy: "recent",
-    authHeader: "Bearer evt_dev_test_token",
+    authHeader: `Bearer ${process.env.NODE_ENV === 'development' ? "evt_dev_test_token" : "[redacted]"}`,
     role: "all",
     page: "1",
   });
   const [terminalOutput, setTerminalOutput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const handleParamChange = (name, val) => {
     setParams(prev => ({ ...prev, [name]: val }));
@@ -116,7 +113,7 @@ const ApiDocs = () => {
     // Track execution for onboarding checklist
     localStorage.setItem("eventra_sandbox_executed", "true");
     
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       let data = [];
       const headers = {
         Status: "200 OK",
@@ -126,8 +123,8 @@ const ApiDocs = () => {
       };
       
       switch (selectedEndpoint) {
-        case "/api/hackathons": {
-          const limitVal = parseInt(params.limit) || 5;
+        case "/mock-api/hackathons": {
+          const limitVal = parseInt(params.limit, 10) || 5;
           const statusVal = params.status || "all";
           const allHackathons = [
             { id: 1, title: "CodeFest 2025", startDate: "2025-09-20", endDate: "2025-09-25", participants: 150, status: "completed" },
@@ -143,7 +140,7 @@ const ApiDocs = () => {
           data = filtered.slice(0, limitVal);
           break;
         }
-        case "/api/projects": {
+        case "/mock-api/projects": {
           const hackathonId = params.hackathonId || "1";
           const sortBy = params.sortBy || "recent";
           const allProjects = [
@@ -159,7 +156,7 @@ const ApiDocs = () => {
           data = filtered;
           break;
         }
-        case "/api/contributors": {
+        case "/mock-api/contributors": {
           const authHeader = params.authHeader || "";
           if (!authHeader.startsWith("Bearer ")) {
             headers.Status = "401 Unauthorized";
@@ -180,9 +177,9 @@ const ApiDocs = () => {
           data = filtered;
           break;
         }
-        case "/api/leaderboard": {
-          const limitVal = parseInt(params.limit) || 10;
-          const pageVal = parseInt(params.page) || 1;
+        case "/mock-api/leaderboard": {
+          const limitVal = parseInt(params.limit, 10) || 10;
+          const pageVal = parseInt(params.page, 10) || 1;
           const allLeaderboard = [
             { rank: 1, username: "coder123", points: 500 },
             { rank: 2, username: "dev_ankita", points: 230 },
@@ -413,10 +410,10 @@ const ApiDocs = () => {
                 onChange={(e) => setSelectedEndpoint(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none text-white focus:border-indigo-500"
               >
-                <option value="/api/hackathons">GET /api/hackathons</option>
-                <option value="/api/projects">GET /api/projects</option>
-                <option value="/api/contributors">GET /api/contributors</option>
-                <option value="/api/leaderboard">GET /api/leaderboard</option>
+                <option value="/mock-api/hackathons">GET /mock-api/hackathons</option>
+                <option value="/mock-api/projects">GET /mock-api/projects</option>
+                <option value="/mock-api/contributors">GET /mock-api/contributors</option>
+                <option value="/mock-api/leaderboard">GET /mock-api/leaderboard</option>
               </select>
             </div>
 
@@ -424,7 +421,7 @@ const ApiDocs = () => {
             <div className="p-4 bg-slate-950/50 border border-slate-800/80 rounded-2xl space-y-4">
               <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Parameters</span>
               
-              {selectedEndpoint === "/api/hackathons" && (
+              {selectedEndpoint === "/mock-api/hackathons" && (
                 <div className="space-y-4 animate-fadeIn">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Limit (Count)</label>
@@ -450,7 +447,7 @@ const ApiDocs = () => {
                 </div>
               )}
 
-              {selectedEndpoint === "/api/projects" && (
+              {selectedEndpoint === "/mock-api/projects" && (
                 <div className="space-y-4 animate-fadeIn">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Hackathon ID</label>
@@ -475,7 +472,7 @@ const ApiDocs = () => {
                 </div>
               )}
 
-              {selectedEndpoint === "/api/contributors" && (
+              {selectedEndpoint === "/mock-api/contributors" && (
                 <div className="space-y-4 animate-fadeIn">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Authorization Header</label>
@@ -502,7 +499,7 @@ const ApiDocs = () => {
                 </div>
               )}
 
-              {selectedEndpoint === "/api/leaderboard" && (
+              {selectedEndpoint === "/mock-api/leaderboard" && (
                 <div className="space-y-4 animate-fadeIn">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Limit</label>
@@ -530,7 +527,7 @@ const ApiDocs = () => {
               onClick={executeMockRequest}
               disabled={isLoading}
               className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
-            >
+             aria-label="button">
               {isLoading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -558,16 +555,16 @@ const ApiDocs = () => {
               <div className="flex-1 flex items-center gap-2 px-3 py-1 bg-slate-950 border border-slate-850 rounded-lg text-[10px] font-mono text-slate-400 select-all overflow-x-auto whitespace-nowrap scrollbar-none">
                 <span className="text-emerald-500 font-bold uppercase shrink-0">GET</span>
                 <span>http://localhost:3000{selectedEndpoint}</span>
-                {selectedEndpoint === "/api/hackathons" && (
+                {selectedEndpoint === "/mock-api/hackathons" && (
                   <span className="text-indigo-400 shrink-0">?limit={params.limit}&status={params.status}</span>
                 )}
-                {selectedEndpoint === "/api/projects" && (
+                {selectedEndpoint === "/mock-api/projects" && (
                   <span className="text-indigo-400 shrink-0">?hackathonId={params.hackathonId}&sortBy={params.sortBy}</span>
                 )}
-                {selectedEndpoint === "/api/contributors" && (
+                {selectedEndpoint === "/mock-api/contributors" && (
                   <span className="text-indigo-400 shrink-0">?role={params.role}</span>
                 )}
-                {selectedEndpoint === "/api/leaderboard" && (
+                {selectedEndpoint === "/mock-api/leaderboard" && (
                   <span className="text-indigo-400 shrink-0">?limit={params.limit}&page={params.page}</span>
                 )}
               </div>
@@ -585,7 +582,7 @@ const ApiDocs = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-slate-600 gap-2 text-center max-w-sm mx-auto">
                   <Terminal className="w-8 h-8 text-slate-800" />
-                  <p className="text-[11px]">Terminal idle. Configure your query parameters and click "Execute Request" to display payload console details.</p>
+                  <p className="text-[11px]">Terminal idle. Configure your query parameters and click &quot;Execute Request&quot; to display payload console details.</p>
                 </div>
               )}
             </div>

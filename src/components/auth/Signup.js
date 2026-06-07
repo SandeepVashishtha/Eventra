@@ -1,439 +1,353 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
-import { useAuth } from "../../context/AuthContext";
-import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
-import { User, AtSign } from "lucide-react";
+import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Sparkles,
+  Check,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Lock,
+  X,
+} from "lucide-react";
+import SignupForm from "./SignupForm";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useReducedMotion from "../../hooks/useReducedMotion";
 
-// FIX: Removed unused `React` import — not needed with modern JSX transform
+const PASSWORD_REQUIREMENTS = [
+  { id: "length", label: "At least 8 characters", regex: /.{8,}/ },
+  { id: "uppercase", label: "One uppercase letter", regex: /[A-Z]/ },
+  { id: "lowercase", label: "One lowercase letter", regex: /[a-z]/ },
+  { id: "number", label: "One number", regex: /\d/ },
+  { id: "special", label: "One special character", regex: /[^A-Za-z0-9]/ },
+];
 
-const assessStrength = (password) => {
-  if (!password) return { criteriaMet: 0 };
+const INTRO_POINTS = [
+  { icon: Sparkles, text: "Post events, join hackathons, and submit projects" },
+  { icon: Check, text: "Track activity and community engagement from one profile" },
+  { icon: ArrowRight, text: "Get quick access to the tools you need to contribute" },
+];
 
-  let criteriaMet = 0;
-  if (password.length >= 8) criteriaMet++;
-  if (/[A-Z]/.test(password)) criteriaMet++;
-  if (/[a-z]/.test(password)) criteriaMet++;
-  if (/\d/.test(password)) criteriaMet++;
-  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) criteriaMet++;
+const checkPasswordRequirement = (password, requirement) => requirement.regex.test(password);
 
-  return { criteriaMet };
+export const FormField = ({
+  id,
+  label,
+  type = "text",
+  icon: Icon,
+  value,
+  onChange,
+  onBlur,
+  error,
+  success,
+  hint,
+  required = false,
+  autoComplete,
+  placeholder,
+  toggleVisibility = false,
+  initialDelay = 0,
+}) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const inputType = toggleVisibility ? (showPassword ? "text" : "password") : type;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: initialDelay }}
+      className="space-y-1.5"
+    >
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+
+      <div className="relative">
+        {Icon && (
+          <Icon className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+        )}
+
+        <input
+          id={id}
+          name={id}
+          type={inputType}
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          autoComplete={autoComplete}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+          className={`w-full rounded-xl border bg-white/70 py-3 text-gray-900 transition-all duration-200 placeholder:text-gray-400 dark:bg-gray-700/70 dark:text-white dark:placeholder:text-gray-500 ${
+            Icon ? "pl-10" : "pl-4"
+          } ${toggleVisibility ? "pr-10" : "pr-4"} ${
+            error
+              ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/30 dark:border-red-700"
+              : success
+                ? "border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 dark:border-green-700"
+                : "border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 dark:border-gray-600 dark:hover:border-gray-500"
+          }`}
+          placeholder={placeholder || `Enter your ${label.toLowerCase()}`}
+          required={required}
+        />
+
+        {toggleVisibility && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((current) => !current)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-pressed={showPassword}
+          >
+            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </button>
+        )}
+      </div>
+
+      {hint && !error && !success && (
+        <p id={`${id}-hint`} className="text-xs text-gray-500 dark:text-gray-400">
+          {hint}
+        </p>
+      )}
+
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            id={`${id}-error`}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex items-center gap-1 text-xs text-red-500 dark:text-red-400"
+            role="alert"
+            aria-live="assertive"
+          >
+            <X className="h-3.5 w-3.5" />
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {success && !error && (
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400"
+          >
+            <Check className="h-3.5 w-3.5" />
+            {success}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
 };
 
-const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+export const PasswordField = ({
+  id,
+  label,
+  value,
+  onChange,
+  error,
+  strength = { score: 0, color: "text-gray-400", label: "None" },
+  requirements = PASSWORD_REQUIREMENTS,
+}) => {
+  const [showPassword, setShowPassword] = useState(false);
 
-// FIX: Moved introPoints outside component — it's static data, no need to
-// re-create this array on every render
-const introPoints = [
-  "Create your account to post events, join hackathons, and submit projects.",
-  "Track your activity, registrations, and community engagement from one profile.",
-  "Get quick access to the tools you need to start contributing immediately.",
-];
+  return (
+    <div className="space-y-2">
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        {label} <span className="text-red-500">*</span>
+      </label>
+
+      <div className="relative">
+        <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+
+        <input
+          id={id}
+          name={id}
+          type={showPassword ? "text" : "password"}
+          value={value}
+          onChange={onChange}
+          autoComplete="new-password"
+          aria-invalid={!!error}
+          aria-describedby={error ? `${id}-error` : `${id}-strength`}
+          className={`w-full rounded-xl border bg-white/70 py-3 pl-10 pr-10 text-gray-900 transition-all duration-200 placeholder:text-gray-400 dark:bg-gray-700/70 dark:text-white dark:placeholder:text-gray-500 ${
+            error
+              ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/30 dark:border-red-700"
+              : strength.score >= 75
+                ? "border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 dark:border-green-700"
+                : "border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 dark:border-gray-600 dark:hover:border-gray-500"
+          }`}
+          placeholder="Create a strong password"
+          required
+        />
+
+        <button
+          type="button"
+          onClick={() => setShowPassword((current) => !current)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+          aria-label={showPassword ? "Hide password" : "Show password"}
+          aria-pressed={showPassword}
+        >
+          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        </button>
+      </div>
+
+      {value && (
+        <div id={`${id}-strength`} className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${strength.score}%` }}
+                transition={{ duration: 0.3 }}
+                className={`h-full rounded-full ${
+                  strength.score >= 75
+                    ? "bg-green-500"
+                    : strength.score >= 50
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
+                }`}
+              />
+            </div>
+            <span className={`text-xs font-medium ${strength.color}`}>{strength.label}</span>
+          </div>
+
+          <ul className="grid grid-cols-2 gap-1.5 text-xs">
+            {requirements.map((requirement) => {
+              const met = checkPasswordRequirement(value, requirement);
+              return (
+                <li
+                  key={requirement.id}
+                  className={`flex items-center gap-1.5 ${
+                    met ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  {met ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[10px]">
+                      *
+                    </span>
+                  )}
+                  <span>{requirement.label}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            id={`${id}-error`}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex items-center gap-1 text-xs text-red-500 dark:text-red-400"
+            role="alert"
+            aria-live="assertive"
+          >
+            <X className="h-3.5 w-3.5" />
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const Signup = () => {
   const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Sign Up | Eventra");
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-
-  const [loading, setLoading] = useState(false);
-  const [firstNameError, setFirstNameError] = useState("");
-  const [lastNameError, setLastNameError] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // FIX: Derive passwordMatchMessage directly from state instead of storing
-  // it as separate state — eliminates the redundant useEffect that was syncing
-  // password/confirmPassword and causing double validation on every keystroke
-  const passwordMatchMessage =
-    formData.password && formData.confirmPassword
-      ? formData.password === formData.confirmPassword
-        ? "Passwords match!"
-        : ""
-      : "";
-
-  const navigate = useNavigate();
-  const { setAuthSession } = useAuth();
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    const newData = { ...formData, [name]: value };
-    setFormData(newData);
-
-    // Password match validation
-    if (name === "password" || name === "confirmPassword") {
-      const pw = name === "password" ? value : newData.password;
-      const cpw = name === "confirmPassword" ? value : newData.confirmPassword;
-
-      if (pw && cpw && pw !== cpw) {
-        setError("Passwords do not match");
-      } else {
-        setError("");
-      }
-    }
-
-    if (name === "email") {
-      setEmailError(validateEmail(value) ? "" : "Invalid email");
-    }
-
-    if (name === "firstName") {
-      if (!value.trim()) setFirstNameError("First name is required");
-      else if (value.length < 2) setFirstNameError("At least 2 characters");
-      else if (value.length > 50) setFirstNameError("Less than 50 characters");
-      else setFirstNameError("");
-    }
-
-    if (name === "lastName") {
-      if (!value.trim()) setLastNameError("Last name is required");
-      else if (value.length < 2) setLastNameError("At least 2 characters");
-      else if (value.length > 50) setLastNameError("Less than 50 characters");
-      else setLastNameError("");
-    }
-
-    // Clear general error when editing non-password fields
-    if (error && name !== "password" && name !== "confirmPassword") {
-      setError("");
-    }
-  };
-
-  const togglePasswordVisibility = () => setShowPassword((v) => !v);
-  const toggleConfirmPasswordVisibility = () => setShowConfirmPassword((v) => !v);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateEmail(formData.email)) {
-      setEmailError("Invalid email format");
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    const { criteriaMet } = assessStrength(formData.password);
-    if (criteriaMet < 5) {
-      setError("Password doesn't meet the security criteria (must meet all 5 requirements).");
-      return;
-    }
-
-    if (!formData.firstName.trim() || !formData.lastName.trim() || firstNameError || lastNameError) {
-      setError("Please fix all name errors before submitting.");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const response = await apiUtils.post(API_ENDPOINTS.AUTH.REGISTER, {
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        email: formData.email.trim(),
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
-      });
-
-      const data = response.data;
-
-      if (response.status !== 200) {
-        const backendMessage = data?.message || data?.error || "";
-        setError(
-          backendMessage
-            ? `${backendMessage} (${response.status})`
-            : `Registration failed (${response.status})`
-        );
-        return;
-      }
-
-      const sessionToken = data?.token;
-      if (!sessionToken) throw new Error("Token missing from signup response");
-
-      const sessionUser = {
-        id: data?.id,
-        firstName: data?.firstName ?? formData.firstName.trim(),
-        lastName: data?.lastName ?? formData.lastName.trim(),
-        email: data?.email ?? formData.email.trim(),
-        username: data?.username ?? formData.email.trim(),
-        role: data?.role ?? "USER",
-        roles: data?.role ? [data.role] : ["USER"],
-        permissions: data?.permissions ?? [],
-      };
-
-      setAuthSession(sessionToken, sessionUser);
-      setSuccess("Account created successfully! Redirecting to dashboard...");
-      setTimeout(() => navigate("/dashboard", { replace: true }), 1200);
-    } catch (err) {
-      setError(err.message || "Network error. Please try again.");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // FIX: Extracted repeated password border class logic into a helper
-  const passwordBorderClass = (field) => {
-    if (!formData[field]) return "border-gray-200 dark:border-gray-600";
-    return passwordMatchMessage ? "border-green-500" : "border-red-400";
-  };
-
-  // FIX: Extracted repeated eye-toggle SVG into a small component
-  const EyeIcon = ({ visible }) =>
-    visible ? (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10a9.958 9.958 0 012.09-6.019M21.364 21.364l-18.728-18.728" />
-      </svg>
-    ) : (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-      </svg>
-    );
-
-  const LockIcon = () => (
-    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-      fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-    </svg>
-  );
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
-      className="pastel-grid-bg  min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
+      transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
+      className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 px-4 py-8 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 sm:px-6 lg:px-8"
     >
-      <div className="max-w-4xl w-full mx-auto">
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
-          className="w-full pl-3 pr-4 py-3 my-14 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+      <div className="mx-auto grid max-w-5xl items-center gap-8 md:grid-cols-2">
+        <motion.section
+          initial={{ x: prefersReducedMotion ? 0 : -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 text-white shadow-2xl"
         >
-          <div className="md:flex">
-            {/* LEFT PANEL */}
-            <div className="relative z-10 md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-white p-12 flex flex-col justify-between rounded-3xl">
-              <div>
-                <h2 className="text-4xl text-center font-extrabold mb-5" style={{ fontFamily: '"Anton", sans-serif' }}>
-                  Join Eventra
-                </h2>
-                <p className="mb-8 text-lg opacity-90 leading-relaxed">
-                  Create your free account and start building amazing events.
-                </p>
-                <div className="space-y-3">
-                  {introPoints.map((point) => (
-                    <div
-                      key={point}
-                      className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 py-3 text-sm text-gray-800 dark:text-gray-100 backdrop-blur-sm"
-                    >
-                      <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0" />
-                      <span className="leading-relaxed">{point}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute left-10 top-10 h-32 w-32 rounded-full bg-white blur-3xl" />
+            <div className="absolute bottom-16 right-10 h-40 w-40 rounded-full bg-yellow-300 blur-3xl" />
+          </div>
 
-            {/* RIGHT PANEL */}
-            <div className="md:w-3/5 p-10 bg-white dark:bg-gray-800">
-              <div className="text-center space-y-2">
-                <motion.div
-                  whileHover={{ scale: 1.05, rotate: 5 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-3xl flex items-center justify-center shadow-md border border-blue-100"
-                >
-                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </motion.div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  Create Your Account
-                </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400 pt-2 pb-5">
-                  Join Eventra and start building amazing events
-                </p>
+          <div className="relative z-10 flex h-full flex-col justify-between gap-8">
+            <div>
+              <div className="mb-8 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <span className="text-xl font-bold tracking-tight">Eventra</span>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Name fields */}
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { id: "firstName", label: "First name", error: firstNameError, autoComplete: "given-name" },
-                    { id: "lastName", label: "Last name", error: lastNameError, autoComplete: "family-name" },
-                  ].map(({ id, label, error: fieldError, autoComplete }) => (
-                    <div key={id}>
-                      <label htmlFor={id} className="block text-sm text-gray-700 dark:text-gray-300">
-                        {label} <sup className="text-red-500">*</sup>
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                          id={id}
-                          name={id}
-                          type="text"
-                          autoComplete={autoComplete}
-                          value={formData[id]}
-                          onChange={handleChange}
-                          placeholder={label}
-                          className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
-                          required
-                        />
-                      </div>
-                      {fieldError && <p className="text-red-500 text-xs">{fieldError}</p>}
-                    </div>
-                  ))}
-                </div>
+              <h1 className="mb-4 text-3xl font-extrabold leading-tight md:text-4xl">
+                Build Your Community,
+                <br />
+                <span className="text-yellow-300">One Event at a Time</span>
+              </h1>
 
-                {/* Email */}
-                <div>
-                  <label htmlFor="email" className="block text-sm text-gray-700 dark:text-gray-300">
-                    Email address <sup className="text-red-500">*</sup>
-                  </label>
-                  <div className="relative">
-                    <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300 w-5 h-5 pointer-events-none" />
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="Enter your email address"
-                      className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
-                      required
-                    />
-                  </div>
-                  {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
-                </div>
-
-                {/* Password */}
-                <div>
-                  <label htmlFor="password" className="block text-sm text-gray-700 dark:text-gray-300">
-                    Password <sup className="text-red-500">*</sup>
-                  </label>
-                  <div className="relative">
-                    <LockIcon />
-                    <input
-                      id="password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="Enter your password"
-                      className={`w-full pl-10 pr-10 py-3 bg-white/60 dark:bg-gray-700/70 border rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white ${passwordBorderClass("confirmPassword")}`}
-                      required
-                    />
-                    <button type="button" onClick={togglePasswordVisibility}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                      <EyeIcon visible={showPassword} />
-                    </button>
-                  </div>
-                  {formData.password && <PasswordStrengthIndicator password={formData.password} />}
-                </div>
-
-                {/* Confirm Password */}
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm text-gray-700 dark:text-gray-300">
-                    Confirm Password <sup className="text-red-500">*</sup>
-                  </label>
-                  <div className="relative">
-                    <LockIcon />
-                    <input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="Confirm your password"
-                      className={`w-full pl-10 pr-10 py-3 bg-white/60 dark:bg-gray-700/70 border rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white ${passwordBorderClass("confirmPassword")}`}
-                      required
-                    />
-                    <button type="button" onClick={toggleConfirmPasswordVisibility}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                      <EyeIcon visible={showConfirmPassword} />
-                    </button>
-                  </div>
-                  {passwordMatchMessage && (
-                    <motion.p
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      transition={{ duration: 0.3 }}
-                      className="text-xs mt-1 text-green-600 dark:text-green-400"
-                    >
-                      {passwordMatchMessage}
-                    </motion.p>
-                  )}
-                </div>
-
-                {error && (
-                  <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/40 p-2 rounded-md">
-                    {error}
-                  </div>
-                )}
-                {success && (
-                  <div className="text-sm text-green-600 bg-green-50 dark:bg-green-900/40 p-2 rounded-md">
-                    {success}
-                  </div>
-                )}
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  disabled={loading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-300 hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
-                >
-                  {loading && (
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10"
-                        stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-              {passwordMatchMessage && (
-                <motion.p
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
-                  className="text-xs mt-1 text-green-600 dark:text-green-400"
-                >
-                  {passwordMatchMessage}
-                </motion.p>
-              )}
-            </div>
-
-              <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-3">
-                Already have an account?{" "}
-                <Link to="/login" className="text-blue-600 hover:underline font-medium">
-                  Sign in
-                </Link>
+              <p className="mb-8 text-lg leading-relaxed text-blue-100">
+                Join developers, designers, and creators building better event experiences together.
               </p>
+
+              <ul className="space-y-4">
+                {INTRO_POINTS.map(({ icon: Icon, text }, index) => (
+                  <motion.li
+                    key={text}
+                    initial={{ x: prefersReducedMotion ? 0 : -12, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: prefersReducedMotion ? 0 : index * 0.08 }}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/20">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <span className="text-blue-50">{text}</span>
+                  </motion.li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="relative z-10 border-t border-white/20 pt-6">
+              <blockquote className="text-sm italic text-blue-100">
+                &quot;Eventra helped me find collaborators and ship faster for my last hackathon.&quot;
+              </blockquote>
+              <cite className="mt-2 block text-xs not-italic text-blue-200">
+                - Priya S., Full-Stack Developer
+              </cite>
             </div>
           </div>
-        </motion.div>
+        </motion.section>
+
+        <motion.section
+          initial={{ x: prefersReducedMotion ? 0 : 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
+          className="rounded-3xl border border-gray-200/60 bg-white/90 p-6 shadow-2xl backdrop-blur-xl dark:border-gray-700/60 dark:bg-gray-800/85 md:p-8"
+        >
+          <SignupForm />
+          <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
+            By creating an account, you agree to our{" "}
+            <Link to="/terms" className="font-medium text-blue-600 hover:underline dark:text-blue-400">
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link to="/privacy" className="font-medium text-blue-600 hover:underline dark:text-blue-400">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        </motion.section>
       </div>
     </motion.div>
   );

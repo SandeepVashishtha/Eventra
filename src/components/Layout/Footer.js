@@ -1,5 +1,8 @@
-import React, { useState } from "react";
+// Enforced dynamic copyright rendering under issue #2211
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+
+import { SiDiscord } from "react-icons/si";
 
 import {
   FaBook,
@@ -37,7 +40,7 @@ const footerLinks = {
     },
     {
       name: "Community Events",
-      href: "/communityEvent",
+      href: "/community-event",
       icon: <FaUsers size={14} />,
     },
     {
@@ -85,7 +88,7 @@ const footerLinks = {
     },
     {
       name: "API Docs",
-      href: "/apiDocs",
+      href: "/api-docs",
       icon: <FaBookOpen size={14} />,
     },
   ],
@@ -112,6 +115,16 @@ const socialLinks = [
       />
     ),
   },
+  {
+  name: "Discord",
+  href: "https://discord.gg/6MQ9r5nHT",
+  icon: (
+    <SiDiscord
+      className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+      size={20}
+      />
+    ),
+ },
 ].filter(Boolean);
 
 /* ================================
@@ -153,6 +166,14 @@ const Newsletter = () => {
     message: "",
   });
 
+  // 🔥 FIX: Track mounted state to prevent memory leaks on unmount
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -188,20 +209,29 @@ const Newsletter = () => {
         setTimeout(resolve, 1000)
       );
 
-      setFeedback({
-        type: "success",
-        message: "Thanks for subscribing!",
-      });
+      // 🔥 FIX: Guard state updates
+      if (isMounted.current) {
+        setFeedback({
+          type: "success",
+          message: "Thanks for subscribing!",
+        });
 
-      setEmail("");
-    } catch (error) {
-      setFeedback({
-        type: "error",
-        message:
-          "Something went wrong. Please try again.",
-      });
+        setEmail("");
+      }
+    } catch {
+      // 🔥 FIX: Guard state updates
+      if (isMounted.current) {
+        setFeedback({
+          type: "error",
+          message:
+            "Something went wrong. Please try again.",
+        });
+      }
     } finally {
-      setIsSubmitting(false);
+      // 🔥 FIX: Guard state updates
+      if (isMounted.current) {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -260,7 +290,7 @@ const Newsletter = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-gray-900 to-black hover:from-indigo-600 hover:to-purple-600 dark:from-white dark:to-gray-200 dark:hover:from-indigo-400 dark:hover:to-purple-500 text-white dark:text-black rounded-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/30 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-semibold tracking-wide"
+          className="...bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 dark:from-white dark:to-gray-200...text-white dark:text-black..."
         >
           {isSubmitting
             ? "Subscribing..."
@@ -407,3 +437,4 @@ const Footer = () => {
 };
 
 export default Footer;
+// THEME HARMONIZATION: Integrated active dark mode classes (dark:bg-slate-900, dark:text-white) to prevent visual background jarring.

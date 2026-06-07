@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { GitHubStatCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import {
@@ -14,9 +14,17 @@ import {
   Eye,
   Languages,
 } from "lucide-react";
+import { safeJsonParse } from "../../../utils/safeJsonParse";
+import {
+  fetchRepository,
+  fetchContributors,
+  fetchPullRequests,
+} from "../../../utils/githubApiClient";
 
-const GITHUB_USER = "SandeepVashishtha";
-const GITHUB_REPO = "Eventra";
+const fetchStat = fetchRepository;
+
+const repoPath = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
+const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
 
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
@@ -25,7 +33,7 @@ const readCache = () => {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
-    const { data, ts } = JSON.parse(raw);
+    const { data, ts } = safeJsonParse(raw, {});
     return Date.now() - ts > CACHE_MS ? null : data;
   } catch {
     return null;
@@ -63,29 +71,53 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        const repoRes = await fetch(`${process.env.REACT_APP_API_URL}/github/repo`);
-        if (!repoRes.ok) throw new Error(`Repo ${repoRes.status}`);
-        const repoData = await repoRes.json();
+        // Fire all three requests in parallel — none depends on the others,
+        // so sequential awaits would triple the load time unnecessarily.
+        const [repoResult, contributorsResult, prResult] =
+          await Promise.allSettled([
+            fetchStat(GITHUB_USER, GITHUB_REPO),
+            fetchStat(GITHUB_USER, GITHUB_REPO, 1, 1),
+            fetchStat(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+          ]);
 
-        // contributors
+        // Repository data is required; bail out if it failed
+        // repoResult.status === "rejected"
+        // contributorsResult.status === "rejected"
+        // prResult.status === "rejected"
+        if (repoResult.status === "rejected") {
+          const cached = readCache();
+          if (cached) {
+            setStats(cached);
+            setIsLoading(false);
+            return;
+          }
+          throw repoResult.reason;
+        }
+        const repoData = repoResult.value;
+
+        // Contributor count — graceful fallback on failure
         let contribCount = "—";
-        try {
-          const cRes = await fetch(`${process.env.REACT_APP_API_URL}/github/contributors`);
-          if (cRes.ok) {
-            const cData = await cRes.json();
-            if (Array.isArray(cData)) contribCount = cData.length;
+        if (contributorsResult.status === "fulfilled") {
+          const contributors = contributorsResult.value;
+          if (Array.isArray(contributors) && contributors.length > 0) {
+            contribCount = contributors.length;
           }
-        } catch {}
+        } else if (contributorsResult.status === "rejected") {
+          contribCount = "—";
+        }
 
-        // pull requests
+        // Pull request count — graceful fallback on failure
         let prCount = "—";
-        try {
-          const pRes = await fetch(`${process.env.REACT_APP_API_URL}/github/pulls`);
-          if (pRes.ok) {
-            const pData = await pRes.json();
-            if (Array.isArray(pData)) prCount = pData.length;
+        if (prResult.status === "fulfilled") {
+          const pullRequests = prResult.value;
+          if (Array.isArray(pullRequests) && pullRequests.length > 0) {
+            prCount = pullRequests.length;
           }
-        } catch {}
+        } else if (prResult.status === "rejected") {
+          prCount = "—";
+        } else {
+         //console.warn("Failed to fetch pull request count:", prResult.reason);
+        }
 
         const next = {
           stars: repoData.stargazers_count || 0,
@@ -108,8 +140,8 @@ export default function GitHubStats() {
           writeCache(next);
           setIsLoading(false);
         }
-      } catch (err) {
-        console.warn("GitHub stats fetch failed", err);
+      } catch {
+        //console.warn("GitHub stats fetch failed", err);
         if (!cached && mounted) {
           setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
           setIsLoading(false);
@@ -122,7 +154,7 @@ export default function GitHubStats() {
     };
   }, []);
 
-  const statCards = [
+  const statCards = useMemo(() => [
     {
       label: "Stars",
       value: stats.stars,
@@ -186,7 +218,7 @@ export default function GitHubStats() {
       icon: <Languages className="text-amber-600" size={40} />,
       link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
     },
-  ];
+  ], [stats]);
 
   return (
     // UPDATED: Section background
@@ -209,12 +241,11 @@ export default function GitHubStats() {
         >
           {isLoading
             ? [...Array(10)].map((_, i) => <GitHubStatCardSkeleton key={`skeleton-${i}`} />)
-            : statCards.map(({ label, value, icon, link }, index) => (
+            : statCards.map(({ label, value, icon, link }) => (
                 <motion.a
                   key={label}
                   href={link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, rotate: 1 }}
                   whileTap={{ scale: 0.95 }}
                   // UPDATED: Card background, border, and responsive sizing

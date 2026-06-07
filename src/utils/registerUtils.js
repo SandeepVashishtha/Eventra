@@ -1,14 +1,22 @@
+import { safeJsonParse } from "./safeJsonParse.js";
+
 const STORAGE_KEY = "eventRegistrations";
 
-const normalizeEmail = (email) =>
-  (email || "").trim().toLowerCase();
+const normalizeEmail = (email) => (email || "").trim().toLowerCase();
 
 const readRegistrations = () => {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : {};
+    const parsed = safeJsonParse(data, {});
+    // Migrate legacy array-based storage to Set-based storage
+    const migrated = {};
+    for (const [eventId, emails] of Object.entries(parsed)) {
+      migrated[eventId] = Array.isArray(emails) ? [...new Set(emails)] : emails;
+    }
+    return migrated;
   } catch (error) {
-    console.warn("Failed to parse eventRegistrations from localStorage.", error);
+     
+    console.warn("[RegisterUtils] Failed to read registrations:", error);
     return {};
   }
 };
@@ -20,6 +28,8 @@ const writeRegistrations = (registrations) => {
     // localStorage may be unavailable or full; keep the UI functional.
   }
 };
+
+
 
 /**
  * localStorage is used here only for UX hints.
@@ -33,11 +43,10 @@ export const isAlreadyRegistered = (eventId, email) => {
   }
 
   const registrations = readRegistrations();
-  const eventEmails = Array.isArray(registrations[eventId])
-    ? registrations[eventId]
-    : [];
+  const eventEmails = Array.isArray(registrations[eventId]) ? registrations[eventId] : [];
+  const emailSet = new Set(eventEmails);
 
-  return eventEmails.includes(normalizedEmail);
+  return emailSet.has(normalizedEmail);
 };
 
 export const saveRegistration = (eventId, email) => {
@@ -48,12 +57,12 @@ export const saveRegistration = (eventId, email) => {
   }
 
   const registrations = readRegistrations();
-  const eventEmails = Array.isArray(registrations[eventId])
-    ? registrations[eventId]
-    : [];
+  const eventEmails = Array.isArray(registrations[eventId]) ? registrations[eventId] : [];
+  const emailSet = new Set(eventEmails);
 
-  if (!eventEmails.includes(normalizedEmail)) {
-    registrations[eventId] = [...eventEmails, normalizedEmail];
+  if (!emailSet.has(normalizedEmail)) {
+    emailSet.add(normalizedEmail);
+    registrations[eventId] = Array.from(emailSet);
     writeRegistrations(registrations);
   }
 };

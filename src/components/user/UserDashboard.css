@@ -26,6 +26,7 @@
   --card-bg-color: rgba(17, 24, 39, 0.92);
   --border-color: rgba(148, 163, 184, 0.18);
   --text-color: #f8fafc;
+  --text-color-light: #94a3b8; /* was #cbd5e1 — too dim on dark card backgrounds */
   --text-color-light: #cbd5e1;
   --hover-bg: rgba(255, 255, 255, 0.05);
 }
@@ -541,6 +542,10 @@
   letter-spacing: 0.4px;
 }
 
+.dark .ud-stat-label {
+  color: #94a3b8;
+}
+
 .ud-stat-value {
   font-size: 1.75rem;
   font-weight: 700;
@@ -549,12 +554,18 @@
   line-height: 1.1;
 }
 
-/* removed dark mode override (handled by CSS variables) */
+.dark .ud-stat-value {
+  color: #f1f5f9;
+}
 
 .ud-stat-sub {
   font-size: 0.75rem;
   color: var(--text-color-light);
   margin: 0;
+}
+
+.dark .ud-stat-sub {
+  color: #94a3b8;
 }
 
 /* ── Quick Actions ── */
@@ -736,6 +747,8 @@
   font-weight: 600;
   color: var(--text-color);
   margin: 0 0 var(--ud-space-xxs);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -878,6 +891,8 @@
   color: var(--text-color);
   margin: 0;
   line-height: 1.3;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -1689,4 +1704,174 @@
   .ud-stats-grid { grid-template-columns: repeat(4, 1fr); }
   .ud-quick-grid { grid-template-columns: repeat(4, 1fr); }
   .ud-three-col  { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── Integrated Dashboard Footer ── */
+.ud-footer {
+  margin-top: auto;
+  padding: 1.75rem var(--ud-space-xl) 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ud-space-sm);
+  background: transparent;
+}
+
+.ud-footer-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border-color);
+  opacity: 0.8;
+}
+
+.ud-footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ud-space-md);
+}
+
+.ud-footer-copyright {
+  font-size: 0.8rem;
+  color: var(--text-color-light);
+  margin: 0;
+  font-weight: 400;
+}
+
+.ud-footer-links {
+  display: flex;
+  align-items: center;
+  gap: var(--ud-space-lg);
+  flex-wrap: wrap;
+}
+
+.ud-footer-link {
+  font-size: 0.8rem;
+  color: var(--text-color-light);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.ud-footer-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: #6366f1;
+  transition: width 0.25s ease;
+}
+
+.ud-footer-link:hover {
+  color: #6366f1;
+}
+
+.ud-footer-link:hover::after {
+  width: 100%;
+}
+
+.dark .ud-footer-link:hover {
+  color: #a5b4fc;
+}
+
+.dark .ud-footer-link:hover::after {
+  background: #a5b4fc;
+}
+
+@media (max-width: 768px) {
+  .ud-footer {
+    padding: 1.25rem var(--ud-space-lg);
+  }
+  .ud-footer-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--ud-space-xs);
+  }
+  .ud-footer-links {
+    justify-content: center;
+    gap: var(--ud-space-md);
+  }
+}
+/* ── Extra small screens (320px - 480px) mobile-first fixes ── */
+@media (max-width: 380px) {
+  .ud-topbar {
+    padding: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .ud-username {
+    font-size: 1.1rem;
+  }
+
+  .ud-greeting {
+    font-size: 0.72rem;
+  }
+
+  .ud-search {
+    width: 100px;
+  }
+
+  .ud-search-wrap:focus-within {
+    width: 180px;
+  }
+
+  .ud-content {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .ud-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .ud-quick-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+
+  .ud-stat-card {
+    padding: 0.85rem;
+  }
+
+  .ud-stat-value {
+    font-size: 1.4rem;
+  }
+
+  .ud-three-col {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .ud-card {
+    padding: 0.85rem;
+  }
+
+  .ud-topbar-right {
+    gap: 0.35rem;
+  }
+
+  .ud-footer {
+    padding: 1rem 0.75rem;
+  }
+
+  .ud-footer-links {
+    gap: 0.65rem;
+  }
+
+  .ud-notif-panel {
+    width: 260px;
+    right: -40px;
+  }
+
+  .ud-table th,
+  .ud-table td {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.78rem;
+  }
 }
