@@ -5,6 +5,8 @@ export function useInstallPrompt() {
   const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const handler = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
