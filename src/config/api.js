@@ -1,8 +1,8 @@
 import axios from "axios";
-import { ENV } from "./env";
-import { syncServerTimeFromHeader } from "../utils/timeSync";
-import { getCSRFToken } from "../utils/csrfToken";
-import { logger } from "../utils/logger";
+import { ENV } from "./env.js";
+import { syncServerTimeFromHeader } from "../utils/timeSync.js";
+import { getCSRFToken } from "../utils/csrfToken.js";
+import { logger } from "../utils/logger.js";
 
 // ---------------------------------------------------------------------------
 // Base API URL
