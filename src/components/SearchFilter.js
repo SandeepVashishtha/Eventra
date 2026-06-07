@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import useDebounce from "../hooks/useDebounce";
 import EmptyState from "./common/EmptyState";
-import { FilterX } from "lucide-react";
+import { FilterX, Heart } from "lucide-react";
 import "./styles/components.css";
 
 const SearchFilter = () => {
@@ -11,6 +11,10 @@ const SearchFilter = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
+  const [favorites, setFavorites] = useState(() => {
+  const saved = localStorage.getItem("favoriteEvents");
+  return saved ? JSON.parse(saved) : [];
+});
 
   const categories = [
     { value: "all", label: "All Categories" },
@@ -32,6 +36,12 @@ const SearchFilter = () => {
     { value: "tokyo", label: "Tokyo" },
   ];
 
+  useEffect(() => {
+  localStorage.setItem(
+    "favoriteEvents",
+    JSON.stringify(favorites)
+  );
+}, [favorites]);
   const mockEvents = [
     {
       id: 1,
@@ -135,6 +145,7 @@ const SearchFilter = () => {
     
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
   });
+  useState(() => {});
 
   return (
     <div className="search-filter-container bg-gray-50 dark:bg-black">
