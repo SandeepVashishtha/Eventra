@@ -164,11 +164,11 @@ export const requestValidation = async (endpoint, options = {}) => {
       const data = error.data;
 
       // If the API explicitly returned a validation failure (like 400, 409)
-      if (status && !RETRYABLE_STATUS_CODES.includes(status) && status < 500) {
+      if (status === 401 || status === 403) {
         return createValidationResponse(
           false,
-          data?.message || invalidMessage,
-          { status, data },
+          networkMessage,
+          { status, data }
         );
       }
 
