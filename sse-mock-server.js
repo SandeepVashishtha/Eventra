@@ -8,6 +8,10 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
+import {
+  buildPersonalizedRecommendations,
+  getTrendingEventsForArea,
+} from "./src/utils/recommendationEngine.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,6 +25,15 @@ const loadJson = (relativePath) => {
 
 const MOCK_EVENT_CATALOG = loadJson("src/Pages/Events/eventsMockData.json");
 const MOCK_PROJECT_CATALOG = loadJson("src/Pages/Projects/mockProjectsData.json");
+const MOCK_HACKATHON_CATALOG = loadJson("src/Pages/Hackathons/hackathonMockData.json");
+
+let userPreferenceStore = {
+  interests: ["Web Development", "AI & Machine Learning"],
+  techStack: ["React", "Python"],
+  eventTypes: ["workshop", "conference"],
+  level: "Intermediate",
+  location: "Online",
+};
 
 // Updated default fallback port to 8080 to match your api.js default config
 const PORT = parseInt(process.env.SSE_MOCK_PORT || process.env.PORT || "8080", 10);
@@ -185,6 +198,58 @@ const server = http.createServer(async (req, res) => {
       ...new Set(MOCK_PROJECT_CATALOG.map((project) => project.category).filter(Boolean)),
     ];
     return jsonResponse(res, 200, categories);
+  }
+
+  // User preference tracking
+  if (pathname === "/api/user/preferences" && req.method === "POST") {
+    const body = await getRequestBody(req);
+    userPreferenceStore = { ...userPreferenceStore, ...body };
+    return jsonResponse(res, 200, {
+      message: "Preferences saved",
+      preferences: userPreferenceStore,
+    });
+  }
+
+  if (pathname === "/api/user/preferences" && req.method === "GET") {
+    return jsonResponse(res, 200, userPreferenceStore);
+  }
+
+  // Personalized recommendations
+  if (pathname === "/api/recommendations/trending" && req.method === "GET") {
+    const limit = Math.max(1, parseInt(searchParams.get("limit") || "6", 10));
+    const location = searchParams.get("location") || userPreferenceStore.location || "";
+    const trending = getTrendingEventsForArea(MOCK_EVENT_CATALOG, location, limit).map(
+      (event) => ({
+        ...event,
+        itemType: "event",
+        recommendationScore: event.trendingScore || 0,
+        recommendationReasons: ["Trending on Eventra"],
+      })
+    );
+    return jsonResponse(res, 200, { recommendations: trending });
+  }
+
+  if (pathname === "/api/recommendations" && req.method === "GET") {
+    const limit = Math.max(1, parseInt(searchParams.get("limit") || "8", 10));
+    const eventRecs = buildPersonalizedRecommendations({
+      events: MOCK_EVENT_CATALOG,
+      userProfile: userPreferenceStore,
+      location: userPreferenceStore.location || "",
+      limit: Math.ceil(limit * 0.7),
+    }).map((item) => ({ ...item, itemType: "event" }));
+
+    const hackathonRecs = buildPersonalizedRecommendations({
+      events: MOCK_HACKATHON_CATALOG,
+      userProfile: userPreferenceStore,
+      location: userPreferenceStore.location || "",
+      limit: Math.ceil(limit * 0.5),
+    }).map((item) => ({ ...item, itemType: "hackathon" }));
+
+    const recommendations = [...eventRecs, ...hackathonRecs]
+      .sort((a, b) => b.recommendationScore - a.recommendationScore)
+      .slice(0, limit);
+
+    return jsonResponse(res, 200, { recommendations });
   }
 
   // Get statistics
@@ -480,6 +545,9 @@ server.listen(PORT, () => {
   console.log(`\n[Dev Only] SSE mock server running on port ${PORT}`);
   console.log(`Allowed Origin: ${ALLOWED_ORIGIN}`);
   console.log("Streams and Endpoints available:");
+  console.log(`  GET http://localhost:${PORT}/api/recommendations`);
+  console.log(`  GET http://localhost:${PORT}/api/recommendations/trending`);
+  console.log(`  POST http://localhost:${PORT}/api/user/preferences`);
   console.log(`  GET http://localhost:${PORT}/api/users/profile`);
   console.log(`  GET http://localhost:${PORT}/api/stream/leaderboard`);
   console.log(`  GET http://localhost:${PORT}/api/stream/analytics`);

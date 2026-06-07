@@ -39,6 +39,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { useAuth } from "./AuthContext";
 
 import { saveToOfflineCache, getFromOfflineCache } from "../utils/indexedDB";
+import { trackEventRegistration } from "../utils/UserInterestTracker";
 
 const MyEventsContext = createContext(null);
 
@@ -149,6 +150,10 @@ export const MyEventsProvider = ({ children }) => {
    * @param {string} qrToken — the signed JWT ticket token
    */
   const addRegistration = useCallback((event, formData = {}, registrationId = null, qrToken = null) => {
+    if (event?.id) {
+      trackEventRegistration(event);
+    }
+
     setMyEvents((prev) => {
       if (prev.some((r) => r.eventId === event.id)) return prev;
       return [

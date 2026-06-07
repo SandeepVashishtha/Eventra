@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { safeJsonParse } from "../utils/safeJsonParse";
 import { logger } from "../utils/logger";
+import { trackEventView } from "../utils/UserInterestTracker";
 
 /**
  * @file useRecentlyViewed.js
@@ -175,6 +176,7 @@ const useRecentlyViewed = () => {
    */
   const addRecentlyViewed = useCallback((event) => {
     if (!event || !event.id) return;
+    trackEventView(event);
 
     setRecentlyViewed((prev) => {
       const filtered = prev.filter((e) => e.id !== event.id);

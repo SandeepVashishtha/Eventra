@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useMemo } from "react";
 import { calculateRecommendationScore } from "../utils/recommendationEngine";
+import { buildUserInterestProfile } from "../utils/UserInterestTracker";
 
 const USER_PROFILE_KEY = "eventra_user_profile";
 const PROFILE_UPDATED_EVENT = "userProfileUpdated";
@@ -49,6 +50,7 @@ const useRecommendations = (events = []) => {
   }, []);
 
   const userProfile = useMemo(() => parseProfile(profileKey), [profileKey]);
+  const interestProfile = useMemo(() => buildUserInterestProfile(), [profileKey]);
 
   const recommendations = useMemo(() => {
     if (!Array.isArray(events)) return [];
@@ -56,7 +58,11 @@ const useRecommendations = (events = []) => {
     return events
       .map((event) => {
         try {
-          const result = calculateRecommendationScore(event, userProfile);
+          const result = calculateRecommendationScore(
+            event,
+            userProfile,
+            interestProfile.interactionProfile
+          );
           return {
             ...event,
             recommendationScore: Number.isFinite(result?.score) ? result.score : 0,
@@ -71,7 +77,7 @@ const useRecommendations = (events = []) => {
         }
       })
       .sort((a, b) => (b.recommendationScore ?? 0) - (a.recommendationScore ?? 0));
-  }, [events, userProfile]);
+  }, [events, userProfile, interestProfile.interactionProfile]);
 
   return recommendations;
 };

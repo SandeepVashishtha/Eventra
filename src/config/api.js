@@ -316,6 +316,11 @@ export const API_ENDPOINTS = {
   USERS: {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
+    PREFERENCES: buildApiUrl("/api/user/preferences"),
+  },
+  RECOMMENDATIONS: {
+    ALL: buildApiUrl("/api/recommendations"),
+    TRENDING: buildApiUrl("/api/recommendations/trending"),
   },
   SESSION_RECOVERY: {
     BASE: buildApiUrl("/api/session-recovery"),
