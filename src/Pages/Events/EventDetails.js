@@ -6,7 +6,7 @@ import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2, Check, Printer, Download } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2, Check } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { DRAFT_KEY } from "../../constants/eventDefaults";
@@ -15,6 +15,7 @@ import { logger } from "../../utils/logger";
 import ReminderControls from "../../components/reminders/ReminderControls";
 import CertificateDownload from "../../components/CertificateDownload";
 import EventRecommendations from "../../components/events/EventRecommendations";
+import SimilarEvents from "../../components/events/SimilarEvents";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
 import { useAuth } from "../../context/AuthContext";
@@ -53,21 +54,11 @@ const EventDetails = () => {
     const requestId = ++latestRequestIdRef.current;
     const isLatestRequest = () => latestRequestIdRef.current === requestId;
 
-    // FIX (#5077): AbortController cancels the in-flight network request when
-    // the user navigates away before it completes, preventing the response
-    // from a stale request from ever reaching setState.
-    const controller = new AbortController();
-
-    // Guard: only reset state for the latest request. A stale in-flight
-    // request must not clobber the loading state started by a newer one.
-    if (!isLatestRequest()) return;
     setFetchLoading(true);
     setFetchError(null);
 
     try {
-      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), {
-        signal: controller.signal,
-      });
+      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
       if (!isLatestRequest()) return;
       if (res.ok && res.data) {
         const raw = res.data?.data ?? res.data;
@@ -75,10 +66,7 @@ const EventDetails = () => {
       } else {
         throw new Error(res.data?.message || `Event not found (${res.status})`);
       }
-    } catch (err) {
-      // AbortError means the request was intentionally cancelled — do not
-      // update state or show an error to the user.
-      if (err?.name === 'AbortError') return;
+    } catch {
       if (!isLatestRequest()) return;
       // Fall back to bundled mock data when the API is unreachable
       const fallback = mockEvents.find((item) => String(item.id) === eventId);
@@ -92,17 +80,10 @@ const EventDetails = () => {
         setFetchLoading(false);
       }
     }
-
-    // Return the abort function so the useEffect cleanup can cancel the request
-    return () => controller.abort();
   }, [eventId]);
 
   useEffect(() => {
-    // loadEvent returns an abort function; wire it up as the cleanup so
-    // navigating away mid-request cancels the in-flight fetch (#5077).
-    let cancel;
-    loadEvent().then((abortFn) => { cancel = abortFn; });
-    return () => { if (cancel) cancel(); };
+    loadEvent();
   }, [loadEvent]);
 
   // Safely handle localStorage cache updates via hook
@@ -237,7 +218,7 @@ const EventDetails = () => {
            toast.success("Event link copied to clipboard!");   
            setLinkCopied(true);                                
            setTimeout(() => setLinkCopied(false), 2000);
-    } catch {
+    } catch (err) {
        toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
@@ -302,7 +283,7 @@ const EventDetails = () => {
                 {event.type}
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <h1 title={event.title} className="text-4xl sm:text-5xl font-extrabold tracking-tight break-words">{event.title}</h1>
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">{event.title}</h1>
                 <button
                   onClick={handleCopy}
                   className={`p-2 rounded-full transition-colors ${linkCopied 
@@ -350,7 +331,7 @@ const EventDetails = () => {
                 className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                 aria-label="Print or save as PDF"
               >
-                {isPrinting ? "Preparing..." : <><Printer size={18} className="inline-block" /> Print / Save as PDF</>}
+                {isPrinting ? "Preparing..." : "≡ƒû¿∩╕Å Print / Save as PDF"}
               </button>
 
               {isOrganizer && (
@@ -368,7 +349,7 @@ const EventDetails = () => {
                       className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                       aria-label="Export registrant data"
                     >
-                      <Download size={18} className="inline-block" /> Export Registrants
+                      ≡ƒôÑ Export Registrants
                     </button>
                     {showExportDropdown && (
                       <>
@@ -400,7 +381,7 @@ const EventDetails = () => {
                                   }
                                 }
                                 exportToCSV(allRegistrants, `${event.title}_registrants`);
-                              } catch {
+                              } catch (error) {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -438,7 +419,7 @@ const EventDetails = () => {
                                   }
                                 }
                                 exportToJSON(allRegistrants, `${event.title}_registrants`);
-                              } catch {
+                              } catch (error) {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -583,6 +564,13 @@ const EventDetails = () => {
 
           <div className="mt-12">
             <EventRecommendations currentEventId={event.id} currentCategory={event.category} />
+          </div>
+
+          {/* Similar Events — multi-signal recommendation section (#7754)
+              Scores candidates by category, shared tags, type, mode, and difficulty
+              so the user is surfaced events that genuinely match what they viewed. */}
+          <div className="mt-4">
+            <SimilarEvents currentEvent={event} />
           </div>
         </div>
 
