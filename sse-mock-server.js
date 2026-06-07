@@ -21,68 +21,7 @@ const loadJson = (relativePath) => {
 
 const MOCK_EVENT_CATALOG = loadJson("src/Pages/Events/eventsMockData.json");
 const MOCK_PROJECT_CATALOG = loadJson("src/Pages/Projects/mockProjectsData.json");
-const MOCK_NOTIFICATION_SEED = loadJson("src/data/mockNotifications.json");
 
-let notificationStore = MOCK_NOTIFICATION_SEED.map((item) => ({ ...item }));
-const notificationSseClients = new Set();
-
-const LIVE_NOTIFICATION_TEMPLATES = [
-  {
-    title: "New Registration",
-    message: "Someone just registered for React Conference 2026.",
-    category: "registrations",
-    type: "registration",
-    link: "/events/1",
-  },
-  {
-    title: "Team Invite",
-    message: "You have a new team invitation for Global AI Hackathon.",
-    category: "social",
-    type: "team_invitation",
-    link: "/hackathons/2",
-  },
-  {
-    title: "Organizer Announcement",
-    message: "Venue details updated for DevOps Summit 2026.",
-    category: "announcements",
-    type: "announcement",
-    link: "/events/3",
-  },
-  {
-    title: "Event Reminder",
-    message: "Your workshop starts in 1 hour.",
-    category: "reminders",
-    type: "reminder",
-    link: "/events/2",
-  },
-];
-
-const broadcastNotification = (notification) => {
-  const payload = JSON.stringify({ notification });
-  for (const client of notificationSseClients) {
-    try {
-      client.write(`data: ${payload}\n\n`);
-    } catch {
-      notificationSseClients.delete(client);
-    }
-  }
-};
-
-const pushLiveNotification = () => {
-  const template =
-    LIVE_NOTIFICATION_TEMPLATES[
-      Math.floor(Math.random() * LIVE_NOTIFICATION_TEMPLATES.length)
-    ];
-  const notification = {
-    ...template,
-    id: `notif-live-${Date.now()}`,
-    isRead: false,
-    createdAt: new Date().toISOString(),
-  };
-  notificationStore = [notification, ...notificationStore];
-  broadcastNotification(notification);
-  return notification;
-};
 
 // Updated default fallback port to 8080 to match your api.js default config
 const PORT = parseInt(process.env.SSE_MOCK_PORT || process.env.PORT || "8080", 10);

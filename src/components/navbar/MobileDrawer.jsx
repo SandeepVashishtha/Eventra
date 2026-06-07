@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { LogIn, UserPlus, Info, HelpCircle, Sun, Moon, MousePointer, Bell } from "lucide-react";
-import { useNotification } from "../../context/NotificationContext";
+
 import NavbarLinks from "./NavbarLinks";
 import LanguageSelector from "../LanguageSelector";
 import { useTheme } from "../../context/ThemeContext";
@@ -162,23 +161,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   {t("nav.viewProfile")}
-                </Link>
-                <Link
-                  to="/notifications"
-                  onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
-                    isActive("/notifications")
-                      ? "border-primary bg-bg-secondary text-text"
-                      : "border-transparent text-text-light hover:bg-bg hover:text-text"
-                  }`}
-                >
-                  <Bell className="w-5 h-5" />
-                  Notifications
-                  {unreadCount > 0 && (
-                    <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </span>
-                  )}
+
                 </Link>
                 <Link
                   to="/about"
