@@ -55,10 +55,7 @@ import { logAbuseAttempt } from "../../utils/abuseLogger";
 
 // Registration lock map to prevent concurrent registrations for the same event
 // const registrationLocks = new Map();
-const registrationLimiter = createRateLimiter({
-  maxTokens: 3,
-  refillRate: 0.2, // roughly 1 token every 5 seconds
-});
+// registrationLimiter moved to hook scope
 
 /**
  * Derives a user-facing error message from a failed registration API response.
