@@ -1460,9 +1460,6 @@ Requires a valid Bearer JWT in the `Authorization` header. Any authenticated use
 | `404 Not Found` | If the event or authenticated user does not exist |
 | `409 Conflict` | If the user has already submitted feedback for the event |
 
-#### Notes
-
-- Related backend implementation: [Backend PR #60](https://github.com/SandeepVashishtha/Eventra-Backend/pull/60)
 
 ---
 
