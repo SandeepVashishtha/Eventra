@@ -171,6 +171,34 @@ const Settings = () => {
             </div>
           </article>
 
+          {/* Security */}
+          <article className="rounded-3xl border border-slate-200/70 dark:border-slate-700/90 bg-card-bg/70 p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4 text-slate-900 dark:text-slate-100">
+              <ShieldCheck className="w-6 h-6 text-violet-500" aria-hidden="true" />
+              <div>
+                <h2 className="text-lg font-semibold">Security</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Manage active sessions and monitor account access.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Link
+                to="/settings/security"
+                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-bg px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
+              >
+                <span className="flex items-center gap-3">
+                  <ShieldCheck className="w-5 h-5 text-violet-500" aria-hidden="true" />
+                  Active Sessions & Security
+                </span>
+                <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
+              </Link>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                View devices signed in to your account and log out remotely from unfamiliar sessions.
+              </p>
+            </div>
+          </article>
+
           {/* Privacy */}
           <article className="rounded-3xl border border-slate-200/70 dark:border-slate-700/90 bg-card-bg/70 p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4 text-slate-900 dark:text-slate-100">

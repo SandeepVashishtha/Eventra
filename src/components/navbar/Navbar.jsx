@@ -6,6 +6,7 @@ import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
 import AuthButtons from "./AuthButtons";
 import InstallAppButton from "../common/InstallAppButton";
+import LanguageSelector from "../LanguageSelector";
 import ProfileMenu from "./ProfileMenu";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
@@ -113,6 +114,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           {/* Right Controls Container */}
           <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0">
             <div className="hidden lg:flex items-center gap-2.5">
+              <LanguageSelector compact />
               {authenticated ? (
                 <ProfileMenu user={user} logout={logout} />
               ) : (

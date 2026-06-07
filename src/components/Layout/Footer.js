@@ -1,6 +1,7 @@
 // Enforced dynamic copyright rendering under issue #2211
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { SiDiscord } from "react-icons/si";
 
@@ -25,73 +26,35 @@ import {
 
 const footerLinks = {
   quick_links: [
-    { name: "Home", href: "/", icon: <FaHome size={14} /> },
-    { name: "Events", href: "/events", icon: <FaCalendarAlt size={14} /> },
-    { name: "Hackathons", href: "/hackathons", icon: <FaStar size={14} /> },
-    { name: "Projects", href: "/projects", icon: <FaFolder size={14} /> },
-    { name: "About", href: "/about", icon: <FaInfoCircle size={14} /> },
+    { nameKey: "footer.links.home", href: "/", icon: <FaHome size={14} /> },
+    { nameKey: "footer.links.events", href: "/events", icon: <FaCalendarAlt size={14} /> },
+    { nameKey: "footer.links.hackathons", href: "/hackathons", icon: <FaStar size={14} /> },
+    { nameKey: "footer.links.projects", href: "/projects", icon: <FaFolder size={14} /> },
+    { nameKey: "footer.links.about", href: "/about", icon: <FaInfoCircle size={14} /> },
   ],
 
   community: [
-    {
-      name: "Create Event",
-      href: "/create-event",
-      icon: <FaPlus size={14} />,
-    },
-    {
-      name: "Community Events",
-      href: "/community-event",
-      icon: <FaUsers size={14} />,
-    },
-    {
-      name: "Documentation",
-      href: "/documentation",
-      icon: <FaBook size={14} />,
-    },
-    {
-      name: "Contributors",
-      href: "/contributors",
-      icon: <FaUsers size={14} />,
-    },
-    {
-      name: "Contributors Guide",
-      href: "/contributorguide",
-      icon: <FaBook size={14} />,
-    },
-    {
-      name: "LeaderBoard",
-      href: "/leaderBoard",
-      icon: <FaTrophy size={14} />,
-    },
+    { nameKey: "footer.links.createEvent", href: "/create-event", icon: <FaPlus size={14} /> },
+    { nameKey: "footer.links.communityEvents", href: "/community-event", icon: <FaUsers size={14} /> },
+    { nameKey: "footer.links.documentation", href: "/documentation", icon: <FaBook size={14} /> },
+    { nameKey: "footer.links.contributors", href: "/contributors", icon: <FaUsers size={14} /> },
+    { nameKey: "footer.links.contributorsGuide", href: "/contributorguide", icon: <FaBook size={14} /> },
+    { nameKey: "footer.links.leaderboard", href: "/leaderBoard", icon: <FaTrophy size={14} /> },
   ],
 
   support: [
-    {
-      name: "Help Center",
-      href: "/helpcenter",
-      icon: <FaQuestionCircle size={14} />,
-    },
-    {
-      name: "FAQ",
-      href: "/faq",
-      icon: <FaQuestion size={14} />,
-    },
-    {
-      name: "Contact Us",
-      href: "/contact",
-      icon: <FaEnvelope size={14} />,
-    },
-    {
-      name: "Feedback",
-      href: "/feedback",
-      icon: <FaComments size={14} />,
-    },
-    {
-      name: "API Docs",
-      href: "/api-docs",
-      icon: <FaBookOpen size={14} />,
-    },
+    { nameKey: "footer.links.helpCenter", href: "/helpcenter", icon: <FaQuestionCircle size={14} /> },
+    { nameKey: "footer.links.faq", href: "/faq", icon: <FaQuestion size={14} /> },
+    { nameKey: "footer.links.contactUs", href: "/contact", icon: <FaEnvelope size={14} /> },
+    { nameKey: "footer.links.feedback", href: "/feedback", icon: <FaComments size={14} /> },
+    { nameKey: "footer.links.apiDocs", href: "/api-docs", icon: <FaBookOpen size={14} /> },
   ],
+};
+
+const footerSectionKeys = {
+  quick_links: "footer.sections.quickLinks",
+  community: "footer.sections.community",
+  support: "footer.sections.support",
 };
 
 const socialLinks = [
@@ -156,6 +119,7 @@ const isValidEmail = (value) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 const Newsletter = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
 
   const [isSubmitting, setIsSubmitting] =
@@ -182,7 +146,7 @@ const Newsletter = () => {
     if (!trimmedEmail) {
       setFeedback({
         type: "error",
-        message: "Please enter your email address.",
+        message: t("footer.newsletter.emailRequired"),
       });
 
       return;
@@ -191,7 +155,7 @@ const Newsletter = () => {
     if (!isValidEmail(trimmedEmail)) {
       setFeedback({
         type: "error",
-        message: "Please enter a valid email address.",
+        message: t("footer.newsletter.emailInvalid"),
       });
 
       return;
@@ -213,7 +177,7 @@ const Newsletter = () => {
       if (isMounted.current) {
         setFeedback({
           type: "success",
-          message: "Thanks for subscribing!",
+          message: t("footer.newsletter.success"),
         });
 
         setEmail("");
@@ -223,8 +187,7 @@ const Newsletter = () => {
       if (isMounted.current) {
         setFeedback({
           type: "error",
-          message:
-            "Something went wrong. Please try again.",
+          message: t("footer.newsletter.error"),
         });
       }
     } finally {
@@ -246,11 +209,11 @@ const Newsletter = () => {
   return (
     <div className="mt-4">
       <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">
-        Subscribe to our newsletter
+        {t("footer.newsletter.heading")}
       </h4>
 
       <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-        Get the latest updates, event tips, and community news.
+        {t("footer.newsletter.description")}
       </p>
 
       <form
@@ -273,7 +236,7 @@ const Newsletter = () => {
                 });
               }
             }}
-            placeholder="Enter your email"
+            placeholder={t("footer.newsletter.placeholder")}
             className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
             disabled={isSubmitting}
             aria-describedby={
@@ -293,8 +256,8 @@ const Newsletter = () => {
           className="...bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 dark:from-white dark:to-gray-200...text-white dark:text-black..."
         >
           {isSubmitting
-            ? "Subscribing..."
-            : "Subscribe"}
+            ? t("footer.newsletter.subscribing")
+            : t("footer.newsletter.subscribe")}
         </button>
       </form>
 
@@ -311,7 +274,7 @@ const Newsletter = () => {
           </p>
         ) : (
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            We respect your privacy. Unsubscribe at any time.
+            {t("footer.newsletter.privacy")}
           </p>
         )}
       </div>
@@ -319,10 +282,12 @@ const Newsletter = () => {
   );
 };
 
-const SocialLinksRender = () => (
+const SocialLinksRender = () => {
+  const { t } = useTranslation();
+  return (
   <div className="mt-6">
     <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-3">
-      Follow Us
+      {t("footer.followUs")}
     </h4>
 
     <div className="flex flex-wrap gap-3">
@@ -344,8 +309,11 @@ const SocialLinksRender = () => (
     </div>
   </div>
 );
+};
 
-const FooterLinksRender = () => (
+const FooterLinksRender = () => {
+  const { t } = useTranslation();
+  return (
   <>
     {Object.entries(footerLinks).map(
       ([key, links]) => (
@@ -354,12 +322,12 @@ const FooterLinksRender = () => (
           className="py-2"
         >
           <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-6">
-            {key.replace("_", " ")}
+            {t(footerSectionKeys[key])}
           </h4>
 
           <ul className="space-y-4">
             {links.map((link) => (
-              <li key={link.name}>
+              <li key={link.nameKey}>
                 <Link
                   to={link.href}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
@@ -370,7 +338,7 @@ const FooterLinksRender = () => (
                     </span>
                   )}
 
-                  <span>{link.name}</span>
+                  <span>{t(link.nameKey)}</span>
                 </Link>
               </li>
             ))}
@@ -380,8 +348,10 @@ const FooterLinksRender = () => (
     )}
   </>
 );
+};
 
 const Footer = () => {
+  const { t } = useTranslation();
   return (
     <footer className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
@@ -398,7 +368,7 @@ const Footer = () => {
             </h2>
 
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Open-source event management for communities worldwide.
+              {t("footer.tagline")}
             </p>
 
             <Newsletter />
@@ -413,7 +383,7 @@ const Footer = () => {
       {/* Bottom Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
         <p className="text-gray-500 dark:text-gray-400 text-sm">
-          © {new Date().getFullYear()} Eventra. All rights reserved.
+          © {new Date().getFullYear()} Eventra. {t("footer.rights")}
         </p>
 
         <div className="flex gap-6 text-sm text-gray-500 dark:text-gray-400">
@@ -421,14 +391,14 @@ const Footer = () => {
             to="/privacy"
             className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
           >
-            Privacy Policy
+            {t("footer.privacy")}
           </Link>
 
           <Link
             to="/terms"
             className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
           >
-            Terms of Service
+            {t("footer.terms")}
           </Link>
         </div>
       </div>

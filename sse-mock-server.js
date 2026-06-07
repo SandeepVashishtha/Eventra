@@ -4,7 +4,32 @@
  * Then set REACT_APP_API_URL=http://localhost:8080 in .env.local and restart the dev server.
  */
 import http from "http";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
+import {
+  createSession,
+  getUserSessions,
+  touchSession,
+  revokeSession,
+  revokeAllSessions,
+  cleanupExpiredSessions,
+} from "./api/lib/sessionStore.js";
+import { getAuthenticatedUserId, getCurrentSessionId } from "./api/lib/authUtils.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const loadJson = (relativePath) => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, relativePath), "utf8"));
+  } catch {
+    return [];
+  }
+};
+
+const MOCK_EVENT_CATALOG = loadJson("src/Pages/Events/eventsMockData.json");
+const MOCK_PROJECT_CATALOG = loadJson("src/Pages/Projects/mockProjectsData.json");
 
 // Updated default fallback port to 8080 to match your api.js default config
 const PORT = parseInt(process.env.SSE_MOCK_PORT || process.env.PORT || "8080", 10);
@@ -32,7 +57,9 @@ const MOCK_EVENTS = [
   { id: "event-3", title: "Web Dev Workshop" }
 ];
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET =
+  process.env.JWT_SECRET ||
+  (process.env.NODE_ENV !== "production" ? "eventra-dev-jwt-secret" : null);
 if (!JWT_SECRET) {
   console.error("FATAL: JWT_SECRET environment variable is required.");
   process.exit(1);
@@ -111,8 +138,8 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Session-Id, X-User-Id, X-Eventra-User-Id",
       "Access-Control-Allow-Credentials": "true",
     });
     res.end();
@@ -132,14 +159,141 @@ const server = http.createServer(async (req, res) => {
     });
     res.end(JSON.stringify({
       success: true,
-      user: { id: "mock-dev-123", name: "Sadwika", role: "developer" }
+      user: { id: "mock-dev-123", name: "Sadwika", role: "developer", email: "dev@eventra.local" }
     }));
     return;
   }
 
-  // Get all events
+  // Multi-device session management
+  if (pathname === "/api/sessions" && (req.method === "GET" || req.method === "POST")) {
+    cleanupExpiredSessions();
+    const userId = getAuthenticatedUserId(req) || "mock-dev-123";
+    const currentSessionId = getCurrentSessionId(req);
+
+    if (req.method === "GET") {
+      const sessions = getUserSessions(userId, currentSessionId);
+      return jsonResponse(res, 200, { sessions, currentSessionId });
+    }
+
+    const body = await getRequestBody(req);
+
+    if (body.action === "heartbeat" && body.sessionId) {
+      const updated = touchSession(body.sessionId);
+      if (!updated || String(updated.userId) !== String(userId)) {
+        return jsonResponse(res, 404, { message: "Session not found." });
+      }
+      return jsonResponse(res, 200, { session: { ...updated, isCurrent: true } });
+    }
+
+    const session = createSession(userId, {
+      sessionId: body.sessionId,
+      userAgent: body.userAgent || req.headers["user-agent"],
+      deviceFingerprint: body.deviceFingerprint,
+      browser: body.browser,
+      os: body.os,
+      deviceType: body.deviceType,
+    }, req);
+
+    return jsonResponse(res, 201, {
+      session: { ...session, isCurrent: true },
+      notifyNewDevice: session.suspicious,
+    });
+  }
+
+  if (pathname === "/api/sessions/logout-all" && req.method === "DELETE") {
+    const userId = getAuthenticatedUserId(req) || "mock-dev-123";
+    const currentSessionId = getCurrentSessionId(req);
+    const { revokedCount } = revokeAllSessions(userId, currentSessionId);
+    return jsonResponse(res, 200, {
+      revoked: true,
+      revokedCount,
+      keptCurrentSession: Boolean(currentSessionId),
+    });
+  }
+
+  const sessionIdMatch = pathname.match(/^\/api\/sessions\/([^/]+)$/);
+  if (sessionIdMatch && req.method === "DELETE") {
+    const userId = getAuthenticatedUserId(req) || "mock-dev-123";
+    const sessionId = decodeURIComponent(sessionIdMatch[1]);
+    const currentSessionId = getCurrentSessionId(req);
+    const result = revokeSession(sessionId, userId);
+
+    if (!result.ok) {
+      return jsonResponse(res, 404, { message: "Session not found." });
+    }
+
+    return jsonResponse(res, 200, {
+      revoked: true,
+      sessionId,
+      revokedCurrentSession: sessionId === currentSessionId,
+    });
+  }
+
+  // Mock auth login — creates a session for local development
+  if (pathname === "/api/auth/login" && req.method === "POST") {
+    const body = await getRequestBody(req);
+    const email = body.usernameOrEmail || body.email || "dev@eventra.local";
+    const userId = "mock-dev-123";
+    const token = jwt.sign(
+      { sub: userId, email, role: "ATTENDEE" },
+      JWT_SECRET,
+      { expiresIn: "7d" },
+    );
+
+    const session = createSession(userId, {
+      userAgent: req.headers["user-agent"],
+      deviceFingerprint: body.deviceFingerprint,
+    }, req);
+
+    return jsonResponse(res, 200, {
+      message: "Login successful",
+      token,
+      user: {
+        id: userId,
+        email,
+        firstName: "Sadwika",
+        lastName: "Dev",
+        role: "ATTENDEE",
+        roles: ["ATTENDEE"],
+      },
+      sessionId: session.id,
+    });
+  }
+
+  if (pathname === "/api/auth/logout" && req.method === "POST") {
+    return jsonResponse(res, 200, { message: "Logged out successfully" });
+  }
+
+  // Get all events (paginated Spring-style response)
   if ((pathname === "/api/events" || pathname === "/events") && req.method === "GET") {
-    return jsonResponse(res, 200, MOCK_EVENTS);
+    const page = Math.max(0, parseInt(searchParams.get("page") || "0", 10));
+    const size = Math.max(1, parseInt(searchParams.get("size") || "12", 10));
+    const start = page * size;
+    const content = MOCK_EVENT_CATALOG.slice(start, start + size);
+    const totalElements = MOCK_EVENT_CATALOG.length;
+    const totalPages = Math.max(1, Math.ceil(totalElements / size));
+
+    return jsonResponse(res, 200, {
+      content,
+      totalElements,
+      totalPages,
+      size,
+      number: page,
+      first: page === 0,
+      last: page >= totalPages - 1,
+    });
+  }
+
+  // Projects list for local development
+  if ((pathname === "/api/projects" || pathname === "/projects") && req.method === "GET") {
+    return jsonResponse(res, 200, MOCK_PROJECT_CATALOG);
+  }
+
+  if (pathname === "/api/projects/categories" && req.method === "GET") {
+    const categories = [
+      ...new Set(MOCK_PROJECT_CATALOG.map((project) => project.category).filter(Boolean)),
+    ];
+    return jsonResponse(res, 200, categories);
   }
 
   // Get statistics
@@ -436,6 +590,11 @@ server.listen(PORT, () => {
   console.log(`Allowed Origin: ${ALLOWED_ORIGIN}`);
   console.log("Streams and Endpoints available:");
   console.log(`  GET http://localhost:${PORT}/api/users/profile`);
+  console.log(`  GET http://localhost:${PORT}/api/sessions`);
+  console.log(`  POST http://localhost:${PORT}/api/sessions`);
+  console.log(`  DELETE http://localhost:${PORT}/api/sessions/:id`);
+  console.log(`  DELETE http://localhost:${PORT}/api/sessions/logout-all`);
+  console.log(`  POST http://localhost:${PORT}/api/auth/login`);
   console.log(`  GET http://localhost:${PORT}/api/stream/leaderboard`);
   console.log(`  GET http://localhost:${PORT}/api/stream/analytics`);
   console.log(`  GET http://localhost:${PORT}/api/events`);

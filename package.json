@@ -53,6 +53,8 @@
   "scripts": {
     "dev": "vite",
     "start": "vite",
+    "mock:api": "node sse-mock-server.js",
+    "dev:full": "node scripts/dev-with-mock.mjs",
     "vercel-build": "node scripts/validate-env.js && vite build",
     "prebuild": "node scripts/validate-env.js",
     "build": "vite build",

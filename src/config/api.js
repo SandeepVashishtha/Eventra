@@ -325,6 +325,11 @@ export const API_ENDPOINTS = {
       buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}/restore`),
     CLEANUP_EXPIRED: buildApiUrl("/api/session-recovery/expired"),
   },
+  SESSIONS: {
+    ALL: buildApiUrl("/api/sessions"),
+    BY_ID: (id) => buildApiUrl(`/api/sessions/${encodeURIComponent(id)}`),
+    LOGOUT_ALL: buildApiUrl("/api/sessions/logout-all"),
+  },
   TICKETS: {
     VALIDATE: buildApiUrl("/api/tickets/validate"),
     CHECK_IN: buildApiUrl("/api/tickets/checkin"),
