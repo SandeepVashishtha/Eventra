@@ -6,20 +6,22 @@
  */
 
 export const generateCompatibilityScore = (userA, userB) => {
+  if (!userA || !userB) return 0;
+
   // In a real implementation, this would involve vector embeddings of user profiles,
   // past events attended, and explicit interests.
   let score = 50;
-  
+
   const skillsA = userA.skills || [];
   const skillsB = userB.skills || [];
-  
+
   const skillsBSet = new Set(skillsB);
   const commonSkills = skillsA.filter(s => skillsBSet.has(s));
   score += commonSkills.length * 10;
-  
+
   if (userA.industry === userB.industry) score += 15;
   if (userA.role !== userB.role) score += 5; // e.g. Designer meets Developer
-  
+
   return Math.min(score, 99);
 };
 
