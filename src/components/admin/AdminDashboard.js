@@ -61,10 +61,11 @@ const stagger = {
 
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
   useEffect(() => {
+    if (!open) return;
     const handleEsc = (e) => { if (e.key === "Escape") onCancel(); };
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
-  }, [onCancel]);
+  }, [open, onCancel]);
 
   if (!open) return null;
 
@@ -259,20 +260,25 @@ const AdminDashboard = () => {
   }, []);
 
   useEffect(() => {
+    if (!isAdmin) return;
     loadStats();
-  }, [loadStats]);
+  }, [loadStats, isAdmin]);
 
   useEffect(() => {
+    if (!isAdmin) return;
     if (activeTab === "users") {
       loadUsers(usersPage, debouncedSearchUser);
     }
   }, [activeTab, usersPage, debouncedSearchUser, loadUsers]);
+  }, [activeTab, usersPage, isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (!isAdmin) return;
     if (activeTab === "events") {
       loadEvents(eventsPage, debouncedSearchEvent);
     }
   }, [activeTab, eventsPage, debouncedSearchEvent, loadEvents]);
+  }, [activeTab, eventsPage, isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearchUser = (value) => {
     setSearchUser(value);
@@ -548,7 +554,7 @@ const AdminDashboard = () => {
                                   <span key={r} style={{ marginRight: '4px' }}><StatusBadge status={r} /></span>
                                 ))}
                               </td>
-                              <td className="ad-muted">{u.createdAt || u.createdAt}</td>
+                              <td className="ad-muted">{u.createdAt || u.joinedAt || "—"}</td>
                               <td><StatusBadge status={u.status || "Active"} /></td>
                               <td>
                                 <div className="ad-action-btns">

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { safeParseJson } from "../../utils/jsonUtils";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   Camera,
   CameraOff,
@@ -119,7 +119,10 @@ export default function TicketScanner() {
           const items = Array.isArray(data) ? data : data.content || data.checkins || [];
           setCheckinHistory(items);
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.error("Failed to load check-in history:", err);
+          toast.error("Failed to load check-in history. The data shown may be stale.");
+        });
     }
   }, [selectedEventId, fetchStats]);
 
@@ -179,7 +182,7 @@ export default function TicketScanner() {
   const addToHistory = useCallback((entry) => {
     setCheckinHistory((prev) => [entry, ...prev].slice(0, 50));
     try {
-      const updated = [entry, ...safeParseJson(localStorage.getItem(HISTORY_CACHE_KEY), [])].slice(0, 50);
+      const updated = [entry, ...safeJsonParse(localStorage.getItem(HISTORY_CACHE_KEY), [])].slice(0, 50);
       localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updated));
     } catch { /* ignore */ }
   }, []);

@@ -219,6 +219,8 @@ API.interceptors.request.use((config) => {
     const csrf = getCSRFToken();
     if (csrf) {
       config.headers["X-CSRF-Token"] = csrf;
+    } else if (process.env.NODE_ENV !== "production") {
+      console.warn("[CSRF] Token missing for mutating request:", method, config.url);
     }
   }
 
@@ -281,6 +283,7 @@ export const API_ENDPOINTS = {
     ALL: buildApiUrl("/api/events"),
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
+    SCHEDULE: (id) => buildApiUrl(`/api/events/${id}/schedule`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
     AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
 
@@ -314,6 +317,14 @@ export const API_ENDPOINTS = {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
   },
+  SESSION_RECOVERY: {
+    BASE: buildApiUrl("/api/session-recovery"),
+    SESSION: (sessionId) =>
+      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}`),
+    RESTORE: (sessionId) =>
+      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}/restore`),
+    CLEANUP_EXPIRED: buildApiUrl("/api/session-recovery/expired"),
+  },
   TICKETS: {
     VALIDATE: buildApiUrl("/api/tickets/validate"),
     CHECK_IN: buildApiUrl("/api/tickets/checkin"),
@@ -330,9 +341,18 @@ export const API_ENDPOINTS = {
     EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
     USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
     PHONE: buildApiUrl("/api/validate/phone"),
+    CONTACT: buildApiUrl("/api/contact"),
   },
 };
 
+
+const buildAxiosConfig = (url, options = {}) => {
+  const { signal, headers, ...rest } = options;
+  const config = normalizeRequestConfig(rest);
+  if (signal) config.signal = signal;
+  if (headers) config.headers = { ...config.headers, ...headers };
+  return { url, config };
+};
 
 export const apiUtils = {
   get: (url, config = {}) =>
@@ -345,6 +365,23 @@ export const apiUtils = {
     API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
   delete: (url, config = {}) =>
     API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+
+  request: async (method, url, data = null, options = {}) => {
+    const config = normalizeRequestConfig(options);
+    if (options.signal) config.signal = options.signal;
+    if (options.headers) config.headers = { ...config.headers, ...options.headers };
+    config.method = method.toLowerCase();
+    const axiosResponse = await API.request({ url, method: config.method, data, ...config });
+    const wrappedHeaders = wrapHeaders(axiosResponse.headers);
+    return {
+      response: {
+        status: axiosResponse.status,
+        ok: axiosResponse.status >= 200 && axiosResponse.status < 300,
+        headers: wrappedHeaders,
+      },
+      data: axiosResponse.data,
+    };
+  },
 };
 
 export default API;
@@ -354,6 +391,16 @@ export { normalizeApiError };
 // Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {
   store: new Map(),
-  get(key) { return this.store.get(key); },
-  set(key, val) { this.store.set(key, val); }
+
+  get(key) {
+    return this.store.get(key);
+  },
+
+  set(key, val) {
+    this.store.set(key, val);
+  },
+
+  clear() {
+    this.store.clear();
+  },
 };

@@ -10,6 +10,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import "./SpatialSeatSelector.css";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Fallback presets if no venue layout is stored yet
 const DEFAULT_PRESETS = {
@@ -140,7 +141,7 @@ const SpatialSeatSelector = ({
     let initialElements = [];
     if (savedLayout) {
       try {
-        const parsed = JSON.parse(savedLayout);
+        const parsed = safeJsonParse(savedLayout, {});
         if (Array.isArray(parsed)) {
           // Strict schema validation and sanitization
           initialElements = parsed.map((el) => ({
@@ -168,7 +169,7 @@ const SpatialSeatSelector = ({
         } else {
           initialElements = DEFAULT_PRESETS.banquet;
         }
-      } catch (e) {
+      } catch {
         initialElements = DEFAULT_PRESETS.banquet;
       }
     } else {
@@ -340,13 +341,12 @@ const SpatialSeatSelector = ({
     e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
-  // Check if a specific seat index on an element is selected
-  const isSeatSelected = (elId, idx) => {
+  const isSeatSelected = useCallback((elId, idx) => {
     return selectedSeat && selectedSeat.elementId === elId && selectedSeat.seatIndex === idx;
-  };
+  }, [selectedSeat]);
 
   // Selection callback
-  const handleSeatClick = (el, seat, seatIdx) => {
+  const handleSeatClick = useCallback((el, seat, seatIdx) => {
     if (readOnly) return;
     const isOccupied = el.assignedAttendees[seatIdx];
     if (isOccupied) return;
@@ -360,7 +360,7 @@ const SpatialSeatSelector = ({
       seatLabel: `${el.label} - ${label}`,
       tier: tier,
     });
-  };
+  }, [onSelectSeat, readOnly]);
 
   return (
     <div className="ssp-container">
@@ -732,6 +732,28 @@ const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, con
     onHover(null);
   };
 
+  const handleMouseEnter = useCallback((e) => {
+    const bbox = e.currentTarget.getBoundingClientRect();
+    const vrect = containerRef.current.getBoundingClientRect();
+    onHover({
+      el,
+      seatIdx: seat.index,
+      label: seatLabel,
+      tier: seatTier,
+      occupiedBy: isOccupied || null,
+      x: bbox.left - vrect.left + bbox.width / 2,
+      y: bbox.top - vrect.top - 10,
+    });
+  }, [containerRef, el, onHover, seat.index, seatLabel, seatTier, isOccupied]);
+
+  const handleMouseLeave = useCallback(() => {
+    onHover(null);
+  }, [onHover]);
+
+  const handleClick = useCallback(() => {
+    onSelect(el, seat, seat.index);
+  }, [el, onSelect, seat]);
+
   return (
     <g
       id={`seat-element-${el.id}-${seat.index}`}
@@ -739,24 +761,12 @@ const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, con
       tabIndex={tabIndex}
       role={role}
       aria-label={ariaLabel}
-      onClick={() => onSelect(el, seat, seat.index)}
+      onClick={handleClick}
       onKeyDown={handleKeyDown}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      onMouseEnter={(e) => {
-        const bbox = e.currentTarget.getBoundingClientRect();
-        const vrect = containerRef.current.getBoundingClientRect();
-        onHover({
-          el,
-          seatIdx: seat.index,
-          label: seatLabel,
-          tier: seatTier,
-          occupiedBy: isOccupied || null,
-          x: bbox.left - vrect.left + bbox.width / 2,
-          y: bbox.top - vrect.top - 10,
-        });
-      }}
-      onMouseLeave={() => onHover(null)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       style={{ cursor: isOccupied ? "not-allowed" : "pointer" }}
     >
       <circle cx={seat.x} cy={seat.y + 3} r={11} fill="rgba(0, 0, 0, 0.45)" />

@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useDebounce from "../../hooks/useDebounce.js";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // ============ CONSTANTS ============
 const GSSOC_TIMELINE = [
@@ -393,10 +395,11 @@ const GSSoCContribution = () => {
   
   // State with localStorage persistence
   const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
   const [userStats] = useState(() => {
     const saved = localStorage.getItem("gssoc.userStats");
-    return saved ? JSON.parse(saved) : {
+    return saved ? safeJsonParse(saved, {}) : {
       issuesClaimed: 3,
       prsMerged: 2,
       points: 450,
@@ -449,17 +452,17 @@ const timeLeft = useCountdown(
   // Filtered resources with difficulty filter
   const filteredResources = useMemo(() => {
     let result = RESOURCES;
-    if (searchQuery) {
+    if (debouncedSearchQuery) {
       result = result.filter(r => 
-        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.type.toLowerCase().includes(searchQuery.toLowerCase())
+        r.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        r.type.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
       );
     }
     if (selectedDifficulty !== "all") {
       result = result.filter(r => r.difficulty === selectedDifficulty);
     }
     return result;
-  }, [searchQuery, selectedDifficulty]);
+  }, [debouncedSearchQuery, selectedDifficulty]);
   
   // Handlers
   const handleMentorConnect = useCallback((mentor) => {
@@ -858,7 +861,7 @@ const timeLeft = useCountdown(
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => window.open("https://discord.gg/eventra", "_blank", "noopener,noreferrer")}
+            onClick={() => window.open("https://discord.gg/6MQ9r5nHT", "_blank", "noopener,noreferrer")}
             className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-[#5865F2] hover:bg-[#4752C4] shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#5865F2] focus:ring-offset-2 dark:focus:ring-offset-black"
           >
             <MessageCircle className="w-4 h-4" aria-hidden="true" />

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast } from "react-toastify";
-import { API_ENDPOINTS, apiUtils } from "../config/api";
+import { API_ENDPOINTS } from "../config/api";
+import { eventService } from "../services/eventService";
 import { useFormSubmit } from "./useFormSubmit";
 import {
   DRAFT_KEY,
@@ -12,6 +13,7 @@ import {
 import { sanitizeHtml } from "../utils/sanitizeHtml";
 import { logger } from "../utils/logger";
 import { useAuth } from "../context/AuthContext";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 // 🎯 Constants for better maintainability
 const MAX_CAPACITY = 100000;
@@ -295,7 +297,7 @@ export const useEventForm = () => {
       return { id: "mock-event-id", success: true };
     }
 
-    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, sanitized);
+    const response = await eventService.createEvent(sanitized);
     const result = response.data;
 
     if (!(response.status === 200 && result?.success)) {
@@ -533,7 +535,7 @@ export const useEventForm = () => {
     try {
       const saved = localStorage.getItem(scopedDraftKey);
       if (saved) {
-        setFormData((prev) => ({ ...prev, ...JSON.parse(saved), banner: null, bannerPreview: null }));
+        setFormData((prev) => ({ ...prev, ...safeJsonParse(saved, {}), banner: null, bannerPreview: null }));
         toast.success("Draft restored successfully!");
       }
     } catch (error) {

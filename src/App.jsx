@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
+import SkipToContent from "./components/accessibility/SkipToContent";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
@@ -23,7 +24,6 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
-import { getAuthRoutes, getProtectedRoutes } from "./components/routes/ProtectedRoutes";
 import {
   AuthFormSkeleton,
   ExploreEventsSkeleton,
@@ -39,6 +39,7 @@ const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
 const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
@@ -49,6 +50,7 @@ const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
+const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
 
 
 const OfflineSyncManager = () => {
@@ -167,6 +169,7 @@ function App() {
               <OfflineSyncManager />
 
               <div className="App">
+                <SkipToContent />
                 <ErrorBoundary level="section" label="Navigation Bar">
                   <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                 </ErrorBoundary>
@@ -208,7 +211,7 @@ function App() {
                           path="/explore"
                           element={
                             <Suspense fallback={<ExploreEventsSkeleton />}>
-                              <ExploreEvents />
+                              <EventsPage />
                             </Suspense>
                           }
                         />
@@ -220,8 +223,14 @@ function App() {
                             </Suspense>
                           }
                         />
-                        {getAuthRoutes()}
-                        {getProtectedRoutes()}
+                        {/* TODO: Implement missing auth/dashboard routes
+                          Pages do not exist:
+                          - ./Pages/auth/Login
+                          - ./Pages/auth/Signup
+                          - ./Pages/dashboard/Dashboard
+                          - ./Pages/Admin/AdminPanel
+                          - ./Pages/user/Profile
+                        */}
                         <Route
                           path="/event-recommendation"
                           element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
@@ -238,6 +247,7 @@ function App() {
                             </Suspense>
                           }
                         />
+
                       </Routes>
                     </ErrorBoundary>
                   </PageTransition>

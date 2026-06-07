@@ -143,7 +143,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     clearBodyScrollStyles();
     try {
       toggleBtnRef.current?.focus();
-    } catch (e) {
+    } catch {
       /* ignore */
     }
   };
