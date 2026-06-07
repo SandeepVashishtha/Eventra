@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
-import { createRateLimiter } from "../lib/rateLimit.js";
+import { createRateLimiter } from "../lib/rateLimiter.js";
 
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 
@@ -286,8 +286,6 @@ async function handler(req, res) {
 
     return corsResponse(req, res, 201, {
       message: "Account created successfully",
-      token,
-      tokenType: "Bearer",
       ...userResponse,
     });
 

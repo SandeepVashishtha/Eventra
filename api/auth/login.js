@@ -111,9 +111,24 @@ export default async function login(req, res, deps = {}) {
     const token =
       typeof issueToken === "function" ? issueToken(user) : undefined;
 
+    if (token) {
+      const isProd = process.env.NODE_ENV === "production";
+      const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`;
+      try {
+        if (typeof res.setHeader === 'function') {
+          res.setHeader('Set-Cookie', cookieValue);
+        } else if (typeof res.set === 'function') {
+          res.set({ 'Set-Cookie': cookieValue });
+        } else if (res.headers && typeof res.headers === 'object') {
+          res.headers['Set-Cookie'] = cookieValue;
+        }
+      } catch (e) {
+        // Ignore write errors on test response objects
+      }
+    }
+
     res.status(200).json({
       message: "Login successful",
-      token,
       user: { id: user.id, email: user.email },
     });
   } catch (err) {
