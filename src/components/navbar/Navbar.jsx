@@ -8,6 +8,7 @@ import AuthButtons from "./AuthButtons";
 import InstallAppButton from "../common/InstallAppButton";
 import LanguageSelector from "../LanguageSelector";
 import ProfileMenu from "./ProfileMenu";
+import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 
@@ -116,7 +117,10 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             <div className="hidden lg:flex items-center gap-2.5">
               <LanguageSelector compact />
               {authenticated ? (
-                <ProfileMenu user={user} logout={logout} />
+                <>
+                  <NotificationBell />
+                  <ProfileMenu user={user} logout={logout} />
+                </>
               ) : (
                 <AuthButtons />
               )}
@@ -124,7 +128,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             </div>
 
-            <div className="lg:hidden">
+            <div className="flex items-center gap-1 lg:hidden">
+              {authenticated && <NotificationBell />}
               <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
             </div>
           </div>

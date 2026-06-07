@@ -65,7 +65,7 @@ export function checkCapacity({ event, currentCount, requestedSeats = 1 }) {
   }
 
   // Unlimited when no capacity configured.
-  if (capacity === 0) {
+  if (event.maxAttendees === undefined && event.capacity === undefined) {
     return {
       allowed: true,
       capacity: 0,
