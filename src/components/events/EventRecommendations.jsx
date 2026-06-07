@@ -13,6 +13,7 @@ import {
 import mockEvents from "../../Pages/Events/eventsMockData.json";
 import { syncSecureStorage } from "../../utils/secureStorage";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { getRecommendedEvents } from "../../utils/eventRecommendationUtils";
 
 // =========================================================================
 // INLINE VECTOR GRAPHIC CONSTANTS (FALLBACK PLACEHOLDER IMAGES)
@@ -173,48 +174,17 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
 
       if (!active) return;
 
-      // Ensure mock data arrays pass standard validation checks
       const validMockEvents = Array.isArray(mockEvents) ? mockEvents : [];
-
-      // 1. Filter out the currently selected active item profile
-      const filteringPool = validMockEvents.filter((e) => e && e.id !== currentEventId);
-
-      // 2. Map structural values and evaluate preference matching scores
-      const scoredPool = filteringPool.map((event) => {
-        if (!event) return { recommendationScore: 0 };
-        let score = 0;
-
-        // Exact category alignment check vector (+10 points)
-        if (currentCategory && event.category?.toLowerCase() === currentCategory.toLowerCase()) {
-          score += 10;
-        }
-
-        // Match user's array metrics elements (+5 points per intersection matching)
-        const parsedCategoryTerms = (event.category || "").split(/[\s/&-]+/);
-        parsedCategoryTerms.forEach((term) => {
-          if (!term) return;
-          if (
-            Array.isArray(userInterests) &&
-            userInterests.some(
-              (interest) =>
-                typeof interest === "string" && interest.toLowerCase().includes(term.toLowerCase())
-            )
-          ) {
-            score += 5;
-          }
-        });
-
-        return { ...event, recommendationScore: score };
+      const recommendations = getRecommendedEvents({
+        events: validMockEvents,
+        currentEventId,
+        currentCategory,
+        userInterests,
       });
 
-      // 3. Sort pool in descending structural order based on priority scores
-      const sortedResultMatrix = scoredPool.sort(
-        (a, b) => b.recommendationScore - a.recommendationScore
-      );
-
       if (active) {
-        // Select topmost 6 scoring matches for the carousel limits
-        setRecommendedEvents(sortedResultMatrix.slice(0, 6));
+        setRecommendedEvents(recommendations);
+        setCurrentIndex(0);
         setLoading(false);
       }
     };
@@ -359,7 +329,7 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
                     )}
                   </div>
 
-                  <h4 className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100 mt-3 line-clamp-1">
+                  <h4 title={event.title} className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100 mt-3 line-clamp-2 break-words min-w-0">
                     {event.title}
                   </h4>
 

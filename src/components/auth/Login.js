@@ -90,8 +90,6 @@ const Login = () => {
       }
     } catch (err) {
       toast.error(getPublicErrorMessage(err, AUTH_ERRORS.loginFailed));
-      // If the server returned 429, respect the Retry-After header rather than
-      // computing our own backoff — the server-side window may be longer.
       const retryAfterHeader =
         err?.response?.headers?.['retry-after'] ||
         err?.response?.headers?.['Retry-After'] ||
@@ -146,7 +144,7 @@ const Login = () => {
                   {introPoints.map((point) => (
                     <div
                       key={point}
-                      className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white backdrop-blur-sm"
+                      className="flex items-start gap-3 rounded-xl border border-white/30 bg-white/10 px-4 py-3 text-sm text-white backdrop-blur-sm ring-[0.5px] ring-white/10"
                     >
                       <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0" />
                       <span className="leading-relaxed">{point}</span>
@@ -210,7 +208,7 @@ const Login = () => {
                 <motion.div
                   whileHover={{ scale: 1.05, rotate: 5 }}
                   whileTap={{ scale: 0.95 }}
-                  className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-3xl flex items-center justify-center shadow-md border border-blue-100"
+                  className="mx-auto w-16 h-16 bg-white/10 dark:bg-white/5 rounded-3xl flex items-center justify-center shadow-md border border-white/20 dark:border-white/10"
                 >
                   <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

@@ -47,16 +47,48 @@ export const exportAsPNG = (canvasRef, eventId) => {
     const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const img = new Image();
+
+    // Guard: revoke the blob URL and clean up listeners unconditionally after
+    // 10 s. Without this timeout the URL leaks when the browser suspends image
+    // decoding (background tab throttling, opaque SVG security policy, mobile
+    // memory pressure) because neither onload nor onerror fires.
+    const cleanupTimeout = setTimeout(() => {
+      img.onload = null;
+      img.onerror = null;
+      URL.revokeObjectURL(url);
+      console.warn(
+        "exportAsPNG: image load timed out after 10 s — blob URL revoked"
+      );
+    }, 10_000);
+
     img.onload = () => {
+      clearTimeout(cleanupTimeout);
+
       const canvas = document.createElement("canvas");
       canvas.width = 1000;
       canvas.height = 800;
+
+      // getContext("2d") returns null when the browser has exhausted its canvas
+      // context limit, the GPU process has crashed, or in headless environments.
+      // Without this guard the next line throws TypeError and the blob URL leaks.
       const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        console.error(
+          "exportAsPNG: 2D canvas context unavailable — too many open canvases or GPU unavailable"
+        );
+        return;
+      }
+
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, 1000, 800);
       ctx.drawImage(img, 0, 0, 1000, 800);
+
       canvas.toBlob((pngBlob) => {
-        if (!pngBlob) return;
+        if (!pngBlob) {
+          URL.revokeObjectURL(url);
+          return;
+        }
         const pngUrl = URL.createObjectURL(pngBlob);
         const link = document.createElement("a");
         link.href = pngUrl;
@@ -68,7 +100,13 @@ export const exportAsPNG = (canvasRef, eventId) => {
         URL.revokeObjectURL(url);
       }, "image/png");
     };
-    img.onerror = () => { URL.revokeObjectURL(url); };
+
+    img.onerror = () => {
+      clearTimeout(cleanupTimeout);
+      URL.revokeObjectURL(url);
+      console.error("exportAsPNG: SVG image failed to load");
+    };
+
     img.src = url;
   } catch (error) {
     console.error("PNG Export failed:", error);

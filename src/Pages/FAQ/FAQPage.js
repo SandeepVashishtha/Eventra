@@ -17,6 +17,7 @@ import FAQCTA from "./FaqCTA";
 import SEOHead from "../../components/SEOHead";
 import { useTranslation } from "react-i18next";
 import { logger } from "../../utils/logger";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 
 
@@ -133,6 +134,7 @@ function FAQSectionInner() {
 
       return matchesCategory && matchesSearch;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, selectedCategory]);
 
   const suggestions = faqs
@@ -146,7 +148,7 @@ function FAQSectionInner() {
   const [ratings, setRatings] = useState(() => {
     try {
       const saved = localStorage.getItem("eventra_faq_ratings");
-      if (saved) return JSON.parse(saved);
+      if (saved) return safeJsonParse(saved, {});
     } catch (e) {
       logger.error("Failed to load FAQ ratings", e);
     }
@@ -355,7 +357,7 @@ function FAQSectionInner() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 32px 20px 0 20px;
+          padding: 32px 20px 100px 20px;
           max-width: 100%;
           box-sizing: border-box;
         }
@@ -364,7 +366,7 @@ function FAQSectionInner() {
           position: relative;
           width: 100%;
           max-width: 820px;
-          margin-bottom: 16px;
+          margin-bottom: 24px;
         }
 
         .faq-accordion-item {
@@ -417,6 +419,9 @@ function FAQSectionInner() {
         .faq-accordion-title-group {
           flex: 1;
           text-align: left;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
         }
 
         .faq-cat {
@@ -425,8 +430,9 @@ function FAQSectionInner() {
           letter-spacing: 0.05em;
           color: var(--cat-color);
           text-transform: uppercase;
-          margin-bottom: 4px;
-          display: block;
+          margin-bottom: 8px;
+          display: inline-block;
+          line-height: 1;
         }
 
         .faq-accordion-header h3 {
@@ -456,6 +462,8 @@ function FAQSectionInner() {
         .faq-accordion-content {
           max-height: 0;
           overflow: hidden;
+          width: 100%;
+          box-sizing: border-box;
           transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
           border-top: 1px solid var(--card-border);
         }
@@ -469,6 +477,8 @@ function FAQSectionInner() {
           display: flex;
           flex-direction: column;
           gap: 16px;
+          width: 100%;
+          box-sizing: border-box;
         }
 
         .faq-accordion-content p {
@@ -541,7 +551,8 @@ function FAQSectionInner() {
         }
 
         .scroll-spacer {
-          height: 32px;
+          height: 100px;
+          width: 100%;
           pointer-events: none;
         }
 
