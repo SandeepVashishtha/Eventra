@@ -13,7 +13,7 @@ function extractUsername(url) {
     const cleanUrl = url.replace(/\/$/, "");
     const parts = cleanUrl.split("/");
     return parts[parts.length - 1] || null;
-  } catch (e) {
+  } catch {
     return null;
   }
 }

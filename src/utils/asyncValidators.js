@@ -4,6 +4,8 @@
  * Can be composed with sync validators in useFormValidation
  */
 
+import { apiUtils } from "../config/api";
+
 /**
  * Generic async validator factory
  * Creates a debounced async validator function
@@ -72,25 +74,13 @@ export const validateUsernameAvailable = async (username) => {
   if (!username || username.length < 3) return true;
 
   try {
-    // In production, replace with actual API call:
-    // const response = await api.get(`/validate/username/${username}`);
-    // return response.data.available || 'Username already taken';
-
-    // Mock implementation for demo
-    const response = await fetch(
-      `/api/validate/username/${encodeURIComponent(username)}`,
-      {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    const response = await apiUtils.get(`/api/validate/username/${encodeURIComponent(username)}`);
 
     if (!response.ok) {
       throw new Error("Failed to validate username");
     }
 
-    const data = await response.json();
-    return data.available === true || "Username already taken";
+    return response.data.available === true || "Username already taken";
   } catch (error) {
     console.error("Username validation error:", error);
     throw error;
@@ -108,25 +98,13 @@ export const validateEmailAvailable = async (email) => {
   if (!email) return true;
 
   try {
-    // In production, replace with actual API call:
-    // const response = await api.get(`/validate/email/${email}`);
-    // return response.data.available || 'Email already registered';
-
-    // Mock implementation for demo
-    const response = await fetch(
-      `/api/validate/email/${encodeURIComponent(email)}`,
-      {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    const response = await apiUtils.get(`/api/validate/email/${encodeURIComponent(email)}`);
 
     if (!response.ok) {
       throw new Error("Failed to validate email");
     }
 
-    const data = await response.json();
-    return data.available === true || "Email already registered";
+    return response.data.available === true || "Email already registered";
   } catch (error) {
     console.error("Email validation error:", error);
     throw error;
@@ -144,23 +122,13 @@ export const validateEmailDomainExists = async (email) => {
   if (!email) return true;
 
   try {
-    // In production, call your backend which performs DNS/SMTP check
-    // const response = await api.post(`/validate/email-domain`, { email });
-    // return response.data.valid || 'Email domain does not exist';
-
-    // Mock implementation
-    const response = await fetch("/api/validate/email-domain", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
+    const response = await apiUtils.post("/api/validate/email-domain", { email });
 
     if (!response.ok) {
       throw new Error("Failed to validate email domain");
     }
 
-    const data = await response.json();
-    return data.valid === true || "Email domain does not exist";
+    return response.data.valid === true || "Email domain does not exist";
   } catch (error) {
     console.error("Email domain validation error:", error);
     throw error;
@@ -210,22 +178,13 @@ export const validatePhoneNumber = async (phone) => {
   if (!phone) return true;
 
   try {
-    // In production, use Twilio or similar service via backend
-    // const response = await api.post(`/validate/phone`, { phone });
-    // return response.data.valid || 'Invalid phone number';
-
-    const response = await fetch("/api/validate/phone", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone }),
-    });
+    const response = await apiUtils.post("/api/validate/phone", { phone });
 
     if (!response.ok) {
       throw new Error("Failed to validate phone number");
     }
 
-    const data = await response.json();
-    return data.valid === true || "Invalid phone number";
+    return response.data.valid === true || "Invalid phone number";
   } catch (error) {
     console.error("Phone validation error:", error);
     throw error;
@@ -243,20 +202,13 @@ export const validateInvitationCode = async (code) => {
   if (!code) return true;
 
   try {
-    const response = await fetch(
-      `/api/validate/invitation-code/${encodeURIComponent(code)}`,
-      {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    const response = await apiUtils.get(`/api/validate/invitation-code/${encodeURIComponent(code)}`);
 
     if (!response.ok) {
       throw new Error("Failed to validate invitation code");
     }
 
-    const data = await response.json();
-    return data.valid === true || "Invitation code is invalid or already used";
+    return response.data.valid === true || "Invitation code is invalid or already used";
   } catch (error) {
     console.error("Invitation code validation error:", error);
     throw error;
@@ -275,18 +227,13 @@ export const validatePromoCode = async (code, context = {}) => {
   if (!code) return true;
 
   try {
-    const response = await fetch("/api/validate/promo-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, ...context }),
-    });
+    const response = await apiUtils.post("/api/validate/promo-code", { code, ...context });
 
     if (!response.ok) {
       throw new Error("Failed to validate promo code");
     }
 
-    const data = await response.json();
-    return data.valid === true || data.message || "Invalid promo code";
+    return response.data.valid === true || response.data.message || "Invalid promo code";
   } catch (error) {
     console.error("Promo code validation error:", error);
     throw error;
@@ -324,25 +271,17 @@ export const createCustomAsyncValidator = (endpoint, options = {}) => {
 
     try {
       let url = endpoint;
-      let init = {
-        method,
-        headers: { "Content-Type": "application/json" },
-      };
 
       if (method === "GET") {
         url += `?${paramName}=${encodeURIComponent(value)}`;
-      } else {
-        init.body = JSON.stringify({ [paramName]: value });
+        const response = await apiUtils.get(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.data[successField] === true || errorMessage;
       }
 
-      const response = await fetch(url, init);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data[successField] === true || errorMessage;
+      const response = await apiUtils.post(url, { [paramName]: value });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.data[successField] === true || errorMessage;
     } catch (error) {
       console.error("Custom validation error:", error);
       throw error;
