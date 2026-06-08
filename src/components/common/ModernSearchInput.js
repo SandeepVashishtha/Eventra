@@ -68,6 +68,7 @@ const ModernSearchInput = ({
             type="text"
             placeholder={tags && tags.length > 0 ? "" : placeholder}
             className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 min-w-[120px] placeholder-gray-400 dark:placeholder-gray-500"
+            style={{ color: "inherit" }}
             value={value}
             onChange={onChange}
             onFocus={handleFocus}
