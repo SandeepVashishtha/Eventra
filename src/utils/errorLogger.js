@@ -11,14 +11,7 @@ if (isSentryEnabled && typeof window !== "undefined") {
   (async () => {
     try {
       const SentryModule = await import("@sentry/browser");
-      Sentry = SentryModule.default || SentryModule;
-
-      const runtimeEnv =
-        typeof import.meta !== "undefined" && import.meta.env
-          ? import.meta.env
-          : typeof process !== "undefined" && process.env
-            ? process.env
-            : {};
+      Sentry = SentryModule;
 
       Sentry.init({
         dsn: SENTRY_DSN,
@@ -39,6 +32,7 @@ if (isSentryEnabled && typeof window !== "undefined") {
       // Sentry SDK unavailable — local-only logging will still work
     }
   })();
+})();
 }
 
 function buildErrorEntry(error, errorInfo, extra = {}) {
