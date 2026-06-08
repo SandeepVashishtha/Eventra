@@ -62,8 +62,6 @@ const SignupForm = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-<<<<<<< HEAD
-=======
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
   
   // Reconstructed missing state variables from the fragmented file
@@ -78,7 +76,6 @@ const SignupForm = () => {
   const setFieldState = useCallback((fieldName, state) => {
     setFieldValidationState((prev) => ({ ...prev, [fieldName]: state }));
   }, []);
->>>>>>> origin/fix/eslint-config-drift-3568
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -96,16 +93,6 @@ const SignupForm = () => {
     const lastNameResult = validate.lastName(formData.lastName.trim());
     if (lastNameResult !== true) nextErrors.lastName = lastNameResult;
 
-<<<<<<< HEAD
-    const emailValue = formData.email.trim();
-    const emailFormatResult = validate.email(emailValue);
-    if (emailFormatResult !== true) {
-      nextErrors.email = emailFormatResult;
-    } else {
-      const emailAvailability = await validateEmailAvailability(emailValue);
-      if (!emailAvailability?.isValid) {
-        nextErrors.email = getResultMessage(emailAvailability, "Email is already registered");
-=======
     if (!formData.email.trim()) {
       nextErrors.email = "Email is required";
     } else {
@@ -118,7 +105,6 @@ const SignupForm = () => {
         if (!emailAvailability?.isValid) {
           nextErrors.email = getResultMessage(emailAvailability, "Email is already registered");
         }
->>>>>>> origin/fix/eslint-config-drift-3568
       }
     }
 
@@ -141,18 +127,6 @@ const SignupForm = () => {
     return Object.keys(nextErrors).length === 0;
   };
 
-<<<<<<< HEAD
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitError("");
-    setSuccess("");
-
-    const valid = await runValidation();
-    if (!valid) return;
-
-    setLoading(true);
-
-=======
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!password || !confirmPassword) {
@@ -213,7 +187,6 @@ const SignupForm = () => {
         return;
     }
 
->>>>>>> origin/fix/eslint-config-drift-3568
     try {
       const signupEndpoint = API_ENDPOINTS.AUTH.REGISTER || API_ENDPOINTS.AUTH.SIGNUP;
       const response = await apiUtils.post(signupEndpoint, {
@@ -229,20 +202,14 @@ const SignupForm = () => {
       if (!ok) {
         const backendMessage = data?.message || data?.error || "Registration failed";
         setSubmitError(`${backendMessage} (${status})`);
-<<<<<<< HEAD
-=======
         setLoading(false);
->>>>>>> origin/fix/eslint-config-drift-3568
         return;
       }
 
       const sessionToken = data?.token;
       if (!sessionToken) {
         setSubmitError("Signup completed but no token was returned.");
-<<<<<<< HEAD
-=======
         setLoading(false);
->>>>>>> origin/fix/eslint-config-drift-3568
         return;
       }
 
@@ -258,15 +225,11 @@ const SignupForm = () => {
       };
 
       setAuthSession(sessionToken, sessionUser);
-          setLoading(false);
+      setLoading(false);
       setSuccess("Account created successfully. Redirecting to dashboard...");
       setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
     } catch (err) {
       setSubmitError(err?.message || "Network error. Please try again.");
-<<<<<<< HEAD
-    } finally {
-=======
->>>>>>> origin/fix/eslint-config-drift-3568
       setLoading(false);
     }
   };
@@ -280,16 +243,12 @@ const SignupForm = () => {
         <h1 className="text-2xl font-bold text-white">Create Your Account</h1>
       </div>
 
-<<<<<<< HEAD
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-=======
       <form
         onSubmit={handleSubmit}
         className="space-y-4"
         noValidate
         aria-describedby="signup-form-error signup-form-success"
       >
->>>>>>> origin/fix/eslint-config-drift-3568
         <div className="grid grid-cols-2 gap-4">
           <FormFieldWrapper id="firstName" label="First name" message={errors.firstName} prefix={<User className="w-4 h-4 text-slate-500" />}>
             <input name="firstName" type="text" value={formData.firstName} onChange={handleChange} className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
@@ -302,41 +261,6 @@ const SignupForm = () => {
         <FormFieldWrapper id="email" label="Email" message={errors.email} prefix={<AtSign className="w-4 h-4 text-slate-500" />}>
           <input name="email" type="email" value={formData.email} onChange={handleChange} className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
         </FormFieldWrapper>
-<<<<<<< HEAD
-
-        <FormFieldWrapper
-          id="password"
-          label="Password"
-          message={errors.password}
-          prefix={<Lock className="w-4 h-4 text-slate-500" />}
-          suffix={
-            <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showPassword ? "Hide password" : "Show password"}>
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          }
-        >
-          <input name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleChange} className="w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
-        </FormFieldWrapper>
-
-        <PasswordStrengthIndicator password={formData.password} />
-
-        <FormFieldWrapper
-          id="confirmPassword"
-          label="Confirm password"
-          message={errors.confirmPassword}
-          prefix={<Lock className="w-4 h-4 text-slate-500" />}
-          suffix={
-            <button type="button" onClick={() => setShowConfirmPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}>
-              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          }
-        >
-          <input name="confirmPassword" type={showConfirmPassword ? "text" : "password"} value={formData.confirmPassword} onChange={handleChange} className="w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
-        </FormFieldWrapper>
-
-        <ValidationMessage message={submitError} state="error" />
-        {success ? <ValidationMessage message={success} state="success" /> : null}
-=======
 
         <FormFieldWrapper
           id="password"
@@ -411,16 +335,11 @@ const SignupForm = () => {
             className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 p-2 rounded-lg"
           />
         )}
->>>>>>> origin/fix/eslint-config-drift-3568
 
         <motion.button
           type="submit"
           disabled={loading}
-<<<<<<< HEAD
-          className="w-full py-3 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400"
-=======
           className="w-full py-3 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400 disabled:opacity-50"
->>>>>>> origin/fix/eslint-config-drift-3568
         >
           {loading ? "Creating account..." : "Create Account"}
         </motion.button>

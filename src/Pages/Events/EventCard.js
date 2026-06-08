@@ -24,7 +24,6 @@ import ShareMenu from "../../components/common/ShareMenu";
 import LazyImage from "../../components/common/LazyImage";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
-import LazyImage from "../../components/common/LazyImage";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
@@ -64,11 +63,11 @@ const EventCard = ({ event }) => {
   const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
   const [randomIcon] = useState(() => {
     const icons = [
-      <Star size={16} className="text-yellow-500" />,
-      <Heart size={16} className="text-red-500" />,
-      <Zap size={16} className="text-pink-500" />,
-      <BookOpen size={16} className="text-indigo-500" />,
-      <Gift size={16} className="text-pink-500" />,
+      <Star key="star" size={16} className="text-yellow-500" />,
+      <Heart key="heart" size={16} className="text-red-500" />,
+      <Zap key="zap" size={16} className="text-pink-500" />,
+      <BookOpen key="book" size={16} className="text-indigo-500" />,
+      <Gift key="gift" size={16} className="text-pink-500" />,
     ];
 
     return icons[Math.floor(Math.random() * icons.length)];
@@ -124,30 +123,33 @@ useEffect(() => {
     });
   }, [event.id]);
 
-  const handleBookmarkToggle = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleBookmarkToggle = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    if (isBookmarked) {
-      removeBookmarkedEvent(event.id);
-      toast.info("Removed from bookmarked events.", {
+      if (isBookmarked) {
+        removeBookmarkedEvent(event.id);
+        toast.info("Removed from bookmarked events.", {
+          toastId: `bookmark-${event.id}`,
+          autoClose: 1800,
+          className: "custom-toast",
+        });
+        return;
+      }
+
+      addBookmarkedEvent({
+        ...event,
+        status: computedStatus,
+      });
+      toast.success("Event bookmarked.", {
         toastId: `bookmark-${event.id}`,
         autoClose: 1800,
         className: "custom-toast",
       });
-      return;
-    }
-
-    addBookmarkedEvent({
-      ...event,
-      status: computedStatus,
-    });
-    toast.success("Event bookmarked.", {
-      toastId: `bookmark-${event.id}`,
-      autoClose: 1800,
-      className: "custom-toast",
-    });
-  };
+    },
+    [isBookmarked, event, computedStatus]
+  );
 
   return (
     <article
@@ -247,17 +249,9 @@ useEffect(() => {
           onClick={(e) => e.stopPropagation()}
           title="Add to Google Calendar"
           aria-label={`Add ${event.title} to Google Calendar`}
-<<<<<<< HEAD
-          className="group/cal focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full"
-        >
-          <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200">
-            <Calendar size={14} className="text-gray-600" aria-hidden="true" />
-          </div>
-=======
           className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
           <Calendar size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
->>>>>>> origin/fix/eslint-config-drift-3568
         </a>
       </div>
 
@@ -303,11 +297,7 @@ useEffect(() => {
       <div className="relative h-40 overflow-hidden">
         <LazyImage
           src={event.image}
-<<<<<<< HEAD
-          alt={`${event.title} event thumbnail`}
-=======
           alt={event.imageAlt || `${event.title} event thumbnail`}
->>>>>>> origin/fix/eslint-config-drift-3568
           width={800}
           height={160}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
