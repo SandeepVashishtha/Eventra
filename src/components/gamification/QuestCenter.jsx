@@ -145,7 +145,7 @@ const playClaimSound = () => {
 };
 
 // ─── Main QuestCenter component ────────────────────────────────────────────────
-export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
+export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocEvents = 0 }) {
   const confettiRef = useRef(null);
   const claimedGuardRef = useRef({});
   const [activeTab, setActiveTab] = useState('daily');
@@ -202,12 +202,12 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
       if (totalEvents >= 1) dp['dq-1'] = Math.min(1, totalEvents);
       dp['dq-2'] = 1; // visiting profile = auto-complete demo
       dp['dq-3'] = 1; // exploring events = auto-complete demo
-      wp['wq-1'] = Math.min(2, totalEvents);
+      wp['wq-1'] = Math.min(2, gssocEvents);
       wp['wq-2'] = Math.min(3, currentStreak);
       wp['wq-4'] = Math.min(5, totalEvents);
       return { ...prev, dailyProgress: dp, weeklyProgress: wp };
     });
-  }, [totalEvents, currentStreak, state.dailyResetAt, state.weeklyResetAt]);
+  }, [totalEvents, currentStreak, gssocEvents, state.dailyResetAt, state.weeklyResetAt]);
 
   // Countdown timer
   useEffect(() => {

@@ -109,6 +109,7 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [achievements, setAchievements] = useState({
     totalEvents: 0,
+    gssocEvents: 0,
     currentStreak: 0,
     badges: [],
   });
@@ -710,7 +711,7 @@ export const NotificationProvider = ({ children }) => {
     if (!token) {
       setNotifications([]);
       setUnreadCount(0);
-      setAchievements({ totalEvents: 0, currentStreak: 0, badges: [] });
+      setAchievements({ totalEvents: 0, gssocEvents: 0, currentStreak: 0, badges: [] });
       seenNotificationIds.current = new Set();
       hasCompletedInitialFetch.current = false;
       return;
