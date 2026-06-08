@@ -73,6 +73,7 @@ const ModernSearchInput = ({
               border: "none",
               outline: "none",
               boxShadow: "none",
+              color: "inherit",
             }}
             value={value}
             onChange={onChange}
