@@ -36,18 +36,27 @@ export function createRateLimiter({ windowMs = 60000, maxRequests = 5 } = {}) {
    * Called opportunistically to keep memory bounded in long-lived processes.
    */
   function sweep(now) {
-    if (now - lastSweep < sweepInterval) {
-      return;
-    }
+    if (now - lastSweep < sweepInterval) return;
     const cutoff = now - windowMs;
-    for (const [key, timestamps] of requestLog.entries()) {
-      const live = timestamps.filter((ts) => ts > cutoff);
-      if (live.length === 0) {
-        requestLog.delete(key);
-      } else {
-        requestLog.set(key, live);
+    // Asynchronous chunked sweep to avoid blocking event loop
+    setTimeout(() => {
+      const keys = Array.from(requestLog.keys());
+      let i = 0;
+      function chunk() {
+        const end = Math.min(i + 100, keys.length);
+        for (; i < end; i++) {
+          const key = keys[i];
+          const timestamps = requestLog.get(key);
+          if (timestamps) {
+            const live = timestamps.filter(ts => ts > cutoff);
+            if (live.length === 0) requestLog.delete(key);
+            else requestLog.set(key, live);
+          }
+        }
+        if (i < keys.length) setTimeout(chunk, 0);
       }
-    }
+      chunk();
+    }, 0);
     lastSweep = now;
   }
 

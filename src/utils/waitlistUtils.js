@@ -267,7 +267,16 @@ export const promoteNextUser = async (eventId, eventData = null) => {
   }
 
   const success = await promoteRecord(nextUserRecord, event);
-  return success ? nextUserRecord : null;
+  if (!success) {
+    return null;
+  }
+  const updatedRecord = getGlobalWaitlist().find(
+    (r) =>
+      r.userId === nextUserRecord.userId &&
+      r.eventId === nextUserRecord.eventId
+  );
+
+  return updatedRecord || null;
 };
 
 // Handle event capacity increase by promoting N users to confirmed attendees
