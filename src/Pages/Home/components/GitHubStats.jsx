@@ -14,6 +14,9 @@ import {
   Eye,
   Languages,
 } from "lucide-react";
+
+import { safeJsonParse } from "../../../utils/safeJsonParse";
+import{
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 import {
   fetchRepository,
