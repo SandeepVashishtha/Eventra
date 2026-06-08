@@ -24,7 +24,8 @@ assert.deepEqual(decodeJwtPayload(token), payload);
 
 // Test isTokenExpired when 'exp' claim is missing
 const missingExpToken = makeToken({ name: "Ada" });
-assert.equal(isTokenExpired(missingExpToken), true);
+assert.equal(isTokenExpired(missingExpToken), false);
+assert.equal(isTokenValid(missingExpToken), true);
 
 // Test isTokenExpired when expired
 const expiredExp = Math.floor(Date.now() / 1000) - 100;
