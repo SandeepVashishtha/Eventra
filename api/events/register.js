@@ -15,6 +15,7 @@
  */
 
 import { checkCapacity } from "../lib/capacityValidator.js";
+import { registerAttendeeAtomic } from "../lib/registrationService.js";
 
 /**
  * Registration handler.
@@ -96,8 +97,14 @@ export default async function registerForEvent(req, res, deps = {}) {
     // Atomic insert. registerAttendee is expected to re-check capacity
     // transactionally and throw { code: "CAPACITY_FULL" } if a concurrent
     // request filled the last seat between our count read and this insert.
-    const registration = await registerAttendee(eventId, user.id);
-
+    // const registration = await registerAttendee(eventId, user.id);
+    const registration = await registerAttendeeAtomic({
+      event,
+      currentCount,
+      userId: user.id,
+      createRegistration: ({ eventId, userId }) =>
+        registerAttendee(eventId, userId),
+    });
     res.status(201).json({
       message: "Registration successful",
       registration,

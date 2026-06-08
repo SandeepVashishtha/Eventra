@@ -414,7 +414,7 @@ export default function CollaborationNetworkMap() {
 
           {/* Stats Summary */}
           <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
+              <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 bg-white hover:shadow-md p-6 shadow-lg">
               <Users size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
@@ -423,7 +423,7 @@ export default function CollaborationNetworkMap() {
                 <span className="mt-1 block text-sm text-slate-600">Developers</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
               <Code size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
@@ -432,7 +432,7 @@ export default function CollaborationNetworkMap() {
                 <span className="mt-1 block text-sm text-slate-600">Projects</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
               <GitBranch size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
@@ -441,7 +441,7 @@ export default function CollaborationNetworkMap() {
                 <span className="mt-1 block text-sm text-slate-600">Connections</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
               <TrendingUp size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">

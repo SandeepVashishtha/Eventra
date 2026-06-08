@@ -3,8 +3,6 @@ import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
@@ -18,38 +16,6 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 
 const CountUp = CountUpLib.default || CountUpLib;
-
-// ─── FLOATING SHAPE SUB-COMPONENT ────────────────────────────────────────────
-// Fix for #7243: Each shape owns its own useTransform hook call at the top
-// level of its own component — hooks must never be called inside .map() loops.
-/**
- * @param {{ shape: object, index: number, scrollYProgress: object, isDark: boolean, floatShape: function, prefersReducedMotion: boolean }} props
- */
-const PARALLAX_OFFSETS = [220, -150, 100, -180, 130, -80, 250, -120, 70];
-
-const FloatingShape = ({ shape, index, scrollYProgress, isDark, floatShape, prefersReducedMotion }) => {
-  const yShape = useTransform(scrollYProgress, [0, 1], [0, PARALLAX_OFFSETS[index]]);
-
-  return (
-    <motion.div
-      style={{
-        position: "absolute",
-        top: shape.pos.top,
-        left: shape.pos.left,
-        width: shape.size,
-        height: shape.size,
-        borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%",
-        background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
-        filter: "blur(2px)",
-        boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
-        y: prefersReducedMotion ? 0 : yShape,
-        willChange: "transform",
-      }}
-      animate={prefersReducedMotion ? {} : floatShape(index)}
-    />
-  );
-};
-// ─────────────────────────────────────────────────────────────────────────────
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
@@ -69,21 +35,19 @@ const allSearchItems = [
   ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
 ];
 
-const SEARCH_RESULT_LIMIT = 8;
-
-const SEARCH_ROUTES = {
-  event: "/events",
-  hackathon: "/hackathons",
-  project: "/projects",
-};
-
-const SEARCH_ICONS = {
-  event: Calendar,
-  hackathon: Trophy,
-  project: Code,
-};
-
-const MotionLink = motion(Link);
+const HEADLINE_PHRASES = [
+  "Amazing Tech Events",
+  "Exciting Hackathons Today",
+  "Innovative Dev Workshops",
+  "Cutting-Edge Tech Meetups",
+];
+const TAGLINE_TEXTS = ["Discover & Join"];
+const SEARCH_RESULT_LIMIT = 5;
+const HERO_STATS = [
+  { icon: Users, value: 1500, label: "Developers Joined", suffix: "+" },
+  { icon: Calendar, value: 75, label: "Events Organized", suffix: "+" },
+  { icon: Handshake, value: 30, label: "Partners & Sponsors", suffix: "+" },
+];
 
 const searchIndex = new Fuse(allSearchItems, {
   keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
@@ -101,6 +65,7 @@ const getResultIcon = (type) => {
   return <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />;
 };
 
+const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
 const Hero = () => {
     const controls = useAnimation(); 
   const prefersReducedMotion = useReducedMotion();
@@ -119,6 +84,8 @@ const Hero = () => {
     hackathon: Trophy,
     project: Code,
   };
+
+  const MotionLink = motion.create(Link);
   
   useDocumentTitle("Eventra | Home");
 
@@ -143,14 +110,6 @@ const Hero = () => {
   const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  const fadeUp = {
-    hidden: { y: 32, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
-    },
-  };
 
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
@@ -174,17 +133,12 @@ const Hero = () => {
   }, []);
 
   useEffect(() => {
-    setPhraseIndex(0);
-  }, [phrases]);
-
-  useEffect(() => {
-    if (!Array.isArray(phrases) || phrases.length === 0) return undefined;
     const interval = setInterval(() => {
-      setPhraseIndex((prev) => (prev + 1) % phrases.length);
+      setPhraseIndex((prev) => (prev + 1) % HEADLINE_PHRASES.length);
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [phrases]);
+  }, []);
 
   useEffect(() => {
     controls.start("show");
@@ -214,11 +168,14 @@ const Hero = () => {
     clearSearchTerm();
   }, [clearSearchTerm]);
 
-  // ─── ANIMATION VARIANTS ────────────────────────────────────────────────────
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+
+  const getResultIcon = (type) => {
+    const icons = { event: Calendar, hackathon: Trophy, project: Code };
+    const Icon = icons[type] || Search;
+    return <Icon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />;
   };
+
+  // ─── ANIMATION VARIANTS ────────────────────────────────────────────────────
 
   const floatShape = (i) => ({
     y: [0, -15 - i * 4, 0],
@@ -245,40 +202,20 @@ const Hero = () => {
     { size: 34, pos: { top: "48%", left: "80%" }, light: "#eab308", dark: "#fcd34d" },
   ];
 
-  const HERO_STATS = useMemo(
-    () => [
-      {
-        value: 1500,
-        label: t("landing.hero.stats.developers"),
-        suffix: "+",
-        icon: Users,
-      },
-      {
-        value: 75,
-        label: t("landing.hero.stats.events"),
-        suffix: "+",
-        icon: Calendar,
-      },
-      {
-        value: 30,
-        label: t("landing.hero.stats.partners"),
-        suffix: "+",
-        icon: Handshake,
-      },
-    ],
-    [t, i18n.language]
-  );
+  const stats = [
+    { value: 1500, label: "Developers Joined", suffix: "+" },
+    { value: 75, label: "Events Organized", suffix: "+" },
+    { value: 30, label: "Partners & Sponsors", suffix: "+" },
+  ];
 
   const primaryBtn = "relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900";
-
+  const secondaryBtn = `${primaryBtn} border border-transparent`;
 
   return (
-    <>
     <section
       ref={containerRef}
       aria-label="Hero section"
-      className="relative overflow-hidden border-b border-gray-100 pb-16 text-slate-900 sm:pb-20 md:pb-24"
-      style={{ background: "linear-gradient(180deg, #F8FBFD 0%, #F3F7FA 10%, #EAF1F7 42%, #DAE3ED 100%)" }}
+      className="relative overflow-hidden border-b border-gray-100 pb-16 text-slate-900 dark:bg-black dark:text-white sm:pb-20 md:pb-24"
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         
@@ -353,7 +290,7 @@ const Hero = () => {
                     }}
                     whileHover={prefersReducedMotion ? {} : { scale: 1.01 }}
                   >
-                    {phrases[phraseIndex]}
+                    {HEADLINE_PHRASES[phraseIndex]}
                   </motion.span>
                 </AnimatePresence>
               </div>
@@ -364,7 +301,8 @@ const Hero = () => {
             variants={fadeUp}
             className="mx-auto mb-8 mt-4 max-w-3xl text-base leading-relaxed text-gray-600 sm:mb-10 sm:mt-6 sm:text-lg md:text-lg"
           >
-            {t("landing.hero.description")}
+            Connect with developers, learn new skills, and grow your network at curated tech events, hackathons, and
+            workshops.
           </motion.p>
 
           <motion.div variants={fadeUp} className="mx-auto mb-10 w-full max-w-2xl">
@@ -373,7 +311,7 @@ const Hero = () => {
                 <ModernSearchInput
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
-                  placeholder={t("landing.hero.searchPlaceholder")}
+                  placeholder="Search events, hackathons, projects..."
                   onFocus={() => searchTerm && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
                   className="border-0 bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0"
@@ -387,13 +325,13 @@ const Hero = () => {
                         transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
                         className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg"
                         role="listbox"
-                        aria-label={t("landing.hero.searchResults")}
+                        aria-label="Search results"
                       >
                         <div className="p-3">
                           {searchResults.length > 0 ? (
                             <>
                               <div className="px-2 py-1.5 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                {t("landing.hero.resultsCount", { count: searchResults.length })}
+                                Results ({searchResults.length})
                               </div>
                               <div className="space-y-1">
                                 {searchResults.map((result, idx) => (
@@ -417,15 +355,13 @@ const Hero = () => {
                                           {result.item.title}
                                         </h4>
                                         <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-slate-800 dark:text-gray-300">
-                                          {t(`landing.hero.searchTypes.${result.item.searchType}`, {
-                                            defaultValue: result.item.searchType,
-                                          })}
+                                          {result.item.searchType}
                                         </span>
                                       </div>
                                       <p className="line-clamp-1 text-xs text-gray-500 dark:text-gray-400">
                                         {result.item.description
                                           ? `${result.item.description.substring(0, 70)}...`
-                                          : t("landing.hero.noDescription")}
+                                          : "No description available"}
                                       </p>
                                     </div>
                                     <ExternalLink
@@ -443,7 +379,7 @@ const Hero = () => {
                               exit={{ opacity: 0, y: 8 }}
                               className="py-8 text-center text-sm text-gray-500 dark:text-gray-400"
                             >
-                              {t("landing.hero.noResults")}{" "}
+                              No results for{" "}
                               <span className="font-medium text-gray-700 dark:text-gray-200">&quot;{searchTerm}&quot;</span>
                             </motion.div>
                           )}
@@ -463,22 +399,23 @@ const Hero = () => {
                 style={{ y: isTouch || prefersReducedMotion ? 0 : yStats, willChange: "transform" }}
                 className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5"
                 role="region"
-                aria-label={t("landing.hero.platformStats")}
+                aria-label="Platform statistics"
               >
                 {HERO_STATS.map((stat) => (
                   <motion.div
                     key={stat.label}
                     variants={fadeUp}
                     whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                    className="flex flex-col items-center justify-center rounded-md border border-gray-100 bg-white p-4 shadow-sm transition-shadow sm:p-5"
+                    className="flex flex-col items-center justify-center rounded-md border border-gray-100 bg-white dark:bg-slate-900 p-4 shadow-sm transition-shadow sm:p-5"
                   >
                     <div className="mb-2 rounded-full bg-gray-100 p-2 text-gray-700">
                       <stat.icon className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <p className="mb-1 text-2xl font-semibold tabular-nums text-gray-900 sm:text-3xl">
                       {statsReady ? (
-  <CountUp
-    end={stat.value}
+                        <CountUp
+                          start={0}
+                          end={Number.isFinite(stat.value) ? stat.value : 0}
                           duration={2.2}
                           suffix={stat.suffix || ""}
                         />
@@ -507,7 +444,7 @@ const Hero = () => {
         className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-gray-500 dark:text-gray-400 md:flex"
         aria-hidden="true"
       >
-        <span className="text-xs font-medium">{t("landing.hero.scrollToExplore")}</span>
+        <span className="text-xs font-medium">Scroll to explore</span>
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -521,7 +458,7 @@ const Hero = () => {
         </motion.div>
       </motion.div>
     </section>
-    </>
   );
 };
+
 export default Hero;
