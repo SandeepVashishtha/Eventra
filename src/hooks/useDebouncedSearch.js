@@ -17,8 +17,17 @@ export function useDebouncedSearch(initialValue = '', delay = 300) {
   const [debouncedTerm, setDebouncedTerm] = useState(initialValue);
   const [isDebouncing, setIsDebouncing] = useState(false);
   const timerRef = useRef(null);
+  const delayRef = useRef(delay);
 
   useEffect(() => {
+    delayRef.current = delay;
+  }, [delay]);
+
+  useEffect(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
     if (searchTerm === debouncedTerm) {
       setIsDebouncing(false);
       return;
@@ -26,22 +35,17 @@ export function useDebouncedSearch(initialValue = '', delay = 300) {
 
     setIsDebouncing(true);
 
-    // Clear any existing timeout to reset the debounce timer
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-
     timerRef.current = setTimeout(() => {
       setDebouncedTerm(searchTerm);
       setIsDebouncing(false);
-    }, delay);
+    }, delayRef.current);
 
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
     };
-  }, [searchTerm, debouncedTerm, delay]);
+  }, [searchTerm]);
 
   const clear = useCallback(() => {
     setSearchTerm('');
