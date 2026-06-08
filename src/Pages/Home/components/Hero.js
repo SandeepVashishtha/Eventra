@@ -48,7 +48,6 @@ const HERO_STATS = [
   { icon: Calendar, value: 75, label: "Events Organized", suffix: "+" },
   { icon: Handshake, value: 30, label: "Partners & Sponsors", suffix: "+" },
 ];
-const MotionLink = motion(Link);
 
 const searchIndex = new Fuse(allSearchItems, {
   keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
@@ -114,7 +113,7 @@ const Hero = () => {
     project: Code,
   };
 
-  const MotionLink = motion(Link);
+  const MotionLink = motion.create(Link);
   
   useDocumentTitle("Eventra | Home");
 
