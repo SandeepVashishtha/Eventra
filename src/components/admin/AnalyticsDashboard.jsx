@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Users, Clock, TrendingUp, Activity, CheckCircle2, Play, Zap } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -116,28 +116,27 @@ function AnalyticsStreamBadge({ status }) {
 
 const LOCAL_STORAGE_KEY = "eventra_checkins";
 
+// Pure initializers — depend only on module-level constants, safe to define outside component
+const getInitialCheckins = () => {
+  const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+  if (saved.length > 0) {
+    const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
+    return merged;
+  }
+  return MOCK_CHECKINS;
+};
+
+const getInitialLiveCount = () => {
+  const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+  return 342 + saved.filter((c) => c.status === "Verified").length;
+};
+
 const AnalyticsDashboard = () => {
-  // Merge real scanned check-ins from localStorage (set by TicketScanner) with mock defaults
-  const getInitialCheckins = () => {
-    const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
-    if (saved.length > 0) {
-      // Merge: show real scanned check-ins first, then pad with mocks if fewer than 5
-      const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
-      return merged;
-    }
-    return MOCK_CHECKINS;
-  };
-
-  const getInitialLiveCount = () => {
-    const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
-    return 342 + saved.filter((c) => c.status === "Verified").length;
-  };
-
   const [checkins, setCheckins] = useState(getInitialCheckins);
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
-const [activeTab, setActiveTab] = useState('analytics');
+  const [activeTab, setActiveTab] = useState('analytics');
 
   // Real-time SSE stream — takes priority over local simulation when connected
   const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
@@ -148,7 +147,7 @@ const [activeTab, setActiveTab] = useState('analytics');
    * Unified Analytical State Consumer pipeline.
    * Maps ingested data contract structure cleanly to the UI state.
    */
-  const processIncomingCheckin = (checkinPayload) => {
+  const processIncomingCheckin = useCallback((checkinPayload) => {
     const { meta, ...cleanCheckinData } = checkinPayload;
     
     // Fallback/Default metadata processing for standard payloads
@@ -180,21 +179,24 @@ const [activeTab, setActiveTab] = useState('analytics');
     // 5. Fire Feedback Notifications Interceptors
     if (cleanCheckinData.status === "Flagged") {
       toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${cleanCheckinData.name}`);
-    } else if (cleanCheckinData.id.includes("manual")) {
+    } else if (String(cleanCheckinData.id).includes("manual")) {
       toast.success(`🚀 Simulator: Successfully injected real-time check-in record for ${cleanCheckinData.name}!`);
     } else {
       toast.info(`🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`);
     }
-  };
+  }, []);
 
   // Processing real-time production SSE streams via data consumer pipeline
   useEffect(() => {
     const latest = streamCheckins[0];
-    if (!latest || latest === lastStreamCheckinRef.current) return;
-    lastStreamCheckinRef.current = latest;
+    // Compare by event ID rather than object reference so that a reconnect
+    // (which rebuilds the context array as new objects) does not re-trigger
+    // processing for the same logical event.
+    if (!latest || latest.id === lastStreamCheckinRef.current) return;
+    lastStreamCheckinRef.current = latest.id;
 
     processIncomingCheckin(latest);
-  }, [streamCheckins]);
+  }, [streamCheckins, processIncomingCheckin]);
 
   // Automated background interval simulation logic loop
   useEffect(() => {
@@ -331,7 +333,7 @@ const [activeTab, setActiveTab] = useState('analytics');
         <button
           onClick={triggerManualCheckin}
           className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md transition self-start sm:self-auto"
-         aria-label="button">
+         aria-label="Trigger manual check-in scan">
           <Play className="w-3.5 h-3.5 fill-white" />
           Trigger Check-in Scan
         </button>
@@ -535,6 +537,7 @@ const [activeTab, setActiveTab] = useState('analytics');
             </div>
           ))}
         </div>
+        {/* Closing tag for line 502 wrapper — fix for #7244 */}
       </div>
       </>
   )}

@@ -47,6 +47,22 @@ export const createRateLimiter = ({
 } = {}) => {
   const store = new Map();
 
+  let lastCleanupAt = 0;
+  const evictStale = () => {
+    const now = Date.now();
+    if (now - lastCleanupAt < windowMs) return;
+    lastCleanupAt = now;
+    const cutoff = now - windowMs;
+    for (const [key, timestamps] of store.entries()) {
+      const valid = timestamps.filter((t) => t > cutoff);
+      if (valid.length === 0) {
+        store.delete(key);
+      } else {
+        store.set(key, valid);
+      }
+    }
+  };
+
   return (handler) => {
     return async (req, res) => {
       if (req.method === "OPTIONS") {
@@ -59,27 +75,36 @@ export const createRateLimiter = ({
       }
 
       const now = Date.now();
-      const existing = store.get(ip);
-      const bucket = existing && existing.resetAt > now
-        ? { count: existing.count + 1, resetAt: existing.resetAt }
-        : { count: 1, resetAt: now + windowMs };
+      // Run cleanup pass on every request (throttled by lastCleanupAt)
+      evictStale();
 
-      store.set(ip, bucket);
+      const cutoff = now - windowMs;
+      const existing = store.get(ip) || [];
+      const validTimestamps = existing.filter((t) => t > cutoff);
 
-      const remaining = Math.max(max - bucket.count, 0);
-      const setHeader = resolveHeaderSetter(res);
-      setHeader("RateLimit-Limit", String(max));
-      setHeader("RateLimit-Remaining", String(remaining));
-      setHeader("RateLimit-Reset", String(Math.ceil((bucket.resetAt - now) / 1000)));
-
-      if (bucket.count > max) {
-        const body = {
+      if (validTimestamps.length >= max) {
+        const resetEpoch = Math.ceil((validTimestamps[0] + windowMs) / 1000);
+        const remaining = 0;
+        const setHeader = resolveHeaderSetter(res);
+        setHeader("RateLimit-Limit", String(max));
+        setHeader("RateLimit-Remaining", String(remaining));
+        setHeader("RateLimit-Reset", String(resetEpoch));
+        return res.status(429).json({
           success: false,
           message,
           error: message,
-        };
-        return res.status(429).json(body);
+        });
       }
+
+      validTimestamps.push(now);
+      store.set(ip, validTimestamps);
+
+      const remaining = max - validTimestamps.length;
+      const resetEpoch = Math.ceil((validTimestamps[0] + windowMs) / 1000);
+      const setHeader = resolveHeaderSetter(res);
+      setHeader("RateLimit-Limit", String(max));
+      setHeader("RateLimit-Remaining", String(remaining));
+      setHeader("RateLimit-Reset", String(resetEpoch));
 
       return handler(req, res);
     };

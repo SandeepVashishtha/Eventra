@@ -16,18 +16,26 @@ module.exports = {
       // FONT SIZES
       // =========================
       fontSize: {
-
         // Body & Navigation
-        body: ['16px', '24px'],
-        nav: ['16px', '24px'],
+        body: ['var(--font-body-lg)', 'var(--lh-body)'],
+        nav: ['var(--font-nav)', 'var(--lh-heading)'],
 
         // Headings
-        h1: ['32px', '40px'],
-        h2: ['28px', '36px'],
-        h3: ['24px', '32px'],
-        h4: ['22px', '28px'],
-        h5: ['20px', '26px'],
-        h6: ['18px', '24px'],
+        h1: ['var(--font-h1)', 'var(--lh-heading)'],
+        h2: ['var(--font-h2)', 'var(--lh-heading)'],
+        h3: ['var(--font-h3)', 'var(--lh-heading)'],
+        h4: ['var(--font-h4)', 'var(--lh-heading)'],
+        h5: ['var(--font-h5)', 'var(--lh-heading)'],
+        h6: ['var(--font-h6)', 'var(--lh-heading)'],
+
+        // Subtitles
+        'subtitle-lg': ['var(--font-subtitle-lg)', '1.6'],
+        'subtitle-md': ['var(--font-subtitle-md)', '1.55'],
+
+        // Body variations
+        'body-lg': ['var(--font-body-lg)', 'var(--lh-body)'],
+        'body-md': ['var(--font-body-md)', '1.5'],
+        'body-sm': ['var(--font-body-sm)', '1.4'],
       },
 
       // =========================

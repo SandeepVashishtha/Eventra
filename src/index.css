@@ -1,30 +1,39 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+
 /* Fix: Removed 'Anton' decorative font — only 'Inter' is used for professionalism */
 /* Issue #828: Standardize and Professionalize Font Text and Size */
-@import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
-
-@import "tailwindcss";
-@config "../tailwind.config.cjs";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-size-body: 16px;
-  --font-size-body--line-height: 24px;
-  --font-size-nav: 16px;
-  --font-size-nav--line-height: 24px;
-  --font-size-h1: 32px;
-  --font-size-h1--line-height: 40px;
-  --font-size-h2: 28px;
-  --font-size-h2--line-height: 36px;
-  --font-size-h3: 24px;
-  --font-size-h3--line-height: 32px;
-  --font-size-h4: 22px;
-  --font-size-h4--line-height: 28px;
-  --font-size-h5: 20px;
-  --font-size-h5--line-height: 26px;
-  --font-size-h6: 18px;
-  --font-size-h6--line-height: 24px;
+  --text-body: var(--font-body);
+  --text-nav: var(--font-nav);
+
+  --text-h1: var(--font-h1);
+  --text-h1--line-height: var(--lh-heading);
+  --text-h2: var(--font-h2);
+  --text-h2--line-height: var(--lh-heading);
+  --text-h3: var(--font-h3);
+  --text-h3--line-height: var(--lh-heading);
+  --text-h4: var(--font-h4);
+  --text-h4--line-height: var(--lh-heading);
+  --text-h5: var(--font-h5);
+  --text-h5--line-height: var(--lh-heading);
+  --text-h6: var(--font-h6);
+  --text-h6--line-height: var(--lh-heading);
+
+  --text-subtitle-lg: var(--font-subtitle-lg);
+  --text-subtitle-lg--line-height: 1.6;
+  --text-subtitle-md: var(--font-subtitle-md);
+  --text-subtitle-md--line-height: 1.55;
+
+  --text-body-lg: var(--font-body-lg);
+  --text-body-lg--line-height: var(--lh-body);
+  --text-body-md: var(--font-body-md);
+  --text-body-md--line-height: 1.5;
+  --text-body-sm: var(--font-body-sm);
+  --text-body-sm--line-height: 1.4;
 
   --color-bg: var(--bg-color);
   --color-bg-secondary: var(--bg-secondary-color);
@@ -49,11 +58,13 @@
 
   --animate-slide-up: slide-up 0.3s ease-out;
   --animate-slide-down: slide-down 0.3s ease-out;
+
   @keyframes slide-up {
     0% {
       transform: translateY(20px);
       opacity: 0;
     }
+
     100% {
       transform: translateY(0);
       opacity: 1;
@@ -65,6 +76,7 @@
       transform: translateY(-20px);
       opacity: 0;
     }
+
     100% {
       transform: translateY(0);
       opacity: 1;
@@ -106,18 +118,23 @@ body {
 .elevation-sm {
   box-shadow: var(--shadow-premium-sm-val) !important;
 }
+
 .elevation-md {
   box-shadow: var(--shadow-premium-md-val) !important;
 }
+
 .elevation-lg {
   box-shadow: var(--shadow-premium-lg-val) !important;
 }
+
 .shadow-glow {
   box-shadow: var(--shadow-glow-md-val) !important;
 }
+
 .shadow-glow-sm {
   box-shadow: var(--shadow-glow-sm-val) !important;
 }
+
 .shadow-glow-lg {
   box-shadow: var(--shadow-glow-lg-val) !important;
 }
@@ -174,7 +191,7 @@ body {
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 /* Theme variables */
@@ -276,6 +293,13 @@ html {
   --font-h5: 1.125rem;
   --font-h6: 1rem;
 
+  --font-subtitle-lg: 1.25rem;
+  --font-subtitle-md: 1.125rem;
+
+  --font-body-lg: 1rem;
+  --font-body-md: 0.875rem;
+  --font-body-sm: 0.75rem;
+
   /* Line Heights */
   --lh-heading: 1.2;
   --lh-body: 1.65;
@@ -297,11 +321,9 @@ html {
   --primary-color: var(--evt-brand-primary);
   --primary-hover: var(--evt-brand-primary-hover);
   --secondary-color: var(--evt-brand-secondary);
-  --accent-gradient: linear-gradient(
-    135deg,
-    var(--evt-brand-primary) 0%,
-    var(--evt-brand-accent) 100%
-  );
+  --accent-gradient: linear-gradient(135deg,
+      var(--evt-brand-primary) 0%,
+      var(--evt-brand-accent) 100%);
   --glow-color: var(--evt-glow-brand);
   --danger-bg: var(--evt-danger-soft);
   --danger-border: var(--evt-danger-border);
@@ -399,11 +421,9 @@ html {
   --primary-color: var(--evt-brand-primary);
   --primary-hover: var(--evt-brand-primary-hover);
   --secondary-color: var(--evt-brand-secondary);
-  --accent-gradient: linear-gradient(
-    135deg,
-    var(--evt-brand-primary) 0%,
-    var(--evt-brand-accent) 100%
-  );
+  --accent-gradient: linear-gradient(135deg,
+      var(--evt-brand-primary) 0%,
+      var(--evt-brand-accent) 100%);
   --glow-color: var(--evt-glow-brand);
   --danger-bg: var(--evt-danger-soft);
   --danger-border: var(--evt-danger-border);
@@ -515,6 +535,20 @@ aside {
   background-color: var(--bg-color);
 }
 
+.dark,
+.dark body,
+.dark div,
+.dark p,
+.dark span,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #f8fafc !important;
+}
+
 .dark .pastel-grid-bg {
   /* Use a solid dark background in dark mode and remove the light pastel grid image
      which remains visible otherwise. This ensures pages that use the pastel grid
@@ -552,11 +586,50 @@ h4 {
 h5 {
   font-size: var(--font-h5);
   font-weight: var(--fw-medium);
+  line-height: var(--lh-heading);
 }
 
 h6 {
   font-size: var(--font-h6);
   font-weight: var(--fw-medium);
+  line-height: var(--lh-heading);
+}
+
+/* Subtitle styles */
+.text-subtitle-lg {
+  font-size: var(--font-subtitle-lg);
+  line-height: 1.6;
+  font-weight: var(--fw-medium);
+  color: var(--text-color-light);
+}
+
+.text-subtitle-md {
+  font-size: var(--font-subtitle-md);
+  line-height: 1.55;
+  font-weight: var(--fw-medium);
+  color: var(--text-color-light);
+}
+
+/* Body styles */
+.text-body-lg {
+  font-size: var(--font-body-lg);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  color: var(--text-color);
+}
+
+.text-body-md {
+  font-size: var(--font-body-md);
+  line-height: 1.5;
+  font-weight: var(--fw-regular);
+  color: var(--text-color-light);
+}
+
+.text-body-sm {
+  font-size: var(--font-body-sm);
+  line-height: 1.4;
+  font-weight: var(--fw-regular);
+  color: var(--text-color-light);
 }
 
 /* Navigation items */
@@ -693,6 +766,11 @@ code {
     /* 18px */
     --font-h5: 1rem;
     --font-h6: 0.9375rem;
+
+    --font-subtitle-lg: 1.125rem;
+    /* 18px on mobile */
+    --font-subtitle-md: 1rem;
+    /* 16px on mobile */
   }
 
   .container {
@@ -716,31 +794,29 @@ code {
 }
 
 /* Issue #862: keep mobile and coarse-pointer controls comfortable to tap. */
-@media (max-width: 768px), (hover: none) and (pointer: coarse) {
-  :where(
-    button,
+@media (max-width: 768px),
+(hover: none) and (pointer: coarse) {
+
+  :where(button,
     [role="button"],
     input[type="button"],
     input[type="reset"],
     input[type="submit"],
     select,
-    summary
-  ) {
+    summary) {
     min-height: var(--touch-target-min);
     min-width: var(--touch-target-min);
     touch-action: manipulation;
   }
 
-  :where(
-    a[href].btn-primary,
+  :where(a[href].btn-primary,
     a[href].btn-secondary,
     a[href].btn-outline,
     a[href].cta-button,
     a[href].button,
     a[href][class*="rounded"],
     nav a[href],
-    .mobile-nav-link
-  ) {
+    .mobile-nav-link) {
     min-height: var(--touch-target-min);
     touch-action: manipulation;
   }
@@ -759,15 +835,13 @@ code {
     padding-bottom: 0.75rem;
   }
 
-  :where(
-    .share-button-pop,
+  :where(.share-button-pop,
     .social-link,
     .theme-toggle,
     .profile-button,
     .mobile-menu-button,
     .mobile-drawer-link,
-    .ud-search-clear
-  ) {
+    .ud-search-clear) {
     align-items: center;
     display: inline-flex;
     justify-content: center;
@@ -775,8 +849,7 @@ code {
     min-width: var(--touch-target-min);
   }
 
-  :where(
-    .filter-controls,
+  :where(.filter-controls,
     .view-controls,
     .event-actions,
     .hackathon-actions,
@@ -784,8 +857,7 @@ code {
     .cta-actions,
     .mobile-auth,
     .navbar-auth,
-    .social-links
-  ) {
+    .social-links) {
     gap: max(var(--touch-target-gap), 0.75rem);
   }
 }
@@ -828,26 +900,18 @@ input::-webkit-password-toggle {
 .pastel-grid-bg {
   background-color: var(--bg-color);
   background-image:
-    linear-gradient(
-      to right,
+    linear-gradient(to right,
       color-mix(in srgb, var(--evt-brand-primary-strong) 32%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
+      transparent 1px),
+    linear-gradient(to bottom,
       color-mix(in srgb, var(--evt-skip-focus) 32%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      45deg,
+      transparent 1px),
+    linear-gradient(45deg,
       color-mix(in srgb, var(--evt-brand-primary) 10%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      -45deg,
+      transparent 1px),
+    linear-gradient(-45deg,
       color-mix(in srgb, var(--evt-skip-focus) 10%, transparent) 1px,
-      transparent 1px
-    );
+      transparent 1px);
   background-size:
     40px 40px,
     40px 40px,
@@ -857,6 +921,7 @@ input::-webkit-password-toggle {
 
 /* Shake Animation (Global) */
 @keyframes shake {
+
   0%,
   100% {
     transform: translateX(0);
@@ -986,7 +1051,7 @@ td {
 /* Smooth Scrolling */
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 /* Optimized Theme Transitions */
@@ -1114,15 +1179,23 @@ html:not(.dark) ::placeholder {
   .event-card-hoverable {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
   }
+
   .event-card-hoverable:hover {
     z-index: 50;
     transform: translateY(-6px) scale(1.005);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    border-color: #a5b4fc !important; /* border-indigo-300 */
+    border-color: #a5b4fc !important;
+    /* border-indigo-300 */
   }
+
   .dark .event-card-hoverable:hover {
-    border-color: #4338ca !important; /* border-indigo-700 */
+    border-color: #4338ca !important;
+    /* border-indigo-700 */
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
   }
-}
 
+  .project-card,
+.project-card * {
+  color: white !important;
+}
+}

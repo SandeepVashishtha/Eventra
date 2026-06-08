@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo } from "react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Copy,
@@ -12,7 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { isValidShareUrl } from "../../utils/shareUtils";
-
+const { containerRef } = useFocusTrap(isOpen, onClose);
 const ModalCloseButton = memo(({ onClick }) => (
   <button
     type="button"
@@ -29,6 +30,11 @@ ModalCloseButton.displayName = "ModalCloseButton";
 const ShareModal = ({ isOpen, onClose, event }) => {
   const shareData = useMemo(() => {
     if (!event) {
+      return null;
+    }
+
+    if (!event.id) {
+      console.warn("[ShareModal] event.id is missing — share URL cannot be constructed.");
       return null;
     }
 
@@ -94,22 +100,21 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     <AnimatePresence>
       {isOpen && shareData ? (
         <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="share-modal-title"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-        >
+  ref={containerRef}
+  className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
+  initial={{ opacity: 0, scale: 0.96, y: 12 }}
+  animate={{ opacity: 1, scale: 1, y: 0 }}
+  exit={{ opacity: 0, scale: 0.96, y: 12 }}
+  transition={{ duration: 0.2 }}
+  onClick={(e) => e.stopPropagation()}
+>
           <motion.div
             className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
             initial={{ opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.2 }}
-            onClick={(event) => event.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800/40">
               <h2 id="share-modal-title" className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
@@ -125,6 +130,9 @@ const ShareModal = ({ isOpen, onClose, event }) => {
                   alt={shareData.title}
                   className="h-full w-full object-cover"
                   loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
                 />
               </div>
 

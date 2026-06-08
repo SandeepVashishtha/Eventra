@@ -14,38 +14,9 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import InteractiveWhiteboard from "./InteractiveWhiteboard";
+import { logger } from "../../utils/logger";
 
-const INITIAL_TASKS = [
-  { id: "tk-1", text: "Create Vite React boilerplate with Tailwind CSS", done: true },
-  { id: "tk-2", text: "Design database schemas (PostgreSQL & Prisma)", done: true },
-  { id: "tk-3", text: "Implement live collaborative whiteboard component", done: false },
-  {
-    id: "tk-4",
-    text: "Hook up server-sent events for real-time team synchronization",
-    done: false,
-  },
-];
-
-const INITIAL_PINS = [
-  {
-    id: "pin-1",
-    text: "Opening ceremony keynotes start tomorrow morning at 09:00 AM! Be there on Discord.",
-    tag: "Organizers",
-    time: "2 hours ago",
-  },
-  {
-    id: "pin-2",
-    text: "GitHub repository submission deadline is locked for Sunday 11:59 PM. No late commits accepted.",
-    tag: "Rules",
-    time: "4 hours ago",
-  },
-  {
-    id: "pin-3",
-    text: "Mentors are available in the support queue for routing assistance in React, Node, and AWS.",
-    tag: "Mentors",
-    time: "1 day ago",
-  },
-];
+// Initial constants removed to support real-time sync database values
 
 const TEAM_MEMBERS = [
   { name: "Sricharan (You)", role: "Frontend Developer", status: "online" },
@@ -58,29 +29,16 @@ const TeamWorkspace = () => {
   const [activeTab, setActiveTab] = useState("dashboard"); // 'dashboard' | 'whiteboard'
 
   // Checklist & Pins state
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  const [tasks, setTasks] = useState([]);
   const [newTaskText, setNewTaskText] = useState("");
-  const [pins, setPins] = useState(INITIAL_PINS);
+  const [pins, setPins] = useState([]);
   const [newPinText, setNewPinText] = useState("");
   const [newPinTag, setNewPinTag] = useState("Announcement");
 
   // Chat Drawer State
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState([
-    {
-      id: 1,
-      sender: "Alex Rivera",
-      text: "Just pushed the initial database schema to main! Let me know if you run into migration issues.",
-      time: "10:30 AM",
-    },
-    {
-      id: 2,
-      sender: "Sophia Chen",
-      text: "Awesome! I am updating the Figma prototype for our landing layout. I'll drop notes on the whiteboard.",
-      time: "10:32 AM",
-    },
-  ]);
+  const [chatHistory, setChatHistory] = useState([]);
 
   // Connection System (SSE with Polling Fallback)
   const [connectionStatus, setConnectionStatus] = useState("connecting"); // 'connecting' | 'sse' | 'polling_fallback'
@@ -91,101 +49,134 @@ const TeamWorkspace = () => {
   useEffect(() => {
     let sseSource = null;
     let fallbackInterval = null;
+    let idleTimeout = null;
 
     setConnectionStatus("connecting");
     const logPrefix = "[TeamSync]";
 
-    // 1. Attempt Server-Sent Events (EventSource) connection
-    try {
-      console.log(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
-      // Simulating connection. In production, this matches react env SSE endpoints.
-      // E.g. const sseUrl = process.env.REACT_APP_API_URL || "/api/hackathons/team/sync";
-      sseSource = new EventSource("/api/hackathons/team/sync-simulated-error");
-
-      sseSource.onopen = () => {
-        setConnectionStatus("sse");
-        console.log(`${logPrefix} Connection opened. Realtime SSE stream active.`);
-      };
-
-      sseSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === "message") {
-            setChatHistory((prev) => [...prev, data.message]);
-          }
-        } catch (e) {
-          console.error("Failed to parse SSE payload", e);
-        }
-      };
-
-      sseSource.onerror = () => {
-        // SSE error! Initiate immediate polling fallback.
-        console.warn(
-          `${logPrefix} Server-Sent Events stream interrupted. Fallback to short-polling activated.`
-        );
-        setConnectionStatus("polling_fallback");
-        sseSource.close();
-        triggerPollingFallback();
-      };
-    } catch (e) {
-      console.error(`${logPrefix} SSE not supported by browser. Falling back to HTTP polling.`, e);
-      setConnectionStatus("polling_fallback");
-      triggerPollingFallback();
-    }
-
-    // 2. HTTP Short Polling Fallback Mechanism
     function triggerPollingFallback() {
       setPollingLogs((prev) => [
         ...prev,
         "SSE connection error. Started HTTP short-polling fallback stream every 4s.",
       ]);
 
-      const mockRepresentativeAnnouncements = [
-        {
-          sender: "Alex Rivera",
-          text: "Finished compiling Postgres container locally! Speed is perfect.",
-          delay: 4000,
-        },
-        {
-          sender: "Sophia Chen",
-          text: "Check out the Interactive Whiteboard tab! I added a quick sticky note diagram.",
-          delay: 12000,
-        },
-        {
-          sender: "Marcus Dupont",
-          text: "Opening ceremony starting soon! Let's wrap up our basic components.",
-          delay: 24000,
-        },
-      ];
-
-      let msgIndex = 0;
-      fallbackInterval = setInterval(() => {
-        setPollingLogs((prev) => [
-          ...prev,
-          `[HTTP-Poll] Checking for team changes... Status: 200 OK`,
-        ]);
-
-        // Randomly simulate an incoming message from teammates to prove polling fallback works
-        if (msgIndex < mockRepresentativeAnnouncements.length) {
-          const incoming = mockRepresentativeAnnouncements[msgIndex];
-          setChatHistory((prev) => [
+      const fetchState = async () => {
+        try {
+          const response = await fetch("/api/hackathons/team/sync", {
+            method: "POST",
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setTasks(data.tasks || []);
+            setPins(data.pins || []);
+            setChatHistory(data.chat || []);
+            setPollingLogs((prev) => [
+              ...prev,
+              `[HTTP-Poll] Checking for team changes... Status: 200 OK`,
+            ]);
+          } else {
+            setPollingLogs((prev) => [
+              ...prev,
+              `[HTTP-Poll] Fetch failed with status ${response.status}`,
+            ]);
+          }
+        } catch (err) {
+          setPollingLogs((prev) => [
             ...prev,
-            {
-              id: Date.now() + msgIndex,
-              sender: incoming.sender,
-              text: incoming.text,
-              time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            },
+            `[HTTP-Poll] Fetch network error: ${err.message}`,
           ]);
-          toast.info(`New message from ${incoming.sender}!`);
-          msgIndex++;
         }
-      }, 5000);
+      };
+
+      fetchState();
+      fallbackInterval = setInterval(fetchState, 4000);
     }
 
+    const connectStream = () => {
+      setConnectionStatus("connecting");
+      try {
+        logger.info(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
+        sseSource = new EventSource("/api/hackathons/team/sync");
+
+        sseSource.onopen = () => {
+          setConnectionStatus("sse");
+          logger.info(`${logPrefix} Connection opened. Realtime SSE stream active.`);
+        };
+
+        sseSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "init") {
+              setTasks(data.tasks || []);
+              setPins(data.pins || []);
+              setChatHistory(data.chat || []);
+            } else if (data.type === "tasks") {
+              setTasks(data.tasks || []);
+            } else if (data.type === "pins") {
+              setPins(data.pins || []);
+            } else if (data.type === "chat") {
+              setChatHistory(data.chat || []);
+            }
+          } catch (e) {
+            logger.error("Failed to parse SSE payload", e);
+          }
+        };
+
+        sseSource.onerror = () => {
+          logger.warn(
+            `${logPrefix} Server-Sent Events stream interrupted. Fallback to short-polling activated.`
+          );
+          setConnectionStatus("polling_fallback");
+          if (sseSource) sseSource.close();
+          triggerPollingFallback();
+        };
+      } catch (e) {
+        logger.error(`${logPrefix} SSE not supported by browser. Falling back to HTTP polling.`, e);
+        setConnectionStatus("polling_fallback");
+        triggerPollingFallback();
+      }
+    };
+
+    const disconnectStream = () => {
+      if (sseSource) {
+        sseSource.close();
+        sseSource = null;
+      }
+      if (fallbackInterval) {
+        clearInterval(fallbackInterval);
+        fallbackInterval = null;
+      }
+      setConnectionStatus("idle");
+    };
+
+    connectStream();
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Close connections after 60 seconds of inactivity
+        idleTimeout = setTimeout(() => {
+          logger.info(`${logPrefix} Tab idle. Closing real-time connections.`);
+          disconnectStream();
+        }, 60000);
+      } else {
+        if (idleTimeout) {
+          clearTimeout(idleTimeout);
+          idleTimeout = null;
+        }
+        // Reconnect if it was closed
+        if (!sseSource && !fallbackInterval) {
+          logger.info(`${logPrefix} Tab active. Reconnecting real-time stream.`);
+          connectStream();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
-      if (sseSource) sseSource.close();
-      if (fallbackInterval) clearInterval(fallbackInterval);
+      disconnectStream();
+      if (idleTimeout) clearTimeout(idleTimeout);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
@@ -197,73 +188,135 @@ const TeamWorkspace = () => {
   }, [chatHistory, isChatOpen]);
 
   // Tasks Checklist handlers
-  const handleAddTask = (e) => {
+  const handleAddTask = async (e) => {
     e.preventDefault();
     if (!newTaskText.trim()) return;
 
-    const newTask = {
-      id: `task-${Date.now()}`,
-      text: newTaskText.trim(),
-      done: false,
-    };
-
-    setTasks([...tasks, newTask]);
-    setNewTaskText("");
-    toast.success("Task added to team checklist.");
+    try {
+      const response = await fetch("/api/hackathons/team/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add", text: newTaskText.trim() }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTasks(data.tasks || []);
+        setNewTaskText("");
+        toast.success("Task added to team checklist.");
+      } else {
+        toast.error("Failed to add task.");
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    }
   };
 
-  const handleToggleTask = (id) => {
-    setTasks(tasks.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+  const handleToggleTask = async (id) => {
+    try {
+      const response = await fetch("/api/hackathons/team/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle", id }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTasks(data.tasks || []);
+      } else {
+        toast.error("Failed to toggle task.");
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    }
   };
 
-  const handleDeleteTask = (id) => {
-    setTasks(tasks.filter((t) => t.id !== id));
-    toast.info("Task removed from checklist.");
+  const handleDeleteTask = async (id) => {
+    try {
+      const response = await fetch("/api/hackathons/team/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTasks(data.tasks || []);
+        toast.info("Task removed from checklist.");
+      } else {
+        toast.error("Failed to delete task.");
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    }
   };
 
   // Pins / Announcements handlers
-  const handleAddPin = (e) => {
+  const handleAddPin = async (e) => {
     e.preventDefault();
     if (!newPinText.trim()) return;
 
-    const newPin = {
-      id: `pin-${Date.now()}`,
-      text: newPinText.trim(),
-      tag: newPinTag,
-      time: "Just now",
-    };
-
-    setPins([newPin, ...pins]);
-    setNewPinText("");
-    toast.success("Announcement pinned to workspace!");
+    try {
+      const response = await fetch("/api/hackathons/team/announcements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "add",
+          text: newPinText.trim(),
+          tag: newPinTag,
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPins(data.pins || []);
+        setNewPinText("");
+        toast.success("Announcement pinned to workspace!");
+      } else {
+        toast.error("Failed to pin announcement.");
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    }
   };
 
-  const handleDeletePin = (id) => {
-    setPins(pins.filter((p) => p.id !== id));
-    toast.info("Announcement unpinned.");
+  const handleDeletePin = async (id) => {
+    try {
+      const response = await fetch("/api/hackathons/team/announcements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPins(data.pins || []);
+        toast.info("Announcement unpinned.");
+      } else {
+        toast.error("Failed to unpin announcement.");
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    }
   };
 
   // Chat message sending
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!chatMessage.trim()) return;
 
-    const userMsg = {
-      id: Date.now(),
-      sender: "Sricharan (You)",
-      text: chatMessage,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-
-    setChatHistory([...chatHistory, userMsg]);
+    const messageText = chatMessage.trim();
     setChatMessage("");
 
-    // Simulate sending payload to server
-    if (connectionStatus === "polling_fallback") {
-      setPollingLogs((prev) => [
-        ...prev,
-        `[HTTP-Post] Sent chat payload to backend server... Status: 200 OK`,
-      ]);
+    try {
+      const response = await fetch("/api/hackathons/team/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: messageText, sender: "Sricharan (You)" }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setChatHistory(data.chat || []);
+      } else {
+        toast.error("Failed to send message.");
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
     }
   };
 
