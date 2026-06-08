@@ -27,6 +27,7 @@ import {
   normalizeEventAvailability,
 } from "../../utils/eventAvailabilityUtils.mjs";
 import { useFormValidation } from "../../hooks/useFormValidation";
+import SpatialSeatSelector from "../../components/events/SpatialSeatSelector";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
@@ -89,6 +90,8 @@ const EventRegistration = () => {
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
+  const [selectedSeat, setSelectedSeat] = useState(null);
+  const [showSeatSelector, setShowSeatSelector] = useState(false);
   const [conflictData, setConflictData] = useState({
     conflicts: [],
     suggestions: [],
@@ -821,6 +824,29 @@ const EventRegistration = () => {
           <div className="p-8">
             <CalendarView events={myEvents} />
 
+            {event?.hasSeatSelection && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">🪑 Select Your Seat</h3>
+                  {selectedSeat && <span className="text-sm text-emerald-600 font-medium">✓ Seat selected</span>}
+                </div>
+                {showSeatSelector ? (
+                  <SpatialSeatSelector
+                    eventId={event.id}
+                    currentUser={user?.firstName + " " + user?.lastName}
+                    onSeatSelect={(seat) => { setSelectedSeat(seat); setShowSeatSelector(false); }}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowSeatSelector(true)}
+                    className="w-full py-3 border-2 border-dashed border-indigo-300 dark:border-indigo-700 rounded-xl text-indigo-600 dark:text-indigo-400 font-medium hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
+                  >
+                    {selectedSeat ? `Change seat (currently: ${selectedSeat.label || "Selected"}` : "Browse & Select a Seat →"}
+                  </button>
+                )}
+              </div>
+            )}
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               {t("eventRegistration.formTitle")}
             </h2>
