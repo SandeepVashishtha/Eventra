@@ -473,7 +473,7 @@ function FAQSectionInner() {
         }
 
         .faq-answer-wrapper {
-          padding: 20px 24px;
+          padding: 20px 104px 20px 24px;
           display: flex;
           flex-direction: column;
           gap: 16px;
@@ -678,7 +678,7 @@ function FAQSectionInner() {
           }
 
           .faq-answer-wrapper {
-            padding: 16px 16px;
+            padding: 16px 88px 16px 16px;
           }
 
           .faq-accordion-header h3 {
