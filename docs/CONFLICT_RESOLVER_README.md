@@ -162,7 +162,7 @@ npm test -- conflictDetection.test.js
 - Verify non-conflicting alternatives exist
 - Check `conflictData.suggestions` in modal props
 
-## That's It!
+## That's It
 
 The system is production-ready. Start with the examples, customize to your needs, write tests, ship it.
 
