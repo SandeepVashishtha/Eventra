@@ -1,9 +1,10 @@
-import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
+import { motion,useAnimation , AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -114,13 +115,11 @@ const getResultIcon = (type) => {
 };
 
 const Hero = () => {
-  const fadeUp = (prefersReducedMotion) => ({
-  hidden: { opacity: 0, y: 24 },
-  visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { delay: prefersReducedMotion ? 0 : i * 0.07, duration: prefersReducedMotion ? 0 : 0.45, ease: "easeOut" }
-  })
-});
+    const controls = useAnimation(); 
+  const prefersReducedMotion = useReducedMotion();
+
+  useAnimation 
+  
 
   const SEARCH_ROUTES = {
     event: "/events",
