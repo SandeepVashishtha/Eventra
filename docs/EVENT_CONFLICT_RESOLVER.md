@@ -245,7 +245,7 @@ getEventUTCRange(event, fallbackDuration?, timezone?)
 
 #### Detailed Function Signatures
 
-**checkRegistrationConflict**
+### checkRegistrationConflict
 ```javascript
 /**
  * @param {object} newEvent - Event to check for conflicts
@@ -256,7 +256,7 @@ getEventUTCRange(event, fallbackDuration?, timezone?)
  */
 ```
 
-**suggestAlternativeEvents**
+### suggestAlternativeEvents
 ```javascript
 /**
  * @param {object} targetEvent - Event user tried to register for
