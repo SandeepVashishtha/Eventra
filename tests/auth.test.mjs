@@ -1,14 +1,22 @@
 import assert from "node:assert/strict";
 import { decodeJwtPayload, isTokenExpired, isTokenValid, getTokenTTL } from "../src/utils/auth.js";
 
+import crypto from "node:crypto";
+
+const TEST_SECRET = "test-environmental-secret-key";
+process.env.JWT_SECRET = TEST_SECRET; // Sets the secret for isTokenValid to read
+
 function makeToken(payloadObj) {
   const header = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
   const payloadStr = JSON.stringify(payloadObj);
-  const payloadBase64 = Buffer.from(payloadStr).toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-  return `${header}.${payloadBase64}.signature`;
+  const payloadBase64 = Buffer.from(payloadStr).toString("base64url"); // Cleaner built-in encoding
+  
+  const signature = crypto
+    .createHmac("sha256", TEST_SECRET)
+    .update(`${header}.${payloadBase64}`)
+    .digest("base64url");
+
+  return `${header}.${payloadBase64}.${signature}`;
 }
 
 // Test decodeJwtPayload with invalid formats
