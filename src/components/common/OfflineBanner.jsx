@@ -1,94 +1,76 @@
-import { useState, useEffect, useRef } from "react";
-import { Wifi, WifiOff } from "lucide-react";
-import { getQueue } from "../../utils/offlineQueue";
-import "./OfflineBanner.css";
+import { useState, useEffect } from "react";
+import { WifiOff, Wifi } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-export default function OfflineBanner() {
-  const [status, setStatus] = useState(navigator.onLine ? "online" : "offline");
-  const [visible, setVisible] = useState(!navigator.onLine);
-  const [queueCount, setQueueCount] = useState(0);
-  const [syncSummary, setSyncSummary] = useState("");
-  const timerRef = useRef(null);
+const OfflineBanner = () => {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showRestoredMsg, setShowRestoredMsg] = useState(false);
 
   useEffect(() => {
     const handleOnline = () => {
-      setStatus("online");
-      setSyncSummary("");
-      setVisible(true);
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        setVisible(false);
-      }, 4000);
+      setIsOnline(true);
+      setShowRestoredMsg(true);
+      setTimeout(() => setShowRestoredMsg(false), 3000);
     };
 
     const handleOffline = () => {
-      setStatus("offline");
-      setSyncSummary("");
-      setVisible(true);
-    };
-
-    const handleQueueUpdated = () => {
-      setQueueCount(getQueue().length);
-      setVisible(true);
-    };
-
-    const handleQueueProcessed = (e) => {
-      const { succeeded, dropped, remaining } = e.detail;
-      setQueueCount(remaining);
-      if (dropped > 0) {
-        setSyncSummary(
-          `${dropped} queued action(s) could not be synced. ${succeeded} action(s) synced successfully.`,
-        );
-        setVisible(true);
-      } else {
-        setSyncSummary(
-          succeeded > 0 ? `${succeeded} queued action(s) synced successfully.` : "",
-        );
-      }
-      if (remaining === 0 && dropped === 0) {
-        if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(() => setVisible(false), 4000);
-      }
+      setIsOnline(false);
+      setShowRestoredMsg(false);
     };
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-    window.addEventListener("eventra-offline-queue-updated", handleQueueUpdated);
-    window.addEventListener("eventra-offline-queue-processed", handleQueueProcessed);
 
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("eventra-offline-queue-updated", handleQueueUpdated);
-      window.removeEventListener("eventra-offline-queue-processed", handleQueueProcessed);
-      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
 
-  if (!visible) return null;
-
   return (
-    <div className={`offline-banner-container ${status}`}>
-      <div className="offline-banner-content">
-        {status === "offline" ? (
-          <>
-            <WifiOff className="offline-banner-icon animate-pulse text-rose-400" size={16} />
-            <span>
-              Operating offline. {queueCount > 0 ? `${queueCount} action(s) queued for sync.` : "Form submissions will be queued."}
-            </span>
-          </>
-        ) : (
-          <>
-            <Wifi className="offline-banner-icon text-emerald-400" size={16} />
-            <span>
-              {syncSummary ||
-                (queueCount > 0
-                  ? `Synchronizing ${queueCount} queued action(s)...`
-                  : "Connection restored! Offline cache is ready.")}
-            </span>
-          </>
-        )}
-      </div>
-    </div>
+    <AnimatePresence>
+      {!isOnline && (
+        <motion.div
+          initial={{ y: -60, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -60, opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          role="alert"
+          aria-live="assertive"
+          className="fixed top-20 left-0 right-0 z-[999] flex justify-center px-4"
+        >
+          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-red-600 text-white shadow-lg text-sm font-semibold max-w-md w-full">
+            <WifiOff size={16} className="shrink-0" aria-hidden="true" />
+            <span className="flex-1">You're offline. Some features may not work.</span>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-xs font-bold"
+              aria-label="Try again"
+            >
+              Try Again
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      {showRestoredMsg && (
+        <motion.div
+          initial={{ y: -60, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -60, opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          role="status"
+          aria-live="polite"
+          className="fixed top-20 left-0 right-0 z-[999] flex justify-center px-4"
+        >
+          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-green-600 text-white shadow-lg text-sm font-semibold max-w-md w-full">
+            <Wifi size={16} className="shrink-0" aria-hidden="true" />
+            <span>You're back online!</span>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
-}
+};
+
+export default OfflineBanner;

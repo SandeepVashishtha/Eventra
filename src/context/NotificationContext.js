@@ -7,9 +7,12 @@ import {
   useRef,
   useState,
 } from "react";
+import { toast } from "react-toastify";
 import { apiUtils, API_ENDPOINTS } from "../config/api";
 import { useAuth } from "./AuthContext";
 import usePageVisibility from "../hooks/usePageVisibility";
+import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnection";
+import seedNotifications from "../data/mockNotifications.json";
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   PUSH_SUBSCRIPTION_KEY,
@@ -29,6 +32,47 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 const NotificationContext = createContext();
 
 const POLLING_INTERVAL_MS = 60_000;
+const NOTIFICATIONS_STORAGE_KEY = "eventra_notification_inbox";
+
+const normalizeNotification = (notification = {}) => ({
+  ...notification,
+  id:
+    notification.id ||
+    notification._id ||
+    `${notification.timestamp || notification.createdAt || Date.now()}-${getNotificationMessage(notification)}`,
+  title: getNotificationTitle(notification),
+  message: getNotificationMessage(notification),
+  category: getNotificationCategory(notification),
+  timestamp:
+    notification.timestamp ||
+    notification.createdAt ||
+    notification.updatedAt ||
+    new Date().toISOString(),
+});
+
+const persistNotifications = (notifications) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      NOTIFICATIONS_STORAGE_KEY,
+      JSON.stringify(notifications)
+    );
+  } catch {
+    // Ignore quota / private browsing errors.
+  }
+};
+
+const loadPersistedNotifications = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = window.localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+    if (!stored) return null;
+    const parsed = safeJsonParse(stored, []);
+    return Array.isArray(parsed) ? parsed.map(normalizeNotification) : null;
+  } catch {
+    return null;
+  }
+};
 const runtimeEnv =
   typeof import.meta !== "undefined" && import.meta.env
     ? import.meta.env
@@ -59,33 +103,19 @@ const getExistingServiceWorkerRegistration = async () => {
   return navigator.serviceWorker.getRegistration();
 };
 
-const normalizeNotification = (notification = {}) => ({
-  ...notification,
-  id:
-    notification.id ||
-    notification._id ||
-    `${notification.timestamp || notification.createdAt || Date.now()}-${getNotificationMessage(notification)}`,
-  title: getNotificationTitle(notification),
-  message: getNotificationMessage(notification),
-  category: getNotificationCategory(notification),
-  timestamp:
-    notification.timestamp ||
-    notification.createdAt ||
-    notification.updatedAt ||
-    new Date().toISOString(),
-});
-
 export const NotificationProvider = ({ children }) => {
   const { token } = useAuth();
   const isPageVisible = usePageVisibility();
   const [notifications, setNotifications] = useState([]);
   const [achievements, setAchievements] = useState({
     totalEvents: 0,
+    gssocEvents: 0,
     currentStreak: 0,
     badges: [],
   });
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState(SSE_STATUS.IDLE);
   const [preferences, setPreferences] = useState(() => readNotificationPreferences());
   const [pushStatus, setPushStatus] = useState({
     supported: false,
@@ -288,6 +318,25 @@ export const NotificationProvider = ({ children }) => {
     [preferences]
   );
 
+  const showToastNotification = useCallback(
+    (notification) => {
+      if (!shouldDeliverNotification(notification, preferences, "inApp")) return;
+
+      toast.info(`${getNotificationTitle(notification)} — ${getNotificationMessage(notification)}`, {
+        toastId: `notif-${notification.id}`,
+        autoClose: 5000,
+        onClick: () => {
+          if (!notification.isRead) {
+            markAsReadRef.current?.(notification.id);
+          }
+        },
+      });
+    },
+    [preferences]
+  );
+
+  const markAsReadRef = useRef(null);
+
   const deliverNewNotifications = useCallback(
     (incomingNotifications) => {
       incomingNotifications.forEach((notification) => {
@@ -296,11 +345,83 @@ export const NotificationProvider = ({ children }) => {
         }
         if (shouldDeliverNotification(notification, preferences, "inApp")) {
           playNotificationSound(preferences.sound);
+          showToastNotification(notification);
         }
       });
     },
-    [preferences, showBrowserNotification]
+    [preferences, showBrowserNotification, showToastNotification]
   );
+
+  const applyNotificationList = useCallback((list, { deliverNew = false } = {}) => {
+    const normalizedData = list.map(normalizeNotification);
+    const incomingUnread = normalizedData.filter((notification) => {
+      const isNew = !seenNotificationIds.current.has(notification.id);
+      return isNew && !notification.isRead;
+    });
+
+    normalizedData.forEach((notification) => addSeenId(notification.id));
+    setNotifications(normalizedData);
+    setUnreadCount(normalizedData.filter((n) => !n.isRead).length);
+    persistNotifications(normalizedData);
+
+    if (deliverNew && hasCompletedInitialFetch.current && incomingUnread.length > 0) {
+      deliverNewNotifications(incomingUnread);
+    }
+    hasCompletedInitialFetch.current = true;
+  }, [deliverNewNotifications]);
+
+  const ingestRealtimeNotification = useCallback(
+    (payload) => {
+      if (!payload || typeof payload !== "object") return;
+
+      const normalized = normalizeNotification(payload);
+      let isNew = false;
+
+      setNotifications((prev) => {
+        const exists = prev.some((item) => item.id === normalized.id);
+        if (exists) {
+          return prev.map((item) =>
+            item.id === normalized.id ? { ...item, ...normalized } : item
+          );
+        }
+        isNew = true;
+        const updated = [normalized, ...prev];
+        persistNotifications(updated);
+        return updated;
+      });
+
+      if (isNew && !normalized.isRead) {
+        addSeenId(normalized.id);
+        setUnreadCount((prev) => prev + 1);
+        deliverNewNotifications([normalized]);
+      }
+    },
+    [deliverNewNotifications]
+  );
+
+  const handleRealtimeMessage = useCallback(
+    (data) => {
+      if (Array.isArray(data)) {
+        data.forEach(ingestRealtimeNotification);
+        return;
+      }
+      if (data?.notification) {
+        ingestRealtimeNotification(data.notification);
+        return;
+      }
+      ingestRealtimeNotification(data);
+    },
+    [ingestRealtimeNotification]
+  );
+
+  const { status: sseStatus } = useRealTimeConnection("/stream/notifications", {
+    onMessage: handleRealtimeMessage,
+    enabled: Boolean(token),
+  });
+
+  useEffect(() => {
+    setRealtimeStatus(sseStatus);
+  }, [sseStatus]);
 
   const fetchNotifications = useCallback(
     async (options = { isBackground: false }) => {
@@ -324,23 +445,16 @@ export const NotificationProvider = ({ children }) => {
         if (!isMounted.current || activeTokenRef.current !== requestToken) return;
 
         const data = response.data;
-        const normalizedData = (Array.isArray(data) ? data : []).map(normalizeNotification);
-        const incomingUnread = normalizedData.filter((notification) => {
-          const isNew = !seenNotificationIds.current.has(notification.id);
-          return isNew && !notification.isRead;
-        });
-
-        normalizedData.forEach((notification) => addSeenId(notification.id));
-        setNotifications(normalizedData);
-        setUnreadCount(normalizedData.filter((n) => !n.isRead).length);
-
-        if (hasCompletedInitialFetch.current && incomingUnread.length > 0) {
-          deliverNewNotifications(incomingUnread);
-        }
-        hasCompletedInitialFetch.current = true;
+        const list = Array.isArray(data) ? data : data?.content || [];
+        applyNotificationList(list, { deliverNew: true });
       } catch (error) {
         if (isMounted.current && activeTokenRef.current === requestToken) {
           console.error("Error fetching notifications:", error);
+          const persisted = loadPersistedNotifications();
+          const fallback = persisted?.length
+            ? persisted
+            : seedNotifications.map(normalizeNotification);
+          applyNotificationList(fallback, { deliverNew: false });
         }
       } finally {
         if (!isBackground && isMounted.current && activeTokenRef.current === requestToken) {
@@ -348,7 +462,7 @@ export const NotificationProvider = ({ children }) => {
         }
       }
     },
-    [token, deliverNewNotifications]
+    [token, applyNotificationList]
   );
 
   const fetchAchievements = useCallback(async () => {
@@ -386,9 +500,13 @@ export const NotificationProvider = ({ children }) => {
       try {
         await apiUtils.put(endpoint, {});
         if (!isMounted.current || activeTokenRef.current !== requestToken) return;
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
-        );
+        setNotifications((prev) => {
+          const updated = prev.map((n) =>
+            n.id === notificationId ? { ...n, isRead: true } : n
+          );
+          persistNotifications(updated);
+          return updated;
+        });
         setUnreadCount((prev) => Math.max(0, prev - 1));
       } catch (error) {
         if (isMounted.current && activeTokenRef.current === requestToken) {
@@ -397,6 +515,46 @@ export const NotificationProvider = ({ children }) => {
       }
     },
     [token]
+  );
+
+  useEffect(() => {
+    markAsReadRef.current = markAsRead;
+  }, [markAsRead]);
+
+  const deleteNotification = useCallback(
+    async (notificationId) => {
+      if (!notificationId) return;
+      const requestToken = token;
+
+      let removedWasUnread = false;
+      setNotifications((prev) => {
+        const target = prev.find((n) => n.id === notificationId);
+        removedWasUnread = target ? !target.isRead : false;
+        const updated = prev.filter((n) => n.id !== notificationId);
+        persistNotifications(updated);
+        return updated;
+      });
+
+      if (removedWasUnread) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+
+      const endpointGetter = API_ENDPOINTS?.NOTIFICATIONS?.DELETE;
+      if (!token || typeof endpointGetter !== "function") return;
+
+      const endpoint = endpointGetter(notificationId);
+      if (!isValidEndpoint(endpoint)) return;
+
+      try {
+        await apiUtils.delete(endpoint);
+      } catch (error) {
+        if (isMounted.current && activeTokenRef.current === requestToken) {
+          console.error("[NotificationContext] Error deleting notification:", error);
+          fetchNotifications({ isBackground: true });
+        }
+      }
+    },
+    [token, fetchNotifications]
   );
 
   const markAllAsRead = useCallback(async () => {
@@ -409,7 +567,9 @@ export const NotificationProvider = ({ children }) => {
     setNotifications((prev) => {
       hasUnread = prev.some((n) => !n.isRead);
       if (!hasUnread) return prev;
-      return prev.map((n) => ({ ...n, isRead: true }));
+      const updated = prev.map((n) => ({ ...n, isRead: true }));
+      persistNotifications(updated);
+      return updated;
     });
 
     if (!hasUnread) return;
@@ -551,7 +711,7 @@ export const NotificationProvider = ({ children }) => {
     if (!token) {
       setNotifications([]);
       setUnreadCount(0);
-      setAchievements({ totalEvents: 0, currentStreak: 0, badges: [] });
+      setAchievements({ totalEvents: 0, gssocEvents: 0, currentStreak: 0, badges: [] });
       seenNotificationIds.current = new Set();
       hasCompletedInitialFetch.current = false;
       return;
@@ -606,6 +766,7 @@ export const NotificationProvider = ({ children }) => {
         achievements,
         unreadCount,
         loading,
+        realtimeStatus,
         preferences,
         pushStatus,
         defaultPreferences: DEFAULT_NOTIFICATION_PREFERENCES,
@@ -613,6 +774,7 @@ export const NotificationProvider = ({ children }) => {
         fetchAchievements,
         markAsRead,
         markAllAsRead,
+        deleteNotification,
         updatePreferences,
         savePreferences,
         requestPushPermission,
