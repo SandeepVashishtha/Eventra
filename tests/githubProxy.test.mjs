@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import jwt from "jsonwebtoken";
 import handler from "../api/github-proxy.js";
+import { users } from "../api/auth/signup.js";
+
+// Seed the in-memory users Map so verifyAuth middleware validates test requests
+users.set("test@example.com", { id: "user-test-1", email: "test@example.com" });
+users.set("ratelimit@example.com", { id: "user-rate-limit-test", email: "ratelimit@example.com" });
 
 // ---------------------------------------------------------------------------
 // Test helpers
