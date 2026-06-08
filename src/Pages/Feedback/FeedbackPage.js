@@ -186,7 +186,7 @@ const CustomFloatingSelect = ({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [dropdownRef]);
+  }, []);
 
   const handleSelect = (optionValue) => {
     const selectedOption = options.find((opt) => opt.value === optionValue);

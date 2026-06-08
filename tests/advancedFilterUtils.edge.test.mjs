@@ -89,8 +89,17 @@ describe("advancedFilterUtils — edge cases", () => {
 
   it("derives earliest and latest event dates", () => {
     const range = getDateRange(events);
-    assert.equal(range.earliest.toISOString().slice(0, 10), "2026-05-28");
-    assert.equal(range.latest.toISOString().slice(0, 10), "2026-07-01");
+    
+    // Helper to extract a clean YYYY-MM-DD string strictly in UTC context
+    const toUTCIsoDate = (date) => {
+      const yyyy = date.getUTCFullYear();
+      const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
+      const dd = String(date.getUTCDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    assert.equal(toUTCIsoDate(range.earliest), "2026-05-28");
+    assert.equal(toUTCIsoDate(range.latest), "2026-07-01");
   });
 
   it("detects active date and price filters", () => {
