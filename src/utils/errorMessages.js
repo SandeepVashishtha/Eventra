@@ -1,3 +1,7 @@
+import i18n from "../i18n/i18n";
+
+const t = (key) => i18n.t(key);
+
 /**
  * Centralised safe error messages for user-facing UI.
  *
@@ -5,29 +9,6 @@
  * stack traces, field names, or framework details useful to attackers.
  * Use getPublicErrorMessage() instead of err.message in all toast/form-error calls.
  */
-
-const STATUS_MESSAGES = {
-  400: "The request could not be understood. Please check your input and try again.",
-  401: "Your credentials are incorrect or your session has expired. Please sign in again.",
-  403: "You don't have permission to perform this action.",
-  404: "The requested resource was not found.",
-  409: "This information is already in use. Please try a different value.",
-  422: "Some fields contain invalid values. Please review and correct them.",
-  429: "Too many requests. Please wait a moment before trying again.",
-  500: "Something went wrong on our end. Please try again shortly.",
-  502: "The service is temporarily unavailable. Please try again shortly.",
-  503: "The service is temporarily unavailable. Please try again shortly.",
-};
-
-const KEYWORD_MESSAGES = {
-  "email.*already.*exist|already.*registered|duplicate.*email": "This email is already registered. Try signing in instead.",
-  "invalid.*password|password.*incorrect|wrong.*password": "Invalid email or password.",
-  "invalid.*credential|credentials.*incorrect": "Invalid email or password.",
-  "account.*not.*found|user.*not.*found": "No account found with those details.",
-  "account.*locked|too.*many.*attempt": "Your account has been temporarily locked. Please try again later.",
-  "token.*expired|session.*expired|jwt.*expired": "Your session has expired. Please sign in again.",
-  "network|fetch|econnrefused|enotfound": "Unable to reach the server. Please check your connection.",
-};
 
 /**
  * Returns a safe, user-friendly error message.
@@ -37,10 +18,33 @@ const KEYWORD_MESSAGES = {
  * @param {string} [fallback] - Message to show when no specific match is found
  * @returns {string} Safe message suitable for display in the UI
  */
-export function getPublicErrorMessage(err, fallback = "An unexpected error occurred. Please try again.") {
+export function getPublicErrorMessage(err, fallback = t("error.generic")) {
   if (process.env.NODE_ENV !== "production") {
     console.error("[Eventra error]", err);
   }
+
+  const STATUS_MESSAGES = {
+    400: t("error.badRequest"),
+    401: t("error.unauthorized"),
+    403: t("error.forbidden"),
+    404: t("error.notFound"),
+    409: t("error.conflict"),
+    422: t("error.unprocessable"),
+    429: t("error.tooManyRequests"),
+    500: t("error.serverError"),
+    502: t("error.serviceUnavailable"),
+    503: t("error.serviceUnavailable"),
+  };
+
+  const KEYWORD_MESSAGES = {
+    "email.*already.*exist|already.*registered|duplicate.*email": t("error.emailExists"),
+    "invalid.*password|password.*incorrect|wrong.*password": t("error.invalidCredentials"),
+    "invalid.*credential|credentials.*incorrect": t("error.invalidCredentials"),
+    "account.*not.*found|user.*not.*found": t("error.accountNotFound"),
+    "account.*locked|too.*many.*attempt": t("error.accountLocked"),
+    "token.*expired|session.*expired|jwt.*expired": t("error.unauthorized"),
+    "network|fetch|econnrefused|enotfound": t("error.networkError"),
+  };
 
   if (!err) return fallback;
 

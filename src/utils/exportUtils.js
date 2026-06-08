@@ -1,4 +1,5 @@
 export function sanitizeFilename(name) {
+  if (!name || typeof name !== "string") return "file";
   return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 }
 
@@ -20,7 +21,9 @@ export function exportToCSV(data, filename) {
   }
   
   const csvString = csvRows.join('\n');
-  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  // Add UTF-8 BOM so Microsoft Excel correctly detects UTF-8 encoding
+  // and displays non-ASCII characters (Hindi, accented, emoji) properly.
+  const blob = new Blob(['\uFEFF', csvString], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   
   const link = document.createElement("a");
@@ -37,6 +40,7 @@ export function exportToCSV(data, filename) {
 }
 
 export function exportToJSON(data, filename) {
+  if (!data || !data.length) return;
   const jsonString = JSON.stringify(data, null, 2);
   const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

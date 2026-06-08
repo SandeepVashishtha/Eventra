@@ -23,7 +23,7 @@ const WhatsHappening = () => {
 
   useEffect(() => {
     if (prefersReducedMotion) {
-      // eslint-disable-next-line
+       
       setIsAutoPlaying(false);
     }
   }, [prefersReducedMotion]);
@@ -37,8 +37,10 @@ const WhatsHappening = () => {
   }, []);
 
   const formatEventsData = (events) => {
+    const now = new Date();
+    const dayMs = 1000 * 60 * 60 * 24;
     return events
-      .filter((event) => new Date(event.date) >= new Date())
+      .filter((event) => new Date(event.date) >= now)
       .map((event) => ({
         id: `event-${event.id}`,
         title: event.title,
@@ -58,12 +60,13 @@ const WhatsHappening = () => {
         location: event.location,
         attendees: event.attendees,
         timeLeft: `${Math.ceil(
-       (new Date(event.rawDate || event.date) - new Date()) /(1000 * 60 * 60 * 24))} days`,
+       (new Date(event.rawDate || event.date) - now) / dayMs)} days`,
       }));
   };
 
   const formatHackathonsData = (hackathons) => {
     const now = new Date();
+    const dayMs = 1000 * 60 * 60 * 24;
     return hackathons
       .filter(
         (hackathon) =>
@@ -76,11 +79,10 @@ const WhatsHappening = () => {
         description: hackathon.description,
 
         timeLeft:
-  new Date(hackathon.endDate) < new Date()
+  new Date(hackathon.endDate) < now
     ? "Ended"
     : `${Math.ceil(
-        (new Date(hackathon.startDate) - new Date()) /
-          (1000 * 60 * 60 * 24)
+        (new Date(hackathon.startDate) - now) / dayMs
       )} days`,
         
         date: `${new Date(hackathon.startDate).toLocaleDateString("en-US", {
@@ -97,7 +99,7 @@ const WhatsHappening = () => {
         link: `/hackathons/${hackathon.id}`,
         featured:
           hackathon.prize &&
-          parseInt(hackathon.prize.replace(/[$,]/g, "")) > 30000,
+          parseInt(hackathon.prize.replace(/[$,]/g, ""), 10) > 30000,
         location: hackathon.location,
         prize: hackathon.prize,
         participants: hackathon.participants,
@@ -351,7 +353,7 @@ const WhatsHappening = () => {
                               </span>
                             </div>
 
-                            <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2 leading-snug group-hover:text-sky-700 transition-colors">
+                            <h3 title={event.title} className="text-lg sm:text-xl font-semibold text-slate-900 mb-2 leading-snug group-hover:text-sky-700 transition-colors line-clamp-2 break-words min-w-0">
                               {event.title}
                             </h3>
                             

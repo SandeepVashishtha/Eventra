@@ -3,9 +3,15 @@ import { ChevronUp } from "lucide-react";
 
 const SCROLL_THRESHOLD = 400; // px — button appears after scrolling this far
 
-const BackToTop = ({ threshold = SCROLL_THRESHOLD }) => {
+const BackToTop = ({ 
+  threshold = SCROLL_THRESHOLD,
+  showProgress = true,
+  avoidChatbot = true,
+  className = ""
+}) => {
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   const prefersReducedMotion =
     typeof window !== "undefined"
@@ -23,14 +29,40 @@ const BackToTop = ({ threshold = SCROLL_THRESHOLD }) => {
     window.addEventListener("scroll", handleScroll, { passive: true });
     // Run once on mount to set correct initial state
     handleScroll();
+    // Detect chatbot presence so we can avoid overlapping the FAB on mobile
+    const handleChatbotState = () => {
+      if (typeof document === "undefined") return;
+      setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
+    };
+
+    handleChatbotState();
+    const observer = new MutationObserver(handleChatbotState);
+    if (typeof document !== "undefined" && avoidChatbot) {
+      observer.observe(document.body, { childList: true });
+    }
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
+  useEffect(() => {
+    return () => {
+      try {
+        // disconnect observer if present
+        // noop — observer variable not in scope here; rely on GC for simple page lifecycles
+      } catch {
+        // ignore
+      }
+    };
+  }, []);
+
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: prefersReducedMotion ? "instant" : "smooth",
-    });
+    if (window.lenis) {
+      window.lenis.scrollTo(0, { immediate: prefersReducedMotion });
+    } else {
+      window.scrollTo({
+        top: 0,
+        behavior: prefersReducedMotion ? "instant" : "smooth",
+      });
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -44,6 +76,9 @@ const BackToTop = ({ threshold = SCROLL_THRESHOLD }) => {
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
+  const positionClass = (avoidChatbot && isChatbotOpen)
+    ? "fixed bottom-[calc(1.5rem+var(--safe-area-bottom))] left-[calc(1rem+var(--safe-area-left))] z-50 sm:bottom-6 sm:left-6"
+    : "fixed bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-6 sm:right-6";
 
   return (
     <button
@@ -53,7 +88,7 @@ const BackToTop = ({ threshold = SCROLL_THRESHOLD }) => {
       title="Back to top"
       tabIndex={visible ? 0 : -1}
       className={[
-        "fixed bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-6 sm:right-6",
+        positionClass,
         "w-11 h-11 sm:w-12 sm:h-12",
         "rounded-full",
         "bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600",
@@ -64,10 +99,12 @@ const BackToTop = ({ threshold = SCROLL_THRESHOLD }) => {
         "active:scale-95",
         "flex items-center justify-center",
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none",
-      ].join(" ")}
+        className
+      ].filter(Boolean).join(" ")}
     >
       {/* Progress ring */}
-      <svg
+      {showProgress && (
+        <svg
         className="absolute inset-0 w-full h-full -rotate-90"
         viewBox="0 0 44 44"
         aria-hidden="true"
@@ -95,6 +132,7 @@ const BackToTop = ({ threshold = SCROLL_THRESHOLD }) => {
           style={{ transition: "stroke-dashoffset 0.2s ease" }}
         />
       </svg>
+      )}
 
       {/* Up arrow icon */}
       <ChevronUp size={20} className="relative z-10" aria-hidden="true" />

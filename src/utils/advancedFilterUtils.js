@@ -125,6 +125,9 @@ export const getCategoryLabel = (categoryKey) => {
  * @returns {Array} Filtered events
  */
 export const filterByCategory = (events, selectedCategories) => {
+  if (!Array.isArray(events)) {
+    return [];
+  }
   if (!selectedCategories || selectedCategories.length === 0) {
     return events;
   }
@@ -134,8 +137,9 @@ export const filterByCategory = (events, selectedCategories) => {
     return selectedCategories.some((cat) => {
       const mappedCategory = EVENT_CATEGORIES.find(
         (category) =>
-          category.id === cat ||
-          normalizeFilterValue(category.label) === normalizeFilterValue(cat),
+          category &&
+          (category.id === cat ||
+            normalizeFilterValue(category.label) === normalizeFilterValue(cat)),
       );
 
       return (
@@ -148,15 +152,18 @@ export const filterByCategory = (events, selectedCategories) => {
 };
 
 export const filterByLocation = (events, locationQuery) => {
+  if (!Array.isArray(events)) {
+    return [];
+  }
   const query = String(locationQuery || "").trim().toLowerCase();
   if (!query) {
     return events;
   }
 
   return events.filter((event) =>
-    String(event.location || event.venue || event.city || "")
+    event ? String(event.location || event.venue || event.city || "")
       .toLowerCase()
-      .includes(query),
+      .includes(query) : false,
   );
 };
 
@@ -167,14 +174,17 @@ export const filterByLocation = (events, locationQuery) => {
  * @returns {Array} Filtered events
  */
 export const filterByMode = (events, selectedModes) => {
+  if (!Array.isArray(events)) {
+    return [];
+  }
   if (!selectedModes || selectedModes.length === 0) {
     return events;
   }
 
   return events.filter((event) =>
-    selectedModes.includes(
+    event ? selectedModes.includes(
       normalizeFilterValue(event.eventMode || event.mode || "offline"),
-    ),
+    ) : false,
   );
 };
 
@@ -185,6 +195,9 @@ export const filterByMode = (events, selectedModes) => {
  * @returns {Array} Filtered events
  */
 export const filterByPrice = (events, priceRange) => {
+  if (!Array.isArray(events)) {
+    return [];
+  }
   if (!priceRange) {
     return events;
   }
@@ -192,6 +205,7 @@ export const filterByPrice = (events, priceRange) => {
   const { min = 0, max = Infinity } = priceRange;
 
   return events.filter((event) => {
+    if (!event) return false;
     const price = event.price || 0;
     return price >= min && price <= max;
   });
@@ -204,6 +218,9 @@ export const filterByPrice = (events, priceRange) => {
  * @returns {Array} Filtered events
  */
 export const filterByDateRange = (events, dateRange) => {
+  if (!Array.isArray(events)) {
+    return [];
+  }
   if (!dateRange || (!dateRange.startDate && !dateRange.endDate)) {
     return events;
   }
@@ -219,6 +236,7 @@ export const filterByDateRange = (events, dateRange) => {
   endDate.setHours(23, 59, 59, 999);
 
   return events.filter((event) => {
+    if (!event) return false;
     const eventDate = new Date(event.date || event.startDate);
     return eventDate >= startDate && eventDate <= endDate;
   });
@@ -231,11 +249,15 @@ export const filterByDateRange = (events, dateRange) => {
  * @returns {Array} Filtered events
  */
 export const filterByStatus = (events, selectedStatuses) => {
+  if (!Array.isArray(events)) {
+    return [];
+  }
   if (!selectedStatuses || selectedStatuses.length === 0) {
     return events;
   }
 
   return events.filter((event) => {
+    if (!event) return false;
     const status = normalizeFilterValue(event.status || "upcoming");
     return selectedStatuses.some(
       (selectedStatus) => normalizeFilterValue(selectedStatus) === status,
@@ -291,7 +313,7 @@ export const getUniqueCategories = (events) => {
       categories.add(event.category);
     }
   });
-  return Array.from(categories).sort();
+  return Array.from(categories).sort((a, b) => a.localeCompare(b));
 };
 
 /**
@@ -430,7 +452,11 @@ export const decodeAdvancedFilters = (value) => {
   }
 
   try {
-    return normalizeAdvancedFilters(JSON.parse(decodeURIComponent(value)));
+    const parsed = JSON.parse(decodeURIComponent(value));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return getDefaultFilters();
+    }
+    return normalizeAdvancedFilters(parsed);
   } catch {
     return getDefaultFilters();
   }

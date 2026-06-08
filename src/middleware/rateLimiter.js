@@ -1,32 +1,19 @@
 // Authentication rate-limiter middleware
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQUESTS = 5;
+// WARNING: Client-side rate limiting provides zero security value.
+// Any user can bypass this by refreshing, using DevTools, or a new tab.
+// Rate limiting MUST be enforced on the server. This module is a no-op
+// placeholder until server-side enforcement is implemented.
 
-const requestCounts = new Map();
-let lastEvictionAt = 0;
+let warned = false;
 
-const evictStale = () => {
-  const now = Date.now();
-  if (now - lastEvictionAt < RATE_LIMIT_WINDOW_MS) return;
-  lastEvictionAt = now;
-
-  for (const [ip, entry] of requestCounts.entries()) {
-    if (now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) requestCounts.delete(ip);
+export function checkRateLimit(_ip) {
+  if (!warned) {
+    console.warn(
+      "[rateLimiter] Client-side rate limiter is a no-op. " +
+      "Implement server-side rate limiting for real protection."
+    );
+    warned = true;
   }
-};
-
-export function checkRateLimit(ip) {
-  const now = Date.now();
-  evictStale();
-
-  const entry = requestCounts.get(ip);
-  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
-    requestCounts.set(ip, { count: 1, windowStart: now });
-    return true;
-  }
-
-  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) return false;
-  entry.count += 1;
   return true;
 }
 

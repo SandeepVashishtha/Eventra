@@ -7,8 +7,11 @@ import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
 import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
 import { toast } from "react-toastify";
-import { getEventStatus } from "../../utils/eventUtils";
+import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { logError } from "../../utils/errorLogger";
+import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
+import LazyImage from "../../components/common/LazyImage";
 // Note: eventsMockData.json is NOT statically imported here.
 // It is loaded dynamically (and only in development/fallback mode) so that
 // the mock JSON is not bundled into the production build.
@@ -23,6 +26,42 @@ const EventDetailsPage = () => {
   const [cacheInfo, setCacheInfo] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  const { user } = useAuth();
+  const { isRegistered, waitlistUpdated, triggerWaitlistUpdate } = useMyEvents();
+  const userId = user?.id || user?.email || null;
+  const [queuePosition, setQueuePosition] = useState(-1);
+  const [waitlistCount, setWaitlistCount] = useState(0);
+
+  useEffect(() => {
+    if (userId && event) {
+      import("../../utils/waitlistUtils").then(({ getQueuePosition }) => {
+        setQueuePosition(getQueuePosition(event.id, userId));
+      }).catch(() => setQueuePosition(-1));
+    } else {
+      setQueuePosition(-1);
+    }
+  }, [userId, event, waitlistUpdated]);
+
+  useEffect(() => {
+    if (event) {
+      import("../../utils/waitlistUtils").then(({ getEventWaitlist }) => {
+        setWaitlistCount(getEventWaitlist(event.id).length);
+      }).catch(() => setWaitlistCount(0));
+    }
+  }, [event, waitlistUpdated]);
+
+  const handleLeaveWaitlist = async () => {
+    if (!userId || !event) return;
+    try {
+      const { leaveWaitlist } = await import("../../utils/waitlistUtils");
+      await leaveWaitlist(event.id, userId);
+      toast.success("Successfully left the waitlist.");
+      triggerWaitlistUpdate();
+    } catch (err) {
+      toast.error(err.message || "Failed to leave waitlist.");
+    }
+  };
+
   const shareUrl = event ? `${window.location.origin}/events/${event.id}` : "";
   const shareText = event ? `Check out this event: ${event.title}` : "";
 
@@ -36,30 +75,37 @@ const EventDetailsPage = () => {
     : {};
 
   const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy link to clipboard");
-    }
-  };
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+
+    setCopied(true);
+
+    toast.success("Event link copied successfully!");
+
+    setTimeout(() => setCopied(false), 2000);
+  } catch {
+    toast.error("Failed to copy link to clipboard");
+  }
+};
 
   const handleNativeShare = async () => {
+  try {
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: event.title,
-          text: shareText,
-          url: shareUrl,
-        });
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          toast.error("Unable to share event");
-        }
-      }
+      await navigator.share({
+        title: event.title,
+        text: shareText,
+        url: shareUrl,
+      });
+
+      toast.success("Event shared successfully!");
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Share not supported. Link copied to clipboard!");
     }
-  };
+  } catch {
+    toast.error("Failed to share event");
+  }
+};
 
   useEffect(() => {
     let isCancelled = false;
@@ -70,6 +116,11 @@ const EventDetailsPage = () => {
       latestRequestIdRef.current === requestId && !controller.signal.aborted;
 
     const fetchEvent = async () => {
+      // Guard: only update state if this is still the latest request.
+      // Without this check, a stale request starting after a newer one has
+      // already begun would unconditionally reset loading/error state,
+      // causing the race condition described in issue #5077.
+      if (!isLatestRequest()) return;
       setLoading(true);
       setCacheInfo(null);
       setError(null);
@@ -176,7 +227,10 @@ const EventDetailsPage = () => {
     );
   }
 
-  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+  const eventStatus = getEventStatus(event);
+  const isPastEvent = eventStatus === "past" || eventStatus === "ended";
+  const isCancelledEvent = eventStatus === "cancelled";
+  const isRegistrationBlocked = isEventRegistrationClosed(event);
 
   return (
     <>
@@ -211,11 +265,12 @@ const EventDetailsPage = () => {
           >
             <section className="min-w-0 lg:col-span-2" aria-labelledby="event-details-title">
               <div className="relative mb-5 aspect-[4/3] overflow-hidden rounded-2xl shadow-xl xs:aspect-video sm:mb-8">
-                <img
+                <LazyImage
                   src={event.image}
                   alt={`${event.title} event banner`}
-                  className="w-full h-96 object-cover"
-                  loading="lazy"
+                  className="w-full h-96"
+                  imgClassName="object-cover"
+                  loading="eager"
                 />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -227,15 +282,16 @@ const EventDetailsPage = () => {
                     </span>
                     <span
                       className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        isPastEvent ? "bg-gray-600" : "bg-green-600"
+                        isRegistrationBlocked ? "bg-gray-600" : "bg-green-600"
                       }`}
                     >
-                      {isPastEvent ? "Past Event" : "Upcoming"}
+                      {isCancelledEvent ? "Cancelled" : isPastEvent ? "Past Event" : "Upcoming"}
                     </span>
                   </div>
                   <h1
                     id="event-details-title"
-                    className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl"
+                    title={event.title}
+                    className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl break-words"
                   >
                     {event.title}
                   </h1>
@@ -259,7 +315,7 @@ const EventDetailsPage = () => {
               className="flex min-w-0 flex-col gap-4 sm:gap-6 lg:col-span-1"
               aria-label="Event registration and details"
             >
-              {!isPastEvent && <CountdownTimer date={event.date} time={event.time} />}
+              {!isRegistrationBlocked && <CountdownTimer date={event.date} time={event.time} />}
 
               <div className="rounded-2xl border border-gray-200 bg-card-bg p-4 shadow-sm dark:border-gray-700 dark:bg-card-bg sm:p-6">
                 <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
@@ -285,12 +341,19 @@ const EventDetailsPage = () => {
                     <MapPin size={16} className="shrink-0 text-pink-500" />
                     <span className="min-w-0 break-words">{event.location}</span>
                   </div>
-                  <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
                     <Users size={16} className="shrink-0 text-green-500" />
                     <span>
                       {Number(event.attendees) || 0} / {Number(event.maxAttendees) || 0} registered
+                      {event.attendees >= event.maxAttendees && " (Sold Out)"}
                     </span>
                   </div>
+                  {waitlistCount > 0 && (
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Clock size={16} className="shrink-0 text-amber-500" />
+                      <span className="text-amber-650 dark:text-amber-400 font-medium">{waitlistCount} user(s) on waitlist</span>
+                    </div>
+                  )}
                   <div className="flex min-w-0 items-center gap-3">
                     <Tag size={16} className="shrink-0 text-yellow-500" />
                     <span className="capitalize">{event.type || event.category || "event"}</span>
@@ -298,13 +361,31 @@ const EventDetailsPage = () => {
                 </div>
               </div>
 
-              {!isPastEvent && (
-                <Link
-                  to={`/events/${event.id}/register`}
-                  className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
-                >
-                  Register Now
-                </Link>
+              {!isRegistrationBlocked && (
+                isRegistered(event.id) ? (
+                  <div className="w-full text-center py-3 bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 rounded-2xl font-semibold">
+                    You are registered!
+                  </div>
+                ) : queuePosition > 0 ? (
+                  <div className="flex flex-col gap-3 w-full">
+                    <div className="w-full text-center py-3 bg-amber-50 dark:bg-amber-950/20 text-amber-650 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-2xl font-semibold">
+                      On Waitlist (Position #{queuePosition})
+                    </div>
+                    <button
+                      onClick={handleLeaveWaitlist}
+                      className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl border border-red-300 text-red-650 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/20 px-4 py-3 text-sm font-semibold transition-all duration-300 cursor-pointer"
+                    >
+                      Leave Waitlist
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    to={`/events/${event.id}/register`}
+                    className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
+                  >
+                    {event.attendees >= event.maxAttendees ? "Join Waitlist" : "Register Now"}
+                  </Link>
+                )
               )}
 
               {/* Share Section */}
@@ -382,7 +463,7 @@ const EventDetailsPage = () => {
                     aria-label="Share via device"
                   >
                     <Share2 size={14} />
-                    Share via Device
+                    Share Event 📤
                   </button>
                 )}
               </div>
