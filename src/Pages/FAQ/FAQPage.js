@@ -464,6 +464,9 @@ function FAQSectionInner() {
         .faq-accordion-title-group {
           flex: 1;
           text-align: left;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
         }
 
         .faq-cat {

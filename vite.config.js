@@ -8,6 +8,11 @@ const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const backendTarget =
+    env.BACKEND_URL ||
+    env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
+    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") ||
+    "http://localhost:8080";
 
   return {
     plugins: [
@@ -46,6 +51,16 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       open: false,
       hmr: { overlay: true },
+      proxy: {
+        "/api": {
+          target: backendTarget,
+          changeOrigin: true,
+        },
+        "/stream": {
+          target: backendTarget,
+          changeOrigin: true,
+        },
+      },
     },
 
     // Pre-bundle heavy deps once → node_modules/.vite/deps

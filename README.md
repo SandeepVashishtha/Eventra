@@ -297,3 +297,11 @@ This project is mentored under **GSSoC'26** by:
 </table>
 
 > 💬 Have questions about contributing or the project? Reach out to the mentor on [LinkedIn](https://www.linkedin.com/in/ayushh-sharmaa/) or via the [GSSoC Discord](https://discord.gg/6MQ9r5nHT).
+
+## 🚀 Quick Start
+
+```bash
+git clone https://github.com/SandeepVashishtha/Eventra.git
+cd Eventra
+npm install
+npm run dev
