@@ -1463,6 +1463,53 @@ Requires a valid Bearer JWT in the `Authorization` header. Any authenticated use
 
 ---
 
+# Notification APIs
+
+## Get Notifications
+
+| Method | Endpoint             |
+| ------ | -------------------- |
+| GET    | `/api/notifications` |
+
+Returns the authenticated user’s notifications sorted by newest first.
+
+### Authentication
+
+Requires Bearer JWT authentication.
+
+### Success Response
+
+Status: `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Welcome Notification",
+    "message": "This is a manual test notification.",
+    "read": false,
+    "createdAt": "2026-06-09T00:38:52.335113"
+  }
+]
+```
+
+### Empty Response
+
+If the authenticated user has no notifications:
+
+```json
+[]
+```
+
+### Notes
+
+* Only notifications belonging to the authenticated user are returned.
+* The response includes read/unread status using the `read` field.
+* Notifications are returned in newest-first order.
+* Pagination is not currently included.
+
+---
+
 # Analytics APIs
 
 ## Get Admin Analytics
