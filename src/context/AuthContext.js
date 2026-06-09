@@ -220,12 +220,13 @@ export const AuthProvider = ({ children }) => {
 
     expiryToastShownRef.current = false;
 
+    let expSeconds;
     if (token === "cookie-managed") {
-      return;
+      expSeconds = user?.exp;
+    } else {
+      const payload = decodeTokenPayload(token);
+      expSeconds = payload?.exp;
     }
-
-    const payload = decodeTokenPayload(token);
-    const expSeconds = payload?.exp;
 
     let timeoutId;
 
@@ -235,30 +236,37 @@ export const AuthProvider = ({ children }) => {
       const delayMs = Math.max(expiresAtMs - nowMs + 1000, 0);
 
       timeoutId = setTimeout(() => {
-        if (!isTokenValid(token)) {
+        if (token === "cookie-managed" ? Date.now() >= expiresAtMs : !isTokenValid(token)) {
           clearExpiredSession();
         }
       }, delayMs);
     } else {
-      timeoutId = setInterval(() => {
+      // If we have no expiration information, we can only rely on API 401s.
+      // We do not ping blindly every 60s as it's wasteful.
+      // But if there's a token, we check it.
+      if (token !== "cookie-managed") {
+        timeoutId = setInterval(() => {
+          if (!isTokenValid(token)) {
+            clearExpiredSession();
+          }
+        }, 60_000);
+
         if (!isTokenValid(token)) {
           clearExpiredSession();
         }
-      }, 60_000);
-
-      if (!isTokenValid(token)) {
-        clearExpiredSession();
       }
     }
 
     return () => {
-      if (typeof expSeconds === "number") {
-        clearTimeout(timeoutId);
-      } else {
-        clearInterval(timeoutId);
+      if (timeoutId) {
+        if (typeof expSeconds === "number") {
+          clearTimeout(timeoutId);
+        } else {
+          clearInterval(timeoutId);
+        }
       }
     };
-  }, [token, clearExpiredSession]);
+  }, [token, user?.exp, clearExpiredSession]);
 
   const persistSession = useCallback(async (sessionToken, sessionUser) => {
     setToken(sessionToken);
@@ -340,14 +348,25 @@ export const AuthProvider = ({ children }) => {
 
 
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.warn("[AuthContext] Backend logout failed, proceeding with local clear", error);
+    }
     clearSession();
     setAuthRequestState({ loading: false, error: null });
   }, [clearSession, setAuthRequestState]);
 
   const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
-    if (token !== "cookie-managed" && !isTokenValid(token)) {
+    
+    if (token === "cookie-managed") {
+      if (typeof user.exp === "number" && Date.now() >= user.exp * 1000) {
+        clearExpiredSession();
+        return false;
+      }
+    } else if (!isTokenValid(token)) {
       clearExpiredSession();
       return false;
     }

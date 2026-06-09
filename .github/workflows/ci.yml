@@ -143,5 +143,6 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          JWT_SECRET: "mock-jwt-secret-for-ci-build-verification-only"
       - name: Check bundle size
         run: npx bundlesize

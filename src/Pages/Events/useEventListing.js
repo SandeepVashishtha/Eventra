@@ -259,12 +259,30 @@ const useEventListing = () => {
 
   const sortedEvents = useMemo(() => {
     return [...filteredEvents].sort((a, b) => {
+      if (sortType === "Title A-Z") {
+        return (a.title || "").localeCompare(b.title || "");
+      }
+      if (sortType === "Title Z-A") {
+        return (b.title || "").localeCompare(a.title || "");
+      }
+      if (sortType === "Price Low to High") {
+        const priceA = a.price === "Free" || !a.price ? 0 : parseFloat(a.price);
+        const priceB = b.price === "Free" || !b.price ? 0 : parseFloat(b.price);
+        return priceA - priceB;
+      }
+      if (sortType === "Price High to Low") {
+        const priceA = a.price === "Free" || !a.price ? 0 : parseFloat(a.price);
+        const priceB = b.price === "Free" || !b.price ? 0 : parseFloat(b.price);
+        return priceB - priceA;
+      }
+
       const dateA = new Date(a.date || a.startDate);
       const dateB = new Date(b.date || b.startDate);
 
-      if (sortType === "Upcoming") {
+      if (sortType === "Upcoming" || sortType === "Oldest") {
         return dateA - dateB;
       }
+      // Default / Newest
       return dateB - dateA;
     });
   }, [filteredEvents, sortType]);
