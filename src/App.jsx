@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
@@ -50,6 +51,7 @@ const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
+const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
 
 
 const OfflineSyncManager = () => {
@@ -58,12 +60,13 @@ const OfflineSyncManager = () => {
 };
 
 function App() {
+  const { t } = useTranslation();
   const location = useLocation();
   const isDashboardOrAdmin =
     location?.pathname === "/dashboard" || location?.pathname === "/admin";
   const pageLoader = (
     <div className="flex items-center justify-center min-h-screen text-gray-500">
-      Loading page...
+      {t("app.loading")}
     </div>
   );
   const [cursorEnabled, setCursorEnabled] = useState(() => {
@@ -131,13 +134,13 @@ function App() {
 
   useEffect(() => {
     const handleOnline = () => {
-      toast.success("Back online! Your connections have been restored and sync is complete.", {
+      toast.success(t("app.backOnline"), {
         position: "bottom-right",
         autoClose: 4000,
       });
     };
     const handleOffline = () => {
-      toast.warning("You are currently offline. Running in secure local offline caching mode.", {
+      toast.warning(t("app.offline"), {
         position: "bottom-right",
         autoClose: 5000,
       });
@@ -153,7 +156,7 @@ function App() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, []);
+  }, [t]);
 
   return (
     <ErrorBoundary>

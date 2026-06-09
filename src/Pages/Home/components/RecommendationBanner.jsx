@@ -1,9 +1,9 @@
 const RecommendationBanner = () => {
   return (
-    <section className="px-4 md:px-8 py-8 overflow-hidden">
+    <section className="px-4 md:px-8 py-8 overflow-hidden dark:bg-black  dark:text-white">
       <div className="relative max-w-7xl mx-auto">
-        <div aria-hidden className="absolute -left-10 -top-10 w-56 h-56 rounded-full bg-[#D7EAF8] opacity-40 blur-3xl -z-10" />
-        <div aria-hidden className="absolute -right-8 top-16 w-44 h-44 rounded-full bg-[#E8F5FB] opacity-35 blur-3xl -z-10" />
+        <div aria-hidden className="absolute -left-10 -top-10 w-56 h-56 rounded-full bg-[#D7EAF8] opacity-40 blur-3xl -z-10 " />
+        <div aria-hidden className="absolute -right-8 top-16 w-44 h-44 rounded-full bg-[#E8F5FB] opacity-35 blur-3xl -z-10 " />
 
         <div
           className="
@@ -11,6 +11,7 @@ const RecommendationBanner = () => {
             border
             border-slate-200
             bg-white/70
+            dark:bg-black
             backdrop-blur-md
             px-8
             py-10
@@ -18,7 +19,6 @@ const RecommendationBanner = () => {
             md:py-14
             shadow-[0_18px_40px_rgba(15,23,42,0.06)]
           "
-          style={{ background: 'linear-gradient(90deg, rgba(224,233,242,0.55), rgba(255,255,255,0.9))' }}
         >
           <div className="max-w-3xl">
             {/* Badge */}
@@ -49,7 +49,7 @@ const RecommendationBanner = () => {
               ].map((tag, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-sm text-slate-700 shadow-sm"
+                  className="px-3 py-1.5 rounded-full bg-white border dark:bg-gray-500 border-slate-200 text-sm text-slate-700 shadow-sm"
                 >
                   {tag}
                 </span>
