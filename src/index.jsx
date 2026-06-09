@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
 import "./i18n/i18n";
 import App from "./App";
+import TranslationProvider from "./components/TranslationProvider";
 import { ThemeProvider } from "./context/ThemeContext";
 import GlobalErrorBoundary from "./components/common/ErrorBoundary";
 import { initializeGlobalErrorHandling } from "./utils/globalErrorHandler";
@@ -33,6 +34,7 @@ const router = createBrowserRouter([
   }
 ]);
 
+// Mount the React application to the DOM
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
@@ -40,20 +42,14 @@ root.render(
     {/* Global Application Error Boundary (Fixes #5060) */}
     <GlobalErrorBoundary>
   <HelmetProvider>
-    <ThemeProvider>
-      <RealTimeProvider>
-        <RouterProvider router={router} />
-      </RealTimeProvider>
-    </ThemeProvider>
+    <TranslationProvider>
+      <ThemeProvider>
+        <RealTimeProvider>
+          <RouterProvider router={router} />
+        </RealTimeProvider>
+      </ThemeProvider>
+    </TranslationProvider>
   </HelmetProvider>
 </GlobalErrorBoundary>
   </React.StrictMode>
 );
-
-// [GSSoC-Critical-Landmark-5] Critical execution routing pathway tracking
-
-
-
-
-
-

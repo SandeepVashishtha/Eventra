@@ -6,6 +6,7 @@
 import { useEffect, useRef } from "react";
 import { useState } from "react";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { logger } from "../../utils/logger";
 
 /**
  * A React component that renders a WebGL-powered fluid simulation
@@ -104,7 +105,7 @@ const FluidCursor = ({ enabled = true }) => {
     const { gl, ext } = getWebGLContext(canvas);
 
     if (!gl || !ext?.formatRGBA || !ext?.formatRG || !ext?.formatR) {
-      console.warn("[FluidCursor] WebGL fluid cursor disabled: unsupported graphics context.");
+      logger.warn("[FluidCursor] WebGL fluid cursor disabled: unsupported graphics context.");
       return undefined;
     }
 
@@ -295,7 +296,7 @@ const FluidCursor = ({ enabled = true }) => {
       gl.linkProgram(program);
 
       if (!gl.getProgramParameter(program, gl.LINK_STATUS))
-        console.trace(gl.getProgramInfoLog(program));
+        logger.error("[FluidCursor] WebGL program link failed:", gl.getProgramInfoLog(program));
 
       return program;
     }
@@ -318,7 +319,7 @@ const FluidCursor = ({ enabled = true }) => {
       gl.compileShader(shader);
 
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
-        console.trace(gl.getShaderInfoLog(shader));
+        logger.error("[FluidCursor] WebGL shader compile failed:", gl.getShaderInfoLog(shader));
 
       return shader;
     }
