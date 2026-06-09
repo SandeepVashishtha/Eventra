@@ -4,6 +4,7 @@
  * Then set REACT_APP_API_URL=http://localhost:8080 in .env.local and restart the dev server.
  */
 import http from "http";
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -144,10 +145,21 @@ const decodeJwtPayload = (token) => {
   return null;
 };
 
-const getRequestBody = (req) => {
-  return new Promise((resolve, reject) => {
+const MAX_BODY_SIZE = 100 * 1024; // 100KB
+
+const getRequestBody = (req, res) => {
+  return new Promise((resolve) => {
     let body = "";
+    let size = 0;
     req.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > MAX_BODY_SIZE) {
+        req.destroy();
+        if (res && !res.headersSent) {
+          jsonResponse(res, 413, { error: "Request body too large. Maximum size is 100KB." });
+        }
+        return;
+      }
       body += chunk;
     });
     req.on("end", () => {
@@ -157,8 +169,8 @@ const getRequestBody = (req) => {
         resolve({});
       }
     });
-    req.on("error", (err) => {
-      reject(err);
+    req.on("error", () => {
+      resolve({});
     });
   });
 };
@@ -293,7 +305,7 @@ const server = http.createServer(async (req, res) => {
 
   // Token generation
   if (pathname === "/api/tickets/token" && req.method === "POST") {
-    const body = await getRequestBody(req);
+    const body = await getRequestBody(req, res);
     const { registrationId, eventId } = body;
     if (!registrationId || !eventId) {
       return jsonResponse(res, 400, { error: "Missing required fields: registrationId and eventId" });
@@ -327,7 +339,7 @@ const server = http.createServer(async (req, res) => {
 
   // Validate ticket code / JWT token
   if (pathname === "/api/tickets/validate" && req.method === "POST") {
-    const body = await getRequestBody(req);
+    const body = await getRequestBody(req, res);
     const { ticketId, eventId } = body;
     if (!ticketId || !eventId) {
       return jsonResponse(res, 400, { error: "Missing ticketId or eventId" });
@@ -415,7 +427,7 @@ const server = http.createServer(async (req, res) => {
 
   // Record check-in
   if (pathname === "/api/tickets/checkin" && req.method === "POST") {
-    const body = await getRequestBody(req);
+    const body = await getRequestBody(req, res);
     const { ticketId, eventId } = body;
     if (!ticketId || !eventId) {
       return jsonResponse(res, 400, { error: "Missing ticketId or eventId" });
