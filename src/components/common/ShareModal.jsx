@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { isValidShareUrl } from "../../utils/shareUtils";
-const { containerRef } = useFocusTrap(isOpen, onClose);
 const ModalCloseButton = memo(({ onClick }) => (
   <button
     type="button"
@@ -28,6 +27,7 @@ const ModalCloseButton = memo(({ onClick }) => (
 ModalCloseButton.displayName = "ModalCloseButton";
 
 const ShareModal = ({ isOpen, onClose, event }) => {
+  const { containerRef } = useFocusTrap(isOpen, onClose);
   const shareData = useMemo(() => {
     if (!event) {
       return null;

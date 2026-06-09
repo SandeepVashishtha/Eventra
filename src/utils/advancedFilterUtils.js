@@ -383,6 +383,8 @@ export const hasActiveFilters = (filters = {}) => {
   );
 };
 
+export const hasActiveAdvancedFilters = hasActiveFilters;
+
 /**
  * Reset all filters to default state
  * @returns {Object} Default filter state

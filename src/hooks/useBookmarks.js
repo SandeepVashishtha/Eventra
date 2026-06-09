@@ -100,7 +100,7 @@ const useBookmarks = (userId = "guest") => {
 
   // Seed state from cache (avoids a second localStorage read when the cache
   // is already warm from another mounted instance or a previous render).
-  const [bookmarks, setBookmarks] = useState(() => getOrPopulateCache(storageKey));
+  // const [bookmarks, setBookmarks] = useState(() => getOrPopulateCache(storageKey));
   const [bookmarks, setBookmarks] = useState(() => {
     try {
       const stored = localStorage.getItem(storageKey);
@@ -121,7 +121,6 @@ const useBookmarks = (userId = "guest") => {
     setBookmarks(getOrPopulateCache(storageKey));
   }, [storageKey]);
   const isInitialSave = useRef(true);
-  const isInitialLoad = useRef(true);
 
   // Persist to localStorage and update the shared cache whenever state changes.
   const prevBookmarksRef = useRef(null);
@@ -129,6 +128,7 @@ const useBookmarks = (userId = "guest") => {
     // Skip write on the very first render (data came from cache/storage already)
     if (prevBookmarksRef.current === null) {
       prevBookmarksRef.current = bookmarks;
+    }
     if (isInitialSave.current) {
       isInitialSave.current = false;
       return;
@@ -155,19 +155,6 @@ const useBookmarks = (userId = "guest") => {
     window.addEventListener("storage", handleStorageEvent);
     return () => window.removeEventListener("storage", handleStorageEvent);
   }, []);
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false;
-      return;
-    }
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (!stored) { setBookmarks([]); return; }
-      const parsed = safeJsonParse(stored, {});
-      setBookmarks(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setBookmarks([]);
-    }
-  }, [storageKey]);
 
   // Cache bookmarks in a Set for O(1) lookups
   const bookmarksSet = useMemo(() => {
