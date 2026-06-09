@@ -184,6 +184,7 @@ Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variable
 | `npm run format` | Run Prettier on source files |
 | `npm run test` | Run unit test suite |
 | `npm run test:e2e` | Run Playwright E2E tests |
+| `npm run check` | Run lint + tests together (CI validation) |
 | `npm run storybook` | Start Storybook |
 | `npm run build-storybook` | Build Storybook static output |
 
