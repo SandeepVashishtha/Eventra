@@ -1,35 +1,50 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { get as idbGet, set as idbSet } from "idb-keyval";
+import { get as idbGet } from "idb-keyval";
 import { logger } from "../utils/logger";
 import { safeJsonParse } from "../utils/safeJsonParse";
+// Fix (Issue #6525): Import queue utilities instead of writing to IndexedDB directly.
+// All writes now go through enqueueNotification() which batches them, retries on
+// failure, and dead-letters anything that cannot be persisted after MAX_RETRIES.
+import {
+  enqueueNotification,
+  startNotificationQueue,
+  stopNotificationQueue,
+} from "../utils/notificationQueue";
+
 const STORAGE_KEY = "eventra_notifications";
 
 export const useNotifications = () => {
-   const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
-   // Track whether the initial load from IndexedDB has completed so we
-   // don't immediately overwrite persisted data with an empty array on mount.
-   const didLoadRef = useRef(false);
+  // Track whether the initial load from IndexedDB has completed so we
+  // don't immediately overwrite persisted data with an empty array on mount.
+  const didLoadRef = useRef(false);
 
-   useEffect(() => {
-     idbGet(STORAGE_KEY)
-       .then((stored) => {
-         if (stored) {
-           const parsed = safeJsonParse(stored, []);
-           setNotifications(parsed);
-         }
-       })
-       .catch((error) => {
-         logger.error("Failed to fetch notifications from indexedDB", error);
-         setNotifications([]);
-       })
-       .finally(() => {
-         // Allow the persistence effect to run only after the initial
-         // load has settled — prevents wiping IndexedDB on mount.
-         didLoadRef.current = true;
-       });
-   }, []);
+  // Start the queue processor on mount and stop it on unmount.
+  useEffect(() => {
+    startNotificationQueue();
+    return () => stopNotificationQueue();
+  }, []);
 
+  // Load persisted notifications from IndexedDB on mount
+  useEffect(() => {
+    idbGet(STORAGE_KEY)
+      .then((stored) => {
+        if (stored) {
+          const parsed = safeJsonParse(stored, []);
+          setNotifications(parsed);
+        }
+      })
+      .catch((error) => {
+        logger.error("Failed to fetch notifications from indexedDB", error);
+        setNotifications([]);
+      })
+      .finally(() => {
+        didLoadRef.current = true;
+      });
+  }, []);
+
+  // Re-sync from IndexedDB whenever the queue flushes a batch
   useEffect(() => {
     const handleUpdate = () => {
       idbGet(STORAGE_KEY)
@@ -44,41 +59,12 @@ export const useNotifications = () => {
         });
     };
     window.addEventListener("eventra-notifications-updated", handleUpdate);
-    return () => window.removeEventListener("eventra-notifications-updated", handleUpdate);
+    return () =>
+      window.removeEventListener("eventra-notifications-updated", handleUpdate);
   }, []);
 
-  useEffect(() => {
-    if (!didLoadRef.current) return;
-    // Persist on every change — including when the list is cleared to []
-    // so that markAllAsRead and future "clear all" features are durable.
-    idbSet(STORAGE_KEY, JSON.stringify(notifications)).catch((error) => {
-      logger.error("Failed to persist notifications to indexedDB", error);
-    });
-  }, [notifications]);
-
-  const requestPermission = async () => {
-    if (!("Notification" in window)) return false;
-
-    const permission =
-      await Notification.requestPermission();
-
-    return permission === "granted";
-  };
-
   const addNotification = useCallback((notification) => {
-    setNotifications((prev) => [
-      {
-        id: Date.now(),
-        read: false,
-        createdAt: new Date().toISOString(),
-        ...notification,
-      },
-      ...prev,
-    ]);
-    // Dispatch event to sync other instances
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
-    }, 50);
+    enqueueNotification(notification);
   }, []);
 
   const markAllAsRead = useCallback(() => {
@@ -93,9 +79,13 @@ export const useNotifications = () => {
     }, 50);
   }, []);
 
-  const unreadCount = notifications.filter(
-    (item) => !item.read
-  ).length;
+  const requestPermission = async () => {
+    if (!("Notification" in window)) return false;
+    const permission = await Notification.requestPermission();
+    return permission === "granted";
+  };
+
+  const unreadCount = notifications.filter((item) => !item.read).length;
 
   return {
     notifications,

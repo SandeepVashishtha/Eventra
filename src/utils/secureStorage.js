@@ -1,4 +1,4 @@
-/* eslint-disable-next-line no-console */
+ 
 /**
  * @file secureStorage.js
  * @module utils/secureStorage
@@ -128,12 +128,12 @@ const getDerivedKey = () => {
   return _keyPromise;
 };
 
-const encryptValue = async (plaintext) => {
+const encryptValue = async (storageKey, plaintext) => {
   const key = await getDerivedKey();
   const encoder = new TextEncoder();
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
   const encrypted = await crypto.subtle.encrypt(
-    { name: CRYPTO_ALGORITHM, iv },
+    { name: CRYPTO_ALGORITHM, iv, additionalData: encoder.encode(storageKey) },
     key,
     encoder.encode(plaintext),
   );
@@ -142,8 +142,9 @@ const encryptValue = async (plaintext) => {
   return `${ivBase64}:${ctBase64}`;
 };
 
-const decryptValue = async (stored) => {
+const decryptValue = async (storageKey, stored) => {
   const key = await getDerivedKey();
+  const encoder = new TextEncoder();
   const colonIdx = stored.indexOf(':');
   if (colonIdx === -1) throw new Error('Invalid ciphertext format');
   const ivBase64 = stored.slice(0, colonIdx);
@@ -151,7 +152,7 @@ const decryptValue = async (stored) => {
   const iv = Uint8Array.from(atob(ivBase64), (c) => c.charCodeAt(0));
   const ciphertext = Uint8Array.from(atob(ctBase64), (c) => c.charCodeAt(0));
   const decrypted = await crypto.subtle.decrypt(
-    { name: CRYPTO_ALGORITHM, iv },
+    { name: CRYPTO_ALGORITHM, iv, additionalData: encoder.encode(storageKey) },
     key,
     ciphertext,
   );
@@ -225,6 +226,13 @@ if (typeof window !== 'undefined') {
 // written to localStorage, so this Map is the only in-flight plaintext store.
 const pendingWrites = new Map();
 
+// Per-key write queue — chains encryption operations so concurrent writes to
+// the same key complete sequentially. When a newer write is queued before the
+// previous encryption finishes, the older write skips its localStorage write
+// entirely, preventing stale ciphertext from overwriting newer values.
+const writeQueue = new Map();
+const writeCounters = new Map();
+
 /**
  * Encrypts `value` and writes the ciphertext to localStorage under `key`.
  *
@@ -246,7 +254,7 @@ const writeWithEncryption = async (key, value) => {
     localStorage.setItem(key, value);
     return;
   }
-  const encrypted = await encryptValue(value);
+  const encrypted = await encryptValue(key, value);
   localStorage.setItem(key, encrypted);
 };
 
@@ -272,16 +280,35 @@ export const syncSecureStorage = {
    * @returns {Promise<boolean>} `true` on success; `false` when the write
    *   could not be persisted (localStorage full, encryption error, etc.).
    */
-  setItem: (key, value) => {
+  setItem: async (key, value) => {
     try {
       pendingWrites.set(key, value);
-      writeWithEncryption(key, value).then(() => {
-        pendingWrites.delete(key);
+
+      const counter = (writeCounters.get(key) || 0) + 1;
+      writeCounters.set(key, counter);
+      const ourCounter = counter;
+
+      const prev = (writeQueue.get(key) || Promise.resolve())
+        .catch(() => {});
+      const next = prev.then(async () => {
+        if (writeCounters.get(key) !== ourCounter) return;
+        await writeWithEncryption(key, value);
       });
+      writeQueue.set(key, next);
+
+      await next;
+
+      if (writeCounters.get(key) !== ourCounter) return true;
+
+      writeCounters.delete(key);
+      pendingWrites.delete(key);
+      writeQueue.delete(key);
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
       pendingWrites.delete(key);
+      writeQueue.delete(key);
+      writeCounters.delete(key);
       return false;
     }
   },
@@ -339,7 +366,7 @@ export const syncSecureStorage = {
 
       if (cryptoSupported) {
         try {
-          return await decryptValue(stored);
+          return await decryptValue(key, stored);
         } catch {
           return stored;
         }
@@ -364,6 +391,8 @@ export const syncSecureStorage = {
   removeItem: (key) => {
     try {
       pendingWrites.delete(key);
+      writeQueue.delete(key);
+      writeCounters.delete(key);
       localStorage.removeItem(key);
       localStorage.removeItem(key + PLAINTEXT_SUFFIX);
     } catch (error) {
@@ -372,13 +401,25 @@ export const syncSecureStorage = {
   },
 
   /**
-   * Clears all localStorage data for the current origin.
-   * Use with caution: this removes ALL keys, not just Eventra's.
+   * Clears all Eventra-managed keys from localStorage.
+   *
+   * Iterates only over keys starting with the Eventra prefix ('eventra:')
+   * so data from other applications on the same origin is never touched.
    */
   clear: () => {
     try {
       pendingWrites.clear();
-      localStorage.clear();
+      writeQueue.clear();
+      writeCounters.clear();
+
+      const prefix = "eventra:";
+      const toRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(prefix)) toRemove.push(k);
+      }
+      toRemove.forEach((k) => localStorage.removeItem(k));
+
       _keyPromise = null;
     } catch (error) {
       console.error('[secureStorage] clear failed:', error);

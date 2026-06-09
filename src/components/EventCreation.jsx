@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import { ArrowRight, Pencil, CheckCircle, AlertCircle, Calendar, Users, MapPin, Ticket as TicketIcon } from "lucide-react";
+import { ArrowRight, Pencil, CheckCircle, AlertCircle, Calendar, MapPin, Ticket as TicketIcon } from "lucide-react";
+import { API_ENDPOINTS, apiUtils } from "../config/api";
 
 import { useEventForm } from "../hooks/useEventForm";
 import EventBasicInfo from "./common/EventCreation/EventBasicInfo";
@@ -15,7 +16,7 @@ import { formatDate, formatTime } from "../utils/eventCreationUtils";
 
 const EventCreation = () => {
   const [currentStep, setCurrentStep] = useState("form");
-  
+
   const {
     formData,
     setFormData,
@@ -52,7 +53,19 @@ const EventCreation = () => {
   };
 
   const handlePublish = async () => {
-    await submitEventForm(formData);
+    const eventData = formData;
+    try {
+      if (!API_ENDPOINTS.EVENTS.CREATE) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        toast.success("🎉 Mock event creation successful!");
+        return;
+      }
+      await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
+      toast.success("🎉 Event published successfully!");
+      setCurrentStep("form");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to create event.");
+    }
   };
 
   useEffect(() => {
@@ -65,10 +78,10 @@ const EventCreation = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <DraftRestoreModal 
-          show={showRestoreModal} 
-          onRestore={handleRestoreDraft} 
-          onDiscard={handleDiscardDraft} 
+        <DraftRestoreModal
+          show={showRestoreModal}
+          onRestore={handleRestoreDraft}
+          onDiscard={handleDiscardDraft}
         />
 
         <AnimatePresence mode="wait">
@@ -89,8 +102,8 @@ const EventCreation = () => {
                 </p>
               </div>
 
-              <form 
-                onSubmit={handlePreview} 
+              <form
+                onSubmit={handlePreview}
                 // 🔥 FIX: Prevent the Enter key from prematurely submitting the form and throwing errors (except inside textareas or native buttons)
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
@@ -104,10 +117,10 @@ const EventCreation = () => {
                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">1</span>
                     Basic Information
                   </h2>
-                  <EventBasicInfo 
-                    formData={formData} 
-                    handleInputChange={handleInputChange} 
-                    errors={errors} 
+                  <EventBasicInfo
+                    formData={formData}
+                    handleInputChange={handleInputChange}
+                    errors={errors}
                   />
                 </section>
 
@@ -118,15 +131,15 @@ const EventCreation = () => {
                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">2</span>
                     Media & Tags
                   </h2>
-                  <EventMediaSection 
-                    formData={formData} 
-                    setFormData={setFormData} 
-                    newTag={newTag} 
-                    setNewTag={setNewTag} 
-                    addTag={addTag} 
-                    removeTag={removeTag} 
+                  <EventMediaSection
+                    formData={formData}
+                    setFormData={setFormData}
+                    newTag={newTag}
+                    setNewTag={setNewTag}
+                    addTag={addTag}
+                    removeTag={removeTag}
                     isUploading={isUploading} // 🔥 FIX: Passed the actual uploading state so the component knows when to show spinners
-                    setIsUploading={setIsUploading} 
+                    setIsUploading={setIsUploading}
                   />
                 </section>
 
@@ -137,11 +150,11 @@ const EventCreation = () => {
                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">3</span>
                     Location & Time
                   </h2>
-                  <EventLocationSection 
-                    formData={formData} 
-                    handleInputChange={handleInputChange} 
-                    handleNestedChange={handleNestedChange} 
-                    errors={errors} 
+                  <EventLocationSection
+                    formData={formData}
+                    handleInputChange={handleInputChange}
+                    handleNestedChange={handleNestedChange}
+                    errors={errors}
                   />
                 </section>
 
@@ -152,12 +165,12 @@ const EventCreation = () => {
                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">4</span>
                     Tickets
                   </h2>
-                  <EventTicketSection 
-                    formData={formData} 
-                    addTicketTier={addTicketTier} 
-                    removeTicketTier={removeTicketTier} 
-                    updateTicketTier={updateTicketTier} 
-                    errors={errors} 
+                  <EventTicketSection
+                    formData={formData}
+                    addTicketTier={addTicketTier}
+                    removeTicketTier={removeTicketTier}
+                    updateTicketTier={updateTicketTier}
+                    errors={errors}
                   />
                 </section>
 
@@ -169,8 +182,12 @@ const EventCreation = () => {
                     Preview Event
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
-                  <p className="text-center text-sm text-gray-500 mt-4 italic">
+                  <p
+                    className="text-center text-sm text-gray-500 mt-4 italic"
+                    aria-live="polite"
+                  >
                     Progress is auto-saved as you type ✨
+                    {lastSavedAt && <span className="block text-xs text-gray-400 mt-1">Last saved {formatDraftAge(lastSavedAt)}</span>}
                   </p>
                 </div>
               </form>
@@ -282,6 +299,8 @@ const EventCreation = () => {
                       onClick={handlePublish}
                       isLoading={isSubmitting}
                       loadingText="Publishing..."
+                      aria-busy={isSubmitting}
+                      aria-label={isSubmitting ? "Publishing event" : "Publish event"}
                       className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2"
                     >
                       <CheckCircle className="w-5 h-5" /> Publish Event

@@ -1,7 +1,6 @@
 import "./EventDetails.print.css";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
-import React from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
@@ -15,7 +14,6 @@ import { useMyEvents } from "../../context/MyEventsContext";
 import { logger } from "../../utils/logger";
 import ReminderControls from "../../components/reminders/ReminderControls";
 import CertificateDownload from "../../components/CertificateDownload";
-import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
@@ -445,6 +443,10 @@ const EventDetails = () => {
             </div>
           </div>
 
+          <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <ReminderControls event={event} canSetReminder={canSetReminder} />
+          </section>
+
           {/* Main Grid */}
           <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] items-start">
             {/* Left Column */}
@@ -511,7 +513,17 @@ const EventDetails = () => {
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Event Details</h2>
                 <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                  <p><span className="font-semibold">Attendees:</span> {event.attendees}/{event.maxAttendees}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p><span className="font-semibold">Attendees:</span> {event.attendees}/{event.maxAttendees}</p>
+                    {/* "Almost Full!" urgency badge — shown when ≥ 80% capacity and not yet sold out (#7665) */}
+                    {event.maxAttendees > 0 &&
+                      event.attendees / event.maxAttendees >= 0.8 &&
+                      event.attendees < event.maxAttendees && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/40 dark:text-red-300 dark:ring-red-500/30">
+                        🔥 Almost Full!
+                      </span>
+                    )}
+                  </div>
                   <p><span className="font-semibold">Type:</span> {event.type}</p>
                   <p><span className="font-semibold">Tags:</span> {event.tags.join(", ")}</p>
                 </div>

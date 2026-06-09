@@ -80,13 +80,16 @@ function saveAppStateSnapshot() {
 }
 
 function buildDiagnosticReport(errorId, error, errorInfo) {
+  // Fix for #7246: each IIFE must fully close its try/catch block before the
+  // next declaration so the parser does not misread subsequent class methods
+  // (e.g. handleTryAgain) as being inside this function's scope.
   const lsSnapshot = (() => {
     try {
       const snap = {};
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && !k.includes("token") && !k.includes("password")) {
-          try { snap[k] = localStorage.getItem(k)?.slice(0, 200); } catch {}
+        if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
+          try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (localStorage.getItem(k)?.slice(0, 200)); } catch {}
         }
       }
       return JSON.stringify(snap, null, 2);
@@ -100,8 +103,8 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
       const snap = {};
       for (let i = 0; i < sessionStorage.length; i++) {
         const k = sessionStorage.key(i);
-        if (k && !k.includes("token") && !k.includes("password")) {
-          try { snap[k] = sessionStorage.getItem(k)?.slice(0, 200); } catch {}
+        if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
+          try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (sessionStorage.getItem(k)?.slice(0, 200)); } catch {}
         }
       }
       return JSON.stringify(snap, null, 2);
@@ -282,8 +285,8 @@ class ErrorBoundary extends React.Component {
         const snap = {};
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
-          if (k && !k.includes("token") && !k.includes("password")) {
-            try { snap[k] = localStorage.getItem(k)?.slice(0, 200); } catch {}
+          if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
+            try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (localStorage.getItem(k)?.slice(0, 200)); } catch {}
           }
         }
         return JSON.stringify(snap, null, 2);

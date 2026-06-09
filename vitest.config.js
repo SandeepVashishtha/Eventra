@@ -1,9 +1,25 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { transformWithOxc } from "vite";
+
+const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    {
+      name: "jsx-in-js",
+      enforce: "pre",
+      async transform(code, id) {
+        if (!/[/\\]src[/\\].*\.js$/.test(id)) return null;
+        if (!JSX_HINT_RE.test(code)) return null;
+        return transformWithOxc(code, id, { lang: "jsx" });
+      },
+    },
+    react({
+      include: /\.(jsx|tsx)$/,
+    }),
+  ],
   test: {
     globals: true,
     environment: "jsdom",

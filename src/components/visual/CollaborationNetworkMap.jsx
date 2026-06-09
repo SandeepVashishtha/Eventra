@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import useReducedMotion from "../../hooks/useReducedMotion";
 import {
   Globe,
   Users,
@@ -208,6 +209,7 @@ const ConnectionParticle = ({ path, color, delay }) => (
 
 // ============ MAIN COMPONENT ============
 export default function CollaborationNetworkMap() {
+  const prefersReducedMotion = useReducedMotion();
   const [activeHub, setActiveHub] = useState(null);
   const [pinnedHub, setPinnedHub] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -302,7 +304,7 @@ export default function CollaborationNetworkMap() {
   );
 
   return (
-    <section className="bg-white py-12 text-slate-900">
+    <section className="bg-white dark:bg-slate-950 py-12 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-6">
         <div className="relative overflow-hidden">
           {/* Header with Controls */}
@@ -330,10 +332,10 @@ export default function CollaborationNetworkMap() {
               </div>
             </div>
 
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               Global Collaboration Network
             </h2>
-            <p className="max-w-2xl text-slate-600">
+            <p className="max-w-2xl text-slate-600 dark:text-slate-400">
               Real-time collaboration across {stats.totalDevs.toLocaleString()} developers in{" "}
               {stats.regions} regions.
             </p>
@@ -350,7 +352,7 @@ export default function CollaborationNetworkMap() {
                   placeholder="Search hubs or technologies..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full md:w-80 rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-700 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full md:w-80 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-3 pl-10 pr-4 text-slate-700 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
                   aria-label="Search hubs"
                 />
               </div>
@@ -363,7 +365,7 @@ export default function CollaborationNetworkMap() {
                 <select
                   value={selectedActivity}
                   onChange={(e) => setSelectedActivity(e.target.value)}
-                  className="rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-700 focus:outline-none"
+                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-3 pl-10 pr-4 text-slate-700 dark:text-slate-200 focus:outline-none"
                   aria-label="Filter by activity"
                 >
                   {["All", "Critical", "High", "Medium", "Low"].map((a) => (
@@ -374,6 +376,19 @@ export default function CollaborationNetworkMap() {
                 </select>
               </div>
 
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-700 focus:outline-none"
+                aria-label="Filter by region"
+              >
+                {REGIONS.map((region) => (
+                  <option key={region} value={region}>
+                    {region === "All" ? "All Regions" : region}
+                  </option>
+                ))}
+              </select>
+
               <label className="flex items-center gap-2 text-slate-700">
                 <input
                   type="checkbox"
@@ -383,12 +398,23 @@ export default function CollaborationNetworkMap() {
                 />
                 <span>Connections</span>
               </label>
+
+              <label className="flex items-center gap-2 text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={particlesEnabled}
+                  onChange={(e) => setParticlesEnabled(e.target.checked)}
+                  disabled={prefersReducedMotion}
+                  className="h-5 w-5 rounded-lg border-slate-300 focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                />
+                <span>Animated particles</span>
+              </label>
             </div>
           </div>
 
           {/* Stats Summary */}
           <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+              <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 bg-white hover:shadow-md p-6 shadow-lg">
               <Users size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
@@ -397,7 +423,7 @@ export default function CollaborationNetworkMap() {
                 <span className="mt-1 block text-sm text-slate-600">Developers</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
               <Code size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
@@ -406,7 +432,7 @@ export default function CollaborationNetworkMap() {
                 <span className="mt-1 block text-sm text-slate-600">Projects</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
               <GitBranch size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
@@ -415,7 +441,7 @@ export default function CollaborationNetworkMap() {
                 <span className="mt-1 block text-sm text-slate-600">Connections</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
               <TrendingUp size={18} />
               <div>
                 <span className="block text-2xl font-bold text-emerald-400">
@@ -428,7 +454,7 @@ export default function CollaborationNetworkMap() {
 
           {/* Map Frame */}
           <div
-            className="relative mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
+            className="relative mt-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900"
             style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
           >
             <svg
@@ -490,7 +516,7 @@ export default function CollaborationNetworkMap() {
                       strokeWidth={Math.max(0.8, getConnectionWidth(conn.intensity))}
                       strokeLinecap="round"
                     />
-                    {particlesEnabled && (
+                    {particlesEnabled && !prefersReducedMotion && (
                       <ConnectionParticle path={pathD} color={color} delay={idx * 0.4} />
                     )}
                   </g>
@@ -587,7 +613,7 @@ export default function CollaborationNetworkMap() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.92, y: 8 }}
                   transition={{ duration: 0.18, ease: "easeOut" }}
-                  className={`absolute w-70 z-50 bg-white p-5 m-4 shadow-lg rounded-lg ${pinnedHub ? "pinned" : ""}`}
+                  className={`absolute w-70 z-50 bg-white dark:bg-slate-900 p-5 m-4 shadow-lg rounded-lg ${pinnedHub ? "pinned" : ""}`}
                   style={getPopupStyle(activeHub || pinnedHub)}
                 >
                   {/* Close button for pinned */}
@@ -633,7 +659,7 @@ export default function CollaborationNetworkMap() {
 
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="bg-slate-50 rounded-lg p-3">
+                    <div className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
                       <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 flex-shrink-0" />
                         <span className="mt-1 block text-sm text-slate-600">Developers</span>
@@ -642,7 +668,7 @@ export default function CollaborationNetworkMap() {
                           {(activeHub || pinnedHub).devs.toLocaleString()}
                       </h4>
                     </div>
-                    <div className="bg-slate-50 rounded-lg p-3">
+                    <div className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
                       <div className="flex items-center gap-2">
                         <Code className="w-4 h-4 flex-shrink-0" />
                         <span className="mt-1 block text-sm text-slate-600">Projects</span>
@@ -656,7 +682,7 @@ export default function CollaborationNetworkMap() {
                   {/* Categories */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {(activeHub || pinnedHub).categories.map((cat) => (
-                      <span key={cat} className="px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-600">
+                      <span key={cat} className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md px-3 py-1 shadow-lg">
                         {cat}
                       </span>
                     ))}
@@ -724,8 +750,8 @@ export default function CollaborationNetworkMap() {
           <div className="absolute bottom-6 right-6 rounded-full bg-white border border-slate-200 px-4 py-2 text-sm text-slate-700 shadow-lg">
             Zoom: {Math.round(zoom * 100)}%
           </div>
-        </div>
-      </div>
+               </div>
+              </div>
     </section>
   );
 }
