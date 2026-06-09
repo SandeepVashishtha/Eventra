@@ -269,7 +269,7 @@ const EventDetails = () => {
       <Helmet>
         <title>{event.title} | Eventra</title>
         <meta property="og:title" content={event.title} />
-        <meta property="og:description" content={event.description.slice(0, 160)} />
+        <meta property="og:description" content={event.description?.slice(0, 160) || ""} />
         <meta property="og:image" content={event.image} />
         <meta property="og:url" content={window.location.href} />
         <meta name="twitter:card" content="summary_large_image" />
