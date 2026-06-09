@@ -61,7 +61,7 @@ const EmptyState = () => {
       <div className="my-events-empty-icon">
         <Ticket size={40} />
       </div>
-      <h3 className="my-events-empty-title">No events yet</h3>
+      <h3 className="my-events-empty-title">No Events Found</h3>
       <p className="my-events-empty-sub">
         You have not registered for or hosted any events yet. Explore upcoming events to get started.
       </p>
@@ -103,7 +103,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
 
   return (
     <motion.div
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 flex flex-col z-10 hover:z-50 overflow-hidden"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl hover:shadow-2xl hover:-translate-y-2 backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] flex flex-col z-10 hover:z-50 overflow-hidden"
       custom={index}
       variants={fadeUpVariants}
       initial="hidden"
@@ -123,7 +123,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
             alt={event.title}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
-          <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50transition-all duration-500 hover:scale-[1.02]" />
         </div>
       )}
 
@@ -193,7 +193,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
               aria-disabled={isOffline}
               style={isOffline ? { opacity: 0.5, cursor: "not-allowed" } : {}}
             >
-              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Trash2 size={13} className="relative" />
                 <span className="relative">Cancel</span>
               </div>
@@ -202,7 +202,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
               className="group/btn flex-1"
               onClick={() => onViewTicket?.(event)}
             >
-              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Ticket size={13} className="relative" />
                 <span className="relative">Ticket</span>
               </div>
@@ -242,7 +242,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
 
   return (
     <motion.div
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 flex flex-col z-10 overflow-hidden"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] flex flex-col z-10 overflow-hidden"
       custom={index}
       variants={fadeUpVariants}
       initial="hidden"
@@ -467,7 +467,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           <div className="ud-search-wrap my-events-search">
             <Search size={14} className="ud-search-icon" />
             <input
-              className="ud-search"
+            className="ud-search focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
               placeholder="Search your events…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -551,6 +551,38 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         </div>
       )}
 
+<section className="mb-8">
+  <div className="ud-tab-header">
+    <h3 className="ud-page-title bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent font-extrabold">
+      Recently Viewed
+    </h3>
+  </div>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+    {[1, 2, 3].map((item) => (
+      <motion.div
+        key={item}
+        whileHover={{ y: -8 }}
+        className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-gray-900 p-5 shadow-lg hover:shadow-2xl transition-all duration-500"
+      >
+        <div className="h-36 rounded-2xl bg-gradient-to-r from-indigo-500 to-pink-500 mb-4 opacity-80" />
+
+        <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-2">
+          Recently Viewed Event
+        </h4>
+
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+          Quick access to events you explored recently.
+        </p>
+
+        <button className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-semibold transition-all duration-300">
+          Open Event
+        </button>
+      </motion.div>
+    ))}
+  </div>
+</section>
+
       {registeredCount + hostedCount === 0 ? (
         <EmptyState />
       ) : filteredEvents.length === 0 ? (
@@ -577,7 +609,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           {filteredRegisteredEvents.length > 0 && (
             <section className="space-y-4">
               <div className="ud-tab-header">
-                <h3 className="ud-page-title">
+              <h3 className="ud-page-title bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent font-extrabold">
                   <Ticket size={18} /> Registered Events
                 </h3>
                 <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
@@ -602,7 +634,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           {filteredHostedEvents.length > 0 && (
             <section className="space-y-4">
               <div className="ud-tab-header">
-                <h3 className="ud-page-title">
+              <h3 className="ud-page-title bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent font-extrabold">
                   <Calendar size={18} /> Hosted Events
                 </h3>
                 <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
@@ -625,7 +657,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           {waitlistEvents.length > 0 && (
             <section className="space-y-4 mt-6">
               <div className="ud-tab-header">
-                <h3 className="ud-page-title flex items-center gap-2">
+<h3 className="ud-page-title flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent font-extrabold">
                   <Clock size={18} className="text-amber-500" /> Waitlisted Events
                 </h3>
                 <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
