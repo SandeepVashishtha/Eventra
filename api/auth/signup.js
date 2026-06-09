@@ -4,6 +4,7 @@ import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { createRateLimiter } from "../lib/rateLimiter.js";
 import { userStore } from "../lib/db.js";
+import { csrfProtection } from "../lib/csrf.js";
 
 const JWT_SECRET = getJwtSecret();
 
@@ -94,6 +95,11 @@ async function handler(req, res) {
   // Only allow POST requests
   if (req.method !== "POST") {
     return corsResponse(req, res, 405, { error: "Method not allowed" });
+  }
+
+  // CSRF validation
+  if (!csrfProtection(req, res)) {
+    return;
   }
 
   try {
