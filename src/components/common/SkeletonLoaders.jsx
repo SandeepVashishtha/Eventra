@@ -616,7 +616,8 @@ export const ExploreEventsSkeleton = () => (
  */
 export const WaitlistSkeleton = () => (
   <div
-    aria-hidden="true"
+    role="status"
+    aria-live="polite"
     aria-label="Loading waitlist information…"
     className="animate-pulse rounded-2xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/20 p-6 space-y-4 w-full max-w-md"
   >
