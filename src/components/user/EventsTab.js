@@ -176,14 +176,18 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
             </button>
           </>
         ) : (
-          <Link to={`/events/${event?.id}/analytics`} className="group/btn flex-1">
+          <Link 
+          to={`/events/${event?.id}`}
+             onClick={() => addToRecentEvents(event)}
             <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
               <Activity size={13} className="relative" />
               <span className="relative">Analytics</span>
             </div>
           </Link>
         )}
-        <Link to={`/events/${event?.id}`} className="group/btn flex-1">
+        <Link 
+          to={`/events/${event?.id}`}
+            onClick={() => addToRecentEvents(event)}
           <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
             <span>{showCancel ? "View Details" : "Open Event"}</span>
           </div>
@@ -206,6 +210,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
       }).catch(() => setQueuePos(-1));
     }
   }, [event.id, user]);
+
 
   return (
     <motion.div
@@ -259,7 +264,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const { myEvents, removeRegistration, waitlistUpdated, triggerWaitlistUpdate } = useMyEvents();
   const { user } = useAuth();
   const [waitlistEvents, setWaitlistEvents] = useState([]);
-
+  const [recentEvents, setRecentEvents] = useState([]);
   useEffect(() => {
     if (user) {
       import("../../utils/waitlistUtils.js").then(({ getGlobalWaitlist }) => {
@@ -324,6 +329,16 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     setRecentSearches(saved);
   }, []);
 
+useEffect(() => {
+  const storedRecent = JSON.parse(
+    localStorage.getItem("recentEvents") || "[]"
+  );
+
+  setRecentEvents(storedRecent);
+}, []);
+
+
+
   const availableTypes = useMemo(() => {
     const types = [...new Set([...registeredEvents, ...hostedEvents].map((event) => event?.type).filter(Boolean))];
     return types.map((type) => type.charAt(0).toUpperCase() + type.slice(1));
@@ -368,6 +383,21 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const hostedCount = hostedEvents.length;
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
+
+const addToRecentEvents = (event) => {
+  const existing =
+    JSON.parse(localStorage.getItem("recentEvents")) || [];
+
+  const filtered = existing.filter((e) => e.id !== event.id);
+
+  const updated = [event, ...filtered].slice(0, 6);
+
+  localStorage.setItem("recentEvents", JSON.stringify(updated));
+
+  setRecentEvents(updated);
+};
+
+
 
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
@@ -519,6 +549,42 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           />
         </div>
       )}
+
+
+
+      {recentEvents.length > 0 && (
+  <section className="mb-10">
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
+        Recently Viewed
+      </h2>
+    </div>
+
+    <div className="flex gap-4 overflow-x-auto pb-2">
+      {recentEvents.map((item) => (
+        <div
+          key={item.id}
+          className="min-w-[260px] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-4"
+        >
+          <h3 className="font-semibold text-slate-800 dark:text-white mb-2">
+            {item.title || item.name}
+          </h3>
+
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+            {item.date || "Upcoming Event"}
+          </p>
+
+          <Link
+            to={`/events/${item.id}`}
+            className="inline-flex items-center rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-medium transition"
+          >
+            View Event
+          </Link>
+        </div>
+      ))}
+    </div>
+  </section>
+)}
 
       {registeredCount + hostedCount === 0 ? (
         <EmptyState
