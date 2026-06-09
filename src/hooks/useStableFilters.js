@@ -70,7 +70,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
  *   return (
  *     <div>
  *       <button onClick={clearFilters}>Reset Filters</button>
- *       {/* render filteredEvents ... */}
+ *       {/* render filteredEvents ... * /}
  *     </div>
  *   );
  * };

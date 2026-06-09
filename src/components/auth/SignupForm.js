@@ -269,27 +269,21 @@ const SignupForm = () => {
         return;
       }
 
-      const sessionToken = data?.token;
-      if (!sessionToken) {
-        setSubmitError("Signup completed but no token was returned.");
-        setLoading(false);
-        isSubmittingRef.current = false;
-        return;
-      }
+      const responseData = response.data || {};
+      const sessionToken = responseData.token || "cookie-managed";
       // Under the HttpOnly-cookie auth model the server sets the session
       // cookie on the signup response. The client never sees a raw JWT.
 
-      const data = response.data || {};
-      const sessionRoles = normalizeSignupRoles(data);
+      const sessionRoles = normalizeSignupRoles(responseData);
       const sessionUser = {
-        id: data?.id,
-        firstName: data?.firstName ?? formData.firstName.trim(),
-        lastName: data?.lastName ?? formData.lastName.trim(),
-        email: data?.email ?? formData.email.trim(),
-        username: data?.username ?? formData.email.trim(),
+        id: responseData?.id,
+        firstName: responseData?.firstName ?? formData.firstName.trim(),
+        lastName: responseData?.lastName ?? formData.lastName.trim(),
+        email: responseData?.email ?? formData.email.trim(),
+        username: responseData?.username ?? formData.email.trim(),
         role: sessionRoles[0],
         roles: sessionRoles,
-        permissions: data?.permissions ?? [],
+        permissions: responseData?.permissions ?? [],
       };
 
       setAuthSession(sessionToken, sessionUser);
