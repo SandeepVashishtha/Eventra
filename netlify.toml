@@ -32,6 +32,12 @@
     Link = "</.well-known/api-catalog>; rel=\"api-catalog\", </apiDocs>; rel=\"service-doc\""
 
 [[redirects]]
+  from = "/api/*"
+  to = "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
