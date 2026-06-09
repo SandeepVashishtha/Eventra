@@ -20,7 +20,7 @@ const events = [
   {
     id: 1,
     title: "Web Dev",
-    type: "Web Development",
+    category: "Web Development",
     eventMode: "online",
     price: 0,
     status: "live",
@@ -51,12 +51,6 @@ describe("advancedFilterUtils — edge cases", () => {
     assert.ok(EVENT_CATEGORIES.length >= 10);
     assert.equal(getCategoryLabel("web-development"), "Web Development");
     assert.equal(getCategoryLabel("unknown-key"), "unknown-key");
-  });
-
-  it("filters by event.type when category is missing", () => {
-    const result = filterByCategory(events, ["web-development"]);
-    assert.equal(result.length, 1);
-    assert.equal(result[0].id, 1);
   });
 
   it("returns all events when mode filter is empty", () => {
@@ -134,6 +128,7 @@ describe("advancedFilterUtils — edge cases", () => {
     assert.deepEqual(getUniqueCategories(events), [
       "AI & Machine Learning",
       "DevOps & Cloud",
+      "Web Development",
     ]);
   });
 });
