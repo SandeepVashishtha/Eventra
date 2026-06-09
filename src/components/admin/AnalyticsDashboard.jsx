@@ -15,7 +15,7 @@ import { toast } from "react-toastify";
 import { useAnalyticsStream, SSE_STATUS } from "../../context/RealTimeContext";
 import BudgetPlanner from "./BudgetPlanner";
 import { safeJsonParse } from "../../utils/safeJsonParse";
-import useAnalytics from "../../hooks/useAnalytics"; // ✅ NEW: real data hook
+import useAnalytics from "../../hooks/useAnalytics";
 
 // =========================================================================
 // CONSTANTS & FALLBACK DATA
@@ -39,7 +39,6 @@ const INITIAL_HOURLY_DATA = [
   { hour: "16:00", checkins: 88 },
 ];
 
-// Fallback category data — used only when API is unavailable
 const FALLBACK_CATEGORY_DATA = [
   { name: "Coding", value: 340, color: "#6366f1" },
   { name: "Design", value: 180, color: "#ec4899" },
@@ -80,11 +79,6 @@ function AnalyticsStreamBadge({ status }) {
 
 const LOCAL_STORAGE_KEY = "eventra_checkins";
 
-// =========================================================================
-// CONFLICT 1 RESOLUTION: Pure initializers from master (outside component),
-// plus useAnalytics() hook from feature branch (inside component)
-// =========================================================================
-
 // Pure initializers — depend only on module-level constants, safe to define outside component
 const getInitialCheckins = () => {
   const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
@@ -106,12 +100,8 @@ const AnalyticsDashboard = () => {
 
   const [checkins, setCheckins] = useState(getInitialCheckins);
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
-  const [liveCount, setLiveCount] = useState(342); // updated below once API loads
+  const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
-
-  // =========================================================================
-  // CONFLICT 2 RESOLUTION: Keep feature branch's activeTab + API sync effects
-  // =========================================================================
   const [activeTab, setActiveTab] = useState("analytics");
 
   // ✅ Once real analytics data arrives, update liveCount with the real total
@@ -136,9 +126,6 @@ const AnalyticsDashboard = () => {
   const isStreamActive = streamStatus === SSE_STATUS.CONNECTED;
   const lastStreamCheckinRef = useRef(null);
 
-  // =========================================================================
-  // CONFLICT 3 RESOLUTION: useCallback + JSDoc from master
-  // =========================================================================
   /**
    * Unified Analytical State Consumer pipeline.
    * Maps ingested data contract structure cleanly to the UI state.
@@ -172,9 +159,6 @@ const AnalyticsDashboard = () => {
     }
   }, []);
 
-  // =========================================================================
-  // CONFLICT 4 RESOLUTION: ID-based deduplication from master (bug fix)
-  // =========================================================================
   // Process real-time SSE stream
   useEffect(() => {
     const latest = streamCheckins[0];
@@ -183,7 +167,6 @@ const AnalyticsDashboard = () => {
     // processing for the same logical event.
     if (!latest || latest.id === lastStreamCheckinRef.current) return;
     lastStreamCheckinRef.current = latest.id;
-
     processIncomingCheckin(latest);
   }, [streamCheckins, processIncomingCheckin]);
 
@@ -267,11 +250,6 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="space-y-8 text-slate-800 dark:text-slate-100">
-      {/* ===================================================================
-          CONFLICT 5 RESOLUTION: Keep feature branch's tab nav (Analytics +
-          Budget buttons). Master's "Trigger Check-in Scan" button belongs
-          in the CONTROL BANNER below, not inside the tab row.
-          =================================================================== */}
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-4">
         <button
@@ -317,7 +295,6 @@ const AnalyticsDashboard = () => {
             {[
               {
                 label: "Live Checked-in Attendees",
-                // ✅ Real value from API, updates live via SSE/simulation on top
                 value: analyticsLoading ? "—" : liveCount,
                 sub: analyticsLoading ? "Loading..." : "Real-time updates",
                 icon: <Users className="w-5 h-5" />,
@@ -332,7 +309,6 @@ const AnalyticsDashboard = () => {
               },
               {
                 label: "Hours Active",
-                // ✅ Real value from API if available
                 value: analytics?.hoursActive ?? "08h 24m",
                 sub: "Since event start",
                 icon: <Clock className="w-5 h-5" />,
@@ -340,7 +316,6 @@ const AnalyticsDashboard = () => {
               },
               {
                 label: "Security Health",
-                // ✅ Real value from API if available
                 value: analytics?.securityHealth ?? "99.8%",
                 sub: analytics?.activeAlerts === 0 ? "Zero active alerts" : `${analytics?.activeAlerts} active alert(s)`,
                 icon: <CheckCircle2 className="w-5 h-5" />,
@@ -404,13 +379,12 @@ const AnalyticsDashboard = () => {
               </div>
             </div>
 
-            {/* CATEGORIES DISTRIBUTION — ✅ now uses real API data with fallback */}
+            {/* CATEGORIES DISTRIBUTION */}
             <div className="flex flex-col justify-between p-6 bg-white border shadow-md dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl">
               <div>
                 <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
                   <Zap className="w-4 h-4 text-amber-500 fill-amber-500/20" />
                   Category Registration Distribution
-                  {/* ✅ Badge shows whether data is live or simulated */}
                   {!analyticsLoading && analytics?.categoryBreakdown && (
                     <span className="ml-auto text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
                       Live
@@ -473,11 +447,6 @@ const AnalyticsDashboard = () => {
             </div>
           </div>
 
-          {/* ===================================================================
-              CONFLICT 6 RESOLUTION: Keep feature branch's full LIVE EVENT
-              CHECK-IN FEED LOG section. Master's closing tags were malformed
-              and would have broken JSX structure.
-              =================================================================== */}
           {/* LIVE EVENT CHECK-IN FEED LOG */}
           <div className="p-6 bg-white border shadow-md dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl">
             <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between gap-1.5">
