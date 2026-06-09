@@ -36,6 +36,7 @@ import DesktopNavLink from "./DesktopNavLink";
 import DesktopNavGroup from "./DesktopNavGroup";
 import UserProfileDropdown from "./UserProfileDropdown";
 import MobileDrawer from "./MobileDrawer";
+import ThemeCustomizer from "./ThemeCustomizer";
 
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
@@ -124,7 +125,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const isMounted = useRef(true);
 
   const { user, isAuthenticated, logout } = useAuth();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -306,6 +307,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               isDarkMode={isDarkMode}
               toggleTheme={toggleTheme}
               isMobile={false}
+              setIsCustomizerOpen={setIsCustomizerOpen}
             />
 
             <CursorToggleButton
@@ -397,6 +399,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         isAuthenticated={isAuthenticated}
         handleLogoutClick={handleLogoutClick}
       />
+
+      <ThemeCustomizer />
 
       <div style={{ height: navHeight }} />
     </>

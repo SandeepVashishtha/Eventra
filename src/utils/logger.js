@@ -1,6 +1,5 @@
  
-const isDevelopment =
-  typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production";
+const isDevelopment = import.meta.env.DEV;
 
 const formatMessage = (level, message) => {
   return `[${level.toUpperCase()}] ${message}`;
@@ -20,11 +19,15 @@ export const logger = {
   },
 
   warn: (...args) => {
-    console.warn(formatMessage("warn", args[0]), ...args.slice(1));
+    if (isDevelopment) {
+      console.warn(formatMessage("warn", args[0]), ...args.slice(1));
+    }
   },
 
   error: (...args) => {
-    console.error(formatMessage("error", args[0]), ...args.slice(1));
+    if (isDevelopment) {
+      console.error(formatMessage("error", args[0]), ...args.slice(1));
+    }
   },
 };
 // ... rest of your code

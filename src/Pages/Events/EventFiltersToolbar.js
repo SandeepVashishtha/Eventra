@@ -1,4 +1,4 @@
-import { Grid, List, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw, Download } from "lucide-react";
+import { Grid, List, Calendar, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw, Download } from "lucide-react";
 import { useState, useEffect, useRef, memo, useCallback } from "react";
 import StyledDropdown from "../../components/StyledDropdown";
 import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
@@ -556,7 +556,7 @@ const EventFiltersToolbar = ({
           />
         </div>
 
-        {/* Grid / List switcher */}
+        {/* Grid / List / Calendar switcher */}
         <div className="flex items-center space-x-2 bg-slate-900/60 border border-slate-800/80 rounded-xl p-1 shadow-inner shrink-0 self-end sm:self-center">
           <button
             type="button"
@@ -583,6 +583,19 @@ const EventFiltersToolbar = ({
             aria-pressed={viewMode === "list"}
           >
             <List size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewModeChange("calendar")}
+            className={`p-2.5 rounded-lg transition-all duration-250 flex items-center justify-center cursor-pointer ${
+              viewMode === "calendar"
+                ? "bg-slate-100 text-slate-950 shadow-md font-bold"
+                : "text-slate-400 hover:bg-slate-850 hover:text-slate-200"
+            }`}
+            aria-label="Calendar view"
+            aria-pressed={viewMode === "calendar"}
+          >
+            <Calendar size={16} />
           </button>
         </div>
       </div>
