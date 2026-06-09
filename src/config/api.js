@@ -3,6 +3,7 @@ import { ENV } from "./env.js";
 import { syncServerTimeFromHeader } from "../utils/timeSync.js";
 import { getCSRFToken } from "../utils/csrfToken.js";
 import { logger } from "../utils/logger.js";
+import { ApiError, RateLimitError } from "./api/errors.js";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -71,26 +72,7 @@ const RETRY_DELAY_MS = 1_000;
 // Normalized API Error
 // ---------------------------------------------------------------------------
 
-export class ApiError extends Error {
-  constructor(
-    message,
-    { status = null, data = null, isTimeout = false, isNetworkError = false } = {}
-  ) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.data = data;
-    this.isTimeout = isTimeout;
-    this.isNetworkError = isNetworkError;
-  }
-}
 
-export class RateLimitError extends ApiError {
-  constructor(message, { status = 429, data = null } = {}) {
-    super(message, { status, data });
-    this.name = "RateLimitError";
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Axios Instance
