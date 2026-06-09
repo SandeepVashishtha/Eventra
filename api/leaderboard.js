@@ -1,9 +1,18 @@
 // api/leaderboard.js
 
-const MAX_PAGES = 10;
-const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "sandeepvashishtha/Eventra";
+const MAX_PAGES = 5;
+const GITHUB_REPO = process.env.GITHUB_REPO || "sandeepvashishtha/Eventra";
+
+const cache = { data: null, ts: 0 };
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "public, max-age=300");
+
+  if (cache.data && Date.now() - cache.ts < CACHE_TTL_MS) {
+    return res.status(200).json(cache.data);
+  }
+
   try {
     let allPRs = [];
     let page = 1;
@@ -14,12 +23,10 @@ export default async function handler(req, res) {
       "User-Agent": "Eventra-Leaderboard"
     };
 
-    if (process.env.VITE_GITHUB_TOKEN || process.env.GITHUB_TOKEN) {
-      const token = process.env.VITE_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
-      headers.Authorization = `token ${token}`;
+    if (process.env.GITHUB_TOKEN) {
+      headers.Authorization = `token ${process.env.GITHUB_TOKEN}`;
     }
 
-    // 1. Fetch the first page
     const firstPageRes = await fetch(
       `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=all&per_page=100&page=${page}`,
       { headers }
@@ -46,11 +53,7 @@ export default async function handler(req, res) {
       page++;
     }
 
-    // 2. Fetch remaining pages sequentially (Pages 2 through 10)
-    // FIX: Replaced Promise.allSettled with a robust sequential while-loop to prevent 
-    // secondary rate limits (Abuse Detected) from firing.
     while (hasMore && page <= MAX_PAGES) {
-      // Throttle delay: Wait 600ms between requests to strictly respect GitHub's abuse mechanisms
       await new Promise(resolve => setTimeout(resolve, 600));
 
       const pageRes = await fetch(
@@ -61,7 +64,7 @@ export default async function handler(req, res) {
       if (!pageRes.ok) {
         if (pageRes.status === 403) {
           console.warn(`[Leaderboard] GitHub secondary rate limit hit on page ${page}. Returning partial data.`);
-          break; // Stop fetching and gracefully degrade to returning what we have so far
+          break;
         }
         throw new Error(`GitHub API error on page ${page}: ${pageRes.statusText}`);
       }
@@ -76,10 +79,14 @@ export default async function handler(req, res) {
       }
     }
 
-    // 3. Send successful response
+    cache.data = allPRs;
+    cache.ts = Date.now();
     res.status(200).json(allPRs);
   } catch (error) {
     console.error("[Leaderboard] Fetch error:", error);
+    if (cache.data) {
+      return res.status(200).json(cache.data);
+    }
     res.status(500).json({ error: "Failed to fetch leaderboard pull requests." });
   }
 }

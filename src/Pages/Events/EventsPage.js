@@ -22,11 +22,10 @@ import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
   getDefaultFilters,
-  hasActiveFilters as hasActiveAdvancedFilters,
+  hasActiveAdvancedFilters,
   normalizeAdvancedFilters,
   serializeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
-
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
 const ExploreEventsSkeleton = () => (
