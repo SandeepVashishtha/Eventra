@@ -14,7 +14,7 @@
  * Resolves the effective capacity for an event.
  *
  * @param {Object} event - Event record
- * @returns {number} Non-negative capacity. 0 means "no capacity configured".
+ * @returns {number} Non-negative capacity. 0 or unset means "no capacity configured".
  */
 export function resolveCapacity(event) {
   if (!event) return 0;
@@ -29,9 +29,8 @@ export function resolveCapacity(event) {
 /**
  * Evaluates whether one more registration fits within capacity.
  *
- * A capacity of 0 is treated as "unlimited" because the codebase uses 0 to mean
- * unconfigured. Callers that require an explicit limit should validate capacity
- * at event-creation time.
+ * A capacity of 0 or unset is treated as "unlimited". Callers that require an
+ * explicit limit should validate capacity at event-creation time.
  *
  * @param {Object} params
  * @param {Object} params.event - Event record (provides capacity)
@@ -64,8 +63,8 @@ export function checkCapacity({ event, currentCount, requestedSeats = 1 }) {
     };
   }
 
-  // Unlimited when no capacity configured.
-  if (event.maxAttendees === undefined && event.capacity === undefined) {
+  // Unlimited when no capacity configured, or capacity is explicitly 0.
+  if (capacity <= 0) {
     return {
       allowed: true,
       capacity: 0,
