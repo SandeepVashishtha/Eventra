@@ -36,32 +36,18 @@ export function isTokenExpired(token) {
   return payload.exp * 1000 < Date.now();
 }
 
-import crypto from "node:crypto"; // Paste this at the very top of your file
-
-export function isTokenValid(token, secret = process.env.JWT_SECRET) {
-  if (!token || typeof token !== "string") return false;
-  if (isTokenExpired(token)) return false;
-
-  const parts = token.split(".");
-  if (parts.length !== 3) return false;
-
-  const [header, payload, signature] = parts;
-  if (!secret) return false;
-
-  // Re-create the HMAC SHA256 signature using the secret key
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(`${header}.${payload}`)
-    .digest("base64url"); // base64url matches standard JWT encoding formats
-
-  return signature === expectedSignature;
+export function isTokenValid(token) {
+  const payload = decodeJwtPayload(token);
+  if (!payload || !payload.exp) return false;
+  
+  return !isTokenExpired(token);
 }
 
 export function getTokenTTL(token) {
   const payload = decodeJwtPayload(token);
-  if (!payload || typeof payload.exp !== "number") return -1;
-  
-  // 🔥 FIX: Apply the CLOCK_SKEW_BUFFER so the TTL matches the expiration logic.
-  // This prevents the background refresh timer from firing too late.
-  return (payload.exp - CLOCK_SKEW_BUFFER) - Math.floor(Date.now() / 1000);
+  if (!payload || !payload.exp) {
+    return 0; 
+  }
+  const now = Math.floor(Date.now() / 1000);
+  return payload.exp - now;
 }
