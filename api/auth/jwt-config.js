@@ -1,6 +1,7 @@
 // Centralized JWT configuration shared by all auth endpoints.
 // JWT_SECRET is mandatory in every environment so Eventra never falls back to
 // a predictable signing key that could be used to forge tokens.
+
 const requireJwtSecret = () => {
   const secret = process.env.JWT_SECRET?.trim();
 

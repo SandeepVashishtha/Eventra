@@ -1,50 +1,13 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
-import { createRateLimiter } from "../lib/rateLimiter.js";
-
 import { buildCorsHeaders, corsResponse } from "./cors.js";
-
-
-// ---------------------------------------------------------------------------
-// In-memory user storage
-// ---------------------------------------------------------------------------
-// WARNING: This Map is module-level and resets to empty on every serverless
-// cold start (Vercel, AWS Lambda, etc.). All registered accounts are lost
-// on restart, causing previously valid credentials to return 401.
-//
-// This store is suitable for local development only. For any deployed
-// environment, replace this Map with a durable database (Supabase, MongoDB,
-// PlanetScale, etc.) and update login.js and google.js accordingly.
-//
-// See GitHub issue #4195 for full details on the production impact.
-// ---------------------------------------------------------------------------
-
-if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
-  // Emit a clear error rather than silently accepting registrations that will
-  // vanish on the next cold start. This prevents the confusing 401 behaviour
-  // that users experience after a serverless function restart.
-  console.error(
-    "[signup.js] FATAL: In-memory user store is active in a production environment. " +
-    "Set DATABASE_URL to a persistent database to prevent data loss on cold starts."
-  );
-}
-
-const users = new Map();
-const usersById = new Map();
-const usersByUsername = new Map();
-
-// ---------------------------------------------------------------------------
-// JWT Configuration
-// ---------------------------------------------------------------------------
+import { createRateLimiter } from "../lib/rateLimiter.js";
+import { userStore } from "../lib/db.js";
 
 const JWT_SECRET = getJwtSecret();
 
-// ---------------------------------------------------------------------------
-// Rate Limiting (IP-based, 3 signups per minute)
-// ---------------------------------------------------------------------------
-
-const signupRateLimiter = createRateLimiter(60_000, 5);
+const signupRateLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 5 });
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
@@ -183,7 +146,7 @@ async function handler(req, res) {
     // Check for duplicate email
     // -----------------------------------------------------------------------
 
-    if (users.has(normalizedEmail)) {
+    if (userStore.findByEmail(normalizedEmail)) {
       return corsResponse(req, res, 409, { error: "An account with this email already exists" });
     }
 
@@ -197,12 +160,11 @@ async function handler(req, res) {
       || req.socket?.remoteAddress
       || "unknown";
 
-    signupRateLimiter.evictStale();
-
-    if (!signupRateLimiter.check(clientIp)) {
+    const rateCheck = signupRateLimiter.check(clientIp);
+    if (!rateCheck.allowed) {
       return corsResponse(req, res, 429, {
         error: "Too many signup attempts. Please try again later.",
-        retryAfter: 60,
+        retryAfter: rateCheck.retryAfter,
       });
     }
 
@@ -235,12 +197,7 @@ async function handler(req, res) {
       isActive: true,
     };
 
-    // Store user (in production, save to database)
-    users.set(normalizedEmail, newUser);
-    usersById.set(userId, newUser);
-    if (newUser.username) {
-      usersByUsername.set(newUser.username.toLowerCase(), newUser);
-    }
+    userStore.save(newUser);
 
     // -----------------------------------------------------------------------
     // Generate JWT token
@@ -286,9 +243,7 @@ async function handler(req, res) {
 
     return corsResponse(req, res, 201, {
       message: "Account created successfully",
-      token,
-      tokenType: "Bearer",
-      ...userResponse,
+      user: userResponse,
     });
 
   } catch (error) {
@@ -297,11 +252,5 @@ async function handler(req, res) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Export users map for sharing with login.js (development purposes)
-// In production, replace with actual database
-// ---------------------------------------------------------------------------
-
 export default handler;
-export { users, usersById, usersByUsername };
 
