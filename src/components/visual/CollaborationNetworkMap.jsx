@@ -747,12 +747,13 @@ export default function CollaborationNetworkMap() {
           </div>
 
           {/* Zoom Indicator */}
-          <div className="absolute bottom-6 right-6 rounded-full bg-white border border-slate-200 px-4 py-2 text-sm text-slate-700 shadow-lg">
+                   <div className="absolute bottom-6 right-6 rounded-full bg-white border border-slate-200 px-4 py-2 text-sm text-slate-700 shadow-lg">
             Zoom: {Math.round(zoom * 100)}%
           </div>
-               </div>
+        </div>
+
+      </div>
 
     </section>
-  
-  )
+  );
 }
