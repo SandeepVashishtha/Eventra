@@ -10,6 +10,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import "./SpatialSeatSelector.css";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Fallback presets if no venue layout is stored yet
 const DEFAULT_PRESETS = {
@@ -24,6 +25,19 @@ const DEFAULT_PRESETS = {
       height: 120,
       rotation: 0,
       seatsCount: 0,
+      assignedAttendees: {},
+    },
+    {
+      id: "accessible-1",
+      type: "round-table",
+      label: "Accessible Seating",
+      x: 50,
+      y: 500,
+      width: 120,
+      height: 120,
+      rotation: 0,
+      seatsCount: 4,
+      tier: "Accessible",
       assignedAttendees: {},
     },
     {
@@ -140,7 +154,7 @@ const SpatialSeatSelector = ({
     let initialElements = [];
     if (savedLayout) {
       try {
-        const parsed = JSON.parse(savedLayout);
+        const parsed = safeJsonParse(savedLayout, {});
         if (Array.isArray(parsed)) {
           // Strict schema validation and sanitization
           initialElements = parsed.map((el) => ({
@@ -168,7 +182,7 @@ const SpatialSeatSelector = ({
         } else {
           initialElements = DEFAULT_PRESETS.banquet;
         }
-      } catch (e) {
+      } catch {
         initialElements = DEFAULT_PRESETS.banquet;
       }
     } else {
@@ -359,7 +373,7 @@ const SpatialSeatSelector = ({
       seatLabel: `${el.label} - ${label}`,
       tier: tier,
     });
-  };
+  }, [onSelectSeat, readOnly]);
 
   return (
     <div className="ssp-container">
@@ -439,6 +453,7 @@ const SpatialSeatSelector = ({
           {/* Render Room elements */}
           {elements.map((el) => {
             const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
+  const isAccessible = el.tier && (el.tier.toLowerCase().includes("accessible") || el.tier.toLowerCase().includes("wheelchair") || el.tier.toLowerCase().includes("accessibility"));
             const projOffset = 10;
 
             return (

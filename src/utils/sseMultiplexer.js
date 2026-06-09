@@ -1,11 +1,13 @@
 import { logger } from "./logger.js";
-import { ENV } from "../config/env.js";
+import { API_BASE_URL } from "../config/api.js";
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const WEB_LOCKS_LOCK_NAME = "eventra_sse_leader_lock";
 const LS_LOCK_KEY = "eventra_sse_leader_ls_lock";
 const LS_LOCK_TIMEOUT = 10000;
 const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
+const LOCAL_STORAGE_CONFIRM_MIN_MS = 25;
+const LOCAL_STORAGE_CONFIRM_JITTER_MS = 75;
 
 // Unique identifier for this tab instance
 const TAB_ID = Math.random().toString(36).substring(2, 9);
@@ -59,6 +61,8 @@ class SseMultiplexer {
     this.statusListeners = new Set(); // callbacks listening to status changes
     this.lastSeenFollowers = new Map();
     this.tabIdToPaths = new Map();
+    this.localStorageLeadershipToken = null;
+    this.localStorageClaimTimeout = null;
 
     if (typeof window !== "undefined") {
       this.channel = new BroadcastChannel(MULTIPLEX_CHANNEL_NAME);
@@ -121,10 +125,111 @@ class SseMultiplexer {
 
       const actual = localStorage.getItem(LS_LOCK_KEY);
       if (!actual) return;
+    const readHeartbeat = () => {
+      try {
+        const heartbeat = localStorage.getItem(HEARTBEAT_KEY);
+        return heartbeat ? JSON.parse(heartbeat) : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const hasActiveExternalLeader = (heartbeat, now) =>
+      heartbeat &&
+      heartbeat.tabId !== this.tabId &&
+      now - heartbeat.timestamp < HEARTBEAT_TIMEOUT;
+
+    const checkLeader = () => {
+      if (this.isLeader) return;
+
+      const now = Date.now();
+      const heartbeat = readHeartbeat();
+      if (hasActiveExternalLeader(heartbeat, now)) return;
+
+      // Try to claim leadership
+      this.claimLocalStorageLeadership(HEARTBEAT_TIMEOUT);
+    };
+
+    this.localStorageInterval = setInterval(checkLeader, HEARTBEAT_INTERVAL);
+    checkLeader();
+  }
+
+  claimLocalStorageLeadership(heartbeatTimeout = 7000) {
+    if (this.localStorageClaimTimeout || this.isLeader) return;
+
+    const token = `${this.tabId}:${Date.now()}:${Math.random().toString(36).substring(2, 9)}`;
+    const timestamp = Date.now();
+
+    try {
+      const current = localStorage.getItem(HEARTBEAT_KEY);
+      const parsed = current ? JSON.parse(current) : null;
+      if (
+        parsed &&
+        parsed.tabId !== this.tabId &&
+        timestamp - parsed.timestamp < heartbeatTimeout
+      ) {
+        return;
+      }
+
+      localStorage.setItem(HEARTBEAT_KEY, JSON.stringify({ tabId: this.tabId, token, timestamp }));
+    } catch {
+      this.becomeLocalStorageLeader(token);
+      return;
+    }
+
+    const confirmDelay =
+      LOCAL_STORAGE_CONFIRM_MIN_MS + Math.floor(Math.random() * LOCAL_STORAGE_CONFIRM_JITTER_MS);
+
+    this.localStorageClaimTimeout = setTimeout(() => {
+      this.localStorageClaimTimeout = null;
+
+      try {
+        const heartbeat = JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "null");
+        if (heartbeat?.tabId !== this.tabId || heartbeat?.token !== token) return;
+      } catch {
+        return;
+      }
+
+      this.becomeLocalStorageLeader(token);
+    }, confirmDelay);
+  }
+
+  becomeLocalStorageLeader(token) {
+    this.isLeader = true;
+    this.localStorageLeadershipToken = token;
+    logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
 
       try {
         const winner = JSON.parse(actual);
         if (winner.owner !== this.tabId) return;
+        const current = JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "null");
+        if (
+          current?.tabId &&
+          current.tabId !== this.tabId &&
+          Date.now() - current.timestamp < 7000
+        ) {
+          for (const source of this.activeEventSources.values()) {
+            source.close();
+          }
+          this.activeEventSources.clear();
+          this.isLeader = false;
+          this.localStorageLeadershipToken = null;
+          if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+          }
+          this.stopHeartbeatChecks();
+          return;
+        }
+
+        localStorage.setItem(
+          HEARTBEAT_KEY,
+          JSON.stringify({
+            tabId: this.tabId,
+            token: this.localStorageLeadershipToken,
+            timestamp: Date.now(),
+          })
+        );
       } catch {
         return;
       }
@@ -216,7 +321,7 @@ class SseMultiplexer {
   handleBroadcastMessage(msg) {
     if (!isValidBroadcastMessage(msg) || msg.tabId === this.tabId) return;
 
-    if (this.isLeader && this.lastSeenFollowers) {
+    if (this.isLeader && this.lastSeenFollowers instanceof Map) {
       this.lastSeenFollowers.set(msg.tabId, Date.now());
     }
 
@@ -346,7 +451,9 @@ class SseMultiplexer {
   }
 
   openEventSource(path) {
-    const sseBaseUrl = ENV.API_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
+    const sseBaseUrl =
+      API_BASE_URL ||
+      (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
 
     logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
     this.updatePathStatus(path, "connecting");
@@ -492,6 +599,7 @@ class SseMultiplexer {
 
     if (this.localStorageInterval) clearInterval(this.localStorageInterval);
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+    if (this.localStorageClaimTimeout) clearTimeout(this.localStorageClaimTimeout);
 
     if (this.isLeader) {
       try {
