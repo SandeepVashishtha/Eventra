@@ -11,7 +11,7 @@
   "dependencies": {
     "@headlessui/react": "2.2.10",
     "@heroicons/react": "^2.2.0",
-    "@sentry/browser": "9.12.0",
+    "@sentry/browser": "^9.12.0",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/postcss": "4.3.0",
     "aos": "^2.3.4",
@@ -53,6 +53,8 @@
   "scripts": {
     "dev": "vite",
     "start": "vite",
+    "mock:api": "node sse-mock-server.js",
+    "dev:full": "node scripts/dev-with-mock.mjs",
     "vercel-build": "node scripts/validate-env.js && vite build",
     "prebuild": "node scripts/validate-env.js",
     "build": "vite build",
@@ -94,6 +96,7 @@
     "@emnapi/core": "^1.10.0",
     "@emnapi/runtime": "^1.10.0",
     "@playwright/test": "1.60.0",
+    "playwright": "1.60.0",
     "@storybook/addon-a11y": "^10.4.1",
     "@storybook/addon-docs": "^10.4.1",
     "@storybook/addon-onboarding": "^10.4.1",
@@ -128,7 +131,7 @@
     "@tootallnate/once": "^2.0.1"
   },
   "optionalDependencies": {
-    "@rolldown/binding-linux-x64-gnu": "1.0.2",
+    "@rolldown/binding-linux-x64-gnu": "1.1.0",
     "@rolldown/binding-linux-x64-musl": "1.0.2",
     "lightningcss-linux-x64-gnu": "1.32.0",
     "lightningcss-linux-x64-musl": "1.32.0"

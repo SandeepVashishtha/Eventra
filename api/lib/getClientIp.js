@@ -33,5 +33,18 @@ export function getClientIp(req) {
     if (addr && !isPrivateIp(addr)) return addr;
   }
 
+  // Fallback: if no public IP was found but we have private IPs, return them
+  if (forwarded && typeof forwarded === "string") {
+    const first = forwarded.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  if (realIp && typeof realIp === "string") {
+    const trimmed = realIp.trim();
+    if (trimmed) return trimmed;
+  }
+  if (req.socket?.remoteAddress) {
+    return req.socket.remoteAddress;
+  }
+
   return "unknown";
 }

@@ -5,10 +5,12 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { useAuth } from "../../context/AuthContext";
 
 import ErrorBoundary from "../common/ErrorBoundary";
 
 const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
+  const { user } = useAuth();
   const [showChat, setShowChat] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
@@ -22,9 +24,9 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
       const existingLeads = existingLeadsStr ? safeJsonParse(existingLeadsStr, []) : [];
       
       const newLead = {
-        name: "Test Attendee",
+        name: user?.name || user?.email || "Guest",
         action: action,
-        contact: "attendee@example.com",
+        contact: user?.email || "unknown",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       
@@ -240,7 +242,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                   <a
                     href="https://example.com"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
                     title="Website"
                   >
@@ -249,7 +251,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                   <a
                     href="https://linkedin.com"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
                     title="LinkedIn"
                   >
@@ -258,7 +260,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                   <a
                     href="https://twitter.com"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
                     title="Twitter"
                   >
@@ -267,7 +269,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                   <a
                     href="https://github.com"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
                     title="GitHub"
                   >

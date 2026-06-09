@@ -61,6 +61,18 @@ The Spring Boot backend is maintained in a separate repository.
 - Playwright (E2E)
 - ESLint and Prettier
 
+## Project Architecture
+
+Below is the high-level architecture of Eventra:
+
+```mermaid
+graph TD
+    Client[Client: React/Vite] --> Assets[Assets: public/]
+    Client --> State[State: Context/Hooks]
+    Client --> API[API: Serverless Helpers]
+    API --> Backend[Backend: Spring Boot API]
+```
+
 ## Project Structure
 
 ```text
@@ -108,7 +120,7 @@ cp .env.example .env
 
 1. Start dev server:
 
-3. Start dev server:
+2. Start dev server:
 
 ```bash
 npm run dev
@@ -297,3 +309,11 @@ This project is mentored under **GSSoC'26** by:
 </table>
 
 > 💬 Have questions about contributing or the project? Reach out to the mentor on [LinkedIn](https://www.linkedin.com/in/ayushh-sharmaa/) or via the [GSSoC Discord](https://discord.gg/6MQ9r5nHT).
+
+## 🚀 Quick Start
+
+```bash
+git clone https://github.com/SandeepVashishtha/Eventra.git
+cd Eventra
+npm install
+npm run dev

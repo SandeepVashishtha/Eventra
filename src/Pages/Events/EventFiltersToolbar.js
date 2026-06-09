@@ -1,4 +1,4 @@
-import { Grid, List, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw, Download } from "lucide-react";
+import { Grid, List, Calendar, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw, Download } from "lucide-react";
 import { useState, useEffect, useRef, memo, useCallback } from "react";
 import StyledDropdown from "../../components/StyledDropdown";
 import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
@@ -166,6 +166,48 @@ const EventFiltersToolbar = ({
         (advancedFilters.statuses && advancedFilters.statuses.length > 0) ||
         (advancedFilters.location && advancedFilters.location.trim() !== "") ||
         (advancedFilters.priceRange && (advancedFilters.priceRange.min > 0 || advancedFilters.priceRange.max < Infinity))));
+
+  const renderFilterTab = useCallback((tab) => {
+    const isActive = filterType === tab.key;
+    return (
+      <button
+        key={tab.key}
+        type="button"
+        onClick={() => onFilterChange(tab.key)}
+        className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition duration-300 border cursor-pointer ${
+          isActive
+            ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.02]"
+            : "bg-slate-900/40 hover:bg-slate-850/60 text-slate-400 hover:text-slate-200 border-slate-800/80 hover:border-slate-700/80"
+        }`}
+      >
+        {tab.pulse && (
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+        )}
+        {tab.label}
+      </button>
+    );
+  }, [filterType, onFilterChange]);
+
+  const renderCategoryButton = useCallback((cat) => {
+    const isActive = categoryFilter === cat.id;
+    return (
+      <button
+        key={cat.id}
+        type="button"
+        onClick={() => onCategoryChange(cat.id)}
+        className={`px-4 py-2 text-xs font-semibold rounded-full border whitespace-nowrap transition duration-300 cursor-pointer ${
+          isActive
+            ? "bg-slate-100 text-slate-950 border-slate-200 shadow-sm font-bold scale-[1.02]"
+            : "bg-slate-900/50 hover:bg-slate-850/80 text-slate-400 hover:text-slate-200 border-slate-800/60"
+        }`}
+      >
+        {cat.label}
+      </button>
+    );
+  }, [categoryFilter, onCategoryChange]);
 
   return (
     <div className="w-full flex flex-col gap-6 bg-slate-950/40 p-4 sm:p-6 rounded-3xl border border-slate-900 shadow-xl backdrop-blur-sm">
@@ -514,7 +556,7 @@ const EventFiltersToolbar = ({
           />
         </div>
 
-        {/* Grid / List switcher */}
+        {/* Grid / List / Calendar switcher */}
         <div className="flex items-center space-x-2 bg-slate-900/60 border border-slate-800/80 rounded-xl p-1 shadow-inner shrink-0 self-end sm:self-center">
           <button
             type="button"
@@ -542,53 +584,23 @@ const EventFiltersToolbar = ({
           >
             <List size={16} />
           </button>
+          <button
+            type="button"
+            onClick={() => onViewModeChange("calendar")}
+            className={`p-2.5 rounded-lg transition-all duration-250 flex items-center justify-center cursor-pointer ${
+              viewMode === "calendar"
+                ? "bg-slate-100 text-slate-950 shadow-md font-bold"
+                : "text-slate-400 hover:bg-slate-850 hover:text-slate-200"
+            }`}
+            aria-label="Calendar view"
+            aria-pressed={viewMode === "calendar"}
+          >
+            <Calendar size={16} />
+          </button>
         </div>
       </div>
 
     </div>
   );
 };
-
-const renderFilterTab = useCallback((tab) => {
-  const isActive = filterType === tab.key;
-  return (
-    <button
-      key={tab.key}
-      type="button"
-      onClick={() => onFilterChange(tab.key)}
-      className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition duration-300 border cursor-pointer ${
-        isActive
-          ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.02]"
-          : "bg-slate-900/40 hover:bg-slate-850/60 text-slate-400 hover:text-slate-200 border-slate-800/80 hover:border-slate-700/80"
-      }`}
-    >
-      {tab.pulse && (
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-        </span>
-      )}
-      {tab.label}
-    </button>
-  );
-}, [filterType, onFilterChange]);
-
-const renderCategoryButton = useCallback((cat) => {
-  const isActive = categoryFilter === cat.id;
-  return (
-    <button
-      key={cat.id}
-      type="button"
-      onClick={() => onCategoryChange(cat.id)}
-      className={`px-4 py-2 text-xs font-semibold rounded-full border whitespace-nowrap transition duration-300 cursor-pointer ${
-        isActive
-          ? "bg-slate-100 text-slate-950 border-slate-200 shadow-sm font-bold scale-[1.02]"
-          : "bg-slate-900/50 hover:bg-slate-850/80 text-slate-400 hover:text-slate-200 border-slate-800/60"
-      }`}
-    >
-      {cat.label}
-    </button>
-  );
-}, [categoryFilter, onCategoryChange]);
-
 export default memo(EventFiltersToolbar);
