@@ -25,6 +25,7 @@ import {
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
+import DashboardEmptyState from "./DashboardEmptyState";
 import OfflineIndicator from "../common/OfflineIndicator";
 
 const fadeUp = (prefersReducedMotion) => ({
@@ -293,6 +294,15 @@ export default function UserDashboard() {
                 </>
               ) : (
                 <>
+                  {/* Full-page premium empty state (#7453):
+                      shown when the user has no events, hackathons, or projects at all.
+                      Provides a direct CTA to browse events or create one. */}
+                  {stats.eventsTotal === 0 &&
+                    stats.hackathonsTotal === 0 &&
+                    stats.projectsTotal === 0 ? (
+                    <DashboardEmptyState />
+                  ) : (
+                  <>
                   <motion.div variants={stagger(prefersReducedMotion)} className="ud-stats-grid">
                     {[
                       { label: "Events", value: stats.eventsTotal, sub: `${stats.eventsCreated} hosted · ${stats.eventsJoined} joined`, icon: <Calendar size={20} />, accent: "#6366f1" },
@@ -343,6 +353,7 @@ export default function UserDashboard() {
                           icon={<Calendar size={32} className="text-indigo-500" />}
                           title="No Upcoming Events"
                           message="You haven't registered or joined any events yet. Check out the Events tab to find one!"
+                          onBrowseAll={() => navigate("/events")}
                         />
                       ) : (
                         upcomingEvents.map(ev => (
@@ -370,6 +381,7 @@ export default function UserDashboard() {
                           icon={<Trophy size={32} className="text-pink-500" />}
                           title="No Active Hackathons"
                           message="There are currently no upcoming hackathons in your schedule."
+                          onBrowseAll={() => navigate("/hackathons")}
                         />
                       ) : (
                         upcomingHackathons.map(h => (
@@ -397,6 +409,7 @@ export default function UserDashboard() {
                           icon={<FolderOpen size={32} className="text-purple-500" />}
                           title="No Active Projects"
                           message="All your tracked development projects are currently completed or inactive."
+                          onBrowseAll={() => navigate("/projects")}
                         />
                       ) : (
                         activeProjects.map(p => (
@@ -411,6 +424,8 @@ export default function UserDashboard() {
                       )}
                     </motion.section>
                   </div>
+                  </>
+                  )} {/* end hasData ternary */}
                 </>
               )}
             </motion.div>

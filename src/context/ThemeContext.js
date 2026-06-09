@@ -10,6 +10,7 @@ import { MotionConfig } from "framer-motion";
 import { THEMES } from "../components/styles/theme";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { safeJsonParse } from "../utils/safeJsonParse";
+const THEME_STORAGE_KEY = "eventra_theme";
 
 export const ThemeContext = createContext(null);
 
@@ -45,7 +46,7 @@ const getSystemTheme = () =>
     : "light";
 
 const getInitialTheme = () => {
-  const stored = safeStorage.getItem("theme");
+  const stored = safeStorage.getItem(THEME_STORAGE_KEY);
   if (stored === "light" || stored === "dark" || stored === "system") {
     return stored;
   }
@@ -106,9 +107,9 @@ export const ThemeProvider = ({ children }) => {
     root.classList.add(resolvedTheme);
 
     if (theme === "system") {
-      safeStorage.removeItem("theme");
+      safeStorage.removeItem(THEME_STORAGE_KEY);
     } else {
-      safeStorage.setItem("theme", theme);
+      safeStorage.setItem(THEME_STORAGE_KEY, theme);
     }
 
     // Apply active skin theme colors
@@ -160,11 +161,32 @@ export const ThemeProvider = ({ children }) => {
     safeStorage.setItem("reducedMotion", reducedMotion);
 
     const styleId = "reduced-motion-override";
-    let styleEl = document.getElementById(styleId);
+    const css = `
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    `;
+
+    // Clean up any previously injected styles (from either method)
+    const existingStyle = document.getElementById(styleId);
+    if (existingStyle) existingStyle.remove();
+    if (typeof CSSStyleSheet !== "undefined") {
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
+        (s) => !s._rm
+      );
+    }
 
     if (reducedMotion) {
-      if (!styleEl) {
-        styleEl = document.createElement("style");
+      if (typeof CSSStyleSheet !== "undefined") {
+        const sheet = new CSSStyleSheet();
+        sheet.replaceSync(css);
+        sheet._rm = true;
+        document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+      } else {
+        const styleEl = document.createElement("style");
         styleEl.id = styleId;
         styleEl.textContent = `
           *, *::before, *::after {
@@ -174,10 +196,9 @@ export const ThemeProvider = ({ children }) => {
             scroll-behavior: auto !important;
           }
         `;
+        styleEl.innerHTML = css;
         document.head.appendChild(styleEl);
       }
-    } else {
-      if (styleEl) styleEl.remove();
     }
   }, [reducedMotion]);
 
@@ -187,7 +208,7 @@ export const ThemeProvider = ({ children }) => {
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      if (!safeStorage.getItem("theme")) {
+      if (!safeStorage.getItem(THEME_STORAGE_KEY)) {
         setTheme("system");
       }
     };
