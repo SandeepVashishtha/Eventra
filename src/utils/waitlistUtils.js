@@ -311,3 +311,60 @@ export const organizerRemoveUser = async (eventId, userId) => {
 
   return true;
 };
+
+// Waitlist Analytics
+export const getWaitlistAnalytics = (eventId) => {
+  const id = parseEventId(eventId);
+  const records = getGlobalWaitlist();
+
+  const eventRecords = records.filter(
+    (record) => record.eventId === id
+  );
+
+  const promotedUsers = eventRecords.filter(
+    (record) => record.status === "promoted"
+  );
+
+  let averageWaitTime = 0;
+
+  if (promotedUsers.length > 0) {
+    const totalWaitTime = promotedUsers.reduce(
+      (sum, record) =>
+        sum +
+        (new Date(record.promotedAt) -
+          new Date(record.joinedAt)),
+      0
+    );
+
+    averageWaitTime =
+      totalWaitTime /
+      promotedUsers.length /
+      (1000 * 60 * 60);
+  }
+
+  return {
+    totalWaitlisted: eventRecords.length,
+
+    waiting: eventRecords.filter(
+      (record) => record.status === "waiting"
+    ).length,
+
+    promoted: promotedUsers.length,
+
+    removed: eventRecords.filter(
+      (record) => record.status === "removed"
+    ).length,
+
+    promotionRate:
+      eventRecords.length > 0
+        ? (
+            (promotedUsers.length /
+              eventRecords.length) *
+            100
+          ).toFixed(1)
+        : 0,
+
+    averageWaitTime:
+      averageWaitTime.toFixed(1),
+  };
+};

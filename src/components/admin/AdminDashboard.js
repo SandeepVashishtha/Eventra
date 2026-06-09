@@ -129,11 +129,29 @@ const AdminDashboard = () => {
   const [selectedWaitlistEvent, setSelectedWaitlistEvent] = useState(null);
   const [waitlistUsers, setWaitlistUsers] = useState([]);
 
-  const loadWaitlist = useCallback((eventId) => {
-    import("../../utils/waitlistUtils.js").then(({ getEventWaitlist }) => {
-      setWaitlistUsers(getEventWaitlist(eventId));
-    }).catch(() => setWaitlistUsers([]));
-  }, []);
+  const [waitlistAnalytics, setWaitlistAnalytics] = useState(null);
+
+ const loadWaitlist = useCallback((eventId) => {
+  import("../../utils/waitlistUtils.js")
+    .then(
+      ({
+        getEventWaitlist,
+        getWaitlistAnalytics,
+      }) => {
+        setWaitlistUsers(
+          getEventWaitlist(eventId)
+        );
+
+        setWaitlistAnalytics(
+          getWaitlistAnalytics(eventId)
+        );
+      }
+    )
+    .catch(() => {
+      setWaitlistUsers([]);
+      setWaitlistAnalytics(null);
+    });
+}, []);
 
   const openWaitlistModal = (event) => {
     setSelectedWaitlistEvent(event);
@@ -762,6 +780,43 @@ const AdminDashboard = () => {
                 Increase Capacity
               </button>
             </div>
+
+            {waitlistAnalytics && (
+  <div
+    style={{
+      padding: "12px",
+      border: "1px solid #ddd",
+      borderRadius: "8px",
+      marginBottom: "16px",
+    }}
+  >
+    <h3>Waitlist Analytics</h3>
+
+    <p>
+      Total Waitlisted: {waitlistAnalytics.totalWaitlisted}
+    </p>
+
+    <p>
+      Waiting: {waitlistAnalytics.waiting}
+    </p>
+
+    <p>
+      Promoted: {waitlistAnalytics.promoted}
+    </p>
+
+    <p>
+      Removed: {waitlistAnalytics.removed}
+    </p>
+
+    <p>
+      Promotion Rate: {waitlistAnalytics.promotionRate}%
+    </p>
+
+    <p>
+      Average Wait Time: {waitlistAnalytics.averageWaitTime} hrs
+    </p>
+  </div>
+)}
 
             <div style={{ maxHeight: "300px", overflowY: "auto" }}>
               {waitlistUsers.length === 0 ? (
