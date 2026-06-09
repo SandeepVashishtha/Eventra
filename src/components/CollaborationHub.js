@@ -8,7 +8,7 @@ import './components.css';
 import CharacterCounter from "../../components/common/CharacterCounter";
 import { sanitizeInputText } from "../utils/inputSanitization";
 import EventMaterials from "./common/EventMaterials";
-import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send } from 'lucide-react';
+import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send, MessageCircle } from 'lucide-react';
 import CollaborativeWhiteboard from './common/CollaborativeWhiteboard';
 import { safeJsonParse } from "../utils/safeJsonParse";
 
@@ -43,6 +43,26 @@ const CollaborationHub = () => {
     setNewRequest(prev => ({ ...prev, [name]: value }));
   };
 
+  const OPPORTUNITY_SCHEMA = {
+    id: "number", title: "string", organizer: "string", type: "string",
+    description: "string", skills: "array", budget: "string",
+    deadline: "string", applicants: "number", status: "string",
+  };
+
+  const validateOpportunity = (item) => {
+    if (!item || typeof item !== "object") return null;
+    const valid = {};
+    for (const [key, type] of Object.entries(OPPORTUNITY_SCHEMA)) {
+      const val = item[key];
+      if (val === undefined || val === null) continue;
+      if (type === "number") { valid[key] = Number(val); if (isNaN(valid[key])) valid[key] = 0; }
+      else if (type === "array") { valid[key] = Array.isArray(val) ? val : []; }
+      else if (type === "string") { valid[key] = String(val); }
+      else { valid[key] = val; }
+    }
+    return valid;
+  };
+
   const [collaborationOpportunities, setCollaborationOpportunities] = useState(() => {
     let saved;
     try {
@@ -54,7 +74,7 @@ const CollaborationHub = () => {
       try {
         const parsed = safeJsonParse(saved, {});
         if (Array.isArray(parsed)) {
-          return parsed.filter(item => item && typeof item === 'object');
+          return parsed.map(validateOpportunity).filter(Boolean);
         }
       } catch (e) {
         console.error("Failed to parse collaboration opportunities from localStorage", e);
@@ -470,10 +490,6 @@ const CollaborationHub = () => {
                       View Details
                     </button>
                     <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all" aria-label={`Schedule a meeting for ${collab.title}`} title={`Schedule a meeting for ${collab.title}`}>
-                    <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-850 dark:text-slate-200 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all">
-                      View Details
-                    </button>
-                    <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all">
                       Schedule Meeting
                     </button>
                   </div>
@@ -524,11 +540,7 @@ const CollaborationHub = () => {
                         <Check size={14} aria-hidden="true" /> Accept Connection
                       </button>
                       <button className="px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all" aria-label={`Send message to ${request.name}`} title={`Send message to ${request.name}`}>
-                      <button className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1">
-                        <Check size={14} /> Accept Connection
-                      </button>
-                      <button className="px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all">
-                        Message
+                        <MessageCircle size={14} aria-hidden="true" /> Message
                       </button>
                     </div>
                   </div>
@@ -693,7 +705,6 @@ const CollaborationHub = () => {
             >
               <button
                 onClick={() => setSelectedOpportunity(null)}
-                aria-label="Close opportunity details"
                 title="Close"
                 className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 aria-label="Close modal"

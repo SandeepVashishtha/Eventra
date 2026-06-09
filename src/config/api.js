@@ -297,7 +297,7 @@ export const API_ENDPOINTS = {
     SCHEDULE: (id) => buildApiUrl(`/api/events/${id}/schedule`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
     AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
-
+    CANCEL: (id) => buildApiUrl(`/api/events/${id}/cancel`),  
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
@@ -341,6 +341,13 @@ export const API_ENDPOINTS = {
     VALIDATE: buildApiUrl("/api/tickets/validate"),
     CHECK_IN: buildApiUrl("/api/tickets/checkin"),
     HISTORY: buildApiUrl("/api/tickets/checkins"),
+  },
+  FEEDBACK: {
+    BASE: buildApiUrl("/api/feedback"),
+    BY_EVENT: (eventId) => {
+      const params = new URLSearchParams({ eventId: String(eventId) });
+      return buildApiUrl(`/api/feedback?${params.toString()}`);
+    },
   },
   ADMIN: {
     USERS: buildApiUrl("/api/admin/users"),

@@ -75,8 +75,20 @@ const toBookmarkEntry = (event) => ({
 const useBookmarks = (userId = "guest") => {
   const storageKey = `bookmarks_${hashUserId(userId)}`;
 
-  // Seed state from shared runtime cache or default to fallback parse array
-  const [bookmarks, setBookmarks] = useState(() => getOrPopulateCache(storageKey));
+  // Seed state from cache (avoids a second localStorage read when the cache
+  // is already warm from another mounted instance or a previous render).
+  // const [bookmarks, setBookmarks] = useState(() => getOrPopulateCache(storageKey));
+  const [bookmarks, setBookmarks] = useState(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) return [];
+//       return JSON.parse(stored) || [];
+      const parsed = safeJsonParse(stored, {});
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
 
   const storageKeyRef = useRef(storageKey);
   storageKeyRef.current = storageKey;
@@ -87,12 +99,16 @@ const useBookmarks = (userId = "guest") => {
   useEffect(() => {
     setBookmarks(getOrPopulateCache(storageKey));
   }, [storageKey]);
+  const isInitialSave = useRef(true);
 
   // Persist to localStorage and update the shared cache whenever state changes.
   useEffect(() => {
     // Skip write on the very first render cycle
     if (prevBookmarksRef.current === null) {
       prevBookmarksRef.current = bookmarks;
+    }
+    if (isInitialSave.current) {
+      isInitialSave.current = false;
       return;
     }
     if (prevBookmarksRef.current === bookmarks) return;

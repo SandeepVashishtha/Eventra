@@ -10,6 +10,7 @@ const SearchFilter = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem("favoriteEvents");
     return saved ? JSON.parse(saved) : [];
@@ -140,6 +141,31 @@ const SearchFilter = () => {
       selectedLocation === "all" || normalizedLocation === selectedLocation;
     const matchesPrice = priceFilter === "all" || event.price === priceFilter;
 
+    const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
+    const matchesPrice = priceFilter === 'all' || event.price === priceFilter;
+    const today = new Date();
+const eventDate = new Date(event.date);
+
+let matchesDate = true;
+
+if (dateFilter === "today") {
+  matchesDate =
+    eventDate.toDateString() === today.toDateString();
+}
+
+if (dateFilter === "weekend") {
+  const day = eventDate.getDay();
+  matchesDate = day === 0 || day === 6;
+}
+
+if (dateFilter === "nextMonth") {
+  const nextMonth = new Date();
+  nextMonth.setMonth(today.getMonth() + 1);
+
+  matchesDate =
+    eventDate.getMonth() === nextMonth.getMonth() &&
+    eventDate.getFullYear() === nextMonth.getFullYear();
+}
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
   });
 
@@ -255,6 +281,32 @@ const SearchFilter = () => {
       <div className="results-count" role="status" aria-live="polite">
         <span>{filteredEvents.length} events found</span>
       </div>
+      <div className="filter-group">
+  <label htmlFor="filter-date">Date</label>
+  <select
+    id="filter-date"
+    value={dateFilter}
+    onChange={(e) => setDateFilter(e.target.value)}
+    className="filter-select"
+  >
+    <option value="all">All Dates</option>
+    <option value="today">Today</option>
+    <option value="weekend">This Weekend</option>
+    <option value="nextMonth">Next Month</option>
+  </select>
+</div>
+<button
+  className="btn-outline"
+  onClick={() => {
+    setSearchTerm("");
+    setSelectedCategory("all");
+    setSelectedLocation("all");
+    setPriceFilter("all");
+    setDateFilter("all");
+  }}
+>
+  Reset Filters
+</button>
 
       {/* FULL CORRECTED EMPTY STATE & GRID LOGIC SWITCH */}
       {filteredEvents.length === 0 ? (

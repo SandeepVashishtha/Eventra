@@ -308,19 +308,10 @@ const Login = () => {
                 </Link>
               </p>
             </div>
-
-            {/* Terms */}
-            <p className="text-xs text-center" style={{ color: "var(--text-color-light)" }}>
-              By signing in, you agree to our{' '}
-              <Link to="/terms" className="hover:underline text-blue-600 font-semibold">Terms of Service</Link>{' '}
-              and{' '}
-              <Link to="/privacy" className="hover:underline text-blue-600 font-semibold">Privacy Policy</Link>
-            </p>
-          </div>
-        </motion.div>
-      </div>
-    </motion.div>
-  );
+          </motion.div>
+        </div>
+      </motion.div>
+    );
 };
 
 export default Login;
