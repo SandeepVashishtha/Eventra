@@ -15,6 +15,7 @@ import { logger } from "../../utils/logger";
 import ReminderControls from "../../components/reminders/ReminderControls";
 import CertificateDownload from "../../components/CertificateDownload";
 import EventRecommendations from "../../components/events/EventRecommendations";
+import EventCancellationModal from "../../components/events/EventCancellationModal";
 import SimilarEvents from "../../components/events/SimilarEvents";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
@@ -45,6 +46,7 @@ const EventDetails = () => {
   const [event, setEvent] = useState(null);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const { isRegistered } = useMyEvents();
   const [linkCopied, setLinkCopied] = useState(false);
@@ -162,19 +164,19 @@ const EventDetails = () => {
       tags: Array.isArray(sourceEvent.tags) ? sourceEvent.tags : [],
       ticketTiers: Array.isArray(sourceEvent.ticketTiers)
         ? sourceEvent.ticketTiers.map((tier) => ({
-            name: tier.name || "",
-            price: tier.price ?? 0,
-            capacity: tier.capacity ?? "",
-            description: tier.description || "",
-          }))
+          name: tier.name || "",
+          price: tier.price ?? 0,
+          capacity: tier.capacity ?? "",
+          description: tier.description || "",
+        }))
         : [
-            {
-              name: "General Admission",
-              price: 0,
-              capacity: "",
-              description: "Standard event access",
-            },
-          ],
+          {
+            name: "General Admission",
+            price: 0,
+            capacity: "",
+            description: "Standard event access",
+          },
+        ],
       banner: null,
       bannerPreview: sourceEvent.image || sourceEvent.banner || "",
     };
@@ -325,6 +327,22 @@ const EventDetails = () => {
                 Share Event
               </button>
 
+              {(isAdmin() || isOrganizer()) && event.status !== "cancelled" && (
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  className="inline-flex items-center justify-center rounded-full border border-red-500 px-6 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                >
+                  Cancel Event
+                </button>
+              )}
+
+              {showCancelModal && (
+                <EventCancellationModal
+                  event={event}
+                  onClose={() => setShowCancelModal(false)}
+                  onSuccess={(updated) => setEvent({ ...event, ...updated })}
+                />
+              )}
               <button
                 onClick={handlePrint}
                 disabled={isPrinting}
@@ -546,16 +564,16 @@ const EventDetails = () => {
                   {generateGoogleCalendarLink(event) && (
                     <a href={generateGoogleCalendarLink(event)} target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200" aria-label="Add to Google Calendar">
                       <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                        <path fill="#4285F4" d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10z"/>
-                        <path fill="#fff" d="M13 7h-2v6l5.25 3.15.75-1.23-4-2.37z"/>
+                        <path fill="#4285F4" d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10z" />
+                        <path fill="#fff" d="M13 7h-2v6l5.25 3.15.75-1.23-4-2.37z" />
                       </svg> Add to Google Calendar
                     </a>
                   )}
                   {generateOutlookLink(event) && (
                     <a href={generateOutlookLink(event)} target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200" aria-label="Add to Outlook Calendar">
                       <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                        <path fill="#0078D4" d="M2 6l10-4 10 4v12l-10 4L2 18z"/>
-                        <path fill="#fff" d="M12 4L4 7v10l8 3 8-3V7z"/>
+                        <path fill="#0078D4" d="M2 6l10-4 10 4v12l-10 4L2 18z" />
+                        <path fill="#fff" d="M12 4L4 7v10l8 3 8-3V7z" />
                       </svg> Add to Outlook
                     </a>
                   )}
