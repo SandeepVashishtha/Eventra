@@ -1,7 +1,10 @@
-import { Grid, List, Search, X, RotateCcw, Sparkles, Filter, ChevronDown, Check } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { Grid, List, Calendar, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw, Download } from "lucide-react";
+import { useState, useEffect, useRef, memo, useCallback } from "react";
 import StyledDropdown from "../../components/StyledDropdown";
 import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
+import useEventFilterPresets from "../../hooks/useEventFilterPresets";
+import useFilterSuggestions from "../../hooks/useFilterSuggestions";
+import { exportEventsResultFile } from "../../utils/eventResultsExport";
 
 const CATEGORY_OPTIONS = [
   { id: "all", label: "All Categories" },
@@ -34,9 +37,31 @@ const EventFiltersToolbar = ({
   searchQuery,
   onSearchChange,
   onResetFilters,
+  currentFilterConfig,
+  onApplyPreset,
+  visibleEvents = [],
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
+  const [presetName, setPresetName] = useState("");
+  const [editingPresetId, setEditingPresetId] = useState("");
+  const [editingPresetName, setEditingPresetName] = useState("");
+  const [exportMessage, setExportMessage] = useState("");
+  const [exportError, setExportError] = useState("");
   const debounceRef = useRef(null);
+  const {
+    presets,
+    presetError,
+    clearPresetError,
+    savePreset,
+    renamePreset,
+    updatePreset,
+    deletePreset,
+  } = useEventFilterPresets();
+  const { suggestions } = useFilterSuggestions({
+    currentFilters: currentFilterConfig,
+    visibleEvents,
+    presets,
+  });
 
   useEffect(() => {
     setLocalQuery(searchQuery || "");
@@ -67,6 +92,70 @@ const EventFiltersToolbar = ({
     onSearchChange?.("");
   };
 
+  const handleSavePreset = () => {
+    const result = savePreset(presetName, currentFilterConfig);
+    if (!result.error) {
+      setPresetName("");
+    }
+  };
+
+  const handleStartRename = (preset) => {
+    clearPresetError();
+    setEditingPresetId(preset.id);
+    setEditingPresetName(preset.name);
+  };
+
+  const handleRenamePreset = (presetId) => {
+    const result = renamePreset(presetId, editingPresetName);
+    if (!result.error) {
+      setEditingPresetId("");
+      setEditingPresetName("");
+    }
+  };
+
+  const handleDeletePreset = (preset) => {
+    if (
+      window.confirm(
+        `Delete the "${preset.name}" filter preset? This cannot be undone.`,
+      )
+    ) {
+      deletePreset(preset.id);
+    }
+  };
+
+  const handleExport = (format) => {
+    setExportMessage("");
+    setExportError("");
+
+    try {
+      const result = exportEventsResultFile({
+        events: visibleEvents,
+        filters: currentFilterConfig,
+        format,
+      });
+
+      if (!result.ok) {
+        setExportError(result.error);
+        return;
+      }
+
+      setExportMessage(
+        `Exported ${result.count} event${result.count === 1 ? "" : "s"} to ${result.filename}.`,
+      );
+    } catch {
+      setExportError("Unable to export events right now.");
+    }
+  };
+
+  const suggestionKindLabels = {
+    category: "Category",
+    location: "Location",
+    eventType: "Type",
+    dateRange: "Date",
+    combination: "Combo",
+    preset: "Preset",
+  };
+
   const hasAnyFilterActive =
     (searchQuery && searchQuery.trim() !== "") ||
     (filterType && filterType !== "all") ||
@@ -77,6 +166,48 @@ const EventFiltersToolbar = ({
         (advancedFilters.statuses && advancedFilters.statuses.length > 0) ||
         (advancedFilters.location && advancedFilters.location.trim() !== "") ||
         (advancedFilters.priceRange && (advancedFilters.priceRange.min > 0 || advancedFilters.priceRange.max < Infinity))));
+
+  const renderFilterTab = useCallback((tab) => {
+    const isActive = filterType === tab.key;
+    return (
+      <button
+        key={tab.key}
+        type="button"
+        onClick={() => onFilterChange(tab.key)}
+        className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition duration-300 border cursor-pointer ${
+          isActive
+            ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.02]"
+            : "bg-slate-900/40 hover:bg-slate-850/60 text-slate-400 hover:text-slate-200 border-slate-800/80 hover:border-slate-700/80"
+        }`}
+      >
+        {tab.pulse && (
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+        )}
+        {tab.label}
+      </button>
+    );
+  }, [filterType, onFilterChange]);
+
+  const renderCategoryButton = useCallback((cat) => {
+    const isActive = categoryFilter === cat.id;
+    return (
+      <button
+        key={cat.id}
+        type="button"
+        onClick={() => onCategoryChange(cat.id)}
+        className={`px-4 py-2 text-xs font-semibold rounded-full border whitespace-nowrap transition duration-300 cursor-pointer ${
+          isActive
+            ? "bg-slate-100 text-slate-950 border-slate-200 shadow-sm font-bold scale-[1.02]"
+            : "bg-slate-900/50 hover:bg-slate-850/80 text-slate-400 hover:text-slate-200 border-slate-800/60"
+        }`}
+      >
+        {cat.label}
+      </button>
+    );
+  }, [categoryFilter, onCategoryChange]);
 
   return (
     <div className="w-full flex flex-col gap-6 bg-slate-950/40 p-4 sm:p-6 rounded-3xl border border-slate-900 shadow-xl backdrop-blur-sm">
@@ -134,6 +265,215 @@ const EventFiltersToolbar = ({
         onToggleOpen={() => onToggleAdvancedFilters?.((isOpen) => !isOpen)}
       />
 
+      <section className="rounded-2xl border border-indigo-500/20 bg-indigo-950/20 p-4 shadow-inner">
+        <div className="flex flex-col gap-1">
+          <h4 className="flex items-center gap-2 text-sm font-bold text-indigo-100">
+            <Sparkles size={16} className="text-indigo-300" />
+            Suggested Filters
+          </h4>
+          <p className="text-xs text-indigo-200/60">
+            Personalized shortcuts from recent searches, views, presets, and popular event patterns.
+          </p>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {suggestions.map((suggestion) => (
+            <button
+              key={suggestion.id}
+              type="button"
+              onClick={() => onApplyPreset?.(suggestion.filters)}
+              className="group inline-flex max-w-full items-center gap-2 rounded-full border border-indigo-300/20 bg-slate-950/60 px-3 py-2 text-left text-xs font-semibold text-indigo-100 shadow-sm transition hover:border-indigo-300/50 hover:bg-indigo-500/20 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+              title={suggestion.reason}
+            >
+              <span className="rounded-full bg-indigo-400/15 px-2 py-0.5 text-[10px] uppercase tracking-wider text-indigo-200">
+                {suggestionKindLabels[suggestion.kind] || "Filter"}
+              </span>
+              <span className="truncate">{suggestion.label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/45 p-4 shadow-inner">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-100">
+              <Save size={16} className="text-indigo-300" />
+              Saved Presets
+            </h4>
+            <p className="mt-1 text-xs text-slate-500">
+              Save this filter setup and apply it again later.
+            </p>
+          </div>
+
+          <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+            <label htmlFor="event-filter-preset-name" className="sr-only">
+              Preset name
+            </label>
+            <input
+              id="event-filter-preset-name"
+              type="text"
+              value={presetName}
+              onChange={(event) => {
+                clearPresetError();
+                setPresetName(event.target.value);
+              }}
+              placeholder="Preset name"
+              className="min-w-0 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+            />
+            <button
+              type="button"
+              onClick={handleSavePreset}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-500/50 bg-indigo-600 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-indigo-500/10 transition hover:bg-indigo-500"
+            >
+              <Save size={14} />
+              Save Preset
+            </button>
+          </div>
+        </div>
+
+        {presetError && (
+          <p className="mt-3 rounded-xl border border-red-500/20 bg-red-950/20 px-3 py-2 text-xs font-medium text-red-300">
+            {presetError}
+          </p>
+        )}
+
+        <div className="mt-4 space-y-2">
+          {presets.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-slate-800 px-3 py-3 text-sm text-slate-500">
+              No saved presets yet.
+            </p>
+          ) : (
+            presets.map((preset) => {
+              const isEditing = editingPresetId === preset.id;
+
+              return (
+                <div
+                  key={preset.id}
+                  className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0 flex-1">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editingPresetName}
+                        onChange={(event) => {
+                          clearPresetError();
+                          setEditingPresetName(event.target.value);
+                        }}
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+                        aria-label={`Rename ${preset.name}`}
+                      />
+                    ) : (
+                      <p className="truncate text-sm font-semibold text-slate-100">
+                        {preset.name}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onApplyPreset?.(preset.filters)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20"
+                    >
+                      <Upload size={13} />
+                      Apply
+                    </button>
+                    {isEditing ? (
+                      <button
+                        type="button"
+                        onClick={() => handleRenamePreset(preset.id)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1.5 text-xs font-semibold text-indigo-300 transition hover:bg-indigo-500/20"
+                      >
+                        <Save size={13} />
+                        Save
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleStartRename(preset)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white"
+                      >
+                        <Pencil size={13} />
+                        Edit
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => updatePreset(preset.id, currentFilterConfig)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/20"
+                    >
+                      <RefreshCcw size={13} />
+                      Update
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePreset(preset)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20"
+                    >
+                      <Trash2 size={13} />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/45 p-4 shadow-inner">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-100">
+              <Download size={16} className="text-emerald-300" />
+              Export Results
+            </h4>
+            <p className="mt-1 text-xs text-slate-500">
+              Download the currently visible filtered events.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => handleExport("csv")}
+              disabled={visibleEvents.length === 0}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900/50 disabled:text-slate-600"
+            >
+              <Download size={14} />
+              Export CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExport("json")}
+              disabled={visibleEvents.length === 0}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900/50 disabled:text-slate-600"
+            >
+              <Download size={14} />
+              Export JSON
+            </button>
+          </div>
+        </div>
+
+        {visibleEvents.length === 0 && (
+          <p className="mt-3 text-xs text-slate-500">
+            Export is disabled because there are no visible events.
+          </p>
+        )}
+        {exportMessage && (
+          <p className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-950/20 px-3 py-2 text-xs font-medium text-emerald-300">
+            {exportMessage}
+          </p>
+        )}
+        {exportError && (
+          <p className="mt-3 rounded-xl border border-red-500/20 bg-red-950/20 px-3 py-2 text-xs font-medium text-red-300">
+            {exportError}
+          </p>
+        )}
+      </section>
+
       {/* 2. Interactive Search & Timing row */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         
@@ -170,29 +510,7 @@ const EventFiltersToolbar = ({
             { key: "live", label: "Live Now", pulse: true },
             { key: "upcoming", label: "Upcoming" },
             { key: "past", label: "Past Events" },
-          ].map((tab) => {
-            const isActive = filterType === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => onFilterChange(tab.key)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition duration-300 border cursor-pointer ${
-                  isActive
-                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.02]"
-                    : "bg-slate-900/40 hover:bg-slate-850/60 text-slate-400 hover:text-slate-200 border-slate-800/80 hover:border-slate-700/80"
-                }`}
-              >
-                {tab.pulse && (
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                )}
-                {tab.label}
-              </button>
-            );
-          })}
+          ].map(renderFilterTab)}
         </div>
       </div>
 
@@ -204,23 +522,7 @@ const EventFiltersToolbar = ({
         
         {/* Desktop Scrolling Category Tabs */}
         <div className="hidden md:flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none max-w-full">
-          {CATEGORY_OPTIONS.map((cat) => {
-            const isActive = categoryFilter === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => onCategoryChange(cat.id)}
-                className={`px-4 py-2 text-xs font-semibold rounded-full border whitespace-nowrap transition duration-300 cursor-pointer ${
-                  isActive
-                    ? "bg-slate-100 text-slate-950 border-slate-200 shadow-sm font-bold scale-[1.02]"
-                    : "bg-slate-900/50 hover:bg-slate-850/80 text-slate-400 hover:text-slate-200 border-slate-800/60"
-                }`}
-              >
-                {cat.label}
-              </button>
-            );
-          })}
+          {CATEGORY_OPTIONS.map(renderCategoryButton)}
         </div>
 
         {/* Mobile Dropdown Category Select */}
@@ -254,7 +556,7 @@ const EventFiltersToolbar = ({
           />
         </div>
 
-        {/* Grid / List switcher */}
+        {/* Grid / List / Calendar switcher */}
         <div className="flex items-center space-x-2 bg-slate-900/60 border border-slate-800/80 rounded-xl p-1 shadow-inner shrink-0 self-end sm:self-center">
           <button
             type="button"
@@ -282,11 +584,23 @@ const EventFiltersToolbar = ({
           >
             <List size={16} />
           </button>
+          <button
+            type="button"
+            onClick={() => onViewModeChange("calendar")}
+            className={`p-2.5 rounded-lg transition-all duration-250 flex items-center justify-center cursor-pointer ${
+              viewMode === "calendar"
+                ? "bg-slate-100 text-slate-950 shadow-md font-bold"
+                : "text-slate-400 hover:bg-slate-850 hover:text-slate-200"
+            }`}
+            aria-label="Calendar view"
+            aria-pressed={viewMode === "calendar"}
+          >
+            <Calendar size={16} />
+          </button>
         </div>
       </div>
 
     </div>
   );
 };
-
-export default EventFiltersToolbar;
+export default memo(EventFiltersToolbar);

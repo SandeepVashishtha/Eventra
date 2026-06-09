@@ -14,6 +14,10 @@ const mapStatusKey = (status = "") => {
     ended: "ended",
     "event ended": "ended",
     "event ended ": "ended",
+    cancelled: "cancelled",
+    canceled: "cancelled",
+    "event cancelled": "cancelled",
+    "event canceled": "cancelled",
   };
 
   return explicitStatusMap[normalized] ?? normalized;
@@ -53,6 +57,14 @@ export const getEventStatus = (event) => {
   if (explicitStatus === "ended") {
     return "ended";
   }
+
+  // A cancelled event must not be overridden by a future date status.
+  // Return the explicit cancellation status directly so downstream consumers
+  // can block registration regardless of when the event was scheduled.
+  if (explicitStatus === "cancelled") {
+    return "cancelled";
+  }
+
   if (explicitStatus && explicitStatus !== dateStatus) {
     return explicitStatus;
   }
@@ -65,7 +77,7 @@ export const isEventRegistrationClosed = (eventOrStatus) => {
       ? mapStatusKey(eventOrStatus)
       : getEventStatus(eventOrStatus);
 
-  return status === "past" || status === "ended";
+  return status === "past" || status === "ended" || status === "cancelled";
 };
 
 export const normalizeEvent = (event) => ({

@@ -61,7 +61,6 @@ const isRateLimited = async (ip) => {
 };
 
 // ---------------------------------------------------------------------------
-
 export const config = {
   matcher: "/api/:path*",
 };
@@ -72,6 +71,7 @@ const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), display-capture=()",
+  "Content-Security-Policy": "default-src 'self'; script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.github.com; frame-src 'self' https://accounts.google.com",
 };
 
 const addSecurityHeaders = (headers) => {
@@ -86,6 +86,53 @@ export default async function middleware(request) {
   // Skip preflight — let the backend handle CORS
   if (request.method === "OPTIONS") {
     return;
+  }
+
+  // Strict Origin Validation
+  const origin = request.headers.get("origin");
+  const host = request.headers.get("host");
+  
+  if (origin) {
+    try {
+      const originUrl = new URL(origin);
+      if (originUrl.host !== host) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden: Invalid origin" }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: Malformed origin" }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }
+
+  // Session validation for API routes
+  if (url.pathname.startsWith("/api/")) {
+    const PUBLIC_PATHS = [
+      "/api/auth/login",
+      "/api/auth/signup",
+      "/api/auth/reset-password",
+      "/api/events",
+      "/api/hackathons",
+      "/api/projects",
+      "/api/validate"
+    ];
+
+    const isPublicPath = PUBLIC_PATHS.some(path => url.pathname.startsWith(path) && (request.method === "GET" || url.pathname.includes("/auth/") || url.pathname.includes("/validate/")));
+
+    if (!isPublicPath) {
+      const cookieHeader = request.headers.get("cookie") || "";
+      const tokenMatch = cookieHeader.match(/(?:^|;\s*)token\s*=\s*([^;]*)/);
+      if (!tokenMatch || !tokenMatch[1]) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized: Missing active user session" }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
   }
 
   // Per-IP rate limiting at the edge
@@ -114,20 +161,53 @@ export default async function middleware(request) {
   // RBAC for ticket routes
   if (url.pathname.startsWith("/api/tickets/")) {
     const cookieHeader = request.headers.get("cookie") || "";
-    const tokenMatch = cookieHeader.match(/(?:(?:^|.*;\s*)token\s*\=\s*([^;]*).*$)|^.*$/);
+    const tokenMatch = cookieHeader.match(/(?:^|;\s*)token\s*=\s*([^;]*)/);
     const token = tokenMatch ? tokenMatch[1] : null;
     let roles = [];
+    let tokenVerified = false;
     
     if (token) {
       try {
-        const payloadStr = atob(token.split('.')[1]);
-        const payload = JSON.parse(payloadStr);
-        roles = payload.roles || [];
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          // Verify JWT signature using HMAC-SHA256 with Web Crypto API
+          const secret = process.env.JWT_SECRET;
+          if (secret) {
+            const encoder = new TextEncoder();
+            const key = await crypto.subtle.importKey(
+              'raw',
+              encoder.encode(secret),
+              { name: 'HMAC', hash: 'SHA-256' },
+              false,
+              ['verify']
+            );
+            
+            const signature = Uint8Array.from(
+              atob(parts[2].replace(/-/g, '+').replace(/_/g, '/')),
+              (c) => c.charCodeAt(0)
+            );
+            const data = encoder.encode(`${parts[0]}.${parts[1]}`);
+            
+            tokenVerified = await crypto.subtle.verify('HMAC', key, signature, data);
+          }
+          
+          if (tokenVerified) {
+            const payloadStr = atob(
+              parts[1].replace(/-/g, '+').replace(/_/g, '/')
+                .padEnd(parts[1].length + ((4 - (parts[1].length % 4)) % 4), '=')
+            );
+            const payload = JSON.parse(
+              decodeURIComponent(
+                Array.from(payloadStr, (c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+              )
+            );
+            roles = payload.roles || [];
+          }
+        }
       } catch (e) {
         // Ignore parsing errors (treat as unauthenticated)
       }
     }
-    
     const hasAccess = roles.some(role => 
       ["ORGANIZER", "VOLUNTEER", "ADMIN", "SUPER_ADMIN", "EVENT_MANAGER"].includes(role.toUpperCase())
     );
