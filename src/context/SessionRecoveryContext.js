@@ -1,8 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse";
 import { logger } from "../utils/logger";
 import { sanitizeSessionState } from "../utils/sessionSanitization";
 import { getDeviceFingerprint } from "../utils/deviceFingerprint";
+import { useAuth } from "./AuthContext";
+import useCloudSessionRecovery from "../hooks/useCloudSessionRecovery";
+import useMultiSessionRecovery from "../hooks/useMultiSessionRecovery";
 
 // ---------------------------------------------------------------------------
 // CryptoJS has been removed from this module.
@@ -27,7 +30,6 @@ const SessionRecoveryContext = createContext();
 
 const SESSION_KEY = "eventra_session_state";
 const SESSION_TIMEOUT = 30 * 60 * 1000;
-const RECOVERY_KEY_NAME = "eventra_session_recovery_key";
 
 // ---------------------------------------------------------------------------
 // Web Crypto helpers — PBKDF2 + AES-256-GCM
@@ -126,23 +128,21 @@ const isCryptoAvailable = () =>
 // Session key management — unchanged from the original implementation
 // ---------------------------------------------------------------------------
 
+// In-memory only — never written to sessionStorage or localStorage
+let _inMemorySessionKey = null;
+
 const getOrCreateSessionKey = () => {
-  if (typeof window === "undefined" || !window.sessionStorage) {
-    return null;
-  }
+  if (typeof window === "undefined") return null;
   try {
-    let key = sessionStorage.getItem(RECOVERY_KEY_NAME);
-    if (!key) {
-      // Generate 32 random bytes and encode as hex for use as the PBKDF2 password
+    if (!_inMemorySessionKey) {
       const raw = crypto.getRandomValues(new Uint8Array(32));
-      key = Array.from(raw)
+      _inMemorySessionKey = Array.from(raw)
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
-      sessionStorage.setItem(RECOVERY_KEY_NAME, key);
     }
-    return key;
+    return _inMemorySessionKey;
   } catch (e) {
-    logger.error("Failed to manage session-bound recovery key:", e);
+    logger.error("Failed to generate in-memory session key:", e);
     return null;
   }
 };
@@ -160,6 +160,7 @@ export const useSessionRecovery = () => {
 };
 
 export const SessionRecoveryProvider = ({ children }) => {
+  const { user, isAuthenticated } = useAuth();
   const [hasSession, setHasSession] = useState(false);
   const [sessionData, setSessionData] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
@@ -170,16 +171,21 @@ export const SessionRecoveryProvider = ({ children }) => {
   const lastActivityRef = useRef(Date.now());
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
+  const cloudRecovery = useCloudSessionRecovery({
+    user,
+    isAuthenticated: isAuthenticated?.() || false,
+  });
+  const multiRecovery = useMultiSessionRecovery({
+    cloudSessions: cloudRecovery.cloudSessions,
+  });
 
   const updateActivity = useCallback(() => {
     const now = Date.now();
-    lastActivityRef.current = now;
-
-    if (!activityTimeoutRef.current) {
-      activityTimeoutRef.current = setTimeout(() => {
-        setLastActivity(lastActivityRef.current);
-        activityTimeoutRef.current = null;
-      }, 1000);
+    // 🔥 FIX: Throttle to max once per second to prevent CPU thrashing from mousemove/scroll
+    if (now - lastActivityRef.current > 1000) {
+      lastActivityRef.current = now;
+      // 🔥 FIX: Synchronize React state so context consumers get accurate data
+      setLastActivity(now);
     }
   }, []);
 
@@ -205,7 +211,9 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   useEffect(() => {
     const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click"];
-    events.forEach((event) => window.addEventListener(event, updateActivity));
+    // 🔥 FIX: Added { passive: true } to further optimize scroll performance
+    events.forEach((event) => window.addEventListener(event, updateActivity, { passive: true }));
+
     return () => {
       events.forEach((event) => window.removeEventListener(event, updateActivity));
     };
@@ -290,9 +298,18 @@ export const SessionRecoveryProvider = ({ children }) => {
           }
 
           const sanitizedState = sanitizeSessionState(state);
+          const recoveryType = sanitizedState.recoveryType || sanitizedState.page || "session";
+          const workflowId = sanitizedState.eventId || sanitizedState.id || "active";
+          const sessionId =
+            sanitizedState.sessionId ||
+            sanitizedState.recoverySessionId ||
+            `${recoveryType}-${workflowId}`;
 
           const currentSession = {
             ...sanitizedState,
+            sessionId,
+            sessionName: sanitizedState.sessionName || sanitizedState.name,
+            recoveryType,
             timestamp: Date.now(),
             lastActivity: lastActivityRef.current,
             deviceFingerprint: getDeviceFingerprint(),
@@ -302,12 +319,26 @@ export const SessionRecoveryProvider = ({ children }) => {
           localStorage.setItem(SESSION_KEY, ciphertext);
           setSessionData(currentSession);
           setHasSession(true);
+          multiRecovery.upsertSession({
+            sessionId,
+            name: currentSession.sessionName,
+            type: recoveryType,
+            draftData: currentSession,
+            source: "local",
+            updatedAt: new Date(currentSession.timestamp).toISOString(),
+            lastUpdated: new Date(currentSession.timestamp).toISOString(),
+          });
+          cloudRecovery.saveCloudSession(currentSession, {
+            sessionId,
+            name: currentSession.sessionName,
+            type: recoveryType,
+          });
         } catch (e) {
           logger.error("Failed to save session:", e);
         }
       }, 1000);
     },
-    [],
+    [cloudRecovery, multiRecovery],
   );
 
   const clearSession = useCallback(() => {
@@ -323,8 +354,48 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const restoreSession = useCallback(() => {
     if (!sessionData) return null;
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+      window.dispatchEvent(new CustomEvent("eventra-session-restored"));
+    }
     return sessionData;
   }, [sessionData]);
+
+  const restoreRecoverySessionById = useCallback(
+    async (sessionId) => {
+      const session = multiRecovery.sessions.find(
+        (item) => item.id === sessionId || item.sessionId === sessionId,
+      );
+      if (!session) return null;
+
+      if (session.source === "cloud" || session.source === "cloud-newer") {
+        const restored = await cloudRecovery.restoreCloudSession(session.sessionId);
+        return restored?.draftData || restored || session.draftData;
+      }
+
+      return session.draftData;
+    },
+    [cloudRecovery, multiRecovery.sessions],
+  );
+
+  const deleteRecoverySessionById = useCallback(
+    async (sessionId) => {
+      const session = multiRecovery.sessions.find(
+        (item) => item.id === sessionId || item.sessionId === sessionId,
+      );
+      multiRecovery.deleteSession(sessionId);
+      if (session?.source === "cloud" || session?.source === "cloud-newer") {
+        await cloudRecovery.dismissCloudSession(session.sessionId);
+      }
+    },
+    [cloudRecovery, multiRecovery],
+  );
+
+  const renameRecoverySessionById = useCallback(
+    (sessionId, name) => {
+      multiRecovery.renameSession(sessionId, name);
+    },
+    [multiRecovery],
+  );
 
   const dismissRecoveryPrompt = useCallback(() => {
     setShowRecoveryPrompt(false);
@@ -342,9 +413,17 @@ export const SessionRecoveryProvider = ({ children }) => {
   }, [hasSession, clearSession]);
 
   useEffect(() => {
+    if ((multiRecovery.hasSessions || cloudRecovery.hasCloudSessions) && !sessionData) {
+      setShowRecoveryPrompt(true);
+    }
+  }, [cloudRecovery.hasCloudSessions, multiRecovery.hasSessions, sessionData]);
+
+  useEffect(() => {
+    const saveTimeout = saveTimeoutRef.current;
+    const activityTimeout = activityTimeoutRef.current;
     return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      if (activityTimeoutRef.current) clearTimeout(activityTimeoutRef.current);
+      if (saveTimeout) clearTimeout(saveTimeout);
+      if (activityTimeout) clearTimeout(activityTimeout);
     };
   }, []);
 
@@ -354,9 +433,26 @@ export const SessionRecoveryProvider = ({ children }) => {
     isOnline,
     isReconnecting,
     showRecoveryPrompt,
+    recoverySessions: multiRecovery.sessions,
+    visibleRecoverySessions: multiRecovery.visibleSessions,
+    groupedRecoverySessions: multiRecovery.groupedSessions,
+    recoverySessionSearchQuery: multiRecovery.searchQuery,
+    setRecoverySessionSearchQuery: multiRecovery.setSearchQuery,
+    hasRecoverySessions: multiRecovery.hasSessions,
+    cloudSessions: cloudRecovery.cloudSessions,
+    hasCloudSessions: cloudRecovery.hasCloudSessions,
+    isCloudSyncing: cloudRecovery.isCloudSyncing,
+    cloudSyncError: cloudRecovery.cloudSyncError,
     saveSession,
     clearSession,
     restoreSession,
+    restoreRecoverySessionById,
+    restoreCloudSession: cloudRecovery.restoreCloudSession,
+    deleteRecoverySessionById,
+    renameRecoverySessionById,
+    importRecoverySessions: multiRecovery.replaceSessions,
+    dismissCloudSession: cloudRecovery.dismissCloudSession,
+    refreshCloudSessions: cloudRecovery.refreshCloudSessions,
     dismissRecoveryPrompt,
     lastActivity,
   };

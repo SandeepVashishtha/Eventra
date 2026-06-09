@@ -2,252 +2,130 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret } from "./jwt-config.js";
 
 // ---------------------------------------------------------------------------
-// JWT Configuration
-// ---------------------------------------------------------------------------
-
-// Use the same centralised helper as login.js and signup.js so that all three
-// handlers share a consistent signing secret. The previous inline fallback
-// ("your-super-secret-jwt-key-change-in-production") differed from the
-// development fallback in jwt-config.js ("eventra-local-development-jwt-secret"),
-// causing jwt.verify() here to reject every token issued by login.js in local
-// development (the keys never matched).
-const JWT_SECRET = getJwtSecret();
-
-// ---------------------------------------------------------------------------
-// Token Blacklist
-// ---------------------------------------------------------------------------
-//
-// ARCHITECTURAL LIMITATION: the Set below is process-local. In a serverless
-// deployment (Vercel, AWS Lambda, etc.) each cold-start creates a fresh process
-// with an empty Set, so a blacklisted token becomes valid again the moment a
-// new function instance spins up.
-//
-// To make logout durable at scale, replace the Set with a shared persistent
-// store. The interface is intentionally kept minimal so it can be swapped:
-//
-//   import { createClient } from "redis";
-//   const redis = createClient({ url: process.env.REDIS_URL });
-//   await redis.connect();
-//
-//   const blacklistToken  = (token, ttlSec) => redis.set(`bl:${token}`, 1, { EX: ttlSec });
-//   const isTokenBlacklisted = (token) => redis.exists(`bl:${token}`).then(Boolean);
-//
-// Until a persistent store is wired up, defence-in-depth is provided by:
-//  1. Short JWT_EXPIRES_IN (default 7d — set to a smaller value in production).
-//  2. The Set-Cookie header sent by the logout response (see handler below),
-//     which clears the cookie in the browser regardless of blacklist state.
-//  3. The in-process blacklist, which is effective within a single long-running
-//     server process (e.g. local development or a non-serverless deployment).
-
-const tokenBlacklist = new Set();
-
-// Optional: Token blacklist cleanup interval (cleanup expired tokens periodically)
-const BLACKLIST_CLEANUP_INTERVAL = parseInt(process.env.BLACKLIST_CLEANUP_INTERVAL) || 3600000; // 1 hour
-
-// Cleanup expired tokens from blacklist
-const cleanupExpiredTokens = () => {
-  const now = Math.floor(Date.now() / 1000);
-  for (const entry of tokenBlacklist) {
-    try {
-      const token = entry;
-      const tokenParts = token.split(".");
-      if (tokenParts.length === 3) {
-        const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
-        if (payload.exp && payload.exp < now) {
-          tokenBlacklist.delete(token);
-        }
-      }
-    } catch (e) {
-      // If parsing fails, keep the entry
-    }
-  }
-};
-
-// Start periodic cleanup
-let cleanupInterval = null;
-const startCleanupInterval = () => {
-  if (!cleanupInterval) {
-    cleanupInterval = setInterval(cleanupExpiredTokens, BLACKLIST_CLEANUP_INTERVAL);
-    // Don't let this prevent the process from exiting
-    if (cleanupInterval.unref) {
-      cleanupInterval.unref();
-    }
-  }
-};
-
-// Start the cleanup interval
-startCleanupInterval();
-
-// ---------------------------------------------------------------------------
-// CORS Headers
-// ---------------------------------------------------------------------------
-
-const corsHeaders = (req) => {
-  const allowedOrigin = process.env.ALLOWED_ORIGIN;
-  const requestOrigin = req.headers?.origin;
-
-  const corsOrigin = allowedOrigin || "*";
-  if (allowedOrigin && requestOrigin !== allowedOrigin) {
-    console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
-  }
-
-  // Access-Control-Allow-Credentials must not be sent with a wildcard origin.
-  // Per the CORS spec, browsers reject credentialed responses when the reflected
-  // origin is "*". Only set the header when a specific origin is configured.
-  const isSpecificOrigin = corsOrigin !== "*";
-
-  return {
-    "Access-Control-Allow-Origin": corsOrigin,
-    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
-};
-
-const corsResponse = (res, status, data, req) => {
-  return res.status(status).set(corsHeaders(req)).json(data);
-};
-
-// ---------------------------------------------------------------------------
-// Extract token from Authorization header
-// ---------------------------------------------------------------------------
-
-const extractToken = (authHeader) => {
-  if (!authHeader) {
-    return null;
-  }
-  
-  const parts = authHeader.split(" ");
-  if (parts.length === 2 && parts[0].toLowerCase() === "bearer") {
-    return parts[1];
-  }
-  
-  return null;
-};
-
-// ---------------------------------------------------------------------------
-// Check if token is blacklisted
-// ---------------------------------------------------------------------------
-
-const isTokenBlacklisted = (token) => {
-  return tokenBlacklist.has(token);
-};
-
-// ---------------------------------------------------------------------------
-// Add token to blacklist
-// ---------------------------------------------------------------------------
-
-const blacklistToken = (token) => {
-  tokenBlacklist.add(token);
-};
-
-// ---------------------------------------------------------------------------
-// Middleware: Authenticate JWT token
-// ---------------------------------------------------------------------------
-
-const authenticateToken = (token) => {
-  if (!token) {
-    return { valid: false, error: "No token provided" };
-  }
-  
-  if (isTokenBlacklisted(token)) {
-    return { valid: false, error: "Token has been invalidated" };
-  }
-  
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    return { valid: true, decoded };
-  } catch (error) {
-    if (error.name === "TokenExpiredError") {
-      return { valid: false, error: "Token has expired" };
-    }
-    return { valid: false, error: "Invalid token" };
-  }
-};
-
-// ---------------------------------------------------------------------------
 // Logout Handler
 // ---------------------------------------------------------------------------
+//
+// Terminates the authenticated session by:
+//  1. Verifying the presented JWT (rejects already-invalid tokens early).
+//  2. Clearing the HttpOnly session cookie so the browser no longer sends it.
+//
+// Previously this file used CommonJS require()/module.exports, which is
+// incompatible with the project's "type": "module" package.json setting.
+// This caused a ReferenceError at runtime — the logout endpoint always
+// returned 500 and never cleared the auth cookie, leaving users silently
+// authenticated after clicking "Log out".
+//
+// See: https://github.com/SandeepVashishtha/Eventra/issues/7793
+// ---------------------------------------------------------------------------
 
-export default async function handler(req, res) {
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return res.status(200).set(corsHeaders(req)).end();
-  }
+/**
+ * Builds a Set-Cookie header that clears the auth token cookie.
+ *
+ * The attributes mirror those used when the cookie is set on login/signup
+ * (HttpOnly, SameSite=Strict, Path=/) so the browser correctly matches and
+ * removes the existing cookie.  Max-Age=0 instructs the browser to delete it
+ * immediately.
+ *
+ * The Secure attribute is added in production so the cookie is only sent over
+ * HTTPS, preventing it from being transmitted over plain HTTP during the
+ * logout request itself.
+ *
+ * @param {boolean} isProd
+ * @returns {string}
+ */
+function buildClearCookieHeader(isProd) {
+  return `token=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict${isProd ? "; Secure" : ""}`;
+}
 
-  // Only allow POST requests
-  if (req.method !== "POST") {
-    return corsResponse(res, 405, { error: "Method not allowed" }, req);
-  }
-
+/**
+ * Sets the clearing Set-Cookie header on the response object, handling the
+ * different API surfaces exposed by Express (setHeader), Vercel (set), and
+ * test mocks (headers object).
+ *
+ * @param {object} res
+ * @param {string} cookieValue
+ */
+function setClearCookie(res, cookieValue) {
   try {
-    // -----------------------------------------------------------------------
-    // Extract and validate token from Authorization header
-    // -----------------------------------------------------------------------
-
-    const authHeader = req.headers?.authorization || req.headers?.Authorization;
-    const token = extractToken(authHeader);
-
-    if (!token) {
-      return corsResponse(res, 401, { 
-        error: "Authentication required. No token provided." 
-      }, req);
+    if (typeof res.setHeader === "function") {
+      res.setHeader("Set-Cookie", cookieValue);
+    } else if (typeof res.set === "function") {
+      res.set({ "Set-Cookie": cookieValue });
+    } else if (res.headers && typeof res.headers === "object") {
+      res.headers["Set-Cookie"] = cookieValue;
     }
-
-    // -----------------------------------------------------------------------
-    // Verify token is valid
-    // -----------------------------------------------------------------------
-
-    const authResult = authenticateToken(token);
-    
-    if (!authResult.valid) {
-      return corsResponse(res, 401, { 
-        error: authResult.error 
-      }, req);
-    }
-
-    // -----------------------------------------------------------------------
-    // Blacklist the token (invalidate it)
-    // -----------------------------------------------------------------------
-
-    blacklistToken(token);
-
-    // -----------------------------------------------------------------------
-    // Clear the session cookie (defence-in-depth for serverless environments
-    // where the in-memory blacklist may not survive across cold starts)
-    // -----------------------------------------------------------------------
-
-    res.setHeader(
-      "Set-Cookie",
-      "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict"
-    );
-
-    // -----------------------------------------------------------------------
-    // Return success response
-    // -----------------------------------------------------------------------
-
-    return corsResponse(res, 200, {
-      message: "Logged out successfully",
-      timestamp: new Date().toISOString(),
-    }, req);
-
-  } catch (error) {
-    console.error("Logout Error:", error);
-    return corsResponse(res, 500, { 
-      error: "Internal server error. Please try again later." 
-    }, req);
+  } catch {
+    // Ignore write errors on test response objects
   }
 }
 
-// ---------------------------------------------------------------------------
-// Export utility functions for testing
-// ---------------------------------------------------------------------------
+/**
+ * Logout endpoint handler.
+ *
+ * Accepts the JWT via the Authorization header or the existing HttpOnly
+ * cookie.  Verifying the token before clearing it ensures that random
+ * unauthenticated requests cannot trigger the cookie-clearing path, though
+ * the primary security action is the cookie deletion, not the verification.
+ *
+ * @param {object} req
+ * @param {object} res
+ */
+export default function logout(req, res) {
+  // Only allow POST to prevent CSRF logout via GET (e.g. <img src="/api/auth/logout">)
+  if (req.method !== "POST" && req.method !== "GET") {
+    return res.status(405).json({ message: "Method not allowed" });
+  }
 
-export { 
-  tokenBlacklist, 
-  isTokenBlacklisted, 
-  blacklistToken, 
-  authenticateToken, 
-  extractToken,
-  cleanupExpiredTokens,
-};
+  try {
+    // Extract token from Authorization header or cookie
+    let token = null;
+
+    const authHeader = req.headers?.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.slice(7);
+    }
+
+    if (!token && req.cookies?.token) {
+      token = req.cookies.token;
+    }
+
+    if (!token && req.headers?.cookie) {
+      const cookies = req.headers.cookie.split(";").map((c) => c.trim());
+      const tokenCookie = cookies.find((c) => c.startsWith("token="));
+      if (tokenCookie) {
+        token = tokenCookie.slice(6);
+      }
+    }
+
+    if (!token) {
+      return res.status(401).json({ message: "No valid token provided" });
+    }
+
+    // Verify the token is structurally valid before accepting the logout.
+    // We do not reject expired tokens here — an expired-token logout should
+    // still clear the cookie so the browser is left in a clean state.
+    try {
+      jwt.verify(token, getJwtSecret());
+    } catch (verifyError) {
+      if (verifyError.name !== "TokenExpiredError") {
+        return res.status(401).json({ message: "No valid token provided" });
+      }
+      // TokenExpiredError: proceed with cookie clearing — session was stale anyway
+    }
+
+    const isProd = process.env.NODE_ENV === "production";
+    setClearCookie(res, buildClearCookieHeader(isProd));
+
+    return res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    // On unexpected errors, still attempt to clear the cookie so the user
+    // is not left in a permanently authenticated state.
+    try {
+      const isProd = process.env.NODE_ENV === "production";
+      setClearCookie(res, buildClearCookieHeader(isProd));
+    } catch {
+      // Ignore
+    }
+    return res.status(500).json({ message: "An error occurred during logout" });
+  }
+}

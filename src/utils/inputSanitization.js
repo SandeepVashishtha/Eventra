@@ -1,3 +1,5 @@
+import createDOMPurify from "dompurify";
+
 /**
  * Input Sanitization Utilities
  *
@@ -6,8 +8,9 @@
  */
 
 /**
- * Sanitize search query to prevent NoSQL injection attacks.
- * Allows only alphanumeric characters, spaces, hyphens, and common punctuation.
+ * Sanitize search query to prevent XSS and NoSQL injection attacks.
+ * Uses DOMPurify with no allowed tags to safely remove all HTML
+ * while handling obfuscated XSS vectors that regex cascades miss.
  *
  * @param {string} query - The raw search query from user input
  * @returns {string} - Sanitized query safe for API transmission
@@ -17,36 +20,36 @@ export const sanitizeSearchQuery = (query = '') => {
     return '';
   }
 
-  // Trim whitespace
+  const MAX_QUERY_LENGTH = 200;
+
   let sanitized = query.trim();
 
-  // Remove/reject NoSQL injection operators
-  const dangerousPatterns = [
-    /\$/g, // NoSQL operators start with $
-    /\{/g, // Object notation
-    /\}/g,
-    /\[/g, // Array notation
-    /\]/g,
-    /;/g, // Statement terminators
-    /'/g, // SQL/NoSQL quotes
-    /`/g, // Backticks
-    /\|/g, // Pipes for command execution
-    /\\/g, // Escape characters
-    /\n/g, // Newlines
-    /\r/g, // Carriage returns
-    /</g,  // HTML tags / XSS
-    />/g,
-  ];
+  // Use DOMPurify to strip ALL HTML tags (including SVG, math, data URI,
+  // obfuscated event handlers) instead of a fragile regex cascade.
+  try {
+    let purify;
+    if (typeof createDOMPurify?.sanitize === 'function') {
+      purify = createDOMPurify;
+    } else if (typeof createDOMPurify === 'function' && typeof window?.document !== 'undefined') {
+      purify = createDOMPurify(window);
+    }
+    if (purify && typeof purify.sanitize === 'function') {
+      sanitized = purify.sanitize(sanitized, { ALLOWED_TAGS: [] });
+    }
+  } catch {
+    // DOMPurify unavailable - fall through to manual stripping
+  }
 
-  // Remove dangerous characters
-  dangerousPatterns.forEach(pattern => {
-    sanitized = sanitized.replace(pattern, '');
-  });
+  // Manual tag stripping as final safeguard (catches any DOMPurify bypass)
+  sanitized = sanitized
+    .replace(/<[^>]*>/g, '')
+    .replace(/[${}\[\];'`|\\/\n\r<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   // Ensure max length to prevent ReDoS attacks
-  const MAX_QUERY_LENGTH = 200;
   if (sanitized.length > MAX_QUERY_LENGTH) {
-    sanitized = sanitized.substring(0, MAX_QUERY_LENGTH);
+    sanitized = sanitized.substring(0, MAX_QUERY_LENGTH).trim();
   }
 
   return sanitized;
@@ -92,6 +95,7 @@ export const validateSearchQuery = (query = '') => {
 export const prepareSafeSearchQuery = (rawQuery = '') => {
   const validation = validateSearchQuery(rawQuery);
   if (!validation.isValid) {
+     
     console.warn(`[Security] Invalid search query: ${validation.error}`);
     return '';
   }
@@ -117,9 +121,22 @@ export const sanitizeInputText = (text = '') => {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#x27;',
-    '/': '&#x2F;'
+    "'": '&#x27;'
   };
 
-  return text.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
+  return text.replace(/[&<>"']/g, (match) => htmlEscapes[match]);
+};
+
+/**
+ * Strip all HTML tags from a text string.
+ * Faster than full DOMPurify when only raw text is needed.
+ *
+ * @param {string} text - Raw input text
+ * @returns {string} - Text with HTML tags stripped
+ */
+export const stripHtmlTags = (text = '') => {
+  if (typeof text !== 'string') {
+    return '';
+  }
+  return text.replace(/<[^>]*>?/gm, '');
 };

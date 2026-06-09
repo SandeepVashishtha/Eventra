@@ -14,10 +14,16 @@ const mapStatusKey = (status = "") => {
     ended: "ended",
     "event ended": "ended",
     "event ended ": "ended",
+    cancelled: "cancelled",
+    canceled: "cancelled",
+    "event cancelled": "cancelled",
+    "event canceled": "cancelled",
   };
 
   return explicitStatusMap[normalized] ?? normalized;
 };
+
+import { getServerTime } from "./timeSync";
 
 const parseEventDate = (dateValue) => {
   if (!dateValue) return null;
@@ -35,7 +41,7 @@ const asEndOfDay = (date) => {
 export const computeDateStatus = (event) => {
   const startDate = parseEventDate(event.startDate || event.date);
   const endDate = asEndOfDay(parseEventDate(event.endDate || event.date));
-  const now = new Date();
+  const now = getServerTime();
 
   if (!startDate) return "upcoming";
   if (now < startDate) return "upcoming";
@@ -45,7 +51,6 @@ export const computeDateStatus = (event) => {
 
 export const getEventStatus = (event) => {
   if (!event) return "upcoming";
-
   const explicitStatus = mapStatusKey(event.status);
   const dateStatus = computeDateStatus(event);
 
@@ -53,11 +58,17 @@ export const getEventStatus = (event) => {
     return "ended";
   }
 
-  if (dateStatus) {
-    return dateStatus;
+  // A cancelled event must not be overridden by a future date status.
+  // Return the explicit cancellation status directly so downstream consumers
+  // can block registration regardless of when the event was scheduled.
+  if (explicitStatus === "cancelled") {
+    return "cancelled";
   }
 
-  return explicitStatus || "upcoming";
+  if (explicitStatus && explicitStatus !== dateStatus) {
+    return explicitStatus;
+  }
+  return dateStatus || "upcoming";
 };
 
 export const isEventRegistrationClosed = (eventOrStatus) => {
@@ -66,7 +77,7 @@ export const isEventRegistrationClosed = (eventOrStatus) => {
       ? mapStatusKey(eventOrStatus)
       : getEventStatus(eventOrStatus);
 
-  return status === "past" || status === "ended";
+  return status === "past" || status === "ended" || status === "cancelled";
 };
 
 export const normalizeEvent = (event) => ({

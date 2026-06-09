@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
@@ -10,16 +11,20 @@ import {
   X,
   Ticket,
   Trash2,
-  Filter,
-  ArrowUpDown,
+  Activity,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
+import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
 import StatusBadge from "../common/StatusBadge";
 import { safeParseJson } from "../../utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
+import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
+import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import LazyImage from "../common/LazyImage";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -46,47 +51,11 @@ const getEventStatus = (event) => {
   return "Upcoming";
 };
 
-const EmptyState = () => {
-  const prefersReducedMotion = useReducedMotion();
-  return (
-    <motion.div
-      className="my-events-empty"
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
-    >
-      <div className="my-events-empty-icon">
-        <Ticket size={40} />
-      </div>
-      <h3 className="my-events-empty-title">No events yet</h3>
-      <p className="my-events-empty-sub">
-        You have not registered for or hosted any events yet. Explore upcoming events to get started.
-      </p>
-      <Link
-        to="/events"
-        className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800 my-events-empty-cta"
-      >
-        <span className="relative z-10 flex items-center">
-          Explore Events
-          <svg
-            className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </span>
-      </Link>
-    </motion.div>
-  );
-};
+
 
 const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
+  const isOffline = useOfflineStatus();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const status = getEventStatus(event);
   const shortDate = event?.date
@@ -107,50 +76,53 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
       layout
     >
       <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-        <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-full opacity-20 group-hover:animate-pulse" />
-        <div className="absolute top-1/2 -left-2 w-4 h-4 bg-gradient-to-br from-pink-400 to-red-500 rounded-full opacity-20 group-hover:animate-bounce" />
-        <div className="absolute bottom-4 right-1/4 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full opacity-20 group-hover:animate-ping" />
+        <div className="absolute -top-4 -right-4 w-8 h-8 bg-linear-to-br from-gray-500 to-gray-700 rounded-full opacity-20 group-hover:animate-pulse" />
+        <div className="absolute top-1/2 -left-2 w-4 h-4 bg-linear-to-br from-pink-400 to-red-500 rounded-full opacity-20 group-hover:animate-bounce" />
+        <div className="absolute bottom-4 right-1/4 w-6 h-6 bg-linear-to-br from-yellow-400 to-orange-500 rounded-full opacity-20 group-hover:animate-ping" />
       </div>
 
       {event?.image && (
         <div className="relative h-48 overflow-hidden">
-          <img
+          <LazyImage
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy"/>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
+            aspectRatio="16/9"
+            className="w-full h-full"
+            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+          <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
         </div>
       )}
 
       {event?.description && (
-        <div className="px-6 py-4 border-b border-gray-200/60 dark:border-gray-700/50 bg-gradient-to-r from-transparent to-indigo-50/30 dark:to-indigo-950/30">
+        <div className="px-6 py-4 border-b border-gray-200/60 dark:border-gray-700/50 bg-linear-to-r from-transparent to-indigo-50/30 dark:to-indigo-950/30">
           <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 leading-relaxed">
             {event.description}
           </p>
         </div>
       )}
 
-      <div className="px-6 py-5 grid grid-cols-2 gap-4 text-gray-700 dark:text-gray-300 text-sm bg-gradient-to-br from-gray-50/50 to-indigo-50/30 dark:from-gray-800/50 dark:to-indigo-950/30">
+      <div className="px-6 py-5 grid grid-cols-2 gap-4 text-gray-700 dark:text-gray-300 text-sm bg-linear-to-br from-gray-50/50 to-indigo-50/30 dark:from-gray-800/50 dark:to-indigo-950/30">
         <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300">
-          <div className="p-1.5 bg-pink-100 dark:bg-pink-900/30 rounded-lg flex-shrink-0">
+          <div className="p-1.5 bg-pink-100 dark:bg-pink-900/30 rounded-lg shrink-0">
             <MapPin size={14} className="text-pink-500" />
           </div>
           <span className="truncate font-medium">{event?.location || "—"}</span>
         </div>
         <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300">
-          <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
+          <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg shrink-0">
             <Clock size={14} className="text-blue-500" />
           </div>
           <span className="font-medium">{event?.time || "—"}</span>
         </div>
         <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300">
-          <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg flex-shrink-0">
+          <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg shrink-0">
             <Tag size={14} className="text-green-500" />
           </div>
           <span className="font-medium capitalize">{event?.type || "—"}</span>
         </div>
         <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300">
-          <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex-shrink-0">
+          <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg shrink-0">
             <Calendar size={14} className="text-indigo-500" />
           </div>
           <span className="font-medium">{shortDate}</span>
@@ -177,14 +149,18 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
         </div>
       )}
 
-      <div className="px-6 py-4 flex gap-3 bg-gradient-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
+      <div className="px-6 py-4 flex gap-3 bg-linear-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
         {showCancel ? (
           <>
             <button
               className="group/btn flex-1"
               onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
+              disabled={isOffline}
+              title={isOffline ? "Action unavailable offline" : "Cancel registration"}
+              aria-disabled={isOffline}
+              style={isOffline ? { opacity: 0.5, cursor: "not-allowed" } : {}}
             >
-              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Trash2 size={13} className="relative" />
                 <span className="relative">Cancel</span>
               </div>
@@ -193,14 +169,19 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
               className="group/btn flex-1"
               onClick={() => onViewTicket?.(event)}
             >
-              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Ticket size={13} className="relative" />
                 <span className="relative">Ticket</span>
               </div>
             </button>
           </>
         ) : (
-          <div className="flex-1" />
+          <Link to={`/events/${event?.id}/analytics`} className="group/btn flex-1">
+            <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <Activity size={13} className="relative" />
+              <span className="relative">Analytics</span>
+            </div>
+          </Link>
         )}
         <Link to={`/events/${event?.id}`} className="group/btn flex-1">
           <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
@@ -212,11 +193,107 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
   );
 };
 
+const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const fadeUpVariants = fadeUp(prefersReducedMotion);
+  const { user } = useAuth();
+  const [queuePos, setQueuePos] = useState(-1);
+
+  useEffect(() => {
+    if (user) {
+      import("../../utils/waitlistUtils").then(({ getQueuePosition }) => {
+        setQueuePos(getQueuePosition(event.id, user.id || user.email));
+      }).catch(() => setQueuePos(-1));
+    }
+  }, [event.id, user]);
+
+  return (
+    <motion.div
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 flex flex-col z-10 overflow-hidden"
+      custom={index}
+      variants={fadeUpVariants}
+      initial="hidden"
+      animate="visible"
+      layout
+    >
+      {event?.image && (
+        <div className="relative h-48 overflow-hidden">
+          <LazyImage
+            src={event.image}
+            alt={event.title}
+            aspectRatio="16/9"
+            className="w-full h-full"
+            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+          <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
+        </div>
+      )}
+
+      <div className="px-6 py-4 flex-1">
+        <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 truncate mb-1">{event.title}</h4>
+        <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-1.5"><Calendar size={12} /> {event.date}</div>
+          <div className="flex items-center gap-1.5"><MapPin size={12} /> {event.location}</div>
+        </div>
+      </div>
+
+      <div className="px-6 py-3 bg-amber-50/50 dark:bg-amber-950/10 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+          Waitlist Position #{queuePos > 0 ? queuePos : "..."}
+        </span>
+        <button
+          onClick={() => onLeaveWaitlist(event.id)}
+          className="text-xs font-bold text-red-650 hover:text-red-750 dark:text-red-400 dark:hover:text-red-300 transition-colors cursor-pointer"
+        >
+          Leave Waitlist
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const staggerVariants = stagger(prefersReducedMotion);
-  const { myEvents, removeRegistration } = useMyEvents();
+  const { myEvents, removeRegistration, waitlistUpdated, triggerWaitlistUpdate } = useMyEvents();
+  const { user } = useAuth();
+  const [waitlistEvents, setWaitlistEvents] = useState([]);
+
+  useEffect(() => {
+    if (user) {
+      import("../../utils/waitlistUtils.js").then(({ getGlobalWaitlist }) => {
+        const records = getGlobalWaitlist();
+        const userId = user.id || user.email;
+        const userWaitlists = records.filter(r => r.userId === userId && r.status === 'waiting');
+        
+        import("../../Pages/Events/eventsMockData.json").then(({ default: mockEvents }) => {
+          const resolved = userWaitlists.map(w => {
+            const foundEvent = mockEvents.find(e => e.id === w.eventId);
+            if (foundEvent) {
+              return {
+                ...foundEvent,
+                waitlistJoinedAt: w.joinedAt,
+                isWaitlist: true,
+              };
+            }
+            return {
+              id: w.eventId,
+              title: `Event #${w.eventId}`,
+              date: "",
+              time: "",
+              location: "Details unavailable",
+              type: "event",
+              isWaitlist: true,
+            };
+          });
+          setWaitlistEvents(resolved);
+        }).catch(() => setWaitlistEvents([]));
+      }).catch(() => setWaitlistEvents([]));
+    } else {
+      setWaitlistEvents([]);
+    }
+  }, [user, waitlistUpdated]);
 
   const {
     searchTerm: searchQuery,
@@ -388,6 +465,22 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
               />
             )}
           </div>
+          
+          {/* 🔥 FIX 2: Relocated Rogue "Clear History" button to its proper logical location */}
+          {recentSearches.length > 0 && (
+            <button
+              onClick={() => {
+                localStorage.removeItem(
+                  "recentSearches"
+                );
+
+                setRecentSearches([]);
+              }}
+              className="text-sm text-red-500 hover:underline mt-2"
+            >
+              Clear History
+            </button>
+          )}
 
           <StyledDropdown
             label=""
@@ -428,7 +521,13 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
       )}
 
       {registeredCount + hostedCount === 0 ? (
-        <EmptyState />
+        <EmptyState
+          title="No events yet"
+          description="You have not registered for or hosted any events yet. Explore upcoming events to get started."
+          icon={Ticket}
+          actionLabel="Explore Events"
+          actionPath="/events"
+        />
       ) : filteredEvents.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }}
@@ -497,11 +596,46 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
               </motion.div>
             </section>
           )}
+
+          {waitlistEvents.length > 0 && (
+            <section className="space-y-4 mt-6">
+              <div className="ud-tab-header">
+                <h3 className="ud-page-title flex items-center gap-2">
+                  <Clock size={18} className="text-amber-500" /> Waitlisted Events
+                </h3>
+                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                  {waitlistEvents.length} event{waitlistEvents.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
+                {waitlistEvents.map((event, index) => (
+                  <WaitlistCard
+                    key={event.id}
+                    event={event}
+                    index={index}
+                    onLeaveWaitlist={async (id) => {
+                      if (window.confirm(`Are you sure you want to leave the waitlist for "${event.title}"?`)) {
+                        try {
+                          const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
+                          await leaveWaitlist(id, user.id || user.email);
+                          toast.success("Left the waitlist successfully.");
+                          triggerWaitlistUpdate();
+                        } catch (err) {
+                          toast.error(err.message || "Failed to leave waitlist.");
+                        }
+                      }
+                    }}
+                  />
+                ))}
+              </motion.div>
+            </section>
+          )}
         </>
       )}
 
+      {/* 🔥 FIX 1: Portaled the modal out of the Framer Motion stacking context trap */}
       <AnimatePresence>
-        {cancelTarget && (
+        {cancelTarget && ReactDOM.createPortal(
           <motion.div
             className="my-events-dialog-backdrop"
             initial={{ opacity: 0 }}
@@ -509,18 +643,6 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             exit={{ opacity: 0 }}
             onClick={handleCancelDismiss}
           >
-            <button
-              onClick={() => {
-                localStorage.removeItem(
-                  "recentSearches"
-                );
-
-                setRecentSearches([]);
-              }}
-              className="text-sm text-red-500 hover:underline mt-2"
-            >
-              Clear History
-            </button>
             <motion.div
               className="my-events-dialog"
               initial={{ scale: 0.95, opacity: 0 }}
@@ -533,15 +655,16 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                 Remove <strong>{cancelTarget.title}</strong> from your registrations?
               </p>
               <div className="my-events-dialog-actions">
-                <button className="my-events-dialog-cancel" onClick={handleCancelDismiss} aria-label="button">
+                <button className="my-events-dialog-cancel" onClick={handleCancelDismiss}>
                   Keep it
                 </button>
-                <button className="my-events-dialog-confirm" onClick={handleCancelConfirm} aria-label="button">
+                <button className="my-events-dialog-confirm" onClick={handleCancelConfirm}>
                   Yes, remove
                 </button>
               </div>
             </motion.div>
-          </motion.div>
+          </motion.div>,
+          document.body
         )}
       </AnimatePresence>
     </motion.div>

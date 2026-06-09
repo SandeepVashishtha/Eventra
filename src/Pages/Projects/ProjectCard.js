@@ -1,18 +1,9 @@
-import React, { useState, useEffect, useRef, memo } from "react";
+import { Star, Github, ExternalLink, AlertCircle, GitPullRequest, Cpu, Code2, Layers, Bookmark } from "lucide-react";
+import { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { fetchGitHubRepo, getGitHubRepoDetails } from "../../utils/githubApiClient.js";
-import {
-  FiStar,
-  FiGithub,
-  FiExternalLink,
-  FiAlertCircle,
-  FiGitPullRequest,
-  FiCpu,
-  FiCode,
-  FiLayers,
-  FiBookmark,
-} from "react-icons/fi";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Cache Keys & Constants
 const CACHE_KEY = "eventra_github_metrics_cache";
@@ -20,31 +11,34 @@ const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour expiration
 
 // Status Badge Styling Helper
 const getStatusColor = (status) => {
-  if (!status) return "bg-slate-100 text-slate-800 dark:bg-slate-900/50 dark:text-slate-400";
+  if (!status) return "bg-slate-100 text-white dark:bg-slate-900/50 dark:text-white";
   switch (status.toLowerCase()) {
     case "active":
-      return "bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/40 dark:border-emerald-900/30";
+      return "bg-emerald-100/80 text-white dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/40 dark:border-emerald-900/30";
     case "maintenance":
-      return "bg-amber-100/80 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/40 dark:border-amber-900/30";
+      return "bg-amber-100/80 text-white dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/40 dark:border-amber-900/30";
     case "archived":
-      return "bg-rose-100/80 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/40 dark:border-rose-900/30";
+      return "bg-rose-100/80 text-white dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/40 dark:border-rose-900/30";
     default:
-      return "bg-sky-100/80 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200/40 dark:border-sky-900/30";
+      return "bg-sky-100/80 text-white dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200/40 dark:border-sky-900/30";
   }
 };
 
 // Difficulty Styling Helper
 const getDifficultyColor = (difficulty) => {
-  if (!difficulty) return "bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-400 border-slate-200/50";
+  if (!difficulty) return "bg-slate-50 text-white dark:bg-slate-900 dark:text-white border-slate-200/50";
   switch (difficulty.toLowerCase()) {
     case "beginner":
-      return "bg-sky-50/80 text-sky-700 border-sky-100 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-900/40";
-    case "intermediate":
-      return "bg-pink-50/80 text-pink-700 border-pink-100 dark:bg-pink-950/30 dark:text-pink-300 dark:border-pink-900/40";
-    case "advanced":
-      return "bg-rose-50/80 text-rose-700 border-rose-100 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-900/40";
-    default:
-      return "bg-slate-50/80 text-slate-700 border-slate-100 dark:bg-slate-950/30 dark:text-slate-400 dark:border-slate-900/40";
+  return "bg-sky-900/40 text-white border-sky-500/30";
+
+case "intermediate":
+  return "bg-pink-900/40 text-white border-pink-500/30";
+
+case "advanced":
+  return "bg-rose-900/40 text-white border-rose-500/30";
+
+default:
+  return "bg-slate-800 text-white border-slate-600";
   }
 };
 
@@ -120,7 +114,7 @@ const ConcentricTechRings = ({ techStack }) => {
           })}
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <FiLayers className="w-4 h-4 text-indigo-500/70 animate-pulse" />
+          <Layers className="w-4 h-4 text-indigo-500/70 animate-pulse" />
         </div>
       </div>
 
@@ -133,21 +127,14 @@ const ConcentricTechRings = ({ techStack }) => {
           return (
             <div key={tech} className="space-y-1">
               <div className="flex items-center justify-between text-[11px] font-black tracking-tight">
-                <span className="text-slate-800 dark:text-slate-200 truncate pr-1">
+                <span className="text-white dark:text-white truncate pr-1">
                   {tech}
                 </span>
-                <span className="text-slate-400 dark:text-slate-500">
+                <span className="text-white dark:text-white">
                   {pct}%
                 </span>
               </div>
               <div className="w-full h-1.5 rounded-full bg-slate-200/40 dark:bg-slate-800/40 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${pct}%` }}
-                  transition={{ duration: prefersReducedMotion ? 0 : 1.0, delay: 0.1 * i, ease: "easeOut" }}
-                  className="h-full rounded-full"
-                  style={{ background: `linear-gradient(to right, ${grad.from}, ${grad.to})` }}
-                />
               </div>
             </div>
           );
@@ -158,7 +145,7 @@ const ConcentricTechRings = ({ techStack }) => {
 };
 
 const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
-  const prefersReducedMotion = useReducedMotion();
+  useReducedMotion();
   const [isLoaded, setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -189,12 +176,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       try {
         let cache = {};
         const saved = localStorage.getItem(CACHE_KEY);
-        cache = saved ? JSON.parse(saved) : {};
+        cache = saved ? safeJsonParse(saved, {}) : {};
         cache[key] = { data: updated, timestamp: Date.now() };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-      } catch (err) {
-        console.error(err);
-      }
+      } catch {}
       return updated;
     });
   };
@@ -211,12 +196,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       try {
         let cache = {};
         const saved = localStorage.getItem(CACHE_KEY);
-        cache = saved ? JSON.parse(saved) : {};
+        cache = saved ? safeJsonParse(saved, {}) : {};
         cache[key] = { data: updated, timestamp: Date.now() };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-      } catch (err) {
-        console.error(err);
-      }
+      } catch {}
       return updated;
     });
   };
@@ -245,7 +228,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         let cache = {};
         try {
           const saved = localStorage.getItem(CACHE_KEY);
-          cache = saved ? JSON.parse(saved) : {};
+          cache = saved ? safeJsonParse(saved, {}) : {};
         } catch (e) {
           cache = {};
         }
@@ -274,8 +257,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
 
         setMetrics(freshMetrics);
         setMetricsLoading(false);
-      } catch (err) {
-        console.warn(`GitHub fetch failed for ${cacheKeyString}, falling back to static project metadata.`, err);
+      } catch {
         setMetrics({
           stars: project.stars || 0,
           forks: project.forks || 0,
@@ -292,7 +274,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   if (!project) return null;
 
   // Header decorative random codes
-  const csIcons = [FiCode, FiCpu, FiGitPullRequest];
+ const csIcons = [Code2, Cpu, GitPullRequest];
   const RandomIcon = csIcons[(index || 0) % csIcons.length];
 
   return (
@@ -301,24 +283,18 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       onMouseMove={handleMouseMove}
       initial={{ opacity: 0, y: 30, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      whileHover={{ y: -8, scale: 1.01 }}
+      whileHover={{ y: -4 }}
       transition={{ type: "spring", stiffness: 200, damping: 22 }}
-      className="group relative bg-white/60 dark:bg-slate-950/65 backdrop-blur-xl rounded-3xl border border-slate-200/50 dark:border-slate-800/40 shadow-md hover:shadow-[0_20px_40px_rgba(99,102,241,0.12)] overflow-hidden flex flex-col h-full transition-shadow duration-300"
+      className="group relative bg-slate-800 text-white backdrop-blur-xl rounded-2xl border border-slate-200/50 dark:border-slate-800/40 shadow-md hover:shadow-[0_20px_40px_rgba(99,102,241,0.12)] overflow-hidden flex flex-col h-full transition-shadow duration-300"
     >
       {/* Reactive Pointer Glow Overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"
-        style={{
-          background: `radial-gradient(350px circle at ${coords.x}px ${coords.y}px, rgba(99, 102, 241, 0.08), transparent 80%)`,
-        }}
-      />
 
       {/* Header */}
-      <div className="relative z-10 flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-800/45 bg-gradient-to-r from-slate-50/50 to-blue-50/20 dark:from-slate-900/30 dark:to-slate-950/40">
+      <div className="relative z-10 flex items-center gap-3 px-4 py-3 border-b border-slate-700 dark:border-slate-800/45 bg-slate-900 dark:from-slate-900/30 dark:to-slate-950/40">
         <div className="w-10 h-10 rounded-xl border border-indigo-200/60 dark:border-indigo-800/30 flex items-center justify-center bg-white dark:bg-slate-900 text-indigo-500 shadow-sm shrink-0">
           <RandomIcon size={18} />
         </div>
-        <h3 className="flex-1 min-w-0 text-base font-extrabold text-slate-850 dark:text-white tracking-tight line-clamp-1">
+        <h3 className="flex-1 min-w-0 text-base font-extrabold text-white tracking-tight line-clamp-1">
           {project.title || "Untitled Project"}
         </h3>
         <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap shadow-xs ${getStatusColor(project.status)}`}>
@@ -333,45 +309,38 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           className={`p-2 rounded-xl border transition-colors shrink-0 cursor-pointer ${
             isBookmarked
               ? "bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/40 dark:border-indigo-900/60 dark:text-indigo-400"
-              : "bg-white border-slate-200 text-slate-400 hover:text-slate-600 dark:bg-slate-900 dark:border-slate-800 dark:hover:text-slate-200"
+              : "bg-white border-slate-200 text-white hover:text-slate-600 dark:bg-slate-900 dark:border-slate-800 dark:hover:text-slate-200"
           }`}
           title={isBookmarked ? "Remove Bookmark" : "Bookmark Project"}
         >
-          <FiBookmark className={isBookmarked ? "fill-current" : ""} size={14} />
+          <Bookmark className={isBookmarked ? "fill-current" : ""} size={14} />
         </button>
       </div>
 
       {/* Hero Image */}
-      <div className="relative aspect-video overflow-hidden border-b border-slate-100 dark:border-slate-800/45 bg-slate-100 dark:bg-slate-900 z-10">
-        <img
-          src={project.lowResImage || project.image}
-          alt="project"
-          aria-hidden="true"
-          className={`absolute inset-0 w-full h-full object-cover blur-xl scale-110 transition-opacity duration-500 z-0 ${
-            isLoaded ? "opacity-0" : "opacity-100"
-          }`} loading="lazy"/>
+      <div className="relative h-44 overflow-hidden border-b border-slate-700 bg-slate-900 z-10">
+
         <img
           src={project.image}
           alt={project.title || "Project preview"}
           loading="lazy"
           decoding="async"
           onLoad={() => setIsLoaded(true)}
-          className="relative w-full h-full object-cover hover:scale-106 transition-transform duration-500 z-10"
+          className="relative w-full h-full object-cover hover:scale-102 transition-transform duration-500 z-10"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none z-20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none z-20" />
       </div>
 
       {/* Main Content Layout */}
-      <div className="relative z-10 flex flex-col flex-1 p-5 space-y-4">
+      <div className="relative z-10 flex flex-col flex-1 p-4 space-y-4 bg-slate-800">
         {/* Description */}
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-3">
-          {project.description}
-        </p>
+        <p className="text-xs sm:text-sm text-white leading-relaxed line-clamp-3">
+  {project.description}
+</p>
 
         {/* Categories & Level badge pills */}
         <div className="flex flex-wrap gap-2 pt-1">
-          <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100/40 dark:bg-indigo-950/20 dark:text-indigo-300 dark:border-indigo-900/30">
-            {project.category || "General"}
+          <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-indigo-600/20 text-white rounded-lg border border-indigo-500/30">
           </span>
           <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider border rounded-lg ${getDifficultyColor(project.difficulty)}`}>
             {project.difficulty || "Unknown"}
@@ -379,7 +348,16 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         </div>
 
         {/* Animated Radial Rings Section */}
-        <ConcentricTechRings techStack={project.techStack} />
+        <div className="flex flex-wrap gap-2">
+  {project.techStack?.slice(0, 5).map((tech) => (
+    <span
+      key={tech}
+      className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-900/40 text-white border border-indigo-500/20"
+    >
+      {tech}
+    </span>
+  ))}
+</div>
 
         {/* Author / Committer Header */}
         <div className="flex items-center justify-between pt-1 border-t border-slate-100/80 dark:border-slate-800/30">
@@ -388,10 +366,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
               {project.author?.charAt(0) || "U"}
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+              <span className="text-[10px] font-bold text-white uppercase tracking-widest leading-none">
                 Creator
               </span>
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-350 truncate mt-1">
+              <span className="text-sm font-semibold text-white truncate mt-1">
                 {project.author || "Unknown"}
               </span>
             </div>
@@ -419,7 +397,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                   className="flex flex-col items-center justify-center bg-amber-50/50 hover:bg-amber-100/80 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border border-amber-100/20 dark:border-amber-900/10 rounded-xl py-1 text-amber-600 dark:text-amber-400 font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95"
                   title="Click to Star repository!"
                  aria-label="Star repository">
-                  <FiStar className="mb-0.5" />
+                  <Star className="mb-0.5" />
                   <span>{metrics?.stars || 0}</span>
                 </button>
 
@@ -428,7 +406,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                   className="flex flex-col items-center justify-center bg-teal-50/50 hover:bg-teal-100/80 dark:bg-teal-950/20 dark:hover:bg-teal-950/40 border border-teal-100/20 dark:border-teal-900/10 rounded-xl py-1 text-teal-600 dark:text-teal-400 font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95"
                   title="Click to Fork repository!"
                  aria-label="Fork repository">
-                  <FiGithub className="mb-0.5" />
+                  <Github className="mb-0.5" />
                   <span>{metrics?.forks || 0}</span>
                 </button>
 
@@ -436,7 +414,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                   className="flex flex-col items-center justify-center bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/20 dark:border-rose-900/10 rounded-xl py-1 text-rose-600 dark:text-rose-400 font-extrabold cursor-help"
                   title="Open Issues"
                 >
-                  <FiAlertCircle className="mb-0.5" />
+                  <AlertCircle className="mb-0.5" />
                   <span>{metrics?.issues || 0}</span>
                 </div>
 
@@ -444,7 +422,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                   className="flex flex-col items-center justify-center bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/20 dark:border-indigo-900/10 rounded-xl py-1 text-indigo-600 dark:text-indigo-400 font-extrabold cursor-help"
                   title="Pull Requests"
                 >
-                  <FiGitPullRequest className="mb-0.5" />
+                  <GitPullRequest className="mb-0.5" />
                   <span>{metrics?.pullRequests || 0}</span>
                 </div>
               </motion.div>
@@ -461,14 +439,13 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
             whileTap={{ scale: 0.97 }}
             href={project.githubUrl}
             target="_blank" rel="noopener noreferrer"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80 text-white text-xs font-black shadow-md hover:shadow-lg transition-all duration-300 border-none cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80 text-white text-xs font-black shadow-md hover:shadow-lg transition-all duration-300 border-none cursor-pointer"
           >
-            <FiGithub className="text-sm" />
+            <Github className="text-sm" />
             Repository
           </motion.a>
         ) : (
-          <div className="flex-1 flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 text-slate-400 text-xs font-black cursor-not-allowed border border-slate-100 dark:border-slate-800/20">
+          <div className="flex-1 flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black cursor-not-allowed border border-slate-700 dark:border-slate-800/20">
             No Repository
           </div>
         )}
@@ -479,14 +456,13 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
             whileTap={{ scale: 0.97 }}
             href={project.liveDemo}
             target="_blank" rel="noopener noreferrer"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-200 hover:border-indigo-300 dark:border-indigo-800/50 dark:hover:border-indigo-700 bg-white/40 dark:bg-slate-900/20 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 text-xs font-black shadow-xs hover:shadow-sm transition-all duration-300 cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-indigo-200 hover:border-indigo-300 dark:border-indigo-800/50 dark:hover:border-indigo-700 bg-white/40 dark:bg-slate-900/20 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 text-xs font-black shadow-xs hover:shadow-sm transition-all duration-300 cursor-pointer"
           >
-            <FiExternalLink className="text-sm" />
+            <ExternalLink className="text-sm" />
             Live Demo
           </motion.a>
         ) : (
-          <div className="flex-1 flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 text-slate-400 text-xs font-black cursor-not-allowed border border-slate-100 dark:border-slate-800/20">
+          <div className="flex-1 flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black cursor-not-allowed border border-slate-700 dark:border-slate-800/20">
             No Live Demo
           </div>
         )}

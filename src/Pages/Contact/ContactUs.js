@@ -1,9 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
+import { apiUtils, API_ENDPOINTS } from "../../config/api";
+import { Star, MessageSquare } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, FileText, MessageSquare, AlertCircle } from "lucide-react";
-import { FiStar, FiMessageSquare } from "react-icons/fi";
+import { User, Mail, FileText, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SEOHead from "../../components/SEOHead";
+import { useTranslation } from "react-i18next";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 const FloatingField = ({
@@ -94,9 +96,9 @@ const FloatingField = ({
   );
 };
 
-const ContactUs = () => {
+const ContactUsInner = () => {
+  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
-  useDocumentTitle("Eventra | Contact Us");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -118,34 +120,34 @@ const ContactUs = () => {
 
     // Name validation
     if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
+      newErrors.name = t("validation.nameRequired");
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters";
+      newErrors.name = t("validation.nameMinLength");
     } else if (!/^[A-Za-z\s]+$/.test(formData.name)) {
-      newErrors.name = "Name should contain only letters";
+      newErrors.name = t("validation.nameLettersOnly");
     }
 
     // Email validation (unchanged)
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
+      newErrors.email = t("validation.emailRequired");
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
+      newErrors.email = t("validation.emailValid");
     }
 
     // Subject validation
     if (!formData.subject.trim()) {
-      newErrors.subject = "Subject is required";
+      newErrors.subject = t("validation.subjectRequired");
     } else if (formData.subject.trim().length < 5) {
-      newErrors.subject = "Subject must be at least 5 characters";
+      newErrors.subject = t("validation.subjectMinLength");
     } else if (!/[a-zA-Z]{2,}/.test(formData.subject)) {
-      newErrors.subject = "Please enter a meaningful subject";
+      newErrors.subject = t("validation.subjectMeaningful");
     }
 
     // Message validation
     if (!formData.message.trim()) {
-      newErrors.message = "Message is required";
+      newErrors.message = t("validation.messageRequired");
     } else if (formData.message.trim().length < 10) {
-      newErrors.message = "Message must be at least 10 characters";
+      newErrors.message = t("validation.messageMinLength");
     }
 
     setErrors(newErrors);
@@ -188,10 +190,13 @@ const ContactUs = () => {
 
     // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Show success toast
-      toast.success("Your message has been sent successfully! We'll get back to you soon.");
+  await apiUtils.post(API_ENDPOINTS.CONTACT, {
+    name: formData.name,
+    email: formData.email,
+    subject: formData.subject,
+    message: formData.message,
+  });
+  toast.success(t("contactUs.toastSuccess"));
 
       // Reset form
       setFormData({
@@ -200,8 +205,8 @@ const ContactUs = () => {
         subject: "",
         message: "",
       });
-    } catch (error) {
-      toast.error("There was an error sending your message. Please try again.");
+    } catch {
+      toast.error(t("contactUs.toastError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -233,21 +238,20 @@ const ContactUs = () => {
                   className="text-4xl font-extrabold mb-6 tracking-wide"
                   style={{ fontFamily: '"Anton", sans-serif' }}
                 >
-                  Get in Touch
+                  {t("contactUs.heroHeading")}
                 </h2>
-                <p className="mb-8 text-lg opacity-90 leading-relaxed">
-                  Questions about our events platform? We're here to help. Reach
-                  out and we'll respond promptly.
+                <p className="mb-8 text-lg text-slate-100/95 leading-relaxed">
+                  {t("contactUs.heroDescription")}
                 </p>
 
                 <div className="space-y-6">
                   {/* Email */}
                   <div
-                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    className="flex items-start gap-4 p-4 bg-white/12 rounded-2xl border border-white/15 shadow-lg shadow-slate-950/20 transition duration-300 ease-in-out hover:bg-white/18 sm:items-center"
                     data-aos="zoom-in"
                     data-aos-delay="200"
                   >
-                    <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
+                    <div className="flex items-center justify-center rounded-full bg-white/20 p-3 shrink-0">
                       <svg
                         className="w-7 h-7 text-white"
                         fill="none"
@@ -263,46 +267,46 @@ const ContactUs = () => {
                         ></path>
                       </svg>
                     </div>
-                    <div className="overflow-hidden break-words max-w-full">
-                      <p className="font-semibold text-white">Email Us</p>
-                      <p className="text-sm opacity-80 break-words max-w-full">
-                        sandeepvashishtha@outlook.in
+                    <div className="min-w-0 overflow-hidden break-words max-w-full">
+                      <p className="font-semibold text-white">{t("contactUs.infoEmailTitle")}</p>
+                      <p className="text-sm font-medium text-slate-100/90 break-all max-w-full leading-snug">
+                        {t("contactUs.infoEmailValue")}
                       </p>
                     </div>
                   </div>
 
                   {/* Quick Response */}
                   <div
-                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    className="flex items-start gap-4 p-4 bg-white/12 rounded-2xl border border-white/15 shadow-lg shadow-slate-950/20 transition duration-300 ease-in-out hover:bg-white/18 sm:items-center"
                     data-aos="zoom-in"
                     data-aos-delay="300"
                   >
-                    <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiMessageSquare className="w-7 h-7 text-white" aria-hidden="true" />
+                    <div className="flex items-center justify-center rounded-full bg-white/20 p-3 shrink-0">
+                      <MessageSquare className="w-7 h-7 text-white" aria-hidden="true" />
                     </div>
-                    <div className="overflow-hidden max-w-full">
-                      <p className="font-semibold text-white">Quick Response</p>
-                      <p className="text-sm opacity-80">
-                        We aim to reply to all inquiries within 24 hours.
+                    <div className="min-w-0 overflow-hidden max-w-full">
+                      <p className="font-semibold text-white">{t("contactUs.infoQuickResponseTitle")}</p>
+                      <p className="text-sm text-slate-100/90 leading-snug">
+                        {t("contactUs.infoQuickResponseDescription")}
                       </p>
                     </div>
                   </div>
 
                   {/* Multiple Channels */}
                   <div
-                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    className="flex items-start gap-4 p-4 bg-white/12 rounded-2xl border border-white/15 shadow-lg shadow-slate-950/20 transition duration-300 ease-in-out hover:bg-white/18 sm:items-center"
                     data-aos="zoom-in"
                     data-aos-delay="400"
                   >
-                    <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
-                      <FiStar className="w-7 h-7 text-white" />
+                    <div className="flex items-center justify-center rounded-full bg-white/20 p-3 shrink-0">
+                      <Star className="w-7 h-7 text-white" />
                     </div>
-                    <div className="overflow-hidden max-w-full">
+                    <div className="min-w-0 overflow-hidden max-w-full">
                       <p className="font-semibold text-white">
-                        Multiple Channels
+                        {t("contactUs.infoMultipleChannelsTitle")}
                       </p>
-                      <p className="text-sm opacity-80">
-                        Reach us via email, phone, or the contact form.
+                      <p className="text-sm text-slate-100/90 leading-snug">
+                        {t("contactUs.infoMultipleChannelsDescription")}
                       </p>
                     </div>
                   </div>
@@ -322,10 +326,10 @@ const ContactUs = () => {
                   className="text-3xl font-extrabold text-gray-900 dark:text-gray-100"
                   style={{ fontFamily: '"Anton", sans-serif' }}
                 >
-                  Send us a Message
+                  {t("contactUs.formHeading")}
                 </h2>
                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  We typically respond within 24 hours
+                  {t("contactUs.formSubtitle")}
                 </p>
               </div>
 
@@ -337,7 +341,7 @@ const ContactUs = () => {
                 <div className="space-y-5">
                   <FloatingField
                     id="name"
-                    label="Your Name"
+                    label={t("contactUs.formName")}
                     value={formData.name}
                     onChange={handleChange}
                     error={errors.name}
@@ -347,7 +351,7 @@ const ContactUs = () => {
 
                   <FloatingField
                     id="email"
-                    label="Email Address"
+                    label={t("contactUs.formEmail")}
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
@@ -359,7 +363,7 @@ const ContactUs = () => {
 
                 <FloatingField
                   id="subject"
-                  label="Subject"
+                  label={t("contactUs.formSubject")}
                   value={formData.subject}
                   onChange={handleChange}
                   error={errors.subject}
@@ -369,7 +373,7 @@ const ContactUs = () => {
 
                 <FloatingField
                   id="message"
-                  label="Your Message"
+                  label={t("contactUs.formMessage")}
                   as="textarea"
                   rows={5}
                   value={formData.message}
@@ -409,7 +413,7 @@ const ContactUs = () => {
                         ></path>
                       </svg>
                     ) : null}
-                    {isSubmitting ? "Sending..." : "Send Message"}
+                    {isSubmitting ? t("contactUs.formSending") : t("contactUs.formSendMessage")}
                   </motion.button>
                 </div>
               </form>
@@ -418,6 +422,20 @@ const ContactUs = () => {
         </motion.div>
       </div>
     </div>
+  );
+};
+
+const ContactUs = () => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <SEOHead
+        title={t("contactUs.pageTitle")}
+        description={t("contactUs.pageDescription")}
+        url={window.location.href}
+      />
+      <ContactUsInner />
+    </>
   );
 };
 

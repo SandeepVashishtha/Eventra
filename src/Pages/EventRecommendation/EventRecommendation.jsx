@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   X,
   Sliders,
@@ -6,71 +6,55 @@ import {
   AlertCircle,
   Sparkles,
   ChevronRight,
+  FilterX,
 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import { showSuccessToast } from "../../utils/toast";
 import {
   generateAIInsights
 } from "../../services/aiRecommendationService";
+import EmptyState from "../../components/common/EmptyState";
 
 import {
   getUserProfile
 } from "../../utils/userProfileAnalyzer";
+import {
+  buildPersonalizedRecommendations,
+  getTrendingEventsForArea,
+} from "../../utils/recommendationEngine";
+import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
+import useBookmarks from "../../hooks/useBookmarks";
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";
+import {
+  getBookmarkedEvents,
+  subscribeToBookmarkChanges,
+} from "../../utils/bookmarkUtils";
+import mockEvents from "../Events/eventsMockData.json";
+import { EventCardSkeleton, SkeletonBlock } from "../../components/common/SkeletonLoaders";
 
 
 const EventRecommendation = () => {
+  const { user } = useAuth();
+  const { myEvents, addRegistration } = useMyEvents();
+  const { bookmarks } = useBookmarks(user?.id || user?.email || "guest");
+  const { recentlyViewed } = useRecentlyViewed();
+  const [globalBookmarks, setGlobalBookmarks] = useState(() => getBookmarkedEvents());
 
-  const events = [
-    {
-      title: "AI Innovation Challenge",
-      category: "AI / ML",
-      level: "Beginner",
-      type: "Hackathon",
-      match: "95%",
-      tag: "AI/ML",
-      description:
-        "Build intelligent AI solutions and compete with developers worldwide.",
-    },
-    {
-      title: "Frontend UI Battle",
-      category: "Web Development",
-      level: "Intermediate",
-      type: "Hackathon",
-      match: "92%",
-      tag: "React",
-      description:
-        "Design modern responsive interfaces and interactive experiences.",
-    },
-    {
-      title: "Open Source Sprint",
-      category: "Open Source",
-      level: "Beginner",
-      type: "Hackathon",
-      match: "89%",
-      tag: "OSS",
-      description:
-        "Collaborate on impactful open-source projects and communities.",
-    },
-    {
-      title: "Cyber Shield Workshop",
-      category: "Cybersecurity",
-      level: "Advanced",
-      type: "Workshop",
-      match: "91%",
-      tag: "Security",
-      description:
-        "Hands-on cybersecurity challenges and ethical hacking sessions.",
-    },
-    {
-      title: "Cloud Computing Conference",
-      category: "Web Development",
-      level: "Advanced",
-      type: "Conference",
-      match: "88%",
-      tag: "Cloud",
-      description:
-        "Explore scalable cloud infrastructure and DevOps technologies.",
-    },
-  ];
+  const events = useMemo(
+    () =>
+      mockEvents.map((event) => ({
+        ...event,
+        level:
+          event.level ||
+          (event.price === 0
+            ? "Beginner"
+            : event.price > 500
+              ? "Advanced"
+              : "Intermediate"),
+        tag: event.tags?.[0] || event.category,
+      })),
+    [],
+  );
 
   const [interest, setInterest] = useState("");
   const [level, setLevel] = useState("");
@@ -91,6 +75,8 @@ const EventRecommendation = () => {
   const [aiInsights, setAiInsights] = useState("");
 
   const [insightLoading, setInsightLoading] = useState(false);
+
+  useEffect(() => subscribeToBookmarkChanges(setGlobalBookmarks), []);
 
   useEffect(() => {
 
@@ -118,14 +104,23 @@ const EventRecommendation = () => {
   loadInsights();
 
 }, [selectedEvent]);
+
+  const userProfile = useMemo(() => getUserProfile(), []);
+  const preferredLocation = useMemo(() => {
+    const sources = [...myEvents, ...bookmarks, ...globalBookmarks, ...recentlyViewed]
+      .map((entry) => entry?.event?.location || entry?.eventSummary?.location || entry?.location)
+      .filter((locationValue) => locationValue && locationValue !== "Online");
+
+    return sources[0] || user?.location || "";
+  }, [bookmarks, globalBookmarks, myEvents, recentlyViewed, user]);
+
+  const trendingNearby = useMemo(
+    () => getTrendingEventsForArea(events, preferredLocation, 4),
+    [events, preferredLocation],
+  );
+
   const generateRecommendations = () => {
     setHasSearched(true);
-
-    if (!interest && !level && !eventType) {
-      setRecommendedEvents([]);
-      return;
-    }
-
     setLoading(true);
     setShowOtherEvents(false);
     
@@ -133,83 +128,65 @@ const EventRecommendation = () => {
     localStorage.setItem("eventra_ai_recommendation_generated", "true");
 
     setTimeout(() => {
-      const totalWeight = (interest ? interestWeight : 0) + (level ? levelWeight : 0) + (eventType ? typeWeight : 0);
-      
-      if (totalWeight === 0) {
-        setRecommendedEvents([]);
-        setLoading(false);
-        return;
-      }
+      const selectedProfile = {
+        ...userProfile,
+        interests: [...(userProfile.interests || []), interest].filter(Boolean),
+        eventTypes: [...(userProfile.eventTypes || []), eventType].filter(Boolean),
+        level: level || userProfile.level,
+      };
 
-      const scored = events.map(event => {
-        let score = 0;
-        let breakdown = [];
-        
-        if (interest) {
-          const isMatch = event.category === interest;
-          if (isMatch) {
-            score += interestWeight;
-            breakdown.push({ label: "Domain Matches Interest", weight: interestWeight, score: interestWeight, matched: true });
-          } else {
-            breakdown.push({ label: "Domain Mismatch", weight: interestWeight, score: 0, matched: false });
-          }
-        }
-        
-        if (level) {
-          const isMatch = event.level === level;
-          if (isMatch) {
-            score += levelWeight;
-            breakdown.push({ label: "Skill Level Matches", weight: levelWeight, score: levelWeight, matched: true });
-          } else {
-            breakdown.push({ label: "Skill Level Mismatch", weight: levelWeight, score: 0, matched: false });
-          }
-        }
-        
-        if (eventType) {
-          const isMatch = event.type === eventType;
-          if (isMatch) {
-            score += typeWeight;
-            breakdown.push({ label: "Event Type Matches", weight: typeWeight, score: typeWeight, matched: true });
-          } else {
-            breakdown.push({ label: "Event Type Mismatch", weight: typeWeight, score: 0, matched: false });
-          }
-        }
-        
-        const percentage = Math.round((score / totalWeight) * 100);
+      const recommendations = buildPersonalizedRecommendations({
+        events,
+        userProfile: selectedProfile,
+        registeredEvents: myEvents,
+        bookmarkedEvents: [...bookmarks, ...globalBookmarks],
+        viewedEvents: recentlyViewed,
+        location: preferredLocation,
+        limit: events.length,
+      }).map((event) => {
+        const selectedBoost =
+          (interest && event.category === interest ? interestWeight : 0) +
+          (level && event.level === level ? levelWeight : 0) +
+          (eventType && event.type === eventType.toLowerCase() ? typeWeight : 0);
+        const boost = Math.round(selectedBoost / 10);
+        const calculatedMatch = Math.min(100, event.calculatedMatch + boost);
+
         return {
           ...event,
-          calculatedMatch: percentage,
-          breakdown,
+          calculatedMatch,
+          recommendationScore: calculatedMatch,
+          breakdown: [
+            ...(event.breakdown || []),
+            ...(boost > 0
+              ? [{ label: "Selected preference boost", score: boost }]
+              : []),
+          ],
         };
-      });
+      }).sort((a, b) => b.recommendationScore - a.recommendationScore);
 
-      const filtered = scored
-        .filter(event => event.calculatedMatch > 0)
-        .sort((a, b) => b.calculatedMatch - a.calculatedMatch);
-
-      setRecommendedEvents(filtered);
+      setRecommendedEvents(recommendations.length ? recommendations : trendingNearby);
       setLoading(false);
     }, 1200);
   };
 
   const otherEvents = events.filter(
     (event) =>
-      !recommendedEvents.some(r => r.title === event.title)
+      !recommendedEvents.some(r => r.id === event.id)
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black py-10 px-4">
+    <div className="min-h-screen bg-bg text-text py-10 px-4">
 
       <div className="max-w-7xl mx-auto">
 
         {/* Heading */}
         <div className="mb-8">
 
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-3xl md:text-4xl font-bold text-text">
             AI Event Recommendation Assistant
           </h1>
 
-          <p className="mt-2 text-sm md:text-base text-slate-600 dark:text-slate-400">
+          <p className="mt-2 text-sm md:text-base text-text-light">
             Personalized hackathons and tech events based on your interests and skills.
           </p>
 
@@ -219,9 +196,9 @@ const EventRecommendation = () => {
         <div className="grid lg:grid-cols-[380px_1fr] gap-6">
 
           {/* LEFT PANEL */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm h-fit">
+          <div className="bg-card-bg rounded-2xl p-6 border border-border shadow-sm h-fit">
 
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-5">
+            <h2 className="text-xl font-semibold text-text mb-5">
               Your Preferences
             </h2>
 
@@ -230,7 +207,7 @@ const EventRecommendation = () => {
               {/* Interests */}
               <div>
 
-                <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
+                <label className="block text-sm font-medium mb-2 text-text-light">
                   Interests
                 </label>
 
@@ -239,14 +216,14 @@ const EventRecommendation = () => {
                   onChange={(e) =>
                     setInterest(e.target.value)
                   }
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm outline-none"
+                  className="w-full border border-border rounded-xl p-3 bg-bg text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
                 >
                   <option value="">
                     Select Domain
                   </option>
 
                   <option>
-                    AI / ML
+                    AI & Machine Learning
                   </option>
 
                   <option>
@@ -258,7 +235,7 @@ const EventRecommendation = () => {
                   </option>
 
                   <option>
-                    Cybersecurity
+                    Security & Privacy
                   </option>
 
                 </select>
@@ -268,7 +245,7 @@ const EventRecommendation = () => {
               {/* Skill Level */}
               <div>
 
-                <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
+                <label className="block text-sm font-medium mb-2 text-text-light">
                   Skill Level
                 </label>
 
@@ -277,7 +254,7 @@ const EventRecommendation = () => {
                   onChange={(e) =>
                     setLevel(e.target.value)
                   }
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm outline-none"
+                  className="w-full border border-border rounded-xl p-3 bg-bg text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
                 >
                   <option value="">
                     Select Skill Level
@@ -302,7 +279,7 @@ const EventRecommendation = () => {
               {/* Event Type */}
               <div>
 
-                <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
+                <label className="block text-sm font-medium mb-2 text-text-light">
                   Event Type
                 </label>
 
@@ -311,7 +288,7 @@ const EventRecommendation = () => {
                   onChange={(e) =>
                     setEventType(e.target.value)
                   }
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm outline-none"
+                  className="w-full border border-border rounded-xl p-3 bg-bg text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
                 >
                   <option value="">
                     Select Event Type
@@ -334,17 +311,17 @@ const EventRecommendation = () => {
               </div>
 
               {/* Dynamic Weights Sliders */}
-              <div className="border-t border-slate-100 dark:border-slate-800/80 pt-4 mt-4 space-y-4">
-                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-semibold text-sm">
-                  <Sliders size={16} className="text-blue-500" />
+              <div className="border-t border-border pt-4 mt-4 space-y-4">
+                <div className="flex items-center gap-2 text-text font-semibold text-sm">
+                  <Sliders size={16} className="text-primary" />
                   <span>Recommendation Weights</span>
                 </div>
                 
                 <div className="space-y-3">
                   <div>
-                    <div className="flex justify-between text-xs font-medium mb-1 text-slate-500 dark:text-slate-400">
+                    <div className="flex justify-between text-xs font-medium mb-1 text-text-light">
                       <span>Domain Match Priority</span>
-                      <span className="text-blue-600 dark:text-blue-400 font-bold">{interestWeight}%</span>
+                      <span className="text-primary font-bold">{interestWeight}%</span>
                     </div>
                     <input
                       type="range"
@@ -352,14 +329,14 @@ const EventRecommendation = () => {
                       max="100"
                       value={interestWeight}
                       onChange={(e) => setInterestWeight(Number(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-primary"
                     />
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-xs font-medium mb-1 text-slate-500 dark:text-slate-400">
+                    <div className="flex justify-between text-xs font-medium mb-1 text-text-light">
                       <span>Skill Level Match Priority</span>
-                      <span className="text-blue-600 dark:text-blue-400 font-bold">{levelWeight}%</span>
+                      <span className="text-primary font-bold">{levelWeight}%</span>
                     </div>
                     <input
                       type="range"
@@ -367,14 +344,14 @@ const EventRecommendation = () => {
                       max="100"
                       value={levelWeight}
                       onChange={(e) => setLevelWeight(Number(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-primary"
                     />
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-xs font-medium mb-1 text-slate-500 dark:text-slate-400">
+                    <div className="flex justify-between text-xs font-medium mb-1 text-text-light">
                       <span>Event Type Match Priority</span>
-                      <span className="text-blue-600 dark:text-blue-400 font-bold">{typeWeight}%</span>
+                      <span className="text-primary font-bold">{typeWeight}%</span>
                     </div>
                     <input
                       type="range"
@@ -382,7 +359,7 @@ const EventRecommendation = () => {
                       max="100"
                       value={typeWeight}
                       onChange={(e) => setTypeWeight(Number(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-primary"
                     />
                   </div>
                 </div>
@@ -391,7 +368,7 @@ const EventRecommendation = () => {
               {/* Button */}
               <button
                 onClick={generateRecommendations}
-                className="w-full mt-4 bg-blue-600 hover:bg-blue-700 transition-all text-white rounded-xl py-3 text-sm font-semibold"
+                className="w-full mt-4 bg-primary hover:opacity-90 transition-all text-white rounded-xl py-3 text-sm font-semibold"
                 aria-label="Generate recommendations">
                 Generate Recommendations
               </button>
@@ -401,15 +378,15 @@ const EventRecommendation = () => {
           </div>
 
           {/* RIGHT PANEL */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="bg-card-bg rounded-2xl p-6 border border-border shadow-sm">
 
             <div className="flex items-center justify-between mb-6">
 
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+              <h2 className="text-xl font-semibold text-text">
                 Recommended Events
               </h2>
 
-              <span className="text-sm text-slate-500 dark:text-slate-400">
+              <span className="text-sm text-text-light">
                 {recommendedEvents.length} Recommendations
               </span>
 
@@ -417,17 +394,16 @@ const EventRecommendation = () => {
 
             {/* Loading */}
             {loading ? (
-
-              <div className="flex flex-col items-center justify-center py-20">
-
-                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-
-                <p className="mt-5 text-slate-500 dark:text-slate-400">
+              <>
+                <div className="sr-only" role="status" aria-live="polite">
                   Searching recommendations...
-                </p>
-
-              </div>
-
+                </div>
+                <div className="grid md:grid-cols-2 gap-4" aria-hidden="true">
+                  {[...Array(4)].map((_, i) => (
+                    <EventCardSkeleton key={i} />
+                  ))}
+                </div>
+              </>
             ) : recommendedEvents.length > 0 ? (
 
               <>
@@ -438,7 +414,7 @@ const EventRecommendation = () => {
 
                     <div
                       key={index}
-                      className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-all bg-slate-50 dark:bg-slate-800/50"
+                      className="rounded-2xl border border-border p-5 hover:shadow-md transition-all bg-bg"
                     >
 
                       <div className="flex items-center justify-between mb-4">
@@ -447,23 +423,23 @@ const EventRecommendation = () => {
                           {event.calculatedMatch}% Match
                         </span>
 
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                        <span className="text-xs text-text-light">
                           {event.tag}
                         </span>
 
                       </div>
 
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                      <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">
                         {event.title}
                       </h3>
 
-                      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                      <p className="mt-2 text-sm text-text-light">
                         {event.description}
                       </p>
 
                       <button
                         onClick={() => setSelectedEvent(event)}
-                        className="mt-5 text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+                        className="mt-5 text-sm font-medium text-primary hover:opacity-80 flex items-center gap-1 cursor-pointer"
                       >
                         View Insights & Match Info <ChevronRight size={14} />
                       </button>
@@ -481,7 +457,7 @@ const EventRecommendation = () => {
                     onClick={() =>
                       setShowOtherEvents(!showOtherEvents)
                     }
-                    className="px-5 py-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-sm font-medium"
+                    className="px-5 py-3 rounded-xl border border-border hover:bg-card-bg transition-all text-sm font-medium"
                   >
                     {showOtherEvents
                       ? "Hide Other Events"
@@ -495,7 +471,7 @@ const EventRecommendation = () => {
 
                   <div className="mt-8">
 
-                    <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">
+                    <h3 className="text-lg font-semibold mb-4 text-text">
                       Other Events You May Like
                     </h3>
 
@@ -505,14 +481,14 @@ const EventRecommendation = () => {
 
                         <div
                           key={index}
-                          className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-800"
+                          className="rounded-2xl border border-border p-5 bg-bg"
                         >
 
-                          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                          <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">
                             {event.title}
                           </h3>
 
-                          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                          <p className="mt-2 text-sm text-text-light">
                             {event.description}
                           </p>
 
@@ -529,69 +505,40 @@ const EventRecommendation = () => {
               </>
 
             ) : !hasSearched ? (
-
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
-                  Ready to Discover Events?
-                </h3>
-
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md">
-                  Select your preferences and generate personalized recommendations.
-                </p>
-
-              </div>
-
+              <EmptyState
+                type="default"
+                icon={<Sparkles size={48} className="text-primary animate-pulse" />}
+                title="Ready to Discover Events?"
+                message="Select your preferences and generate personalized recommendations."
+              />
             ) : (
-
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
-                  No Relevant Events Found
-                </h3>
-
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md">
-                  Try changing your interests, skill level, or event type.
-                </p>
-
-                <button
-                  onClick={() =>
-                    setShowOtherEvents(!showOtherEvents)
-                  }
-                  className="mt-6 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-all"
-                >
-                  Explore All Events
-                </button>
+              <>
+                <EmptyState
+                  type="filters"
+                  icon={<FilterX size={48} className="text-gray-400" />}
+                  title="No Relevant Events Found"
+                  message="Try changing your interests, skill level, or recommendation weights to discover more events."
+                  onBrowseAll={() => setShowOtherEvents(!showOtherEvents)}
+                />
 
                 {showOtherEvents && (
-
                   <div className="mt-8 w-full grid md:grid-cols-2 gap-4">
-
                     {events.map((event, index) => (
-
                       <div
                         key={index}
-                        className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-800 text-left"
+                        className="rounded-2xl border border-border p-5 bg-bg text-left"
                       >
-
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                        <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">
                           {event.title}
                         </h3>
-
-                        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                        <p className="mt-2 text-sm text-text-light">
                           {event.description}
                         </p>
-
                       </div>
-
                     ))}
-
                   </div>
-
                 )}
-
-              </div>
-
+              </>
             )}
 
           </div>
@@ -603,24 +550,24 @@ const EventRecommendation = () => {
       {/* Detailed Recommendation Insights Modal */}
       {selectedEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity">
-          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-lg bg-card-bg border border-border rounded-3xl p-6 shadow-2xl overflow-hidden">
             {/* Background Glow */}
-            <div className="absolute top-0 right-0 w-36 h-36 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-36 h-36 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
             {/* Header */}
             <div className="flex items-start justify-between mb-5">
               <div>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-100 dark:border-blue-900/30 mb-2">
-                  <Sparkles size={12} className="animate-pulse text-blue-500" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-primary/10 text-primary border border-primary/20 mb-2">
+                  <Sparkles size={12} className="animate-pulse text-primary" />
                   AI Recommendation Score
                 </span>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                <h3 className="text-xl font-extrabold text-text leading-tight">
                   {selectedEvent.title}
                 </h3>
               </div>
               <button
                 onClick={() => setSelectedEvent(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-text-light hover:bg-bg hover:text-text transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -629,39 +576,39 @@ const EventRecommendation = () => {
             {/* Content Details */}
             <div className="space-y-4">
               {/* Overall Score */}
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950/45 rounded-2xl border border-slate-100 dark:border-slate-800/50">
-                <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Match Percentage</span>
+              <div className="flex items-center justify-between p-4 bg-bg rounded-2xl border border-border">
+                <span className="text-sm font-bold text-text-light">Match Percentage</span>
                 <div className="text-right">
-                  <span className="text-3xl font-black text-blue-600 dark:text-blue-400">{selectedEvent.calculatedMatch}%</span>
+                  <span className="text-3xl font-black text-primary">{selectedEvent.calculatedMatch}%</span>
                 </div>
               </div>
 
               {/* Breakdown Matrix */}
               <div className="space-y-3">
-                <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest block">Match Priority Matrix</span>
+                <span className="text-xs font-extrabold text-text-light/60 uppercase tracking-widest block">Match Priority Matrix</span>
                 
                 {selectedEvent.breakdown && selectedEvent.breakdown.map((item, idx) => (
                   <div key={idx} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
-                        {item.matched ? (
-                          <CheckCircle2 size={14} className="text-green-500 shrink-0" />
+                      <span className="flex items-center gap-1.5 font-bold text-text-light">
+                        {item.matched === false ? (
+                          <AlertCircle size={14} className="text-text-light/60 shrink-0" />
                         ) : (
-                          <AlertCircle size={14} className="text-slate-400 shrink-0" />
+                          <CheckCircle2 size={14} className="text-green-500 shrink-0" />
                         )}
                         {item.label}
                       </span>
-                      <span className="text-slate-400 font-medium">
-                        {item.matched ? `+${item.score}%` : `0% / ${item.weight}%`}
+                      <span className="text-text-light font-medium">
+                        +{item.score} pts
                       </span>
                     </div>
                     {/* Visual Progress Bar */}
-                    <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-850 overflow-hidden">
+                    <div className="w-full h-2 rounded-full bg-border overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
-                          item.matched ? "bg-green-500" : "bg-slate-300 dark:bg-slate-700"
+                          item.matched === false ? "bg-border" : "bg-green-500"
                         }`}
-                        style={{ width: `${item.matched ? 100 : 0}%` }}
+                        style={{ width: `${Math.min(item.score * 4, 100)}%` }}
                       />
                     </div>
                   </div>
@@ -671,20 +618,20 @@ const EventRecommendation = () => {
               {/* Description summary */}
               {/* Description summary */}
 
-<div className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-800/60 pt-4">
+<div className="text-xs text-text-light leading-relaxed border-t border-border pt-4">
 
-  <span className="font-bold text-slate-400 block mb-1">
+  <span className="font-bold text-text-light/60 block mb-1">
     Target Audience Insights
   </span>
 
   Fits best for developers with
-  <strong className="text-slate-700 dark:text-slate-200 font-bold">
+  <strong className="text-text font-bold">
     {selectedEvent.level}
   </strong>
 
   level experience, interested in
 
-  <strong className="text-slate-700 dark:text-slate-200 font-bold">
+  <strong className="text-text font-bold">
     {selectedEvent.category}
   </strong>.
 
@@ -695,31 +642,32 @@ const EventRecommendation = () => {
 
 <div className="mt-6">
 
-  <h3 className="text-lg font-semibold mb-3 text-slate-900 dark:text-white">
+  <h3 className="text-lg font-semibold mb-3 text-text">
 
     AI Recommendation Insights
 
   </h3>
 
   {insightLoading ? (
-
-    <p className="text-slate-400">
-
-      Generating AI insights...
-
-    </p>
-
+    <>
+      <div className="sr-only" role="status" aria-live="polite">
+        Generating AI insights...
+      </div>
+      <div className="space-y-3 py-4" aria-hidden="true">
+        <SkeletonBlock className="h-4 w-full" />
+        <SkeletonBlock className="h-4 w-5/6" />
+        <SkeletonBlock className="h-4 w-4/5" />
+      </div>
+    </>
   ) : (
 
     <div
       className="
         rounded-xl
-        bg-slate-100
-        dark:bg-slate-800/70
+        bg-bg/50
         p-4
         text-sm
-        text-slate-700
-        dark:text-slate-300
+        text-text-light
         leading-7
         whitespace-pre-line
       "
@@ -735,19 +683,20 @@ const EventRecommendation = () => {
             </div>
 
             {/* Footer Buttons */}
-            <div className="flex gap-3 mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
+            <div className="flex gap-3 mt-6 border-t border-border pt-4">
               <button
                 onClick={() => setSelectedEvent(null)}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold transition-all cursor-pointer"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-text hover:bg-bg text-xs font-bold transition-all cursor-pointer"
               >
                 Close
               </button>
               <button
                 onClick={() => {
-                  toast.success(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
+                  addRegistration(selectedEvent, { source: "recommendation" });
+                  showSuccessToast(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
                   setSelectedEvent(null);
                 }}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-primary hover:opacity-90 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
               >
                 Register Event
               </button>
@@ -756,7 +705,6 @@ const EventRecommendation = () => {
         </div>
       )}
       
-      <Toaster position="bottom-right" />
     </div>
   );
 };

@@ -1,8 +1,39 @@
+/**
+ * @fileoverview FluidCursor - WebGL-based fluid cursor animation for Eventra
+ * @module components/visual/FluidCursor
+ */
 "use client";
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useState } from "react";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { logger } from "../../utils/logger";
 
+/**
+ * A React component that renders a WebGL-powered fluid simulation
+ * as a cursor trail effect on the page. Creates a colorful, interactive
+ * fluid animation that follows mouse and touch movements.
+ *
+ * Automatically disabled on:
+ * - Mobile/touch devices (viewport ≤ 768px or coarse pointer)
+ * - When `prefers-reduced-motion` accessibility setting is enabled
+ * - When explicitly disabled via the `enabled` prop
+ *
+ * Uses HTML5 Canvas and WebGL (with WebGL2 fallback to WebGL1) for rendering.
+ *
+ * @component
+ * @param {Object} props - Component props
+ * @param {boolean} [props.enabled=true] - Whether the fluid cursor animation is active
+ *
+ * @returns {JSX.Element|null} A fixed-position canvas overlay, or null if disabled
+ *
+ * @example
+ * // Enable fluid cursor (default)
+ * <FluidCursor />
+ *
+ * @example
+ * // Conditionally enable based on user preference
+ * <FluidCursor enabled={userPreferences.fluidCursor} />
+ */
 const FluidCursor = ({ enabled = true }) => {
   const canvasRef = useRef(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
@@ -26,6 +57,7 @@ const FluidCursor = ({ enabled = true }) => {
     return () => mediaQuery.removeListener(updateViewportState);
   }, []);
 
+  // 🔥 FIX 3: Added prefersReducedMotion to the dependency array
   useEffect(() => {
     if (!enabled || isMobileViewport || prefersReducedMotion) {
       return undefined;
@@ -72,6 +104,11 @@ const FluidCursor = ({ enabled = true }) => {
 
     const { gl, ext } = getWebGLContext(canvas);
 
+    if (!gl || !ext?.formatRGBA || !ext?.formatRG || !ext?.formatR) {
+      logger.warn("[FluidCursor] WebGL fluid cursor disabled: unsupported graphics context.");
+      return undefined;
+    }
+
     if (!ext.supportLinearFiltering) {
       config.DYE_RESOLUTION = 256;
       config.SHADING = false;
@@ -92,6 +129,19 @@ const FluidCursor = ({ enabled = true }) => {
         gl =
           canvas.getContext("webgl", params) ||
           canvas.getContext("experimental-webgl", params);
+
+      if (!gl) {
+        return {
+          gl: null,
+          ext: {
+            formatRGBA: null,
+            formatRG: null,
+            formatR: null,
+            halfFloatTexType: null,
+            supportLinearFiltering: false,
+          },
+        };
+      }
 
       let halfFloat;
       let supportLinearFiltering;
@@ -246,7 +296,7 @@ const FluidCursor = ({ enabled = true }) => {
       gl.linkProgram(program);
 
       if (!gl.getProgramParameter(program, gl.LINK_STATUS))
-        console.trace(gl.getProgramInfoLog(program));
+        logger.error("[FluidCursor] WebGL program link failed:", gl.getProgramInfoLog(program));
 
       return program;
     }
@@ -269,7 +319,7 @@ const FluidCursor = ({ enabled = true }) => {
       gl.compileShader(shader);
 
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
-        console.trace(gl.getShaderInfoLog(shader));
+        logger.error("[FluidCursor] WebGL shader compile failed:", gl.getShaderInfoLog(shader));
 
       return shader;
     }
@@ -1124,7 +1174,6 @@ const FluidCursor = ({ enabled = true }) => {
       };
     }
 
-
     function updatePointerDownData(pointer, id, posX, posY) {
       pointer.id = id;
       pointer.down = true;
@@ -1166,12 +1215,16 @@ const FluidCursor = ({ enabled = true }) => {
     // Uses document.elementFromPoint to see through the pointer-events-none canvas
     // and detect the actual DOM element beneath it.
     function isExcludedZone(clientX, clientY, target) {
-      if (target && (target.closest("nav") !== null || target.closest("footer") !== null || target.closest("a") !== null || target.closest("button") !== null)) {
-        return true;
+      if (target && typeof target.closest === 'function') {
+        if (target.closest("nav") !== null || target.closest("footer") !== null || target.closest("a") !== null || target.closest("button") !== null) {
+          return true;
+        }
       }
-      const el = document.elementFromPoint(clientX, clientY);
-      if (!el) return false;
-      return el.closest("nav") !== null || el.closest("footer") !== null;
+      // 🔥 FIX 2: Removed document.elementFromPoint to prevent massive Layout Thrashing.
+      // Since the canvas is pointer-events-none, window.onmousemove already receives 
+      // the true underlying DOM element as e.target. Calling elementFromPoint 60x a second
+      // forces synchronous layout recalculations and tanks rendering FPS.
+      return false;
     }
 
     // Skip click splat when mouse is over navbar or footer
@@ -1218,7 +1271,7 @@ const FluidCursor = ({ enabled = true }) => {
       }
     };
 
-    const handleTouchEnd = (e) => {
+    const handleTouchEnd = () => {
       let pointer = pointers[0];
       pointer.down = false;
     };
@@ -1240,8 +1293,18 @@ const FluidCursor = ({ enabled = true }) => {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
+      
+      // 🔥 FIX 1: Prevent WebGL Context Exhaustion (Memory Leak)
+      // We must explicitly ask the browser to destroy the active WebGL context.
+      // Otherwise, toggling the cursor leaves orphaned contexts in memory until the browser crashes.
+      if (gl) {
+        const loseContextExt = gl.getExtension('WEBGL_lose_context');
+        if (loseContextExt) {
+          loseContextExt.loseContext();
+        }
+      }
     };
-  }, [enabled, isMobileViewport]);
+  }, [enabled, isMobileViewport, prefersReducedMotion]);
 
   if (!enabled || isMobileViewport || prefersReducedMotion) {
     return null;

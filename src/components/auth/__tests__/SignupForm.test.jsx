@@ -1,31 +1,31 @@
-import React, { act } from "react";
+import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
-import SignupForm from "../SignupForm";
+import SignupForm, { normalizeSignupRoles } from "../SignupForm";
 import { apiUtils } from "../../../config/api";
 import {
   validateEmailAvailability,
   validatePasswordStrength,
 } from "../../../validation";
 
-jest.mock("../../../config/api", () => ({
+vi.mock("../../../config/api", () => ({
   API_ENDPOINTS: {
     AUTH: {
       SIGNUP: "/auth/signup",
     },
   },
   apiUtils: {
-    post: jest.fn(),
+    post: vi.fn(),
   },
 }));
 
-jest.mock("../../../context/AuthContext", () => ({
+vi.mock("../../../context/AuthContext", () => ({
   useAuth: () => ({
-    setAuthSession: jest.fn(),
+    setAuthSession: vi.fn(),
   }),
 }));
 
-jest.mock("../../../validation", () => ({
+vi.mock("../../../validation", () => ({
   validate: {
     email: (value) =>
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || "Invalid email format",
@@ -41,24 +41,29 @@ jest.mock("../../../validation", () => ({
       if (value.length > 50) return "Less than 50 characters";
       return true;
     },
+    confirmPassword: (value, { password }) => {
+      if (!value) return "Confirm password is required";
+      if (value !== password) return "Passwords do not match";
+      return true;
+    },
   },
-  validateEmailAvailability: jest.fn(),
-  validatePasswordStrength: jest.fn(),
+  validateEmailAvailability: vi.fn(),
+  validatePasswordStrength: vi.fn(),
 }));
 
 let container;
 let root;
 
-/* eslint-disable no-undef */
+ 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
-/* eslint-enable no-undef */
+ 
 
 const renderSignup = () => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
-  // eslint-disable-next-line testing-library/no-unnecessary-act
+   
   act(() => {
     root.render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -101,8 +106,8 @@ const fillValidSignupForm = () => {
 };
 
 beforeEach(() => {
-  jest.useFakeTimers();
-  window.scrollTo = jest.fn();
+  vi.useFakeTimers();
+  window.scrollTo = vi.fn();
   validateEmailAvailability.mockResolvedValue({ isValid: true, message: "" });
   validatePasswordStrength.mockResolvedValue({ isValid: true, message: "" });
   apiUtils.post.mockResolvedValue({
@@ -119,17 +124,30 @@ beforeEach(() => {
 
 afterEach(() => {
   if (root) {
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     act(() => {
       root.unmount();
     });
   }
   document.body.innerHTML = "";
-  jest.clearAllMocks();
-  jest.useRealTimers();
+  vi.clearAllMocks();
+  vi.useRealTimers();
 });
 
 describe("SignupForm integration", () => {
+  it("preserves server-assigned signup roles arrays", () => {
+    expect(
+      normalizeSignupRoles({
+        role: "ATTENDEE",
+        roles: ["ORGANIZER"],
+      }),
+    ).toEqual(["ORGANIZER"]);
+  });
+
+  it("falls back to a valid app role when signup response has no roles", () => {
+    expect(normalizeSignupRoles({})).toEqual(["ATTENDEE"]);
+  });
+
   it("blocks submission and marks required fields invalid", async () => {
     renderSignup();
 
@@ -161,7 +179,7 @@ describe("SignupForm integration", () => {
 
     changeInput("email", "ada@example.com");
     act(() => {
-      jest.advanceTimersByTime(500);
+      vi.advanceTimersByTime(500);
     });
 
     expect(container.textContent).toContain("Checking email availability...");
@@ -173,7 +191,7 @@ describe("SignupForm integration", () => {
 
     changeInput("email", "ada@example.com");
     await act(async () => {
-      jest.advanceTimersByTime(500);
+      vi.advanceTimersByTime(500);
     });
 
     expect(input("email").getAttribute("aria-invalid")).toBe("false");
@@ -189,7 +207,7 @@ describe("SignupForm integration", () => {
 
     changeInput("email", "taken@example.com");
     await act(async () => {
-      jest.advanceTimersByTime(500);
+      vi.advanceTimersByTime(500);
     });
 
     expect(container.textContent).toContain("Email is already registered");
