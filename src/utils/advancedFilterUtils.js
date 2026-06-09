@@ -133,8 +133,7 @@ export const filterByCategory = (events, selectedCategories) => {
   }
 
   return events.filter((event) => {
-    if (!event) return false;
-    const eventCategory = normalizeFilterValue(event.category || event.type);
+    const eventCategory = normalizeFilterValue(event.category);
     return selectedCategories.some((cat) => {
       const mappedCategory = EVENT_CATEGORIES.find(
         (category) =>
@@ -383,6 +382,8 @@ export const hasActiveFilters = (filters = {}) => {
       (filters.dateRange.startDate || filters.dateRange.endDate))
   );
 };
+
+export const hasActiveAdvancedFilters = hasActiveFilters;
 
 /**
  * Reset all filters to default state

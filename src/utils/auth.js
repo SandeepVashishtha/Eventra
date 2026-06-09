@@ -28,17 +28,33 @@ export function decodeJwtPayload(token) {
 
 export function isTokenExpired(token) {
   const payload = decodeJwtPayload(token);
-  if (!payload || typeof payload.exp !== "number") {
-    return true;
-  }
-
-  const nowInSeconds = Math.floor(Date.now() / 1000);
-  return payload.exp - CLOCK_SKEW_BUFFER <= nowInSeconds;
+  if (!payload) return true;
+  
+  // If 'exp' is missing, the token does not expire by time per RFC 7519
+  if (typeof payload.exp === 'undefined') return false;
+  
+  return payload.exp * 1000 < Date.now();
 }
 
-export function isTokenValid(token) {
+import crypto from "node:crypto"; // Paste this at the very top of your file
+
+export function isTokenValid(token, secret = process.env.JWT_SECRET) {
   if (!token || typeof token !== "string") return false;
-  return !isTokenExpired(token);
+  if (isTokenExpired(token)) return false;
+
+  const parts = token.split(".");
+  if (parts.length !== 3) return false;
+
+  const [header, payload, signature] = parts;
+  if (!secret) return false;
+
+  // Re-create the HMAC SHA256 signature using the secret key
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(`${header}.${payload}`)
+    .digest("base64url"); // base64url matches standard JWT encoding formats
+
+  return signature === expectedSignature;
 }
 
 export function getTokenTTL(token) {

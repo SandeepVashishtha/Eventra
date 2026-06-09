@@ -172,4 +172,23 @@ const user = { id: 42 };
   assert.equal(res.statusCode, 404, "unknown event returns 404");
 }
 
+// --- handler: capacity boundary condition (99 -> 100 succeeds) ---
+{
+  const res = makeRes();
+  await registerForEvent(
+    {
+      method: "POST",
+      user,
+      params: { id: "evt-1" },
+    },
+    res,
+    baseDeps(99)
+  );
+  assert.equal(
+    res.statusCode,
+    201,
+    "registration succeeds when final seat is available"
+  );
+}
+
 console.log("event capacity validation tests passed ✓");

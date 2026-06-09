@@ -14,6 +14,24 @@ env:
   NODE_VERSION: "22.x"
 
 jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: npm-node-modules-${{ hashFiles('package-lock.json') }}
+      - name: Install dependencies
+        run: npm ci
+      - name: Dependency vulnerability scan
+        run: npm audit --audit-level=high
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -107,7 +125,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, test, e2e-test]
+    needs: [security, lint, typecheck, test, e2e-test]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
