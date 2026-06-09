@@ -49,55 +49,11 @@ const TeamWorkspace = () => {
   useEffect(() => {
     let sseSource = null;
     let fallbackInterval = null;
+    let idleTimeout = null;
 
     setConnectionStatus("connecting");
     const logPrefix = "[TeamSync]";
 
-    // 1. Attempt Server-Sent Events (EventSource) connection
-    try {
-      logger.info(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
-      sseSource = new EventSource("/api/hackathons/team/sync");
-
-      sseSource.onopen = () => {
-        setConnectionStatus("sse");
-        logger.info(`${logPrefix} Connection opened. Realtime SSE stream active.`);
-      };
-
-      sseSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === "init") {
-            setTasks(data.tasks || []);
-            setPins(data.pins || []);
-            setChatHistory(data.chat || []);
-          } else if (data.type === "tasks") {
-            setTasks(data.tasks || []);
-          } else if (data.type === "pins") {
-            setPins(data.pins || []);
-          } else if (data.type === "chat") {
-            setChatHistory(data.chat || []);
-          }
-        } catch (e) {
-          logger.error("Failed to parse SSE payload", e);
-        }
-      };
-
-      sseSource.onerror = () => {
-        // SSE error! Initiate immediate polling fallback.
-        logger.warn(
-          `${logPrefix} Server-Sent Events stream interrupted. Fallback to short-polling activated.`
-        );
-        setConnectionStatus("polling_fallback");
-        sseSource.close();
-        triggerPollingFallback();
-      };
-    } catch (e) {
-      logger.error(`${logPrefix} SSE not supported by browser. Falling back to HTTP polling.`, e);
-      setConnectionStatus("polling_fallback");
-      triggerPollingFallback();
-    }
-
-    // 2. HTTP Short Polling Fallback Mechanism
     function triggerPollingFallback() {
       setPollingLogs((prev) => [
         ...prev,
@@ -132,16 +88,95 @@ const TeamWorkspace = () => {
         }
       };
 
-      // Fetch immediately
       fetchState();
-
-      // Poll every 4 seconds
       fallbackInterval = setInterval(fetchState, 4000);
     }
 
+    const connectStream = () => {
+      setConnectionStatus("connecting");
+      try {
+        logger.info(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
+        sseSource = new EventSource("/api/hackathons/team/sync");
+
+        sseSource.onopen = () => {
+          setConnectionStatus("sse");
+          logger.info(`${logPrefix} Connection opened. Realtime SSE stream active.`);
+        };
+
+        sseSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "init") {
+              setTasks(data.tasks || []);
+              setPins(data.pins || []);
+              setChatHistory(data.chat || []);
+            } else if (data.type === "tasks") {
+              setTasks(data.tasks || []);
+            } else if (data.type === "pins") {
+              setPins(data.pins || []);
+            } else if (data.type === "chat") {
+              setChatHistory(data.chat || []);
+            }
+          } catch (e) {
+            logger.error("Failed to parse SSE payload", e);
+          }
+        };
+
+        sseSource.onerror = () => {
+          logger.warn(
+            `${logPrefix} Server-Sent Events stream interrupted. Fallback to short-polling activated.`
+          );
+          setConnectionStatus("polling_fallback");
+          if (sseSource) sseSource.close();
+          triggerPollingFallback();
+        };
+      } catch (e) {
+        logger.error(`${logPrefix} SSE not supported by browser. Falling back to HTTP polling.`, e);
+        setConnectionStatus("polling_fallback");
+        triggerPollingFallback();
+      }
+    };
+
+    const disconnectStream = () => {
+      if (sseSource) {
+        sseSource.close();
+        sseSource = null;
+      }
+      if (fallbackInterval) {
+        clearInterval(fallbackInterval);
+        fallbackInterval = null;
+      }
+      setConnectionStatus("idle");
+    };
+
+    connectStream();
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Close connections after 60 seconds of inactivity
+        idleTimeout = setTimeout(() => {
+          logger.info(`${logPrefix} Tab idle. Closing real-time connections.`);
+          disconnectStream();
+        }, 60000);
+      } else {
+        if (idleTimeout) {
+          clearTimeout(idleTimeout);
+          idleTimeout = null;
+        }
+        // Reconnect if it was closed
+        if (!sseSource && !fallbackInterval) {
+          logger.info(`${logPrefix} Tab active. Reconnecting real-time stream.`);
+          connectStream();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
-      if (sseSource) sseSource.close();
-      if (fallbackInterval) clearInterval(fallbackInterval);
+      disconnectStream();
+      if (idleTimeout) clearTimeout(idleTimeout);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 

@@ -20,9 +20,7 @@ export const useNotifications = () => {
   // don't immediately overwrite persisted data with an empty array on mount.
   const didLoadRef = useRef(false);
 
-  // Fix (Issue #6525): Start the queue processor on mount and stop it on unmount.
-  // Previously there was no queue at all — every addNotification() call wrote
-  // directly to IndexedDB, causing UI jank and silent data loss under load.
+  // Start the queue processor on mount and stop it on unmount.
   useEffect(() => {
     startNotificationQueue();
     return () => stopNotificationQueue();
@@ -42,8 +40,6 @@ export const useNotifications = () => {
         setNotifications([]);
       })
       .finally(() => {
-        // Allow the persistence effect to run only after the initial
-        // load has settled — prevents wiping IndexedDB on mount.
         didLoadRef.current = true;
       });
   }, []);
@@ -67,11 +63,6 @@ export const useNotifications = () => {
       window.removeEventListener("eventra-notifications-updated", handleUpdate);
   }, []);
 
-  // Fix (Issue #6525): Replace direct idbSet with enqueueNotification().
-  // Previously: direct IndexedDB write fired on every call — 5000 simultaneous
-  // notifications caused 5000 concurrent IndexedDB writes with no retry or
-  // backpressure, silently dropping ~30% of messages.
-  // Now: notifications are buffered and written in batches with retry + dead-letter.
   const addNotification = useCallback((notification) => {
     enqueueNotification(notification);
   }, []);

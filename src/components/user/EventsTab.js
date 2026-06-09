@@ -21,8 +21,10 @@ import StatusBadge from "../common/StatusBadge";
 import { safeParseJson } from "../../utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
+import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import LazyImage from "../common/LazyImage";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -49,44 +51,7 @@ const getEventStatus = (event) => {
   return "Upcoming";
 };
 
-const EmptyState = () => {
-  const prefersReducedMotion = useReducedMotion();
-  return (
-    <motion.div
-      className="my-events-empty"
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
-    >
-      <div className="my-events-empty-icon">
-        <Ticket size={40} />
-      </div>
-      <h3 className="my-events-empty-title">No Events Found</h3>
-      <p className="my-events-empty-sub">
-        You have not registered for or hosted any events yet. Explore upcoming events to get started.
-      </p>
-      <Link
-        to="/events"
-        className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800 my-events-empty-cta"
-      >
-        <span className="relative z-10 flex items-center">
-          Explore Events
-          <svg
-            className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </span>
-      </Link>
-    </motion.div>
-  );
-};
+
 
 const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -118,10 +83,12 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
 
       {event?.image && (
         <div className="relative h-48 overflow-hidden">
-          <img
+          <LazyImage
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            aspectRatio="16/9"
+            className="w-full h-full"
+            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50transition-all duration-500 hover:scale-[1.02]" />
         </div>
@@ -209,14 +176,18 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
             </button>
           </>
         ) : (
-          <Link to={`/events/${event?.id}/analytics`} className="group/btn flex-1">
+          <Link 
+          to={`/events/${event?.id}`}
+             onClick={() => addToRecentEvents(event)}
             <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
               <Activity size={13} className="relative" />
               <span className="relative">Analytics</span>
             </div>
           </Link>
         )}
-        <Link to={`/events/${event?.id}`} className="group/btn flex-1">
+        <Link 
+          to={`/events/${event?.id}`}
+            onClick={() => addToRecentEvents(event)}
           <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
             <span>{showCancel ? "View Details" : "Open Event"}</span>
           </div>
@@ -240,6 +211,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
     }
   }, [event.id, user]);
 
+
   return (
     <motion.div
       className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] flex flex-col z-10 overflow-hidden"
@@ -251,10 +223,12 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
     >
       {event?.image && (
         <div className="relative h-48 overflow-hidden">
-          <img
+          <LazyImage
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            aspectRatio="16/9"
+            className="w-full h-full"
+            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
         </div>
@@ -290,7 +264,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const { myEvents, removeRegistration, waitlistUpdated, triggerWaitlistUpdate } = useMyEvents();
   const { user } = useAuth();
   const [waitlistEvents, setWaitlistEvents] = useState([]);
-
+  const [recentEvents, setRecentEvents] = useState([]);
   useEffect(() => {
     if (user) {
       import("../../utils/waitlistUtils.js").then(({ getGlobalWaitlist }) => {
@@ -336,6 +310,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterType, setFilterType] = useState("All");
   const [sortBy, setSortBy] = useState("soonest");
+  const [loading, setLoading] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
 
   const [recentSearches,
@@ -354,6 +329,24 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
     setRecentSearches(saved);
   }, []);
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setLoading(false);
+  }, 1500);
+
+  return () => clearTimeout(timer);
+}, []);
+
+
+useEffect(() => {
+  const storedRecent = JSON.parse(
+    localStorage.getItem("recentEvents") || "[]"
+  );
+
+  setRecentEvents(storedRecent);
+}, []);
+
+
 
   const availableTypes = useMemo(() => {
     const types = [...new Set([...registeredEvents, ...hostedEvents].map((event) => event?.type).filter(Boolean))];
@@ -399,6 +392,21 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const hostedCount = hostedEvents.length;
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
+
+const addToRecentEvents = (event) => {
+  const existing =
+    JSON.parse(localStorage.getItem("recentEvents")) || [];
+
+  const filtered = existing.filter((e) => e.id !== event.id);
+
+  const updated = [event, ...filtered].slice(0, 6);
+
+  localStorage.setItem("recentEvents", JSON.stringify(updated));
+
+  setRecentEvents(updated);
+};
+
+
 
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
@@ -551,40 +559,50 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         </div>
       )}
 
-<section className="mb-8">
-  <div className="ud-tab-header">
-    <h3 className="ud-page-title bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent font-extrabold">
-      Recently Viewed
-    </h3>
-  </div>
 
-  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-    {[1, 2, 3].map((item) => (
-      <motion.div
-        key={item}
-        whileHover={{ y: -8 }}
-        className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-gray-900 p-5 shadow-lg hover:shadow-2xl transition-all duration-500"
-      >
-        <div className="h-36 rounded-2xl bg-gradient-to-r from-indigo-500 to-pink-500 mb-4 opacity-80" />
 
-        <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-2">
-          Recently Viewed Event
-        </h4>
+      {recentEvents.length > 0 && (
+  <section className="mb-10">
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
+        Recently Viewed
+      </h2>
+    </div>
 
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-          Quick access to events you explored recently.
-        </p>
+    <div className="flex gap-4 overflow-x-auto pb-2">
+      {recentEvents.map((item) => (
+        <div
+          key={item.id}
+          className="min-w-[260px] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-4"
+        >
+          <h3 className="font-semibold text-slate-800 dark:text-white mb-2">
+            {item.title || item.name}
+          </h3>
 
-        <button className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-semibold transition-all duration-300">
-          Open Event
-        </button>
-      </motion.div>
-    ))}
-  </div>
-</section>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+            {item.date || "Upcoming Event"}
+          </p>
+
+          <Link
+            to={`/events/${item.id}`}
+            className="inline-flex items-center rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-medium transition"
+          >
+            View Event
+          </Link>
+        </div>
+      ))}
+    </div>
+  </section>
+)}
 
       {registeredCount + hostedCount === 0 ? (
-        <EmptyState />
+        <EmptyState
+          title="No events yet"
+          description="You have not registered for or hosted any events yet. Explore upcoming events to get started."
+          icon={Ticket}
+          actionLabel="Explore Events"
+          actionPath="/events"
+        />
       ) : filteredEvents.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }}
@@ -631,65 +649,42 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             </section>
           )}
 
-          {filteredHostedEvents.length > 0 && (
-            <section className="space-y-4">
-              <div className="ud-tab-header">
-              <h3 className="ud-page-title bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent font-extrabold">
-                  <Calendar size={18} /> Hosted Events
-                </h3>
-                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                  {filteredHostedEvents.length} event{filteredHostedEvents.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {filteredHostedEvents.map((event, index) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    showCancel={false}
-                  />
-                ))}
-              </motion.div>
-            </section>
-          )}
+        <div className="h-5 w-3/4 rounded bg-slate-200 dark:bg-slate-700 mb-3" />
 
-          {waitlistEvents.length > 0 && (
-            <section className="space-y-4 mt-6">
-              <div className="ud-tab-header">
-<h3 className="ud-page-title flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent font-extrabold">
-                  <Clock size={18} className="text-amber-500" /> Waitlisted Events
-                </h3>
-                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                  {waitlistEvents.length} event{waitlistEvents.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {waitlistEvents.map((event, index) => (
-                  <WaitlistCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    onLeaveWaitlist={async (id) => {
-                      if (window.confirm(`Are you sure you want to leave the waitlist for "${event.title}"?`)) {
-                        try {
-                          const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
-                          await leaveWaitlist(id, user.id || user.email);
-                          toast.success("Left the waitlist successfully.");
-                          triggerWaitlistUpdate();
-                        } catch (err) {
-                          toast.error(err.message || "Failed to leave waitlist.");
-                        }
-                      }
-                    }}
-                  />
-                ))}
-              </motion.div>
-            </section>
-          )}
-        </>
-      )}
+        <div className="h-4 w-1/2 rounded bg-slate-200 dark:bg-slate-700 mb-2" />
 
+        <div className="h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-700 mb-6" />
+
+        <div className="flex gap-3">
+          <div className="h-10 flex-1 rounded-xl bg-slate-200 dark:bg-slate-700" />
+          <div className="h-10 flex-1 rounded-xl bg-slate-200 dark:bg-slate-700" />
+        </div>
+      </div>
+    ))}
+  </div>
+) : registeredCount + hostedCount === 0 ? (
+  <EmptyState />
+) : filteredEvents.length === 0 ? (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    className="w-full mt-4"
+  >
+    <SearchEmptyState
+      query={searchQuery}
+      itemLabel="events"
+      browseLabel="Browse Events"
+      browsePath="/events"
+      onClear={() => {
+        setSearchQuery("");
+        setFilterStatus("All");
+        setFilterType("All");
+        setSortBy("soonest");
+      }}
+    />
+  </motion.div>
+) : (
+  <>
       {/* 🔥 FIX 1: Portaled the modal out of the Framer Motion stacking context trap */}
       <AnimatePresence>
         {cancelTarget && ReactDOM.createPortal(

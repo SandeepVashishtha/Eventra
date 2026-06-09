@@ -85,11 +85,6 @@ const _getCachedTags = (event) => {
   return tags;
 };
 
-const clearTagCache = () => {
-  _tagCache.clear();
-  _cacheOrder.length = 0;
-};
-
 const getSimilarityScore = (candidate, interactedEvents) => {
   if (!interactedEvents.length) return 0;
 
@@ -299,7 +294,6 @@ export const buildPersonalizedRecommendations = ({
   includeInteracted = false,
   limit = 8,
 } = {}) => {
-  clearTagCache();
   const interactionProfile = buildInteractionProfile({
     registeredEvents,
     bookmarkedEvents,
@@ -308,18 +302,22 @@ export const buildPersonalizedRecommendations = ({
   });
 
   return events
-    .filter((event) => includeInteracted || !interactionProfile.registeredIds.has(getEventId(event)))
-    .map((event) => {
-      const result = calculateRecommendationScore(event, userProfile, interactionProfile);
-      return {
-        ...event,
-        calculatedMatch: result.score,
-        recommendationScore: result.score,
-        recommendationReasons: result.reasons,
-        breakdown: result.breakdown,
-      };
-    })
-    .filter((event) => event.recommendationScore > 0)
+    .reduce((acc, event) => {
+      if (includeInteracted || !interactionProfile.registeredIds.has(getEventId(event))) {
+        const result = calculateRecommendationScore(event, userProfile, interactionProfile);
+        const scored = {
+          ...event,
+          calculatedMatch: result.score,
+          recommendationScore: result.score,
+          recommendationReasons: result.reasons,
+          breakdown: result.breakdown,
+        };
+        if (scored.recommendationScore > 0) {
+          acc.push(scored);
+        }
+      }
+      return acc;
+    }, [])
     .sort((a, b) => b.recommendationScore - a.recommendationScore)
     .slice(0, limit);
 };

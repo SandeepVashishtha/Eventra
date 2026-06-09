@@ -1,15 +1,17 @@
 import { useRef, useState, useEffect, useCallback, memo } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { LayoutDashboard, LogOut, User, ChevronDown, Info, HelpCircle } from "lucide-react";
 
 const menuItems = [
-  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-  { label: "View Profile", path: "/dashboard/profile", icon: User },
-  { label: "About", path: "/about", icon: Info },
-  { label: "Frequently Asked Questions", path: "/faq", icon: HelpCircle },
+  { labelKey: "nav.dashboard", path: "/dashboard", icon: LayoutDashboard },
+  { labelKey: "nav.viewProfile", path: "/dashboard/profile", icon: User },
+  { labelKey: "nav.about", path: "/about", icon: Info },
+  { labelKey: "nav.faqFull", path: "/faq", icon: HelpCircle },
 ];
 
 const ProfileMenu = ({ user, logout }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
@@ -128,7 +130,7 @@ const ProfileMenu = ({ user, logout }) => {
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light hover:bg-bg hover:text-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <Icon className="w-4 h-4" />
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               );
             })}
@@ -148,7 +150,7 @@ const ProfileMenu = ({ user, logout }) => {
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-error hover:bg-error/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <LogOut className="w-4 h-4" />
-            Logout
+            {t("nav.signOut")}
           </button>
         </div>
       )}
