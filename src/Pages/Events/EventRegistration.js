@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
-import { getGoogleCalendarUrl, getOutlookCalendarUrl } from "../../utils/calendarUrlUtils";
+import { getGoogleCalendarUrl, getOutlookCalendarUrl, getYahooCalendarUrl, generateIcsFileBlobUrl } from "../../utils/calendarUrlUtils";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
@@ -27,7 +27,8 @@ import {
   normalizeEventAvailability,
 } from "../../utils/eventAvailabilityUtils.mjs";
 import { useFormValidation } from "../../hooks/useFormValidation";
-import { getEventStatus } from "../../utils/eventUtils";
+import SpatialSeatSelector from "../../components/events/SpatialSeatSelector";
+import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -39,8 +40,34 @@ import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 import { SkeletonEventCard, WaitlistSkeleton, WaitlistPositionSkeleton } from "../../components/common/SkeletonLoaders";
 import { logger } from "../../utils/logger";
 import { validate } from "../../validation";
+import { getCacheAgeLabel, getCachedEventDetail, saveCachedEventDetail } from "../../utils/offlineEventCache";
+import { pushToQueue } from "../../utils/offlineQueue";
+import registrationLocks from "../../utils/registrationLocks";
 
 const MAX_NOTES_CHARS = 500;
+
+const getRegistrationFailureMessage = (error) => {
+  const message = error?.data?.message || error?.data?.error || error?.message || "";
+  const normalizedMessage = message.toLowerCase();
+
+  if (error?.status === 409 && /already registered|duplicate/.test(normalizedMessage)) {
+    return "You are already registered for this event.";
+  }
+
+  if (
+    error?.status === 409 ||
+    error?.status === 423 ||
+    /capacity|full|sold out|max(?:imum)? capacity/.test(normalizedMessage)
+  ) {
+    return "This event has reached maximum capacity. Please choose another event.";
+  }
+
+  if (/conflict/.test(normalizedMessage)) {
+    return "Registration could not be completed because the server reported a conflict.";
+  }
+
+  return message || "Registration failed. Please try again.";
+};
 
 const EventRegistration = () => {
   const { t } = useTranslation();
@@ -63,6 +90,8 @@ const EventRegistration = () => {
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
+  const [selectedSeat, setSelectedSeat] = useState(null);
+  const [showSeatSelector, setShowSeatSelector] = useState(false);
   const [conflictData, setConflictData] = useState({
     conflicts: [],
     suggestions: [],
@@ -195,6 +224,7 @@ const EventRegistration = () => {
     return () => {
       isCancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
   const refreshEventAvailability = useCallback(async (id) => {
@@ -282,7 +312,7 @@ const EventRegistration = () => {
         toast.error(err.message || t("eventRegistration.toastRegistrationError"));
         return;
       } finally {
-        registrationLocks.delete(eventId);
+      registrationLocks.delete(eventId);
         isSubmittingRef.current = false;
         setSubmitting(false);
       }
@@ -299,7 +329,6 @@ const EventRegistration = () => {
           ...formData,
           priority: formData.priority,
           eventId: parseInt(eventId),
-          userId: user.id,
         },
         token
       );
@@ -327,7 +356,6 @@ const EventRegistration = () => {
         const payload = {
           ...formData,
           eventId: parseInt(eventId),
-          userId: user.id,
         };
 
         const success = await pushToQueue(
@@ -360,7 +388,11 @@ const EventRegistration = () => {
         setRegistered(true);
         toast.success(isEventFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
         const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
-        addRegistration(event, formData, existingRegId, "");
+        // Do not pass the current form values — the server rejected this
+        // submission as a duplicate, so formData is unconfirmed. Storing it
+        // would overwrite the locally-cached registration with values that
+        // may differ from the authoritative server record.
+        addRegistration(event, {}, existingRegId, "");
         clearSession();
         toast.info(failureMessage);
         return;
@@ -368,10 +400,11 @@ const EventRegistration = () => {
 
       toast.error(failureMessage);
     } finally {
-      registrationLocks.delete(eventId);
+      registrationLocksRef.current.delete(eventId);
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     eventId,
     event,
@@ -413,42 +446,83 @@ const EventRegistration = () => {
       return;
     }
 
-    const isFull = await checkEventCapacity(eventId, event);
-    if (isFull) {
-      const { getGlobalWaitlist } = await import("../../utils/waitlistUtils");
-      const records = getGlobalWaitlist();
-      const onWaitlist = records.some(
-        (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
-      );
-      if (onWaitlist) {
-        toast.error(t("eventRegistration.toastAlreadyWaitlisted"));
-        return;
+    // Acquire both locks before any async work so that a concurrent submission
+    // arriving during capacity checks or conflict detection is blocked by the
+    // guards above rather than being allowed to start a parallel flow.
+    isSubmittingRef.current = true;
+    registrationLocks.set(eventId, true);
+
+    let conflictDetected = false;
+    try {
+      const isFull = await checkEventCapacity(eventId, event);
+      if (isFull) {
+        const { getGlobalWaitlist } = await import("../../utils/waitlistUtils");
+        const records = getGlobalWaitlist();
+        const onWaitlist = records.some(
+          (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
+        );
+        if (onWaitlist) {
+          isSubmittingRef.current = false;
+          registrationLocks.delete(eventId);
+          toast.error(t("eventRegistration.toastAlreadyWaitlisted"));
+          return;
+        }
       }
+      conflictDetected = await checkAndHandleConflicts();
+    } catch {
+      isSubmittingRef.current = false;
+      registrationLocks.delete(eventId);
+      return;
     }
 
-    if (await checkAndHandleConflicts()) return;
+    if (conflictDetected) {
+      // The conflict modal is visible; release the lock so the user can review
+      // without blocking future attempts. handleConflictProceed re-acquires.
+      isSubmittingRef.current = false;
+      registrationLocks.delete(eventId);
+      return;
+    }
 
-    proceedWithRegistration();
+    try {
+      await proceedWithRegistration();
+    } finally {
+      isSubmittingRef.current = false;
+      registrationLocks.delete(eventId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
 
   // Handle conflict modal actions
   const handleConflictCancel = useCallback(() => {
     setShowConflictModal(false);
     toast.info(t("eventRegistration.toastConflictCancelled"));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleConflictProceed = useCallback(() => {
+    if (isSubmittingRef.current) {
+      return;
+    }
+    if (registrationLocks.has(eventId)) {
+      return;
+    }
+    isSubmittingRef.current = true;
+    registrationLocks.set(eventId, true);
     proceedWithRegistration();
-  }, [proceedWithRegistration]);
+  }, [eventId, proceedWithRegistration]);
 
   const handleSelectAlternative = useCallback((alternativeEvent) => {
     setShowConflictModal(false);
     navigate(`/events/${alternativeEvent.id}/register`);
     toast.info(t("eventRegistration.toastRedirectingTo", { title: alternativeEvent.title }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
-  const isEventFull = useMemo(() => event ? event.attendees >= event.maxAttendees : false, [event]);
-  const isPastEvent = useMemo(() => getEventStatus(event) === "past" || getEventStatus(event) === "ended", [event]);
+  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+  const status = getEventStatus(event);
+  const isPastEvent = status === "past" || status === "ended";
+  const isCancelledEvent = status === "cancelled";
+  const isRegistrationBlocked = isEventRegistrationClosed(event);
 
   if (loading) {
     return (
@@ -476,14 +550,16 @@ const EventRegistration = () => {
     );
   }
 
-  if (isPastEvent) {
+  if (isRegistrationBlocked) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           {t("eventRegistration.pastEventTitle")}
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
-          {t("eventRegistration.pastEventDescription")}
+          {isCancelledEvent
+            ? "This event has been cancelled."
+            : t("eventRegistration.pastEventDescription")}
         </p>
         <Link
           to={isHackathonPath ? `/hackathons/${event.id}` : `/events/${event.id}`}
@@ -513,6 +589,8 @@ const EventRegistration = () => {
   if (registered) {
     const googleCalendarUrl = getGoogleCalendarUrl(event);
     const outlookCalendarUrl = getOutlookCalendarUrl(event);
+    const yahooCalendarUrl = getYahooCalendarUrl(event);
+    const icsBlobUrl = generateIcsFileBlobUrl(event);
     const shareText = `I'm attending ${event.title} on Eventra! Join me there!`;
     const shareUrl = `${window.location.origin}/events/${event.id}`;
 
@@ -576,7 +654,7 @@ const EventRegistration = () => {
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 truncate">
+            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 break-words min-w-0">
               {event.title}
             </h3>
 
@@ -609,12 +687,12 @@ const EventRegistration = () => {
             <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
               {t("eventRegistration.successAddToCalendar")}
             </p>
-            <div className="flex gap-3 justify-center">
+            <div className="flex gap-3 justify-center flex-wrap">
               <a
                 href={googleCalendarUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
@@ -625,12 +703,33 @@ const EventRegistration = () => {
                 href={outlookCalendarUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
                 </svg>
                 {t("eventRegistration.successCalendarOutlook")}
+              </a>
+              <a
+                href={yahooCalendarUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+              >
+                <svg className="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                </svg>
+                Yahoo
+              </a>
+              <a
+                href={icsBlobUrl || '#'}
+                download={event.title ? `${event.title}.ics` : 'event.ics'}
+                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+              >
+                <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3h-14c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-4v-4h-2l4-4 4 4h-2v4z" />
+                </svg>
+                Apple / ICS
               </a>
             </div>
           </div>
@@ -722,7 +821,7 @@ const EventRegistration = () => {
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
+              <h1 title={event.title} className="text-3xl font-bold mb-2 break-words">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
@@ -748,6 +847,29 @@ const EventRegistration = () => {
           <div className="p-8">
             <CalendarView events={myEvents} />
 
+            {event?.hasSeatSelection && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">🪑 Select Your Seat</h3>
+                  {selectedSeat && <span className="text-sm text-emerald-600 font-medium">✓ Seat selected</span>}
+                </div>
+                {showSeatSelector ? (
+                  <SpatialSeatSelector
+                    eventId={event.id}
+                    currentUser={user?.firstName + " " + user?.lastName}
+                    onSeatSelect={(seat) => { setSelectedSeat(seat); setShowSeatSelector(false); }}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowSeatSelector(true)}
+                    className="w-full py-3 border-2 border-dashed border-indigo-300 dark:border-indigo-700 rounded-xl text-indigo-600 dark:text-indigo-400 font-medium hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
+                  >
+                    {selectedSeat ? `Change seat (currently: ${selectedSeat.label || "Selected"}` : "Browse & Select a Seat →"}
+                  </button>
+                )}
+              </div>
+            )}
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               {t("eventRegistration.formTitle")}
             </h2>

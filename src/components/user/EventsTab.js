@@ -21,8 +21,10 @@ import StatusBadge from "../common/StatusBadge";
 import { safeParseJson } from "../../utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
+import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import LazyImage from "../common/LazyImage";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -49,44 +51,7 @@ const getEventStatus = (event) => {
   return "Upcoming";
 };
 
-const EmptyState = () => {
-  const prefersReducedMotion = useReducedMotion();
-  return (
-    <motion.div
-      className="my-events-empty"
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
-    >
-      <div className="my-events-empty-icon">
-        <Ticket size={40} />
-      </div>
-      <h3 className="my-events-empty-title">No events yet</h3>
-      <p className="my-events-empty-sub">
-        You have not registered for or hosted any events yet. Explore upcoming events to get started.
-      </p>
-      <Link
-        to="/events"
-        className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800 my-events-empty-cta"
-      >
-        <span className="relative z-10 flex items-center">
-          Explore Events
-          <svg
-            className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </span>
-      </Link>
-    </motion.div>
-  );
-};
+
 
 const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -118,10 +83,12 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
 
       {event?.image && (
         <div className="relative h-48 overflow-hidden">
-          <img
+          <LazyImage
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            aspectRatio="16/9"
+            className="w-full h-full"
+            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
         </div>
@@ -251,10 +218,12 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
     >
       {event?.image && (
         <div className="relative h-48 overflow-hidden">
-          <img
+          <LazyImage
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            aspectRatio="16/9"
+            className="w-full h-full"
+            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
         </div>
@@ -560,14 +529,59 @@ useEffect(() => {
         </div>
       )}
 
-    {loading ? (
-  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-    {Array.from({ length: 6 }).map((_, index) => (
-      <div
-        key={index}
-        className="animate-pulse rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm"
-      >
-        <div className="h-40 rounded-xl bg-slate-200 dark:bg-slate-700 mb-4" />
+      {registeredCount + hostedCount === 0 ? (
+        <EmptyState
+          title="No events yet"
+          description="You have not registered for or hosted any events yet. Explore upcoming events to get started."
+          icon={Ticket}
+          actionLabel="Explore Events"
+          actionPath="/events"
+        />
+      ) : filteredEvents.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="w-full mt-4"
+        >
+          <SearchEmptyState
+            query={searchQuery}
+            itemLabel="events"
+            browseLabel="Browse Events"
+            browsePath="/events"
+            onClear={() => {
+              setSearchQuery("");
+              setFilterStatus("All");
+              setFilterType("All");
+              setSortBy("soonest");
+            }}
+          />
+        </motion.div>
+      ) : (
+        <>
+          {filteredRegisteredEvents.length > 0 && (
+            <section className="space-y-4">
+              <div className="ud-tab-header">
+                <h3 className="ud-page-title">
+                  <Ticket size={18} /> Registered Events
+                </h3>
+                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                  {filteredRegisteredEvents.length} event{filteredRegisteredEvents.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
+                {filteredRegisteredEvents.map((event, index) => (
+                  <EventCard
+                    key={event.eventId || event.id}
+                    event={event}
+                    index={index}
+                    onRemoveRegistration={handleCancelClick}
+                    showCancel
+                    onViewTicket={onViewTicket}
+                  />
+                ))}
+              </motion.div>
+            </section>
+          )}
 
         <div className="h-5 w-3/4 rounded bg-slate-200 dark:bg-slate-700 mb-3" />
 

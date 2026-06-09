@@ -22,6 +22,7 @@
 
 import { get as idbGet, set as idbSet } from "idb-keyval";
 import { logger } from "./logger.js";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -71,7 +72,7 @@ let flushTimerId = null;
 const deadLetter = async (notification, lastError) => {
   try {
     const existing = await idbGet(DEAD_LETTER_KEY);
-    const deadLettered = existing ? JSON.parse(existing) : [];
+    const deadLettered = existing ? safeJsonParse(existing, {}) : [];
     deadLettered.push({
       ...notification,
       deadLetteredAt: new Date().toISOString(),
@@ -153,7 +154,7 @@ const flushBatch = async () => {
   try {
     // Read current persisted state
     const stored = await idbGet(STORAGE_KEY);
-    const existing = stored ? JSON.parse(stored) : [];
+    const existing = stored ? safeJsonParse(stored, {}) : [];
 
     // Merge: prepend new batch (newest-first ordering)
     const merged = [...batch, ...existing];
@@ -169,6 +170,8 @@ const flushBatch = async () => {
     logger.info(`[NotificationQueue] Flushed batch of ${batch.length} notification(s).`);
   } catch (err) {
     logger.error("[NotificationQueue] Unexpected error during flush:", err);
+    // Put the batch back into pendingBatch so it isn't permanently dropped
+    pendingBatch.unshift(...batch);
   } finally {
     isFlushing = false;
   }
@@ -242,7 +245,7 @@ export const enqueueNotification = (notification) => {
 export const getDeadLetteredNotifications = async () => {
   try {
     const stored = await idbGet(DEAD_LETTER_KEY);
-    return stored ? JSON.parse(stored) : [];
+    return stored ? safeJsonParse(stored, {}) : [];
   } catch (err) {
     logger.error("[NotificationQueue] Failed to read dead-letter store:", err);
     return [];

@@ -45,32 +45,28 @@ export const analyzeSentiment = (text) => {
  * Gets a descriptive label and an emoji representation based on the sentiment score
  */
 export const getSentimentDisplay = (score) => {
-  // Ensure score is a valid, parsed float number
-  const parsedScore = typeof score === 'number' && isFinite(score) ? score : parseFloat(score);
-  const validatedScore = isNaN(parsedScore) ? 0 : parsedScore;
-
-  if (validatedScore >= 1.5) {
+  if (score >= 3.0) {
     return {
       emoji: "🌟",
       label: "Excited / Highly Positive",
       color: "text-green-500 dark:text-green-400 animate-bounce"
     };
   }
-  if (validatedScore > 0.2) {
+  if (score >= 1.5) {
     return {
       emoji: "🙂",
       label: "Happy / Positive",
       color: "text-emerald-500 dark:text-emerald-400"
     };
   }
-  if (validatedScore < -1.5) {
+  if (score <= -3.0) {
     return {
       emoji: "😢",
       label: "Frustrated / Highly Negative",
       color: "text-red-500 dark:text-red-400 animate-pulse"
     };
   }
-  if (validatedScore < -0.2) {
+  if (score <= -1.5) {
     return {
       emoji: "🙁",
       label: "Muted / Negative",
