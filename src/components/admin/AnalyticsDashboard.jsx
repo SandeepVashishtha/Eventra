@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Users, Clock, TrendingUp, Activity, CheckCircle2, Play, Zap } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -80,30 +80,38 @@ function AnalyticsStreamBadge({ status }) {
 
 const LOCAL_STORAGE_KEY = "eventra_checkins";
 
+// =========================================================================
+// CONFLICT 1 RESOLUTION: Pure initializers from master (outside component),
+// plus useAnalytics() hook from feature branch (inside component)
+// =========================================================================
+
+// Pure initializers — depend only on module-level constants, safe to define outside component
+const getInitialCheckins = () => {
+  const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+  if (saved.length > 0) {
+    const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
+    return merged;
+  }
+  return MOCK_CHECKINS;
+};
+
+const getInitialLiveCount = () => {
+  const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+  return 342 + saved.filter((c) => c.status === "Verified").length;
+};
+
 const AnalyticsDashboard = () => {
   // ✅ Real analytics data from API (with graceful fallback)
   const { analytics, loading: analyticsLoading } = useAnalytics();
-
-  // Derive initial live count: prefer real API value, fall back to localStorage + base
-  const getInitialLiveCount = () => {
-    if (analytics?.totalCheckins) return analytics.totalCheckins;
-    const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
-    return 342 + saved.filter((c) => c.status === "Verified").length;
-  };
-
-  // Merge real scanned check-ins from localStorage with mock defaults
-  const getInitialCheckins = () => {
-    const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
-    if (saved.length > 0) {
-      return [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
-    }
-    return MOCK_CHECKINS;
-  };
 
   const [checkins, setCheckins] = useState(getInitialCheckins);
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(342); // updated below once API loads
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
+
+  // =========================================================================
+  // CONFLICT 2 RESOLUTION: Keep feature branch's activeTab + API sync effects
+  // =========================================================================
   const [activeTab, setActiveTab] = useState("analytics");
 
   // ✅ Once real analytics data arrives, update liveCount with the real total
@@ -128,7 +136,14 @@ const AnalyticsDashboard = () => {
   const isStreamActive = streamStatus === SSE_STATUS.CONNECTED;
   const lastStreamCheckinRef = useRef(null);
 
-  const processIncomingCheckin = (checkinPayload) => {
+  // =========================================================================
+  // CONFLICT 3 RESOLUTION: useCallback + JSDoc from master
+  // =========================================================================
+  /**
+   * Unified Analytical State Consumer pipeline.
+   * Maps ingested data contract structure cleanly to the UI state.
+   */
+  const processIncomingCheckin = useCallback((checkinPayload) => {
     const { meta, ...cleanCheckinData } = checkinPayload;
     const hourlyIncrement = meta?.hourlyIncrement ?? 1;
     const velocityDelta = meta?.velocityDelta ?? parseFloat((Math.random() * 0.4 - 0.2).toFixed(1));
@@ -150,20 +165,27 @@ const AnalyticsDashboard = () => {
 
     if (cleanCheckinData.status === "Flagged") {
       toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${cleanCheckinData.name}`);
-    } else if (cleanCheckinData.id.includes("manual")) {
+    } else if (String(cleanCheckinData.id).includes("manual")) {
       toast.success(`🚀 Simulator: Successfully injected real-time check-in record for ${cleanCheckinData.name}!`);
     } else {
       toast.info(`🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`);
     }
-  };
+  }, []);
 
+  // =========================================================================
+  // CONFLICT 4 RESOLUTION: ID-based deduplication from master (bug fix)
+  // =========================================================================
   // Process real-time SSE stream
   useEffect(() => {
     const latest = streamCheckins[0];
-    if (!latest || latest === lastStreamCheckinRef.current) return;
-    lastStreamCheckinRef.current = latest;
+    // Compare by event ID rather than object reference so that a reconnect
+    // (which rebuilds the context array as new objects) does not re-trigger
+    // processing for the same logical event.
+    if (!latest || latest.id === lastStreamCheckinRef.current) return;
+    lastStreamCheckinRef.current = latest.id;
+
     processIncomingCheckin(latest);
-  }, [streamCheckins]);
+  }, [streamCheckins, processIncomingCheckin]);
 
   // Background simulation when SSE is not connected
   useEffect(() => {
@@ -245,6 +267,11 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="space-y-8 text-slate-800 dark:text-slate-100">
+      {/* ===================================================================
+          CONFLICT 5 RESOLUTION: Keep feature branch's tab nav (Analytics +
+          Budget buttons). Master's "Trigger Check-in Scan" button belongs
+          in the CONTROL BANNER below, not inside the tab row.
+          =================================================================== */}
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-4">
         <button
@@ -446,6 +473,11 @@ const AnalyticsDashboard = () => {
             </div>
           </div>
 
+          {/* ===================================================================
+              CONFLICT 6 RESOLUTION: Keep feature branch's full LIVE EVENT
+              CHECK-IN FEED LOG section. Master's closing tags were malformed
+              and would have broken JSX structure.
+              =================================================================== */}
           {/* LIVE EVENT CHECK-IN FEED LOG */}
           <div className="p-6 bg-white border shadow-md dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl">
             <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between gap-1.5">
