@@ -68,6 +68,7 @@
     "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
     "prepare": "node scripts/setup-git-config.js",
+    "setup:secret": "node scripts/setup-dev-secret.js",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
