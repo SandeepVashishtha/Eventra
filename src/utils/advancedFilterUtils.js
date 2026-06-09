@@ -181,11 +181,11 @@ export const filterByMode = (events, selectedModes) => {
     return events;
   }
 
-  return events.filter((event) =>
-    event ? selectedModes.includes(
-      normalizeFilterValue(event.eventMode || event.mode || "offline"),
-    ) : false,
-  );
+  return events.filter((event) => {
+    // Safely extract the raw mode without implicitly falling back to a valid filter value
+    const rawMode = event.eventMode !== undefined ? event.eventMode : (event.mode !== undefined ? event.mode : "");
+    return selectedModes.includes(normalizeFilterValue(rawMode));
+  });
 };
 
 /**
