@@ -1,9 +1,9 @@
-import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { motion,useAnimation , AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
+
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -67,39 +67,11 @@ const getResultIcon = (type) => {
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
 const Hero = () => {
-   const prefersReducedMotion = useReducedMotion();
-  const controls = useAnimation();
+    const controls = useAnimation(); 
+  const prefersReducedMotion = useReducedMotion();
 
+  useAnimation 
   
-
-  const TAGLINE_TEXTS = [
-    "Build. Connect. Innovate.",
-    "Discover Opportunities.",
-    "Join the Tech Community.",
-  ];
-
-  const SEARCH_RESULT_LIMIT = 5;
-
-  const HERO_STATS = [
-    {
-      value: 1500,
-      label: "Developers",
-      suffix: "+",
-      icon: Users,
-    },
-    {
-      value: 75,
-      label: "Events",
-      suffix: "+",
-      icon: Calendar,
-    },
-    {
-      value: 30,
-      label: "Partners",
-      suffix: "+",
-      icon: Handshake,
-    },
-  ];
 
   const SEARCH_ROUTES = {
     event: "/events",
