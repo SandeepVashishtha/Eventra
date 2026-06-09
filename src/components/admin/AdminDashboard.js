@@ -32,7 +32,7 @@ import StatusBadge from "../common/StatusBadge";
 import "./AdminDashboard.css";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import TicketScanner from "./TicketScanner";
-import SectionErrorBoundary from "../common/SectionErrorBoundary";
+import ErrorBoundary from "../common/ErrorBoundary";
 import { toast } from "react-toastify";
 
 import { ROLES, PERMISSIONS } from "../../config/roles";
@@ -43,6 +43,7 @@ import {
   deleteAdminEvent,
   fetchAdminStats,
 } from "../../services/adminService";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -60,10 +61,11 @@ const stagger = {
 
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
   useEffect(() => {
+    if (!open) return;
     const handleEsc = (e) => { if (e.key === "Escape") onCancel(); };
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
-  }, [onCancel]);
+  }, [open, onCancel]);
 
   if (!open) return null;
 
@@ -131,7 +133,7 @@ const AdminDashboard = () => {
   const loadWaitlist = useCallback((eventId) => {
     import("../../utils/waitlistUtils.js").then(({ getEventWaitlist }) => {
       setWaitlistUsers(getEventWaitlist(eventId));
-    });
+    }).catch(() => setWaitlistUsers([]));
   }, []);
 
   const openWaitlistModal = (event) => {
@@ -256,20 +258,23 @@ const AdminDashboard = () => {
   }, []);
 
   useEffect(() => {
+    if (!isAdmin) return;
     loadStats();
-  }, [loadStats]);
+  }, [loadStats, isAdmin]);
 
   useEffect(() => {
+    if (!isAdmin) return;
     if (activeTab === "users") {
       loadUsers(usersPage, searchUser);
     }
-  }, [activeTab, usersPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, usersPage, isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (!isAdmin) return;
     if (activeTab === "events") {
       loadEvents(eventsPage, searchEvent);
     }
-  }, [activeTab, eventsPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, eventsPage, isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearchUser = (value) => {
     setSearchUser(value);
@@ -304,6 +309,14 @@ const AdminDashboard = () => {
 
   const handleConfirmDelete = async () => {
     const { type, id } = confirmModal;
+    setConfirmModal({ open: false, type: "", id: null });
+
+    if (type === "logout") {
+      logout();
+      navigate("/login", { replace: true });
+      return;
+    }
+
     try {
       if (type === "user") {
         await deleteAdminUser(id);
@@ -320,7 +333,6 @@ const AdminDashboard = () => {
     } catch (error) {
       toast.error(error.message || `Failed to delete ${type}.`);
     }
-    setConfirmModal({ open: false, type: "", id: null });
   };
 
   const confirmDelete = (type, id) => setConfirmModal({ open: true, type, id });
@@ -538,7 +550,7 @@ const AdminDashboard = () => {
                                   <span key={r} style={{ marginRight: '4px' }}><StatusBadge status={r} /></span>
                                 ))}
                               </td>
-                              <td className="ad-muted">{u.createdAt || u.createdAt}</td>
+                              <td className="ad-muted">{u.createdAt || u.joinedAt || "—"}</td>
                               <td><StatusBadge status={u.status || "Active"} /></td>
                               <td>
                                 <div className="ad-action-btns">
@@ -683,18 +695,18 @@ const AdminDashboard = () => {
                       ))}
                 </motion.div>
                 <div style={{ marginTop: "1.5rem" }}>
-                  <SectionErrorBoundary label="Analytics Dashboard">
+                  <ErrorBoundary level="section" label="Analytics Dashboard">
                     <AnalyticsDashboard />
-                  </SectionErrorBoundary>
+                  </ErrorBoundary>
                 </div>
               </motion.div>
             )}
 
             {activeTab === "scanner" && (
               <motion.div key="scanner" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ad-section">
-                <SectionErrorBoundary label="Ticket Scanner">
+                <ErrorBoundary level="section" label="Ticket Scanner">
                   <TicketScanner />
-                </SectionErrorBoundary>
+                </ErrorBoundary>
               </motion.div>
             )}
           </AnimatePresence>
@@ -706,7 +718,7 @@ const AdminDashboard = () => {
             <p className="ad-footer-copyright">© {new Date().getFullYear()} Eventra. Admin Control Panel.</p>
             <div className="ad-footer-links">
               <Link to="/helpcenter" className="ad-footer-link">Help Center</Link>
-              <a href={`https://github.com/${process.env.REACT_APP_GITHUB_REPO || 'sandeepvashishtha/Eventra'}`} target="_blank" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
+              <a href={`https://github.com/${import.meta.env.VITE_GITHUB_REPO || import.meta.env.REACT_APP_GITHUB_REPO || 'sandeepvashishtha/Eventra'}`} target="_blank" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
               <Link to="/privacy" className="ad-footer-link">Privacy Policy</Link>
               <Link to="/terms" className="ad-footer-link">Terms of Service</Link>
             </div>

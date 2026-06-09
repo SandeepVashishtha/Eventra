@@ -116,28 +116,27 @@ function AnalyticsStreamBadge({ status }) {
 
 const LOCAL_STORAGE_KEY = "eventra_checkins";
 
+// Pure initializers — depend only on module-level constants, safe to define outside component
+const getInitialCheckins = () => {
+  const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+  if (saved.length > 0) {
+    const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
+    return merged;
+  }
+  return MOCK_CHECKINS;
+};
+
+const getInitialLiveCount = () => {
+  const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+  return 342 + saved.filter((c) => c.status === "Verified").length;
+};
+
 const AnalyticsDashboard = () => {
-  // Merge real scanned check-ins from localStorage (set by TicketScanner) with mock defaults
-  const getInitialCheckins = () => {
-    const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
-    if (saved.length > 0) {
-      // Merge: show real scanned check-ins first, then pad with mocks if fewer than 5
-      const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
-      return merged;
-    }
-    return MOCK_CHECKINS;
-  };
-
-  const getInitialLiveCount = () => {
-    const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
-    return 342 + saved.filter((c) => c.status === "Verified").length;
-  };
-
   const [checkins, setCheckins] = useState(getInitialCheckins);
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
-const [activeTab, setActiveTab] = useState('analytics');
+  const [activeTab, setActiveTab] = useState('analytics');
 
   // Real-time SSE stream — takes priority over local simulation when connected
   const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
@@ -190,8 +189,11 @@ const [activeTab, setActiveTab] = useState('analytics');
   // Processing real-time production SSE streams via data consumer pipeline
   useEffect(() => {
     const latest = streamCheckins[0];
-    if (!latest || latest === lastStreamCheckinRef.current) return;
-    lastStreamCheckinRef.current = latest;
+    // Compare by event ID rather than object reference so that a reconnect
+    // (which rebuilds the context array as new objects) does not re-trigger
+    // processing for the same logical event.
+    if (!latest || latest.id === lastStreamCheckinRef.current) return;
+    lastStreamCheckinRef.current = latest.id;
 
     processIncomingCheckin(latest);
   }, [streamCheckins, processIncomingCheckin]);
@@ -535,6 +537,7 @@ const [activeTab, setActiveTab] = useState('analytics');
             </div>
           ))}
         </div>
+        {/* Closing tag for line 502 wrapper — fix for #7244 */}
       </div>
       </>
   )}

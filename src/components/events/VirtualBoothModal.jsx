@@ -3,6 +3,10 @@ import {
   X, Briefcase, Mail, Globe, Linkedin, Twitter, Github,
   Send, User, MessageSquare, ArrowLeft
 } from "lucide-react";
+import { toast } from "react-toastify";
+import { safeJsonParse } from "../../utils/safeJsonParse";
+
+import ErrorBoundary from "../common/ErrorBoundary";
 
 const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   const [showChat, setShowChat] = useState(false);
@@ -11,6 +15,25 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   const [isTyping, setIsTyping] = useState(false);
   const modalRef = useRef(null);
   const chatEndRef = useRef(null);
+
+  const captureLead = (action) => {
+    try {
+      const existingLeadsStr = localStorage.getItem("eventra_sponsor_leads");
+      const existingLeads = existingLeadsStr ? safeJsonParse(existingLeadsStr, []) : [];
+      
+      const newLead = {
+        name: "Test Attendee",
+        action: action,
+        contact: "attendee@example.com",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      
+      existingLeads.push(newLead);
+      localStorage.setItem("eventra_sponsor_leads", JSON.stringify(existingLeads));
+    } catch (e) {
+      console.error("Failed to capture lead", e);
+    }
+  };
 
   // Close on ESC key press
   useEffect(() => {
@@ -22,6 +45,50 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
+
+  // Trap focus inside modal when open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const focusableSelector = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
+    
+    const timer = setTimeout(() => {
+      if (modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll(focusableSelector);
+        if (focusableElements.length > 0) {
+          focusableElements[0].focus();
+        }
+      }
+    }, 50);
+
+    const handleKeyDown = (e) => {
+      if (e.key !== "Tab" || !modalRef.current) return;
+
+      const focusableElements = Array.from(modalRef.current.querySelectorAll(focusableSelector));
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          firstElement.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
 
   // Lock focus when modal open
   useEffect(() => {
@@ -56,6 +123,10 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!chatMessage.trim()) return;
+
+    if (chatHistory.length === 1) {
+      captureLead("Initiated Chat");
+    }
 
     const userMsg = {
       id: Date.now(),
@@ -169,7 +240,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                   <a
                     href="https://example.com"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
                     title="Website"
                   >
@@ -178,7 +249,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                   <a
                     href="https://linkedin.com"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
                     title="LinkedIn"
                   >
@@ -187,7 +258,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                   <a
                     href="https://twitter.com"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
                     title="Twitter"
                   >
@@ -196,7 +267,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                   <a
                     href="https://github.com"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
                     title="GitHub"
                   >
@@ -220,7 +291,15 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                         className="p-2 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 rounded-lg text-xs font-semibold text-gray-200 transition-colors flex items-center justify-between"
                       >
                         <span className="truncate">{job}</span>
-                        <span className="text-[9px] text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">Apply</span>
+                        <button 
+                          onClick={() => {
+                            captureLead(`Applied for ${job}`);
+                            toast.success(`Application sent to ${booth.label} for ${job}!`);
+                          }}
+                          className="text-[9px] text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 px-1.5 py-0.5 rounded cursor-pointer transition-colors border-none"
+                        >
+                          Apply
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -327,4 +406,10 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   );
 };
 
-export default VirtualBoothModal;
+export default function SafeVirtualBoothModal(props) {
+  return (
+    <ErrorBoundary level="feature" label="Virtual Booth Modal">
+      <VirtualBoothModal {...props} />
+    </ErrorBoundary>
+  );
+}

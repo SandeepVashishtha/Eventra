@@ -11,7 +11,9 @@ import AuthButtons from "./AuthButtons";
 import ThemeToggleButton from "./ThemeToggleButton";
 import CursorToggleButton from "./CursorToggleButton";
 
-const NavList = ({ navItems, location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => (
+// 🔥 FIX 1: Stripped dead code and dangerous `null` map returns.
+// The list now strictly returns keyed components without useless ternaries.
+const NavList = ({ navItems, location, openDropdown, onToggleGroup, onLinkClick }) => (
   <>
     {navItems.map((item) => {
       const isActive = item.href
@@ -19,16 +21,12 @@ const NavList = ({ navItems, location, openDropdown, onToggleGroup, onLinkClick,
         : item.subItems?.some(s => location.pathname.startsWith(s.href));
 
       if (item.subItems) {
-        return isMobile ? (
+        return (
           <MobileNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={() => onToggleGroup(item.name)} closeAllMenus={onLinkClick} location={location} />
-        ) : (
-          null
         );
       }
-      return isMobile ? (
+      return (
         <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
-      ) : (
-        null
       );
     })}
   </>
@@ -40,7 +38,9 @@ const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus }) => (
     <button
       ref={closeBtnRef}
       onClick={closeAllMenus}
-      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400 transition-colors"
+      // 🔥 FIX 2: Added missing aria-label and focus-visible states for screen readers/keyboard users
+      aria-label="Close mobile menu"
+      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
     >
       <ChevronDown className="w-6 h-6 rotate-90" />
     </button>
@@ -57,6 +57,7 @@ const MobileDrawerFooter = ({
   handleLogoutClick,
   isDarkMode,
   toggleTheme,
+  setIsCustomizerOpen,
   cursorEnabled,
   toggleCursor,
 }) => (
@@ -75,7 +76,7 @@ const MobileDrawerFooter = ({
         <AuthButtons isMobile={true} closeAllMenus={closeAllMenus} />
       )}
       <div className="flex gap-3 mt-4">
-        <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} />
+        <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} setIsCustomizerOpen={setIsCustomizerOpen} />
         <CursorToggleButton
           cursorEnabled={cursorEnabled}
           toggleCursor={toggleCursor}
@@ -88,7 +89,7 @@ const MobileDrawerFooter = ({
 
 const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeAllMenus, handleTouchStart, handleTouchMove, handleTouchEnd, closeBtnRef, handleLogoutClick, primaryLine, secondaryLine, cursorEnabled, toggleCursor, navItems }) => {
   const location = useLocation();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
   const { user, isAuthenticated } = useAuth();
 
   return (
@@ -103,6 +104,8 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
           className="fixed inset-y-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-[20rem] sm:max-w-sm shadow-2xl z-[110] flex flex-col bg-white/95 backdrop-blur-xl dark:bg-slate-900/95"
           role="dialog"
           aria-modal="true"
+          // 🔥 FIX 3: Added aria-label to the modal dialog so screen readers announce it properly
+          aria-label="Mobile navigation menu"
           initial={{ x: "100%" }}
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
@@ -117,7 +120,6 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
               openDropdown={openDropdown}
               onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
               onLinkClick={closeAllMenus}
-              isMobile={true}
             />
           </div>
 
@@ -131,6 +133,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
             handleLogoutClick={handleLogoutClick}
             isDarkMode={isDarkMode}
             toggleTheme={toggleTheme}
+            setIsCustomizerOpen={setIsCustomizerOpen}
             cursorEnabled={cursorEnabled}
             toggleCursor={toggleCursor}
           />

@@ -7,7 +7,9 @@ import {
   useRef,
   useState,
 } from "react";
-import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from "../config/api";
+import { setOnUnauthorizedHandler, setAuthToken } from "../config/api";
+import { authService } from "../services/authService";
+import { userService } from "../services/userService";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
 import { syncSecureStorage } from "../utils/secureStorage";
 import { toast } from "react-toastify";
@@ -32,7 +34,7 @@ export const AuthProvider = ({ children }) => {
     error: null,
   });
 
-  const isMountedRef = useRef(false);
+  const isMountedRef = useRef(true);
   const needsExpiryCleanupRef = useRef(false);
   const expiryToastShownRef = useRef(false);
 
@@ -48,16 +50,21 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
+    setAuthToken(null);
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     syncSecureStorage.removeItem("user");
-    localStorage.removeItem("user");
     return true;
   }, []);
 
   const clearExpiredSession = useCallback(() => {
     // 🔥 FIX: Check if a user was actually logged in before blasting them with an "Expired" toast.
     // Anonymous users (who trigger a 401 on mount) shouldn't see this.
-    const hadPreviousSession = !!localStorage.getItem("user");
+    let hadPreviousSession = false;
+    try {
+      hadPreviousSession = !!syncSecureStorage.getItem("user");
+    } catch {
+      // localStorage unavailable (private browsing, quota exceeded, etc.)
+    }
 
     console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
     clearSession();
@@ -72,8 +79,11 @@ export const AuthProvider = ({ children }) => {
     expiryToastShownRef.current = true;
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",
-      autoClose: 5000,
+      autoClose: 4000,
     });
+    setTimeout(() => {
+      window.location.replace("/login");
+    }, 1500);
   }, [clearSession]);
 
   const setAuthRequestState = useCallback((nextState) => {
@@ -92,26 +102,12 @@ export const AuthProvider = ({ children }) => {
 
   const extractSession = useCallback(
     (res, data, fallbackEmail) => {
-      // Prefer an explicit token from the response body (legacy / non-HttpOnly
-      // deployments) or from a Bearer header, but fall back to "cookie-managed"
-      // when neither is present. The server sets an HttpOnly cookie that is
-      // transmitted automatically via withCredentials on every subsequent
-      // request; no client-side token string is needed for that flow.
-      let sessionToken = data?.token ?? data?.accessToken ?? null;
-
-      if (!sessionToken) {
-        const authHeader = res.headers?.authorization || res.headers?.Authorization || null;
-        if (authHeader && authHeader.startsWith("Bearer ")) {
-          sessionToken = authHeader.substring(7);
-        }
-      }
-
-      // Cookie-only flow: the server set an HttpOnly cookie but did not include
-      // the token in the response body.  Sentinel value tells the rest of
-      // AuthContext not to attempt client-side JWT validation.
-      if (!sessionToken) {
-        sessionToken = "cookie-managed";
-      }
+      // Under a strict HttpOnly-cookie authentication model, the client-visible
+      // response body or headers (like data.token, data.accessToken, and Authorization
+      // response headers) are ignored entirely to prevent token-injection risks.
+      // Authenticated sessions are established solely through successful backend
+      // validation of the HttpOnly session cookie, using the sentinel value "cookie-managed".
+      const sessionToken = "cookie-managed";
 
       const rawUser = data?.user ?? data?.data ?? data ?? null;
       const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
@@ -150,7 +146,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const validateSession = async () => {
       try {
-        const res = await apiUtils.get(API_ENDPOINTS.USERS.PROFILE);
+        const res = await userService.getProfile();
         if (!isMountedRef.current) return;
 
         if (res.ok && res.data) {
@@ -161,9 +157,26 @@ export const AuthProvider = ({ children }) => {
         } else {
           clearSession();
         }
-      } catch {
+      } catch (err) {
         if (!isMountedRef.current) return;
-        clearSession();
+        
+        const isAuthError = err?.status === 401 || err?.status === 403;
+        if (isAuthError) {
+          clearSession();
+        } else {
+          console.warn("[AuthContext] Network error during session validation. Preserving local session.");
+          try {
+            const cachedUser = syncSecureStorage.getItem("user");
+            if (cachedUser) {
+              setUser(JSON.parse(cachedUser));
+              setToken("cookie-managed");
+            } else {
+              clearSession();
+            }
+          } catch {
+            clearSession();
+          }
+        }
       } finally {
         if (isMountedRef.current) {
           setLoading(false);
@@ -247,9 +260,10 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, clearExpiredSession]);
 
-  const persistSession = useCallback((sessionToken, sessionUser) => {
+  const persistSession = useCallback(async (sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
+    setAuthToken(sessionToken);
 
     // The auth token is set exclusively by the server via a Set-Cookie response
     // header with HttpOnly; Secure; SameSite=Strict. Writing the token through
@@ -264,7 +278,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // eslint-disable-next-line no-unused-vars
       const { roles, permissions, scopes, ...displayProfile } = sessionUser;
-      syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
+      await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {
       console.error("[AuthContext] Error persisting user profile:", error);
     }
@@ -294,7 +308,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
+        const res = await authService.login({
           usernameOrEmail,
           password,
         });
@@ -310,7 +324,7 @@ export const AuthProvider = ({ children }) => {
         // body. There is no longer a missing-token failure path here.
         const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
 
-        const persisted = persistSession(sessionToken, sessionUser);
+        const persisted = await persistSession(sessionToken, sessionUser);
         if (!persisted) return false;
 
         setAuthRequestState({ loading: false, error: null });
@@ -340,39 +354,27 @@ export const AuthProvider = ({ children }) => {
     return true;
   }, [user, token, clearExpiredSession]);
 
-  const hasRole = useCallback(
-    (roleName) => {
-      if (!user?.roles) return false;
-      const targetRole = String(roleName).toUpperCase();
-      return normalizeRoles(user.roles).includes(targetRole);
-    },
-    [normalizeRoles, user]
-  );
+  const hasRole = (roleName) => {
+    if (!user?.roles) return false;
+    const targetRole = String(roleName).toUpperCase();
+    return normalizeRoles(user.roles).includes(targetRole);
+  };
 
-  const hasPermission = useCallback(
-    (permissionName) => {
-      if (!user?.permissions) return false;
-      return user.permissions.includes(permissionName);
-    },
-    [user]
-  );
+  const hasPermission = (permissionName) => {
+    if (!user?.permissions) return false;
+    return user.permissions.includes(permissionName);
+  };
 
-  const hasAnyRole = useCallback(
-    (...roleNames) => roleNames.some((role) => hasRole(role)),
-    [hasRole]
-  );
+  const hasAnyRole = (...roleNames) => roleNames.some((role) => hasRole(role));
 
-  const hasAnyPermission = useCallback(
-    (...permissionNames) => permissionNames.some((permission) => hasPermission(permission)),
-    [hasPermission]
-  );
+  const hasAnyPermission = (...permissionNames) => permissionNames.some((permission) => hasPermission(permission));
 
-  const isAdmin = useCallback(() => hasRole(ROLES.ADMIN), [hasRole]);
-  const isEventManager = useCallback(() => hasRole(ROLES.ORGANIZER), [hasRole]);
-  const isSuperAdmin = useCallback(() => hasRole(ROLES.SUPER_ADMIN), [hasRole]);
-  const isOrganizer = useCallback(() => hasRole(ROLES.ORGANIZER), [hasRole]);
-  const isVolunteer = useCallback(() => hasRole(ROLES.VOLUNTEER), [hasRole]);
-  const isAttendee = useCallback(() => hasRole(ROLES.ATTENDEE), [hasRole]);
+  const isAdmin = () => hasRole(ROLES.ADMIN);
+  const isEventManager = () => hasRole(ROLES.ORGANIZER);
+  const isSuperAdmin = () => hasRole(ROLES.SUPER_ADMIN);
+  const isOrganizer = () => hasRole(ROLES.ORGANIZER);
+  const isVolunteer = () => hasRole(ROLES.VOLUNTEER);
+  const isAttendee = () => hasRole(ROLES.ATTENDEE);
 
   const value = useMemo(
     () => ({
@@ -404,6 +406,7 @@ export const AuthProvider = ({ children }) => {
       login,
       logout,
       setAuthSession,
+      setUser,
       isAuthenticated,
       hasRole,
       hasPermission,

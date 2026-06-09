@@ -11,6 +11,7 @@ import {
   X,
   Ticket,
   Trash2,
+  Activity,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -20,7 +21,10 @@ import StatusBadge from "../common/StatusBadge";
 import { safeParseJson } from "../../utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
+import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
+import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import LazyImage from "../common/LazyImage";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -47,47 +51,11 @@ const getEventStatus = (event) => {
   return "Upcoming";
 };
 
-const EmptyState = () => {
-  const prefersReducedMotion = useReducedMotion();
-  return (
-    <motion.div
-      className="my-events-empty"
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
-    >
-      <div className="my-events-empty-icon">
-        <Ticket size={40} />
-      </div>
-      <h3 className="my-events-empty-title">No events yet</h3>
-      <p className="my-events-empty-sub">
-        You have not registered for or hosted any events yet. Explore upcoming events to get started.
-      </p>
-      <Link
-        to="/events"
-        className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800 my-events-empty-cta"
-      >
-        <span className="relative z-10 flex items-center">
-          Explore Events
-          <svg
-            className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </span>
-      </Link>
-    </motion.div>
-  );
-};
+
 
 const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
+  const isOffline = useOfflineStatus();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const status = getEventStatus(event);
   const shortDate = event?.date
@@ -115,10 +83,12 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
 
       {event?.image && (
         <div className="relative h-48 overflow-hidden">
-          <img
+          <LazyImage
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            aspectRatio="16/9"
+            className="w-full h-full"
+            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
         </div>
@@ -185,6 +155,10 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
             <button
               className="group/btn flex-1"
               onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
+              disabled={isOffline}
+              title={isOffline ? "Action unavailable offline" : "Cancel registration"}
+              aria-disabled={isOffline}
+              style={isOffline ? { opacity: 0.5, cursor: "not-allowed" } : {}}
             >
               <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Trash2 size={13} className="relative" />
@@ -202,7 +176,12 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
             </button>
           </>
         ) : (
-          <div className="flex-1" />
+          <Link to={`/events/${event?.id}/analytics`} className="group/btn flex-1">
+            <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <Activity size={13} className="relative" />
+              <span className="relative">Analytics</span>
+            </div>
+          </Link>
         )}
         <Link to={`/events/${event?.id}`} className="group/btn flex-1">
           <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
@@ -224,7 +203,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
     if (user) {
       import("../../utils/waitlistUtils").then(({ getQueuePosition }) => {
         setQueuePos(getQueuePosition(event.id, user.id || user.email));
-      });
+      }).catch(() => setQueuePos(-1));
     }
   }, [event.id, user]);
 
@@ -239,10 +218,12 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
     >
       {event?.image && (
         <div className="relative h-48 overflow-hidden">
-          <img
+          <LazyImage
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            aspectRatio="16/9"
+            className="w-full h-full"
+            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
         </div>
@@ -307,8 +288,8 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             };
           });
           setWaitlistEvents(resolved);
-        });
-      });
+        }).catch(() => setWaitlistEvents([]));
+      }).catch(() => setWaitlistEvents([]));
     } else {
       setWaitlistEvents([]);
     }
@@ -540,7 +521,13 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
       )}
 
       {registeredCount + hostedCount === 0 ? (
-        <EmptyState />
+        <EmptyState
+          title="No events yet"
+          description="You have not registered for or hosted any events yet. Explore upcoming events to get started."
+          icon={Ticket}
+          actionLabel="Explore Events"
+          actionPath="/events"
+        />
       ) : filteredEvents.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }}

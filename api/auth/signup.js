@@ -1,9 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
+import { createRateLimiter } from "../lib/rateLimiter.js";
 
 import { buildCorsHeaders, corsResponse } from "./cors.js";
-import { createRateLimiter } from "../lib/rateLimit.js";
+
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
@@ -269,7 +270,7 @@ async function handler(req, res) {
     };
 
     const isProd = process.env.NODE_ENV === "production";
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`;
+    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
     // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
     try {
       if (typeof res.setHeader === 'function') {
@@ -283,11 +284,10 @@ async function handler(req, res) {
       // Ignore write errors on test response objects
     }
 
-    // The JWT is delivered exclusively via the HttpOnly Set-Cookie header set
-    // above. Including it in the JSON body would expose it to JavaScript,
-    // defeating the XSS-theft protection that HttpOnly provides.
     return corsResponse(req, res, 201, {
       message: "Account created successfully",
+      token,
+      tokenType: "Bearer",
       ...userResponse,
     });
 
@@ -303,7 +303,5 @@ async function handler(req, res) {
 // ---------------------------------------------------------------------------
 
 export default handler;
+export { users, usersById, usersByUsername };
 
-export { users };
-
-export { usersById, usersByUsername };

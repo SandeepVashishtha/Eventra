@@ -1,221 +1,92 @@
-import { getClientIp } from "./lib/getClientIp.js";
-import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
-import { buildCorsHeaders } from "./auth/cors.js";
+// api/leaderboard.js
 
-const GITHUB_REPO = process.env.GITHUB_REPO || "SandeepVashishtha/Eventra";
+const MAX_PAGES = 5;
+const GITHUB_REPO = process.env.GITHUB_REPO || "sandeepvashishtha/Eventra";
 
-const POINTS = {
-  gssoclevel1: 3,
-  gssoclevel2: 7,
-  gssoclevel3: 10,
-};
-
-const DEFAULT_MERGED_PR_POINTS = 1;
-const MAX_PAGES = 10;
-
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQUESTS = 5;
-const ipRateLimitMap = new Map();
-
-const isRateLimited = (ip) => {
-  const now = Date.now();
-  const entry = ipRateLimitMap.get(ip);
-
-  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
-    ipRateLimitMap.set(ip, { count: 1, windowStart: now });
-    return false;
-  }
-
-  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return true;
-  }
-
-  entry.count += 1;
-  return false;
-};
-
-let lastEvictionAt = 0;
-const evictStaleIpEntries = () => {
-  const now = Date.now();
-  if (now - lastEvictionAt < RATE_LIMIT_WINDOW_MS) return;
-  lastEvictionAt = now;
-
-  for (const [key, entry] of ipRateLimitMap.entries()) {
-    if (now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
-      ipRateLimitMap.delete(key);
-    }
-  }
-};
-
-const CACHE_TTL_MS = 5 * 60_000;
-let cachedLeaderboard = null;
-let cacheTimestamp = 0;
-
-const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-const calculatePrPoints = (labels) => {
-  const levelPoints = labels.reduce((total, label) => {
-    const normalized = normalizeLabel(label);
-    return total + (POINTS[normalized] || 0);
-  }, 0);
-
-  return levelPoints || DEFAULT_MERGED_PR_POINTS;
-};
-
-const fetchPrPage = async (page, headers) => {
-  const url = `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`;
-  try {
-    const response = await fetch(url, { headers });
-    if (!response.ok) {
-      console.warn(`[Leaderboard API] PR page ${page} failed with status: ${response.status}`);
-      return [];
-    }
-
-    const data = await response.json();
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.warn(`[Leaderboard API] PR page ${page} fetch error:`, error);
-    return [];
-  }
-};
-
-const aggregatePrs = (prs, contributorsInfo) => {
-  const contributorsMap = {};
-
-  prs.forEach((pr) => {
-    if (!pr.merged_at) return;
-
-    const labels = pr.labels.map((label) => label.name.toLowerCase());
-    const hasGsocLabel = labels.some((label) => label.includes("gssoc") || label.includes("gsoc"));
-    if (!hasGsocLabel) return;
-
-    const author = pr.user.login;
-    const points = calculatePrPoints(labels);
-
-    if (!contributorsMap[author]) {
-      const info = contributorsInfo[author] || {
-        name: author,
-        avatar: pr.user.avatar_url,
-        profile: pr.user.html_url,
-      };
-
-      contributorsMap[author] = {
-        username: author,
-        name: info.name,
-        avatar: info.avatar,
-        profile: info.profile,
-        points: 0,
-        prs: 0,
-      };
-    }
-
-    contributorsMap[author].points += points;
-    contributorsMap[author].prs += 1;
-  });
-
-  return contributorsMap;
-};
+const cache = { data: null, ts: 0 };
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export default async function handler(req, res) {
-  const corsHeaders = buildCorsHeaders(req);
-  res.set(corsHeaders);
+  res.setHeader("Cache-Control", "public, max-age=300");
 
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method Not Allowed" });
+  if (cache.data && Date.now() - cache.ts < CACHE_TTL_MS) {
+    return res.status(200).json(cache.data);
   }
-
-  const clientIp = getClientIp(req);
-  evictStaleIpEntries();
-
-  if (isRateLimited(clientIp)) {
-    res.setHeader("Retry-After", "60");
-    return res.status(429).json({
-      error: "Too many requests. The leaderboard may be requested at most 5 times per minute per client.",
-    });
-  }
-
-  const now = Date.now();
-  if (cachedLeaderboard && now - cacheTimestamp < CACHE_TTL_MS) {
-    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
-    res.setHeader("X-Cache", "HIT");
-    return res.status(200).json(cachedLeaderboard);
-  }
-
-  const token = process.env.GITHUB_TOKEN;
-  const headers = {
-    Accept: "application/vnd.github.v3+json",
-    ...(token ? { Authorization: `token ${token}` } : {}),
-  };
 
   try {
-    const contributorsUrl = `https://api.github.com/repos/${GITHUB_REPO}/contributors`;
-    const [contributorsRes, firstPagePrs] = await Promise.all([
-      fetchWithTimeout(contributorsUrl, { headers }, 10000),
-      fetchPrPage(1, headers),
-    ]);
+    let allPRs = [];
+    let page = 1;
+    let hasMore = true;
 
-    if (!contributorsRes.ok) {
-      throw new Error(`Failed to fetch contributors: ${contributorsRes.status}`);
+    const headers = {
+      "Accept": "application/vnd.github.v3+json",
+      "User-Agent": "Eventra-Leaderboard"
+    };
+
+    if (process.env.GITHUB_TOKEN) {
+      headers.Authorization = `token ${process.env.GITHUB_TOKEN}`;
     }
 
-    const contributorsData = await contributorsRes.json();
-    const contributorsInfo = {};
-
-    if (Array.isArray(contributorsData)) {
-      contributorsData.forEach((contributor) => {
-        contributorsInfo[contributor.login] = {
-          name: contributor.name || contributor.login,
-          avatar: contributor.avatar_url,
-          profile: contributor.html_url,
-        };
-      });
-    }
-
-    let allPrs = [...firstPagePrs];
-
-    if (firstPagePrs.length === 100) {
-      const remainingPageNumbers = Array.from(
-        { length: MAX_PAGES - 1 },
-        (_, index) => index + 2,
-      );
-
-      const remainingResults = await Promise.allSettled(
-        remainingPageNumbers.map((page) => fetchPrPage(page, headers)),
-      );
-
-      for (const result of remainingResults) {
-        if (result.status === "fulfilled" && result.value.length > 0) {
-          allPrs.push(...result.value);
-        }
-      }
-    }
-
-    const contributorsMap = aggregatePrs(allPrs, contributorsInfo);
-
-    Object.keys(contributorsMap).forEach((user) => {
-      const count = contributorsMap[user].prs;
-      if (count >= 10) {
-        contributorsMap[user].points += 10;
-      } else if (count >= 5) {
-        contributorsMap[user].points += 5;
-      }
-    });
-
-    const sortedContributors = Object.values(contributorsMap).sort(
-      (a, b) => b.points - a.points,
+    const firstPageRes = await fetch(
+      `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=all&per_page=100&page=${page}`,
+      { headers }
     );
 
-    // 5. Populate the in-process cache so subsequent warm-instance calls skip
-    //    the GitHub round-trips entirely for the next CACHE_TTL_MS window.
-    cachedLeaderboard = sortedContributors;
-    cacheTimestamp = Date.now();
+    if (!firstPageRes.ok) {
+      if (firstPageRes.status === 403) {
+        return res.status(403).json({ error: "GitHub API rate limit exceeded." });
+      }
+      throw new Error(`GitHub API error: ${firstPageRes.statusText}`);
+    }
 
-    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
-    res.setHeader("X-Cache", "MISS");
+    const firstPageData = await firstPageRes.json();
+    
+    if (!Array.isArray(firstPageData)) {
+      throw new Error("Invalid response from GitHub");
+    }
 
-    return res.status(200).json(sortedContributors);
+    allPRs = [...firstPageData];
+
+    if (firstPageData.length < 100) {
+      hasMore = false;
+    } else {
+      page++;
+    }
+
+    while (hasMore && page <= MAX_PAGES) {
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      const pageRes = await fetch(
+        `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=all&per_page=100&page=${page}`,
+        { headers }
+      );
+
+      if (!pageRes.ok) {
+        if (pageRes.status === 403) {
+          console.warn(`[Leaderboard] GitHub secondary rate limit hit on page ${page}. Returning partial data.`);
+          break;
+        }
+        throw new Error(`GitHub API error on page ${page}: ${pageRes.statusText}`);
+      }
+
+      const pageData = await pageRes.json();
+      allPRs = [...allPRs, ...pageData];
+
+      if (pageData.length < 100) {
+        hasMore = false;
+      } else {
+        page++;
+      }
+    }
+
+    cache.data = allPRs;
+    cache.ts = Date.now();
+    res.status(200).json(allPRs);
   } catch (error) {
-    console.error("[Leaderboard API] Aggregation Error:", error);
-    return res.status(500).json({ error: "Failed to compile leaderboard data" });
+    console.error("[Leaderboard] Fetch error:", error);
+    if (cache.data) {
+      return res.status(200).json(cache.data);
+    }
+    res.status(500).json({ error: "Failed to fetch leaderboard pull requests." });
   }
 }
