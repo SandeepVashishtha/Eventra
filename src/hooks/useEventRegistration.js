@@ -260,12 +260,19 @@ const useEventRegistration = (eventIdParam) => {
       const freshRes = await eventService.getEventDetails(id);
       if (freshRes.status === 200) {
         const freshEvent = freshRes.data;
-        return freshEvent.attendees >= freshEvent.maxAttendees;
+        const capacity = freshEvent.maxAttendees ?? 0;
+        const attendees = freshEvent.attendees ?? 0;
+        return attendees >= capacity;
       }
-    } catch {
-      return currentEvent.attendees >= currentEvent.maxAttendees;
+      const capacity = currentEvent?.maxAttendees ?? 0;
+      const attendees = currentEvent?.attendees ?? 0;
+      return attendees >= capacity;
+    } catch (error) {
+      console.error("[checkEventCapacity] Failed to check capacity:", error);
+      const capacity = currentEvent?.maxAttendees ?? 0;
+      const attendees = currentEvent?.attendees ?? 0;
+      return attendees >= capacity;
     }
-    return false;
   }, []);
 
   const checkAndHandleConflicts = useCallback(async () => {
