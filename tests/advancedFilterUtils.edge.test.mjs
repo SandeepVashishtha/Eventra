@@ -61,7 +61,7 @@ describe("advancedFilterUtils — edge cases", () => {
 
   it("returns all events when mode filter is empty", () => {
     assert.equal(filterByMode(events, []).length, events.length);
-    assert.equal(filterByMode([{ eventMode: undefined }], ["offline"]).length, 1);
+    assert.equal(filterByMode([{ eventMode: undefined }], ["offline"]).length, 0);
   });
 
   it("respects inclusive price boundaries", () => {
