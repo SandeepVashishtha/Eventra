@@ -17,6 +17,13 @@ import projectsData from "../../Projects/mockProjectsData.json";
 
 const CountUp = CountUpLib.default || CountUpLib;
 
+export const SEARCH_ROUTES = {
+  events: "/events",
+  hackathons: "/hackathons",
+  projects: "/projects",
+  networking: "/networking"
+};
+
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
   id: item.id,

@@ -25,6 +25,15 @@ import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
 import LazyImage from "../common/LazyImage";
+import { SEARCH_ROUTES } from "../../constants/routes";
+import { SEARCH_ROUTES } from "../Hero";
+
+const SEARCH_ROUTES = {
+  events: "/events",
+  hackathons: "/hackathons",
+  projects: "/projects",
+  networking: "/networking"
+};
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -51,8 +60,6 @@ const getEventStatus = (event) => {
   return "Upcoming";
 };
 
-
-
 const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const isOffline = useOfflineStatus();
@@ -60,10 +67,10 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
   const status = getEventStatus(event);
   const shortDate = event?.date
     ? new Date(event.date).toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    })
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      })
     : "—";
 
   return (
@@ -307,8 +314,8 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [sortBy, setSortBy] = useState("soonest");
   const [cancelTarget, setCancelTarget] = useState(null);
 
-  const [recentSearches,
-    setRecentSearches] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+
   const registeredEvents = useMemo(
     () =>
       myEvents.map((registration) => ({
@@ -318,9 +325,9 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
       })),
     [myEvents]
   );
+
   useEffect(() => {
     const saved = safeParseJson(localStorage.getItem("recentSearches"), []);
-
     setRecentSearches(saved);
   }, []);
 
@@ -328,8 +335,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     const types = [...new Set([...registeredEvents, ...hostedEvents].map((event) => event?.type).filter(Boolean))];
     return types.map((type) => type.charAt(0).toUpperCase() + type.slice(1));
   }, [registeredEvents, hostedEvents]);
-
-  const filteredEvents = useMemo(() => {
+const filteredEvents = useMemo(() => {
     const pool = [...registeredEvents, ...hostedEvents];
     const result = pool.filter((event) => {
       const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
@@ -360,6 +366,27 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
     return result;
   }, [registeredEvents, hostedEvents, debouncedTerm, filterStatus, filterType, sortBy]);
+
+  useEffect(() => {
+    if (debouncedTerm && debouncedTerm.trim().length > 1) {
+      let saved = [];
+      try {
+        const raw = localStorage.getItem("recentSearches");
+        saved = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(saved)) saved = [];
+      } catch (e) {
+        saved = [];
+      }
+      
+      const updatedHistory = [
+        debouncedTerm.trim(),
+        ...saved.filter((term) => term.toLowerCase() !== debouncedTerm.trim().toLowerCase())
+      ].slice(0, 5);
+
+      localStorage.setItem("recentSearches", JSON.stringify(updatedHistory));
+      setRecentSearches(updatedHistory);
+    }
+  }, [debouncedTerm]);
 
   const filteredRegisteredEvents = filteredEvents.filter((event) => event.registeredAt);
   const filteredHostedEvents = filteredEvents.filter((event) => !event.registeredAt);
@@ -466,14 +493,10 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             )}
           </div>
           
-          {/* 🔥 FIX 2: Relocated Rogue "Clear History" button to its proper logical location */}
           {recentSearches.length > 0 && (
             <button
               onClick={() => {
-                localStorage.removeItem(
-                  "recentSearches"
-                );
-
+                localStorage.removeItem("recentSearches");
                 setRecentSearches([]);
               }}
               className="text-sm text-red-500 hover:underline mt-2"
@@ -633,7 +656,6 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         </>
       )}
 
-      {/* 🔥 FIX 1: Portaled the modal out of the Framer Motion stacking context trap */}
       <AnimatePresence>
         {cancelTarget && ReactDOM.createPortal(
           <motion.div

@@ -84,6 +84,97 @@
   }
 }
 
+@utility my-events-dialog-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+@utility my-events-dialog {
+  background-color: #ffffff;
+  border-radius: 1.5rem;
+  padding: 1.75rem;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  .dark & {
+    background-color: #0f172a;
+    border: 1px solid #334155;
+  }
+}
+
+@utility my-events-dialog-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+@utility my-events-dialog-body {
+  font-size: 0.95rem;
+  color: #475569;
+  margin-bottom: 1.5rem;
+
+  .dark & {
+    color: #cbd5e1;
+  }
+}
+
+@utility my-events-dialog-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+@utility my-events-dialog-cancel {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  color: #475569;
+  background-color: #f1f5f9;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #e2e8f0;
+  }
+
+  .dark & {
+    color: #cbd5e1;
+    background-color: #1e293b;
+
+    &:hover {
+      background-color: #334155;
+    }
+  }
+}
+
+@utility my-events-dialog-confirm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  color: #ffffff;
+  background-color: #ef4444;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #dc2626;
+  }
+}
+
 body {
   margin: 0;
   padding: 0;
