@@ -15,6 +15,7 @@ import { logger } from "../../utils/logger";
 import ReminderControls from "../../components/reminders/ReminderControls";
 import CertificateDownload from "../../components/CertificateDownload";
 import EventRecommendations from "../../components/events/EventRecommendations";
+import SimilarEvents from "../../components/events/SimilarEvents";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
 import { useAuth } from "../../context/AuthContext";
@@ -573,6 +574,13 @@ const EventDetails = () => {
 
           <div className="mt-12">
             <EventRecommendations currentEventId={event.id} currentCategory={event.category} />
+          </div>
+
+          {/* Similar Events — multi-signal recommendation section (#7754)
+              Scores candidates by category, shared tags, type, mode, and difficulty
+              so the user is surfaced events that genuinely match what they viewed. */}
+          <div className="mt-4">
+            <SimilarEvents currentEvent={event} />
           </div>
         </div>
 
