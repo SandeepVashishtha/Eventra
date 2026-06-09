@@ -55,7 +55,7 @@ import { logAbuseAttempt } from "../../utils/abuseLogger";
 
 // Registration lock map to prevent concurrent registrations for the same event
 // const registrationLocks = new Map();
-// registrationLimiter moved to hook scope
+// registrationLimiterRef initialized at hook scope with 3 tokens, 0.3/sec refill
 
 /**
  * Derives a user-facing error message from a failed registration API response.
@@ -98,6 +98,7 @@ const useEventRegistration = (eventIdParam) => {
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
+  const registrationLimiterRef = useRef(createRateLimiter({ maxTokens: 3, refillRate: 0.3 }));
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -303,8 +304,8 @@ const useEventRegistration = (eventIdParam) => {
 
   // Proceed with registration after conflict check or user confirmation
   const proceedWithRegistration = useCallback(async () => {
-    if (!registrationLimiter.tryConsume()) {
-      const retryMs = registrationLimiter.getRetryAfterMs();
+    if (!registrationLimiterRef.current.tryConsume()) {
+      const retryMs = registrationLimiterRef.current.getRetryAfterMs();
 
       logAbuseAttempt("event-registration-rate-limit", {
         eventId,
