@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Modal Portal
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -203,7 +203,7 @@ const EditProfile = () => {
     return Math.round((filled / 10) * 100);
   };
 
-  const completionPercentage = calculateCompletion();
+  const completionPercentage = useMemo(() => calculateCompletion(), [form, user]);
 
   const addSkill = (skill) => {
     const trimmedSkill = skill.trim();
@@ -295,14 +295,18 @@ const EditProfile = () => {
     }
   };
 
-  const filteredSuggestions = allSkillSuggestions
-    .filter(
-      (suggestion) =>
-        currentSkillInput &&
-        suggestion.toLowerCase().includes(currentSkillInput.toLowerCase()) &&
-        !form.skills.some((s) => s.toLowerCase() === suggestion.toLowerCase())
-    )
-    .slice(0, 7);
+  const filteredSuggestions = useMemo(
+    () =>
+      allSkillSuggestions
+        .filter(
+          (suggestion) =>
+            currentSkillInput &&
+            suggestion.toLowerCase().includes(currentSkillInput.toLowerCase()) &&
+            !form.skills.some((s) => s.toLowerCase() === suggestion.toLowerCase())
+        )
+        .slice(0, 7),
+    [currentSkillInput, form.skills]
+  );
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 py-10 px-4">

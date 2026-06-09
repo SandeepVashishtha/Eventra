@@ -28,6 +28,19 @@ const DEFAULT_PRESETS = {
       assignedAttendees: {},
     },
     {
+      id: "accessible-1",
+      type: "round-table",
+      label: "Accessible Seating",
+      x: 50,
+      y: 500,
+      width: 120,
+      height: 120,
+      rotation: 0,
+      seatsCount: 4,
+      tier: "Accessible",
+      assignedAttendees: {},
+    },
+    {
       id: "table-1",
       type: "round-table",
       label: "VIP Table A",
@@ -347,24 +360,20 @@ const SpatialSeatSelector = ({
 
   // Selection callback
   const handleSeatClick = useCallback((el, seat, seatIdx) => {
-  if (readOnly) return;
+    if (readOnly) return;
+    const isOccupied = el.assignedAttendees[seatIdx];
+    if (isOccupied) return;
 
-  const isOccupied = el.assignedAttendees?.[seatIdx];
-  if (isOccupied) return;
+    const label = (el.seatLabels && el.seatLabels[seatIdx]) || `Seat ${seatIdx + 1}`;
+    const tier = el.tier || "General Seating";
 
-  const label =
-    (el.seatLabels && el.seatLabels[seatIdx]) ||
-    `Seat ${seatIdx + 1}`;
-
-  const tier = el.tier || "General Seating";
-
-  onSelectSeat({
-    elementId: el.id,
-    seatIndex: seatIdx,
-    seatLabel: `${el.label} - ${label}`,
-    tier,
-  });
-}, [readOnly, onSelectSeat]);
+    onSelectSeat({
+      elementId: el.id,
+      seatIndex: seatIdx,
+      seatLabel: `${el.label} - ${label}`,
+      tier: tier,
+    });
+  }, [onSelectSeat, readOnly]);
 
   return (
     <div className="ssp-container">
@@ -444,6 +453,7 @@ const SpatialSeatSelector = ({
           {/* Render Room elements */}
           {elements.map((el) => {
             const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
+  const isAccessible = el.tier && (el.tier.toLowerCase().includes("accessible") || el.tier.toLowerCase().includes("wheelchair") || el.tier.toLowerCase().includes("accessibility"));
             const projOffset = 10;
 
             return (

@@ -128,10 +128,13 @@ for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   }
 }
 
-console.log("\nScanning VITE_* variables for credential leaks...");
-const viteVars = Object.keys(process.env).filter((k) => k.startsWith("VITE_"));
+console.log("\nScanning client variables for credential leaks...");
+// Security Fix: Scan BOTH Vite and React App prefixes to prevent bypass leaks
+const clientVars = Object.keys(process.env).filter(
+  (k) => k.startsWith("VITE_") || k.startsWith("REACT_APP_")
+);
 
-for (const key of viteVars) {
+for (const key of clientVars) {
   if (ALLOWED_EXCEPTIONS.has(key)) continue;
 
   const value = process.env[key] || "";
@@ -180,6 +183,6 @@ if (criticalErrors.length > 0 || hasErrors) {
 }
 
 console.log(
-  `\n[validate-env] Environment check passed. Scanned ${viteVars.length} VITE_* variable(s).\n`
+  `\n[validate-env] Environment check passed. Scanned ${clientVars.length} client variable(s).\n`
 );
 process.exit(0);

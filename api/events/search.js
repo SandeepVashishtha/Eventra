@@ -61,7 +61,7 @@ export default async function searchEventsHandler(req, res, deps = {}) {
       typeof countEvents === "function"
         ? await countEvents({ query })
         : // Best-effort fallback when no count function is provided.
-          offset + items.length + (items.length === pageSize ? pageSize : 0);
+          offset + items.length + (items.length === pageSize ? 1 : 0);
 
     res.status(200).json(
       buildPageResponse({ items, total, page, pageSize })

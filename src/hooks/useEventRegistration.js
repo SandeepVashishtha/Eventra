@@ -53,14 +53,9 @@ export const MAX_NOTES_CHARS = 500;
 
 import { logAbuseAttempt } from "../../utils/abuseLogger";
 
-export const MAX_NOTES_CHARS = 500;
-
 // Registration lock map to prevent concurrent registrations for the same event
-const registrationLocks = new Map();
-const registrationLimiter = createRateLimiter({
-  maxTokens: 3,
-  refillRate: 0.2, // roughly 1 token every 5 seconds
-});
+// const registrationLocks = new Map();
+// registrationLimiterRef initialized at hook scope with 3 tokens, 0.3/sec refill
 
 /**
  * Derives a user-facing error message from a failed registration API response.
@@ -103,6 +98,7 @@ const useEventRegistration = (eventIdParam) => {
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
+  const registrationLimiterRef = useRef(createRateLimiter({ maxTokens: 3, refillRate: 0.3 }));
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -265,12 +261,19 @@ const useEventRegistration = (eventIdParam) => {
       const freshRes = await eventService.getEventDetails(id);
       if (freshRes.status === 200) {
         const freshEvent = freshRes.data;
-        return freshEvent.attendees >= freshEvent.maxAttendees;
+        const capacity = freshEvent.maxAttendees ?? 0;
+        const attendees = freshEvent.attendees ?? 0;
+        return attendees >= capacity;
       }
-    } catch {
-      return currentEvent.attendees >= currentEvent.maxAttendees;
+      const capacity = currentEvent?.maxAttendees ?? 0;
+      const attendees = currentEvent?.attendees ?? 0;
+      return attendees >= capacity;
+    } catch (error) {
+      console.error("[checkEventCapacity] Failed to check capacity:", error);
+      const capacity = currentEvent?.maxAttendees ?? 0;
+      const attendees = currentEvent?.attendees ?? 0;
+      return attendees >= capacity;
     }
-    return false;
   }, []);
 
   const checkAndHandleConflicts = useCallback(async () => {
@@ -301,8 +304,8 @@ const useEventRegistration = (eventIdParam) => {
 
   // Proceed with registration after conflict check or user confirmation
   const proceedWithRegistration = useCallback(async () => {
-    if (!registrationLimiter.tryConsume()) {
-      const retryMs = registrationLimiter.getRetryAfterMs();
+    if (!registrationLimiterRef.current.tryConsume()) {
+      const retryMs = registrationLimiterRef.current.getRetryAfterMs();
 
       logAbuseAttempt("event-registration-rate-limit", {
         eventId,
@@ -339,9 +342,7 @@ const useEventRegistration = (eventIdParam) => {
     };
 
     try {
-      // Fixed: Removed local const isEventFull to prevent scope error in catch block.
-      // Now using the hook-level isEventFull variable.
-      if (isEventFull) {
+      if (event && event.attendees >= event.maxAttendees) {
         await eventService.waitlistForEvent(eventId, payload);
       } else {
         await eventService.registerForEvent(eventId, payload);

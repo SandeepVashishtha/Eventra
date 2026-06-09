@@ -11,8 +11,9 @@
  */
 
 // --- IndexedDB Cache Configuration ---
+import { logger } from "./logger.js";
 const DB_NAME = "eventra_p2p_cache";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "file_chunks";
 
 let dbInstance = null;
@@ -27,8 +28,14 @@ const getDB = () => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = (e) => {
       const db = e.target.result;
+      let store;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: "chunkId" });
+        store = db.createObjectStore(STORE_NAME, { keyPath: "chunkId" });
+      } else {
+        store = e.target.transaction.objectStore(STORE_NAME);
+      }
+      if (!store.indexNames.contains("fileId")) {
+        store.createIndex("fileId", "fileId", { unique: false });
       }
     };
     request.onsuccess = (e) => {
@@ -36,7 +43,7 @@ const getDB = () => {
       resolve(dbInstance);
     };
     request.onerror = (e) => {
-      console.error("IndexedDB initialization error:", e);
+      logger.error("IndexedDB initialization error:", e);
       reject(e);
     };
   });
@@ -45,15 +52,15 @@ const getDB = () => {
 // Helper to attach error/abort handlers to an IndexedDB transaction and request
 const attachIdbReadHandlers = (transaction, request, resolve, fallbackValue, functionName) => {
   transaction.onerror = (err) => {
-    console.error(`${functionName} transaction error:`, err);
+    logger.error(`${functionName} transaction error:`, err);
     resolve(fallbackValue);
   };
   transaction.onabort = (err) => {
-    console.error(`${functionName} transaction aborted:`, err);
+    logger.error(`${functionName} transaction aborted:`, err);
     resolve(fallbackValue);
   };
   request.onerror = (err) => {
-    console.error(`${functionName} request error:`, err);
+    logger.error(`${functionName} request error:`, err);
     resolve(fallbackValue);
   };
 };
@@ -65,8 +72,9 @@ export async function isFileCached(fileId) {
     return new Promise((resolve) => {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
+      const index = store.index("fileId");
       
-      const request = store.openCursor();
+      const request = index.openCursor(IDBKeyRange.only(fileId));
       let chunksCount = 0;
       let totalChunks = 0;
       
@@ -75,10 +83,8 @@ export async function isFileCached(fileId) {
       request.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
-          if (cursor.value.fileId === fileId) {
-            chunksCount++;
-            totalChunks = cursor.value.totalChunks;
-          }
+          chunksCount++;
+          totalChunks = cursor.value.totalChunks;
           cursor.continue();
         } else {
           resolve(chunksCount > 0 && chunksCount === totalChunks);
@@ -86,7 +92,7 @@ export async function isFileCached(fileId) {
       };
     });
   } catch (error) {
-    console.error("Failed checking file cache:", error);
+    logger.error("Failed checking file cache:", error);
     return false;
   }
 }
@@ -98,8 +104,9 @@ export async function getCachedFile(fileId) {
     return new Promise((resolve) => {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
+      const index = store.index("fileId");
 
-      const request = store.openCursor();
+      const request = index.openCursor(IDBKeyRange.only(fileId));
       const chunks = [];
       
       attachIdbReadHandlers(transaction, request, resolve, null, "getCachedFile");
@@ -107,9 +114,7 @@ export async function getCachedFile(fileId) {
       request.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
-          if (cursor.value.fileId === fileId) {
-            chunks.push(cursor.value);
-          }
+          chunks.push(cursor.value);
           cursor.continue();
         } else {
           // Sort chunks by index
@@ -119,7 +124,7 @@ export async function getCachedFile(fileId) {
       };
     });
   } catch (error) {
-    console.error("Failed retrieving cached file chunks:", error);
+    logger.error("Failed retrieving cached file chunks:", error);
     return null;
   }
 }
@@ -148,7 +153,7 @@ export async function saveChunkToCache(fileId, fileName, chunkIndex, totalChunks
       request.onerror = (e) => reject(e);
     });
   } catch (error) {
-    console.error("Failed saving chunk:", error);
+    logger.error("Failed saving chunk:", error);
     return false;
   }
 }
@@ -209,6 +214,7 @@ export class P2PFileTransferCoordinator {
     this.isInitiator = false;
     this.onMessageListener = null;
     this.currentState = null;
+    this.queuedRemoteCandidates = [];
   }
 
   updateState(state, progress = 0, speed = "-", peer = null, count = 1) {
@@ -274,7 +280,7 @@ export class P2PFileTransferCoordinator {
             try {
               await this.pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
             } catch (err) {
-              console.error("Error adding ICE candidate:", err);
+              logger.error("Error adding ICE candidate:", err);
             }
           }
           break;
@@ -315,18 +321,22 @@ export class P2PFileTransferCoordinator {
         }
       }, 2500);
 
+      let checkInterval;
+
       // Add a secondary connection safety timer of 5 seconds total
       const connectionSafetyTimeout = setTimeout(() => {
         if (this.currentState === "connecting" || this.currentState === "searching") {
           this.cleanup();
+          clearInterval(checkInterval);
           resolve(false); // WebRTC connection handshakes timed out, fallback to server
         } else if (this.currentState === "completed" || this.currentState === "transferring") {
+          clearInterval(checkInterval);
           resolve(true);
         }
       }, 5000);
 
       // Attach state listener check to resolve immediately if completed
-      const checkInterval = setInterval(() => {
+      checkInterval = setInterval(() => {
         if (this.currentState === "completed") {
           clearTimeout(searchTimeout);
           clearTimeout(connectionSafetyTimeout);
@@ -352,6 +362,7 @@ export class P2PFileTransferCoordinator {
     this.updateState("connecting", 0, "-", targetPeerId, 1);
     
     this.pc = new RTCPeerConnection();
+    this.queuedRemoteCandidates = [];
     
     // Create data channel
     this.channel = this.pc.createDataChannel("file-transfer");
@@ -391,6 +402,7 @@ export class P2PFileTransferCoordinator {
     this.updateState("connecting", 0, "-", senderId, 1);
 
     this.pc = new RTCPeerConnection();
+    this.queuedRemoteCandidates = [];
 
     this.pc.ondatachannel = (e) => {
       this.channel = e.channel;
@@ -410,6 +422,7 @@ export class P2PFileTransferCoordinator {
     };
 
     await this.pc.setRemoteDescription(new RTCSessionDescription(offer));
+    await this.processQueuedCandidates();
     const answer = await this.pc.createAnswer();
     await this.pc.setLocalDescription(answer);
 
@@ -426,10 +439,23 @@ export class P2PFileTransferCoordinator {
   async handleAnswer(answer) {
     if (this.pc) {
       await this.pc.setRemoteDescription(new RTCSessionDescription(answer));
+      await this.processQueuedCandidates();
     }
   }
 
-  // Regulate chunk transmission using DataChannel flow control
+  // Process any ICE candidates that were queued before the remote description was applied
+  async processQueuedCandidates() {
+    if (!this.pc || !this.pc.remoteDescription) return;
+    while (this.queuedRemoteCandidates.length > 0) {
+      const candidate = this.queuedRemoteCandidates.shift();
+      try {
+        await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (err) {
+        console.error("Error adding queued ICE candidate:", err);
+      }
+    }
+  }
+
   async sendChunks(fileChunks) {
     const total = fileChunks.length;
     const channel = this.channel;
@@ -437,34 +463,34 @@ export class P2PFileTransferCoordinator {
 
     // Monitor bufferedAmount and pause sending when the buffer is congested
     channel.bufferedAmountLowThreshold = 65536; // 64 KB
-    let index = 0;
 
-    const sendNext = () => {
-      while (index < total) {
-        if (!channel || channel.readyState !== "open") {
-          break;
-        }
+    for (let index = 0; index < total; index++) {
+      if (channel.readyState !== "open") {
+        break;
+      }
 
-        // Check if browser DataChannel buffer is congested
-        if (channel.bufferedAmount > channel.bufferedAmountLowThreshold) {
+      // Check if browser DataChannel buffer is congested
+      if (channel.bufferedAmount > channel.bufferedAmountLowThreshold) {
+        // Await the drain event asynchronously without blocking the main thread or creating runaway timers
+        await new Promise((resolve) => {
           channel.onbufferedamountlow = () => {
             channel.onbufferedamountlow = null;
-            sendNext();
+            resolve();
           };
-          return;
-        }
-
-        const chunk = fileChunks[index];
-        channel.send(JSON.stringify({
-          chunkIndex: chunk.chunkIndex,
-          totalChunks: total,
-          data: chunk.data
-        }));
-        index++;
+        });
       }
-    };
 
-    sendNext();
+      if (channel.readyState !== "open") {
+        break;
+      }
+
+      const chunk = fileChunks[index];
+      channel.send(JSON.stringify({
+        chunkIndex: chunk.chunkIndex,
+        totalChunks: total,
+        data: chunk.data
+      }));
+    }
   }
 
   // Setup WebRTC DataChannel handlers for transferring chunks
@@ -487,7 +513,7 @@ this.channel.onmessage = async (e) => {
   try {
     chunkMsg = JSON.parse(e.data);
   } catch (err) {
-    console.error("Failed to parse incoming P2P message:", err);
+    logger.error("Failed to parse incoming P2P message:", err);
     return;
   }
 
@@ -499,7 +525,7 @@ this.channel.onmessage = async (e) => {
       typeof chunkMsg.totalChunks !== "number" ||
       chunkMsg.totalChunks !== this.expectedTotalChunks
     ) {
-      console.error(
+      logger.error(
         `[P2P Security] Chunk count mismatch! Expected ${this.expectedTotalChunks}, ` +
         `peer claims ${chunkMsg.totalChunks}. Dropping chunk and aborting transfer.`
       );
@@ -516,7 +542,7 @@ this.channel.onmessage = async (e) => {
     chunkMsg.chunkIndex < 0 ||
     chunkMsg.chunkIndex >= maxChunks
   ) {
-    console.error(
+    logger.error(
       `[P2P Security] Invalid chunkIndex ${chunkMsg.chunkIndex} for totalChunks ${maxChunks}. Dropping.`
     );
     return;
@@ -527,7 +553,7 @@ this.channel.onmessage = async (e) => {
     (c) => c.chunkIndex === chunkMsg.chunkIndex
   );
   if (alreadyReceived) {
-    console.warn(`[P2P Security] Duplicate chunk ${chunkMsg.chunkIndex} received. Dropping.`);
+    logger.warn(`[P2P Security] Duplicate chunk ${chunkMsg.chunkIndex} received. Dropping.`);
     return;
   }
 
@@ -557,7 +583,7 @@ this.channel.onmessage = async (e) => {
 };
 
     this.channel.onerror = (err) => {
-      console.error("DataChannel error:", err);
+      logger.error("DataChannel error:", err);
       this.updateState("failed");
       this.cleanup();
     };

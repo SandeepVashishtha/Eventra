@@ -9,6 +9,7 @@ Modern event and hackathon platform for communities, organizers, and contributor
 ---
 
 > [!IMPORTANT]
+>
 > ## Project Status Notice
 >
 > Due to time constraints and other commitments, **I ([@SandeepVashishtha](https://github.com/SandeepVashishtha)) will no longer be actively contributing to or managing this project** going forward. I sincerely apologize for any inconvenience this may cause to contributors and users.
@@ -20,6 +21,7 @@ Modern event and hackathon platform for communities, organizers, and contributor
 > ### Interested in becoming a maintainer?
 >
 > If you are passionate about this project and willing to take on a maintainer role, please reach out by:
+>
 > - Opening an issue titled **"Maintainer Volunteer - [Your Name]"**
 > - Or contacting via the existing community channels
 >
@@ -34,10 +36,10 @@ Eventra is an open-source frontend application built with React and Vite. It sup
 This repository contains the frontend and serverless API helpers under `api/`.
 The Spring Boot backend is maintained in a separate repository.
 
-- Frontend repo: https://github.com/SandeepVashishtha/Eventra
-- Backend repo: https://github.com/SandeepVashishtha/Eventra-Backend
-- Backend API base: https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net
-- Swagger: https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html
+- Frontend repo: <https://github.com/SandeepVashishtha/Eventra>
+- Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
+- Backend API base: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net>
+- Swagger: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html>
 
 ## Key Features
 
@@ -58,6 +60,18 @@ The Spring Boot backend is maintained in a separate repository.
 - Lucide React
 - Playwright (E2E)
 - ESLint and Prettier
+
+## Project Architecture
+
+Below is the high-level architecture of Eventra:
+
+```mermaid
+graph TD
+    Client[Client: React/Vite] --> Assets[Assets: public/]
+    Client --> State[State: Context/Hooks]
+    Client --> API[API: Serverless Helpers]
+    API --> Backend[Backend: Spring Boot API]
+```
 
 ## Project Structure
 
@@ -97,19 +111,50 @@ cd Eventra
 npm install
 ```
 
-2. Create your env file:
+1. Create your env file:
 
 ```bash
 cp .env.example .env
 ```
+> **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
 
-3. Start dev server:
+1. Start dev server:
+
+2. Start dev server:
 
 ```bash
 npm run dev
 ```
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
+
+## Docker Development
+
+You can run Eventra fully containerized using Docker Compose to ensure a consistent environment:
+
+1. Clone the repository and setup your environment variables:
+
+```bash
+git clone https://github.com/SandeepVashishtha/Eventra.git
+cd Eventra
+cp .env.example .env
+```
+
+1. Start the local development container:
+
+```bash
+docker-compose up eventra-dev
+```
+
+The app will be available at `http://localhost:3000` with hot-reloading enabled.
+
+1. Build and test the production container locally:
+
+```bash
+docker-compose up --build eventra-prod
+```
+
+The production-optimized build will be served via Nginx at `http://localhost:8080`.
 
 ## Environment Variables
 
@@ -182,7 +227,6 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
 ## Contributing
 
-- Read [CONTRIBUTING.md](CONTRIBUTING.md)
 - Follow [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - Open focused pull requests with clear scope and test notes
 - Issues may be auto-unassigned after inactivity by workflow: [auto-unassign-stale-issues.yml](.github/workflows/auto-unassign-stale-issues.yml)
@@ -265,3 +309,11 @@ This project is mentored under **GSSoC'26** by:
 </table>
 
 > 💬 Have questions about contributing or the project? Reach out to the mentor on [LinkedIn](https://www.linkedin.com/in/ayushh-sharmaa/) or via the [GSSoC Discord](https://discord.gg/6MQ9r5nHT).
+
+## 🚀 Quick Start
+
+```bash
+git clone https://github.com/SandeepVashishtha/Eventra.git
+cd Eventra
+npm install
+npm run dev

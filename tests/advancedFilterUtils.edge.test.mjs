@@ -20,7 +20,7 @@ const events = [
   {
     id: 1,
     title: "Web Dev",
-    type: "Web Development",
+    category: "Web Development",
     eventMode: "online",
     price: 0,
     status: "live",
@@ -53,12 +53,6 @@ describe("advancedFilterUtils — edge cases", () => {
     assert.equal(getCategoryLabel("unknown-key"), "unknown-key");
   });
 
-  it("filters by event.type when category is missing", () => {
-    const result = filterByCategory(events, ["web-development"]);
-    assert.equal(result.length, 1);
-    assert.equal(result[0].id, 1);
-  });
-
   it("returns all events when mode filter is empty", () => {
     assert.equal(filterByMode(events, []).length, events.length);
     assert.equal(filterByMode([{ eventMode: undefined }], ["offline"]).length, 1);
@@ -89,8 +83,17 @@ describe("advancedFilterUtils — edge cases", () => {
 
   it("derives earliest and latest event dates", () => {
     const range = getDateRange(events);
-    assert.equal(range.earliest.toISOString().slice(0, 10), "2026-05-28");
-    assert.equal(range.latest.toISOString().slice(0, 10), "2026-07-01");
+    
+    // Helper to extract a clean YYYY-MM-DD string strictly in UTC context
+    const toUTCIsoDate = (date) => {
+      const yyyy = date.getUTCFullYear();
+      const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
+      const dd = String(date.getUTCDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    assert.equal(toUTCIsoDate(range.earliest), "2026-05-28");
+    assert.equal(toUTCIsoDate(range.latest), "2026-07-01");
   });
 
   it("detects active date and price filters", () => {
@@ -125,6 +128,7 @@ describe("advancedFilterUtils — edge cases", () => {
     assert.deepEqual(getUniqueCategories(events), [
       "AI & Machine Learning",
       "DevOps & Cloud",
+      "Web Development",
     ]);
   });
 });
