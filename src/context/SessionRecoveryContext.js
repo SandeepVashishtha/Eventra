@@ -135,10 +135,16 @@ const getOrCreateSessionKey = () => {
   if (typeof window === "undefined") return null;
   try {
     if (!_inMemorySessionKey) {
-      const raw = crypto.getRandomValues(new Uint8Array(32));
-      _inMemorySessionKey = Array.from(raw)
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
+      const stored = sessionStorage.getItem("eventra_session_key");
+      if (stored) {
+        _inMemorySessionKey = stored;
+      } else {
+        const raw = crypto.getRandomValues(new Uint8Array(32));
+        _inMemorySessionKey = Array.from(raw)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        sessionStorage.setItem("eventra_session_key", _inMemorySessionKey);
+      }
     }
     return _inMemorySessionKey;
   } catch (e) {
