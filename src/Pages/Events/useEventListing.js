@@ -3,11 +3,22 @@ import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
+import { useStableFilters } from "../../hooks/useStableFilters";
+import {
+  applyAdvancedFilters,
+  getDateRange,
+  getDefaultFilters,
+  getPriceStats,
+  normalizeAdvancedFilters,
+} from "../../utils/advancedFilterUtils";
+import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
+
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
 const SORT_MAPPING = {
   Newest: "date,desc",
+  Upcoming: "date,asc",
   Oldest: "date,asc",
   "Title A-Z": "title,asc",
   "Title Z-A": "title,desc",
@@ -15,9 +26,15 @@ const SORT_MAPPING = {
   "Price High to Low": "price,desc",
 };
 
+const normalizeEvent = (event) => ({
+  ...event,
+  status: event.status || getEventStatus(event),
+});
+
 const useEventListing = () => {
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
@@ -28,10 +45,7 @@ const useEventListing = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
 
-  const [advancedFilters, setAdvancedFilters] = useState({
-    category: "",
-    status: "",
-  });
+  const [advancedFilters, setAdvancedFiltersState] = useStableFilters({});
 
   const [pagination, setPagination] = useState({
     totalPages: 1,
@@ -42,6 +56,7 @@ const useEventListing = () => {
 
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const isInitialMount = useRef(true);
+  const latestRequestRef = useRef(0);
 
   const buildQueryParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -57,16 +72,19 @@ const useEventListing = () => {
       params.append("status", filterType.toUpperCase());
     }
 
-    if (advancedFilters?.category) {
-      params.append("category", advancedFilters.category);
+    if (advancedFilters?.categories?.length) {
+      advancedFilters.categories.forEach((category) => {
+        params.append("category", category);
+      });
     }
 
-    if (advancedFilters?.status) {
-      params.append("status", advancedFilters.status.toUpperCase());
+    if (advancedFilters?.statuses?.length) {
+      advancedFilters.statuses.forEach((status) => {
+        params.append("status", status.toUpperCase());
+      });
     }
 
     const sortValue = SORT_MAPPING[sortType];
-
     if (sortValue) {
       params.append("sort", sortValue);
     }
@@ -82,6 +100,7 @@ const useEventListing = () => {
   ]);
 
   const fetchEvents = useCallback(async () => {
+    const requestId = ++latestRequestRef.current;
     setIsLoading(true);
     setLoadError("");
 
@@ -92,17 +111,18 @@ const useEventListing = () => {
         `${API_ENDPOINTS.EVENTS.LIST}?${query}`,
       );
 
+      // Discard stale responses from earlier requests
+      if (requestId !== latestRequestRef.current) return;
+
       const responseData = response?.data || {};
 
       const apiEvents = Array.isArray(responseData.content)
         ? responseData.content
-        : [];
+        : Array.isArray(responseData)
+          ? responseData
+          : [];
 
-      const normalizedEvents = apiEvents.map((event) => ({
-        ...event,
-        status: event.status || getEventStatus(event),
-      }));
-
+      const normalizedEvents = apiEvents.map(normalizeEvent);
       setEvents(normalizedEvents);
 
       setPagination({
@@ -112,16 +132,9 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-      console.error("Failed to fetch events:", error);
-
       if (process.env.NODE_ENV === "development") {
-        const normalizedMockEvents = mockEvents.map((event) => ({
-          ...event,
-          status: getEventStatus(event),
-        }));
-
+        const normalizedMockEvents = mockEvents.map(normalizeEvent);
         setEvents(normalizedMockEvents);
-
         setPagination({
           totalPages: 1,
           totalElements: normalizedMockEvents.length,
@@ -138,33 +151,20 @@ const useEventListing = () => {
         });
 
         if (error?.response?.status === 403) {
-  setLoadError(
-    "Access to events is currently restricted. Please try again later.",
-  );
-} else {
-  setLoadError(
-    "Failed to load events. Please try again later.",
-  );
-}
+          setLoadError(
+            "Access to events is currently restricted. Please try again later.",
+          );
+        } else {
+          setLoadError(
+            "Failed to load events. Please try again later.",
+          );
+        }
       }
     } finally {
       setIsLoading(false);
     }
   }, [buildQueryParams]);
 
-  // RACE CONDITION FIX: Call fetchEvents immediately on mount, without scheduling
-  // mock data concurrently. This prevents race conditions where mock data could
-  // overwrite real API responses based on timing.
-  //
-  // Previous implementation:
-  // - useEffect 1: Scheduled mock data to load after 800ms
-  // - useEffect 2: Called fetchEvents() for API request
-  // - Result: If API took >800ms, mock data would overwrite real results
-  //
-  // New implementation:
-  // - Single fetchEvents() call that uses mock data only as a failure fallback
-  // - No concurrent timers that could race with network requests
-  // - Mock data is development-only fallback logic, not a production path
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
@@ -182,18 +182,100 @@ const useEventListing = () => {
       setCurrentPage(1);
       return;
     }
-
     if (page > pagination.totalPages) {
       setCurrentPage(pagination.totalPages);
       return;
     }
-
     setCurrentPage(page);
   };
 
-  const filteredEvents = useMemo(() => events, [events]);
+  const setAdvancedFilters = useCallback((filters) => {
+    setAdvancedFiltersState(normalizeAdvancedFilters(filters));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const paginatedEvents = useMemo(() => events, [events]);
+  const priceStats = useMemo(() => getPriceStats(events), [events]);
+  const dateRangeStats = useMemo(() => getDateRange(events), [events]);
+
+  const filteredEvents = useMemo(() => {
+    // 1. Fuzzy search first (or all events if no query)
+    let filtered = debouncedSearchQuery.trim()
+      ? getRouteSearchResults(
+          events,
+          debouncedSearchQuery,
+          [
+            { name: "title", weight: 0.8 },
+            { name: "category", weight: 0.5 },
+            { name: "tags", weight: 0.4 },
+            { name: "location.name", weight: 0.3 },
+            { name: "location.city", weight: 0.3 },
+            { name: "description", weight: 0.1 },
+          ]
+        )
+      : [...events];
+
+    // 2. Status timing filter
+    filtered = filtered.filter((event) => {
+      const status = getEventStatus(event);
+      if (filterType === "live" && status !== "live") return false;
+      if (filterType === "upcoming" && status !== "upcoming") return false;
+      if (filterType === "past" && status !== "past" && status !== "ended") return false;
+      return true;
+    });
+
+    // 3. Category filter
+    const target = categoryFilter && categoryFilter !== "all"
+      ? categoryFilter.toLowerCase()
+      : null;
+
+    if (target) {
+      filtered = filtered.filter((event) => {
+        const cat = event.category?.toLowerCase() || "";
+        const type = event.type?.toLowerCase() || "";
+
+        if (target === "hackathon" || target === "hackathons") {
+          return type === "hackathon" || cat.includes("hackathon");
+        } else if (["tech talks", "tech-talks", "conference"].includes(target)) {
+          return (
+            type === "conference" || type === "summit" ||
+            cat.includes("tech") || cat.includes("conference") || cat.includes("summit")
+          );
+        } else if (["cultural", "networking", "cultural & networking"].includes(target)) {
+          return cat.includes("networking") || cat.includes("cultural") || cat.includes("community");
+        } else {
+          const norm = (s) => s.replace(/[^a-z0-9]+/g, "");
+          const nTarget = norm(target), nCat = norm(cat), nType = norm(type);
+          return (
+            nCat.includes(nTarget) || nType.includes(nTarget) ||
+            nTarget.includes(nCat) || nTarget.includes(nType)
+          );
+        }
+      });
+    }
+
+    // 4. Advanced filters
+    return applyAdvancedFilters(filtered, advancedFilters);
+  }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
+
+  const sortedEvents = useMemo(() => {
+    return [...filteredEvents].sort((a, b) => {
+      const dateA = new Date(a.date || a.startDate);
+      const dateB = new Date(b.date || b.startDate);
+
+      if (sortType === "Upcoming") {
+        return dateA - dateB;
+      }
+      return dateB - dateA;
+    });
+  }, [filteredEvents, sortType]);
+
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * eventsPerPage;
+    return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
+  }, [sortedEvents, currentPage, eventsPerPage]);
+
+  const totalElements = pagination.totalPages > 1 ? pagination.totalElements : sortedEvents.length;
+  const totalPages = pagination.totalPages > 1 ? pagination.totalPages : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
 
   return {
     currentPage,
@@ -201,18 +283,22 @@ const useEventListing = () => {
     fetchEvents,
     filteredEvents,
     filterType,
+    categoryFilter,
     loadError,
     isLoading,
     paginatedEvents,
     searchQuery,
     sortType,
-    totalPages: pagination.totalPages,
-    totalElements: pagination.totalElements,
+    totalPages,
+    totalElements,
     viewMode,
     advancedFilters,
     isAdvancedFiltersOpen,
+    priceStats,
+    dateRangeStats,
     setEventsPerPage,
     setFilterType,
+    setCategoryFilter,
     setSafePage,
     setSearchQuery,
     setSortType,

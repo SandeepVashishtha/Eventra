@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Users, Clock, TrendingUp, Activity, CheckCircle2, Play, Zap } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -13,6 +13,8 @@ import {
 } from "recharts";
 import { toast } from "react-toastify";
 import { useAnalyticsStream, SSE_STATUS } from "../../context/RealTimeContext";
+import BudgetPlanner from "./BudgetPlanner";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // =========================================================================
 // CONSTANTS & INITIAL DATA
@@ -80,36 +82,6 @@ const MOCK_CATEGORY_DATA = [
  * Isolated payload generator ensuring visual graphs are decoupled
  * from the local state generation mechanisms.
  */
-const generateMockCheckinPayload = (isManual = false) => {
-  const checkinNames = [
-    "Aditya Rao", "Ishaan Roy", "Meera Nair", "Rohan Das", "Zoya Ali",
-    "Aryan Joshi", "Tanya Sen", "Kabir Dutt", "Riya Pillai", "Aravind Swami"
-  ];
-  const simulatorNames = ["Gaurav Kumar", "Shruti Shah", "Manish Pandey", "Pooja Hegde"];
-  
-  const checkinEvents = [
-    "Web Dev Workshop", "Global AI Hackathon", "AI & ML Bootcamp",
-    "React Conference 2025", "Hack for Sustainability"
-  ];
-
-  const pool = isManual ? simulatorNames : checkinNames;
-  const randomName = pool[Math.floor(Math.random() * pool.length)];
-  const randomEvent = isManual ? "Global AI Hackathon" : checkinEvents[Math.floor(Math.random() * checkinEvents.length)];
-  const randomStatus = isManual ? "Verified" : (Math.random() > 0.08 ? "Verified" : "Flagged");
-  const hourlyIncrement = isManual ? 3 : 1;
-
-  return {
-    id: isManual ? `c-manual-${Date.now()}` : `c-${Date.now()}`,
-    name: randomName,
-    event: randomEvent,
-    time: "Just now",
-    status: randomStatus,
-    meta: {
-      hourlyIncrement,
-      velocityDelta: parseFloat((Math.random() * 0.4 - 0.2).toFixed(1))
-    }
-  };
-};
 
 // =========================================================================
 // SUB-COMPONENTS
@@ -144,35 +116,27 @@ function AnalyticsStreamBadge({ status }) {
 
 const LOCAL_STORAGE_KEY = "eventra_checkins";
 
+// Pure initializers — depend only on module-level constants, safe to define outside component
+const getInitialCheckins = () => {
+  const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+  if (saved.length > 0) {
+    const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
+    return merged;
+  }
+  return MOCK_CHECKINS;
+};
+
+const getInitialLiveCount = () => {
+  const saved = safeJsonParse(localStorage.getItem(LOCAL_STORAGE_KEY), []);
+  return 342 + saved.filter((c) => c.status === "Verified").length;
+};
+
 const AnalyticsDashboard = () => {
-  // Merge real scanned check-ins from localStorage (set by TicketScanner) with mock defaults
-  const getInitialCheckins = () => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
-      if (saved.length > 0) {
-        // Merge: show real scanned check-ins first, then pad with mocks if fewer than 5
-        const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
-        return merged;
-      }
-    } catch (e) {
-      // fallback to mock if localStorage is corrupted
-    }
-    return MOCK_CHECKINS;
-  };
-
-  const getInitialLiveCount = () => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
-      return 342 + saved.filter((c) => c.status === "Verified").length;
-    } catch (e) {
-      return 342;
-    }
-  };
-
   const [checkins, setCheckins] = useState(getInitialCheckins);
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
+  const [activeTab, setActiveTab] = useState('analytics');
 
   // Real-time SSE stream — takes priority over local simulation when connected
   const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
@@ -183,7 +147,7 @@ const AnalyticsDashboard = () => {
    * Unified Analytical State Consumer pipeline.
    * Maps ingested data contract structure cleanly to the UI state.
    */
-  const processIncomingCheckin = (checkinPayload) => {
+  const processIncomingCheckin = useCallback((checkinPayload) => {
     const { meta, ...cleanCheckinData } = checkinPayload;
     
     // Fallback/Default metadata processing for standard payloads
@@ -215,21 +179,24 @@ const AnalyticsDashboard = () => {
     // 5. Fire Feedback Notifications Interceptors
     if (cleanCheckinData.status === "Flagged") {
       toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${cleanCheckinData.name}`);
-    } else if (cleanCheckinData.id.includes("manual")) {
+    } else if (String(cleanCheckinData.id).includes("manual")) {
       toast.success(`🚀 Simulator: Successfully injected real-time check-in record for ${cleanCheckinData.name}!`);
     } else {
       toast.info(`🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`);
     }
-  };
+  }, []);
 
   // Processing real-time production SSE streams via data consumer pipeline
   useEffect(() => {
     const latest = streamCheckins[0];
-    if (!latest || latest === lastStreamCheckinRef.current) return;
-    lastStreamCheckinRef.current = latest;
+    // Compare by event ID rather than object reference so that a reconnect
+    // (which rebuilds the context array as new objects) does not re-trigger
+    // processing for the same logical event.
+    if (!latest || latest.id === lastStreamCheckinRef.current) return;
+    lastStreamCheckinRef.current = latest.id;
 
     processIncomingCheckin(latest);
-  }, [streamCheckins]);
+  }, [streamCheckins, processIncomingCheckin]);
 
   // Automated background interval simulation logic loop
   useEffect(() => {
@@ -332,6 +299,26 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="space-y-8 text-slate-800 dark:text-slate-100">
+  {/* Tab Navigation */}
+  <div className="flex gap-2 mb-4">
+    <button
+      onClick={() => setActiveTab('analytics')}
+      className={`px-4 py-2 rounded ${activeTab === 'analytics' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+    >
+      Analytics
+    </button>
+    <button
+      onClick={() => setActiveTab('budget')}
+      className={`px-4 py-2 rounded ${activeTab === 'budget' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+    >
+      Budget
+    </button>
+  </div>
+  {activeTab === 'budget' ? (
+    <BudgetPlanner />
+  ) : (
+    // Original analytics UI starts here
+    <>
       {/* CONTROL BANNER */}
       <div className="flex flex-col gap-4 p-5 bg-white border shadow-sm sm:flex-row sm:items-center sm:justify-between dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl">
         <div>
@@ -346,7 +333,7 @@ const AnalyticsDashboard = () => {
         <button
           onClick={triggerManualCheckin}
           className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md transition self-start sm:self-auto"
-         aria-label="button">
+         aria-label="Trigger manual check-in scan">
           <Play className="w-3.5 h-3.5 fill-white" />
           Trigger Check-in Scan
         </button>
@@ -550,8 +537,11 @@ const AnalyticsDashboard = () => {
             </div>
           ))}
         </div>
+        {/* Closing tag for line 502 wrapper — fix for #7244 */}
       </div>
-    </div>
+      </>
+  )}
+</div>
   );
 };
 

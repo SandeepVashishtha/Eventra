@@ -1,3 +1,7 @@
+/**
+ * @fileoverview useDebouncedSearch - Debounced search query hook
+ * @module hooks/useDebouncedSearch
+ */
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 /**
@@ -37,7 +41,7 @@ export function useDebouncedSearch(initialValue = '', delay = 300) {
         clearTimeout(timerRef.current);
       }
     };
-  }, [searchTerm, delay]);
+  }, [searchTerm, debouncedTerm, delay]);
 
   const clear = useCallback(() => {
     setSearchTerm('');

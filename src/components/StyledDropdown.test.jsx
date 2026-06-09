@@ -1,4 +1,4 @@
-import React, { act } from "react";
+import { act } from "react";
 import { createRoot } from "react-dom/client";
 import Dropdown from "./StyledDropdown";
 
@@ -6,9 +6,9 @@ let container;
 let root;
 let onChange;
 
-/* eslint-disable no-undef */
+ 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
-/* eslint-enable no-undef */
+ 
 
 const renderDropdown = (props = {}) => {
   container = document.createElement("div");
@@ -16,7 +16,7 @@ const renderDropdown = (props = {}) => {
   root = createRoot(container);
   onChange = jest.fn();
 
-  // eslint-disable-next-line testing-library/no-unnecessary-act
+   
   act(() => {
     root.render(
       <Dropdown
@@ -42,7 +42,7 @@ const pressKey = (element, key) => {
 
 afterEach(() => {
   if (root) {
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     act(() => {
       root.unmount();
     });

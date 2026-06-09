@@ -1,3 +1,4 @@
+ 
 import { lazy } from "react";
 
 export function lazyWithRetry(importFn, retries = 2, delay = 1000) {

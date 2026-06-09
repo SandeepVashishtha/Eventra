@@ -1,5 +1,8 @@
 import axios from "axios";
-import { ENV } from "./env";
+import { ENV } from "./env.js";
+import { syncServerTimeFromHeader } from "../utils/timeSync.js";
+import { getCSRFToken } from "../utils/csrfToken.js";
+import { logger } from "../utils/logger.js";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -27,8 +30,8 @@ const resolveEnvApiBaseUrl = () => {
   if (envUrl) {
     return normalizeApiBaseUrl(envUrl);
   }
-  if (process.env.NODE_ENV === "production") {
-    console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
+  if (!isDev) {
+    logger.warn(`VITE_API_URL environment variable is missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
     return "";
   }
   return "http://localhost:8080";
@@ -60,6 +63,7 @@ const buildApiUrl = (path = "") => {
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
+const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1_000;
 
@@ -102,9 +106,14 @@ const API = axios.create({
 });
 
 let onUnauthorized = null;
+let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
+};
+
+export const setAuthToken = (token) => {
+  _authToken = token;
 };
 
 /**
@@ -195,17 +204,48 @@ const normalizeApiError = (error) => {
   );
 };
 
-// 🔥 HERE IS WHERE WE FIXED THE BUG 🔥
 // We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
 API.interceptors.request.use((config) => {
   if (isDev) {
-    console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
+    logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
+
+  if (_authToken && _authToken !== "cookie-managed") {
+    config.headers["Authorization"] = `Bearer ${_authToken}`;
+  }
+
+  const method = config.method?.toUpperCase();
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    const csrf = getCSRFToken();
+    if (csrf) {
+      config.headers["X-CSRF-Token"] = csrf;
+    } else if (process.env.NODE_ENV !== "production") {
+      console.warn("[CSRF] Token missing for mutating request:", method, config.url);
+    }
+    
+    // Add idempotency key for critical state mutations
+    if (!config.headers["Idempotency-Key"]) {
+      config.headers["Idempotency-Key"] = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+    }
+  }
+
   return config;
 });
 
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
+    if (headerValue) {
+      syncServerTimeFromHeader(headerValue);
+    }
+    return response;
+  },
   async (error) => {
     const config = error.config || {};
     const status = error?.response?.status;
@@ -215,16 +255,17 @@ API.interceptors.response.use(
     }
 
     const retryCount = config._retryCount || 0;
-    const isNonMutating = config.method?.toUpperCase() === 'GET';
-    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status) || (status === 429);
+    const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
+    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
     
-    // Retry non-mutating requests with exponential backoff
+    // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
+    // because those can duplicate writes or worsen server-side rate limiting.
     if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
       config._retryCount = retryCount + 1;
       const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
       if (isDev) {
-        console.debug(
+        logger.info(
           `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
         );
       }
@@ -253,8 +294,10 @@ export const API_ENDPOINTS = {
     ALL: buildApiUrl("/api/events"),
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
+    SCHEDULE: (id) => buildApiUrl(`/api/events/${id}/schedule`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
-
+    AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
+    CANCEL: (id) => buildApiUrl(`/api/events/${id}/cancel`),  
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
@@ -276,6 +319,7 @@ export const API_ENDPOINTS = {
     BASE: buildApiUrl("/api/notifications"),
     ALL: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
+    DELETE: (id) => (id ? buildApiUrl(`/api/notifications/${id}`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
     PREFERENCES: buildApiUrl("/api/notifications/preferences"),
     PUSH_SUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions"),
@@ -285,13 +329,49 @@ export const API_ENDPOINTS = {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
   },
+  SESSION_RECOVERY: {
+    BASE: buildApiUrl("/api/session-recovery"),
+    SESSION: (sessionId) =>
+      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}`),
+    RESTORE: (sessionId) =>
+      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}/restore`),
+    CLEANUP_EXPIRED: buildApiUrl("/api/session-recovery/expired"),
+  },
+  TICKETS: {
+    VALIDATE: buildApiUrl("/api/tickets/validate"),
+    CHECK_IN: buildApiUrl("/api/tickets/checkin"),
+    HISTORY: buildApiUrl("/api/tickets/checkins"),
+  },
+  FEEDBACK: {
+    BASE: buildApiUrl("/api/feedback"),
+    BY_EVENT: (eventId) => {
+      const params = new URLSearchParams({ eventId: String(eventId) });
+      return buildApiUrl(`/api/feedback?${params.toString()}`);
+    },
+  },
+  ADMIN: {
+    USERS: buildApiUrl("/api/admin/users"),
+    USER: (id) => buildApiUrl(`/api/admin/users/${id}`),
+    EVENTS: buildApiUrl("/api/admin/events"),
+    EVENT: (id) => buildApiUrl(`/api/admin/events/${id}`),
+    STATS: buildApiUrl("/api/admin/stats"),
+  },
   VALIDATION: {
     EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
     USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
     PHONE: buildApiUrl("/api/validate/phone"),
+    CONTACT: buildApiUrl("/api/contact"),
   },
 };
 
+
+const buildAxiosConfig = (url, options = {}) => {
+  const { signal, headers, ...rest } = options;
+  const config = normalizeRequestConfig(rest);
+  if (signal) config.signal = signal;
+  if (headers) config.headers = { ...config.headers, ...headers };
+  return { url, config };
+};
 
 export const apiUtils = {
   get: (url, config = {}) =>
@@ -304,6 +384,23 @@ export const apiUtils = {
     API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
   delete: (url, config = {}) =>
     API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+
+  request: async (method, url, data = null, options = {}) => {
+    const config = normalizeRequestConfig(options);
+    if (options.signal) config.signal = options.signal;
+    if (options.headers) config.headers = { ...config.headers, ...options.headers };
+    config.method = method.toLowerCase();
+    const axiosResponse = await API.request({ url, method: config.method, data, ...config });
+    const wrappedHeaders = wrapHeaders(axiosResponse.headers);
+    return {
+      response: {
+        status: axiosResponse.status,
+        ok: axiosResponse.status >= 200 && axiosResponse.status < 300,
+        headers: wrappedHeaders,
+      },
+      data: axiosResponse.data,
+    };
+  },
 };
 
 export default API;
@@ -313,6 +410,16 @@ export { normalizeApiError };
 // Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {
   store: new Map(),
-  get(key) { return this.store.get(key); },
-  set(key, val) { this.store.set(key, val); }
+
+  get(key) {
+    return this.store.get(key);
+  },
+
+  set(key, val) {
+    this.store.set(key, val);
+  },
+
+  clear() {
+    this.store.clear();
+  },
 };

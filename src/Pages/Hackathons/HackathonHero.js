@@ -4,10 +4,10 @@ import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { useAuth } from "../../context/AuthContext";
 import CountUpLib from "react-countup";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 
-const CountUp = CountUpLib.default;
+const CountUp = CountUpLib.default || CountUpLib;
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
   <motion.div
@@ -27,7 +27,6 @@ const Tag = ({ tag, onRemove }) => (
 );
 
 export default function HackathonHero({
-  hackathons = [],
   searchQuery,
   setSearchQuery,
   scrollToCards,
@@ -208,7 +207,7 @@ export default function HackathonHero({
 
       {/* STATS SECTION */}
       {searchQuery.trim() === "" && selectedTags.length === 0 && (
-        <SectionErrorBoundary label="Hackathon Statistics">
+        <ErrorBoundary level="section" label="Hackathon Statistics">
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-14 sm:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {[
             { label: "Hackathons Hosted", value: 120, suffix: "+", icon: Calendar, color: "from-blue-500 to-indigo-500" },
@@ -248,7 +247,7 @@ export default function HackathonHero({
             </motion.div>
           ))}
         </div>
-        </SectionErrorBoundary>
+        </ErrorBoundary>
       )}
     </div>
   );

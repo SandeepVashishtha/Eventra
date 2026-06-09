@@ -1,24 +1,32 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-} from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { authService } from "../../services/authService";
+
+import { ROLES } from "../../config/roles";
 import { useAuth } from "../../context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { User, AtSign, Lock, Eye, EyeOff, Zap } from "lucide-react";
-import {
-  validate,
-  validateEmailAvailability,
-  validatePasswordStrength,
-} from "../../validation";
+import { validate, validateEmailAvailability, validatePasswordStrength } from "../../validation";
 
-const getResultMessage = (result, fallback) =>
-  result?.isValid ? "" : result?.message || fallback;
+const getResultMessage = (result, fallback) => (result?.isValid ? "" : result?.message || fallback);
+
+export const normalizeSignupRoles = (data) => {
+  const responseRoles = Array.isArray(data?.roles)
+    ? data.roles.filter((role) => typeof role === "string" && role.trim())
+    : [];
+
+  if (responseRoles.length > 0) {
+    return responseRoles;
+  }
+
+  if (typeof data?.role === "string" && data.role.trim()) {
+    return [data.role];
+  }
+
+  return [ROLES.ATTENDEE];
+};
 
 const parseSignupResponse = async (response) => {
   if (typeof response?.text === "function") {
@@ -47,6 +55,9 @@ const parseSignupResponse = async (response) => {
 const SignupForm = () => {
   const navigate = useNavigate();
   const { setAuthSession } = useAuth();
+  // useRef-based guard prevents double-click submissions even when
+  // the loading state update hasn't propagated yet (setState is async).
+  const isSubmittingRef = useRef(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -62,28 +73,20 @@ const SignupForm = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-<<<<<<< HEAD
-=======
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
-  
-  // Reconstructed missing state variables from the fragmented file
-  const [error, setError] = useState("");
-  const [confirmPasswordError, setConfirmPasswordError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [fieldValidationState, setFieldValidationState] = useState({});
 
-  const emailValidationRequestRef = useRef(0);
+  const [fieldValidationState, setFieldValidationState] = useState({});
   const { password, confirmPassword } = formData;
 
   const setFieldState = useCallback((fieldName, state) => {
     setFieldValidationState((prev) => ({ ...prev, [fieldName]: state }));
   }, []);
->>>>>>> origin/fix/eslint-config-drift-3568
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
+    setFieldState(name, "idle");
     setSubmitError("");
   };
 
@@ -91,43 +94,47 @@ const SignupForm = () => {
     const nextErrors = {};
 
     const firstNameResult = validate.firstName(formData.firstName.trim());
-    if (firstNameResult !== true) nextErrors.firstName = firstNameResult;
+    if (firstNameResult !== true) {
+      nextErrors.firstName = firstNameResult;
+      setFieldState("firstName", "error");
+    } else {
+      setFieldState("firstName", "success");
+    }
 
     const lastNameResult = validate.lastName(formData.lastName.trim());
-    if (lastNameResult !== true) nextErrors.lastName = lastNameResult;
-
-<<<<<<< HEAD
-    const emailValue = formData.email.trim();
-    const emailFormatResult = validate.email(emailValue);
-    if (emailFormatResult !== true) {
-      nextErrors.email = emailFormatResult;
+    if (lastNameResult !== true) {
+      nextErrors.lastName = lastNameResult;
+      setFieldState("lastName", "error");
     } else {
-      const emailAvailability = await validateEmailAvailability(emailValue);
-      if (!emailAvailability?.isValid) {
-        nextErrors.email = getResultMessage(emailAvailability, "Email is already registered");
-=======
+      setFieldState("lastName", "success");
+    }
+
     if (!formData.email.trim()) {
       nextErrors.email = "Email is required";
+      setFieldState("email", "error");
     } else {
       const emailValue = formData.email.trim();
       const emailFormatResult = validate.email(emailValue);
       if (emailFormatResult !== true) {
         nextErrors.email = emailFormatResult;
+        setFieldState("email", "error");
       } else {
         const emailAvailability = await validateEmailAvailability(emailValue);
         if (!emailAvailability?.isValid) {
           nextErrors.email = getResultMessage(emailAvailability, "Email is already registered");
+          setFieldState("email", "error");
+        } else {
+          setFieldState("email", "success");
         }
->>>>>>> origin/fix/eslint-config-drift-3568
       }
     }
 
     const passwordResult = await validatePasswordStrength(formData.password);
     if (!passwordResult?.isValid) {
-      nextErrors.password = getResultMessage(
-        passwordResult,
-        "Password does not meet strength requirements"
-      );
+      nextErrors.password = "Password doesn't meet the security criteria";
+      setFieldState("password", "error");
+    } else {
+      setFieldState("password", "success");
     }
 
     const confirmPasswordResult = validate.confirmPassword(formData.confirmPassword, {
@@ -135,41 +142,30 @@ const SignupForm = () => {
     });
     if (confirmPasswordResult !== true) {
       nextErrors.confirmPassword = confirmPasswordResult;
+      setFieldState("confirmPassword", "error");
+    } else {
+      setFieldState("confirmPassword", "success");
     }
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
 
-<<<<<<< HEAD
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitError("");
-    setSuccess("");
-
-    const valid = await runValidation();
-    if (!valid) return;
-
-    setLoading(true);
-
-=======
+  // Confirm Password matching useEffect
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!password || !confirmPassword) {
-        setError("");
+        setErrors((prev) => ({ ...prev, confirmPassword: "" }));
         setPasswordMatchMessage("");
-        setConfirmPasswordError("");
         setFieldState("confirmPassword", "idle");
         return;
       }
       if (password === confirmPassword) {
-        setError("");
-        setConfirmPasswordError("");
+        setErrors((prev) => ({ ...prev, confirmPassword: "" }));
         setFieldState("confirmPassword", "success");
         setPasswordMatchMessage("Passwords match!");
       } else {
-        setError("Passwords do not match");
-        setConfirmPasswordError("Passwords do not match");
+        setErrors((prev) => ({ ...prev, confirmPassword: "Passwords do not match" }));
         setFieldState("confirmPassword", "error");
         setPasswordMatchMessage("");
       }
@@ -177,46 +173,87 @@ const SignupForm = () => {
     return () => clearTimeout(timer);
   }, [password, confirmPassword, setFieldState]);
 
+  // Password strength check useEffect
   useEffect(() => {
-    let isActive = true;
-
     const validatePwd = async () => {
       if (!formData.password) {
-        setPasswordError("");
+        setErrors((prev) => ({ ...prev, password: "" }));
         setFieldState("password", "idle");
         return;
       }
+      const result = await validatePasswordStrength(formData.password);
+      if (result?.isValid) {
+        setErrors((prev) => ({ ...prev, password: "" }));
+        setFieldState("password", "success");
+      } else {
+        setErrors((prev) => ({ ...prev, password: result?.message }));
+        setFieldState("password", "error");
+      }
     };
     validatePwd();
-    
-    return () => {
-      isActive = false;
-    };
   }, [formData.password, setFieldState]);
+
+  // Email validation check useEffect with 500ms debounce
+  useEffect(() => {
+    const email = formData.email.trim();
+    if (!email) {
+      setErrors((prev) => ({ ...prev, email: "" }));
+      setFieldState("email", "idle");
+      return;
+    }
+
+    const emailFormatResult = validate.email(email);
+    if (emailFormatResult !== true) {
+      setErrors((prev) => ({ ...prev, email: emailFormatResult }));
+      setFieldState("email", "error");
+      return;
+    }
+
+    // Set validating/loading state immediately
+    setErrors((prev) => ({ ...prev, email: "Checking email availability..." }));
+    setFieldState("email", "loading");
+
+    const timer = setTimeout(async () => {
+      try {
+        const result = await validateEmailAvailability(email);
+        if (result?.isValid) {
+          setErrors((prev) => ({ ...prev, email: "" }));
+          setFieldState("email", "success");
+        } else {
+          setErrors((prev) => ({ ...prev, email: result?.message || "Email is already registered" }));
+          setFieldState("email", "error");
+        }
+      } catch {
+        setErrors((prev) => ({ ...prev, email: "Validation failed" }));
+        setFieldState("email", "error");
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.email, setFieldState]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // 🔥 FIX 1: Prevent double-click API spam by returning early if already loading
-    if (loading) return;
+
+    // Dual-layer double-submit prevention:
+    // 1. isSubmittingRef — synchronous, blocks re-entry immediately.
+    // 2. loading state — keeps the button disabled in the UI.
+    if (isSubmittingRef.current || loading) return;
+    isSubmittingRef.current = true;
 
     setSubmitError("");
     setSuccess("");
-
-    // 🔥 FIX 2: Set loading immediately to lock the form BEFORE async validation
     setLoading(true);
 
-    const valid = await runValidation();
-    if (!valid) {
-        // 🔥 FIX 3: Safely unlock the form if validation fails
-        setLoading(false);
-        return;
-    }
-
->>>>>>> origin/fix/eslint-config-drift-3568
     try {
-      const signupEndpoint = API_ENDPOINTS.AUTH.REGISTER || API_ENDPOINTS.AUTH.SIGNUP;
-      const response = await apiUtils.post(signupEndpoint, {
+      const valid = await runValidation();
+      if (!valid) {
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
+
+      const response = await authService.register({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
@@ -224,210 +261,214 @@ const SignupForm = () => {
         confirmPassword: formData.confirmPassword,
       });
 
-      const { ok, status, data } = await parseSignupResponse(response);
-
-      if (!ok) {
-        const backendMessage = data?.message || data?.error || "Registration failed";
-        setSubmitError(`${backendMessage} (${status})`);
-<<<<<<< HEAD
-=======
+      if (!response.ok) {
+        const backendMessage = response.data?.message || response.data?.error || "Registration failed";
+        setSubmitError(`${backendMessage} (${response.status})`);
         setLoading(false);
->>>>>>> origin/fix/eslint-config-drift-3568
+        isSubmittingRef.current = false;
         return;
       }
 
       const sessionToken = data?.token;
       if (!sessionToken) {
         setSubmitError("Signup completed but no token was returned.");
-<<<<<<< HEAD
-=======
         setLoading(false);
->>>>>>> origin/fix/eslint-config-drift-3568
+        isSubmittingRef.current = false;
         return;
       }
+      // Under the HttpOnly-cookie auth model the server sets the session
+      // cookie on the signup response. The client never sees a raw JWT.
 
+      const data = response.data || {};
+      const sessionRoles = normalizeSignupRoles(data);
       const sessionUser = {
         id: data?.id,
         firstName: data?.firstName ?? formData.firstName.trim(),
         lastName: data?.lastName ?? formData.lastName.trim(),
         email: data?.email ?? formData.email.trim(),
         username: data?.username ?? formData.email.trim(),
-        role: data?.role ?? "USER",
-        roles: data?.role ? [data.role] : ["USER"],
+        role: sessionRoles[0],
+        roles: sessionRoles,
         permissions: data?.permissions ?? [],
       };
 
       setAuthSession(sessionToken, sessionUser);
-          setLoading(false);
+      setLoading(false);
       setSuccess("Account created successfully. Redirecting to dashboard...");
       setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
     } catch (err) {
       setSubmitError(err?.message || "Network error. Please try again.");
-<<<<<<< HEAD
-    } finally {
-=======
->>>>>>> origin/fix/eslint-config-drift-3568
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
   return (
     <div className="w-full">
       <div className="text-center space-y-3 mb-6">
-        <motion.div className="mx-auto w-14 h-14 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-2xl flex items-center justify-center">
-          <Zap className="w-7 h-7 text-blue-600" />
+        <motion.div className="mx-auto w-14 h-14 bg-bg-secondary border border-border rounded-2xl flex items-center justify-center">
+          <Zap className="w-7 h-7 text-primary" />
         </motion.div>
-        <h1 className="text-2xl font-bold text-white">Create Your Account</h1>
+        <h1 className="text-2xl font-bold text-text">Create Your Account</h1>
       </div>
 
-<<<<<<< HEAD
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-=======
       <form
         onSubmit={handleSubmit}
         className="space-y-4"
         noValidate
         aria-describedby="signup-form-error signup-form-success"
       >
->>>>>>> origin/fix/eslint-config-drift-3568
-        <div className="grid grid-cols-2 gap-4">
-          <FormFieldWrapper id="firstName" label="First name" message={errors.firstName} prefix={<User className="w-4 h-4 text-slate-500" />}>
-            <input name="firstName" type="text" value={formData.firstName} onChange={handleChange} className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
-          </FormFieldWrapper>
-          <FormFieldWrapper id="lastName" label="Last name" message={errors.lastName} prefix={<User className="w-4 h-4 text-slate-500" />}>
-            <input name="lastName" type="text" value={formData.lastName} onChange={handleChange} className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
-          </FormFieldWrapper>
-        </div>
-
-        <FormFieldWrapper id="email" label="Email" message={errors.email} prefix={<AtSign className="w-4 h-4 text-slate-500" />}>
-          <input name="email" type="email" value={formData.email} onChange={handleChange} className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
-        </FormFieldWrapper>
-<<<<<<< HEAD
-
-        <FormFieldWrapper
-          id="password"
-          label="Password"
-          message={errors.password}
-          prefix={<Lock className="w-4 h-4 text-slate-500" />}
-          suffix={
-            <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showPassword ? "Hide password" : "Show password"}>
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          }
-        >
-          <input name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleChange} className="w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
-        </FormFieldWrapper>
-
-        <PasswordStrengthIndicator password={formData.password} />
-
-        <FormFieldWrapper
-          id="confirmPassword"
-          label="Confirm password"
-          message={errors.confirmPassword}
-          prefix={<Lock className="w-4 h-4 text-slate-500" />}
-          suffix={
-            <button type="button" onClick={() => setShowConfirmPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}>
-              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          }
-        >
-          <input name="confirmPassword" type={showConfirmPassword ? "text" : "password"} value={formData.confirmPassword} onChange={handleChange} className="w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
-        </FormFieldWrapper>
-
-        <ValidationMessage message={submitError} state="error" />
-        {success ? <ValidationMessage message={success} state="success" /> : null}
-=======
-
-        <FormFieldWrapper
-          id="password"
-          label="Password"
-          message={errors.password}
-          prefix={<Lock className="w-4 h-4 text-slate-500" />}
-          suffix={
-            <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400" aria-label={showPassword ? "Hide password" : "Show password"}>
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          }
-        >
-          <input name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleChange} className="w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
-        </FormFieldWrapper>
-
-        {errors.password && (
-          <p id="password-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.password}</p>
-        )}
-        {formData.password && <PasswordStrengthIndicator password={formData.password} />}
-
-        <div className="space-y-1.5">
-          <label htmlFor="confirmPassword" className="block text-xs font-medium text-slate-300">
-            Confirm Password <span className="text-red-500">*</span>
-          </label>
-          <div className="relative group">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 pointer-events-none" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormFieldWrapper
+            id="firstName"
+            label="First name"
+            message={errors.firstName}
+            validationState={fieldValidationState.firstName}
+            prefix={<User className="w-4 h-4 text-text-light" />}
+          >
             <input
-              id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"}
-              value={formData.confirmPassword} onChange={handleChange}
-              placeholder="Confirm your password"
-              aria-invalid={!!errors.confirmPassword}
-              aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
-              className={`w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white ${
-                errors.confirmPassword
-                  ? "border-red-500"
-                  : formData.confirmPassword
-                    ? passwordMatchMessage ? "border-green-500" : "border-red-400"
-                    : "border-slate-700/50 focus:border-blue-500"
-              }`}
+              name="firstName"
+              type="text"
+              value={formData.firstName}
+              onChange={handleChange}
+              placeholder="Enter your first name"
+              className="w-full pl-9 pr-3 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
               required
               disabled={loading}
             />
+          </FormFieldWrapper>
+          <FormFieldWrapper
+            id="lastName"
+            label="Last name"
+            message={errors.lastName}
+            validationState={fieldValidationState.lastName}
+            prefix={<User className="w-4 h-4 text-text-light" />}
+          >
+            <input
+              name="lastName"
+              type="text"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder="Enter your last name"
+              className="w-full pl-9 pr-3 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
+              required
+              disabled={loading}
+            />
+          </FormFieldWrapper>
+        </div>
+
+        <FormFieldWrapper
+          id="email"
+          label="Email"
+          message={errors.email}
+          validationState={fieldValidationState.email}
+          prefix={<AtSign className="w-4 h-4 text-text-light" />}
+        >
+          <input
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter your email address"
+            className="w-full pl-9 pr-3 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
+            required
+            disabled={loading}
+          />
+        </FormFieldWrapper>
+
+        <FormFieldWrapper
+          id="password"
+          label="Password"
+          message={errors.password}
+          validationState={fieldValidationState.password}
+          prefix={<Lock className="w-4 h-4 text-text-light" />}
+          suffix={
             <button
-              type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="flex items-center justify-center text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-controls="password"
+              aria-pressed={showPassword ? "true" : "false"}
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          }
+        >
+          <input
+            name="password"
+            type={showPassword ? "text" : "password"}
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Create a strong password"
+            className="w-full pl-9 pr-9 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
+            required
+            disabled={loading}
+          />
+        </FormFieldWrapper>
+
+        {formData.password && <PasswordStrengthIndicator password={formData.password} />}
+
+        <FormFieldWrapper
+          id="confirmPassword"
+          label="Confirm Password"
+          message={errors.confirmPassword || passwordMatchMessage}
+          validationState={fieldValidationState.confirmPassword}
+          prefix={<Lock className="w-4 h-4 text-text-light" />}
+          suffix={
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              className="flex items-center justify-center text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
               aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              aria-controls="confirmPassword"
+              aria-pressed={showConfirmPassword ? "true" : "false"}
             >
               {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
-          </div>
-          {errors.confirmPassword && (
-            <p id="confirmPassword-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.confirmPassword}</p>
-          )}
-          {passwordMatchMessage && !errors.confirmPassword && (
-            <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-[10px] mt-1 text-green-400">
-              {passwordMatchMessage}
-            </motion.p>
-          )}
-        </div>
+          }
+        >
+          <input
+            name="confirmPassword"
+            type={showConfirmPassword ? "text" : "password"}
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="Re-enter your password"
+            className="w-full pl-9 pr-9 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
+            required
+            disabled={loading}
+          />
+        </FormFieldWrapper>
 
         <ValidationMessage
           id="signup-form-error"
-          message={submitError || error}
+          message={submitError}
           state="error"
-          className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-lg"
+          className="text-xs text-red-700 bg-red-50 border border-red-200 p-2 rounded-lg"
         />
         {success && (
           <ValidationMessage
             id="signup-form-success"
             message={success}
             state="success"
-            className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 p-2 rounded-lg"
+            className="text-xs text-green-700 bg-green-50 border border-green-200 p-2 rounded-lg"
           />
         )}
->>>>>>> origin/fix/eslint-config-drift-3568
 
         <motion.button
           type="submit"
           disabled={loading}
-<<<<<<< HEAD
-          className="w-full py-3 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400"
-=======
-          className="w-full py-3 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400 disabled:opacity-50"
->>>>>>> origin/fix/eslint-config-drift-3568
+          className="w-full py-3 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-hover disabled:opacity-50"
         >
           {loading ? "Creating account..." : "Create Account"}
         </motion.button>
       </form>
 
-      <p className="text-center text-sm text-slate-400 mt-4">
-        Already have an account? <Link to="/login" className="text-blue-400 hover:text-blue-300">Sign in</Link>
+      <p className="text-center text-sm text-text-light mt-4">
+        Already have an account?{" "}
+        <Link to="/login" className="text-primary hover:text-primary-hover">
+          Sign in
+        </Link>
       </p>
     </div>
   );

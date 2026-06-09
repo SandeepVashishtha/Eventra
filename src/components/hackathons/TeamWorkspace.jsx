@@ -1,48 +1,44 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
-  Users, CheckCircle2, Pin, MessageSquare, Trash2, Send,
-  User, Sparkles, X, RefreshCw, AlertTriangle
+  Users,
+  CheckCircle2,
+  Pin,
+  MessageSquare,
+  Trash2,
+  Send,
+  User,
+  Sparkles,
+  X,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import InteractiveWhiteboard from "./InteractiveWhiteboard";
+import { logger } from "../../utils/logger";
 
-const INITIAL_TASKS = [
-  { id: "tk-1", text: "Create Vite React boilerplate with Tailwind CSS", done: true },
-  { id: "tk-2", text: "Design database schemas (PostgreSQL & Prisma)", done: true },
-  { id: "tk-3", text: "Implement live collaborative whiteboard component", done: false },
-  { id: "tk-4", text: "Hook up server-sent events for real-time team synchronization", done: false }
-];
-
-const INITIAL_PINS = [
-  { id: "pin-1", text: "Opening ceremony keynotes start tomorrow morning at 09:00 AM! Be there on Discord.", tag: "Organizers", time: "2 hours ago" },
-  { id: "pin-2", text: "GitHub repository submission deadline is locked for Sunday 11:59 PM. No late commits accepted.", tag: "Rules", time: "4 hours ago" },
-  { id: "pin-3", text: "Mentors are available in the support queue for routing assistance in React, Node, and AWS.", tag: "Mentors", time: "1 day ago" }
-];
+// Initial constants removed to support real-time sync database values
 
 const TEAM_MEMBERS = [
   { name: "Sricharan (You)", role: "Frontend Developer", status: "online" },
   { name: "Alex Rivera", role: "Backend Developer", status: "online" },
   { name: "Sophia Chen", role: "UI/UX Designer", status: "online" },
-  { name: "Marcus Dupont", role: "Product Manager", status: "away" }
+  { name: "Marcus Dupont", role: "Product Manager", status: "away" },
 ];
 
 const TeamWorkspace = () => {
   const [activeTab, setActiveTab] = useState("dashboard"); // 'dashboard' | 'whiteboard'
-  
+
   // Checklist & Pins state
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  const [tasks, setTasks] = useState([]);
   const [newTaskText, setNewTaskText] = useState("");
-  const [pins, setPins] = useState(INITIAL_PINS);
+  const [pins, setPins] = useState([]);
   const [newPinText, setNewPinText] = useState("");
   const [newPinTag, setNewPinTag] = useState("Announcement");
 
   // Chat Drawer State
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState([
-    { id: 1, sender: "Alex Rivera", text: "Just pushed the initial database schema to main! Let me know if you run into migration issues.", time: "10:30 AM" },
-    { id: 2, sender: "Sophia Chen", text: "Awesome! I am updating the Figma prototype for our landing layout. I'll drop notes on the whiteboard.", time: "10:32 AM" }
-  ]);
+  const [chatHistory, setChatHistory] = useState([]);
 
   // Connection System (SSE with Polling Fallback)
   const [connectionStatus, setConnectionStatus] = useState("connecting"); // 'connecting' | 'sse' | 'polling_fallback'
@@ -53,81 +49,134 @@ const TeamWorkspace = () => {
   useEffect(() => {
     let sseSource = null;
     let fallbackInterval = null;
+    let idleTimeout = null;
 
     setConnectionStatus("connecting");
     const logPrefix = "[TeamSync]";
 
-    // 1. Attempt Server-Sent Events (EventSource) connection
-    try {
-      console.log(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
-      // Simulating connection. In production, this matches react env SSE endpoints.
-      // E.g. const sseUrl = process.env.REACT_APP_SSE_URL || "/api/hackathons/team/sync";
-      sseSource = new EventSource("/api/hackathons/team/sync-simulated-error");
-
-      sseSource.onopen = () => {
-        setConnectionStatus("sse");
-        console.log(`${logPrefix} Connection opened. Realtime SSE stream active.`);
-      };
-
-      sseSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === "message") {
-            setChatHistory(prev => [...prev, data.message]);
-          }
-        } catch (e) {
-          console.error("Failed to parse SSE payload", e);
-        }
-      };
-
-      sseSource.onerror = (err) => {
-        // SSE error! Initiate immediate polling fallback.
-        console.warn(`${logPrefix} Server-Sent Events stream interrupted. Fallback to short-polling activated.`);
-        setConnectionStatus("polling_fallback");
-        sseSource.close();
-        triggerPollingFallback();
-      };
-    } catch (e) {
-      console.error(`${logPrefix} SSE not supported by browser. Falling back to HTTP polling.`, e);
-      setConnectionStatus("polling_fallback");
-      triggerPollingFallback();
-    }
-
-    // 2. HTTP Short Polling Fallback Mechanism
     function triggerPollingFallback() {
-      setPollingLogs(prev => [...prev, "SSE connection error. Started HTTP short-polling fallback stream every 4s."]);
-      
-      const mockRepresentativeAnnouncements = [
-        { sender: "Alex Rivera", text: "Finished compiling Postgres container locally! Speed is perfect.", delay: 4000 },
-        { sender: "Sophia Chen", text: "Check out the Interactive Whiteboard tab! I added a quick sticky note diagram.", delay: 12000 },
-        { sender: "Marcus Dupont", text: "Opening ceremony starting soon! Let's wrap up our basic components.", delay: 24000 }
-      ];
+      setPollingLogs((prev) => [
+        ...prev,
+        "SSE connection error. Started HTTP short-polling fallback stream every 4s.",
+      ]);
 
-      let msgIndex = 0;
-      fallbackInterval = setInterval(() => {
-        setPollingLogs(prev => [...prev, `[HTTP-Poll] Checking for team changes... Status: 200 OK`]);
-        
-        // Randomly simulate an incoming message from teammates to prove polling fallback works
-        if (msgIndex < mockRepresentativeAnnouncements.length) {
-          const incoming = mockRepresentativeAnnouncements[msgIndex];
-          setChatHistory(prev => [
+      const fetchState = async () => {
+        try {
+          const response = await fetch("/api/hackathons/team/sync", {
+            method: "POST",
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setTasks(data.tasks || []);
+            setPins(data.pins || []);
+            setChatHistory(data.chat || []);
+            setPollingLogs((prev) => [
+              ...prev,
+              `[HTTP-Poll] Checking for team changes... Status: 200 OK`,
+            ]);
+          } else {
+            setPollingLogs((prev) => [
+              ...prev,
+              `[HTTP-Poll] Fetch failed with status ${response.status}`,
+            ]);
+          }
+        } catch (err) {
+          setPollingLogs((prev) => [
             ...prev,
-            {
-              id: Date.now() + msgIndex,
-              sender: incoming.sender,
-              text: incoming.text,
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            }
+            `[HTTP-Poll] Fetch network error: ${err.message}`,
           ]);
-          toast.info(`New message from ${incoming.sender}!`);
-          msgIndex++;
         }
-      }, 5000);
+      };
+
+      fetchState();
+      fallbackInterval = setInterval(fetchState, 4000);
     }
+
+    const connectStream = () => {
+      setConnectionStatus("connecting");
+      try {
+        logger.info(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
+        sseSource = new EventSource("/api/hackathons/team/sync");
+
+        sseSource.onopen = () => {
+          setConnectionStatus("sse");
+          logger.info(`${logPrefix} Connection opened. Realtime SSE stream active.`);
+        };
+
+        sseSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "init") {
+              setTasks(data.tasks || []);
+              setPins(data.pins || []);
+              setChatHistory(data.chat || []);
+            } else if (data.type === "tasks") {
+              setTasks(data.tasks || []);
+            } else if (data.type === "pins") {
+              setPins(data.pins || []);
+            } else if (data.type === "chat") {
+              setChatHistory(data.chat || []);
+            }
+          } catch (e) {
+            logger.error("Failed to parse SSE payload", e);
+          }
+        };
+
+        sseSource.onerror = () => {
+          logger.warn(
+            `${logPrefix} Server-Sent Events stream interrupted. Fallback to short-polling activated.`
+          );
+          setConnectionStatus("polling_fallback");
+          if (sseSource) sseSource.close();
+          triggerPollingFallback();
+        };
+      } catch (e) {
+        logger.error(`${logPrefix} SSE not supported by browser. Falling back to HTTP polling.`, e);
+        setConnectionStatus("polling_fallback");
+        triggerPollingFallback();
+      }
+    };
+
+    const disconnectStream = () => {
+      if (sseSource) {
+        sseSource.close();
+        sseSource = null;
+      }
+      if (fallbackInterval) {
+        clearInterval(fallbackInterval);
+        fallbackInterval = null;
+      }
+      setConnectionStatus("idle");
+    };
+
+    connectStream();
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Close connections after 60 seconds of inactivity
+        idleTimeout = setTimeout(() => {
+          logger.info(`${logPrefix} Tab idle. Closing real-time connections.`);
+          disconnectStream();
+        }, 60000);
+      } else {
+        if (idleTimeout) {
+          clearTimeout(idleTimeout);
+          idleTimeout = null;
+        }
+        // Reconnect if it was closed
+        if (!sseSource && !fallbackInterval) {
+          logger.info(`${logPrefix} Tab active. Reconnecting real-time stream.`);
+          connectStream();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      if (sseSource) sseSource.close();
-      if (fallbackInterval) clearInterval(fallbackInterval);
+      disconnectStream();
+      if (idleTimeout) clearTimeout(idleTimeout);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
@@ -139,76 +188,140 @@ const TeamWorkspace = () => {
   }, [chatHistory, isChatOpen]);
 
   // Tasks Checklist handlers
-  const handleAddTask = (e) => {
+  const handleAddTask = async (e) => {
     e.preventDefault();
     if (!newTaskText.trim()) return;
 
-    const newTask = {
-      id: `task-${Date.now()}`,
-      text: newTaskText.trim(),
-      done: false
-    };
-
-    setTasks([...tasks, newTask]);
-    setNewTaskText("");
-    toast.success("Task added to team checklist.");
+    try {
+      const response = await fetch("/api/hackathons/team/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add", text: newTaskText.trim() }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTasks(data.tasks || []);
+        setNewTaskText("");
+        toast.success("Task added to team checklist.");
+      } else {
+        toast.error("Failed to add task.");
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    }
   };
 
-  const handleToggleTask = (id) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  const handleToggleTask = async (id) => {
+    try {
+      const response = await fetch("/api/hackathons/team/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle", id }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTasks(data.tasks || []);
+      } else {
+        toast.error("Failed to toggle task.");
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    }
   };
 
-  const handleDeleteTask = (id) => {
-    setTasks(tasks.filter(t => t.id !== id));
-    toast.info("Task removed from checklist.");
+  const handleDeleteTask = async (id) => {
+    try {
+      const response = await fetch("/api/hackathons/team/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTasks(data.tasks || []);
+        toast.info("Task removed from checklist.");
+      } else {
+        toast.error("Failed to delete task.");
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    }
   };
 
   // Pins / Announcements handlers
-  const handleAddPin = (e) => {
+  const handleAddPin = async (e) => {
     e.preventDefault();
     if (!newPinText.trim()) return;
 
-    const newPin = {
-      id: `pin-${Date.now()}`,
-      text: newPinText.trim(),
-      tag: newPinTag,
-      time: "Just now"
-    };
-
-    setPins([newPin, ...pins]);
-    setNewPinText("");
-    toast.success("Announcement pinned to workspace!");
+    try {
+      const response = await fetch("/api/hackathons/team/announcements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "add",
+          text: newPinText.trim(),
+          tag: newPinTag,
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPins(data.pins || []);
+        setNewPinText("");
+        toast.success("Announcement pinned to workspace!");
+      } else {
+        toast.error("Failed to pin announcement.");
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    }
   };
 
-  const handleDeletePin = (id) => {
-    setPins(pins.filter(p => p.id !== id));
-    toast.info("Announcement unpinned.");
+  const handleDeletePin = async (id) => {
+    try {
+      const response = await fetch("/api/hackathons/team/announcements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPins(data.pins || []);
+        toast.info("Announcement unpinned.");
+      } else {
+        toast.error("Failed to unpin announcement.");
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    }
   };
 
   // Chat message sending
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!chatMessage.trim()) return;
 
-    const userMsg = {
-      id: Date.now(),
-      sender: "Sricharan (You)",
-      text: chatMessage,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setChatHistory([...chatHistory, userMsg]);
+    const messageText = chatMessage.trim();
     setChatMessage("");
 
-    // Simulate sending payload to server
-    if (connectionStatus === "polling_fallback") {
-      setPollingLogs(prev => [...prev, `[HTTP-Post] Sent chat payload to backend server... Status: 200 OK`]);
+    try {
+      const response = await fetch("/api/hackathons/team/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: messageText, sender: "Sricharan (You)" }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setChatHistory(data.chat || []);
+      } else {
+        toast.error("Failed to send message.");
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
     }
   };
 
   return (
     <div className="bg-[#0b0c16] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative text-white">
-      
       {/* Workspace Header Panel */}
       <div className="bg-slate-900/80 px-6 py-4 border-b border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-4 z-10">
         <div className="flex items-center gap-3">
@@ -217,12 +330,16 @@ const TeamWorkspace = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-black tracking-tight">Active Hacking Collaboration Suite</h2>
+              <h2 className="text-lg font-black tracking-tight">
+                Active Hacking Collaboration Suite
+              </h2>
               <span className="px-2 py-0.5 text-[9px] font-black tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded uppercase">
                 Active Room
               </span>
             </div>
-            <p className="text-xs text-gray-400 mt-0.5">Manage tasks, share announcements, brainstorm on the canvas, and chat in real-time.</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Manage tasks, share announcements, brainstorm on the canvas, and chat in real-time.
+            </p>
           </div>
         </div>
 
@@ -241,7 +358,10 @@ const TeamWorkspace = () => {
             </div>
           )}
           {connectionStatus === "polling_fallback" && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/25 rounded-full text-xs text-indigo-400 font-bold uppercase tracking-wider" title="Server Sent Events failed. Polling actively every 4s.">
+            <div
+              className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/25 rounded-full text-xs text-indigo-400 font-bold uppercase tracking-wider"
+              title="Server Sent Events failed. Polling actively every 4s."
+            >
               <AlertTriangle size={12} className="text-indigo-400" />
               <span>HTTP Polling Fallback</span>
             </div>
@@ -286,10 +406,8 @@ const TeamWorkspace = () => {
       <div className="flex-1 p-6">
         {activeTab === "dashboard" ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-            
             {/* Left/Middle Column: Operational Checklist & Logs */}
             <div className="lg:col-span-2 space-y-6 flex flex-col justify-between">
-              
               {/* Checklist */}
               <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 md:p-6 shadow-sm">
                 <h3 className="text-sm font-extrabold text-gray-300 uppercase tracking-widest flex items-center gap-2 mb-4">
@@ -332,16 +450,21 @@ const TeamWorkspace = () => {
                       >
                         <div className="mt-0.5 shrink-0">
                           {task.done ? (
-                            <CheckCircle2 size={18} className="text-emerald-500 fill-emerald-950/30" />
+                            <CheckCircle2
+                              size={18}
+                              className="text-emerald-500 fill-emerald-950/30"
+                            />
                           ) : (
                             <div className="w-[18px] h-[18px] rounded-full border-2 border-slate-700 hover:border-indigo-500 transition-colors" />
                           )}
                         </div>
-                        <span className={`text-xs font-semibold leading-relaxed ${task.done ? "line-through opacity-50" : ""}`}>
+                        <span
+                          className={`text-xs font-semibold leading-relaxed ${task.done ? "line-through opacity-50" : ""}`}
+                        >
                           {task.text}
                         </span>
                       </button>
-                      
+
                       <button
                         onClick={() => handleDeleteTask(task.id)}
                         className="p-1 text-gray-500 hover:text-red-400 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
@@ -359,7 +482,9 @@ const TeamWorkspace = () => {
                 <div className="bg-black/90 border border-slate-800 rounded-2xl p-4 mt-6">
                   <div className="text-[10px] font-bold tracking-widest text-indigo-400 uppercase mb-2 flex items-center justify-between">
                     <span>Synchronizer Fallback Console Logs</span>
-                    <span className="text-gray-600 font-mono">Status: Connected via short-polling</span>
+                    <span className="text-gray-600 font-mono">
+                      Status: Connected via short-polling
+                    </span>
                   </div>
                   <div className="font-mono text-[9px] text-gray-500 space-y-1 max-h-24 overflow-y-auto pr-1">
                     {pollingLogs.slice(-6).map((log, i) => (
@@ -371,12 +496,10 @@ const TeamWorkspace = () => {
                   </div>
                 </div>
               )}
-
             </div>
 
             {/* Right Column: Pinned Announcements & Team info */}
             <div className="space-y-6">
-              
               {/* Pins announcements list */}
               <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 md:p-6 shadow-sm">
                 <h3 className="text-sm font-extrabold text-gray-300 uppercase tracking-widest flex items-center gap-2 mb-4">
@@ -435,7 +558,9 @@ const TeamWorkspace = () => {
                           </button>
                         </div>
                       </div>
-                      <p className="text-xs font-medium text-gray-300 leading-relaxed">{pin.text}</p>
+                      <p className="text-xs font-medium text-gray-300 leading-relaxed">
+                        {pin.text}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -443,10 +568,15 @@ const TeamWorkspace = () => {
 
               {/* Assembled Team Members */}
               <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 shadow-sm">
-                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">Hackathon Squad</h4>
+                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">
+                  Hackathon Squad
+                </h4>
                 <div className="space-y-2">
                   {TEAM_MEMBERS.map((member, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 bg-slate-950/60 rounded-xl border border-white/[0.02]">
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-2 bg-slate-950/60 rounded-xl border border-white/[0.02]"
+                    >
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-full bg-slate-900 border border-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-400">
                           <User size={12} />
@@ -457,16 +587,16 @@ const TeamWorkspace = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${member.status === "online" ? "bg-emerald-500" : "bg-amber-500"}`} />
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${member.status === "online" ? "bg-emerald-500" : "bg-amber-500"}`}
+                        />
                         <span className="text-[9px] text-gray-500 capitalize">{member.status}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-
             </div>
-
           </div>
         ) : (
           /* Interactive Whiteboard Tab */
@@ -484,7 +614,6 @@ const TeamWorkspace = () => {
 
           {/* Drawer Panel Container */}
           <div className="relative w-full max-w-md h-full bg-[#07080e] border-l border-slate-800 shadow-2xl flex flex-col z-10 animate-slide-in">
-            
             {/* Drawer Header */}
             <div className="px-6 py-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -493,7 +622,9 @@ const TeamWorkspace = () => {
                   <h3 className="text-sm font-black text-white">Live Team Channel</h3>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                    <span className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">SSE Fallback Enabled</span>
+                    <span className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">
+                      SSE Fallback Enabled
+                    </span>
                   </div>
                 </div>
               </div>
@@ -515,24 +646,34 @@ const TeamWorkspace = () => {
                     className={`flex gap-3 max-w-[85%] ${isMe ? "ml-auto flex-row-reverse" : ""}`}
                   >
                     {/* Member Avatar */}
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 border ${
-                      isMe 
-                        ? "bg-purple-950 border-purple-500/20 text-purple-400" 
-                        : "bg-indigo-950 border-indigo-500/20 text-indigo-400"
-                    }`}>
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 border ${
+                        isMe
+                          ? "bg-purple-950 border-purple-500/20 text-purple-400"
+                          : "bg-indigo-950 border-indigo-500/20 text-indigo-400"
+                      }`}
+                    >
                       <User size={12} />
                     </div>
                     {/* Speech Balloon */}
                     <div className="space-y-1">
-                      {!isMe && <div className="text-[9px] text-gray-500 font-bold ml-1">{msg.sender}</div>}
-                      <div className={`px-3 py-2 rounded-2xl text-xs leading-relaxed ${
-                        isMe
-                          ? "bg-indigo-650 text-white rounded-tr-none"
-                          : "bg-slate-900 text-gray-250 border border-slate-800/80 rounded-tl-none"
-                      }`}>
+                      {!isMe && (
+                        <div className="text-[9px] text-gray-500 font-bold ml-1">{msg.sender}</div>
+                      )}
+                      <div
+                        className={`px-3 py-2 rounded-2xl text-xs leading-relaxed ${
+                          isMe
+                            ? "bg-indigo-650 text-white rounded-tr-none"
+                            : "bg-slate-900 text-gray-250 border border-slate-800/80 rounded-tl-none"
+                        }`}
+                      >
                         {msg.text}
                       </div>
-                      <div className={`text-[8px] text-gray-600 ${isMe ? "text-right mr-1" : "ml-1"}`}>{msg.time}</div>
+                      <div
+                        className={`text-[8px] text-gray-600 ${isMe ? "text-right mr-1" : "ml-1"}`}
+                      >
+                        {msg.time}
+                      </div>
                     </div>
                   </div>
                 );
@@ -541,7 +682,10 @@ const TeamWorkspace = () => {
             </div>
 
             {/* Chat Send Form */}
-            <form onSubmit={handleSendMessage} className="p-4 bg-slate-900 border-t border-slate-800 flex gap-2">
+            <form
+              onSubmit={handleSendMessage}
+              className="p-4 bg-slate-900 border-t border-slate-800 flex gap-2"
+            >
               <input
                 type="text"
                 className="flex-1 bg-slate-950 border border-slate-800 hover:border-slate-700 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-all placeholder-slate-500"
@@ -557,11 +701,9 @@ const TeamWorkspace = () => {
                 <Send size={14} />
               </button>
             </form>
-
           </div>
         </div>
       )}
-
     </div>
   );
 };

@@ -1,13 +1,14 @@
 (() => {
   try {
-    const savedTheme = localStorage.getItem("theme");
-    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const theme = savedTheme || (systemDark ? "dark" : "light");
-
     document.documentElement.classList.add("no-transition");
-    document.documentElement.classList.remove("light", "dark");
-    document.documentElement.classList.add(theme);
-    document.documentElement.style.colorScheme = theme;
+
+    const saved = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = saved === "dark" || (!saved && prefersDark);
+
+    document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.classList.toggle("light", !isDark);
+    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
 
     window.addEventListener("load", () => {
       document.documentElement.classList.remove("no-transition");

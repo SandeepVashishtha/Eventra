@@ -1,20 +1,34 @@
 // Centralized JWT configuration shared by all auth endpoints.
-// Production must fail closed if the signing secret is missing; otherwise a
-// predictable fallback would let attackers forge valid Eventra tokens.
-const DEVELOPMENT_JWT_SECRET = "eventra-local-development-jwt-secret";
+// JWT_SECRET is mandatory in every environment so Eventra never falls back to
+// a predictable signing key that could be used to forge tokens.
+const requireJwtSecret = () => {
+  const secret = process.env.JWT_SECRET?.trim();
 
-export const getJwtSecret = () => {
-  const secret = process.env.JWT_SECRET;
-
-  if (secret && secret.trim()) {
+  if (secret) {
     return secret;
   }
 
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("JWT_SECRET must be configured in production");
+  // Fallback to a test secret if in test environment
+  if (process.env.NODE_ENV === "test") {
+    return "test-secret-for-test-environments";
   }
 
-  return DEVELOPMENT_JWT_SECRET;
+  throw new Error(
+    "Missing required environment variable: JWT_SECRET. Eventra cannot start without a JWT signing secret."
+  );
 };
 
-export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+export const getJwtSecret = () => requireJwtSecret();
+
+export const JWT_SECRET = requireJwtSecret();
+
+export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
+
+export const JWT_COOKIE_MAX_AGE_SECONDS = (() => {
+  const val = JWT_EXPIRES_IN;
+  const match = val.match(/^(\d+)(m|h|d)$/);
+  if (!match) return 3600;
+  const n = parseInt(match[1], 10);
+  const unit = match[2];
+  return unit === 'm' ? n * 60 : unit === 'h' ? n * 3600 : n * 86400;
+})();
