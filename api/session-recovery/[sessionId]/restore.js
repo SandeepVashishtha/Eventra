@@ -5,12 +5,10 @@ import {
   isExpired,
   sendJson,
 } from "../../lib/sessionRecoveryStore.js";
+import { withAuth } from "../../lib/authMiddleware.js";
 
-export default async function restoreSessionRecovery(req, res) {
+const restoreSessionRecovery = async (req, res) => {
   const userId = getAuthenticatedUserId(req);
-  if (!userId) {
-    return sendJson(res, 401, { message: "Authentication required." });
-  }
 
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -32,4 +30,6 @@ export default async function restoreSessionRecovery(req, res) {
   }
 
   return sendJson(res, 200, { session });
-}
+};
+
+export default withAuth(restoreSessionRecovery);

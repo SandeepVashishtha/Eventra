@@ -16,6 +16,7 @@
 
 import { checkCapacity } from "../lib/capacityValidator.js";
 import { registerAttendeeAtomic } from "../lib/registrationService.js";
+import { withAuth } from "../lib/authMiddleware.js";
 
 /**
  * Registration handler.
@@ -29,7 +30,7 @@ import { registerAttendeeAtomic } from "../lib/registrationService.js";
  * @param {Function} [deps.registerAttendee] - async (eventId, userId) => registration
  * @param {Function} [deps.getEventId] - (req) => string
  */
-export default async function registerForEvent(req, res, deps = {}) {
+const registerForEvent = async (req, res, deps = {}) => {
   if (req.method && req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
     return;
@@ -117,4 +118,6 @@ export default async function registerForEvent(req, res, deps = {}) {
     }
     res.status(500).json({ error: "Internal server error" });
   }
-}
+};
+
+export default withAuth(registerForEvent);
