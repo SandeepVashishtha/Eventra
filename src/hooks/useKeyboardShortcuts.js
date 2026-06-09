@@ -1,139 +1,209 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-const useKeyboardShortcuts = ({
-  onOpenHelp,
-  onCloseHelp,
-  isOpen,
-}) => {
+/**
+ * useKeyboardShortcuts Hook
+ * 
+ * Centralized manager for keyboard shortcuts.
+ * 
+ * @param {Object} shortcuts - Mapping of keys to handlers
+ * @param {boolean} disabled - Global disable toggle
+ */
+export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
   const navigate = useNavigate();
+
+  const shortcutsRef = useRef(shortcuts);
+  useEffect(() => {
+    shortcutsRef.current = shortcuts;
+  }, [shortcuts]);
+
   const keyBuffer = useRef([]);
   const timeoutRef = useRef(null);
 
+  // Clean up timeout on unmount
   useEffect(() => {
-    const handler = (e) => {
-      const active = document.activeElement;
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
+  const handleKeyDown = useCallback(
+    (event) => {
+      if (disabled) return;
+
+      const activeElement = document.activeElement;
       const isTyping =
-        active &&
-        ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName);
+        activeElement && (
+          activeElement.tagName === "INPUT" ||
+          activeElement.tagName === "TEXTAREA" ||
+          activeElement.tagName === "SELECT" ||
+          activeElement.isContentEditable ||
+          activeElement.contentEditable === "true" ||
+          activeElement.getAttribute?.("contenteditable") === "true"
+        );
 
-      let key = String(e?.key || "").toLowerCase();
+      const key = event.key;
+      const ctrl = event.ctrlKey || event.metaKey;
+      const shift = event.shiftKey;
+      const alt = event.altKey;
 
-      if (!key) return;
+      // Ignore shortcuts if the user is typing, except for the Escape key
+      if (isTyping && key !== "Escape") return;
 
-      // Trigger Command Palette (Ctrl+K or Cmd+K)
-      if ((e.ctrlKey || e.metaKey) && key === "k") {
-        e.preventDefault();
+      // Normalize key
+      let keyString = "";
+      if (ctrl) keyString += "ctrl+";
+      if (alt) keyString += "alt+";
+      if (shift) keyString += "shift+";
+      keyString += key.toLowerCase();
+
+      // 1. Direct handler match (e.g. "ctrl+k", "alt+d", or physical key mapping like "r", "c", etc.)
+      const handler = shortcutsRef.current[keyString] || shortcutsRef.current[key.toLowerCase()];
+
+      if (handler) {
+        event.preventDefault();
+        handler(event);
+        return;
+      }
+
+      // 2. Global Shortcuts & Dynamic Callbacks Fallbacks
+
+      // ALT Navigation Shortcuts
+      if (keyString === "alt+d") {
+        if (navigate) {
+          event.preventDefault();
+          navigate("/dashboard");
+        }
+        return;
+      }
+
+      if (keyString === "alt+e") {
+        if (navigate) {
+          event.preventDefault();
+          navigate("/events");
+        }
+        return;
+      }
+
+      if (keyString === "alt+p") {
+        if (navigate) {
+          event.preventDefault();
+          navigate("/profile");
+        }
+        return;
+      }
+
+      // Search focus shortcut
+      if (keyString === "/") {
+        event.preventDefault();
+        if (shortcutsRef.current.onSearchFocus) {
+          shortcutsRef.current.onSearchFocus();
+        } else {
+          const input = document.querySelector('nav input[type="text"], nav input[type="search"]') ||
+                        document.querySelector('input[type="text"], input[type="search"]');
+          if (input) input.focus();
+        }
+        return;
+      }
+
+      // Ctrl + K shortcut
+      if (keyString === "ctrl+k") {
+        event.preventDefault();
         window.dispatchEvent(new CustomEvent("toggleCommandPalette"));
+        if (shortcutsRef.current.onCloseHelp) {
+          shortcutsRef.current.onCloseHelp();
+        }
+        const input = document.querySelector('nav input[type="text"], nav input[type="search"]') ||
+                      document.querySelector('input[type="text"], input[type="search"]');
+        if (input) input.focus();
         return;
       }
 
-      if (isTyping && key !== "escape") return;
-
-      // Map ? shifted key to / for virtual matrix consistency
-      if (key === "?") {
-        key = "/";
-      }
-
-      // Command Palette (Ctrl + K or Cmd + K)
-      if ((e.metaKey || e.ctrlKey) && key === "k") {
-        e.preventDefault();
-        window.dispatchEvent(new CustomEvent("toggleCommandPalette"));
-        onCloseHelp?.(); // Close Shortcuts Modal if open
-        return;
-      }
-
-      // Open modal (Shift + ? or Shift + /)
-      if (e.shiftKey && key === "/") {
-        e.preventDefault();
+      // Escape shortcut
+      if (key === "Escape") {
         window.dispatchEvent(new CustomEvent("closeCommandPalette"));
-        onOpenHelp?.();
-        return;
-      }
-
-      // Close modal
-      if (key === "escape") {
-        e.preventDefault();
-        window.dispatchEvent(new CustomEvent("closeCommandPalette"));
-        onCloseHelp?.();
+        let handled = false;
+        if (shortcutsRef.current.onCloseHelp) {
+          shortcutsRef.current.onCloseHelp();
+          handled = true;
+        }
+        if (shortcutsRef.current.onCloseModals) {
+          shortcutsRef.current.onCloseModals();
+          handled = true;
+        }
+        if (shortcutsRef.current.onClose) {
+          shortcutsRef.current.onClose();
+          handled = true;
+        }
+        if (handled) {
+          event.preventDefault();
+        }
         keyBuffer.current = [];
         return;
       }
 
-      // Prevent navigation shortcuts if any modal is open
-      const hasModalOpen = isOpen || document.body.style.overflow === "hidden" || document.querySelector('[role="dialog"]');
+      // Shift+? or Shift+/ for opening help modal
+      if (shift && (key === "?" || key === "/")) {
+        event.preventDefault();
+        window.dispatchEvent(new CustomEvent("closeCommandPalette"));
+        if (shortcutsRef.current.onOpenHelp) {
+          shortcutsRef.current.onOpenHelp();
+        }
+        return;
+      }
+
+      // 3. Sequence keys fallback navigation (e.g. 'g' -> 'h')
+      const hasModalOpen =
+        shortcutsRef.current.isOpen ||
+        document.body.style.overflow === "hidden" ||
+        document.querySelector('[role="dialog"]');
+
       if (hasModalOpen) return;
+      if (ctrl || alt || shift || event.metaKey) return;
 
-      // Ignore navigation sequences if standard command modifier keys are active
-      if (e.ctrlKey || e.altKey || e.metaKey) return;
-
-      // Clear existing active timeout
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
 
-      keyBuffer.current.push(key);
-
+      keyBuffer.current.push(key.toLowerCase());
       if (keyBuffer.current.length > 2) {
         keyBuffer.current.shift();
       }
 
       const combo = keyBuffer.current.join("");
-
-      // Start a 1-second timeout to clear the buffer
       timeoutRef.current = setTimeout(() => {
         keyBuffer.current = [];
       }, 1000);
 
-      if (combo === "gh") {
-        navigate("/");
-        keyBuffer.current = [];
-      } else if (combo === "gl") {
-        navigate("/login");
-        keyBuffer.current = [];
-      } else if (combo === "gs") {
-        navigate("/signup");
-        keyBuffer.current = [];
-      } else if (combo === "ge") {
-        navigate("/events");
-        keyBuffer.current = [];
-      } else if (combo === "gc") {
-        navigate("/calendar");
-        keyBuffer.current = [];
-      } else if (combo === "gb") {
-        navigate("/bookmarks");
-        keyBuffer.current = [];
-      } else if (combo === "gr") {
-        navigate("/reminders");
-        keyBuffer.current = [];
-      } else if (combo === "gk") {
-        navigate("/hackathons");
-        keyBuffer.current = [];
-      } else if (combo === "gp") {
-        navigate("/projects");
-        keyBuffer.current = [];
-      } else if (combo === "ga") {
-        navigate("/leaderboard");
-        keyBuffer.current = [];
-      } else if (combo === "gf") {
-        navigate("/faq");
-        keyBuffer.current = [];
-      } else if (combo === "gd") {
-        navigate("/dashboard");
+      const navRoutes = {
+        gh: "/",
+        gl: "/login",
+        gs: "/signup",
+        ge: "/events",
+        gc: "/calendar",
+        gb: "/bookmarks",
+        gr: "/reminders",
+        gk: "/hackathons",
+        gp: "/projects",
+        ga: "/leaderboard",
+        gf: "/faq",
+        gd: "/dashboard",
+      };
+
+      if (navRoutes[combo] && navigate) {
+        navigate(navRoutes[combo]);
         keyBuffer.current = [];
       }
-    };
+    },
+    [disabled, navigate]
+  );
 
-    document.addEventListener("keydown", handler);
-
-    return () => {
-      document.removeEventListener("keydown", handler);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [navigate, onOpenHelp, onCloseHelp, isOpen]);
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
 };
 
 export default useKeyboardShortcuts;

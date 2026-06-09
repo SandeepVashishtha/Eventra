@@ -6,6 +6,7 @@ import {
 import useReducedMotion from "../../hooks/useReducedMotion";
 import VirtualBoothModal from "../../components/events/VirtualBoothModal";
 import { toast } from "react-toastify";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Default premium developer sponsor booths (fallback if none loaded from designer)
 const DEFAULT_SPONSORS = [
@@ -131,22 +132,39 @@ const VirtualVenueWalkthrough = () => {
 
   // Load custom sponsor booths from local storage
   useEffect(() => {
+    let baseSponsors = [...DEFAULT_SPONSORS];
     const savedLayout = localStorage.getItem("eventra_floorplan_default");
+    
+    // Check if the floorplan designer has overriding sponsors
     if (savedLayout) {
       try {
-        const elements = JSON.parse(savedLayout);
+        const elements = safeJsonParse(savedLayout, {});
         const sponsors = elements.filter(el => el.isSponsorBooth);
         if (sponsors.length > 0) {
-          setSponsorBooths(sponsors);
-        } else {
-          setSponsorBooths(DEFAULT_SPONSORS);
+          baseSponsors = sponsors;
         }
       } catch (e) {
-        setSponsorBooths(DEFAULT_SPONSORS);
+        console.error("Failed to parse floorplan", e);
       }
-    } else {
-      setSponsorBooths(DEFAULT_SPONSORS);
     }
+    
+    // Check if the Dedicated Sponsor Dashboard has updated the booth
+    const dashboardSettings = localStorage.getItem("eventra_sponsor_settings");
+    if (dashboardSettings) {
+      try {
+        const customSponsor = safeJsonParse(dashboardSettings, {});
+        // Ensure it's in the array (replace the first sponsor for demo purposes, or push it)
+        if (baseSponsors.length > 0) {
+          baseSponsors[0] = customSponsor;
+        } else {
+          baseSponsors.push(customSponsor);
+        }
+      } catch (e) {
+        console.error("Failed to parse sponsor dashboard settings", e);
+      }
+    }
+    
+    setSponsorBooths(baseSponsors);
   }, []);
 
   const handleMouseMove = (e) => {
