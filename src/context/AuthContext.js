@@ -324,7 +324,7 @@ export const AuthProvider = ({ children }) => {
         // body. There is no longer a missing-token failure path here.
         const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
 
-        const persisted = persistSession(sessionToken, sessionUser);
+        const persisted = await persistSession(sessionToken, sessionUser);
         if (!persisted) return false;
 
         setAuthRequestState({ loading: false, error: null });
@@ -354,39 +354,27 @@ export const AuthProvider = ({ children }) => {
     return true;
   }, [user, token, clearExpiredSession]);
 
-  const hasRole = useCallback(
-    (roleName) => {
-      if (!user?.roles) return false;
-      const targetRole = String(roleName).toUpperCase();
-      return normalizeRoles(user.roles).includes(targetRole);
-    },
-    [normalizeRoles, user]
-  );
+  const hasRole = (roleName) => {
+    if (!user?.roles) return false;
+    const targetRole = String(roleName).toUpperCase();
+    return normalizeRoles(user.roles).includes(targetRole);
+  };
 
-  const hasPermission = useCallback(
-    (permissionName) => {
-      if (!user?.permissions) return false;
-      return user.permissions.includes(permissionName);
-    },
-    [user]
-  );
+  const hasPermission = (permissionName) => {
+    if (!user?.permissions) return false;
+    return user.permissions.includes(permissionName);
+  };
 
-  const hasAnyRole = useCallback(
-    (...roleNames) => roleNames.some((role) => hasRole(role)),
-    [hasRole]
-  );
+  const hasAnyRole = (...roleNames) => roleNames.some((role) => hasRole(role));
 
-  const hasAnyPermission = useCallback(
-    (...permissionNames) => permissionNames.some((permission) => hasPermission(permission)),
-    [hasPermission]
-  );
+  const hasAnyPermission = (...permissionNames) => permissionNames.some((permission) => hasPermission(permission));
 
-  const isAdmin = useCallback(() => hasRole(ROLES.ADMIN), [hasRole]);
-  const isEventManager = useCallback(() => hasRole(ROLES.ORGANIZER), [hasRole]);
-  const isSuperAdmin = useCallback(() => hasRole(ROLES.SUPER_ADMIN), [hasRole]);
-  const isOrganizer = useCallback(() => hasRole(ROLES.ORGANIZER), [hasRole]);
-  const isVolunteer = useCallback(() => hasRole(ROLES.VOLUNTEER), [hasRole]);
-  const isAttendee = useCallback(() => hasRole(ROLES.ATTENDEE), [hasRole]);
+  const isAdmin = () => hasRole(ROLES.ADMIN);
+  const isEventManager = () => hasRole(ROLES.ORGANIZER);
+  const isSuperAdmin = () => hasRole(ROLES.SUPER_ADMIN);
+  const isOrganizer = () => hasRole(ROLES.ORGANIZER);
+  const isVolunteer = () => hasRole(ROLES.VOLUNTEER);
+  const isAttendee = () => hasRole(ROLES.ATTENDEE);
 
   const value = useMemo(
     () => ({

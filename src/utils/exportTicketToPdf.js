@@ -1,32 +1,24 @@
-// Mock implementation for exporting an event ticket to PDF
-// Requires a PDF library like html2pdf.js or jspdf in a full implementation
+import { logger } from "./logger.js";
+import { jsPDF } from "jspdf";
 
 export const exportTicketToPdf = async (event, userData) => {
-  console.log("Generating Scannable PDF Ticket for:", event?.title);
-  
-  // Create a synthetic blob to simulate downloading a PDF file
-  const mockPdfContent = `
-    Eventra Ticket: ${event?.title || 'Unknown Event'}
-    Attendee: ${userData?.name || 'Guest'}
-    Location: ${event?.location || 'Virtual'}
-    Date: ${event?.date || new Date().toLocaleDateString()}
-    ---------------------------------------------------
-    [MOCK QR CODE AND SCANNABLE BARCODE GOES HERE]
-  `;
+  logger.log("Generating PDF Ticket for:", event?.title);
 
-  const blob = new Blob([mockPdfContent], { type: "text/plain" }); // Using text/plain for mock
-  const url = URL.createObjectURL(blob);
-  
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `Eventra_Ticket_${event?.id || 'event'}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 100);
+  const doc = new jsPDF();
+
+  doc.setFontSize(20);
+  doc.text("Eventra Ticket", 105, 20, { align: "center" });
+
+  doc.setFontSize(14);
+  doc.text(`Event: ${event?.title || "Unknown Event"}`, 20, 50);
+  doc.text(`Attendee: ${userData?.name || "Guest"}`, 20, 65);
+  doc.text(`Location: ${event?.location || "Virtual"}`, 20, 80);
+  doc.text(`Date: ${event?.date || new Date().toLocaleDateString()}`, 20, 95);
+
+  doc.setFontSize(10);
+  doc.text("Thank you for registering with Eventra!", 105, 120, { align: "center" });
+
+  doc.save(`Eventra_Ticket_${event?.id || "event"}.pdf`);
 
   return true;
 };

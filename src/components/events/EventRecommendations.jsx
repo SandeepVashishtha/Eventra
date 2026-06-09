@@ -13,6 +13,7 @@ import {
 import mockEvents from "../../Pages/Events/eventsMockData.json";
 import { syncSecureStorage } from "../../utils/secureStorage";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { getRecommendedEvents } from "../../utils/eventRecommendationUtils";
 
 // =========================================================================
 // INLINE VECTOR GRAPHIC CONSTANTS (FALLBACK PLACEHOLDER IMAGES)
@@ -87,14 +88,14 @@ RecommendationSkeleton.displayName = "RecommendationSkeleton";
  * 🖼️ SAFE FALLBACK IMAGE LAYOUT MODULE
  * Intercepts broken external URLs natively and updates sources to a fallback vector.
  */
-const CardBannerImage = memo(({ src, alt }) => {
-  const handleImageLoadingError = (e) => {
-    e.target.onerror = null; // Prevent infinite fallback trigger loops
-    e.target.src = INLINE_SVG_PLACEHOLDER;
-    e.target.className =
-      "h-full w-full object-cover opacity-60 filter grayscale dark:brightness-75";
-  };
+const handleImageLoadingError = (e) => {
+  e.target.onerror = null;
+  e.target.src = INLINE_SVG_PLACEHOLDER;
+  e.target.className =
+    "h-full w-full object-cover opacity-60 filter grayscale dark:brightness-75";
+};
 
+const CardBannerImage = memo(({ src, alt }) => {
   return (
     <div className="relative w-full h-32 rounded-xl overflow-hidden mb-3.5 bg-slate-100 dark:bg-slate-900 border border-slate-200/20 shadow-inner group">
       <img
@@ -173,48 +174,17 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
 
       if (!active) return;
 
-      // Ensure mock data arrays pass standard validation checks
       const validMockEvents = Array.isArray(mockEvents) ? mockEvents : [];
-
-      // 1. Filter out the currently selected active item profile
-      const filteringPool = validMockEvents.filter((e) => e && e.id !== currentEventId);
-
-      // 2. Map structural values and evaluate preference matching scores
-      const scoredPool = filteringPool.map((event) => {
-        if (!event) return { recommendationScore: 0 };
-        let score = 0;
-
-        // Exact category alignment check vector (+10 points)
-        if (currentCategory && event.category?.toLowerCase() === currentCategory.toLowerCase()) {
-          score += 10;
-        }
-
-        // Match user's array metrics elements (+5 points per intersection matching)
-        const parsedCategoryTerms = (event.category || "").split(/[\s/&-]+/);
-        parsedCategoryTerms.forEach((term) => {
-          if (!term) return;
-          if (
-            Array.isArray(userInterests) &&
-            userInterests.some(
-              (interest) =>
-                typeof interest === "string" && interest.toLowerCase().includes(term.toLowerCase())
-            )
-          ) {
-            score += 5;
-          }
-        });
-
-        return { ...event, recommendationScore: score };
+      const recommendations = getRecommendedEvents({
+        events: validMockEvents,
+        currentEventId,
+        currentCategory,
+        userInterests,
       });
 
-      // 3. Sort pool in descending structural order based on priority scores
-      const sortedResultMatrix = scoredPool.sort(
-        (a, b) => b.recommendationScore - a.recommendationScore
-      );
-
       if (active) {
-        // Select topmost 6 scoring matches for the carousel limits
-        setRecommendedEvents(sortedResultMatrix.slice(0, 6));
+        setRecommendedEvents(recommendations);
+        setCurrentIndex(0);
         setLoading(false);
       }
     };
