@@ -309,8 +309,10 @@ export const applyAdvancedFilters = (events, filters = {}) => {
 export const getUniqueCategories = (events) => {
   const categories = new Set();
   events.forEach((event) => {
-    if (event.category) {
-      categories.add(event.category);
+    // Fallback to event.type if event.category is missing
+    const categoryValue = event.category || event.type;
+    if (categoryValue) {
+      categories.add(categoryValue);
     }
   });
   return Array.from(categories).sort((a, b) => a.localeCompare(b));
@@ -347,16 +349,18 @@ export const getPriceStats = (events) => {
  * @returns {Object} { earliest: Date, latest: Date }
  */
 export const getDateRange = (events) => {
-  if (events.length === 0) {
-    return { earliest: new Date(), latest: new Date() };
+  // Gracefully return null if the array is missing or entirely empty
+  if (!events || events.length === 0) {
+    return { earliest: null, latest: null };
   }
 
   const dates = events
     .map((e) => new Date(e.date || e.startDate))
     .filter((d) => !Number.isNaN(d.getTime()));
 
+  // Handle cases where events exist but none contain a structurally valid date format
   if (dates.length === 0) {
-    return { earliest: new Date(), latest: new Date() };
+    return { earliest: null, latest: null };
   }
 
   return {

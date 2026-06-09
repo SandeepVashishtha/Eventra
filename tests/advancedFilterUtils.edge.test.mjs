@@ -96,6 +96,12 @@ describe("advancedFilterUtils — edge cases", () => {
     assert.equal(toUTCIsoDate(range.latest), "2026-07-01");
   });
 
+  it("returns null date boundaries for empty event arrays", () => {
+    const emptyRange = getDateRange([]);
+    assert.equal(emptyRange.earliest, null);
+    assert.equal(emptyRange.latest, null);
+  });
+
   it("detects active date and price filters", () => {
     assert.ok(
       hasActiveFilters({
