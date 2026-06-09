@@ -486,6 +486,12 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [token]);
 
+  // Stable refs to prevent interval restart when function identities change
+  const fetchNotificationsRef = useRef(fetchNotifications);
+  const fetchAchievementsRef = useRef(fetchAchievements);
+  useEffect(() => { fetchNotificationsRef.current = fetchNotifications; }, [fetchNotifications]);
+  useEffect(() => { fetchAchievementsRef.current = fetchAchievements; }, [fetchAchievements]);
+
   const markAsRead = useCallback(
     async (notificationId) => {
       if (!token || !notificationId) return;
@@ -742,12 +748,13 @@ export const NotificationProvider = ({ children }) => {
     // catch-up fetch that the visibility useEffect below already handles.
     const intervalId = setInterval(() => {
       if (isMounted.current && activeTokenRef.current === requestToken && isPageVisibleRef.current) {
-        fetchNotifications({ isBackground: true });
+        fetchNotificationsRef.current({ isBackground: true });
       }
     }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [token, fetchNotifications, fetchAchievements]); // isPageVisible intentionally excluded — handled via ref
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]); // fetchNotifications/fetchAchievements excluded via ref to avoid interval restart on every render
 
   // Catch-up fetch: when the tab becomes visible after being hidden, immediately
   // fetch notifications so the user sees fresh data without waiting up to
@@ -755,8 +762,9 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     if (!isPageVisible || !token) return;
     if (!hasCompletedInitialFetch.current) return;
-    fetchNotifications({ isBackground: true });
-  }, [isPageVisible, token, fetchNotifications]);
+    fetchNotificationsRef.current({ isBackground: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPageVisible, token]); // fetchNotifications excluded via ref
 
   return (
     <NotificationContext.Provider
