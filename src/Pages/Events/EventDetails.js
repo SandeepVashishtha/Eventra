@@ -544,7 +544,7 @@ const EventDetails = () => {
                     )}
                   </div>
                   <p><span className="font-semibold">Type:</span> {event.type}</p>
-                  <p><span className="font-semibold">Tags:</span> {event.tags.join(", ")}</p>
+                  <p><span className="font-semibold">Tags:</span> {(event.tags ?? []).join(", ")}</p>
                 </div>
               </div>
 
