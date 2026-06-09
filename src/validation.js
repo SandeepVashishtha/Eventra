@@ -1,4 +1,4 @@
-import { createDebouncedValidator } from "./utils/debounceUtils";
+import { createDebouncedValidator } from "./utils/debounceUtils.js";
 import {
   checkEmailAvailability,
   checkPhoneValidation,
@@ -6,8 +6,8 @@ import {
   createValidationResponse,
   normalizeValidationApiResponse,
   requestValidation,
-} from "./utils/validationApi";
-import i18n from "./i18n/i18n";
+} from "./utils/validationApi.js";
+import i18n from "./i18n/i18n.js";
 
 const t = (key) => i18n.t(key);
 
@@ -47,7 +47,17 @@ export const validate = {
     return EMAIL_REGEX.test(val) || "Invalid email format";
   },
 
-  password: (val) => val.length >= 8 || "Password must be at least 8 characters",
+  password: (val) => {
+    if (!val || val.length < 8) return "Password must be at least 8 characters";
+    const hasUpper = /[A-Z]/.test(val);
+    const hasLower = /[a-z]/.test(val);
+    const hasNumber = /\d/.test(val);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(val);
+    if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+      return "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character";
+    }
+    return true;
+  },
 
   required: (val) => (val && val.trim() !== "") || "This field is required",
 
@@ -308,7 +318,7 @@ export const validatePasswordStrength = async (password, options = {}) => {
     [!requireUppercase || /[A-Z]/.test(password), messages.uppercase || "Password must include an uppercase letter"],
     [!requireLowercase || /[a-z]/.test(password), messages.lowercase || "Password must include a lowercase letter"],
     [!requireNumber || /\d/.test(password), messages.number || "Password must include a number"],
-    [!requireSpecial || /[^A-Za-z0-9]/.test(password), messages.special || "Password must include a special character"],
+    [!requireSpecial || /[!@#$%^&*(),.?":{}|<>]/.test(password), messages.special || "Password must include a special character"],
   ];
 
   const failedCheck = checks.find(([passed]) => !passed);

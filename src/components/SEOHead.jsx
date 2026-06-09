@@ -13,7 +13,7 @@ import { useEffect } from "react";
 export default function SEOHead({
   title,
   description,
-  image,
+  image = "https://eventra.sandeepvashishtha.in/logo_transparent.png",
   url,
   type = "website",
 }) {

@@ -1,8 +1,9 @@
 import { useRef, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useLocation } from "react-router-dom";
-import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid"; 
+import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
+import EventCalendarView from "./EventCalendarView";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
@@ -17,15 +18,15 @@ import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
   getDefaultFilters,
-  hasActiveFilters as hasActiveAdvancedFilters,
+  hasActiveAdvancedFilters,
   normalizeAdvancedFilters,
   serializeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
-
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
 const ExploreEventsSkeleton = () => (
@@ -43,11 +44,12 @@ const renderCardSection = (
   paginatedEvents,
   viewMode,
   searchQuery,
-  onClearSearch
+  onClearSearch,
+  filteredEvents
 ) => {
   if (isLoading) {
-  return <ExploreEventsSkeleton />;
-}
+    return <ExploreEventsSkeleton />;
+  }
 
   if (loadError) {
     return (
@@ -77,16 +79,18 @@ const renderCardSection = (
       </div>
     );
   }
-  if (viewMode === "grid" && paginatedEvents.length > 20) {
+  if (viewMode === "grid" && paginatedEvents.length > 50) {
     return <VirtualizedEventGrid events={paginatedEvents} />;
+  }
+  if (viewMode === "calendar") {
+    return <EventCalendarView events={filteredEvents} />;
   }
   return (
     <div
-      className={`grid gap-6 ${
-        viewMode === "grid"
-          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-          : "grid-cols-1 max-w-4xl mx-auto"
-      }`}
+      className={`grid gap-6 ${viewMode === "grid"
+        ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+        : "grid-cols-1 max-w-4xl mx-auto"
+        }`}
     >
       {paginatedEvents.map((event) => (
         <EventCard key={event.id} event={event} />
@@ -141,7 +145,7 @@ const EventsPage = () => {
     let savedFilters = {};
 
     try {
-      savedFilters = JSON.parse(
+      savedFilters = safeJsonParse(
         window.sessionStorage.getItem(FILTER_STORAGE_KEY) || "{}"
       );
     } catch {
@@ -161,8 +165,8 @@ const EventsPage = () => {
     const advancedFilters = urlAdvancedFilters
       ? decodeAdvancedFilters(urlAdvancedFilters)
       : normalizeAdvancedFilters(
-          savedFilters.advancedFilters || getDefaultFilters()
-        );
+        savedFilters.advancedFilters || getDefaultFilters()
+      );
     const initialSearch = routeSearchQuery || savedFilters.searchQuery || "";
 
     if (initialSearch) {
@@ -365,15 +369,16 @@ const EventsPage = () => {
         />
 
         <ErrorBoundary level="section" label="Events">
-     {renderCardSection(
-  isLoading,
-  listing.loadError,
-  listing.fetchEvents,
-  listing.paginatedEvents,
-  listing.viewMode,
-  listing.searchQuery,
-  clearSearchAndFilters
-)}
+          {renderCardSection(
+            isLoading,
+            listing.loadError,
+            listing.fetchEvents,
+            listing.paginatedEvents,
+            listing.viewMode,
+            listing.searchQuery,
+            clearSearchAndFilters,
+            listing.filteredEvents
+          )}
 
           {!listing.isLoading && listing.totalPages > 1 && (
             <div className="mt-8 flex justify-center">
