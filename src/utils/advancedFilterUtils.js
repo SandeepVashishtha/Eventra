@@ -287,8 +287,10 @@ export const applyAdvancedFilters = (events, filters = {}) => {
 export const getUniqueCategories = (events) => {
   const categories = new Set();
   events.forEach((event) => {
-    if (event.category) {
-      categories.add(event.category);
+    // Fallback to event.type if event.category is missing
+    const categoryValue = event.category || event.type;
+    if (categoryValue) {
+      categories.add(categoryValue);
     }
   });
   return Array.from(categories).sort();

@@ -125,6 +125,7 @@ describe("advancedFilterUtils — edge cases", () => {
     assert.deepEqual(getUniqueCategories(events), [
       "AI & Machine Learning",
       "DevOps & Cloud",
+      "Web Development",
     ]);
   });
 });
