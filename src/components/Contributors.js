@@ -180,7 +180,7 @@ const ContributorsInner = () => {
         return;
       }
 
-      const enhanced = await Promise.all(
+      const results = await Promise.allSettled(
         allContributors.map(async (c, idx) => {
           await new Promise((resolve) => setTimeout(resolve, idx * PROFILE_FETCH_DELAY_MS));
           const profile = await fetchGitHubProfile(c.login);
@@ -191,6 +191,15 @@ const ContributorsInner = () => {
           };
         }),
       );
+
+      const enhanced = results
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => r.value);
+
+      if (results.some((r) => r.status === "rejected")) {
+        const failCount = results.filter((r) => r.status === "rejected").length;
+        console.warn(`[Contributors] ${failCount} profile(s) failed to load, using partial data`);
+      }
 
       enhanced.sort((a, b) => b.contributions - a.contributions);
       setContributors(enhanced);
@@ -227,7 +236,7 @@ const ContributorsInner = () => {
   if (loading) {
     return (
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
             {[...Array(8)].map((_, i) => (
@@ -243,7 +252,7 @@ const ContributorsInner = () => {
   if (error)
     return (
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
             Contributors are unavailable
@@ -263,7 +272,7 @@ const ContributorsInner = () => {
   return (
     // UPDATED: Section background
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           {/* Added The Search Bar */}
           <div className="flex justify-center mb-8">

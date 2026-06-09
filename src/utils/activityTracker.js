@@ -1,3 +1,4 @@
+import { safeJsonParse } from "../utils/safeJsonParse";
 // 🔥 FIX: In-memory queue and lock to prevent localStorage race conditions
 let isUpdating = false;
 let interestQueue = [];
@@ -15,7 +16,7 @@ const isStorageAvailable = () => {
       localStorage.removeItem(testKey);
     }
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 };
@@ -34,7 +35,7 @@ const processInterestQueue = () => {
     try {
       const raw = localStorage.getItem("eventra_user_profile");
       if (raw) {
-        existing = JSON.parse(raw) || {};
+        existing = safeJsonParse(raw, {}) || {};
       }
     } catch (parseError) {
       console.warn("Failed to parse user profile JSON, resetting it:", parseError);

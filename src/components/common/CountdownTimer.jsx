@@ -1,6 +1,31 @@
 import { useEffect, useState, useMemo } from "react";
 import { Clock } from "lucide-react";
 import { getServerTime } from "../../utils/timeSync";
+import { resolveEventInstant } from "../../utils/timezoneUtils";
+
+/**
+ * Resolves the countdown deadline anchored to the event's own timezone so the
+ * countdown is identical regardless of the viewer's location. Falls back to
+ * naive parsing only when the timezone-aware resolver cannot parse the inputs,
+ * preserving behaviour for malformed legacy data.
+ *
+ * @param {string} date - Event date
+ * @param {string} time - Event time
+ * @param {string} [timezone] - IANA timezone the event time is expressed in
+ * @returns {Date} Deadline instant
+ */
+const resolveDeadline = (date, time, timezone) => {
+  const resolved = resolveEventInstant(date, time, timezone);
+  if (resolved) return resolved;
+
+  // Fallback: only attempt naive ISO construction for 24-hour "HH:MM" format.
+  // 12-hour strings like "10:00 AM" are not valid ISO 8601 and produce Invalid Date.
+  if (time && /^\d{1,2}:\d{2}$/.test(time.trim())) {
+    return new Date(`${date}T${time}`);
+  }
+
+  return null;
+};
 
 const calculateTimeLeft = (deadline) => {
   const diff = new Date(deadline) - getServerTime();
@@ -16,17 +41,25 @@ const calculateTimeLeft = (deadline) => {
 const pad = (n) => String(n).padStart(2, "0");
 
 // Compact version for EventCard
-export const CountdownBadge = ({ date, time }) => {
-  const deadline = useMemo(() => new Date(`${date}T${time}`), [date, time]);
+export const CountdownBadge = ({ date, time, timezone }) => {
+  const deadline = useMemo(
+    () => resolveDeadline(date, time, timezone),
+    [date, time, timezone]
+  );
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    let timerId = null;
+    timerId = setInterval(() => {
       const remaining = calculateTimeLeft(deadline);
       setTimeLeft(remaining);
-      if (!remaining) clearInterval(timer);
+      if (!remaining && timerId !== null) {
+        clearInterval(timerId);
+      }
     }, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      if (timerId !== null) clearInterval(timerId);
+    };
   }, [deadline]);
 
   if (!timeLeft) {
@@ -46,17 +79,25 @@ export const CountdownBadge = ({ date, time }) => {
 };
 
 // Large version for EventDetailsPage
-const CountdownTimer = ({ date, time }) => {
-  const deadline = useMemo(() => new Date(`${date}T${time}`), [date, time]);
+const CountdownTimer = ({ date, time, timezone }) => {
+  const deadline = useMemo(
+    () => resolveDeadline(date, time, timezone),
+    [date, time, timezone]
+  );
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    let timerId = null;
+    timerId = setInterval(() => {
       const remaining = calculateTimeLeft(deadline);
       setTimeLeft(remaining);
-      if (!remaining) clearInterval(timer);
+      if (!remaining && timerId !== null) {
+        clearInterval(timerId);
+      }
     }, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      if (timerId !== null) clearInterval(timerId);
+    };
   }, [deadline]);
 
   if (!timeLeft) {
