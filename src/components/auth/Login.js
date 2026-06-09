@@ -317,11 +317,10 @@ const Login = () => {
                 <Link to="/privacy" className="hover:underline text-blue-600 font-semibold">Privacy Policy</Link>
               </p>
             </div>
-          </div>
-        </motion.div>
-      </div>
-    </motion.div>
-  );
+          </motion.div>
+        </div>
+      </motion.div>
+    );
 };
 
 export default Login;
