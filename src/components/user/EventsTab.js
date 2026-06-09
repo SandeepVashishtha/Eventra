@@ -310,6 +310,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterType, setFilterType] = useState("All");
   const [sortBy, setSortBy] = useState("soonest");
+  const [loading, setLoading] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
 
   const [recentSearches,
@@ -328,6 +329,14 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
     setRecentSearches(saved);
   }, []);
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setLoading(false);
+  }, 1500);
+
+  return () => clearTimeout(timer);
+}, []);
+
 
 useEffect(() => {
   const storedRecent = JSON.parse(
@@ -640,65 +649,42 @@ const addToRecentEvents = (event) => {
             </section>
           )}
 
-          {filteredHostedEvents.length > 0 && (
-            <section className="space-y-4">
-              <div className="ud-tab-header">
-                <h3 className="ud-page-title">
-                  <Calendar size={18} /> Hosted Events
-                </h3>
-                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                  {filteredHostedEvents.length} event{filteredHostedEvents.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {filteredHostedEvents.map((event, index) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    showCancel={false}
-                  />
-                ))}
-              </motion.div>
-            </section>
-          )}
+        <div className="h-5 w-3/4 rounded bg-slate-200 dark:bg-slate-700 mb-3" />
 
-          {waitlistEvents.length > 0 && (
-            <section className="space-y-4 mt-6">
-              <div className="ud-tab-header">
-                <h3 className="ud-page-title flex items-center gap-2">
-                  <Clock size={18} className="text-amber-500" /> Waitlisted Events
-                </h3>
-                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                  {waitlistEvents.length} event{waitlistEvents.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {waitlistEvents.map((event, index) => (
-                  <WaitlistCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    onLeaveWaitlist={async (id) => {
-                      if (window.confirm(`Are you sure you want to leave the waitlist for "${event.title}"?`)) {
-                        try {
-                          const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
-                          await leaveWaitlist(id, user.id || user.email);
-                          toast.success("Left the waitlist successfully.");
-                          triggerWaitlistUpdate();
-                        } catch (err) {
-                          toast.error(err.message || "Failed to leave waitlist.");
-                        }
-                      }
-                    }}
-                  />
-                ))}
-              </motion.div>
-            </section>
-          )}
-        </>
-      )}
+        <div className="h-4 w-1/2 rounded bg-slate-200 dark:bg-slate-700 mb-2" />
 
+        <div className="h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-700 mb-6" />
+
+        <div className="flex gap-3">
+          <div className="h-10 flex-1 rounded-xl bg-slate-200 dark:bg-slate-700" />
+          <div className="h-10 flex-1 rounded-xl bg-slate-200 dark:bg-slate-700" />
+        </div>
+      </div>
+    ))}
+  </div>
+) : registeredCount + hostedCount === 0 ? (
+  <EmptyState />
+) : filteredEvents.length === 0 ? (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    className="w-full mt-4"
+  >
+    <SearchEmptyState
+      query={searchQuery}
+      itemLabel="events"
+      browseLabel="Browse Events"
+      browsePath="/events"
+      onClear={() => {
+        setSearchQuery("");
+        setFilterStatus("All");
+        setFilterType("All");
+        setSortBy("soonest");
+      }}
+    />
+  </motion.div>
+) : (
+  <>
       {/* 🔥 FIX 1: Portaled the modal out of the Framer Motion stacking context trap */}
       <AnimatePresence>
         {cancelTarget && ReactDOM.createPortal(
