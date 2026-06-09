@@ -27,9 +27,9 @@ export default function CTASection() {
             className="inline-flex items-center gap-2 border border-indigo-200 dark:border-indigo-500/50 bg-indigo-50 dark:bg-indigo-950/80 rounded-full px-4 py-1.5 justify-center mx-auto mb-6 shadow-sm"
           >
             <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-            <span className="text-indigo-800 dark:text-indigo-200 text-xs sm:text-sm font-bold tracking-wide uppercase">
+            <div className="text-indigo-800 dark:text-indigo-200 text-xs sm:text-sm font-bold tracking-wide uppercase">
               Innovate Ideas, Build Projects, Join Events
-            </span>
+            </div>
           </motion.div>
 
           {/* Main heading */}
@@ -40,10 +40,12 @@ export default function CTASection() {
             transition={{ delay: 0.1 }}
             className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white mb-6 tracking-tight leading-[1.1] drop-shadow-sm"
           >
+            <div className="inline-block text-black dark:text-white">
             Ignite Ideas,{" "}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400">
+            </div>
+            <div className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400">
               Connect Innovators
-            </span>
+            </div>
           </motion.h2>
 
           {/* ✅ FIXED: Description text ko dark mode mein 'slate-200' kar diya hai maximum readability ke liye */}
@@ -54,9 +56,11 @@ export default function CTASection() {
             transition={{ delay: 0.2 }}
             className="text-slate-700 dark:text-slate-200 max-w-2xl mx-auto text-base sm:text-lg mb-10 leading-relaxed font-medium"
           >
+            <div className="text-slate-600 dark:text-slate-400">
             Participate in hackathons, showcase your projects, and collaborate
             with creators around the world. Eventra makes it effortless, fun,
             and inspiring.
+            </div>
           </motion.p>
 
           {/* Buttons container */}
@@ -95,7 +99,9 @@ export default function CTASection() {
             transition={{ delay: 0.4 }}
             className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-semibold"
           >
+            <div className="text-slate-500 dark:text-slate-500">
             Connect, create, and grow with your community today.
+            </div>
           </motion.p>
         </div>
       </section>

@@ -22,4 +22,13 @@ export const getJwtSecret = () => requireJwtSecret();
 
 export const JWT_SECRET = requireJwtSecret();
 
-export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
+
+export const JWT_COOKIE_MAX_AGE_SECONDS = (() => {
+  const val = JWT_EXPIRES_IN;
+  const match = val.match(/^(\d+)(m|h|d)$/);
+  if (!match) return 3600;
+  const n = parseInt(match[1], 10);
+  const unit = match[2];
+  return unit === 'm' ? n * 60 : unit === 'h' ? n * 3600 : n * 86400;
+})();

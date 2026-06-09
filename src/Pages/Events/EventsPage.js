@@ -3,6 +3,7 @@ import { useSearchParams, useLocation } from "react-router-dom";
 import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
+import EventCalendarView from "./EventCalendarView";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
@@ -22,11 +23,10 @@ import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
   getDefaultFilters,
-  hasActiveFilters as hasActiveAdvancedFilters,
+  hasActiveAdvancedFilters,
   normalizeAdvancedFilters,
   serializeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
-
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
 const ExploreEventsSkeleton = () => (
@@ -44,7 +44,8 @@ const renderCardSection = (
   paginatedEvents,
   viewMode,
   searchQuery,
-  onClearSearch
+  onClearSearch,
+  filteredEvents
 ) => {
   if (isLoading) {
     return <ExploreEventsSkeleton />;
@@ -80,6 +81,9 @@ const renderCardSection = (
   }
   if (viewMode === "grid" && paginatedEvents.length > 50) {
     return <VirtualizedEventGrid events={paginatedEvents} />;
+  }
+  if (viewMode === "calendar") {
+    return <EventCalendarView events={filteredEvents} />;
   }
   return (
     <div
@@ -372,7 +376,8 @@ const EventsPage = () => {
             listing.paginatedEvents,
             listing.viewMode,
             listing.searchQuery,
-            clearSearchAndFilters
+            clearSearchAndFilters,
+            listing.filteredEvents
           )}
 
           {!listing.isLoading && listing.totalPages > 1 && (
