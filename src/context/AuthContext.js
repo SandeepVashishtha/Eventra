@@ -348,7 +348,12 @@ export const AuthProvider = ({ children }) => {
 
 
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.warn("[AuthContext] Backend logout failed, proceeding with local clear", error);
+    }
     clearSession();
     setAuthRequestState({ loading: false, error: null });
   }, [clearSession, setAuthRequestState]);
