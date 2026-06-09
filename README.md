@@ -29,6 +29,31 @@ Modern event and hackathon platform for communities, organizers, and contributor
 
 ---
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Project Architecture](#project-architecture)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Local Development](#local-development)
+- [Docker Development](#docker-development)
+- [Environment Variables](#environment-variables)
+- [Available Scripts](#available-scripts)
+- [Testing and Quality](#testing-and-quality)
+- [SSE Mock Server (Optional)](#sse-mock-server-optional)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contributors](#contributors)
+- [Star History](#star-history)
+- [🧑‍🏫 Mentor](#%E2%80%8D-mentor)
+- [🚀 Quick Start](#-quick-start)
+
+---
+
 ## Overview
 
 Eventra is an open-source frontend application built with React and Vite. It supports event discovery, registration, dashboards, hackathons, collaboration features, feedback flows, and role-based access experiences.
