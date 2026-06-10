@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
@@ -296,9 +296,25 @@ const EventRegistration = () => {
     isSubmittingRef.current = true;
     setSubmitting(true);
 
-    const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+    // FIX (TOCTOU): Re-check capacity immediately before the POST so the
+    // endpoint decision is based on fresh server data, not on the stale
+    // React state snapshotted when handleSubmit ran. This collapses the
+    // check-then-act window to the minimum possible latency (one request).
+    // refreshEventAvailability also calls setEvent with the latest data, so
+    // the local event state is updated as a side-effect.
+    let isFreshlyFull = false;
+    try {
+      const latestAvailability = await refreshEventAvailability(eventId);
+      isFreshlyFull = latestAvailability != null
+        ? latestAvailability.isFull
+        : (event ? event.attendees >= event.maxAttendees : false);
+    } catch {
+      // If the availability refresh itself fails, fall back to local state
+      // rather than blocking registration entirely.
+      isFreshlyFull = event ? event.attendees >= event.maxAttendees : false;
+    }
 
-    if (isEventFull) {
+    if (isFreshlyFull) {
       try {
         const { joinWaitlist, getQueuePosition } = await import("../../utils/waitlistUtils");
         await joinWaitlist(eventId, user, { ...formData, eventTitle: event?.title || "the event" });
@@ -312,7 +328,7 @@ const EventRegistration = () => {
         toast.error(err.message || t("eventRegistration.toastRegistrationError"));
         return;
       } finally {
-      registrationLocks.delete(eventId);
+        registrationLocks.delete(eventId);
         isSubmittingRef.current = false;
         setSubmitting(false);
       }
@@ -322,6 +338,16 @@ const EventRegistration = () => {
         ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
         : `/api/events/${eventId}/register`;
 
+        // FIX (offline queue dedup): Generate a stable idempotency key once per
+        // submission attempt. It travels with the payload to the backend (which
+        // should honour it for duplicate detection) and is also passed to
+        // pushToQueue so the queue can deduplicate by eventId+userId before
+        // writing to IndexedDB / localStorage.
+        const idempotencyKey =
+        typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `idem-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
     try {
       const response = await apiUtils.post(
         endpoint,
@@ -329,6 +355,7 @@ const EventRegistration = () => {
           ...formData,
           priority: formData.priority,
           eventId: parseInt(eventId),
+          idempotencyKey,
         },
         token
       );
@@ -339,10 +366,9 @@ const EventRegistration = () => {
 
       setRegistered(true);
       toast.success(t("eventRegistration.toastRegistrationSuccess"));
-      // addRegistration(event, formData)
       addRegistration(event, formData, registrationId, qrToken);
       clearSession();
-        } catch (error) {
+    } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
 
       if (isCapacityConflictError(error)) {
@@ -356,13 +382,20 @@ const EventRegistration = () => {
         const payload = {
           ...formData,
           eventId: parseInt(eventId),
+          // Carry the idempotency key into the queued payload so that when
+          // the queue replays, the backend rejects any true duplicate.
+          idempotencyKey,
         };
 
         const success = await pushToQueue(
           {
-            actionType: isEventFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            actionType: isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
             endpoint,
             eventId: parseInt(eventId),
+            // FIX (offline queue dedup): Pass at the item level so pushToQueue
+            // can skip enqueueing if an identical eventId+userId+actionType
+            // entry already exists in the queue.
+            idempotencyKey,
             payload,
           },
           user.id
@@ -386,7 +419,7 @@ const EventRegistration = () => {
 
       if (isAlreadyRegistered) {
         setRegistered(true);
-        toast.success(isEventFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
+        toast.success(isFreshlyFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
         const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
         // Do not pass the current form values — the server rejected this
         // submission as a duplicate, so formData is unconfirmed. Storing it
@@ -400,7 +433,6 @@ const EventRegistration = () => {
 
       toast.error(failureMessage);
     } finally {
-      registrationLocksRef.current.delete(eventId);
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
