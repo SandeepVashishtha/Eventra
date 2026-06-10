@@ -1,8 +1,9 @@
 import { CalendarIcon, MapPinIcon, ClockIcon, UserGroupIcon, TrophyIcon, BuildingLibraryIcon, ShareIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
+import { getServerTime } from "../../utils/timeSync";
 
 import ShareMenu from "../../components/common/ShareMenu";
 import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";
@@ -11,7 +12,7 @@ import { generateEventSharingData } from "../../utils/shareUtils";
 const useCountdown = (targetDate) => {
   useReducedMotion();
   const calculateTimeLeft = useCallback(() => {
-    const difference = new Date(targetDate) - new Date();
+    const difference = new Date(targetDate) - getServerTime();
 
     if (!targetDate || difference <= 0) {
       return null;
@@ -29,11 +30,14 @@ const useCountdown = (targetDate) => {
   useEffect(() => {
     setTimeLeft(calculateTimeLeft());
 
-    const timer = setInterval(() => {
+    let timerId = null;
+    timerId = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      if (timerId !== null) clearInterval(timerId);
+    };
   }, [calculateTimeLeft]);
 
   return timeLeft;
@@ -89,7 +93,7 @@ const UrgencyBadge = ({ startDate, endDate, status }) => {
 };
 
 const computeStatus = (startDate, endDate) => {
-  const now = new Date();
+  const now = getServerTime();
   const start = new Date(startDate);
   const end = new Date(endDate);
 
@@ -157,10 +161,11 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
     winner: hackathon?.winner || "",
   };
 
-  const status =
-    normalizedHackathon.startDate && normalizedHackathon.endDate
+  const status = useMemo(() => {
+    return normalizedHackathon.startDate && normalizedHackathon.endDate
       ? computeStatus(normalizedHackathon.startDate, normalizedHackathon.endDate)
       : normalizedHackathon.status || "upcoming";
+  }, [normalizedHackathon.startDate, normalizedHackathon.endDate, normalizedHackathon.status]);
   const style = statusStyles[status] || statusStyles.upcoming;
   const sharingData = generateEventSharingData({
     ...normalizedHackathon,

@@ -125,17 +125,21 @@ export const getCategoryLabel = (categoryKey) => {
  * @returns {Array} Filtered events
  */
 export const filterByCategory = (events, selectedCategories) => {
+  if (!Array.isArray(events)) {
+    return [];
+  }
   if (!selectedCategories || selectedCategories.length === 0) {
     return events;
   }
 
   return events.filter((event) => {
-    const eventCategory = normalizeFilterValue(event.category || event.type);
+    const eventCategory = normalizeFilterValue(event.category);
     return selectedCategories.some((cat) => {
       const mappedCategory = EVENT_CATEGORIES.find(
         (category) =>
-          category.id === cat ||
-          normalizeFilterValue(category.label) === normalizeFilterValue(cat),
+          category &&
+          (category.id === cat ||
+            normalizeFilterValue(category.label) === normalizeFilterValue(cat)),
       );
 
       return (
@@ -148,15 +152,18 @@ export const filterByCategory = (events, selectedCategories) => {
 };
 
 export const filterByLocation = (events, locationQuery) => {
+  if (!Array.isArray(events)) {
+    return [];
+  }
   const query = String(locationQuery || "").trim().toLowerCase();
   if (!query) {
     return events;
   }
 
   return events.filter((event) =>
-    String(event.location || event.venue || event.city || "")
+    event ? String(event.location || event.venue || event.city || "")
       .toLowerCase()
-      .includes(query),
+      .includes(query) : false,
   );
 };
 
@@ -167,15 +174,18 @@ export const filterByLocation = (events, locationQuery) => {
  * @returns {Array} Filtered events
  */
 export const filterByMode = (events, selectedModes) => {
+  if (!Array.isArray(events)) {
+    return [];
+  }
   if (!selectedModes || selectedModes.length === 0) {
     return events;
   }
 
-  return events.filter((event) =>
-    selectedModes.includes(
-      normalizeFilterValue(event.eventMode || event.mode || "offline"),
-    ),
-  );
+  return events.filter((event) => {
+    // Safely extract the raw mode without implicitly falling back to a valid filter value
+    const rawMode = event.eventMode !== undefined ? event.eventMode : (event.mode !== undefined ? event.mode : "");
+    return selectedModes.includes(normalizeFilterValue(rawMode));
+  });
 };
 
 /**
@@ -185,6 +195,9 @@ export const filterByMode = (events, selectedModes) => {
  * @returns {Array} Filtered events
  */
 export const filterByPrice = (events, priceRange) => {
+  if (!Array.isArray(events)) {
+    return [];
+  }
   if (!priceRange) {
     return events;
   }
@@ -192,6 +205,7 @@ export const filterByPrice = (events, priceRange) => {
   const { min = 0, max = Infinity } = priceRange;
 
   return events.filter((event) => {
+    if (!event) return false;
     const price = event.price || 0;
     return price >= min && price <= max;
   });
@@ -204,6 +218,9 @@ export const filterByPrice = (events, priceRange) => {
  * @returns {Array} Filtered events
  */
 export const filterByDateRange = (events, dateRange) => {
+  if (!Array.isArray(events)) {
+    return [];
+  }
   if (!dateRange || (!dateRange.startDate && !dateRange.endDate)) {
     return events;
   }
@@ -219,6 +236,7 @@ export const filterByDateRange = (events, dateRange) => {
   endDate.setHours(23, 59, 59, 999);
 
   return events.filter((event) => {
+    if (!event) return false;
     const eventDate = new Date(event.date || event.startDate);
     return eventDate >= startDate && eventDate <= endDate;
   });
@@ -231,11 +249,15 @@ export const filterByDateRange = (events, dateRange) => {
  * @returns {Array} Filtered events
  */
 export const filterByStatus = (events, selectedStatuses) => {
+  if (!Array.isArray(events)) {
+    return [];
+  }
   if (!selectedStatuses || selectedStatuses.length === 0) {
     return events;
   }
 
   return events.filter((event) => {
+    if (!event) return false;
     const status = normalizeFilterValue(event.status || "upcoming");
     return selectedStatuses.some(
       (selectedStatus) => normalizeFilterValue(selectedStatus) === status,
@@ -287,11 +309,13 @@ export const applyAdvancedFilters = (events, filters = {}) => {
 export const getUniqueCategories = (events) => {
   const categories = new Set();
   events.forEach((event) => {
-    if (event.category) {
-      categories.add(event.category);
+    // Fallback to event.type if event.category is missing
+    const categoryValue = event.category || event.type;
+    if (categoryValue) {
+      categories.add(categoryValue);
     }
   });
-  return Array.from(categories).sort();
+  return Array.from(categories).sort((a, b) => a.localeCompare(b));
 };
 
 /**
@@ -325,16 +349,18 @@ export const getPriceStats = (events) => {
  * @returns {Object} { earliest: Date, latest: Date }
  */
 export const getDateRange = (events) => {
-  if (events.length === 0) {
-    return { earliest: new Date(), latest: new Date() };
+  // Gracefully return null if the array is missing or entirely empty
+  if (!events || events.length === 0) {
+    return { earliest: null, latest: null };
   }
 
   const dates = events
     .map((e) => new Date(e.date || e.startDate))
     .filter((d) => !Number.isNaN(d.getTime()));
 
+  // Handle cases where events exist but none contain a structurally valid date format
   if (dates.length === 0) {
-    return { earliest: new Date(), latest: new Date() };
+    return { earliest: null, latest: null };
   }
 
   return {
@@ -360,6 +386,8 @@ export const hasActiveFilters = (filters = {}) => {
       (filters.dateRange.startDate || filters.dateRange.endDate))
   );
 };
+
+export const hasActiveAdvancedFilters = hasActiveFilters;
 
 /**
  * Reset all filters to default state
@@ -430,7 +458,11 @@ export const decodeAdvancedFilters = (value) => {
   }
 
   try {
-    return normalizeAdvancedFilters(JSON.parse(decodeURIComponent(value)));
+    const parsed = JSON.parse(decodeURIComponent(value));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return getDefaultFilters();
+    }
+    return normalizeAdvancedFilters(parsed);
   } catch {
     return getDefaultFilters();
   }

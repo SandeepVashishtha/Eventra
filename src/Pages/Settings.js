@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { Sun, MousePointer, Bell, ShieldCheck, ArrowRight, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import useDocumentTitle from "../hooks/useDocumentTitle";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
+import KeyboardShortcutsHelp from "../components/accessibility/KeyboardShortcutsHelp";
 
 const Settings = () => {
   useDocumentTitle("Eventra | Settings");
@@ -41,16 +42,14 @@ const Settings = () => {
         "crypto", "kernel", "daemon", "syntax", "lexicon", "cosmos", "beacon", "vortex"
       ];
       
-      const phraseArr = [];
-      for (let i = 0; i < 12; i++) {
-        const idx = Math.floor(Math.random() * words.length);
-        phraseArr.push(words[idx]);
-      }
-      
+      const randomIndices = new Uint32Array(12);
+      crypto.getRandomValues(randomIndices);
+      const phraseArr = Array.from(randomIndices, (v) => words[v % words.length]);
+
       const keyMnemonic = phraseArr.join(" ");
-      const keyHex = Array.from({ length: 64 }, () => 
-        Math.floor(Math.random() * 16).toString(16)
-      ).join("");
+      const randomBytes = new Uint8Array(32);
+      crypto.getRandomValues(randomBytes);
+      const keyHex = Array.from(randomBytes, (b) => b.toString(16).padStart(2, "0")).join("");
       
       setBackupKey({
         mnemonic: keyMnemonic,
@@ -84,6 +83,7 @@ const Settings = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     toast.success("Backup key file downloaded!");
   };
 
@@ -202,6 +202,9 @@ const Settings = () => {
               </p>
             </div>
           </article>
+
+          {/* Keyboard Shortcuts Help */}
+          <KeyboardShortcutsHelp />
         </div>
 
         {/* Advanced Backup Recovery Key Generator Card */}
