@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import EventHealthScore from "./EventHealthScore";
 import { Users, Clock, TrendingUp, Activity, CheckCircle2, Play, Zap } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -538,6 +539,7 @@ const [activeTab, setActiveTab] = useState('analytics');
       </div>
       </>
   )}
+  <EventHealthScore />
 </div>
   );
 };
