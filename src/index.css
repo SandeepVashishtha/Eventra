@@ -1196,3 +1196,31 @@ html:not(.dark) ::placeholder {
   color: white !important;
 }
 }
+
+/* Custom react-toastify overrides for premium visual consistency */
+.Toastify__toast {
+  border-radius: 12px !important;
+  font-family: inherit !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Light Theme Toast Styles */
+.Toastify__toast--theme-light {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Dark Theme Toast Styles */
+.Toastify__toast--theme-dark {
+  background-color: #0b1120 !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #1e293b !important;
+}
+
+/* Accessibility: Keyboard Outlines on Close Button */
+.Toastify__close-button:focus-visible {
+  outline: 2px solid #38bdf8 !important;
+  outline-offset: 2px !important;
+  border-radius: 4px !important;
+}
