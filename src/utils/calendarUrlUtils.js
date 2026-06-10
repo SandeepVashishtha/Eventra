@@ -269,7 +269,7 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
     `LOCATION:${(event.location || '').replace(/,/g, '\\,')}`,
     'END:VEVENT',
     'END:VCALENDAR'
-  ].join('\\r\\n');
+  ].join('\r\n');
 
   try {
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
