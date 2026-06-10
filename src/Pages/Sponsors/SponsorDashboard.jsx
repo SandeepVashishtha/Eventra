@@ -4,6 +4,7 @@ import {
   Save, Layout, Shield, Mail, Briefcase, Info, Download, Trash2, CheckCircle2
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const DEFAULT_SETTINGS = {
   id: "sp-custom",
@@ -33,46 +34,47 @@ const SponsorDashboard = () => {
     chatInitiations: Math.floor(Math.random() * 100) + 20,
   });
 
-  useEffect(() => {
-    // Load custom settings
-    const saved = localStorage.getItem("eventra_sponsor_settings");
-    if (saved) {
-      try {
-        setSettings(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse sponsor settings", e);
-      }
+ useEffect(() => {
+  // Load custom settings
+  const saved = localStorage.getItem("eventra_sponsor_settings");
+
+  if (saved) {
+    try {
+      setSettings(safeJsonParse(saved, {}));
+    } catch (e) {
+      console.error("Failed to parse sponsor settings", e);
     }
-
-    // Load captured leads
-    const savedLeads = localStorage.getItem("eventra_sponsor_leads");
-
-if (savedLeads) {
-  try {
-    const parsedLeads = safeJsonParse(savedLeads, []);
-
-    setLeads([...parsedLeads].reverse());
-
-    setAnalytics({
-      boothVisits: parsedLeads.length * 3,
-      qrScans: parsedLeads.length,
-      engagementRate:
-        parsedLeads.length > 0
-          ? (
-              (parsedLeads.length /
-                (parsedLeads.length * 3)) *
-              100
-            ).toFixed(1)
-          : 0,
-    });
-  } catch (e) {
-    console.error(
-      "Failed to parse sponsor leads",
-      e
-    );
   }
-}
-  }, []);
+
+  // Load captured leads
+  const savedLeads = localStorage.getItem("eventra_sponsor_leads");
+
+  if (savedLeads) {
+    try {
+      const parsedLeads = safeJsonParse(savedLeads, []);
+
+      setLeads([...parsedLeads].reverse());
+
+      setAnalytics({
+        boothVisits: parsedLeads.length * 3,
+        qrScans: parsedLeads.length,
+        engagementRate:
+          parsedLeads.length > 0
+            ? (
+                (parsedLeads.length /
+                  (parsedLeads.length * 3)) *
+                100
+              ).toFixed(1)
+            : 0,
+      });
+    } catch (e) {
+      console.error(
+        "Failed to parse sponsor leads",
+        e
+      );
+    }
+  }
+}, []);
 
   const handleSaveSettings = (e) => {
     e.preventDefault();

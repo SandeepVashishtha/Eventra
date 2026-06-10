@@ -119,7 +119,7 @@ export default function OnboardingChecklist() {
       } else if (user?.skills && user.skills.length > 0) {
         interestsDone = true;
       }
-    } catch (e) {
+    } catch {
       if (user?.skills && user.skills.length > 0) {
         interestsDone = true;
       }
