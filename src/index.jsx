@@ -53,3 +53,4 @@ root.render(
 </GlobalErrorBoundary>
   </React.StrictMode>
 );
+
