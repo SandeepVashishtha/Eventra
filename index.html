@@ -1,37 +1,48 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Eventra — Platform for Builders</title>
+		<meta name="description" content="A premium, modern platform for organizing and attending events, hackathons, and projects." />
 
-    <!-- Theme -->
-    <meta name="theme-color" content="#0f172a" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Eventra" />
+		<!-- Icons & manifest -->
+		<link rel="icon" href="/favicon.png" />
+		<link rel="apple-touch-icon" href="/Eventra.png" />
+		<link rel="manifest" href="/manifest.json" />
+		<meta name="theme-color" content="#4f46e5" />
+		<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' 'unsafe-inline' 		https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com;" />
 
-    <!-- Preconnect for faster external resource loading -->
-    <link rel="preconnect" href="https://api.github.com" />
-    <link rel="dns-prefetch" href="https://api.github.com" />
-    <link rel="preconnect" href="https://accounts.google.com" crossorigin />
-    <link rel="dns-prefetch" href="https://accounts.google.com" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<!-- Social -->
+		<meta property="og:site_name" content="Eventra" />
+		<meta property="og:title" content="Eventra — Platform for Builders" />
+		<meta property="og:description" content="A premium, modern platform for organizing and attending events, hackathons, and projects." />
+		<meta property="og:image" content="/logo_transparent.png" />
+		<meta name="twitter:card" content="summary_large_image" />
 
-    <!-- Fonts -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
-    <noscript>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-        rel="stylesheet"
-      />
-    </noscript>
+		<!-- Prevent flash of wrong theme; runs early from /public -->
+		<script src="/theme-init.js"></script>
 
-    <!-- Prevent Theme Flickering -->
-    <script src="/theme-init.js"></script>
+		<!-- Performance hints -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+		<!-- Vite will inject dev client & HMR in development automatically -->
+	</head>
+	<body>
+		<a class="skip-to-content" href="#main">Skip to content</a>
+		<div id="root"></div>
+
+		<noscript>
+			<div style="padding:1rem;text-align:center;">
+				<strong>Eventra requires JavaScript to run. Please enable JavaScript in your browser.</strong>
+			</div>
+		</noscript>
+
+		<!-- App entry (Vite) -->
+		<script type="module" src="/src/index.jsx"></script>
+	</body>
+</html>
 
     <!-- Title -->
     <title>Eventra - Open Source Event Management Platform</title>
