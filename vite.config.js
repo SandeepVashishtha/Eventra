@@ -8,11 +8,14 @@ const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const DEPLOYED_BACKEND_URL =
+    "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net";
+
   const backendTarget =
     env.BACKEND_URL ||
     env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
     env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") ||
-    "http://localhost:8080";
+    DEPLOYED_BACKEND_URL;
 
   return {
     plugins: [
