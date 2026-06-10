@@ -78,7 +78,7 @@ export const CountdownBadge = ({ date, time, timezone }) => {
   );
 };
 
-// Large version for EventDetailsPage
+// Large version for EventDetails
 const CountdownTimer = ({ date, time, timezone }) => {
   const deadline = useMemo(
     () => resolveDeadline(date, time, timezone),

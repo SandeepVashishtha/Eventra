@@ -270,6 +270,13 @@ function FAQSectionInner() {
       <style>{`
         .faq-section-root {
           transition: background-color 0.3s ease, color 0.3s ease;
+          --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+          --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+          --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+          --shadow-xl: 0 16px 40px rgba(0,0,0,0.18);
+          --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+          --bg-secondary: rgba(0,0,0,0.03);
+          --text-muted: #9ca3af;
           --bg-primary: #fafbfc;
           --bg-secondary: #ffffff;
           --text-primary: #0f172a;
@@ -295,6 +302,12 @@ function FAQSectionInner() {
         }
 
         .dark .faq-section-root {
+          --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+          --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+          --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+          --shadow-xl: 0 16px 40px rgba(0,0,0,0.6);
+          --bg-secondary: rgba(255,255,255,0.03);
+          --text-muted: #6b7280;
           --bg-primary: #0f172a;
           --bg-secondary: #1e293b;
           --text-primary: #f1f5f9;
@@ -512,6 +525,8 @@ function FAQSectionInner() {
         .faq-accordion-content {
           max-height: 0;
           overflow: hidden;
+          width: 100%;
+          box-sizing: border-box;
           transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           border-top: 1px solid transparent;
         }
