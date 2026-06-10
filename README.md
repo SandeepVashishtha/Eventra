@@ -143,7 +143,7 @@ cp .env.example .env
 1. Start the local development container:
 
 ```bash
-docker-compose up eventra-dev
+docker compose up eventra-dev
 ```
 
 The app will be available at `http://localhost:3000` with hot-reloading enabled.
@@ -151,7 +151,7 @@ The app will be available at `http://localhost:3000` with hot-reloading enabled.
 1. Build and test the production container locally:
 
 ```bash
-docker-compose up --build eventra-prod
+docker compose up --build eventra-prod
 ```
 
 The production-optimized build will be served via Nginx at `http://localhost:8080`.
