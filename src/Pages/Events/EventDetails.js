@@ -82,7 +82,11 @@ const EventDetails = () => {
         setFetchLoading(false);
       }
     }
+<<<<<<< HEAD
   }, [eventId, setEvent, setFetchLoading, setFetchError]);
+=======
+  }, [eventId,setEvent]);
+>>>>>>> 7ca4237e (Cleaned and optimized EventsTab component)
 
   useEffect(() => {
     loadEvent();

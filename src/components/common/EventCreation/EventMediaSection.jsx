@@ -79,12 +79,20 @@ const EventMediaSection = ({
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 7ca4237e (Cleaned and optimized EventsTab component)
     if (!allowedTypes.includes(file.type)) {
       alert("Please upload JPG, PNG, or WEBP images only.");
       return;
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 7ca4237e (Cleaned and optimized EventsTab component)
     if (file.size > MAX_BANNER_SIZE) {
       alert("Image is too large (max 5MB)");
       return;

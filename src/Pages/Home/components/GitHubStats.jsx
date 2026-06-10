@@ -15,13 +15,15 @@ import {
   Languages,
 } from "lucide-react";
 
+<<<<<<< HEAD
 import { safeJsonParse } from "../../../utils/safeJsonParse";
+=======
+>>>>>>> 7ca4237e (Cleaned and optimized EventsTab component)
 import {
   fetchRepository,
-  fetchContributors,
-  fetchPullRequests,
 } from "../../../utils/githubApiClient";
-import { ENV } from "../../../config/env";
+
+import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 const fetchStat = fetchRepository;
 

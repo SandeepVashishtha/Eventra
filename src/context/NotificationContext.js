@@ -763,7 +763,7 @@ export const NotificationProvider = ({ children }) => {
     if (!isPageVisible || !token) return;
     if (!hasCompletedInitialFetch.current) return;
     fetchNotificationsRef.current({ isBackground: true });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [isPageVisible, token]); // fetchNotifications excluded via ref
 
   return (
