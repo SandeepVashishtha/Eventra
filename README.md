@@ -8,8 +8,13 @@ Modern event and hackathon platform for communities, organizers, and contributor
 
 ---
 
+## Project Status Notice
+
+🚧 Eventra is actively maintained and welcomes contributions from the open-source community. Please check existing issues before creating new ones and follow the contribution guidelines when submitting pull requests.
+
 ## Table of Contents
 
+- [Project Status Notice](#project-status-notice)
 - [Overview](#overview)
 - [Key Features](#key-features)
 - [Tech Stack](#tech-stack)
@@ -27,6 +32,8 @@ Modern event and hackathon platform for communities, organizers, and contributor
 - [Contributing](#contributing)
 - [License](#license)
 - [Contributors](#contributors)
+- [Maintainers](#maintainers)
+- [Mentor](#mentor)
 - [Star History](#star-history)
 
 ---
@@ -271,6 +278,10 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
 </td>
 </tr>
 </table>
+
+## Mentor
+
+Guidance and mentorship for the Eventra project are provided by the project leadership team. Contributors are encouraged to use GitHub Issues and Discussions for questions, suggestions, and collaboration.
 
 ## Star History
 
