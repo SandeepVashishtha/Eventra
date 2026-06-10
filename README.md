@@ -3,7 +3,7 @@
 Modern event and hackathon platform for communities, organizers, and contributors.
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![React](https://img.shields.io/badge/React-19.x-blue.svg)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-18.2-blue.svg)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.x-646CFF.svg)](https://vitejs.dev/)
 
 ---
@@ -60,7 +60,7 @@ This repository contains the frontend application. The Spring Boot backend is ma
 
 ## Tech Stack
 
-- React 19
+- React 18.2
 - React Router 7
 - Vite 8
 - Tailwind CSS 4
