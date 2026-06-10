@@ -25,17 +25,18 @@ const normalizeApiBaseUrl = (value = "") => {
 
 const isDev = process.env.NODE_ENV === "development";
 
+// Deployed backend — used when no environment variable overrides it.
+// Update this URL if the backend is redeployed to a different host.
+const DEPLOYED_BACKEND_URL =
+  "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net";
+
 const resolveEnvApiBaseUrl = () => {
   const envUrl = ENV.API_URL;
   if (envUrl) {
     return normalizeApiBaseUrl(envUrl);
   }
-  if (!isDev) {
-    logger.warn(`VITE_API_URL environment variable is missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
-    return "";
-  }
-  logger.warn("VITE_API_URL not set in development. Defaulting to localhost.");
-  return "";
+  // No env variable set — fall back to the deployed backend URL.
+  return normalizeApiBaseUrl(DEPLOYED_BACKEND_URL);
 };
 
 export const API_BASE_URL = resolveEnvApiBaseUrl();
