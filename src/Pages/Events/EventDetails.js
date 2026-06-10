@@ -31,6 +31,12 @@ import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 
+const isRequestCanceled = (error, signal) =>
+  signal?.aborted ||
+  error?.name === "AbortError" ||
+  error?.name === "CanceledError" ||
+  error?.code === "ERR_CANCELED";
+
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -51,16 +57,26 @@ const EventDetails = () => {
   const { isRegistered } = useMyEvents();
   const [linkCopied, setLinkCopied] = useState(false);
   const latestRequestIdRef = useRef(0);
+  const abortControllerRef = useRef(null);
 
   const loadEvent = useCallback(async () => {
+    abortControllerRef.current?.abort();
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     const requestId = ++latestRequestIdRef.current;
-    const isLatestRequest = () => latestRequestIdRef.current === requestId;
+    const isLatestRequest = () =>
+      latestRequestIdRef.current === requestId &&
+      abortControllerRef.current === controller &&
+      !controller.signal.aborted;
 
     setFetchLoading(true);
     setFetchError(null);
 
     try {
-      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), {
+        signal: controller.signal,
+      });
       if (!isLatestRequest()) return;
       if (res.ok && res.data) {
         const raw = res.data?.data ?? res.data;
@@ -68,8 +84,10 @@ const EventDetails = () => {
       } else {
         throw new Error(res.data?.message || `Event not found (${res.status})`);
       }
-    } catch {
+    } catch (error) {
       if (!isLatestRequest()) return;
+      if (isRequestCanceled(error, controller.signal)) return;
+
       // Fall back to bundled mock data when the API is unreachable
       const fallback = mockEvents.find((item) => String(item.id) === eventId);
       if (fallback) {
@@ -78,7 +96,11 @@ const EventDetails = () => {
         setFetchError("Event not found.");
       }
     } finally {
-      if (isLatestRequest()) {
+      const shouldFinishLoading = isLatestRequest();
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
+      if (shouldFinishLoading) {
         setFetchLoading(false);
       }
     }
@@ -86,6 +108,9 @@ const EventDetails = () => {
 
   useEffect(() => {
     loadEvent();
+    return () => {
+      abortControllerRef.current?.abort();
+    };
   }, [loadEvent]);
 
   // Safely handle localStorage cache updates via hook
