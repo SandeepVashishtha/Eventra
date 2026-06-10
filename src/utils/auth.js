@@ -29,11 +29,10 @@ export function decodeJwtPayload(token) {
 export function isTokenExpired(token) {
   const payload = decodeJwtPayload(token);
   if (!payload) return true;
-  
   // If 'exp' is missing, the token does not expire by time per RFC 7519
   if (typeof payload.exp === 'undefined') return false;
   
-  return payload.exp * 1000 < Date.now();
+  return payload.exp * 1000 < Date.now() + CLOCK_SKEW_BUFFER * 1000;
 }
 
 export function isTokenValid(token) {
@@ -49,5 +48,5 @@ export function getTokenTTL(token) {
     return 0; 
   }
   const now = Math.floor(Date.now() / 1000);
-  return payload.exp - now;
+  return payload.exp - now - CLOCK_SKEW_BUFFER;
 }

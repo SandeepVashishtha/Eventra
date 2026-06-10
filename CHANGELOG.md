@@ -1,0 +1,1 @@
+- Applied `CLOCK_SKEW_BUFFER` to `isTokenExpired()` and `getTokenTTL()` in `src/utils/auth.js` (lines 42, 51) — the 30-second grace period was declared but never used.
