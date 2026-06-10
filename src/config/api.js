@@ -309,6 +309,7 @@ export const API_ENDPOINTS = {
     DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
     CATEGORIES: buildApiUrl("/api/projects/categories"),
     SUBMIT: buildApiUrl("/api/projects"),
+    UPVOTE: (id) => buildApiUrl(`/api/projects/${id}/upvote`),
   },
   HACKATHONS: {
     LIST: buildApiUrl("/api/hackathons"),

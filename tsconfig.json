@@ -1,38 +1,24 @@
 {
   "compilerOptions": {
-<<<<<<< HEAD
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowJs": true,
     "checkJs": false,
     "noEmit": true,
-    "jsx": "react-jsx",
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "types": []
-  },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "build"
-=======
-    "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "allowJs": true,
-    "noEmit": true,
     "strict": false,
     "jsx": "react-jsx",
-    "esModuleInterop": true,
     "skipLibCheck": true,
-    "allowSyntheticDefaultImports": true
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "types": []
   },
   "include": [
     "src/**/*",
     "api/**/*"
->>>>>>> master
+  ],
+  "exclude": [
+    "node_modules",
+    "build"
   ]
 }

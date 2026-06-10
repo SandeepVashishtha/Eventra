@@ -197,9 +197,7 @@ async function handler(req, res) {
       || req.socket?.remoteAddress
       || "unknown";
 
-    signupRateLimiter.evictStale();
-
-    if (!signupRateLimiter.check(clientIp)) {
+    if (!signupRateLimiter.check(clientIp).allowed) {
       return corsResponse(req, res, 429, {
         error: "Too many signup attempts. Please try again later.",
         retryAfter: 60,
@@ -286,8 +284,6 @@ async function handler(req, res) {
 
     return corsResponse(req, res, 201, {
       message: "Account created successfully",
-      token,
-      tokenType: "Bearer",
       ...userResponse,
     });
 
