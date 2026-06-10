@@ -34,7 +34,8 @@ const resolveEnvApiBaseUrl = () => {
     logger.warn(`VITE_API_URL environment variable is missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
     return "";
   }
-  return "http://localhost:8080";
+  logger.warn("VITE_API_URL not set in development. Defaulting to localhost.");
+  return "";
 };
 
 export const API_BASE_URL = resolveEnvApiBaseUrl();
