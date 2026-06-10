@@ -243,7 +243,7 @@ const SignupForm = () => {
         const status = response.status;
         let message;
         if (status === 409) {
-          message = AUTH_ERRORS.emailTaken;
+          message = "An account with this email already exists.";
         } else if (status === 429) {
           message = "Too many signup attempts. Please try again later.";
         } else if (status === 400) {
