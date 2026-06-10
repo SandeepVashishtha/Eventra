@@ -1,5 +1,6 @@
 // src/pages/CommunityEventsPage.jsx
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
@@ -277,7 +278,7 @@ const CommunityEvent = () => {
         </div>
       </div>
 
-      {selectedEvent && (
+      {selectedEvent && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
           role="dialog"
@@ -363,7 +364,8 @@ const CommunityEvent = () => {
               </p>
             </div>
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

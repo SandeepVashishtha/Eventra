@@ -8,22 +8,26 @@ Modern event and hackathon platform for communities, organizers, and contributor
 
 ---
 
-> [!IMPORTANT]
-> ## Project Status Notice
->
-> Due to time constraints and other commitments, **I ([@SandeepVashishtha](https://github.com/SandeepVashishtha)) will no longer be actively contributing to or managing this project** going forward. I sincerely apologize for any inconvenience this may cause to contributors and users.
->
-> **The project will NOT be archived** - it remains open and active, especially for **GSSoC 2026** participants and the broader open-source community.
->
-> There are mentors currently involved, and the project can continue to grow with community support. However, **we are looking for 2-3 dedicated volunteers to step up as maintainers** to help review PRs, triage issues, and guide contributors.
->
-> ### Interested in becoming a maintainer?
->
-> If you are passionate about this project and willing to take on a maintainer role, please reach out by:
-> - Opening an issue titled **"Maintainer Volunteer - [Your Name]"**
-> - Or contacting via the existing community channels
->
-> Your contributions and leadership would mean a lot to this project and the community around it. 🙏
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Project Architecture](#project-architecture)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Local Development](#local-development)
+- [Docker Development](#docker-development)
+- [Environment Variables](#environment-variables)
+- [Available Scripts](#available-scripts)
+- [Testing and Quality](#testing-and-quality)
+- [SSE Mock Server (Optional)](#sse-mock-server-optional)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contributors](#contributors)
+- [Star History](#star-history)
 
 ---
 
@@ -31,13 +35,12 @@ Modern event and hackathon platform for communities, organizers, and contributor
 
 Eventra is an open-source frontend application built with React and Vite. It supports event discovery, registration, dashboards, hackathons, collaboration features, feedback flows, and role-based access experiences.
 
-This repository contains the frontend and serverless API helpers under `api/`.
-The Spring Boot backend is maintained in a separate repository.
+This repository contains the frontend application. The Spring Boot backend is maintained in a separate repository — all API traffic is proxied to it both in production (via Vercel rewrites) and in local development (via Vite proxy).
 
-- Frontend repo: https://github.com/SandeepVashishtha/Eventra
-- Backend repo: https://github.com/SandeepVashishtha/Eventra-Backend
-- Backend API base: https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net
-- Swagger: https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html
+- Frontend repo: <https://github.com/SandeepVashishtha/Eventra>
+- Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
+- Backend API base: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net>
+- Swagger: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html>
 
 ## Key Features
 
@@ -59,11 +62,24 @@ The Spring Boot backend is maintained in a separate repository.
 - Playwright (E2E)
 - ESLint and Prettier
 
+## Project Architecture
+
+Below is the high-level architecture of Eventra:
+
+```mermaid
+graph TD
+    Client[Client: React/Vite] --> Assets[Assets: public/]
+    Client --> State[State: Context/Hooks]
+    Client --> Backend[Backend: Spring Boot API]
+    Backend --> Azure[Azure Spring Boot]
+    Client -.-> VercelRewrite[Vercel /api/* Rewrite]
+    VercelRewrite --> Backend
+```
+
 ## Project Structure
 
 ```text
 Eventra/
-|-- api/                 # Serverless API routes and middleware
 |-- docs/                # Architecture, env setup, onboarding, security docs
 |-- public/              # Static assets
 |-- scripts/             # Validation and automation scripts
@@ -102,14 +118,43 @@ npm install
 ```bash
 cp .env.example .env
 ```
+> **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
 
 3. Start dev server:
 
-```bash
 npm run dev
-```
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
+
+
+
+## Docker Development
+
+You can run Eventra fully containerized using Docker Compose to ensure a consistent environment:
+
+1. Clone the repository and setup your environment variables:
+
+```bash
+git clone https://github.com/SandeepVashishtha/Eventra.git
+cd Eventra
+cp .env.example .env
+```
+
+1. Start the local development container:
+
+```bash
+docker compose up eventra-dev
+```
+
+The app will be available at `http://localhost:3000` with hot-reloading enabled.
+
+1. Build and test the production container locally:
+
+```bash
+docker compose up --build eventra-prod
+```
+
+The production-optimized build will be served via Nginx at `http://localhost:8080`.
 
 ## Environment Variables
 
@@ -139,6 +184,7 @@ Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variable
 | `npm run format` | Run Prettier on source files |
 | `npm run test` | Run unit test suite |
 | `npm run test:e2e` | Run Playwright E2E tests |
+| `npm run check` | Run lint + tests together (CI validation) |
 | `npm run storybook` | Start Storybook |
 | `npm run build-storybook` | Build Storybook static output |
 
@@ -170,7 +216,8 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
 - Build command: `npm run lint && GENERATE_SOURCEMAP=false npm run build`
 - Output directory: `build`
-- `/api/*` is rewritten to the hosted Spring Boot backend
+- `/api/*` is rewritten to the hosted Spring Boot backend (the sole API provider)
+- No serverless functions are deployed — the `api/` directory was removed as dead code
 
 ## Documentation
 
@@ -182,7 +229,6 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
 ## Contributing
 
-- Read [CONTRIBUTING.md](CONTRIBUTING.md)
 - Follow [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - Open focused pull requests with clear scope and test notes
 - Issues may be auto-unassigned after inactivity by workflow: [auto-unassign-stale-issues.yml](.github/workflows/auto-unassign-stale-issues.yml)
@@ -237,3 +283,5 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
 </a>
 
 Built by the Eventra community.
+
+---
