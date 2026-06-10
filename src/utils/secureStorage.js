@@ -37,6 +37,22 @@ const KEY_LENGTH = 256;
 const IV_LENGTH = 12;
 const PBKDF2_ITERATIONS = 100_000;
 
+const isCryptoAvailable = () => {
+  try {
+    return (
+      typeof window !== 'undefined' &&
+      typeof crypto !== 'undefined' &&
+      typeof crypto.subtle !== 'undefined' &&
+      typeof crypto.getRandomValues === 'function' &&
+      window.isSecureContext !== false
+    );
+  } catch {
+    return false;
+  }
+};
+
+const cryptoSupported = isCryptoAvailable();
+
 // ---------------------------------------------------------------------------
 // Per-browser random material — two independent 256-bit random values, each
 // generated once on first use and persisted in localStorage.
@@ -90,8 +106,8 @@ const getOrCreateSecret = (storageKey) => {
 
 // Both values are initialised eagerly at module load so every call to
 // getDerivedKey() within a page session operates on the same key.
-const DERIVED_KEY_MATERIAL = getOrCreateSecret(MATERIAL_STORAGE_KEY);
-const DERIVED_KEY_SALT = getOrCreateSecret(SALT_STORAGE_KEY);
+const DERIVED_KEY_MATERIAL = cryptoSupported ? getOrCreateSecret(MATERIAL_STORAGE_KEY) : null;
+const DERIVED_KEY_SALT = cryptoSupported ? getOrCreateSecret(SALT_STORAGE_KEY) : null;
 
 let _keyPromise = null;
 
@@ -159,21 +175,7 @@ const decryptValue = async (storageKey, stored) => {
   return new TextDecoder().decode(decrypted);
 };
 
-const isCryptoAvailable = () => {
-  try {
-    return (
-      typeof window !== 'undefined' &&
-      typeof crypto !== 'undefined' &&
-      typeof crypto.subtle !== 'undefined' &&
-      typeof crypto.getRandomValues === 'function' &&
-      window.isSecureContext !== false
-    );
-  } catch {
-    return false;
-  }
-};
 
-const cryptoSupported = isCryptoAvailable();
 
 // ---------------------------------------------------------------------------
 // Encrypted key-value storage wrapper (localStorage — AES-GCM encrypted)
