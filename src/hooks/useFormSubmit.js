@@ -2,7 +2,7 @@
  * @fileoverview useFormSubmit - Generic form submission handler hook
  * @module hooks/useFormSubmit
  */
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { pushToQueue } from "../utils/offlineQueue";
 import { getPublicErrorMessage, FORM_ERRORS } from "../utils/errorMessages";
 
@@ -52,7 +52,7 @@ export function useFormSubmit(submitFn, offlineOptions = {}) {
     };
   }, []);
 
-  const handleSubmit = async (data) => {
+  const handleSubmit = useCallback(async (data) => {
     if (isInFlight.current) return;
 
     isInFlight.current = true;
@@ -71,10 +71,10 @@ export function useFormSubmit(submitFn, offlineOptions = {}) {
           typeof offlineOptions.createQueueItem === "function"
             ? offlineOptions.createQueueItem(data, err)
             : {
-                actionType: offlineOptions.actionType || "FORM_SUBMISSION",
-                endpoint: offlineOptions.endpoint,
-                payload: data,
-              };
+              actionType: offlineOptions.actionType || "FORM_SUBMISSION",
+              endpoint: offlineOptions.endpoint,
+              payload: data,
+            };
 
         const queued = await pushToQueue(queueItem, offlineOptions.userId || null);
         if (queued) {
@@ -94,7 +94,7 @@ export function useFormSubmit(submitFn, offlineOptions = {}) {
         setIsSubmitting(false);
       }
     }
-  };
+  }, [submitFn, offlineOptions]);
 
   return { handleSubmit, isSubmitting, error, success };
 }

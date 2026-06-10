@@ -1,8 +1,9 @@
 FROM node:22-alpine AS build
+LABEL maintainer="Eventra Community"
 WORKDIR /app
 
 # Copy dependency manifests first for Docker layer caching
-COPY package*.json ./
+COPY package.json package-lock.json ./
 
 # Install dependencies with BuildKit cache mount for npm cache persistence
 # --mount=type=cache preserves ~/.npm across builds so npm doesn't re-download

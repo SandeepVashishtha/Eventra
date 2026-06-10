@@ -1,5 +1,6 @@
 import { get as idbGet, set as idbSet } from "idb-keyval";
 import { safeJsonParse } from "./safeJsonParse.js";
+import { logger } from "./logger.js";
 
 const GLOBAL_WAITLIST_KEY = "eventra_global_waitlists";
 const NOTIFICATIONS_STORAGE_KEY = "eventra_notifications";
@@ -45,7 +46,7 @@ export const addLocalNotification = async (title, message) => {
     // Trigger cross-component real-time sync
     window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
   } catch (error) {
-    console.error("[WaitlistUtils] Failed to add local notification:", error);
+    logger.error("[WaitlistUtils] Failed to add local notification:", error);
   }
 };
 
@@ -64,7 +65,7 @@ export const saveGlobalWaitlist = (records) => {
   try {
     localStorage.setItem(GLOBAL_WAITLIST_KEY, JSON.stringify(records));
   } catch (error) {
-    console.error("[WaitlistUtils] Failed to save global waitlist:", error);
+    logger.error("[WaitlistUtils] Failed to save global waitlist:", error);
   }
 };
 
@@ -108,7 +109,7 @@ export const addRegistrationToUserStorage = (userId, event) => {
       localStorage.setItem(storageKey, JSON.stringify(current));
     }
   } catch (error) {
-    console.error("[WaitlistUtils] Failed to add registration to user storage:", error);
+    logger.error("[WaitlistUtils] Failed to add registration to user storage:", error);
   }
 };
 
@@ -126,7 +127,7 @@ export const incrementEventAttendees = (eventId) => {
       }
     }
   } catch (error) {
-    console.error("[WaitlistUtils] Failed to update event attendee count cache:", error);
+    logger.error("[WaitlistUtils] Failed to update event attendee count cache:", error);
   }
 };
 
@@ -178,8 +179,7 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
   // Notify user they joined
   await addLocalNotification(
     "Waitlist Joined",
-    `You have successfully joined the waitlist for ${
-      registrationForm.eventTitle || "the event"
+    `You have successfully joined the waitlist for ${registrationForm.eventTitle || "the event"
     }.`
   );
 
@@ -231,8 +231,7 @@ export const promoteRecord = async (record, event) => {
     // 3. Dispatch promotion notification
     await addLocalNotification(
       "Waitlist Promotion",
-      `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${
-        event.title || "your event"
+      `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${event.title || "your event"
       }.`
     );
     return true;
@@ -268,7 +267,16 @@ export const promoteNextUser = async (eventId, eventData = null) => {
   }
 
   const success = await promoteRecord(nextUserRecord, event);
-  return success ? nextUserRecord : null;
+  if (!success) {
+    return null;
+  }
+  const updatedRecord = getGlobalWaitlist().find(
+    (r) =>
+      r.userId === nextUserRecord.userId &&
+      r.eventId === nextUserRecord.eventId
+  );
+
+  return updatedRecord || null;
 };
 
 // Handle event capacity increase by promoting N users to confirmed attendees
@@ -310,4 +318,61 @@ export const organizerRemoveUser = async (eventId, userId) => {
   );
 
   return true;
+};
+
+// Waitlist Analytics
+export const getWaitlistAnalytics = (eventId) => {
+  const id = parseEventId(eventId);
+  const records = getGlobalWaitlist();
+
+  const eventRecords = records.filter(
+    (record) => record.eventId === id
+  );
+
+  const promotedUsers = eventRecords.filter(
+    (record) => record.status === "promoted"
+  );
+
+  let averageWaitTime = 0;
+
+  if (promotedUsers.length > 0) {
+    const totalWaitTime = promotedUsers.reduce(
+      (sum, record) =>
+        sum +
+        (new Date(record.promotedAt) -
+          new Date(record.joinedAt)),
+      0
+    );
+
+    averageWaitTime =
+      totalWaitTime /
+      promotedUsers.length /
+      (1000 * 60 * 60);
+  }
+
+  return {
+    totalWaitlisted: eventRecords.length,
+
+    waiting: eventRecords.filter(
+      (record) => record.status === "waiting"
+    ).length,
+
+    promoted: promotedUsers.length,
+
+    removed: eventRecords.filter(
+      (record) => record.status === "removed"
+    ).length,
+
+    promotionRate:
+      eventRecords.length > 0
+        ? (
+            (promotedUsers.length /
+              eventRecords.length) *
+            100
+          ).toFixed(1)
+        : 0,
+
+    averageWaitTime:
+      averageWaitTime.toFixed(1),
+  };
 };

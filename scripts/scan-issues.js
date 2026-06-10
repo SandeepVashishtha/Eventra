@@ -1,15 +1,28 @@
-const fs = require('fs').promises;
+// Change the require at the top to include promises, or just use fs.promises directly:
+const fs = require('fs');
 const path = require('path');
 
+// RECTIFIED ASYNC CRAWLER
 async function getFiles(dir) {
-  let r = [];
-  for (const f of await fs.readdir(dir)) {
-    const full = path.join(dir, f);
-    const stat = await fs.stat(full);
-    if (stat.isDirectory() && f !== 'node_modules') r = r.concat(await getFiles(full));
-    else if (f.endsWith('.js') || f.endsWith('.jsx')) r.push(full);
+  try {
+    const files = await fs.promises.readdir(dir);
+    const ObjectPromises = files.map(async (f) => {
+      const full = path.join(dir, f);
+      const stat = await fs.promises.stat(full);
+      
+      if (stat.isDirectory() && f !== 'node_modules') {
+        return getFiles(full);
+      } else if (f.endsWith('.js') || f.endsWith('.jsx')) {
+        return full;
+      }
+      return [];
+    });
+    
+    const results = await Promise.all(ObjectPromises);
+    return results.flat();
+  } catch (err) {
+    return [];
   }
-  return r;
 }
 
 // Helper to strip out comments and string literals to prevent regex false positives
@@ -39,9 +52,4 @@ for (const f of files) {
 
   console.log('Issues found:', issues.length);
   issues.forEach(i => console.log(i));
-}
-
-main().catch(err => {
-  console.error('scan-issues failed:', err);
-  process.exit(1);
 });

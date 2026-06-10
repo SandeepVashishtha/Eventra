@@ -33,11 +33,6 @@ const Login = () => {
 
   // If ProtectedRoute redirected here because the JWT expired, show a notice.
   const sessionExpired = location.state?.sessionExpired ?? false;
-  const introPoints = [
-    "Pick up where you left off with your dashboard and event tools.",
-    "Stay in sync with registrations, submissions, and community updates.",
-    "Keep your drafts, favorites, and notifications in one place.",
-  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -128,34 +123,7 @@ const Login = () => {
           <div className="pointer-events-none absolute top-8 left-6 h-16 w-16 rounded-full bg-blue-100 opacity-60 blur-sm"></div>
           <div className="pointer-events-none absolute bottom-10 left-20 h-20 w-20 rounded-full bg-pink-100 opacity-60 blur-sm"></div>
           <div className="pointer-events-none absolute top-16 right-10 h-14 w-14 rounded-full bg-yellow-100 opacity-60 blur-sm"></div>
-          <div className="flex flex-col gap-6 md:flex-row md:gap-0">
-
-            {/* LEFT PANEL */}
-            <div className="relative z-10 w-full md:w-[38%] p-8 sm:p-10 lg:p-12 flex flex-col justify-between rounded-2xl md:rounded-l-2xl md:rounded-r-none"
-              style={{ background: "var(--accent-gradient)", color: "white" }}>
-              <div>
-                <h2 className="text-3xl sm:text-4xl text-center font-extrabold mb-5 md:text-left">
-                  Welcome Back
-                </h2>
-                <p className="mb-8 text-base sm:text-lg opacity-90 leading-relaxed md:text-left">
-                  Sign in to your Eventra account and pick up where you left off.
-                </p>
-                <div className="space-y-3">
-                  {introPoints.map((point) => (
-                    <div
-                      key={point}
-                      className="flex items-start gap-3 rounded-xl border border-white/30 bg-white/10 px-4 py-3 text-sm text-white backdrop-blur-sm ring-[0.5px] ring-white/10"
-                    >
-                      <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0" />
-                      <span className="leading-relaxed">{point}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT PANEL */}
-            <div className="md:w-3/5 p-10 space-y-6 backdrop-blur-xl section-theme">
+          <div className="relative z-10 w-full p-10 space-y-6 backdrop-blur-xl section-theme">
 
               {/* Session-expired banner */}
               {sessionExpired && (
@@ -349,11 +317,10 @@ const Login = () => {
                 <Link to="/privacy" className="hover:underline text-blue-600 font-semibold">Privacy Policy</Link>
               </p>
             </div>
-          </div>
-        </motion.div>
-      </div>
-    </motion.div>
-  );
+          </motion.div>
+        </div>
+      </motion.div>
+    );
 };
 
 export default Login;
