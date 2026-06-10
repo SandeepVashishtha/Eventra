@@ -51,18 +51,6 @@ export const createRateLimiter = ({
   // issue inherent to fixed-window (where 2*max requests could pass in
   // consecutive windows around the boundary).
   const store = new Map();
-  let lastEvictionAt = 0;
-
-  const evictStale = () => {
-    const now = Date.now();
-    if (now - lastEvictionAt < windowMs) return;
-    lastEvictionAt = now;
-    for (const [key, entry] of store.entries()) {
-      if (now - entry.resetAt >= 0) {
-        store.delete(key);
-      }
-    }
-  };
 
   // Periodic cleanup to prevent memory leaks from stale keys
   let lastCleanupAt = 0;
