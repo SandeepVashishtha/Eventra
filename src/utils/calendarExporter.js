@@ -141,6 +141,36 @@ export const generateOutlookLink = (event) => {
 };
 
 /**
+ * Generates an external Yahoo Calendar addition link.
+ *
+ * Yahoo Calendar deep-link format:
+ *   https://calendar.yahoo.com/?v=60&title=...&st=YYYYMMDDTHHMMSSZ&et=YYYYMMDDTHHMMSSZ&desc=...&in_loc=...
+ *
+ * @param {Object} event - Event object with title, description, date, endDate, location
+ * @returns {string|null} Yahoo Calendar URL or null if the event date is invalid
+ */
+export const generateYahooCalendarLink = (event) => {
+  const { title, description, date, endDate, location } = event;
+  const start = formatToICSDate(date);
+  if (!start) return null;
+
+  const end = endDate
+    ? formatToICSDate(endDate)
+    : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
+
+  const params = new URLSearchParams({
+    v: '60',
+    title: title || 'Eventra Event',
+    st: start,
+    et: end,
+    desc: description || 'Event organized through the Eventra Platform.',
+    in_loc: location || 'Virtual / Online Event',
+  });
+
+  return `https://calendar.yahoo.com/?${params.toString()}`;
+};
+
+/**
  * Downloads a single .ics file containing multiple events.
  * Supports both flat event objects and nested registration objects.
  * @param {Array} events - List of event/registration objects to export

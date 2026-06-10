@@ -43,6 +43,26 @@ const CollaborationHub = () => {
     setNewRequest(prev => ({ ...prev, [name]: value }));
   };
 
+  const OPPORTUNITY_SCHEMA = {
+    id: "number", title: "string", organizer: "string", type: "string",
+    description: "string", skills: "array", budget: "string",
+    deadline: "string", applicants: "number", status: "string",
+  };
+
+  const validateOpportunity = (item) => {
+    if (!item || typeof item !== "object") return null;
+    const valid = {};
+    for (const [key, type] of Object.entries(OPPORTUNITY_SCHEMA)) {
+      const val = item[key];
+      if (val === undefined || val === null) continue;
+      if (type === "number") { valid[key] = Number(val); if (isNaN(valid[key])) valid[key] = 0; }
+      else if (type === "array") { valid[key] = Array.isArray(val) ? val : []; }
+      else if (type === "string") { valid[key] = String(val); }
+      else { valid[key] = val; }
+    }
+    return valid;
+  };
+
   const [collaborationOpportunities, setCollaborationOpportunities] = useState(() => {
     let saved;
     try {
@@ -54,7 +74,7 @@ const CollaborationHub = () => {
       try {
         const parsed = safeJsonParse(saved, {});
         if (Array.isArray(parsed)) {
-          return parsed.filter(item => item && typeof item === 'object');
+          return parsed.map(validateOpportunity).filter(Boolean);
         }
       } catch (e) {
         console.error("Failed to parse collaboration opportunities from localStorage", e);
@@ -368,7 +388,7 @@ const CollaborationHub = () => {
                     <div className="skills-tags">
                       {/* 🔥 FIX: Protected map */}
                       {Array.isArray(opportunity.skills) && opportunity.skills.map((skill) => (
-                        <span key={skill} className="skill-tag">{skill}</span>
+                        <span key={`${skill}-${index}`} className="skill-tag">{skill}</span>
                       ))}
                     </div>
                   </div>
@@ -737,8 +757,8 @@ const CollaborationHub = () => {
                 <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Required Core Skills</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {/* 🔥 FIX: Protected map */}
-                  {Array.isArray(selectedOpportunity.skills) && selectedOpportunity.skills.map((skill) => (
-                    <span key={skill} className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 border border-indigo-500/10">
+                  {Array.isArray(selectedOpportunity.skills) && selectedOpportunity.skills.map((skill, index) => (
+                    <span key={`${skill}-${index}`} className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 border border-indigo-500/10">
                       {skill}
                     </span>
                   ))}
