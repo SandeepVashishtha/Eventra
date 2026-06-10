@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { visualizer } from "rollup-plugin-visualizer";
 
 // Quick regex to detect JSX syntax — lets us skip transformWithOxc
 // on plain .js files that have no JSX (the common case).
@@ -27,6 +28,12 @@ export default defineConfig(({ mode }) => {
       react({
         // Only .jsx/.tsx — .js files are handled above
         include: /\.(jsx|tsx)$/,
+      }),
+      visualizer({
+        filename: "build/bundle-analysis.html",
+        open: false,
+        gzipSize: true,
+        brotliSize: true,
       }),
     ],
 
