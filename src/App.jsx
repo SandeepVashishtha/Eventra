@@ -161,7 +161,6 @@ function App() {
                                 </ProtectedRoute>
                               }
                             />
-                            <Route path="/event-recommendation" element={<EventRecommendation />} />
                             <Route path="/saved-events" element={<SavedEventsPage />} />
                             <Route path="*" element={<AppRoutes />} />
                           </Routes>
