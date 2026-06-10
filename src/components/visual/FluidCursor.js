@@ -155,11 +155,25 @@ const FluidCursor = ({ enabled = true }) => {
         );
       }
 
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
       const halfFloatTexType = isWebGL2
-        ? gl.HALF_FLOAT
-        : halfFloat.HALF_FLOAT_OES;
+          ? gl.HALF_FLOAT
+          : halfFloat?.HALF_FLOAT_OES;
+
+        if (!halfFloatTexType) {
+          logger.warn("[FluidCursor] Half float textures not supported.");
+          return {
+            gl: null,
+            ext: {
+              formatRGBA: null,
+              formatRG: null,
+              formatR: null,
+              halfFloatTexType: null,
+              supportLinearFiltering: false,
+            },
+          };
+        }
       let formatRGBA;
       let formatRG;
       let formatR;
@@ -659,7 +673,7 @@ const FluidCursor = ({ enabled = true }) => {
           gl.bindFramebuffer(gl.FRAMEBUFFER, target.fbo);
         }
         if (clear) {
-          gl.clearColor(0.0, 0.0, 0.0, 1.0);
+          gl.clearColor(0.0, 0.0, 0.0, 0.0);
           gl.clear(gl.COLOR_BUFFER_BIT);
         }
         gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);

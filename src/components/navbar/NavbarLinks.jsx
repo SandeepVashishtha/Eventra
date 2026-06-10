@@ -79,10 +79,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         }`
       : `flex gap-1.5 items-center text-[12px] lg:text-[13px] font-normal uppercase tracking-[0.03em] transition-all duration-200 px-3 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
           active
-            ? "text-slate-900 dark:text-white border-primary"
+            ? "text-text border-primary"
             : isDropdown
-            ? "text-slate-500 dark:text-slate-400 hover:text-text border-transparent hover:border-border"
-            : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border-transparent hover:border-border"
+            ? "text-text-secondary hover:text-text border-transparent hover:border-border"
+            : "text-text-secondary hover:text-text border-transparent hover:border-border"
         }`;
   };
 
@@ -185,7 +185,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                       `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
                         isActive
                           ? "bg-bg-secondary text-text font-semibold"
-                          : "text-slate-600 dark:text-slate-300 hover:text-text hover:bg-bg"
+                          : "text-muted-foreground hover:text-text hover:bg-bg"
                       }`
                     }
                   >

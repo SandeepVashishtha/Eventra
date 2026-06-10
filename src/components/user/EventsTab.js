@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef  } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -178,7 +178,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
         ) : (
           <Link 
           to={`/events/${event?.id}`}
-             onClick={() => addToRecentEvents(event)}
+             onClick={() => addToRecentEvents(event)}>
             <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
               <Activity size={13} className="relative" />
               <span className="relative">Analytics</span>
@@ -187,7 +187,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
         )}
         <Link 
           to={`/events/${event?.id}`}
-            onClick={() => addToRecentEvents(event)}
+            onClick={() => addToRecentEvents(event)}>
           <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
             <span>{showCancel ? "View Details" : "Open Event"}</span>
           </div>
@@ -649,22 +649,30 @@ const addToRecentEvents = (event) => {
             </section>
           )}
 
-        <div className="h-5 w-3/4 rounded bg-slate-200 dark:bg-slate-700 mb-3" />
+          {filteredHostedEvents.length > 0 && (
+  <section className="space-y-4">
+    <div className="ud-tab-header">
+      <h3 className="ud-page-title">
+        <Activity size={18} /> Hosted Events
+      </h3>
+    </div>
 
-        <div className="h-4 w-1/2 rounded bg-slate-200 dark:bg-slate-700 mb-2" />
-
-        <div className="h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-700 mb-6" />
-
-        <div className="flex gap-3">
-          <div className="h-10 flex-1 rounded-xl bg-slate-200 dark:bg-slate-700" />
-          <div className="h-10 flex-1 rounded-xl bg-slate-200 dark:bg-slate-700" />
-        </div>
-      </div>
-    ))}
-  </div>
-) : registeredCount + hostedCount === 0 ? (
-  <EmptyState />
-) : filteredEvents.length === 0 ? (
+    <motion.div
+      className="ud-items-grid"
+      variants={staggerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {filteredHostedEvents.map((event, index) => (
+        <EventCard
+          key={event.id}
+          event={event}
+          index={index}
+        />
+      ))}
+    </motion.div>
+  </section>
+)}
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}

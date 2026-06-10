@@ -12,20 +12,14 @@ import ProfileMenu from "./ProfileMenu";
 import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
+import { useTheme } from "../../context/ThemeContext";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const { isDarkMode, toggleTheme } = useTheme();
   const navRef = useRef(null);
-  const [isDarkMode, setIsDarkMode] = useState(
-  document.documentElement.classList.contains("dark")
-);
-
-const toggleTheme = () => {
-  document.documentElement.classList.toggle("dark");
-  setIsDarkMode(document.documentElement.classList.contains("dark"));
-};
 
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();

@@ -114,12 +114,17 @@ export const ThemeProvider = ({ children }) => {
 
     // Apply active skin theme colors
     const activeTheme = THEMES[activeThemeId] || THEMES.default;
-    const themeColors = activeTheme.colors.light || activeTheme.colors.dark;
-    if (themeColors) {
-      Object.entries(themeColors).forEach(([variable, val]) => {
-        root.style.setProperty(variable, val);
-      });
-    }
+
+const themeColors =
+  resolvedTheme === "dark"
+    ? activeTheme.colors?.dark
+    : activeTheme.colors?.light;
+
+if (themeColors) {
+  Object.entries(themeColors).forEach(([variable, val]) => {
+    root.style.setProperty(variable, val);
+  });
+}
 
     // Apply HSL customization overrides if active
     if (customHsl && customHsl.active) {
