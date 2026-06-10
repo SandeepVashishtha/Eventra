@@ -7,10 +7,11 @@ import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
 import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
 import { toast } from "react-toastify";
-import { getEventStatus } from "../../utils/eventUtils";
+import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { logError } from "../../utils/errorLogger";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
+import LazyImage from "../../components/common/LazyImage";
 // Note: eventsMockData.json is NOT statically imported here.
 // It is loaded dynamically (and only in development/fallback mode) so that
 // the mock JSON is not bundled into the production build.
@@ -35,7 +36,7 @@ const EventDetailsPage = () => {
     if (userId && event) {
       import("../../utils/waitlistUtils").then(({ getQueuePosition }) => {
         setQueuePosition(getQueuePosition(event.id, userId));
-      });
+      }).catch(() => setQueuePosition(-1));
     } else {
       setQueuePosition(-1);
     }
@@ -45,7 +46,7 @@ const EventDetailsPage = () => {
     if (event) {
       import("../../utils/waitlistUtils").then(({ getEventWaitlist }) => {
         setWaitlistCount(getEventWaitlist(event.id).length);
-      });
+      }).catch(() => setWaitlistCount(0));
     }
   }, [event, waitlistUpdated]);
 
@@ -74,30 +75,37 @@ const EventDetailsPage = () => {
     : {};
 
   const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy link to clipboard");
-    }
-  };
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+
+    setCopied(true);
+
+    toast.success("Event link copied successfully!");
+
+    setTimeout(() => setCopied(false), 2000);
+  } catch {
+    toast.error("Failed to copy link to clipboard");
+  }
+};
 
   const handleNativeShare = async () => {
+  try {
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: event.title,
-          text: shareText,
-          url: shareUrl,
-        });
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          toast.error("Unable to share event");
-        }
-      }
+      await navigator.share({
+        title: event.title,
+        text: shareText,
+        url: shareUrl,
+      });
+
+      toast.success("Event shared successfully!");
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Share not supported. Link copied to clipboard!");
     }
-  };
+  } catch {
+    toast.error("Failed to share event");
+  }
+};
 
   useEffect(() => {
     let isCancelled = false;
@@ -108,6 +116,11 @@ const EventDetailsPage = () => {
       latestRequestIdRef.current === requestId && !controller.signal.aborted;
 
     const fetchEvent = async () => {
+      // Guard: only update state if this is still the latest request.
+      // Without this check, a stale request starting after a newer one has
+      // already begun would unconditionally reset loading/error state,
+      // causing the race condition described in issue #5077.
+      if (!isLatestRequest()) return;
       setLoading(true);
       setCacheInfo(null);
       setError(null);
@@ -214,7 +227,10 @@ const EventDetailsPage = () => {
     );
   }
 
-  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+  const eventStatus = getEventStatus(event);
+  const isPastEvent = eventStatus === "past" || eventStatus === "ended";
+  const isCancelledEvent = eventStatus === "cancelled";
+  const isRegistrationBlocked = isEventRegistrationClosed(event);
 
   return (
     <>
@@ -249,11 +265,12 @@ const EventDetailsPage = () => {
           >
             <section className="min-w-0 lg:col-span-2" aria-labelledby="event-details-title">
               <div className="relative mb-5 aspect-[4/3] overflow-hidden rounded-2xl shadow-xl xs:aspect-video sm:mb-8">
-                <img
+                <LazyImage
                   src={event.image}
                   alt={`${event.title} event banner`}
-                  className="w-full h-96 object-cover"
-                  loading="lazy"
+                  className="w-full h-96"
+                  imgClassName="object-cover"
+                  loading="eager"
                 />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -265,15 +282,16 @@ const EventDetailsPage = () => {
                     </span>
                     <span
                       className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        isPastEvent ? "bg-gray-600" : "bg-green-600"
+                        isRegistrationBlocked ? "bg-gray-600" : "bg-green-600"
                       }`}
                     >
-                      {isPastEvent ? "Past Event" : "Upcoming"}
+                      {isCancelledEvent ? "Cancelled" : isPastEvent ? "Past Event" : "Upcoming"}
                     </span>
                   </div>
                   <h1
                     id="event-details-title"
-                    className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl"
+                    title={event.title}
+                    className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl break-words"
                   >
                     {event.title}
                   </h1>
@@ -297,7 +315,7 @@ const EventDetailsPage = () => {
               className="flex min-w-0 flex-col gap-4 sm:gap-6 lg:col-span-1"
               aria-label="Event registration and details"
             >
-              {!isPastEvent && <CountdownTimer date={event.date} time={event.time} />}
+              {!isRegistrationBlocked && <CountdownTimer date={event.date} time={event.time} />}
 
               <div className="rounded-2xl border border-gray-200 bg-card-bg p-4 shadow-sm dark:border-gray-700 dark:bg-card-bg sm:p-6">
                 <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
@@ -343,7 +361,7 @@ const EventDetailsPage = () => {
                 </div>
               </div>
 
-              {!isPastEvent && (
+              {!isRegistrationBlocked && (
                 isRegistered(event.id) ? (
                   <div className="w-full text-center py-3 bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 rounded-2xl font-semibold">
                     You are registered!
@@ -445,7 +463,7 @@ const EventDetailsPage = () => {
                     aria-label="Share via device"
                   >
                     <Share2 size={14} />
-                    Share via Device
+                    Share Event 📤
                   </button>
                 )}
               </div>

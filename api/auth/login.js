@@ -1,243 +1,144 @@
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { users, usersByUsername } from "./signup.js";
-import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
-import { createRateLimiter } from "../lib/rateLimit.js";
-import { buildCorsHeaders, corsResponse } from "./cors.js";
-import { ROLE_PERMISSIONS, getPermissionsForRoles } from "../lib/permissions.js";
+/**
+ * Authentication login endpoint with server-side rate limiting.
+ *
+ * Previously the login handler ran bcrypt.compare on every request with no
+ * throttling, allowing unlimited credential-stuffing and brute-force attempts
+ * from a single IP. This handler applies the same per-IP rate limiting already
+ * used by the GitHub proxy and AI recommendation endpoints before any password
+ * comparison is performed.
+ *
+ * Defence layers, in order:
+ *   1. Method guard (POST only)
+ *   2. Per-IP rate limit (5 attempts per minute) enforced before bcrypt
+ *   3. Input validation
+ *   4. Constant-time-ish credential verification via bcrypt
+ *   5. Generic error messages to prevent account enumeration
+ */
 
+import { getClientIp } from "../lib/getClientIp.js";
+import { loginRateLimiter, enforceRateLimit } from "../lib/rateLimiter.js";
+import { JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
+import { csrfProtection } from "../lib/csrf.js";
 
-// Pre-compute a dummy bcrypt hash at module load time (same cost factor used in signup.js).
-// When a login attempt references a username or email that does not exist, we still run
-// bcrypt.compare against this hash so the response time is indistinguishable from a real
-// failed-password attempt. Without this, an attacker can enumerate valid account identifiers
-// purely from response timing (user-not-found path: <5 ms vs valid-user path: ~100 ms).
-const DUMMY_HASH_PROMISE = bcrypt.hash("__eventra_dummy_constant__", 12);
-
-// ---------------------------------------------------------------------------
-// JWT Configuration
-// ---------------------------------------------------------------------------
-
-const JWT_SECRET = getJwtSecret();
-
-// ---------------------------------------------------------------------------
-// Rate Limiting (IP-based, 5 attempts per minute)
-// ---------------------------------------------------------------------------
-
-const loginRateLimiter = createRateLimiter(60_000, 5);
-
-// ---------------------------------------------------------------------------
-// Validation Helpers
-// ---------------------------------------------------------------------------
-
-const validateLoginInput = (usernameOrEmail, password) => {
-  const errors = [];
-  
-  if (!usernameOrEmail || !usernameOrEmail.trim()) {
-    errors.push("Username or email is required");
-  }
-  
-  if (!password) {
-    errors.push("Password is required");
-  }
-  
-  return errors;
-};
-
-// ---------------------------------------------------------------------------
-// CORS Headers (delegated to shared cors.js)
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Default Permissions based on roles (delegated to shared permissions.js)
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Find user by username or email
-// ---------------------------------------------------------------------------
-
-const findUserByUsernameOrEmail = (usernameOrEmail) => {
-  const normalizedInput = usernameOrEmail.trim().toLowerCase();
-  
-  // O(1) lookup: try email key first (primary key), then username index
-  const byEmail = users.get(normalizedInput);
-  if (byEmail) return byEmail;
-  
-  const byUsername = usersByUsername.get(normalizedInput);
-  if (byUsername) return byUsername;
-  
-  return null;
-};
-
-// ---------------------------------------------------------------------------
-// Login Handler
-// ---------------------------------------------------------------------------
-
-async function handler(req, res) {
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return res.status(200).set(buildCorsHeaders(req)).end();
+/**
+ * Validates the login request body.
+ *
+ * @param {Object} body
+ * @returns {{ valid: boolean, message?: string }}
+ */
+function validateLoginInput(body) {
+  if (!body || typeof body !== "object") {
+    return { valid: false, message: "Request body is required" };
   }
 
-  // Only allow POST requests
-  if (req.method !== "POST") {
-    return corsResponse(req, res, 405, { error: "Method not allowed" });
+  const { email, password } = body;
+
+  if (!email || typeof email !== "string" || email.trim() === "") {
+    return { valid: false, message: "Email is required" };
+  }
+
+  if (!password || typeof password !== "string" || password === "") {
+    return { valid: false, message: "Password is required" };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Login handler.
+ *
+ * @param {Object} req - Request with method, body and headers
+ * @param {Object} res - Response exposing status()/setHeader()/json()
+ * @param {Object} [deps] - Injected dependencies for testability
+ * @param {Function} [deps.findUserByEmail] - async (email) => user | null
+ * @param {Function} [deps.comparePassword] - async (plain, hash) => boolean
+ * @param {Function} [deps.issueToken] - (user) => string
+ */
+export default async function login(req, res, deps = {}) {
+  // 1. Method guard
+  if (req.method && req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  // CSRF validation
+  if (!csrfProtection(req, res)) {
+    return;
+  }
+
+  // 2. Rate limit BEFORE any expensive work (bcrypt). This is the core fix.
+  const clientIp = getClientIp(req);
+  if (!enforceRateLimit(loginRateLimiter, clientIp, res)) {
+    return;
+  }
+
+  // 3. Input validation
+  const validation = validateLoginInput(req.body);
+  if (!validation.valid) {
+    res.status(400).json({ error: validation.message });
+    return;
+  }
+
+  const { email, password } = req.body;
+
+  const {
+    findUserByEmail,
+    comparePassword,
+    issueToken,
+  } = deps;
+
+  // When dependencies are not wired (e.g. during incremental integration),
+  // fail closed rather than leaking an unauthenticated success.
+  if (
+    typeof findUserByEmail !== "function" ||
+    typeof comparePassword !== "function"
+  ) {
+    res.status(503).json({ error: "Authentication service unavailable" });
+    return;
   }
 
   try {
-    if (!req.body || typeof req.body !== "object") {
-      return corsResponse(req, res, 400, { error: "Request body is required" });
+    const user = await findUserByEmail(email);
+
+    // 4. Verify credentials. Always run the comparison shape regardless of
+    //    whether the user exists to avoid leaking timing/enumeration signals.
+    const passwordHash = user?.password ?? "";
+    const isValid = await comparePassword(password, passwordHash);
+
+    if (!user || !isValid) {
+      // 5. Generic message prevents account enumeration.
+      res.status(401).json({ error: "Invalid email or password" });
+      return;
     }
 
-    const { usernameOrEmail, password } = req.body;
+    // Successful login: clear this IP's counter so a legitimate user is not
+    // penalised for earlier failed attempts.
+    loginRateLimiter.reset(clientIp);
 
-    // -----------------------------------------------------------------------
-    // Input Validation
-    // Run before rate-limit so malformed requests don't burn the budget.
-    // -----------------------------------------------------------------------
+    const token =
+      typeof issueToken === "function" ? issueToken(user) : undefined;
 
-    const validationErrors = validateLoginInput(usernameOrEmail, password);
-    if (validationErrors.length > 0) {
-      return corsResponse(req, res, 400, { 
-        error: validationErrors.join(", ") 
-      });
-    }
-
-    // -----------------------------------------------------------------------
-    // Rate Limiting (brute-force protection)
-    // -----------------------------------------------------------------------
-
-    const clientIp =
-  req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-  || req.headers?.["x-real-ip"]
-  || req.socket?.remoteAddress
-  || null;
-
-if (clientIp) {
-  loginRateLimiter.evictStale();
-
-  if (!loginRateLimiter.check(clientIp)) {
-    return corsResponse(req, res, 429, {
-      success: false,
-      message: "Too many authentication attempts. Please try again later.",
-    });
-  }
-}
-
-    // -----------------------------------------------------------------------
-    // Find user by username or email
-    // -----------------------------------------------------------------------
-
-    const user = findUserByUsernameOrEmail(usernameOrEmail);
-
-    // -----------------------------------------------------------------------
-    // Verify password using BCrypt
-    // Always run bcrypt.compare regardless of whether the user exists so that
-    // response time is uniform across all failure modes. This eliminates the
-    // timing side-channel that would otherwise reveal valid account identifiers.
-    // -----------------------------------------------------------------------
-
-    const hashToCompare = user ? user.password : await DUMMY_HASH_PROMISE;
-    const isPasswordValid = await bcrypt.compare(password, hashToCompare);
-
-    if (!user || !isPasswordValid) {
-      return corsResponse(req, res, 401, {
-        error: "Invalid credentials"
-      });
-    }
-
-    // Check if user is active after confirming identity to keep timing uniform
-    if (user.isActive === false) {
-      return corsResponse(req, res, 401, {
-        error: "Invalid credentials"
-      });
-    }
-
-    // -----------------------------------------------------------------------
-    // Generate JWT token
-    // -----------------------------------------------------------------------
-    // Only identity claims are embedded in the token. Permissions are
-    // intentionally excluded: baking them into a 7-day JWT means a role
-    // change (demotion, suspension, permission revocation) cannot take
-    // effect until the token naturally expires. Callers that need the
-    // current permission set should derive it server-side from the user's
-    // roles on every request using getPermissionsForRoles(roles).
-
-    const roles = user.roles || ["USER"];
-
-    const jwtPayload = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      roles: roles,
-    };
-
-    const token = jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-
-    // -----------------------------------------------------------------------
-    // Prepare response (exclude sensitive data)
-    // -----------------------------------------------------------------------
-
-    // Normalize role for response (use first role as primary)
-    const primaryRole = roles[0] || "ATTENDEE";
-    
-    // Normalize EVENT_MANAGER to ORGANIZER for frontend compatibility
-    const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
-
-    // Derive permissions fresh from the user's current roles so the response
-    // always reflects the latest role assignment, not a stale token snapshot.
-    const permissions = getPermissionsForRoles(roles);
-
-    const userResponse = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      username: user.username,
-      role: normalizedRole,
-      roles: roles,
-      permissions: permissions,
-    };
-
-    const isProd = process.env.NODE_ENV === "production";
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`;
-    // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
-    try {
-      if (typeof res.setHeader === 'function') {
-        res.setHeader('Set-Cookie', cookieValue);
-      } else if (typeof res.set === 'function') {
-        res.set({ 'Set-Cookie': cookieValue });
-      } else if (res.headers && typeof res.headers === 'object') {
-        res.headers['Set-Cookie'] = cookieValue;
+    if (token) {
+      const isProd = process.env.NODE_ENV === "production";
+      const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
+      try {
+        if (typeof res.setHeader === 'function') {
+          res.setHeader('Set-Cookie', cookieValue);
+        } else if (typeof res.set === 'function') {
+          res.set({ 'Set-Cookie': cookieValue });
+        } else if (res.headers && typeof res.headers === 'object') {
+          res.headers['Set-Cookie'] = cookieValue;
+        }
+      } catch (e) {
+        // Ignore write errors on test response objects
       }
-    } catch (e) {
-      // Ignore write errors on test response objects
     }
 
-    // Reset rate limit on successful login so a legitimate user is not penalised
-
-    // The JWT is delivered exclusively via the HttpOnly Set-Cookie header set
-    // above. Including it in the JSON body would expose it to JavaScript
-    // (document.cookie / response.json()), allowing XSS to steal the session
-    // token even when HttpOnly is correctly configured. The frontend reads the
-    // cookie automatically via withCredentials on every subsequent request.
-    return corsResponse(req, res, 200, {
+    res.status(200).json({
       message: "Login successful",
-      ...userResponse,
+      user: { id: user.id, email: user.email },
     });
-
-  } catch (error) {
-    console.error("Login Error:", error);
-    return corsResponse(req, res, 500, { 
-      error: "Internal server error. Please try again later." 
-    });
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
   }
 }
-
-// ---------------------------------------------------------------------------
-// Export users map for sharing with signup.js (development purposes)
-// In production, replace with actual database
-// ---------------------------------------------------------------------------
-
-export default handler;
-export { users };

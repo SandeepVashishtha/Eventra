@@ -1,8 +1,12 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LogIn, UserPlus, Info, HelpCircle, Sun, Moon, MousePointer } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { LogIn, UserPlus, Info, HelpCircle, Sun, Moon, MousePointer, Bell } from "lucide-react";
+import { useNotification } from "../../context/NotificationContext";
 import NavbarLinks from "./NavbarLinks";
+import LanguageSelector from "../LanguageSelector";
 import { useTheme } from "../../context/ThemeContext";
+
 
 const MobileDrawer = ({
   isOpen,
@@ -12,11 +16,13 @@ const MobileDrawer = ({
   cursorEnabled,
   toggleCursor,
 }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const drawerRef = useRef(null);
   const closeButtonRef = useRef(null);
   const isActive = (path) => location.pathname === path;
   const { isDarkMode, toggleTheme } = useTheme();
+  const { unreadCount } = useNotification();
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -54,7 +60,24 @@ const MobileDrawer = ({
       previouslyFocusedElement?.focus?.();
     };
   }, [closeMenu, isOpen]);
+  // Scroll lock: prevent background scroll when drawer is open
+  useEffect(() => {
+    if (!isOpen) return;
 
+    const scrollY = window.scrollY;
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);   
   return (
     <div
       className={`fixed inset-0 z-50 lg:hidden ${
@@ -99,7 +122,7 @@ const MobileDrawer = ({
             type="button"
             onClick={closeMenu}
             aria-label="Close navigation menu"
-            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl px-3 text-xl font-semibold text-text-light transition-colors hover:bg-bg-secondary"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl px-3 text-xl font-semibold text-text-light transition-colors hover:bg-bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <span aria-hidden="true">X</span>
           </button>
@@ -110,6 +133,10 @@ const MobileDrawer = ({
             vertical
             onClick={closeMenu}
           />
+
+          <div className="mt-4 px-1">
+            <LanguageSelector className="w-full" />
+          </div>
 
           <div className="mt-6 border-t border-border pt-4">
             {isAuthenticated ? (
@@ -123,7 +150,7 @@ const MobileDrawer = ({
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  Dashboard
+                  {t("nav.dashboard")}
                 </Link>
                 <Link
                   to="/dashboard/profile"
@@ -134,7 +161,24 @@ const MobileDrawer = ({
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  View Profile
+                  {t("nav.viewProfile")}
+                </Link>
+                <Link
+                  to="/notifications"
+                  onClick={closeMenu}
+                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                    isActive("/notifications")
+                      ? "border-primary bg-bg-secondary text-text"
+                      : "border-transparent text-text-light hover:bg-bg hover:text-text"
+                  }`}
+                >
+                  <Bell className="w-5 h-5" />
+                  Notifications
+                  {unreadCount > 0 && (
+                    <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
                 <Link
                   to="/about"
@@ -146,7 +190,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   <Info className="w-5 h-5" />
-                  About
+                  {t("nav.about")}
                 </Link>
                 <Link
                   to="/faq"
@@ -158,7 +202,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   <HelpCircle className="w-5 h-5" />
-                  Frequently Asked Questions
+                  {t("nav.faqFull")}
                 </Link>
                 <button
                   type="button"
@@ -169,7 +213,7 @@ const MobileDrawer = ({
                   className="mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 border-transparent px-3 py-2 text-left text-sm font-medium text-text-light transition-all duration-200 hover:bg-bg hover:text-text"
                 >
                   <LogIn className="w-5 h-5" />
-                  Logout
+                  {t("nav.signOut")}
                 </button>
               </div>
             ) : (
@@ -184,7 +228,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   <Info className="w-5 h-5" />
-                  About
+                  {t("nav.about")}
                 </Link>
                 <Link
                   to="/faq"
@@ -196,7 +240,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   <HelpCircle className="w-5 h-5" />
-                  Frequently Asked Questions
+                  {t("nav.faqFull")}
                 </Link>
                 <Link
                   to="/login"
@@ -208,7 +252,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   <LogIn className="w-5 h-5" />
-                  Sign In
+                  {t("nav.signIn")}
                 </Link>
                 <Link
                   to="/signup"
@@ -220,22 +264,22 @@ const MobileDrawer = ({
                   }`}
                 >
                   <UserPlus className="w-5 h-5" />
-                  Sign Up
+                  {t("nav.signUp")}
                 </Link>
               </div>
             )}
           </div>
 
-          {/* Preferences Section (Theme & Cursor Toggles) - Visible only on mobile where main navbar controls are hidden */}
-          <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-800 sm:hidden">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3 px-3">
+          {/* Preferences Section (Theme & Cursor Toggles) - Unified Semantic Classes */}
+          <div className="mt-6 border-t border-border pt-4 sm:hidden">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-light/80 mb-3 px-3">
               Preferences
             </h3>
             <div className="flex items-center gap-3 px-3">
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-border text-sm font-medium text-text-light hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
                 <span>{isDarkMode ? "Light" : "Dark"}</span>
@@ -243,10 +287,10 @@ const MobileDrawer = ({
               <button
                 type="button"
                 onClick={toggleCursor}
-                className={`flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                className={`flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   cursorEnabled
-                    ? "border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-950 dark:bg-blue-950/40 dark:text-blue-400"
-                    : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-850"
+                    ? "border-primary/40 bg-primary/10 text-primary"
+                    : "border-border text-text-light hover:bg-bg-secondary"
                 }`}
               >
                 <MousePointer size={16} />

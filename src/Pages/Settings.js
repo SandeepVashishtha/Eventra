@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { Sun, MousePointer, Bell, ShieldCheck, ArrowRight, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import useDocumentTitle from "../hooks/useDocumentTitle";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
+import KeyboardShortcutsHelp from "../components/accessibility/KeyboardShortcutsHelp";
 
 const Settings = () => {
   useDocumentTitle("Eventra | Settings");
@@ -82,6 +83,7 @@ const Settings = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     toast.success("Backup key file downloaded!");
   };
 
@@ -200,6 +202,9 @@ const Settings = () => {
               </p>
             </div>
           </article>
+
+          {/* Keyboard Shortcuts Help */}
+          <KeyboardShortcutsHelp />
         </div>
 
         {/* Advanced Backup Recovery Key Generator Card */}

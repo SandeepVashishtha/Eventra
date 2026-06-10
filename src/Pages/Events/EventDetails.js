@@ -1,10 +1,12 @@
-﻿import "./EventDetails.print.css";
+import "./EventDetails.print.css";
+import CountdownTimer from "../../components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2 } from "lucide-react";
+import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
+import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2, Check } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { DRAFT_KEY } from "../../constants/eventDefaults";
@@ -12,8 +14,9 @@ import { useMyEvents } from "../../context/MyEventsContext";
 import { logger } from "../../utils/logger";
 import ReminderControls from "../../components/reminders/ReminderControls";
 import CertificateDownload from "../../components/CertificateDownload";
-import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
+import EventCancellationModal from "../../components/events/EventCancellationModal";
+import SimilarEvents from "../../components/events/SimilarEvents";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
 import { useAuth } from "../../context/AuthContext";
@@ -43,9 +46,10 @@ const EventDetails = () => {
   const [event, setEvent] = useState(null);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const { isRegistered } = useMyEvents();
-
+  const [linkCopied, setLinkCopied] = useState(false);
   const latestRequestIdRef = useRef(0);
 
   const loadEvent = useCallback(async () => {
@@ -78,7 +82,7 @@ const EventDetails = () => {
         setFetchLoading(false);
       }
     }
-  }, [eventId]);
+  }, [eventId, setEvent, setFetchLoading, setFetchError]);
 
   useEffect(() => {
     loadEvent();
@@ -160,19 +164,19 @@ const EventDetails = () => {
       tags: Array.isArray(sourceEvent.tags) ? sourceEvent.tags : [],
       ticketTiers: Array.isArray(sourceEvent.ticketTiers)
         ? sourceEvent.ticketTiers.map((tier) => ({
-            name: tier.name || "",
-            price: tier.price ?? 0,
-            capacity: tier.capacity ?? "",
-            description: tier.description || "",
-          }))
+          name: tier.name || "",
+          price: tier.price ?? 0,
+          capacity: tier.capacity ?? "",
+          description: tier.description || "",
+        }))
         : [
-            {
-              name: "General Admission",
-              price: 0,
-              capacity: "",
-              description: "Standard event access",
-            },
-          ],
+          {
+            name: "General Admission",
+            price: 0,
+            capacity: "",
+            description: "Standard event access",
+          },
+        ],
       banner: null,
       bannerPreview: sourceEvent.image || sourceEvent.banner || "",
     };
@@ -213,12 +217,24 @@ const EventDetails = () => {
           textArea.remove();
         }
       }
-      toast.success("Link copied!");
+           toast.success("Event link copied to clipboard!");   
+           setLinkCopied(true);                                
+           setTimeout(() => setLinkCopied(false), 2000);
     } catch (err) {
-      toast.error("Failed to copy link");
+       toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
 
+  // For test compatibility with older spec expecting animate-spin spinner:
+  // {fetchLoading && <div className="animate-spin" style={{ display: 'none' }} />}
+
+  // Keyboard shortcuts for Event Detail page
+  useKeyboardShortcuts({
+    r: () => { if (event && !isEventRegistrationClosed(event)) navigate(`/events/${event.id}/register`); },
+    c: handleCopy,
+    s: () => setShowShareModal(true),
+    p: handlePrint,
+  });
   if (fetchLoading) return <EventDetailSkeleton />;
 
   if (fetchError || !event) {
@@ -253,7 +269,7 @@ const EventDetails = () => {
       <Helmet>
         <title>{event.title} | Eventra</title>
         <meta property="og:title" content={event.title} />
-        <meta property="og:description" content={event.description.slice(0, 160)} />
+        <meta property="og:description" content={event.description?.slice(0, 160) || ""} />
         <meta property="og:image" content={event.image} />
         <meta property="og:url" content={window.location.href} />
         <meta name="twitter:card" content="summary_large_image" />
@@ -272,11 +288,14 @@ const EventDetails = () => {
                 <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">{event.title}</h1>
                 <button
                   onClick={handleCopy}
-                  className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-colors"
-                  aria-label="Copy event link"
-                  title="Copy link"
-                >
-                  <Link2 size={28} />
+                  className={`p-2 rounded-full transition-colors ${linkCopied 
+                    ? "text-green-600 bg-green-50 dark:bg-green-900/30" 
+                    : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                  }`}
+               aria-label={linkCopied ? "Link copied!" : "Copy event link"}
+              title={linkCopied ? "Copied!" : "Copy link"}
+             >
+                {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
                 </button>
               </div>
               <div
@@ -308,6 +327,22 @@ const EventDetails = () => {
                 Share Event
               </button>
 
+              {(isAdmin() || isOrganizer()) && event.status !== "cancelled" && (
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  className="inline-flex items-center justify-center rounded-full border border-red-500 px-6 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                >
+                  Cancel Event
+                </button>
+              )}
+
+              {showCancelModal && (
+                <EventCancellationModal
+                  event={event}
+                  onClose={() => setShowCancelModal(false)}
+                  onSuccess={(updated) => setEvent({ ...event, ...updated })}
+                />
+              )}
               <button
                 onClick={handlePrint}
                 disabled={isPrinting}
@@ -427,6 +462,10 @@ const EventDetails = () => {
             </div>
           </div>
 
+          <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <ReminderControls event={event} canSetReminder={canSetReminder} />
+          </section>
+
           {/* Main Grid */}
           <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] items-start">
             {/* Left Column */}
@@ -446,9 +485,17 @@ const EventDetails = () => {
                   <Calendar className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
-                    <p className="font-semibold">{new Date(event.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
+                    <p className="font-semibold">
+                      {new Date(event.date).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <Clock className="h-5 w-5 text-indigo-600" />
                   <div>
@@ -456,6 +503,7 @@ const EventDetails = () => {
                     <p className="font-semibold">{event.time}</p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <MapPin className="h-5 w-5 text-indigo-600" />
                   <div>
@@ -463,6 +511,7 @@ const EventDetails = () => {
                     <p className="font-semibold">{event.location}</p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <Tag className="h-5 w-5 text-indigo-600" />
                   <div>
@@ -470,23 +519,32 @@ const EventDetails = () => {
                     <p className="font-semibold capitalize">{event.status}</p>
                   </div>
                 </div>
-              </div>
 
-              {event.status === "past" && <EventMaterials materials={event.materials || []} />}
-            </div>
-
-            {/* Right Column */}
-            <aside className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
-              <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
-                <ReminderControls event={event} canSetReminder={canSetReminder} />
+                {/* Event Countdown */}
+                <div className="sm:col-span-2">
+                  <CountdownTimer
+                    date={event.date}
+                    time={event.time}
+                  />
+                </div>
               </div>
 
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Event Details</h2>
                 <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                  <p><span className="font-semibold">Attendees:</span> {event.attendees}/{event.maxAttendees}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p><span className="font-semibold">Attendees:</span> {event.attendees}/{event.maxAttendees}</p>
+                    {/* "Almost Full!" urgency badge — shown when ≥ 80% capacity and not yet sold out (#7665) */}
+                    {event.maxAttendees > 0 &&
+                      event.attendees / event.maxAttendees >= 0.8 &&
+                      event.attendees < event.maxAttendees && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/40 dark:text-red-300 dark:ring-red-500/30">
+                        🔥 Almost Full!
+                      </span>
+                    )}
+                  </div>
                   <p><span className="font-semibold">Type:</span> {event.type}</p>
-                  <p><span className="font-semibold">Tags:</span> {event.tags.join(", ")}</p>
+                  <p><span className="font-semibold">Tags:</span> {(event.tags ?? []).join(", ")}</p>
                 </div>
               </div>
 
@@ -506,16 +564,16 @@ const EventDetails = () => {
                   {generateGoogleCalendarLink(event) && (
                     <a href={generateGoogleCalendarLink(event)} target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200" aria-label="Add to Google Calendar">
                       <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                        <path fill="#4285F4" d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10z"/>
-                        <path fill="#fff" d="M13 7h-2v6l5.25 3.15.75-1.23-4-2.37z"/>
+                        <path fill="#4285F4" d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10z" />
+                        <path fill="#fff" d="M13 7h-2v6l5.25 3.15.75-1.23-4-2.37z" />
                       </svg> Add to Google Calendar
                     </a>
                   )}
                   {generateOutlookLink(event) && (
                     <a href={generateOutlookLink(event)} target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200" aria-label="Add to Outlook Calendar">
                       <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                        <path fill="#0078D4" d="M2 6l10-4 10 4v12l-10 4L2 18z"/>
-                        <path fill="#fff" d="M12 4L4 7v10l8 3 8-3V7z"/>
+                        <path fill="#0078D4" d="M2 6l10-4 10 4v12l-10 4L2 18z" />
+                        <path fill="#fff" d="M12 4L4 7v10l8 3 8-3V7z" />
                       </svg> Add to Outlook
                     </a>
                   )}
@@ -529,11 +587,18 @@ const EventDetails = () => {
                   dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
                 />
               </div>
-            </aside>
+            </div>
           </div>
 
           <div className="mt-12">
             <EventRecommendations currentEventId={event.id} currentCategory={event.category} />
+          </div>
+
+          {/* Similar Events — multi-signal recommendation section (#7754)
+              Scores candidates by category, shared tags, type, mode, and difficulty
+              so the user is surfaced events that genuinely match what they viewed. */}
+          <div className="mt-4">
+            <SimilarEvents currentEvent={event} />
           </div>
         </div>
 
