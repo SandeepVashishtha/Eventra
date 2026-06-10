@@ -148,17 +148,17 @@ const CONNECTIONS = [
 ];
 
 const ACTIVITY_LEVELS = {
-  Critical: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.36)", label: "Critical" },
-  High: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.32)", label: "High" },
-  Medium: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.28)", label: "Medium" },
-  Low: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.18)", label: "Low" },
+  Critical: { color: "#8B5CF6", pulse: "rgba(139, 92, 246, 0.4)", label: "Critical" },
+  High: { color: "#A78BFA", pulse: "rgba(167, 139, 250, 0.3)", label: "High" },
+  Medium: { color: "#38BDF8", pulse: "rgba(56, 189, 248, 0.25)", label: "Medium" },
+  Low: { color: "#34D399", pulse: "rgba(52, 211, 153, 0.2)", label: "Low" },
 };
 
 const REGIONS = ["All", "North America", "Europe", "Asia", "Oceania"];
 
 // ============ UTILITY FUNCTIONS ============
-const getHubSize = (devs) => Math.max(4, Math.min(12, devs / 200));
-const getConnectionWidth = (intensity) => 1.5 + intensity * 2;
+const getHubSize = (devs) => Math.max(5, Math.min(13, devs / 220));
+const getConnectionWidth = (intensity) => 1.2 + intensity * 2;
 const formatTimeInZone = (timezone) => {
   try {
     return new Date().toLocaleTimeString("en-US", {
@@ -192,18 +192,17 @@ const formatTimeInZone = (timezone) => {
 // ============ PARTICLE ANIMATION COMPONENT ============
 const ConnectionParticle = ({ path, color, delay }) => (
   <motion.circle
-    r="2"
+    r="2.5"
     fill={color}
-    initial={{ offsetDistance: "0%", opacity: 0.7 }}
-    animate={{ offsetDistance: "100%", opacity: 0.45 }}
+    initial={{ offsetDistance: "0%", opacity: 0.9 }}
+    animate={{ offsetDistance: "100%", opacity: 0.2 }}
     transition={{
-      duration: 5 + Math.random() * 3,
+      duration: 4 + Math.random() * 3,
       repeat: Infinity,
       ease: "linear",
       delay,
     }}
     style={{ offsetPath: `path("${path}")` }}
-    opacity="0.65"
   />
 );
 
@@ -278,9 +277,14 @@ export default function CollaborationNetworkMap() {
   );
 
   const getPopupStyle = useCallback((hub) => {
-    let leftPercent = 0;
-    let topPercent = 0;
-    return { left: `${leftPercent}%`, top: `${topPercent}%`, transform: "translate(-50%, -100%)" };
+    if (!hub) return {};
+    const xPercent = (hub.x / 1000) * 100;
+    const yPercent = (hub.y / 500) * 100;
+    return { 
+      left: `${xPercent}%`, 
+      top: `${yPercent - 4}%`, 
+      transform: "translate(-50%, -100%)" 
+    };
   }, []);
 
   const handleHubClick = useCallback(
@@ -304,454 +308,367 @@ export default function CollaborationNetworkMap() {
   );
 
   return (
-    <section className="bg-white dark:bg-slate-950 py-12 text-slate-900 dark:text-slate-100">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="relative overflow-hidden">
-          {/* Header with Controls */}
-          <div className="mb-8 flex flex-col gap-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-2 text-sm font-medium text-blue-400">
-                <Globe className="h-4 w-4" />
-                <span>Global Connectivity</span>
-              </div>
-              <div className="absolute top-6 right-6 flex items-center gap-3 z-10">
-                <button
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg transition hover:scale-105 hover:bg-violet-500"
-                  onClick={() => setZoom((z) => Math.min(z + 0.2, 2))}
-                  aria-label="Zoom in"
-                >
-                  <ZoomIn size={16} />
-                </button>
-                <button
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg transition hover:scale-105 hover:bg-violet-500"
-                  onClick={() => setZoom((z) => Math.max(z - 0.2, 0.5))}
-                  aria-label="Zoom out"
-                >
-                  <ZoomOut size={16} />
-                </button>
-              </div>
+    <section className="bg-white dark:bg-slate-950 py-16 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+      <div className="mx-auto max-w-7xl px-4 md:px-8">
+        <div className="relative">
+          {/* Header Controls */}
+          <div className="mb-8 flex flex-col gap-4 relative">
+            <div className="flex items-center gap-2 text-sm font-semibold text-violet-600 dark:text-violet-400">
+              <Globe className="h-4 w-4" />
+              <span>Global Connectivity</span>
             </div>
 
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <div className="absolute top-0 right-0 flex items-center gap-2 z-20">
+              <button
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95"
+                onClick={() => setZoom((z) => Math.min(z + 0.2, 2))}
+                aria-label="Zoom in"
+              >
+                <ZoomIn size={16} />
+              </button>
+              <button
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95"
+                onClick={() => setZoom((z) => Math.max(z - 0.2, 0.5))}
+                aria-label="Zoom out"
+              >
+                <ZoomOut size={16} />
+              </button>
+            </div>
+
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
               Global Collaboration Network
             </h2>
-            <p className="max-w-2xl text-slate-600 dark:text-slate-400">
+            <p className="max-w-2xl text-base text-slate-600 dark:text-slate-400">
               Real-time collaboration across {stats.totalDevs.toLocaleString()} developers in{" "}
-              {stats.regions} regions.
+              {stats.regions} active tech hubs.
             </p>
 
-            {/* Filters */}
-            <div className="mb-10 flex flex-wrap items-center gap-4">
-              <div className="relative">
-                <Search
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
-                />
+            {/* Filters Row */}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <div className="relative flex-1 min-w-[240px] md:flex-none">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search hubs or technologies..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full md:w-80 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-3 pl-10 pr-4 text-slate-700 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  aria-label="Search hubs"
+                  className="w-full md:w-72 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20"
                 />
               </div>
 
               <div className="relative">
-                <Filter
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
-                />
+                <Filter size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <select
                   value={selectedActivity}
                   onChange={(e) => setSelectedActivity(e.target.value)}
-                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-3 pl-10 pr-4 text-slate-700 dark:text-slate-200 focus:outline-none"
-                  aria-label="Filter by activity"
+                  className="appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-8 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:border-violet-500/60"
                 >
                   {["All", "Critical", "High", "Medium", "Low"].map((a) => (
-                    <option key={a} value={a}>
-                      {a} Activity
+                    <option key={a} value={a}>{a} Activity</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="relative">
+                <select
+                  value={selectedRegion}
+                  onChange={(e) => setSelectedRegion(e.target.value)}
+                  className="appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 px-4 pr-8 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:border-violet-500/60"
+                >
+                  {REGIONS.map((region) => (
+                    <option key={region} value={region}>
+                      {region === "All" ? "All Regions" : region}
                     </option>
                   ))}
                 </select>
               </div>
 
-              <select
-                value={selectedRegion}
-                onChange={(e) => setSelectedRegion(e.target.value)}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-700 focus:outline-none"
-                aria-label="Filter by region"
+              <div className="flex items-center gap-4 ml-2 border-l border-slate-200 dark:border-slate-800 pl-4 h-9">
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showConnections}
+                    onChange={(e) => setShowConnections(e.target.checked)}
+                    className="h-4 w-4 rounded text-violet-600 focus:ring-violet-500/40 border-slate-300 dark:border-slate-700 cursor-pointer"
+                  />
+                  <span>Connections</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={particlesEnabled}
+                    onChange={(e) => setParticlesEnabled(e.target.checked)}
+                    disabled={prefersReducedMotion}
+                    className="h-4 w-4 rounded text-violet-600 focus:ring-violet-500/40 border-slate-300 dark:border-slate-700 disabled:opacity-40 cursor-pointer"
+                  />
+                  <span>Particles</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Metrics Row Wrapper Panel */}
+          <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4 p-4 rounded-3xl bg-violet-50/50 dark:bg-violet-950/20 border border-violet-100/60 dark:border-violet-900/30">
+            {[
+              { label: "Developers", value: stats.totalDevs.toLocaleString(), icon: Users, color: "text-violet-600 dark:text-violet-400" },
+              { label: "Projects", value: stats.totalProjects, icon: Code, color: "text-violet-600 dark:text-violet-400" },
+              { label: "Connections", value: CONNECTIONS.length, icon: GitBranch, color: "text-violet-600 dark:text-violet-400" },
+              { label: "Active Hubs", value: `${stats.activeHubs}/${HUBS.length}`, icon: TrendingUp, color: "text-violet-600 dark:text-violet-400" }
+            ].map((stat, i) => (
+              /* MODIFIED: Added premium uniform violet borders and soft shadows to ALL metric cards */
+              <div 
+                key={i} 
+                className="flex items-center gap-4 rounded-2xl p-5 transition-all duration-300 bg-white dark:bg-slate-900 border-2 border-violet-500 shadow-[0_0_15px_rgba(124,58,237,0.12)] dark:shadow-[0_0_20px_rgba(139,92,246,0.12)]"
               >
-                {REGIONS.map((region) => (
-                  <option key={region} value={region}>
-                    {region === "All" ? "All Regions" : region}
-                  </option>
-                ))}
-              </select>
-
-              <label className="flex items-center gap-2 text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={showConnections}
-                  onChange={(e) => setShowConnections(e.target.checked)}
-                  className=" h-5 w-5 rounded-lg border-slate-300 focus:ring-2 focus:ring-violet-500 cursor-pointer"
-                />
-                <span>Connections</span>
-              </label>
-
-              <label className="flex items-center gap-2 text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={particlesEnabled}
-                  onChange={(e) => setParticlesEnabled(e.target.checked)}
-                  disabled={prefersReducedMotion}
-                  className="h-5 w-5 rounded-lg border-slate-300 focus:ring-2 focus:ring-violet-500 cursor-pointer"
-                />
-                <span>Animated particles</span>
-              </label>
-            </div>
+                <div className="p-2.5 rounded-xl bg-violet-50 dark:bg-violet-950/60 metric-icon text-violet-600 dark:text-violet-400">
+                  <stat.icon size={20} />
+                </div>
+                <div>
+                  <span className="block text-2xl font-black tracking-tight text-violet-600 dark:text-violet-400">
+                    {stat.value}
+                  </span>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{stat.label}</span>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Stats Summary */}
-          <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-              <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 bg-white hover:shadow-md p-6 shadow-lg">
-              <Users size={18} />
-              <div>
-                <span className="block text-2xl font-bold text-emerald-400">
-                  {stats.totalDevs.toLocaleString()}
-                </span>
-                <span className="mt-1 block text-sm text-slate-600">Developers</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
-              <Code size={18} />
-              <div>
-                <span className="block text-2xl font-bold text-emerald-400">
-                  {stats.totalProjects}
-                </span>
-                <span className="mt-1 block text-sm text-slate-600">Projects</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
-              <GitBranch size={18} />
-              <div>
-                <span className="block text-2xl font-bold text-emerald-400">
-                  {CONNECTIONS.length}
-                </span>
-                <span className="mt-1 block text-sm text-slate-600">Connections</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
-              <TrendingUp size={18} />
-              <div>
-                <span className="block text-2xl font-bold text-emerald-400">
-                  {stats.activeHubs}/{HUBS.length}
-                </span>
-                <span className="mt-1 block text-sm text-slate-600">Active Hubs</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Map Frame */}
-          <div
-            className="relative mt-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900"
-            style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
-          >
-            <svg
-              className="h-[420px] w-full"
-              viewBox="0 0 1000 500"
-              
-              preserveAspectRatio="xMidYMid meet"
-              role="img"
-              aria-label="Global collaboration network map"
+          {/* Interactive Map Canvas Window Frame */}
+          {/* MODIFIED: Replaced standard slate border with a gorgeous thick 2px violet border & custom ambient glow to elevate the graph */}
+          <div className="relative rounded-2xl border-2 border-violet-500/80 bg-slate-50 dark:bg-slate-950/40 overflow-hidden shadow-[0_0_25px_rgba(124,58,237,0.08)] backdrop-blur-sm">
+            <div 
+              className="transition-transform duration-300 ease-out"
+              style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
             >
-              <defs>
-                <filter id="hub-glow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="6" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-                <pattern id="cnm-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <circle cx="2" cy="2" r="1.5" fill="rgba(224,233,242,0.06)" />
-                </pattern>
-                <linearGradient id="connection-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="rgba(224,233,242,0.6)" />
-                  <stop offset="100%" stopColor="rgba(224,233,242,0.9)" />
-                </linearGradient>
-                <marker
-                  id="arrowhead"
-                  markerWidth="10"
-                  markerHeight="7"
-                  refX="9"
-                  refY="3.5"
-                  orient="auto"
-                >
-                  <polygon points="0 0, 10 3.5, 0 7" fill="rgba(224,233,242,0.5)" />
-                </marker>
-              </defs>
+              <svg
+                className="h-[440px] w-full mix-blend-multiply dark:mix-blend-normal"
+                viewBox="0 0 1000 500"
+                preserveAspectRatio="xMidYMid meet"
+                role="img"
+                aria-label="Global network nodes map"
+              >
+                <defs>
+                  <filter id="hub-glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="5" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                  <pattern id="cnm-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                    <circle cx="2" cy="2" r="1" className="fill-slate-200 dark:fill-slate-800" />
+                  </pattern>
+                </defs>
 
-              {/* Background */}
-              <rect width="100%" height="100%" fill="url(#cnm-grid)" rx="16" />
+                {/* Grid Background Overlay */}
+                <rect width="100%" height="100%" fill="url(#cnm-grid)" />
 
-              {/* Connection Paths */}
-              {visibleConnections.map((conn, idx) => {
-                const start = getCoordinates(conn.from);
-                const end = getCoordinates(conn.to);
-                const dx = end.x - start.x;
-                const dy = end.y - start.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                const dr = distance * 0.8;
-                const pathD = `M ${start.x} ${start.y} A ${dr} ${dr} 0 0,1 ${end.x} ${end.y}`;
-                const color =
-                  ACTIVITY_LEVELS[HUBS.find((h) => h.id === conn.from)?.activity || "Medium"].color;
+                {/* SVG Connection Paths Render */}
+                {visibleConnections.map((conn, idx) => {
+                  const start = getCoordinates(conn.from);
+                  const end = getCoordinates(conn.to);
+                  const dx = end.x - start.x;
+                  const dy = end.y - start.y;
+                  const distance = Math.sqrt(dx * dx + dy * dy);
+                  const dr = distance * 1.1;
+                  const pathD = `M ${start.x} ${start.y} A ${dr} ${dr} 0 0,1 ${end.x} ${end.y}`;
+                  const fromHub = HUBS.find((h) => h.id === conn.from);
+                  const color = ACTIVITY_LEVELS[fromHub?.activity || "Medium"].color;
 
-                return (
-                  <g key={`connection-${idx}`} className="connection-group">
-                    <path
-                      d={pathD}
-                      fill="none"
-                      stroke="rgba(224,233,242,0.5)"
-                      strokeWidth={Math.max(0.8, getConnectionWidth(conn.intensity))}
-                      strokeLinecap="round"
-                    />
-                    {particlesEnabled && !prefersReducedMotion && (
-                      <ConnectionParticle path={pathD} color={color} delay={idx * 0.4} />
-                    )}
-                  </g>
-                );
-              })}
-
-              {/* Hub Nodes */}
-              {filteredHubs.map((hub) => {
-                const isActive = activeHub?.id === hub.id || pinnedHub?.id === hub.id;
-                const isPinned = pinnedHub?.id === hub.id;
-                const config = ACTIVITY_LEVELS[hub.activity];
-                const hubSize = getHubSize(hub.devs);
-
-                return (
-                  <g
-                    key={hub.id}
-                    className={`cnm-node-group ${isActive ? "active" : ""} ${isPinned ? "pinned" : ""}`}
-                    onMouseEnter={() => handleHubHover(hub)}
-                    onMouseLeave={() => !pinnedHub && setActiveHub(null)}
-                    onClick={() => handleHubClick(hub)}
-                    role="button"
-                    aria-label={`${hub.name}, ${hub.devs} developers, ${hub.activity} activity`}
-                    style={{ outline: "none", cursor: "pointer" }}
-                  >
-                    {/* Pulse ring */}
-                    <motion.circle
-                      cx={hub.x}
-                      cy={hub.y}
-                      r={isActive ? 32 : 22}
-                      fill="none"
-                      stroke={config.pulse}
-                      strokeWidth="1.5"
-                      initial={{ scale: 0.8, opacity: 0.6 }}
-                      animate={{ scale: [1, 1.3, 1], opacity: [0.6, 0.3, 0.6] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="node-pulse"
-                    />
-
-                    {/* Glow effect */}
-                    <circle
-                      cx={hub.x}
-                      cy={hub.y}
-                      r={hubSize + 4}
-                      fill={config.color}
-                      filter="url(#hub-glow)"
-                      opacity={isActive ? 0.8 : 0.4}
-                      className="node-glow"
-                    />
-
-                    {/* Core node */}
-                    <circle
-                      cx={hub.x}
-                      cy={hub.y}
-                      r={hubSize}
-                      fill="#1e293b"
-                      stroke={config.color}
-                      strokeWidth="2.5"
-                      className="node-core"
-                    />
-
-                    {/* Pin indicator */}
-                    {isPinned && (
-                      <motion.path
-                        d="M 0 -18 L 4 -10 L 2 -10 L 2 0 L -2 0 L -2 -10 L -4 -10 Z"
-                        fill={config.color}
-                        transform={`translate(${hub.x}, ${hub.y})`}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
+                  return (
+                    <g key={`connection-${idx}`} className="opacity-75 dark:opacity-60">
+                      <path
+                        d={pathD}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth={getConnectionWidth(conn.intensity)}
+                        className="opacity-25 dark:opacity-30"
+                        strokeLinecap="round"
                       />
-                    )}
+                      {particlesEnabled && !prefersReducedMotion && (
+                        <ConnectionParticle path={pathD} color={color} delay={idx * 0.35} />
+                      )}
+                    </g>
+                  );
+                })}
 
-                    {/* Label */}
-                    <text
-                      x={hub.x}
-                      y={hub.y + hubSize + 18}
-                      textAnchor="middle"
-                      className="node-label"
-                      fill="#334155"
-                      fontSize="11"
-                      fontWeight="500"
+                {/* Interactive SVG City Nodes mapping */}
+                {filteredHubs.map((hub) => {
+                  const isActive = activeHub?.id === hub.id || pinnedHub?.id === hub.id;
+                  const isPinned = pinnedHub?.id === hub.id;
+                  const config = ACTIVITY_LEVELS[hub.activity];
+                  const hubSize = getHubSize(hub.devs);
+
+                  return (
+                    <g
+                      key={hub.id}
+                      className="cursor-pointer select-none outline-none"
+                      onMouseEnter={() => handleHubHover(hub)}
+                      onMouseLeave={() => !pinnedHub && setActiveHub(null)}
+                      onClick={() => handleHubClick(hub)}
+                      role="button"
                     >
-                      {hub.name.split(" ")[0]}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
+                      {/* Interactive Pulse Waves */}
+                      <motion.circle
+                        cx={hub.x}
+                        cy={hub.y}
+                        r={isActive ? hubSize + 16 : hubSize + 8}
+                        fill="none"
+                        stroke={config.pulse}
+                        strokeWidth="1.5"
+                        animate={{ scale: [1, 1.25, 1], opacity: [0.7, 0.2, 0.7] }}
+                        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                      />
 
-            {/* Popup Card */}
+                      {/* Neon Soft Backdrop Glow filter node */}
+                      <circle
+                        cx={hub.x}
+                        cy={hub.y}
+                        r={hubSize + 6}
+                        fill={config.color}
+                        filter="url(#hub-glow)"
+                        opacity={isActive ? 0.6 : 0.2}
+                      />
+
+                      {/* Solid Core Dot */}
+                      <circle
+                        cx={hub.x}
+                        cy={hub.y}
+                        r={isActive ? hubSize + 1.5 : hubSize}
+                        fill={isActive ? config.color : "#0F172A"}
+                        stroke={isActive ? "#FFFFFF" : config.color}
+                        strokeWidth={isActive ? 2 : 2.5}
+                        className="transition-all duration-200"
+                      />
+
+                      {/* Hub Label Tag */}
+                      <text
+                        x={hub.x}
+                        y={hub.y + hubSize + 16}
+                        textAnchor="middle"
+                        className="fill-slate-600 dark:fill-slate-400 select-none pointer-events-none tracking-wide"
+                        fontSize="11"
+                        fontWeight={isActive ? "700" : "500"}
+                      >
+                        {hub.name.split(" ")[0]}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            {/* Absolute Fixed Map Floating Overlay Popup Component Card */}
             <AnimatePresence>
               {(activeHub || pinnedHub) && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.92, y: 1 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.92, y: 8 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
-                  className={`absolute w-70 z-50 bg-white dark:bg-slate-900 p-5 m-4 shadow-lg rounded-lg ${pinnedHub ? "pinned" : ""}`}
+                  initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute w-72 z-30 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-xl rounded-2xl"
                   style={getPopupStyle(activeHub || pinnedHub)}
                 >
-                  {/* Close button for pinned */}
                   {pinnedHub && (
                     <button
-                      className="popup-close"
+                      className="absolute top-3 right-3 p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200"
                       onClick={(e) => {
                         e.stopPropagation();
                         setPinnedHub(null);
                         setActiveHub(null);
                       }}
-                      aria-label="Close popup"
+                      aria-label="Close panel"
                     >
-                      <X size={18} />
+                      <X size={15} />
                     </button>
                   )}
 
-                  {/* Header */}
-                  <div className="mb-4">
-
-                    <div className="flex items-center gap-2">
-                      <MapPin className="text-blue-500" size={18} />
-
-                      <h4 className="text-xl font-bold text-slate-800">
+                  {/* Node Identity Details */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 pr-6">
+                      <MapPin className="text-violet-500 shrink-0" size={16} />
+                      <h4 className="text-base font-bold text-slate-900 dark:text-white truncate">
                         {(activeHub || pinnedHub).name}
                       </h4>
                     </div>
-
-                    <div className="mt-2 ml-7 text-xs text-slate-500 space-y-1">
-
-                      <div>
-                        {(activeHub || pinnedHub).lat}° N • {(activeHub || pinnedHub).lng}° E
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <Clock size={13} />
+                    
+                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                      <span>{(activeHub || pinnedHub).lat} • {(activeHub || pinnedHub).lng}</span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={12} className="text-slate-400" />
                         {formatTimeInZone((activeHub || pinnedHub).timezone)}
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
-                      <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 flex-shrink-0" />
-                        <span className="mt-1 block text-sm text-slate-600">Developers</span>
-                      </div>
-                      <h4 className="block text-2xl font-bold text-emerald-400">
-                          {(activeHub || pinnedHub).devs.toLocaleString()}
-                      </h4>
-                    </div>
-                    <div className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
-                      <div className="flex items-center gap-2">
-                        <Code className="w-4 h-4 flex-shrink-0" />
-                        <span className="mt-1 block text-sm text-slate-600">Projects</span>
-                      </div>
-                      <h4 className="block text-2xl font-bold text-emerald-400">
-                          {(activeHub || pinnedHub).projects}
-                      </h4>
+                      </span>
                     </div>
                   </div>
 
-                  {/* Categories */}
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  {/* Micro Metric Stat Badges */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 border border-slate-100 dark:border-transparent">
+                      <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">Developers</span>
+                      <span className="text-base font-bold text-slate-900 dark:text-white">
+                        {(activeHub || pinnedHub).devs.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 border border-slate-100 dark:transparent">
+                      <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">Projects</span>
+                      <span className="text-base font-bold text-slate-900 dark:text-white">
+                        {(activeHub || pinnedHub).projects}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Core Tags array */}
+                  <div className="flex flex-wrap gap-1.5 mb-3">
                     {(activeHub || pinnedHub).categories.map((cat) => (
-                      <span key={cat} className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md px-3 py-1 shadow-lg">
+                      <span key={cat} className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                         {cat}
                       </span>
                     ))}
                   </div>
 
-                  {/* Status & Region */}
-                  <div className="mb-4 flex items-center justify-between">
-
-                    <span className="text-sm text-slate-500">
-                      Activity Level
-                    </span>
-
-                    <div
-                      className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold
-                      ${(activeHub || pinnedHub).activity === "critical"
-                        ? "bg-red-100 text-red-600"
-                        : (activeHub || pinnedHub).activity === "high"
-                        ? "bg-orange-100 text-orange-600"
-                        : (activeHub || pinnedHub).activity === "medium"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-green-100 text-green-600"
-                      }`}
-                    >
-                      <Activity size={12} />
-                      {ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].label}
+                  {/* Bottom Activity Status and View Info Anchor action triggers */}
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3 mt-1">
+                    <div className="flex items-center gap-1.5">
+                      <Activity size={13} style={{ color: ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].color }} />
+                      <span className="text-xs font-bold" style={{ color: ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].color }}>
+                        {ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].label}
+                      </span>
                     </div>
-                  </div>
 
-                  {/* Region */}
-                  <div className="flex items-center justify-between border-t pt-3">
-
-                    <span className="text-sm font-medium text-slate-600">
-                      {(activeHub || pinnedHub).region}
-                    </span>
-
-                    <button className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
-                      <ExternalLink size={14} />
-                      View Details
+                    <button className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 dark:text-violet-400 hover:opacity-80 transition-opacity">
+                      <span>View Details</span>
+                      <ExternalLink size={12} />
                     </button>
-
                   </div>
-                
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* Legend */}
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 text-sm text-slate-600">
-            <h5>Activity Levels</h5>
-            <div className="flex flex-wrap items-center gap-4">
+          {/* Bottom Interactive Scale Legends Footer metadata block */}
+          <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border border-slate-100 dark:border-slate-900/60 p-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <span className="text-slate-400 uppercase tracking-wider font-bold text-[10px]">Activity Legend</span>
               {Object.entries(ACTIVITY_LEVELS).map(([key, config]) => (
                 <div key={key} className="flex items-center gap-2">
                   <span
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: config.color, boxShadow: `0 0 8px ${config.pulse}` }}
+                    className="h-2.5 w-2.5 rounded-full shadow-sm"
+                    style={{ backgroundColor: config.color }}
                   />
-                  <span>{config.label}</span>
+                  <span className="text-slate-700 dark:text-slate-300">{config.label}</span>
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* Zoom Indicator */}
-          <div className="absolute bottom-6 right-6 rounded-full bg-white border border-slate-200 px-4 py-2 text-sm text-slate-700 shadow-lg">
-            Zoom: {Math.round(zoom * 100)}%
+            <div className="text-slate-400 dark:text-slate-500 shrink-0">
+              Canvas Frame Zoom State: <span className="font-bold text-slate-700 dark:text-slate-300">{Math.round(zoom * 100)}%</span>
+            </div>
           </div>
-               </div>
-              </div>
+        </div>
+
+      </div>
+
     </section>
   );
 }
