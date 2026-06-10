@@ -1,6 +1,6 @@
 import { Trophy } from "lucide-react";
 
-export default function LeaderboardHero({ stats, loading, currentContributors }) {
+export default function LeaderboardHero({ stats, currentContributors }) {
   return (
     <header className="mb-10 rounded-[32px] border border-slate-200/70 bg-white/85 px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:px-8">
       <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-600">

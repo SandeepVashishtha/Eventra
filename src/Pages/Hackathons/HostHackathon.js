@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { useAuth } from "../../context/AuthContext";
-import { API_ENDPOINTS } from "../../config/api";
+
 import { hostHackathon } from "../../services/hackathonService";
 import { sanitizeInputText } from "../../utils/inputSanitization";
 

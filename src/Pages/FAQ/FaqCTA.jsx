@@ -45,8 +45,7 @@ export default function FAQCTA() {
 
   return (
     <section
-      className="relative bg-gradient-to-tr from-[#0C0C1F] via-[#1A1F36] to-[#0B1E2E] py-16 px-8 sm:px-12 lg:px-20 overflow-hidden m-8 rounded-3xl"
-      aria-labelledby="faq-cta-heading"
+      className="relative z-10 bg-gradient-to-tr from-[#0C0C1F] via-[#1A1F36] to-[#0B1E2E] py-20 px-8 sm:px-12 lg:px-20 overflow-visible mt-20 mb-12 mx-8 rounded-3xl"
     >
       <div className="relative max-w-6xl mx-auto text-center m-4">
         {/* Tag */}

@@ -34,6 +34,7 @@ import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
 import { validateCoordinates } from "../../../utils/eventCreationUtils";
 import { validateForm } from "../../../utils/eventFormValidation";
+import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -308,7 +309,7 @@ const EventCreation = () => {
       const saved = localStorage.getItem(DRAFT_KEY);
 
       if (saved) {
-        const parsed = JSON.parse(saved);
+        const parsed = safeJsonParse(saved, {});
 
         setFormData((prev) => ({
           ...prev,

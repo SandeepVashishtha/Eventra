@@ -69,7 +69,7 @@ export function formatEventDate(date, options = {}) {
     }
 
     return new Intl.DateTimeFormat(locale, formatOptions).format(d);
-  } catch (err) {
+  } catch {
     // Fallback for environments without Intl support
     const d = date instanceof Date ? date : new Date(date);
     return d.toLocaleString();
@@ -111,6 +111,7 @@ export function getRelativeTime(date) {
     if (Math.abs(diffMin) >= 1) return rtf.format(diffMin, "minute");
     return rtf.format(diffSec, "second");
   } catch {
-    return "";
+    const d = date instanceof Date ? date : new Date(date);
+    return isNaN(d.getTime()) ? "" : d.toLocaleString();
   }
 }

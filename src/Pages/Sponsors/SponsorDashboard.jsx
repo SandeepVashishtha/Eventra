@@ -4,6 +4,7 @@ import {
   Save, Layout, Shield, Mail, Briefcase, Info, Download, Trash2, CheckCircle2
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const DEFAULT_SETTINGS = {
   id: "sp-custom",
@@ -38,7 +39,7 @@ const SponsorDashboard = () => {
     const saved = localStorage.getItem("eventra_sponsor_settings");
     if (saved) {
       try {
-        setSettings(JSON.parse(saved));
+        setSettings(safeJsonParse(saved, {}));
       } catch (e) {
         console.error("Failed to parse sponsor settings", e);
       }
@@ -46,7 +47,6 @@ const SponsorDashboard = () => {
 
     // Load captured leads
     const savedLeads = localStorage.getItem("eventra_sponsor_leads");
-
 if (savedLeads) {
   try {
     const parsedLeads = safeJsonParse(savedLeads, []);

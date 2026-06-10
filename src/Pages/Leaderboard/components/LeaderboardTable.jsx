@@ -36,6 +36,9 @@ function TableRow({ c, rank, badge, streak, index }) {
             {rank}
           </span>
           <RankMovementIndicator liveDifference={streak?.rankDifference} />
+          {c.points > 1000 && <span className="ml-2 text-xs bg-gradient-to-r from-blue-400 to-purple-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">DIAMOND</span>}
+          {c.points > 500 && c.points <= 1000 && <span className="ml-2 text-xs bg-yellow-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">GOLD</span>}
+          {c.points > 100 && c.points <= 500 && <span className="ml-2 text-xs bg-gray-400 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">SILVER</span>}
         </div>
       </td>
 
@@ -67,6 +70,7 @@ function TableRow({ c, rank, badge, streak, index }) {
                   : "border-indigo-100 dark:border-slate-800"
               }`}
               src={c.avatar}
+              onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E"; }}
               alt={`${c.username}'s avatar`}
               width={40}
               height={40}
