@@ -53,7 +53,7 @@ const getEventStatus = (event) => {
 
 
 
-const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
+const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket, onViewRecent }) => {
   const prefersReducedMotion = useReducedMotion();
   const isOffline = useOfflineStatus();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
@@ -68,7 +68,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
 
   return (
     <motion.div
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 flex flex-col z-10 hover:z-50 overflow-hidden"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl hover:shadow-2xl hover:-translate-y-2 backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] flex flex-col z-10 hover:z-50 overflow-hidden"
       custom={index}
       variants={fadeUpVariants}
       initial="hidden"
@@ -90,7 +90,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
             className="w-full h-full"
             imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
           />
-          <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50transition-all duration-500 hover:scale-[1.02]" />
         </div>
       )}
 
@@ -160,7 +160,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
               aria-disabled={isOffline}
               style={isOffline ? { opacity: 0.5, cursor: "not-allowed" } : {}}
             >
-              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Trash2 size={13} className="relative" />
                 <span className="relative">Cancel</span>
               </div>
@@ -169,7 +169,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
               className="group/btn flex-1"
               onClick={() => onViewTicket?.(event)}
             >
-              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Ticket size={13} className="relative" />
                 <span className="relative">Ticket</span>
               </div>
@@ -178,7 +178,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
         ) : (
           <Link 
             to={`/events/${event?.id}`}
-            onClick={() => addToRecentEvents(event)}
+            onClick={() => onViewRecent?.(event)}
           >
             <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
               <Activity size={13} className="relative" />
@@ -188,7 +188,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
         )}
         <Link 
           to={`/events/${event?.id}`}
-          onClick={() => addToRecentEvents(event)}
+          onClick={() => onViewRecent?.(event)}
         >
           <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
             <span>{showCancel ? "View Details" : "Open Event"}</span>
@@ -216,7 +216,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
 
   return (
     <motion.div
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 flex flex-col z-10 overflow-hidden"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] flex flex-col z-10 overflow-hidden"
       custom={index}
       variants={fadeUpVariants}
       initial="hidden"
@@ -477,7 +477,7 @@ const addToRecentEvents = (event) => {
           <div className="ud-search-wrap my-events-search">
             <Search size={14} className="ud-search-icon" />
             <input
-              className="ud-search"
+            className="ud-search focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
               placeholder="Search your events…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -597,7 +597,25 @@ const addToRecentEvents = (event) => {
   </section>
 )}
 
-      {registeredCount + hostedCount === 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="animate-pulse rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm"
+            >
+              <div className="h-40 rounded-xl bg-slate-200 dark:bg-slate-700 mb-4" />
+              <div className="h-5 w-3/4 rounded bg-slate-200 dark:bg-slate-700 mb-3" />
+              <div className="h-4 w-1/2 rounded bg-slate-200 dark:bg-slate-700 mb-2" />
+              <div className="h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-700 mb-6" />
+              <div className="flex gap-3">
+                <div className="h-10 flex-1 rounded-xl bg-slate-200 dark:bg-slate-700" />
+                <div className="h-10 flex-1 rounded-xl bg-slate-200 dark:bg-slate-700" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : registeredCount + hostedCount === 0 ? (
         <EmptyState
           title="No events yet"
           description="You have not registered for or hosted any events yet. Explore upcoming events to get started."
@@ -629,7 +647,7 @@ const addToRecentEvents = (event) => {
           {filteredRegisteredEvents.length > 0 && (
             <section className="space-y-4">
               <div className="ud-tab-header">
-                <h3 className="ud-page-title">
+              <h3 className="ud-page-title bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent font-extrabold">
                   <Ticket size={18} /> Registered Events
                 </h3>
                 <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
@@ -645,6 +663,7 @@ const addToRecentEvents = (event) => {
                     onRemoveRegistration={handleCancelClick}
                     showCancel
                     onViewTicket={onViewTicket}
+                    onViewRecent={addToRecentEvents}
                   />
                 ))}
               </motion.div>
@@ -668,6 +687,7 @@ const addToRecentEvents = (event) => {
                     event={event}
                     index={index}
                     showCancel={false}
+                    onViewRecent={addToRecentEvents}
                   />
                 ))}
               </motion.div>
@@ -709,7 +729,6 @@ const addToRecentEvents = (event) => {
           )}
         </>
       )}
-
       {/* 🔥 FIX 1: Portaled the modal out of the Framer Motion stacking context trap */}
       <AnimatePresence>
         {cancelTarget && ReactDOM.createPortal(

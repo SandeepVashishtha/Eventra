@@ -113,22 +113,20 @@ cd Eventra
 npm install
 ```
 
-1. Create your env file:
+2. Create your env file:
 
 ```bash
 cp .env.example .env
 ```
 > **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
 
-1. Start dev server:
+3. Start dev server:
 
-2. Start dev server:
-
-```bash
 npm run dev
-```
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
+
+
 
 ## Docker Development
 
@@ -145,7 +143,7 @@ cp .env.example .env
 1. Start the local development container:
 
 ```bash
-docker-compose up eventra-dev
+docker compose up eventra-dev
 ```
 
 The app will be available at `http://localhost:3000` with hot-reloading enabled.
@@ -153,7 +151,7 @@ The app will be available at `http://localhost:3000` with hot-reloading enabled.
 1. Build and test the production container locally:
 
 ```bash
-docker-compose up --build eventra-prod
+docker compose up --build eventra-prod
 ```
 
 The production-optimized build will be served via Nginx at `http://localhost:8080`.
@@ -186,6 +184,7 @@ Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variable
 | `npm run format` | Run Prettier on source files |
 | `npm run test` | Run unit test suite |
 | `npm run test:e2e` | Run Playwright E2E tests |
+| `npm run check` | Run lint + tests together (CI validation) |
 | `npm run storybook` | Start Storybook |
 | `npm run build-storybook` | Build Storybook static output |
 
