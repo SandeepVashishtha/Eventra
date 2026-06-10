@@ -46,3 +46,5 @@ assert.equal(isTokenValid(validToken), true);
 assert.equal(getTokenTTL(missingExpToken), -1);
 assert.ok(getTokenTTL(validToken) > 0);
 assert.ok(getTokenTTL(expiredToken) < 0);
+
+console.log("All tests passed.");
