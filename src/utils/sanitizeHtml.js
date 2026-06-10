@@ -38,6 +38,8 @@ const PURIFY_CONFIG = {
   ALLOWED_ATTR,
   ALLOW_DATA_ATTR: false,
   ADD_ATTR: ["target"],
+  FORBID_ATTR: ["onerror", "onload"],
+  ALLOW_UNKNOWN_PROTOCOLS: false,
 };
 
 let purifyInstance;
@@ -72,6 +74,23 @@ const getDOMPurify = () => {
         node.setAttribute("target", "_blank");
         node.setAttribute("rel", "noopener noreferrer");
       }
+
+      // Hardening: validate href/src data: URIs and block svg/scripts
+      if (node.hasAttribute("src")) {
+        const src = node.getAttribute("src").trim();
+        if (/^\s*data:/i.test(src)) {
+          const isSafeDataUri = /^\s*data:\s*image\/(png|jpeg|jpg|gif|webp)\s*;base64,/i.test(src);
+          if (!isSafeDataUri) {
+            node.removeAttribute("src");
+          }
+        }
+      }
+      if (node.hasAttribute("href")) {
+        const href = node.getAttribute("href").trim();
+        if (/^\s*data:/i.test(href)) {
+          node.removeAttribute("href");
+        }
+      }
     });
     hookRegistered = true;
   }
@@ -88,10 +107,16 @@ const getDOMPurify = () => {
  * @param {string} dirty - Raw HTML from an untrusted source (API, user input)
  * @returns {string} Sanitised HTML safe for injection into the DOM
  */
+const stripAllHtml = (text) =>
+  text.replace(/<[^>]*>/g, '');
+
 export function sanitizeHtml(dirty) {
   if (!dirty || typeof dirty !== "string") return "";
   const purifier = getDOMPurify();
-  if (!purifier) return dirty;
+  if (!purifier) {
+    console.warn('[sanitizeHtml] DOMPurify unavailable - falling back to HTML tag stripping');
+    return stripAllHtml(dirty);
+  }
   return purifier.sanitize(dirty, PURIFY_CONFIG);
 }
 

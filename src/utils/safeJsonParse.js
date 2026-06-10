@@ -8,7 +8,7 @@ export const safeJsonParse = (
     }
 
     return JSON.parse(value);
-  } catch (error) {
+  } catch {
     return fallback;
   }
 };
