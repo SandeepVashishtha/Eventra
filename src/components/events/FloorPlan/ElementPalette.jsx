@@ -1,7 +1,7 @@
 import {
   Layout, Users, Grid, MapPin, Minimize2, RotateCcw,
-  Save, Image, Download, FileJson, Upload, AlertTriangle,
-  Plus, Minus, Move, Trash2, Sparkles
+   Image, Download, FileJson, Upload, AlertTriangle,
+   Sparkles
 } from "lucide-react";
 
 const SNIPPET_TIP = "Place round tables, select them, then assign registered VIP guests in the right panel. Keep track of table occupancy dynamically!";

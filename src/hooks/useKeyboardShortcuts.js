@@ -1,13 +1,36 @@
+/**
+ * @fileoverview useKeyboardShortcuts - Centralized keyboard shortcut manager hook
+ * @module hooks/useKeyboardShortcuts
+ */
 import { useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 /**
- * useKeyboardShortcuts Hook
- * 
- * Centralized manager for keyboard shortcuts.
- * 
- * @param {Object} shortcuts - Mapping of keys to handlers
- * @param {boolean} disabled - Global disable toggle
+ * A custom React hook that registers and manages global keyboard shortcuts,
+ * including single key, modifier combinations, and multi-key sequences.
+ *
+ * Shortcuts are ignored when the user is typing in inputs, textareas,
+ * select elements, or contentEditable elements (except Escape).
+ *
+ * Supports:
+ * - Modifier combinations: "ctrl+k", "alt+d", "shift+?"
+ * - Single keys: "escape", "/"
+ * - Key sequences: "gh" → navigate home, "ge" → navigate events
+ * - Built-in navigation via Alt shortcuts and sequence keys
+ *
+ * @param {Object} [shortcuts={}] - Map of key strings to handler functions.
+ *   Keys use format: "ctrl+s", "alt+d", "escape", "/".
+ *   Special callbacks: onSearchFocus, onOpenHelp, onCloseHelp,
+ *   onCloseModals, onClose, isOpen.
+ * @param {boolean} [disabled=false] - When true, all shortcuts are disabled.
+ * @returns {void}
+ *
+ * @example
+ * useKeyboardShortcuts({
+ *   "ctrl+k": () => openCommandPalette(),
+ *   "escape": () => closeModal(),
+ *   onOpenHelp: () => setHelpOpen(true),
+ * });
  */
 export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
   const navigate = useNavigate();

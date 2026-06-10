@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   Clock,
 } from "lucide-react";
+import { ENV } from "../../config/env";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
 import {
   AdminListCardSkeleton,
@@ -508,7 +509,7 @@ const AdminDashboard = () => {
                 <div className="ad-toolbar">
                   <div className="ad-search-wrap">
                     <Search size={14} className="ad-search-icon" />
-                    <input className="ad-search" placeholder="Search users…" value={searchUser} onChange={(e) => handleSearchUser(e.target.value)} />
+                    <input className="ad-search" placeholder="Search users…" value={searchUser} onChange={(e) => handleSearchUser(e.target.value)} aria-label="Search users" />
                   </div>
                   <div className="ad-toolbar-right flex items-center gap-3">
                     <div className="relative">
@@ -615,7 +616,7 @@ const AdminDashboard = () => {
                 <div className="ad-toolbar">
                   <div className="ad-search-wrap">
                     <Search size={14} className="ad-search-icon" />
-                    <input className="ad-search" placeholder="Search events…" value={searchEvent} onChange={(e) => handleSearchEvent(e.target.value)} />
+                    <input className="ad-search" placeholder="Search events…" value={searchEvent} onChange={(e) => handleSearchEvent(e.target.value)} aria-label="Search events" />
                   </div>
                   <span className="ad-count">{events.length} event{events.length !== 1 ? "s" : ""}</span>
                 </div>
@@ -736,7 +737,7 @@ const AdminDashboard = () => {
             <p className="ad-footer-copyright">© {new Date().getFullYear()} Eventra. Admin Control Panel.</p>
             <div className="ad-footer-links">
               <Link to="/helpcenter" className="ad-footer-link">Help Center</Link>
-              <a href={`https://github.com/${import.meta.env.VITE_GITHUB_REPO || import.meta.env.REACT_APP_GITHUB_REPO || 'sandeepvashishtha/Eventra'}`} target="_blank" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
+              <a href={`https://github.com/${ENV.GITHUB_REPO}`} target="_blank" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
               <Link to="/privacy" className="ad-footer-link">Privacy Policy</Link>
               <Link to="/terms" className="ad-footer-link">Terms of Service</Link>
             </div>

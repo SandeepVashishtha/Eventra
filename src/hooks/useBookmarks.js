@@ -77,18 +77,7 @@ const useBookmarks = (userId = "guest") => {
 
   // Seed state from cache (avoids a second localStorage read when the cache
   // is already warm from another mounted instance or a previous render).
-  // const [bookmarks, setBookmarks] = useState(() => getOrPopulateCache(storageKey));
-  const [bookmarks, setBookmarks] = useState(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (!stored) return [];
-//       return JSON.parse(stored) || [];
-      const parsed = safeJsonParse(stored, {});
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  });
+  const [bookmarks, setBookmarks] = useState(() => getOrPopulateCache(storageKey));
 
   const storageKeyRef = useRef(storageKey);
   storageKeyRef.current = storageKey;
@@ -123,12 +112,13 @@ const useBookmarks = (userId = "guest") => {
     const handleStorageEvent = (e) => {
       if (e.key !== storageKeyRef.current) return;
       const fresh = e.newValue ? (() => {
-        try {
-          const p = safeJsonParse(e.newValue, []);
-          return Array.isArray(p) ? p : [];
-        } catch {
-          return [];
-        }
+        try { 
+          const p = JSON.parse(e.newValue); 
+          if (!Array.isArray(p)) return [];
+          // Deep merge: combine existing local state with incoming storage state, keeping newest by savedAt
+          const merged = new Map([...bookmarks.map(b => [b.id, b]), ...p.map(b => [b.id, b])]);
+          return Array.from(merged.values()).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
+        } catch { return []; }
       })() : [];
       cache.set(storageKeyRef.current, fresh);
       setBookmarks(fresh);

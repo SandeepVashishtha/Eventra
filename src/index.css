@@ -626,18 +626,15 @@ aside {
   background-color: var(--bg-color);
 }
 
-.dark,
+/* Dark mode: apply text color via CSS variables so ThemeContext color overrides work */
 .dark body,
-.dark div,
-.dark p,
-.dark span,
 .dark h1,
 .dark h2,
 .dark h3,
 .dark h4,
 .dark h5,
 .dark h6 {
-  color: #f8fafc !important;
+  color: var(--text-color);
 }
 
 .dark .pastel-grid-bg {
