@@ -509,7 +509,7 @@ const AdminDashboard = () => {
                 <div className="ad-toolbar">
                   <div className="ad-search-wrap">
                     <Search size={14} className="ad-search-icon" />
-                    <input className="ad-search" placeholder="Search users…" value={searchUser} onChange={(e) => handleSearchUser(e.target.value)} />
+                    <input className="ad-search" placeholder="Search users…" value={searchUser} onChange={(e) => handleSearchUser(e.target.value)} aria-label="Search users" />
                   </div>
                   <div className="ad-toolbar-right flex items-center gap-3">
                     <div className="relative">
@@ -616,7 +616,7 @@ const AdminDashboard = () => {
                 <div className="ad-toolbar">
                   <div className="ad-search-wrap">
                     <Search size={14} className="ad-search-icon" />
-                    <input className="ad-search" placeholder="Search events…" value={searchEvent} onChange={(e) => handleSearchEvent(e.target.value)} />
+                    <input className="ad-search" placeholder="Search events…" value={searchEvent} onChange={(e) => handleSearchEvent(e.target.value)} aria-label="Search events" />
                   </div>
                   <span className="ad-count">{events.length} event{events.length !== 1 ? "s" : ""}</span>
                 </div>

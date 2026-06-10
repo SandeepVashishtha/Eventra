@@ -1,5 +1,24 @@
 {
   "compilerOptions": {
+<<<<<<< HEAD
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "types": []
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "build"
+=======
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
@@ -14,5 +33,6 @@
   "include": [
     "src/**/*",
     "api/**/*"
+>>>>>>> master
   ]
 }
