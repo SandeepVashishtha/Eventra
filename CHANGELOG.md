@@ -1,0 +1,1 @@
+- Fixed auth.js line 41: `isTokenExpired` now applies `CLOCK_SKEW_BUFFER` (30s) to prevent premature session expiry from client clock drift.
