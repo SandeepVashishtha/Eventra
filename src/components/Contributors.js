@@ -236,7 +236,7 @@ const ContributorsInner = () => {
   if (loading) {
     return (
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
             {[...Array(8)].map((_, i) => (
@@ -252,7 +252,7 @@ const ContributorsInner = () => {
   if (error)
     return (
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
             Contributors are unavailable
@@ -272,7 +272,7 @@ const ContributorsInner = () => {
   return (
     // UPDATED: Section background
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           {/* Added The Search Bar */}
           <div className="flex justify-center mb-8">

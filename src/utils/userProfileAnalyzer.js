@@ -1,8 +1,9 @@
+import { safeJsonParse } from "../utils/safeJsonParse";
 export const getUserProfile = () => {
   let saved = {};
   try {
     saved =
-      JSON.parse(
+      safeJsonParse(
         localStorage.getItem(
           "eventra_user_profile"
         )
