@@ -101,12 +101,7 @@ const useBookmarks = (userId = "guest") => {
   // Seed state from cache (avoids a second localStorage read when the cache
   // is already warm from another mounted instance or a previous render).
   // const [bookmarks, setBookmarks] = useState(() => getOrPopulateCache(storageKey));
-  const [bookmarks, setBookmarks] = useState(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (!stored) return [];
-//       return JSON.parse(stored) || [];
-      const parsed = safeJsonParse(stored, {});
+  const [bookmarks, setBookmarks] = useState(() => getOrPopulateCache(storageKey));
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
