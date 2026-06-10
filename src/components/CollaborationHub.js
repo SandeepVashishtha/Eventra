@@ -388,7 +388,7 @@ const CollaborationHub = () => {
                     <div className="skills-tags">
                       {/* 🔥 FIX: Protected map */}
                       {Array.isArray(opportunity.skills) && opportunity.skills.map((skill) => (
-                        <span key={skill} className="skill-tag">{skill}</span>
+                        <span key={`${skill}-${index}`} className="skill-tag">{skill}</span>
                       ))}
                     </div>
                   </div>
@@ -757,8 +757,8 @@ const CollaborationHub = () => {
                 <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Required Core Skills</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {/* 🔥 FIX: Protected map */}
-                  {Array.isArray(selectedOpportunity.skills) && selectedOpportunity.skills.map((skill) => (
-                    <span key={skill} className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 border border-indigo-500/10">
+                  {Array.isArray(selectedOpportunity.skills) && selectedOpportunity.skills.map((skill, index) => (
+                    <span key={`${skill}-${index}`} className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 border border-indigo-500/10">
                       {skill}
                     </span>
                   ))}
