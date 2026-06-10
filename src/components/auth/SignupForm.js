@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 import { authService } from "../../services/authService";
 
 import { ROLES } from "../../config/roles";
 import { useAuth } from "../../context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
-import { User, AtSign, Lock, Eye, EyeOff, Zap } from "lucide-react";
+import { User, AtSign, Lock, Eye, EyeOff, Zap, LoaderCircle } from "lucide-react";
 import { validate, validateEmailAvailability, validatePasswordStrength } from "../../validation";
+import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 
 const getResultMessage = (result, fallback) => (result?.isValid ? "" : result?.message || fallback);
 
@@ -26,30 +28,6 @@ export const normalizeSignupRoles = (data) => {
   }
 
   return [ROLES.ATTENDEE];
-};
-
-const parseSignupResponse = async (response) => {
-  if (typeof response?.text === "function") {
-    const responseText = await response.text();
-    let data = null;
-    try {
-      data = responseText ? JSON.parse(responseText) : null;
-    } catch {
-      data = null;
-    }
-
-    return {
-      ok: response.ok,
-      status: response.status,
-      data,
-    };
-  }
-
-  return {
-    ok: response?.status >= 200 && response?.status < 300,
-    status: response?.status,
-    data: response?.data || null,
-  };
 };
 
 const SignupForm = () => {
@@ -262,8 +240,19 @@ const SignupForm = () => {
       });
 
       if (!response.ok) {
-        const backendMessage = response.data?.message || response.data?.error || "Registration failed";
-        setSubmitError(`${backendMessage} (${response.status})`);
+        const status = response.status;
+        let message;
+        if (status === 409) {
+          message = "An account with this email already exists.";
+        } else if (status === 429) {
+          message = "Too many signup attempts. Please try again later.";
+        } else if (status === 400) {
+          message = response.data?.message || response.data?.error || "Please check your input and try again.";
+        } else {
+          message = response.data?.message || response.data?.error || AUTH_ERRORS.registrationFailed;
+        }
+        setSubmitError(message);
+        toast.error(message);
         setLoading(false);
         isSubmittingRef.current = false;
         return;
@@ -289,9 +278,15 @@ const SignupForm = () => {
       setAuthSession(sessionToken, sessionUser);
       setLoading(false);
       setSuccess("Account created successfully. Redirecting to dashboard...");
+      toast.success("Account created successfully!");
       setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
     } catch (err) {
-      setSubmitError(err?.message || "Network error. Please try again.");
+      const networkMessage = "Unable to connect to the server. Please try again.";
+      const message = err?.isNetworkError
+        ? networkMessage
+        : getPublicErrorMessage(err, AUTH_ERRORS.registrationFailed);
+      setSubmitError(message);
+      toast.error(message);
       setLoading(false);
       isSubmittingRef.current = false;
     }
@@ -452,9 +447,16 @@ const SignupForm = () => {
         <motion.button
           type="submit"
           disabled={loading}
-          className="w-full py-3 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-hover disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-hover disabled:opacity-50"
         >
-          {loading ? "Creating account..." : "Create Account"}
+          {loading ? (
+            <>
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+              Creating account...
+            </>
+          ) : (
+            "Create Account"
+          )}
         </motion.button>
       </form>
 
