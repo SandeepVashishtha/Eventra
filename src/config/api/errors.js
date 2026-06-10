@@ -18,3 +18,10 @@ export class RateLimitError extends ApiError {
     this.name = "RateLimitError";
   }
 }
+
+export class CSRFError extends ApiError {
+  constructor(message, { status = 403, data = null } = {}) {
+    super(message, { status, data });
+    this.name = "CSRFError";
+  }
+}
