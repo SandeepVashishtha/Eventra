@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Github, ExternalLink, GitBranch, MapPin, Building, Users, Medal, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
@@ -430,7 +430,7 @@ const Contributors = () => {
                         </span>
                       </div>
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                        <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
+                        <GitBranch className="text-gray-900 dark:text-indigo-400 mb-1 w-4 h-4" />
                         <span className="font-semibold">{c.contributions}</span>
                         <span className="text-xs text-gray-600 dark:text-gray-400">
                           Contribs

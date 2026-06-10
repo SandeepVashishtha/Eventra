@@ -74,21 +74,49 @@ export async function isFileCached(fileId) {
       const store = transaction.objectStore(STORE_NAME);
       const index = store.index("fileId");
       
-      const request = index.openCursor(IDBKeyRange.only(fileId));
-      let chunksCount = 0;
-      let totalChunks = 0;
+      const countRequest = index.count(IDBKeyRange.only(fileId));
+      const getRequest = index.get(IDBKeyRange.only(fileId));
       
-      attachIdbReadHandlers(transaction, request, resolve, false, "isFileCached");
+      let count = 0;
+      let firstChunk = null;
+      let completedCount = 0;
 
-      request.onsuccess = (e) => {
-        const cursor = e.target.result;
-        if (cursor) {
-          chunksCount++;
-          totalChunks = cursor.value.totalChunks;
-          cursor.continue();
-        } else {
-          resolve(chunksCount > 0 && chunksCount === totalChunks);
+      const checkCompletion = () => {
+        completedCount++;
+        if (completedCount === 2) {
+          if (firstChunk && count > 0 && count === firstChunk.totalChunks) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
         }
+      };
+
+      transaction.onerror = (err) => {
+        logger.error("isFileCached transaction error:", err);
+        resolve(false);
+      };
+      transaction.onabort = (err) => {
+        logger.error("isFileCached transaction aborted:", err);
+        resolve(false);
+      };
+
+      countRequest.onsuccess = (e) => {
+        count = e.target.result;
+        checkCompletion();
+      };
+      countRequest.onerror = (err) => {
+        logger.error("isFileCached count request error:", err);
+        resolve(false);
+      };
+
+      getRequest.onsuccess = (e) => {
+        firstChunk = e.target.result;
+        checkCompletion();
+      };
+      getRequest.onerror = (err) => {
+        logger.error("isFileCached get request error:", err);
+        resolve(false);
       };
     });
   } catch (error) {
@@ -106,20 +134,29 @@ export async function getCachedFile(fileId) {
       const store = transaction.objectStore(STORE_NAME);
       const index = store.index("fileId");
 
-      const request = index.openCursor(IDBKeyRange.only(fileId));
-      const chunks = [];
+      const request = index.getAll(IDBKeyRange.only(fileId));
       
-      attachIdbReadHandlers(transaction, request, resolve, null, "getCachedFile");
+      transaction.onerror = (err) => {
+        logger.error("getCachedFile transaction error:", err);
+        resolve(null);
+      };
+      transaction.onabort = (err) => {
+        logger.error("getCachedFile transaction aborted:", err);
+        resolve(null);
+      };
+      request.onerror = (err) => {
+        logger.error("getCachedFile request error:", err);
+        resolve(null);
+      };
 
       request.onsuccess = (e) => {
-        const cursor = e.target.result;
-        if (cursor) {
-          chunks.push(cursor.value);
-          cursor.continue();
-        } else {
+        const chunks = e.target.result || [];
+        if (chunks.length > 0) {
           // Sort chunks by index
           chunks.sort((a, b) => a.chunkIndex - b.chunkIndex);
-          resolve(chunks.length > 0 ? chunks : null);
+          resolve(chunks);
+        } else {
+          resolve(null);
         }
       };
     });

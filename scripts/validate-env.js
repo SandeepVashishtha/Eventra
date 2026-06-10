@@ -100,6 +100,15 @@ if (process.env.REACT_APP_GROQ_API_KEY) {
   hasErrors = true;
 }
 
+const buildEnv = process.env.NODE_ENV;
+const isBuildLocal = buildEnv === "development" || buildEnv === "test" || !buildEnv;
+if (!isBuildLocal && (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim())) {
+  const msg = "[CRITICAL ERROR] JWT_SECRET environment variable is missing. A signing secret is required for production/staging builds.";
+  errors.push(msg);
+  hasErrors = true;
+  console.error(`  ERROR: ${msg}`);
+}
+
 console.log("\nOptional variables:");
 if (OPTIONAL_VARS.length === 0) {
   console.log("  (none configured)");
@@ -173,7 +182,7 @@ if (errors.length > 0) {
 }
 
 const criticalErrors = errors.filter(
-  (e) => e.includes("[SECURITY LEAK]") || e.includes("[FORMAT ERROR]")
+  (e) => e.includes("[SECURITY LEAK]") || e.includes("[FORMAT ERROR]") || e.includes("[CRITICAL ERROR]")
 );
 if (criticalErrors.length > 0 || hasErrors) {
   console.error(

@@ -461,14 +461,13 @@ export const useEventForm = () => {
         [name]: type === "checkbox" ? checked : value,
       }));
     }
-    if (errors[name]) {
-      setErrors((prev) => {
-        const newErrs = { ...prev };
-        delete newErrs[name];
-        return newErrs;
-      });
-    }
-  }, [errors]);
+    setErrors((prev) => {
+      if (!prev[name]) return prev;
+      const newErrs = { ...prev };
+      delete newErrs[name];
+      return newErrs;
+    });
+  }, []);
 
   const handleNestedChange = useCallback((category, field, value) => {
     setFormData((prev) => ({
@@ -478,25 +477,23 @@ export const useEventForm = () => {
         [field]: value,
       },
     }));
-    if (errors[category]) {
-      setErrors((prev) => {
-        const newErrs = { ...prev };
-        delete newErrs[category];
-        return newErrs;
-      });
-    }
-  }, [errors]);
+    setErrors((prev) => {
+      if (!prev[category]) return prev;
+      const newErrs = { ...prev };
+      delete newErrs[category];
+      return newErrs;
+    });
+  }, []);
 
   const addTag = useCallback(() => {
     const tag = newTag.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (tag && !formData.tags.includes(tag)) {
-      setFormData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, tag],
-      }));
-      setNewTag("");
-    }
-  }, [newTag, formData.tags]);
+    if (!tag) return;
+    setFormData((prev) => {
+      if (prev.tags.includes(tag)) return prev;
+      return { ...prev, tags: [...prev.tags, tag] };
+    });
+    setNewTag("");
+  }, [newTag]);
 
   const removeTag = useCallback((tagToRemove) => {
     setFormData((prev) => ({

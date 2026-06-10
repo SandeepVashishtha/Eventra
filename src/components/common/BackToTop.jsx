@@ -40,19 +40,11 @@ const BackToTop = ({
     if (typeof document !== "undefined" && avoidChatbot) {
       observer.observe(document.body, { childList: true });
     }
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
-
-  useEffect(() => {
     return () => {
-      try {
-        // disconnect observer if present
-        // noop — observer variable not in scope here; rely on GC for simple page lifecycles
-      } catch {
-        // ignore
-      }
+      window.removeEventListener("scroll", handleScroll);
+      observer.disconnect();
     };
-  }, []);
+  }, [handleScroll]);
 
   const scrollToTop = () => {
     if (window.lenis) {

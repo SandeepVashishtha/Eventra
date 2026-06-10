@@ -1407,6 +1407,109 @@ No request body required.
 
 ---
 
+# Feedback APIs
+
+## Submit Feedback
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/feedback` |
+
+This endpoint allows an authenticated user to submit feedback for an event they are registered for. The backend validates the event, authenticated user, and event registration before saving feedback. Duplicate feedback from the same user for the same event is rejected.
+
+### Authentication
+
+Requires a valid Bearer JWT in the `Authorization` header. Any authenticated user can submit feedback, but the user must be registered for the event.
+
+### Request Body
+
+```json
+{
+  "eventId": 1,
+  "rating": 5,
+  "comment": "Great event!"
+}
+```
+
+### Request Validation
+
+- `eventId` is required
+- `rating` is required and must be between `1` and `5`
+- `comment` is optional and can be up to `1000` characters
+
+### Successful Response (201)
+
+```json
+{
+  "id": 1,
+  "eventId": 1,
+  "userId": 1,
+  "rating": 5,
+  "comment": "Great event!",
+  "submittedAt": "2026-06-07T18:06:22.334156"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Invalid request body or validation failure |
+| `401 Unauthorized` | If the request is unauthenticated |
+| `403 Forbidden` | If the authenticated user is not registered for the event |
+| `404 Not Found` | If the event or authenticated user does not exist |
+| `409 Conflict` | If the user has already submitted feedback for the event |
+
+
+---
+
+# Notification APIs
+
+## Get Notifications
+
+| Method | Endpoint             |
+| ------ | -------------------- |
+| GET    | `/api/notifications` |
+
+Returns the authenticated user’s notifications sorted by newest first.
+
+### Authentication
+
+Requires Bearer JWT authentication.
+
+### Success Response
+
+Status: `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Welcome Notification",
+    "message": "This is a manual test notification.",
+    "read": false,
+    "createdAt": "2026-06-09T00:38:52.335113"
+  }
+]
+```
+
+### Empty Response
+
+If the authenticated user has no notifications:
+
+```json
+[]
+```
+
+### Notes
+
+* Only notifications belonging to the authenticated user are returned.
+* The response includes read/unread status using the `read` field.
+* Notifications are returned in newest-first order.
+* Pagination is not currently included.
+
+---
+
 # Analytics APIs
 
 ## Get Admin Analytics
