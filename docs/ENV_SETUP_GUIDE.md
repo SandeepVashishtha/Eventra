@@ -10,13 +10,13 @@ This guide explains the active frontend environment variables for Eventra.
 cp .env.example .env
 ```
 
-2. Set the required API URL:
+1. Set the required API URL:
 
 ```env
 REACT_APP_API_URL=http://localhost:8080/api
 ```
 
-3. Start the app:
+1. Start the app:
 
 ```bash
 npm run dev

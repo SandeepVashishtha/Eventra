@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Download } from "lucide-react";
+import { Download, Inbox } from "lucide-react";
 import EmptyState from "../components/common/EmptyState";
 import useBookmarks from "../hooks/useBookmarks";
 import { exportToCSV } from "../utils/exportUtils";
+import { toast } from "react-toastify";
 
 const SavedEventsPage = () => {
   const navigate = useNavigate();
@@ -11,8 +12,11 @@ const SavedEventsPage = () => {
   const [sortBy, setSortBy] = useState("savedAt");
   const [exporting, setExporting] = useState(false);
 
-  const sorted = [...bookmarks].sort((a, b) =>
-    sortBy === "savedAt" ? b.savedAt - a.savedAt : new Date(a.date) - new Date(b.date)
+  const sorted = useMemo(
+    () => [...bookmarks].sort((a, b) =>
+      sortBy === "savedAt" ? b.savedAt - a.savedAt : new Date(a.date) - new Date(b.date)
+    ),
+    [bookmarks, sortBy]
   );
 
   const handleExportCSV = () => {
@@ -20,6 +24,8 @@ const SavedEventsPage = () => {
     setExporting(true);
     try {
       exportToCSV(sorted, `eventra-saved-events-${new Date().toISOString().slice(0, 10)}`);
+    } catch {
+      toast.error("Failed to export saved events. Please try again.");
     } finally {
       // Brief visual feedback before resetting
       setTimeout(() => setExporting(false), 800);
@@ -31,10 +37,11 @@ const SavedEventsPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] px-4 py-12 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100 sm:px-6 lg:px-8">
         <section className="mx-auto max-w-4xl">
           <EmptyState
-            type="bookmarks"
             title="No saved events yet!"
-            message="Bookmark events you're interested in to find them here later."
-            onBrowseAll={() => navigate("/events")}
+            description="Bookmark events you're interested in to find them here later."
+            icon={Inbox}
+            actionLabel="Browse Events"
+            actionPath="/events"
           />
         </section>
       </div>
@@ -86,7 +93,7 @@ const SavedEventsPage = () => {
               key={event.id}
               className="rounded-3xl border border-gray-100 bg-white p-5 shadow-[0_10px_25px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl dark:border-gray-800 dark:bg-gray-900 dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] dark:hover:border-indigo-700"
             >
-              <h3 className="mb-2 text-lg font-bold tracking-tight text-gray-950 dark:text-slate-100">
+              <h3 title={event.title || event.name} className="mb-2 text-lg font-bold tracking-tight text-gray-950 dark:text-slate-100 line-clamp-2 break-words min-w-0">
                 {event.title || event.name}
               </h3>
               <p className="text-sm text-gray-600 dark:text-slate-400">{event.date}</p>

@@ -1,21 +1,4 @@
-/**
- * Timezone-aware Date Formatting Utility
- *
- * Uses Intl.DateTimeFormat to format dates in the user's local timezone.
- * Falls back gracefully if the Intl API is not available.
- */
-
-/**
- * Gets the user's timezone from the browser.
- * @returns {string} IANA timezone string (e.g., "America/New_York")
- */
-export function getUserTimezone() {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return "UTC";
-  }
-}
+import { getUserTimezone } from './timezoneUtils';
 
 /**
  * Formats a date string for display in the user's local timezone.
@@ -86,7 +69,7 @@ export function formatEventDate(date, options = {}) {
     }
 
     return new Intl.DateTimeFormat(locale, formatOptions).format(d);
-  } catch (err) {
+  } catch {
     // Fallback for environments without Intl support
     const d = date instanceof Date ? date : new Date(date);
     return d.toLocaleString();
@@ -128,6 +111,7 @@ export function getRelativeTime(date) {
     if (Math.abs(diffMin) >= 1) return rtf.format(diffMin, "minute");
     return rtf.format(diffSec, "second");
   } catch {
-    return "";
+    const d = date instanceof Date ? date : new Date(date);
+    return isNaN(d.getTime()) ? "" : d.toLocaleString();
   }
 }
