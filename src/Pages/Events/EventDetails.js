@@ -82,7 +82,7 @@ const EventDetails = () => {
         setFetchLoading(false);
       }
     }
-  }, [eventId]);
+  }, [eventId, setEvent, setFetchLoading, setFetchError]);
 
   useEffect(() => {
     loadEvent();
