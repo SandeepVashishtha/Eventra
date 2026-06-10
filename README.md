@@ -165,16 +165,20 @@ The production-optimized build will be served via Nginx at `http://localhost:808
 
 ## Environment Variables
 
-Use `.env.example` as the source of truth.
+Use `.env.example` as the source of truth. See [docs/ENV_SETUP_GUIDE.md](docs/ENV_SETUP_GUIDE.md) for detailed configuration information.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `REACT_APP_API_URL` | Yes | Backend API base URL used by client requests and SSE streams |
+| `BACKEND_URL` | No | Backend origin (highest priority, overrides others) |
+| `VITE_API_URL` | No | Backend API base URL (Vite - preferred) |
+| `REACT_APP_API_URL` | No | Backend API base URL (CRA compatibility) |
 | `REACT_APP_GITHUB_REPO` | No | Public repo identifier used in metadata |
 | `REACT_APP_PUBLIC_URL` | No | Canonical public app URL |
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public web-push key |
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
 | `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN, used only in production |
+
+**Backend Configuration**: All backend endpoint configuration is centralized in `src/config/backendConfig.js`. The system resolves backend URLs in priority order: `BACKEND_URL` → `VITE_API_URL` → `REACT_APP_API_URL`. In development, defaults to `http://localhost:8080`. In production, no automatic fallback - configuration must be explicitly set to avoid configuration drift.
 
 Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variables because they are exposed to the client bundle.
 
