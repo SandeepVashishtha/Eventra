@@ -1,9 +1,17 @@
-import { motion,useAnimation , AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
+import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  motion,
+  useAnimation,
+  AnimatePresence,
+  MotionConfig,
+  useScroll,
+  useTransform
+} from "framer-motion";
+
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
-
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
