@@ -28,26 +28,6 @@ jobs:
             gh pr checkout $num
             if git merge origin/master --no-commit --no-ff 2>&1 | grep -q "CONFLICT"; then
               for file in $(git diff --name-only --diff-filter=U); do
-                # Extract both sides of the conflict and keep the HEAD version
-                                              python3 -c "
-                import re
-
-                path = '$file'
-
-                with open(path) as f:
-                    content = f.read()
-
-                resolved = re.sub(
-                    r'<<<<<<< .*?\n(.*?)=======\n.*?>>>>>>> .*?\n',
-                    r'\1',
-                    content,
-                    flags=re.DOTALL
-                )
-
-                if resolved != content:
-                    with open(path, 'w') as f:
-                        f.write(resolved)
-                    print(f'Resolved: {path}')
-                else:
-                    print(f'No markers found in: {path}')
-                "
+                # Auto resolve by keeping current branch version
+                git checkout --ours "$file"
+                git add "$file"
