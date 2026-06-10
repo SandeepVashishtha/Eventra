@@ -9,6 +9,7 @@
  */
 
 import { enforceOwnership } from "../lib/authorizeOwnership.js";
+import { withAuth } from "../lib/authMiddleware.js";
 
 /**
  * Registration handler.
@@ -21,7 +22,7 @@ import { enforceOwnership } from "../lib/authorizeOwnership.js";
  * @param {Function} [deps.deleteRegistration] - async (id) => void
  * @param {Function} [deps.getRegistrationId] - (req) => string (id extraction)
  */
-export default async function registrationHandler(req, res, deps = {}) {
+const registrationHandler = async (req, res, deps = {}) => {
   const {
     getRegistrationById,
     updateRegistration,
@@ -108,4 +109,6 @@ export default async function registrationHandler(req, res, deps = {}) {
   } catch {
     res.status(500).json({ error: "Internal server error" });
   }
-}
+};
+
+export default withAuth(registrationHandler);

@@ -18,6 +18,7 @@
 import { getClientIp } from "../lib/getClientIp.js";
 import { loginRateLimiter, enforceRateLimit } from "../lib/rateLimiter.js";
 import { JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
+import { csrfProtection } from "../lib/csrf.js";
 
 /**
  * Validates the login request body.
@@ -57,6 +58,11 @@ export default async function login(req, res, deps = {}) {
   // 1. Method guard
   if (req.method && req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  // CSRF validation
+  if (!csrfProtection(req, res)) {
     return;
   }
 

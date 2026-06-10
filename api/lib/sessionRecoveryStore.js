@@ -8,20 +8,7 @@ export const getStore = () => {
 };
 
 export const getAuthenticatedUserId = (req) => {
-  const verifiedUser =
-    req.user?.id ||
-    req.user?.userId ||
-    req.auth?.userId ||
-    req.session?.user?.id ||
-    null;
-
-  if (verifiedUser) return String(verifiedUser);
-
-  if (process.env.NODE_ENV !== "production") {
-    return String(req.headers["x-user-id"] || req.headers["x-eventra-user-id"] || "");
-  }
-
-  return "";
+  return req.user?.id ? String(req.user.id) : null;
 };
 
 export const sendJson = (res, status, payload) => {
