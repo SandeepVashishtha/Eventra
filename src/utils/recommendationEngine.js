@@ -61,31 +61,34 @@ const getPopularityScore = (event) => {
   return Math.min((attendees / capacity) * 10, 10);
 };
 
-const _tagCache = new Map();
-const _cacheOrder = [];
 const MAX_CACHE_SIZE = 100;
 
-const _getCachedTags = (event) => {
-  const id = getEventId(event);
-  if (!id) return [];
-  if (_tagCache.has(id)) {
-    const tags = _tagCache.get(id);
-    const idx = _cacheOrder.indexOf(id);
-    if (idx > -1) _cacheOrder.splice(idx, 1);
-    _cacheOrder.push(id);
+const createTagResolver = () => {
+  const tagCache = new Map();
+  const cacheOrder = [];
+
+  return (event) => {
+    const id = getEventId(event);
+    if (!id) return [];
+    if (tagCache.has(id)) {
+      const tags = tagCache.get(id);
+      const idx = cacheOrder.indexOf(id);
+      if (idx > -1) cacheOrder.splice(idx, 1);
+      cacheOrder.push(id);
+      return tags;
+    }
+    if (cacheOrder.length >= MAX_CACHE_SIZE) {
+      const oldest = cacheOrder.shift();
+      tagCache.delete(oldest);
+    }
+    const tags = getEventTags(event);
+    tagCache.set(id, tags);
+    cacheOrder.push(id);
     return tags;
-  }
-  if (_cacheOrder.length >= MAX_CACHE_SIZE) {
-    const oldest = _cacheOrder.shift();
-    _tagCache.delete(oldest);
-  }
-  const tags = getEventTags(event);
-  _tagCache.set(id, tags);
-  _cacheOrder.push(id);
-  return tags;
+  };
 };
 
-const getSimilarityScore = (candidate, interactedEvents) => {
+const getSimilarityScore = (candidate, interactedEvents, resolveTags = createTagResolver()) => {
   if (!interactedEvents.length) return 0;
 
   const candidateCategory = getEventCategory(candidate);
@@ -104,7 +107,7 @@ const getSimilarityScore = (candidate, interactedEvents) => {
       score += 5;
     }
 
-    const overlap = _getCachedTags(event).filter((tag) => candidateTags.has(tag));
+    const overlap = resolveTags(event).filter((tag) => candidateTags.has(tag));
     score += Math.min(overlap.length * 3, 12);
 
     return Math.max(bestScore, score);
@@ -176,6 +179,7 @@ export const calculateRecommendationScore = (
   event,
   userProfile = {},
   interactions = {},
+  resolveTags = createTagResolver(),
 ) => {
   if (!event || typeof event !== "object") {
     return { score: 0, reasons: [], breakdown: [] };
@@ -251,7 +255,7 @@ export const calculateRecommendationScore = (
 
   addScore(
     "Collaborative item similarity",
-    getSimilarityScore(event, interactionProfile.interactedEvents || []),
+    getSimilarityScore(event, interactionProfile.interactedEvents || [], resolveTags),
     "Similar to events in your activity history",
   );
 
@@ -300,11 +304,17 @@ export const buildPersonalizedRecommendations = ({
     viewedEvents,
     location,
   });
+  const resolveTags = createTagResolver();
 
   return events
     .reduce((acc, event) => {
       if (includeInteracted || !interactionProfile.registeredIds.has(getEventId(event))) {
-        const result = calculateRecommendationScore(event, userProfile, interactionProfile);
+        const result = calculateRecommendationScore(
+          event,
+          userProfile,
+          interactionProfile,
+          resolveTags,
+        );
         const scored = {
           ...event,
           calculatedMatch: result.score,
