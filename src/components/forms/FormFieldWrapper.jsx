@@ -146,8 +146,7 @@ const FormFieldWrapper = ({
           (validationState === "success" || validationState === "valid") && "border-green-500 focus:border-green-500 focus:ring-green-500/20 dark:border-green-400",
           loading && "border-blue-500 dark:border-blue-400",
           prefix && "pl-10",
-          (showStatusIcon || suffix) && "pr-10",
-          showStatusIcon && suffix && "pr-16",
+          (showStatusIcon || suffix) && "pr-20",
           child.props.className,
         ),
       })
@@ -183,21 +182,19 @@ const FormFieldWrapper = ({
           </span>
         )}
         {enhancedChild}
-        {suffix && (
-          <span className="absolute inset-y-0 right-3 flex items-center">
-            {suffix}
-          </span>
-        )}
-        {showStatusIcon && (
-          <span
-            className={joinClasses(
-              "pointer-events-none absolute inset-y-0 flex items-center",
-              suffix ? "right-10" : "right-3",
-            )}
-          >
-            <ValidationStatusIcon state={validationState} />
-          </span>
-        )}
+        <div className="absolute inset-y-0 right-3 flex items-center gap-2">
+  {showStatusIcon && (
+    <span className="pointer-events-none">
+      <ValidationStatusIcon state={validationState} />
+    </span>
+  )}
+
+  {suffix && (
+    <span className="flex items-center">
+      {suffix}
+    </span>
+  )}
+</div>
       </div>
 
       {hasMessage(helperText) && (
