@@ -169,16 +169,49 @@ const forbiddenResponse = (url) =>
       },
     },
   );
-const BLOCKED_COUNTRIES = ['CU', 'IR', 'KP', 'SY', 'RU'];
+
+// ---------------------------------------------------------------------------
+// Geographic access restrictions — configurable via BLOCKED_COUNTRIES env var
+// ---------------------------------------------------------------------------
+
+const getBlockedCountries = () => {
+  return new Set(
+    (process.env.BLOCKED_COUNTRIES || "")
+      .split(",")
+      .map((country) => country.trim().toUpperCase())
+      .filter(Boolean)
+  );
+};
+
+const isCountryBlocked = (country) => {
+  const blockedCountries = getBlockedCountries();
+  return blockedCountries.has(country?.toUpperCase());
+};
+
+const createGeoBlockedResponse = () =>
+  new Response(
+    JSON.stringify({
+      error: "Unavailable For Legal Reasons",
+      code: "COUNTRY_BLOCKED"
+    }),
+    {
+      status: 451,
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }
+  );
 
 export default async function middleware(request) {
-  const country = request.geo?.country || 'US';
-  if (BLOCKED_COUNTRIES.includes(country)) {
-    return new Response(JSON.stringify({ error: "Unavailable For Legal Reasons" }), {
-      status: 451,
-      headers: { "Content-Type": "application/json" }
-    });
+  const country = request.geo?.country;
+  
+  if (isCountryBlocked(country)) {
+    console.warn(
+      `[Geo Restriction] Blocked request from country: ${country}`
+    );
+    return createGeoBlockedResponse();
   }
+  
   const url = new URL(request.url);
 
   if (request.method === "OPTIONS") return;
