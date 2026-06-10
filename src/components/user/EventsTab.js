@@ -360,11 +360,14 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     return types.map((type) => type.charAt(0).toUpperCase() + type.slice(1));
   }, [registeredEvents, hostedEvents]);
 
+const normalizedSearch = debouncedTerm.trim().toLowerCase();
+
+
   const filteredEvents = useMemo(() => {
     const pool = [...registeredEvents, ...hostedEvents];
     const result = pool.filter((event) => {
       const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
-      const matchSearch = !debouncedTerm || searchTarget.includes(debouncedTerm.toLowerCase());
+      const matchSearch = !debouncedTerm || searchTarget.includes(normalizedSearch);
       const status = getEventStatus(event);
       const matchStatus = filterStatus === "All" || status === filterStatus;
       const typeLabel = event?.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : "";
@@ -468,9 +471,13 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             <Search size={14} className="ud-search-icon" />
             <input
               className="ud-search"
+              autoComplete="off"
               placeholder="Search your events…"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+           onChange={(e) => {
+  const value = e.target.value;
+  setSearchQuery(value);
+}}
             />
             {searchQuery && (
               <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query">
