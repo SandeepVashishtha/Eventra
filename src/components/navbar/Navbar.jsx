@@ -1,6 +1,7 @@
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
@@ -20,6 +21,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [scrolled, setScrolled] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
   const navRef = useRef(null);
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
 
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
@@ -132,8 +134,9 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </div>
             <ThemeToggleButton 
               isDarkMode={isDarkMode}
-  toggleTheme={toggleTheme}
-  isMobile={false}
+              toggleTheme={toggleTheme}
+              isMobile={false}
+              setIsCustomizerOpen={setIsCustomizerOpen}
             />
 
             <div className="flex items-center gap-1 lg:hidden">

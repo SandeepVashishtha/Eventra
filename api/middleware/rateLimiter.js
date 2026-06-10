@@ -74,6 +74,7 @@ export const createRateLimiter = ({
         return handler(req, res);
       }
 
+      evictStale();
       const now = Date.now();
       // Run cleanup pass on every request (throttled by lastCleanupAt)
       evictStale();

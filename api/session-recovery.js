@@ -6,12 +6,10 @@ import {
   parseBody,
   sendJson,
 } from "./lib/sessionRecoveryStore.js";
+import { withAuth } from "./lib/authMiddleware.js";
 
-export default async function sessionRecovery(req, res) {
+const sessionRecovery = async (req, res) => {
   const userId = getAuthenticatedUserId(req);
-  if (!userId) {
-    return sendJson(res, 401, { message: "Authentication required." });
-  }
 
   const store = getStore();
 
@@ -37,4 +35,6 @@ export default async function sessionRecovery(req, res) {
 
   res.setHeader("Allow", "GET, POST");
   return sendJson(res, 405, { message: "Method not allowed." });
-}
+};
+
+export default withAuth(sessionRecovery);

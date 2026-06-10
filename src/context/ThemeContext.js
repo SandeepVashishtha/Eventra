@@ -112,7 +112,7 @@ export const ThemeProvider = ({ children }) => {
       safeStorage.setItem(THEME_STORAGE_KEY, theme);
     }
 
-    // Apply active skin theme colors
+    // Apply active skin theme colors — pick the variant that matches the resolved mode
     const activeTheme = THEMES[activeThemeId] || THEMES.default;
 
 const themeColors =
@@ -125,6 +125,15 @@ if (themeColors) {
     root.style.setProperty(variable, val);
   });
 }
+    const themeColors =
+      resolvedTheme === "dark"
+        ? (activeTheme.colors.dark || activeTheme.colors.light)
+        : (activeTheme.colors.light || activeTheme.colors.dark);
+    if (themeColors) {
+      Object.entries(themeColors).forEach(([variable, val]) => {
+        root.style.setProperty(variable, val);
+      });
+    }
 
     // Apply HSL customization overrides if active
     if (customHsl && customHsl.active) {

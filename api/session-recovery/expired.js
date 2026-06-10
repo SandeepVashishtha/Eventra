@@ -4,12 +4,10 @@ import {
   isExpired,
   sendJson,
 } from "../lib/sessionRecoveryStore.js";
+import { withAuth } from "../lib/authMiddleware.js";
 
-export default async function cleanupExpiredRecovery(req, res) {
+const cleanupExpiredRecovery = async (req, res) => {
   const userId = getAuthenticatedUserId(req);
-  if (!userId) {
-    return sendJson(res, 401, { message: "Authentication required." });
-  }
 
   if (req.method !== "DELETE") {
     res.setHeader("Allow", "DELETE");
@@ -27,4 +25,6 @@ export default async function cleanupExpiredRecovery(req, res) {
   }
 
   return sendJson(res, 200, { deleted });
-}
+};
+
+export default withAuth(cleanupExpiredRecovery);

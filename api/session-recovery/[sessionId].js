@@ -7,12 +7,10 @@ import {
   parseBody,
   sendJson,
 } from "../lib/sessionRecoveryStore.js";
+import { withAuth } from "../lib/authMiddleware.js";
 
-export default async function sessionRecoveryById(req, res) {
+const sessionRecoveryById = async (req, res) => {
   const userId = getAuthenticatedUserId(req);
-  if (!userId) {
-    return sendJson(res, 401, { message: "Authentication required." });
-  }
 
   const { sessionId } = req.query || {};
   const id = Array.isArray(sessionId) ? sessionId[0] : sessionId;
@@ -61,4 +59,6 @@ export default async function sessionRecoveryById(req, res) {
 
   res.setHeader("Allow", "GET, PUT, PATCH, DELETE");
   return sendJson(res, 405, { message: "Method not allowed." });
-}
+};
+
+export default withAuth(sessionRecoveryById);
