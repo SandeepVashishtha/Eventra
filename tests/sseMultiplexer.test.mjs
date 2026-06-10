@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 
+process.env.REACT_APP_API_URL = "https://api.example.test";
+
 // Mock environment and globals before importing sseMultiplexer
 
 const store = {};
@@ -88,8 +90,8 @@ class MockEventSource {
 }
 globalThis.EventSource = MockEventSource;
 
-// Now import the multiplexer
-import { sseMultiplexer } from "../src/utils/sseMultiplexer.js";
+// Now import the multiplexer dynamically to ensure environment variable is set first
+const { sseMultiplexer } = await import("../src/utils/sseMultiplexer.js");
 
 // Force mock sseMultiplexer state to be the leader for initial tests
 sseMultiplexer.isLeader = true;

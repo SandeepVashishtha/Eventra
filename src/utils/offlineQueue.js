@@ -372,16 +372,29 @@ export const pushToQueue = async (item, userId = null) => {
   const queue = getQueue();
   if (queue.length >= offlineSyncConfig.maxQueueSize) {
     logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
-    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
-      window.dispatchEvent(
-        new CustomEvent("eventra-offline-queue-full", {
-          detail: { eventId: item.eventId, limit: offlineSyncConfig.maxQueueSize },
-        })
-      );
-    }
     return false;
   }
-  queue.push(actionItem);
+  const isDuplicate = queue.some((existing) => {
+  if (actionItem.idempotencyKey && existing.idempotencyKey) {
+    return existing.idempotencyKey === actionItem.idempotencyKey;
+  }
+
+  return (
+    existing.eventId === actionItem.eventId &&
+    existing.userId === actionItem.userId &&
+    existing.actionType === actionItem.actionType
+  );
+});
+
+if (isDuplicate) {
+  logger.warn(
+    `[OfflineQueue] Duplicate action detected for event ${actionItem.eventId} ` +
+      `(user ${actionItem.userId}, type ${actionItem.actionType}). Skipping enqueue.`
+  );
+  return true;
+}
+
+queue.push(actionItem);
 
   let localStorageSuccess = false;
   try {

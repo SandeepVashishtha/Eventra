@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { fetchGitHubRepo, getGitHubRepoDetails } from "../../utils/githubApiClient.js";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { useAuth } from "../../context/AuthContext.js";
+import { toast } from "react-toastify";
+import { projectService } from "../../services/projectService.js";
 
 // Cache Keys & Constants
 const CACHE_KEY = "eventra_github_metrics_cache";
@@ -146,6 +149,7 @@ const ConcentricTechRings = ({ techStack }) => {
 
 const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   useReducedMotion();
+  const { token, isAuthenticated } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -164,24 +168,41 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     });
   };
 
-  const handleIncrementStar = (e) => {
+  const handleIncrementStar = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const repoDetails = getGitHubRepoDetails(project.githubUrl);
-    const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
-    
-    setMetrics(prev => {
-      const updated = { ...prev, stars: (prev?.stars || 0) + 1 };
-      try {
-        let cache = {};
-        const saved = localStorage.getItem(CACHE_KEY);
-        cache = saved ? safeJsonParse(saved, {}) : {};
-        cache[key] = { data: updated, timestamp: Date.now() };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-      } catch {}
-      return updated;
-    });
+    if (!isAuthenticated()) {
+      toast.error("You must be logged in to upvote a project.");
+      return;
+    }
+
+    try {
+      await projectService.upvoteProject(project.id, {
+        headers: {
+          Authorization: token
+        }
+      });
+      
+      const repoDetails = getGitHubRepoDetails(project.githubUrl);
+      const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
+      
+      setMetrics(prev => {
+        const updated = { ...prev, stars: (prev?.stars || 0) + 1 };
+        try {
+          let cache = {};
+          const saved = localStorage.getItem(CACHE_KEY);
+          cache = saved ? safeJsonParse(saved, {}) : {};
+          cache[key] = { data: updated, timestamp: Date.now() };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        } catch {}
+        return updated;
+      });
+      toast.success("Project upvoted successfully!");
+    } catch (err) {
+      const message = err?.data?.message || err?.message || "Failed to upvote project.";
+      toast.error(message);
+    }
   };
 
   const handleIncrementFork = (e) => {
@@ -211,7 +232,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     if (!repoDetails) {
       // Fallback directly to mock data if there is no valid repo
       setMetrics({
-        stars: project.stars || 0,
+        stars: project.stars || project.upvotes || 0,
         forks: project.forks || 0,
         issues: project.openIssues || 0,
         pullRequests: project.pullRequests || 0,
@@ -259,7 +280,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         setMetricsLoading(false);
       } catch {
         setMetrics({
-          stars: project.stars || 0,
+          stars: project.stars || project.upvotes || 0,
           forks: project.forks || 0,
           issues: project.openIssues || 0,
           pullRequests: project.pullRequests || 0,
@@ -272,6 +293,18 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   }, [project]);
 
   if (!project) return null;
+
+  const isValidUrl = (string) => {
+    try {
+      const parsed = new URL(string);
+      return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
+  const hasValidRepo = project.githubUrl && getGitHubRepoDetails(project.githubUrl);
+  const hasValidLiveDemo = project.liveDemo && isValidUrl(project.liveDemo);
 
   // Header decorative random codes
  const csIcons = [Code2, Cpu, GitPullRequest];
@@ -341,6 +374,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         {/* Categories & Level badge pills */}
         <div className="flex flex-wrap gap-2 pt-1">
           <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-indigo-600/20 text-white rounded-lg border border-indigo-500/30">
+            {project.category || "Uncategorized"}
           </span>
           <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider border rounded-lg ${getDifficultyColor(project.difficulty)}`}>
             {project.difficulty || "Unknown"}
@@ -433,7 +467,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
 
       {/* Custom Action buttons panel */}
       <div className="relative z-10 px-5 pb-5 pt-1 flex flex-col sm:flex-row gap-3 mt-auto">
-        {project.githubUrl ? (
+        {hasValidRepo ? (
           <motion.a
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
@@ -450,7 +484,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           </div>
         )}
 
-        {project.liveDemo ? (
+        {hasValidLiveDemo ? (
           <motion.a
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}

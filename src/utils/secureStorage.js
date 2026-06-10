@@ -258,6 +258,46 @@ const writeWithEncryption = async (key, value) => {
   localStorage.setItem(key, encrypted);
 };
 
+const KEYS_METADATA_KEY = 'eventra:keys';
+
+const trackKey = (key) => {
+  try {
+    if (key === KEYS_METADATA_KEY || key === MATERIAL_STORAGE_KEY || key === SALT_STORAGE_KEY) {
+      return;
+    }
+    const stored = localStorage.getItem(KEYS_METADATA_KEY);
+    let keys = [];
+    if (stored) {
+      keys = JSON.parse(stored);
+      if (!Array.isArray(keys)) keys = [];
+    }
+    if (!keys.includes(key)) {
+      keys.push(key);
+      localStorage.setItem(KEYS_METADATA_KEY, JSON.stringify(keys));
+    }
+  } catch (e) {
+    // Ignore localStorage/JSON errors
+  }
+};
+
+const untrackKey = (key) => {
+  try {
+    const stored = localStorage.getItem(KEYS_METADATA_KEY);
+    if (stored) {
+      let keys = JSON.parse(stored);
+      if (Array.isArray(keys)) {
+        const idx = keys.indexOf(key);
+        if (idx !== -1) {
+          keys.splice(idx, 1);
+          localStorage.setItem(KEYS_METADATA_KEY, JSON.stringify(keys));
+        }
+      }
+    }
+  } catch (e) {
+    // Ignore localStorage/JSON errors
+  }
+};
+
 export const syncSecureStorage = {
   /**
    * Encrypts `value` and stores it under `key` in localStorage.
@@ -283,6 +323,7 @@ export const syncSecureStorage = {
   setItem: async (key, value) => {
     try {
       pendingWrites.set(key, value);
+      trackKey(key);
 
       const counter = (writeCounters.get(key) || 0) + 1;
       writeCounters.set(key, counter);
@@ -395,6 +436,7 @@ export const syncSecureStorage = {
       writeCounters.delete(key);
       localStorage.removeItem(key);
       localStorage.removeItem(key + PLAINTEXT_SUFFIX);
+      untrackKey(key);
     } catch (error) {
       console.error('[secureStorage] removeItem failed:', error);
     }
@@ -411,6 +453,21 @@ export const syncSecureStorage = {
       pendingWrites.clear();
       writeQueue.clear();
       writeCounters.clear();
+
+      try {
+        const stored = localStorage.getItem(KEYS_METADATA_KEY);
+        if (stored) {
+          const keys = JSON.parse(stored);
+          if (Array.isArray(keys)) {
+            keys.forEach((k) => {
+              localStorage.removeItem(k);
+              localStorage.removeItem(k + PLAINTEXT_SUFFIX);
+            });
+          }
+        }
+      } catch (e) {
+        // Ignore JSON errors
+      }
 
       const prefix = "eventra:";
       const toRemove = [];

@@ -150,7 +150,13 @@ export const MyEventsProvider = ({ children }) => {
    */
   const addRegistration = useCallback((event, formData = {}, registrationId = null, qrToken = null) => {
     setMyEvents((prev) => {
-      if (prev.some((r) => r.eventId === event.id)) return prev;
+      const alreadyExists = prev.some(
+        (r) =>
+          r.eventId === event.id ||
+        (registrationId && r.registrationId && r.registrationId === registrationId)
+      );
+
+      if (alreadyExists) return prev;
       return [
         ...prev,
         {
