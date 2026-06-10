@@ -46,12 +46,11 @@ import {
 } from "../../utils/offlineEventCache";
 import { pushToQueue } from "../../utils/offlineQueue";
 import { logError } from "../../utils/errorLogger";
+import { logAbuseAttempt } from "../../utils/abuseLogger";
 import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
 import registrationLocks from "../../utils/registrationLocks";
 
 export const MAX_NOTES_CHARS = 500;
-
-import { logAbuseAttempt } from "../../utils/abuseLogger";
 
 // Registration lock map to prevent concurrent registrations for the same event
 // const registrationLocks = new Map();

@@ -10,10 +10,7 @@ const allowedTypes = [
   "image/png",
   "image/webp",
 ];
-if (!allowedTypes.includes(file.type)) {
-  alert("Please upload JPG, PNG, or WEBP images only.");
-  return;
-}
+
 const TagInput = ({ tags, onAdd, onRemove, newTag, setNewTag, placeholder = "Add a tag" }) => {
   const handleKeyDown = (e) => {
     if (e.key === "Enter" || e.key === ",") {
@@ -82,6 +79,11 @@ const EventMediaSection = ({
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please upload JPG, PNG, or WEBP images only.");
+      return;
+    }
 
     if (file.size > MAX_BANNER_SIZE) {
       alert("Image is too large (max 5MB)");
