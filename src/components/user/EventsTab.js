@@ -355,11 +355,14 @@ useEffect(() => {
     return types.map((type) => type.charAt(0).toUpperCase() + type.slice(1));
   }, [registeredEvents, hostedEvents]);
 
+const normalizedSearch = debouncedTerm.trim().toLowerCase();
+
+
   const filteredEvents = useMemo(() => {
     const pool = [...registeredEvents, ...hostedEvents];
     const result = pool.filter((event) => {
       const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
-      const matchSearch = !debouncedTerm || searchTarget.includes(debouncedTerm.toLowerCase());
+      const matchSearch = !debouncedTerm || searchTarget.includes(normalizedSearch);
       const status = getEventStatus(event);
       const matchStatus = filterStatus === "All" || status === filterStatus;
       const typeLabel = event?.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : "";
@@ -432,7 +435,7 @@ const addToRecentEvents = (event) => {
         </h2>
         <Link
           to="/events"
-          className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800"
+          className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:-translate-y-1 hover:bg-blue-200 dark:hover:bg-blue-800"
         >
           <span className="relative z-10 flex items-center">
             Explore Events
@@ -480,7 +483,10 @@ const addToRecentEvents = (event) => {
             className="ud-search focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
               placeholder="Search your events…"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+           onChange={(e) => {
+  const value = e.target.value;
+  setSearchQuery(value);
+}}
             />
             {searchQuery && (
               <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query">
