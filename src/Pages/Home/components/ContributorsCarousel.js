@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { throttleProfileFetch } from "../../../components/Contributors";
 import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
 import { ContributorCardSkeleton } from "../../../components/common/SkeletonLoaders";
+import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
@@ -24,6 +24,12 @@ const BATCH_DELAY_MS = 200;
 // keeping per-batch concurrency well within rate-limit budgets.
 const PROFILE_BATCH_SIZE = 10;
 
+// Inserts a small delay before each individual profile request to avoid
+// hammering GitHub's unauthenticated API (60 req/hr). Works in tandem with
+// fetchInBatches which adds BATCH_DELAY_MS between batches.
+const throttleProfileFetch = () =>
+  new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS / PROFILE_BATCH_SIZE));
+
 /**
  * Fetches items in parallel batches, inserting a short delay between batches
  * to stay within GitHub's unauthenticated rate limit.
@@ -37,12 +43,12 @@ const fetchInBatches = async (items, asyncFn, batchSize = PROFILE_BATCH_SIZE) =>
   const results = [];
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
-    // eslint-disable-next-line no-await-in-loop
+     
     const batchResults = await Promise.allSettled(batch.map(asyncFn));
     results.push(...batchResults);
     // Insert a delay between batches (but not after the last one)
     if (i + batchSize < items.length) {
-      // eslint-disable-next-line no-await-in-loop
+       
       await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
     }
   }
@@ -65,7 +71,7 @@ const getCachedContributors = () => {
   try {
     const cachedData = localStorage.getItem(STORAGE_KEY);
     if (!cachedData) return { data: null, isStale: false };
-    const { data, timestamp } = JSON.parse(cachedData);
+    const { data, timestamp } = safeJsonParse(cachedData, {});
     const age = Date.now() - timestamp;
     if (age <= CACHE_DURATION) return { data, isStale: false };
     if (age <= CACHE_DURATION + STALE_REVALIDATE_WINDOW) {
@@ -82,7 +88,7 @@ const cacheContributors = (data) => {
       STORAGE_KEY,
       JSON.stringify({ data, timestamp: Date.now() })
     );
-  } catch {}
+  } catch { }
 };
 
 const Contributors = () => {
@@ -310,7 +316,7 @@ const Contributors = () => {
             // UPDATED: Arrow button styles
             className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
             disabled={loading || currentIndex === 0}
-           aria-label="Previous slide">
+            aria-label="Previous slide">
             {/* UPDATED: Arrow icon color */}
             <ChevronLeft className="text-gray-900 dark:text-white text-xl" />
           </button>
@@ -339,9 +345,8 @@ const Contributors = () => {
                     <ContributorCardSkeleton
                       key={c.id}
                       style={{
-                        flex: `0 0 calc((100% - ${
-                          itemsPerView - 1
-                        } * 1.5rem) / ${itemsPerView})`,
+                        flex: `0 0 calc((100% - ${itemsPerView - 1
+                          } * 1.5rem) / ${itemsPerView})`,
                       }}
                       className="flex-shrink-0 mb-6"
                     />
@@ -353,9 +358,8 @@ const Contributors = () => {
                     key={c.id}
                     className="relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out flex-shrink-0"
                     style={{
-                      flex: `0 0 calc((100% - ${
-                        itemsPerView - 1
-                      } * 1.5rem) / ${itemsPerView})`,
+                      flex: `0 0 calc((100% - ${itemsPerView - 1
+                        } * 1.5rem) / ${itemsPerView})`,
                     }}
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -372,10 +376,10 @@ const Contributors = () => {
                     <div className="absolute top-3 mt-3 left-1/2 -translate-x-1/2">
                       <div className="relative">
                         <img loading="lazy" decoding="async" width="65" height="65"
-    src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || c.login || "Anon")}&background=random`}
-    alt={`${c.name || c.login || "Contributor"}'s GitHub profile`}
-    className="w-[65px] h-[65px] rounded-full border-4 border-gray-900 dark:border-gray-300 shadow-md relative z-10"
-  />
+                          src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || c.login || "Anon")}&background=random`}
+                          alt={`${c.name || c.login || "Contributor"}'s GitHub profile`}
+                          className="w-[65px] h-[65px] rounded-full border-4 border-gray-900 dark:border-gray-300 shadow-md relative z-10"
+                        />
                         <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>
                       </div>
                     </div>
@@ -483,11 +487,10 @@ const Contributors = () => {
                 key={index}
                 onClick={() => !loading && setCurrentIndex(index * itemsPerView)}
                 // UPDATED: Dot colors
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentSlide
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentSlide
                     ? "bg-gray-900 dark:bg-white scale-125"
                     : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
-                }`}
+                  }`}
               />
             ))}
           </div>

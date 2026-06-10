@@ -61,6 +61,30 @@ const getPopularityScore = (event) => {
   return Math.min((attendees / capacity) * 10, 10);
 };
 
+const _tagCache = new Map();
+const _cacheOrder = [];
+const MAX_CACHE_SIZE = 100;
+
+const _getCachedTags = (event) => {
+  const id = getEventId(event);
+  if (!id) return [];
+  if (_tagCache.has(id)) {
+    const tags = _tagCache.get(id);
+    const idx = _cacheOrder.indexOf(id);
+    if (idx > -1) _cacheOrder.splice(idx, 1);
+    _cacheOrder.push(id);
+    return tags;
+  }
+  if (_cacheOrder.length >= MAX_CACHE_SIZE) {
+    const oldest = _cacheOrder.shift();
+    _tagCache.delete(oldest);
+  }
+  const tags = getEventTags(event);
+  _tagCache.set(id, tags);
+  _cacheOrder.push(id);
+  return tags;
+};
+
 const getSimilarityScore = (candidate, interactedEvents) => {
   if (!interactedEvents.length) return 0;
 
@@ -80,7 +104,7 @@ const getSimilarityScore = (candidate, interactedEvents) => {
       score += 5;
     }
 
-    const overlap = getEventTags(event).filter((tag) => candidateTags.has(tag));
+    const overlap = _getCachedTags(event).filter((tag) => candidateTags.has(tag));
     score += Math.min(overlap.length * 3, 12);
 
     return Math.max(bestScore, score);
@@ -278,18 +302,22 @@ export const buildPersonalizedRecommendations = ({
   });
 
   return events
-    .filter((event) => includeInteracted || !interactionProfile.registeredIds.has(getEventId(event)))
-    .map((event) => {
-      const result = calculateRecommendationScore(event, userProfile, interactionProfile);
-      return {
-        ...event,
-        calculatedMatch: result.score,
-        recommendationScore: result.score,
-        recommendationReasons: result.reasons,
-        breakdown: result.breakdown,
-      };
-    })
-    .filter((event) => event.recommendationScore > 0)
+    .reduce((acc, event) => {
+      if (includeInteracted || !interactionProfile.registeredIds.has(getEventId(event))) {
+        const result = calculateRecommendationScore(event, userProfile, interactionProfile);
+        const scored = {
+          ...event,
+          calculatedMatch: result.score,
+          recommendationScore: result.score,
+          recommendationReasons: result.reasons,
+          breakdown: result.breakdown,
+        };
+        if (scored.recommendationScore > 0) {
+          acc.push(scored);
+        }
+      }
+      return acc;
+    }, [])
     .sort((a, b) => b.recommendationScore - a.recommendationScore)
     .slice(0, limit);
 };

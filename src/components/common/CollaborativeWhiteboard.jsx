@@ -181,6 +181,8 @@ export default function CollaborativeWhiteboard() {
     // 1. Open Database & Load history
     initDB().then((db) => {
       loadHistory(db);
+    }).catch(() => {
+      console.warn("[Whiteboard] IndexedDB unavailable, starting with empty history");
     });
 
     // 2. Connect BroadcastChannel for real-time signaling P2P
@@ -670,7 +672,7 @@ export default function CollaborativeWhiteboard() {
                   </button>
                   <button
                     type="submit"
-                    className="px-2.5 py-1.5 rounded-lg bg-indigo-650 hover:bg-indigo-700 text-[10px] font-bold text-white shadow-sm"
+                    className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-[10px] font-bold text-white shadow-sm"
                   >
                     Place
                   </button>

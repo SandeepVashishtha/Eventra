@@ -1,4 +1,5 @@
-/* eslint-disable-next-line no-console */
+import createDOMPurify from "dompurify";
+
 /**
  * Input Sanitization Utilities
  *
@@ -7,8 +8,9 @@
  */
 
 /**
- * Sanitize search query to prevent NoSQL injection attacks.
- * Allows only alphanumeric characters, spaces, hyphens, and common punctuation.
+ * Sanitize search query to prevent XSS and NoSQL injection attacks.
+ * Uses DOMPurify with no allowed tags to safely remove all HTML
+ * while handling obfuscated XSS vectors that regex cascades miss.
  *
  * @param {string} query - The raw search query from user input
  * @returns {string} - Sanitized query safe for API transmission
@@ -22,15 +24,25 @@ export const sanitizeSearchQuery = (query = '') => {
 
   let sanitized = query.trim();
 
+  // Use DOMPurify to strip ALL HTML tags (including SVG, math, data URI,
+  // obfuscated event handlers) instead of a fragile regex cascade.
+  try {
+    let purify;
+    if (typeof createDOMPurify?.sanitize === 'function') {
+      purify = createDOMPurify;
+    } else if (typeof createDOMPurify === 'function' && typeof window?.document !== 'undefined') {
+      purify = createDOMPurify(window);
+    }
+    if (purify && typeof purify.sanitize === 'function') {
+      sanitized = purify.sanitize(sanitized, { ALLOWED_TAGS: [] });
+    }
+  } catch {
+    // DOMPurify unavailable - fall through to manual stripping
+  }
+
+  // Manual tag stripping as final safeguard (catches any DOMPurify bypass)
   sanitized = sanitized
-    // Drop executable blocks before stripping tag characters so their payloads
-    // cannot survive as searchable text.
-    .replace(/<\s*(script|style)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, ' ')
-    .replace(/<\s*\/?\s*(script|style)\b[^>]*>?/gi, ' ')
-    .replace(/<\s*(img|iframe|object|embed|svg|math|link|meta)\b[^>]*>?/gi, ' ')
-    .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s<>]+)/gi, ' ')
-    .replace(/\b(?:java|vb)script\s*:/gi, ' ')
-    .replace(/\b(?:alert|confirm|prompt)\s*\([^)]*\)/gi, ' ')
+    .replace(/<[^>]*>/g, '')
     .replace(/[${}\[\];'`|\\/\n\r<>]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -83,7 +95,7 @@ export const validateSearchQuery = (query = '') => {
 export const prepareSafeSearchQuery = (rawQuery = '') => {
   const validation = validateSearchQuery(rawQuery);
   if (!validation.isValid) {
-    /* eslint-disable-next-line no-console */
+     
     console.warn(`[Security] Invalid search query: ${validation.error}`);
     return '';
   }
@@ -109,11 +121,10 @@ export const sanitizeInputText = (text = '') => {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#x27;',
-    '/': '&#x2F;'
+    "'": '&#x27;'
   };
 
-  return text.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
+  return text.replace(/[&<>"']/g, (match) => htmlEscapes[match]);
 };
 
 /**

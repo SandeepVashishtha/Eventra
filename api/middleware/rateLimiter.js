@@ -45,14 +45,8 @@ export const createRateLimiter = ({
   max = 5,
   message = DEFAULT_LIMIT_MESSAGE,
 } = {}) => {
-  // Sliding window: stores an array of timestamps per key.
-  // On each request, expired entries are filtered out, then the remaining
-  // count is compared against the limit. This eliminates the boundary burst
-  // issue inherent to fixed-window (where 2*max requests could pass in
-  // consecutive windows around the boundary).
   const store = new Map();
 
-  // Periodic cleanup to prevent memory leaks from stale keys
   let lastCleanupAt = 0;
   const evictStale = () => {
     const now = Date.now();
@@ -82,12 +76,14 @@ export const createRateLimiter = ({
 
       evictStale();
       const now = Date.now();
+      // Run cleanup pass on every request (throttled by lastCleanupAt)
+      evictStale();
+
       const cutoff = now - windowMs;
       const existing = store.get(ip) || [];
       const validTimestamps = existing.filter((t) => t > cutoff);
 
       if (validTimestamps.length >= max) {
-        evictStale();
         const resetEpoch = Math.ceil((validTimestamps[0] + windowMs) / 1000);
         const remaining = 0;
         const setHeader = resolveHeaderSetter(res);

@@ -1,12 +1,9 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
+import { createRateLimiter } from "../lib/rateLimiter.js";
 
-import fs from "fs";
-import path from "path";
-import os from "os";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
-import { createRateLimiter } from "../lib/rateLimit.js";
 
 
 // ---------------------------------------------------------------------------
@@ -23,16 +20,10 @@ import { createRateLimiter } from "../lib/rateLimit.js";
 // See GitHub issue #4195 for full details on the production impact.
 // ---------------------------------------------------------------------------
 
-// Guard: prevent unintentional production use of the in-memory store.
-// When NODE_ENV=production but no DATABASE_URL is configured, any
-// registration would be lost on the next cold start, causing confusing 401
-// errors for users. This guard proactively returns 503 on write operations
-// so the misconfiguration is surfaced immediately rather than silently
-// accepting registrations that will vanish.
-const isUsingInMemoryStore = () =>
-  process.env.NODE_ENV === "production" && !process.env.DATABASE_URL;
-
-if (isUsingInMemoryStore()) {
+if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
+  // Emit a clear error rather than silently accepting registrations that will
+  // vanish on the next cold start. This prevents the confusing 401 behaviour
+  // that users experience after a serverless function restart.
   console.error(
     "[signup.js] FATAL: In-memory user store is active in a production environment. " +
     "Set DATABASE_URL to a persistent database to prevent data loss on cold starts."
@@ -42,37 +33,6 @@ if (isUsingInMemoryStore()) {
 const users = new Map();
 const usersById = new Map();
 const usersByUsername = new Map();
-
-const DB_PATH = path.join(os.tmpdir(), "eventra_users_db.json");
-
-const loadDatabaseFallback = () => {
-  try {
-    if (fs.existsSync(DB_PATH)) {
-      const data = JSON.parse(fs.readFileSync(DB_PATH, "utf-8"));
-      for (const user of data) {
-        users.set(user.email.toLowerCase(), user);
-        usersById.set(user.id, user);
-        if (user.username) {
-          usersByUsername.set(user.username.toLowerCase(), user);
-        }
-      }
-    }
-  } catch (err) {
-    console.error("Failed to load database fallback:", err);
-  }
-};
-
-const saveDatabaseFallback = () => {
-  try {
-    const data = Array.from(users.values());
-    fs.writeFileSync(DB_PATH, JSON.stringify(data));
-  } catch (err) {
-    console.error("Failed to save database fallback:", err);
-  }
-};
-
-// Hydrate on module load
-loadDatabaseFallback();
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
@@ -232,26 +192,17 @@ async function handler(req, res) {
     // Run after input validation so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
-    const clientIp = req.headers?.["x-vercel-forwarded-for"]
-      || req.headers?.["x-forwarded-for"]
+    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
       || req.headers?.["x-real-ip"]
       || req.socket?.remoteAddress
       || "unknown";
+
+    signupRateLimiter.evictStale();
 
     if (!signupRateLimiter.check(clientIp)) {
       return corsResponse(req, res, 429, {
         error: "Too many signup attempts. Please try again later.",
         retryAfter: 60,
-      });
-    }
-
-    // -----------------------------------------------------------------------
-    // Guard: reject writes in production without a persistent store
-    // -----------------------------------------------------------------------
-
-    if (isUsingInMemoryStore()) {
-      return corsResponse(req, res, 503, {
-        error: "Service temporarily unavailable. The server is starting up with a temporary storage configuration. Please try again shortly.",
       });
     }
 
@@ -282,15 +233,14 @@ async function handler(req, res) {
       updatedAt: createdAt,
       emailVerified: false,
       isActive: true,
-    };    // Store user (in production, save to database)
+    };
+
+    // Store user (in production, save to database)
     users.set(normalizedEmail, newUser);
     usersById.set(userId, newUser);
     if (newUser.username) {
       usersByUsername.set(newUser.username.toLowerCase(), newUser);
     }
-    
-    // Persist to local fallback to survive cold starts
-    saveDatabaseFallback();
 
     // -----------------------------------------------------------------------
     // Generate JWT token
@@ -320,7 +270,7 @@ async function handler(req, res) {
     };
 
     const isProd = process.env.NODE_ENV === "production";
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`;
+    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
     // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
     try {
       if (typeof res.setHeader === 'function') {
@@ -334,11 +284,10 @@ async function handler(req, res) {
       // Ignore write errors on test response objects
     }
 
-    // The JWT is delivered exclusively via the HttpOnly Set-Cookie header set
-    // above. Including it in the JSON body would expose it to JavaScript,
-    // defeating the XSS-theft protection that HttpOnly provides.
     return corsResponse(req, res, 201, {
       message: "Account created successfully",
+      token,
+      tokenType: "Bearer",
       ...userResponse,
     });
 
@@ -354,9 +303,5 @@ async function handler(req, res) {
 // ---------------------------------------------------------------------------
 
 export default handler;
+export { users, usersById, usersByUsername };
 
-export { users };
-
-export { usersById, usersByUsername };
-
-export { isUsingInMemoryStore };

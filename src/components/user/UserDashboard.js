@@ -7,7 +7,8 @@ import {
   LogOut, User, Plus, Search, X
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect, useMemo, Component } from "react";
+import { useState, useEffect, useMemo } from "react";
+import ErrorBoundary from "../common/ErrorBoundary";
 import { useAuth } from "../../context/AuthContext";
 import StatusBadge from "../common/StatusBadge";
 import EventsTab from "./EventsTab";
@@ -24,37 +25,8 @@ import {
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
+import DashboardEmptyState from "./DashboardEmptyState";
 import OfflineIndicator from "../common/OfflineIndicator";
-
-// ✅ FIX 1: Define FeatureErrorBoundary — was used but never defined/imported
-class FeatureErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, info) {
-    console.error("FeatureErrorBoundary caught:", error, info);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="ud-error-state">
-          <p>Something went wrong loading this section.</p>
-          <button onClick={() => this.setState({ hasError: false, error: null })}>
-            Retry
-          </button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 24 },
@@ -322,6 +294,15 @@ export default function UserDashboard() {
                 </>
               ) : (
                 <>
+                  {/* Full-page premium empty state (#7453):
+                      shown when the user has no events, hackathons, or projects at all.
+                      Provides a direct CTA to browse events or create one. */}
+                  {stats.eventsTotal === 0 &&
+                    stats.hackathonsTotal === 0 &&
+                    stats.projectsTotal === 0 ? (
+                    <DashboardEmptyState />
+                  ) : (
+                  <>
                   <motion.div variants={stagger(prefersReducedMotion)} className="ud-stats-grid">
                     {[
                       { label: "Events", value: stats.eventsTotal, sub: `${stats.eventsCreated} hosted · ${stats.eventsJoined} joined`, icon: <Calendar size={20} />, accent: "#6366f1" },
@@ -372,6 +353,7 @@ export default function UserDashboard() {
                           icon={<Calendar size={32} className="text-indigo-500" />}
                           title="No Upcoming Events"
                           message="You haven't registered or joined any events yet. Check out the Events tab to find one!"
+                          onBrowseAll={() => navigate("/events")}
                         />
                       ) : (
                         upcomingEvents.map(ev => (
@@ -399,6 +381,7 @@ export default function UserDashboard() {
                           icon={<Trophy size={32} className="text-pink-500" />}
                           title="No Active Hackathons"
                           message="There are currently no upcoming hackathons in your schedule."
+                          onBrowseAll={() => navigate("/hackathons")}
                         />
                       ) : (
                         upcomingHackathons.map(h => (
@@ -426,6 +409,7 @@ export default function UserDashboard() {
                           icon={<FolderOpen size={32} className="text-purple-500" />}
                           title="No Active Projects"
                           message="All your tracked development projects are currently completed or inactive."
+                          onBrowseAll={() => navigate("/projects")}
                         />
                       ) : (
                         activeProjects.map(p => (
@@ -440,6 +424,8 @@ export default function UserDashboard() {
                       )}
                     </motion.section>
                   </div>
+                  </>
+                  )} {/* end hasData ternary */}
                 </>
               )}
             </motion.div>
@@ -448,45 +434,45 @@ export default function UserDashboard() {
           {/* Events tab */}
           {activeTab === "events" && (
             <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <FeatureErrorBoundary>
+              <ErrorBoundary level="feature">
                 <EventsTab
                   hostedEvents={MOCK_DATA.filter(d => d.type === "Event" && d.participationType)}
                   onViewTicket={setSelectedTicketEvent}
                 />
-              </FeatureErrorBoundary>
+              </ErrorBoundary>
             </motion.div>
           )}
 
           {/* Hackathons tab */}
           {activeTab === "hackathons" && (
             <motion.div key="hackathons" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <FeatureErrorBoundary>
+              <ErrorBoundary level="feature">
                 <HackathonsTab
                   hackathons={MOCK_DATA.filter(d => d.type === "Hackathon")}
                   loading={loading}
                   fadeUp={fadeUp(prefersReducedMotion)}
                 />
-              </FeatureErrorBoundary>
+              </ErrorBoundary>
             </motion.div>
           )}
 
           {/* Projects tab */}
           {activeTab === "projects" && (
             <motion.div key="projects" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <FeatureErrorBoundary>
+              <ErrorBoundary level="feature">
                 <ProjectsTab
                   projects={MOCK_DATA.filter(d => d.type === "Project")}
                   loading={loading}
                   fadeUp={fadeUp(prefersReducedMotion)}
                 />
-              </FeatureErrorBoundary>
+              </ErrorBoundary>
             </motion.div>
           )}
 
           {/* Registrations tab */}
           {activeTab === "registrations" && (
             <motion.div key="registrations" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <FeatureErrorBoundary>
+              <ErrorBoundary level="feature">
                 <RegistrationsTab
                   filteredData={filteredData}
                   loading={loading}
@@ -496,7 +482,7 @@ export default function UserDashboard() {
                   setFilterStatus={setFilterStatus}
                   setSelectedTicketEvent={setSelectedTicketEvent}
                 />
-              </FeatureErrorBoundary>
+              </ErrorBoundary>
             </motion.div>
           )}
         </AnimatePresence>

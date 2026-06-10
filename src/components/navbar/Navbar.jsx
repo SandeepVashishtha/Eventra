@@ -4,16 +4,28 @@ import { useAuth } from "../../context/AuthContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
+import ThemeToggleButton from "../Layout/ThemeToggleButton";
 import AuthButtons from "./AuthButtons";
+import InstallAppButton from "../common/InstallAppButton";
+import LanguageSelector from "../LanguageSelector";
 import ProfileMenu from "./ProfileMenu";
+import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
-import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
+import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef(null);
+  const [isDarkMode, setIsDarkMode] = useState(
+  document.documentElement.classList.contains("dark")
+);
+
+const toggleTheme = () => {
+  document.documentElement.classList.toggle("dark");
+  setIsDarkMode(document.documentElement.classList.contains("dark"));
+};
 
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
@@ -112,15 +124,26 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           {/* Right Controls Container */}
           <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0">
             <div className="hidden lg:flex items-center gap-2.5">
+              <LanguageSelector compact />
               {authenticated ? (
-                <ProfileMenu user={user} logout={logout} />
+                <>
+                  <NotificationBell />
+                  <ProfileMenu user={user} logout={logout} />
+                </>
               ) : (
                 <AuthButtons />
               )}
+              <InstallAppButton />
               <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             </div>
+            <ThemeToggleButton 
+              isDarkMode={isDarkMode}
+  toggleTheme={toggleTheme}
+  isMobile={false}
+            />
 
-            <div className="lg:hidden">
+            <div className="flex items-center gap-1 lg:hidden">
+              {authenticated && <NotificationBell />}
               <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
             </div>
           </div>
