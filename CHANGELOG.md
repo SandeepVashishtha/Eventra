@@ -1,0 +1,1 @@
+- Fixed AuthContext.js line 240: `setAuthSession` (persistSession) is now exposed in context value.
