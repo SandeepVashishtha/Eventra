@@ -145,8 +145,13 @@ const useBookmarks = (userId = "guest") => {
     const handleStorageEvent = (e) => {
       if (e.key !== storageKeyRef.current) return;
       const fresh = e.newValue ? (() => {
-        try { const p = JSON.parse(e.newValue); return Array.isArray(p) ? p : []; }
-        catch { return []; }
+        try { 
+          const p = JSON.parse(e.newValue); 
+          if (!Array.isArray(p)) return [];
+          // Deep merge: combine existing local state with incoming storage state, keeping newest by savedAt
+          const merged = new Map([...bookmarks.map(b => [b.id, b]), ...p.map(b => [b.id, b])]);
+          return Array.from(merged.values()).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
+        } catch { return []; }
       })() : [];
       cache.set(storageKeyRef.current, fresh);
       setBookmarks(fresh);
