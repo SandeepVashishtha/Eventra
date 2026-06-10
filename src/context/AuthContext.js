@@ -239,7 +239,7 @@ export const AuthProvider = ({ children }) => {
   const isAttendee = () => hasRole(ROLES.ATTENDEE);
 
   const value = useMemo(() => ({
-    user, token, loading, authRequest, login, logout, setUser,
+    user, token, loading, authRequest, login, logout, setUser, setAuthSession: persistSession,
     isAuthenticated, hasRole, hasPermission, hasAnyRole, hasAnyPermission,
     isAdmin, isEventManager, isSuperAdmin, isOrganizer, isVolunteer, isAttendee,
   }), [
