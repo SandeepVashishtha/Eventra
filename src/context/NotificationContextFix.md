@@ -1,4 +1,4 @@
-# \# Fix for Issue #2630 - N+1 Query Pattern in Notification Mark-All-As-Read
+# \# Fix for Issue 2630 - N+1 Query Pattern in Notification Mark-All-As-Read
 
 # 
 
