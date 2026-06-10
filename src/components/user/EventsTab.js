@@ -67,7 +67,7 @@ const EmptyState = () => {
       </p>
       <Link
         to="/events"
-        className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800 my-events-empty-cta"
+        className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:-translate-y-1 hover:bg-blue-200 dark:hover:bg-blue-800 my-events-empty-cta"
       >
         <span className="relative z-10 flex items-center">
           Explore Events
@@ -103,7 +103,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
 
   return (
     <motion.div
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 flex flex-col z-10 hover:z-50 overflow-hidden"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-transform transition-shadow duration-300 will-change-transform flex flex-col z-10 hover:z-50 overflow-hidden transform-gpu"
       custom={index}
       variants={fadeUpVariants}
       initial="hidden"
@@ -121,7 +121,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
           <img
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
         </div>
@@ -242,7 +242,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
 
   return (
     <motion.div
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 flex flex-col z-10 overflow-hidden"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-transform transition-shadow duration-300 will-change-transform flex flex-col z-10 overflow-hidden transform-gpu"
       custom={index}
       variants={fadeUpVariants}
       initial="hidden"
@@ -254,7 +254,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
           <img
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
         </div>
@@ -425,7 +425,7 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
         </h2>
         <Link
           to="/events"
-          className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800"
+          className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:-translate-y-1 hover:bg-blue-200 dark:hover:bg-blue-800"
         >
           <span className="relative z-10 flex items-center">
             Explore Events
