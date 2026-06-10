@@ -169,8 +169,16 @@ const forbiddenResponse = (url) =>
       },
     },
   );
+const BLOCKED_COUNTRIES = ['CU', 'IR', 'KP', 'SY', 'RU'];
 
 export default async function middleware(request) {
+  const country = request.geo?.country || 'US';
+  if (BLOCKED_COUNTRIES.includes(country)) {
+    return new Response(JSON.stringify({ error: "Unavailable For Legal Reasons" }), {
+      status: 451,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
   const url = new URL(request.url);
 
   if (request.method === "OPTIONS") return;

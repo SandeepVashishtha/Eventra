@@ -113,22 +113,20 @@ cd Eventra
 npm install
 ```
 
-1. Create your env file:
+2. Create your env file:
 
 ```bash
 cp .env.example .env
 ```
 > **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
 
-1. Start dev server:
+3. Start dev server:
 
-2. Start dev server:
-
-```bash
 npm run dev
-```
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
+
+
 
 ## Docker Development
 
