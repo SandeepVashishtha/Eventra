@@ -128,6 +128,8 @@ const LoginForm = () => {
               value={formData.usernameOrEmail}
               onChange={handleChange}
               required
+              aria-busy={authRequest.loading}
+aria-live="polite"
               disabled={authRequest.loading}
               placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
               aria-invalid={!!error.usernameOrEmail}

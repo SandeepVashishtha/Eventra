@@ -95,31 +95,11 @@ const getInitialLiveCount = () => {
 };
 
 const AnalyticsDashboard = () => {
-  // ✅ Real analytics data from API (with graceful fallback)
-  const { analytics, loading: analyticsLoading } = useAnalytics();
-
   const [checkins, setCheckins] = useState(getInitialCheckins);
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
-  const [activeTab, setActiveTab] = useState("analytics");
-
-  // ✅ Once real analytics data arrives, update liveCount with the real total
-  useEffect(() => {
-    if (analytics?.totalCheckins) {
-      setLiveCount(analytics.totalCheckins);
-    }
-  }, [analytics]);
-
-  // ✅ Derive category data: real API data if available, fallback otherwise
-  const categoryData = analytics?.categoryBreakdown ?? FALLBACK_CATEGORY_DATA;
-
-  // ✅ Derive scan velocity from API if available
-  useEffect(() => {
-    if (analytics?.scanVelocity) {
-      setActiveCheckinsPerMinute(analytics.scanVelocity);
-    }
-  }, [analytics]);
+  const [activeTab, setActiveTab] = useState('analytics');
 
   // Real-time SSE stream — takes priority over local simulation when connected
   const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
@@ -167,6 +147,7 @@ const AnalyticsDashboard = () => {
     // processing for the same logical event.
     if (!latest || latest.id === lastStreamCheckinRef.current) return;
     lastStreamCheckinRef.current = latest.id;
+
     processIncomingCheckin(latest);
   }, [streamCheckins, processIncomingCheckin]);
 
@@ -253,16 +234,11 @@ const AnalyticsDashboard = () => {
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-4">
         <button
-          onClick={() => setActiveTab("analytics")}
-          className={`px-4 py-2 rounded ${activeTab === "analytics" ? "bg-indigo-600 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"}`}
-        >
-          Analytics
-        </button>
-        <button
-          onClick={() => setActiveTab("budget")}
-          className={`px-4 py-2 rounded ${activeTab === "budget" ? "bg-indigo-600 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"}`}
-        >
-          Budget
+          onClick={triggerManualCheckin}
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md transition self-start sm:self-auto"
+         aria-label="Trigger manual check-in scan">
+          <Play className="w-3.5 h-3.5 fill-white" />
+          Trigger Check-in Scan
         </button>
       </div>
 
@@ -445,57 +421,13 @@ const AnalyticsDashboard = () => {
                 ))}
               </div>
             </div>
-          </div>
-
-          {/* LIVE EVENT CHECK-IN FEED LOG */}
-          <div className="p-6 bg-white border shadow-md dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl">
-            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between gap-1.5">
-              <span className="flex items-center gap-1.5">
-                <Activity className="w-4 h-4 text-emerald-500 animate-pulse" />
-                Live Check-In Event Activity Log
-              </span>
-              <AnalyticsStreamBadge status={streamStatus} />
-            </h3>
-
-            <div className="mt-4 space-y-3">
-              {checkins.map((checkin) => (
-                <div
-                  key={checkin.id}
-                  className="flex items-center justify-between p-3 transition border bg-slate-50 hover:bg-slate-100/60 dark:bg-slate-950 dark:hover:bg-slate-850/45 rounded-2xl border-slate-150 dark:border-slate-850"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 text-xs font-black text-indigo-600 rounded-full bg-indigo-50 dark:bg-indigo-950/40 dark:text-indigo-400">
-                      {checkin.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-850 dark:text-slate-100">
-                        {checkin.name}
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        {checkin.event} &bull; Check-in attempt
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-slate-400">{checkin.time}</span>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                        checkin.status === "Verified"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-450"
-                          : "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-455"
-                      }`}
-                    >
-                      {checkin.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+          ))}
+        </div>
+        {/* Closing tag for line 502 wrapper — fix for #7244 */}
+      </div>
+      </>
+  )}
+</div>
   );
 };
 

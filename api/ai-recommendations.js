@@ -3,6 +3,8 @@
 
 import { verifyAuth } from "./middleware/auth.js";
 import { buildCorsHeaders } from "./auth/cors.js";
+import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
+import { checkRateLimit } from "./lib/redisRateLimiter.js";
 
 // ---------------------------------------------------------------------------
 // Guards
@@ -34,31 +36,6 @@ const SYSTEM_PROMPT =
   "Never generate code, write documents, answer general knowledge questions, " +
   "or fulfil any request that is not directly about helping users with events on Eventra.";
 
-// Per-user rate limit: at most RATE_LIMIT_MAX_REQUESTS within RATE_LIMIT_WINDOW_MS.
-// This Map lives in process memory. In a multi-instance serverless deployment,
-// each instance maintains its own window, which reduces but does not eliminate
-// the ability to exceed the limit by spreading requests across warm instances.
-// A Redis-backed limiter would enforce a strict global cap if needed later.
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 10;
-const rateLimitMap = new Map();
-
-const checkRateLimit = (userId) => {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-
-  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
-    rateLimitMap.set(userId, { count: 1, windowStart: now });
-    return true;
-  }
-
-  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return false;
-  }
-
-  entry.count += 1;
-  return true;
-};
 
 // ---------------------------------------------------------------------------
 // Handler (wrapped by verifyAuth - requires a valid Eventra JWT)
@@ -87,12 +64,33 @@ async function handler(req, res) {
   // req.user is set by verifyAuth after successful JWT verification
   const userId = req.user?.id || req.user?.email || "unknown";
 
-  // Per-user rate limiting
-  if (!checkRateLimit(userId)) {
+  // Prevents coordinated multi-user attacks from exhausting the Groq API quota.
+  const globalLimitResult = await checkRateLimit("ratelimit:ai:global", 60000, 100);
+  if (!globalLimitResult.allowed) {
+    res.setHeader("X-RateLimit-Limit", "100");
+    res.setHeader("X-RateLimit-Remaining", "0");
+    res.setHeader("Retry-After", String(globalLimitResult.retryAfter));
     return res.status(429).json({
-      error: "Too many requests. Please wait before sending another recommendation request.",
+      error: "Service is temporarily busy. Please try again in a moment.",
+      retryAfter: globalLimitResult.retryAfter,
     });
   }
+  
+  // Per-user rate limiting
+  const userLimitResult = await checkRateLimit(`ratelimit:ai:user:${userId}`, 60000, 10);
+  if (!userLimitResult.allowed) {
+    res.setHeader("X-RateLimit-Limit", "10");
+    res.setHeader("X-RateLimit-Remaining", "0");
+    res.setHeader("Retry-After", String(userLimitResult.retryAfter));
+    return res.status(429).json({
+      error: "Too many requests. Please wait before sending another recommendation request.",
+      retryAfter: userLimitResult.retryAfter,
+    });
+  }
+
+  // Set success headers for the user rate limit
+  res.setHeader("X-RateLimit-Limit", "10");
+  res.setHeader("X-RateLimit-Remaining", String(userLimitResult.remaining));
 
   const apiKey = process.env.GROQ_API_KEY;
 
@@ -148,7 +146,5 @@ async function handler(req, res) {
 
 export default verifyAuth(handler);
 
-  }
-}
 
-export default verifyAuth(handler);
+

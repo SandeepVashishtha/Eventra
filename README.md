@@ -6,6 +6,31 @@ Modern event and hackathon platform for communities, organizers, and contributor
 [![React](https://img.shields.io/badge/React-19.x-blue.svg)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.x-646CFF.svg)](https://vitejs.dev/)
 
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Project Architecture](#project-architecture)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Local Development](#local-development)
+- [Docker Development](#docker-development)
+- [Environment Variables](#environment-variables)
+- [Available Scripts](#available-scripts)
+- [Testing and Quality](#testing-and-quality)
+- [SSE Mock Server (Optional)](#sse-mock-server-optional)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contributors](#contributors)
+- [Star History](#star-history)
+
+---
+
 ## Overview
 
 Eventra is an open-source frontend application built with React and Vite. It supports event discovery, registration, dashboards, hackathons, collaboration features, feedback flows, and role-based access experiences.
@@ -13,10 +38,10 @@ Eventra is an open-source frontend application built with React and Vite. It sup
 This repository contains the frontend and serverless API helpers under `api/`.
 The Spring Boot backend is maintained in a separate repository.
 
-- Frontend repo: https://github.com/SandeepVashishtha/Eventra
-- Backend repo: https://github.com/SandeepVashishtha/Eventra-Backend
-- Backend API base: https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net
-- Swagger: https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html
+- Frontend repo: <https://github.com/SandeepVashishtha/Eventra>
+- Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
+- Backend API base: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net>
+- Swagger: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html>
 
 ## Key Features
 
@@ -37,6 +62,18 @@ The Spring Boot backend is maintained in a separate repository.
 - Lucide React
 - Playwright (E2E)
 - ESLint and Prettier
+
+## Project Architecture
+
+Below is the high-level architecture of Eventra:
+
+```mermaid
+graph TD
+    Client[Client: React/Vite] --> Assets[Assets: public/]
+    Client --> State[State: Context/Hooks]
+    Client --> API[API: Serverless Helpers]
+    API --> Backend[Backend: Spring Boot API]
+```
 
 ## Project Structure
 
@@ -76,13 +113,16 @@ cd Eventra
 npm install
 ```
 
-2. Create your env file:
+1. Create your env file:
 
 ```bash
 cp .env.example .env
 ```
+> **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
 
-3. Start dev server:
+1. Start dev server:
+
+2. Start dev server:
 
 ```bash
 npm run dev
@@ -90,17 +130,46 @@ npm run dev
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
 
+## Docker Development
+
+You can run Eventra fully containerized using Docker Compose to ensure a consistent environment:
+
+1. Clone the repository and setup your environment variables:
+
+```bash
+git clone https://github.com/SandeepVashishtha/Eventra.git
+cd Eventra
+cp .env.example .env
+```
+
+1. Start the local development container:
+
+```bash
+docker-compose up eventra-dev
+```
+
+The app will be available at `http://localhost:3000` with hot-reloading enabled.
+
+1. Build and test the production container locally:
+
+```bash
+docker-compose up --build eventra-prod
+```
+
+The production-optimized build will be served via Nginx at `http://localhost:8080`.
+
 ## Environment Variables
 
 Use `.env.example` as the source of truth.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `REACT_APP_API_URL` | Yes | Backend API base URL |
+| `REACT_APP_API_URL` | Yes | Backend API base URL used by client requests and SSE streams |
 | `REACT_APP_GITHUB_REPO` | No | Public repo identifier used in metadata |
 | `REACT_APP_PUBLIC_URL` | No | Canonical public app URL |
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public web-push key |
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
+| `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN, used only in production |
 
 Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variables because they are exposed to the client bundle.
 
@@ -160,7 +229,6 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
 ## Contributing
 
-- Read [CONTRIBUTING.md](CONTRIBUTING.md)
 - Follow [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - Open focused pull requests with clear scope and test notes
 - Issues may be auto-unassigned after inactivity by workflow: [auto-unassign-stale-issues.yml](.github/workflows/auto-unassign-stale-issues.yml)
@@ -215,3 +283,5 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
 </a>
 
 Built by the Eventra community.
+
+---
