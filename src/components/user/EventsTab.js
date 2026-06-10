@@ -216,12 +216,24 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
             </div>
           </Link>
         )}
-        <Link to={`/events/${event?.id}`} className="group/btn flex-1">
+       <div className="relative group flex-1">
+  <Link
+    to={`/events/${event?.id}`}
+    className="group/btn flex-1"
+  >
           <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
             <span>{showCancel ? "View Details" : "Open Event"}</span>
           </div>
         </Link>
       </div>
+
+  </Link>
+
+  <span className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 text-white text-xs px-3 py-1 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-lg">
+    View Event Details
+  </span>
+</div>
+
     </motion.div>
   );
 };
