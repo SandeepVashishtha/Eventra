@@ -12,6 +12,7 @@ import {
   Ticket,
   Trash2,
   Activity,
+  Copy,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -400,6 +401,19 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
 
+
+  const handleCopyEventLink = async (eventId) => {
+  try {
+    const eventUrl = `${window.location.origin}/events/${eventId}`;
+
+    await navigator.clipboard.writeText(eventUrl);
+
+    toast.success("Event link copied successfully!");
+  } catch (error) {
+    toast.error("Failed to copy event link");
+  }
+};
+
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
   const handleCancelConfirm = () => {
@@ -686,6 +700,15 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                 <button className="my-events-dialog-confirm" onClick={handleCancelConfirm}>
                   Yes, remove
                 </button>
+<button
+  onClick={() => handleCopyEventLink(event?.id)}
+  aria-label="Copy event link"
+  className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300 hover:scale-105"
+>
+  <Copy size={16} />
+  Copy Link
+</button>
+
               </div>
             </motion.div>
           </motion.div>,
