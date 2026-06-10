@@ -130,11 +130,29 @@ const AdminDashboard = () => {
   const [selectedWaitlistEvent, setSelectedWaitlistEvent] = useState(null);
   const [waitlistUsers, setWaitlistUsers] = useState([]);
 
-  const loadWaitlist = useCallback((eventId) => {
-    import("../../utils/waitlistUtils.js").then(({ getEventWaitlist }) => {
-      setWaitlistUsers(getEventWaitlist(eventId));
-    }).catch(() => setWaitlistUsers([]));
-  }, []);
+  const [waitlistAnalytics, setWaitlistAnalytics] = useState(null);
+
+ const loadWaitlist = useCallback((eventId) => {
+  import("../../utils/waitlistUtils.js")
+    .then(
+      ({
+        getEventWaitlist,
+        getWaitlistAnalytics,
+      }) => {
+        setWaitlistUsers(
+          getEventWaitlist(eventId)
+        );
+
+        setWaitlistAnalytics(
+          getWaitlistAnalytics(eventId)
+        );
+      }
+    )
+    .catch(() => {
+      setWaitlistUsers([]);
+      setWaitlistAnalytics(null);
+    });
+}, []);
 
   const openWaitlistModal = (event) => {
     setSelectedWaitlistEvent(event);
@@ -718,7 +736,7 @@ const AdminDashboard = () => {
             <p className="ad-footer-copyright">© {new Date().getFullYear()} Eventra. Admin Control Panel.</p>
             <div className="ad-footer-links">
               <Link to="/helpcenter" className="ad-footer-link">Help Center</Link>
-              <a href={`https://github.com/${process.env.REACT_APP_GITHUB_REPO || 'sandeepvashishtha/Eventra'}`} target="_blank" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
+              <a href={`https://github.com/${import.meta.env.VITE_GITHUB_REPO || import.meta.env.REACT_APP_GITHUB_REPO || 'sandeepvashishtha/Eventra'}`} target="_blank" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
               <Link to="/privacy" className="ad-footer-link">Privacy Policy</Link>
               <Link to="/terms" className="ad-footer-link">Terms of Service</Link>
             </div>
@@ -766,6 +784,43 @@ const AdminDashboard = () => {
                 Increase Capacity
               </button>
             </div>
+
+            {waitlistAnalytics && (
+  <div
+    style={{
+      padding: "12px",
+      border: "1px solid #ddd",
+      borderRadius: "8px",
+      marginBottom: "16px",
+    }}
+  >
+    <h3>Waitlist Analytics</h3>
+
+    <p>
+      Total Waitlisted: {waitlistAnalytics.totalWaitlisted}
+    </p>
+
+    <p>
+      Waiting: {waitlistAnalytics.waiting}
+    </p>
+
+    <p>
+      Promoted: {waitlistAnalytics.promoted}
+    </p>
+
+    <p>
+      Removed: {waitlistAnalytics.removed}
+    </p>
+
+    <p>
+      Promotion Rate: {waitlistAnalytics.promotionRate}%
+    </p>
+
+    <p>
+      Average Wait Time: {waitlistAnalytics.averageWaitTime} hrs
+    </p>
+  </div>
+)}
 
             <div style={{ maxHeight: "300px", overflowY: "auto" }}>
               {waitlistUsers.length === 0 ? (

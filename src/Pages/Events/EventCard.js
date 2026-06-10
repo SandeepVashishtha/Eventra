@@ -108,30 +108,33 @@ const EventCard = ({ event }) => {
     });
   }, [event.id]);
 
-  const handleBookmarkToggle = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleBookmarkToggle = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    if (isBookmarked) {
-      removeBookmarkedEvent(event.id);
-      toast.info("Removed from bookmarked events.", {
+      if (isBookmarked) {
+        removeBookmarkedEvent(event.id);
+        toast.info("Removed from bookmarked events.", {
+          toastId: `bookmark-${event.id}`,
+          autoClose: 1800,
+          className: "custom-toast",
+        });
+        return;
+      }
+
+      addBookmarkedEvent({
+        ...event,
+        status: computedStatus,
+      });
+      toast.success("Event bookmarked.", {
         toastId: `bookmark-${event.id}`,
         autoClose: 1800,
         className: "custom-toast",
       });
-      return;
-    }
-
-    addBookmarkedEvent({
-      ...event,
-      status: computedStatus,
-    });
-    toast.success("Event bookmarked.", {
-      toastId: `bookmark-${event.id}`,
-      autoClose: 1800,
-      className: "custom-toast",
-   });
-}, [computedStatus, event, isBookmarked]);
+    },
+    [isBookmarked, event, computedStatus]
+  );
 
   return (
     <article

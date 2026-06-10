@@ -666,7 +666,9 @@ export default function CollaborationNetworkMap() {
             </div>
           </div>
         </div>
+
       </div>
+
     </section>
   );
 }

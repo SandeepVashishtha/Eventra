@@ -535,6 +535,20 @@ aside {
   background-color: var(--bg-color);
 }
 
+.dark,
+.dark body,
+.dark div,
+.dark p,
+.dark span,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #f8fafc !important;
+}
+
 .dark .pastel-grid-bg {
   /* Use a solid dark background in dark mode and remove the light pastel grid image
      which remains visible otherwise. This ensures pages that use the pastel grid
@@ -1179,4 +1193,9 @@ html:not(.dark) ::placeholder {
     /* border-indigo-700 */
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
   }
+
+  .project-card,
+.project-card * {
+  color: white !important;
+}
 }
