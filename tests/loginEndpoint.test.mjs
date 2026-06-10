@@ -1,10 +1,6 @@
-import "./helpers/authTestEnv.mjs";
-process.env.ALLOWED_ORIGIN = "http://localhost:3000";
+import { AUTH_TEST_ALLOWED_ORIGIN } from "./helpers/authTestEnv.mjs";
 import assert from "node:assert/strict";
 const { default: handler, users } = await import("../api/auth/login.js");
-
-// Mock allowed origin to test specific CORS headers correctly
-process.env.ALLOWED_ORIGIN = "http://localhost:3000";
 
 // ---------------------------------------------------------------------------
 // Mock Response Helper
@@ -44,10 +40,19 @@ const createResponse = () => {
 // Mock Request Helper
 // ---------------------------------------------------------------------------
 
-const createRequest = (method, body) => ({
-  method,
-  body,
-});
+let requestCounter = 0;
+const createRequest = (method, body, headers = {}) => {
+  const finalHeaders = { origin: "http://localhost:3000", ...headers };
+  if (!finalHeaders["x-forwarded-for"] && !finalHeaders["x-real-ip"]) {
+    requestCounter += 1;
+    finalHeaders["x-forwarded-for"] = `10.0.0.${requestCounter}`;
+  }
+  return {
+    method,
+    body,
+    headers: finalHeaders,
+  };
+};
 
 // ---------------------------------------------------------------------------
 // Helper: Create a test user by calling signup first
@@ -87,8 +92,16 @@ console.log("Running login endpoint tests...");
   await handler(req, res);
 
   assert.equal(res.statusCode, 200, "Should return 200 on successful login");
-  assert.ok(res.body.token, "Should return a JWT token");
-  assert.equal(res.body.tokenType, "Bearer", "Should return tokenType as Bearer");
+  // Token must NOT appear in the JSON body — it is delivered only via HttpOnly cookie.
+  assert.equal(res.body.token, undefined, "Token must not be exposed in the response body");
+  assert.equal(res.body.tokenType, undefined, "tokenType must not be in body when using HttpOnly cookies");
+  // HttpOnly Set-Cookie header must be present and correctly configured.
+  const setCookie1 = res.headers["Set-Cookie"] || "";
+  assert.ok(setCookie1.includes("token="), "Set-Cookie header must contain the token");
+  assert.ok(setCookie1.includes("HttpOnly"), "Cookie must have HttpOnly flag");
+  assert.ok(setCookie1.includes("SameSite=Strict"), "Cookie must have SameSite=Strict");
+  assert.ok(setCookie1.includes("Path=/"), "Cookie must have Path=/");
+  // User profile fields must still be present for the frontend to populate state.
   assert.equal(res.body.email, "john.login@example.com", "Should return email");
   assert.equal(res.body.firstName, "John", "Should return firstName");
   assert.equal(res.body.lastName, "Doe", "Should return lastName");
@@ -96,7 +109,7 @@ console.log("Running login endpoint tests...");
   assert.ok(Array.isArray(res.body.roles), "Should return roles array");
   assert.ok(Array.isArray(res.body.permissions), "Should return permissions array");
   assert.equal(res.body.message, "Login successful", "Should return success message");
-  console.log("✓ Test 1: Successful login with email");
+  console.log("✓ Test 1: Successful login — token in HttpOnly cookie, not in body");
 }
 
 // Test 2: Successful login with username
@@ -118,8 +131,10 @@ console.log("Running login endpoint tests...");
   await handler(req, res);
 
   assert.equal(res.statusCode, 200, "Should return 200 on successful login with email as username");
-  assert.ok(res.body.token, "Should return a JWT token");
-  console.log("✓ Test 2: Successful login with username/email");
+  assert.equal(res.body.token, undefined, "Token must not appear in body for username login either");
+  const setCookie2 = res.headers["Set-Cookie"] || "";
+  assert.ok(setCookie2.includes("HttpOnly"), "Cookie must be HttpOnly on username login");
+  console.log("✓ Test 2: Successful login with username/email — HttpOnly cookie set");
 }
 
 // Test 3: Missing usernameOrEmail returns 400
@@ -224,7 +239,7 @@ console.log("Running login endpoint tests...");
   console.log("✓ Test 10: Case insensitive email login");
 }
 
-// Test 11: JWT token contains required claims
+// Test 11: JWT token delivered via HttpOnly cookie contains required claims
 {
   const req = createRequest("POST", {
     usernameOrEmail: "john.login@example.com",
@@ -234,18 +249,47 @@ console.log("Running login endpoint tests...");
   await handler(req, res);
 
   assert.equal(res.statusCode, 200, "Should return 200");
-  assert.ok(res.body.token, "Should return a JWT token");
-  
-  // Decode JWT payload (without verification for testing)
-  const tokenParts = res.body.token.split(".");
-  const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
-  
+  // Token is in the Set-Cookie header, not the response body.
+  assert.equal(res.body.token, undefined, "Token must not be in response body");
+  const cookieHeader = res.headers["Set-Cookie"] || "";
+  assert.ok(cookieHeader.length > 0, "Set-Cookie header must be present");
+
+  // Extract the raw JWT from "token=<jwt>; HttpOnly; ..."
+  const tokenMatch = cookieHeader.match(/token=([^;]+)/);
+  assert.ok(tokenMatch, "Should be able to extract token from Set-Cookie header");
+  const rawToken = tokenMatch[1];
+
+  // Decode JWT payload (without signature verification — header contents only)
+  const tokenParts = rawToken.split(".");
+  assert.equal(tokenParts.length, 3, "JWT must have three parts (header.payload.signature)");
+  const payload = JSON.parse(Buffer.from(tokenParts[1], "base64url").toString());
+
   assert.ok(payload.id, "JWT should contain user id");
   assert.ok(payload.email, "JWT should contain email");
-  assert.ok(payload.roles, "JWT should contain roles");
-  assert.equal(payload.permissions, undefined, "JWT should NOT contain permissions");
-  assert.ok(payload.exp, "JWT should contain expiration");
-  console.log("✓ Test 11: JWT token contains required claims");
+  assert.ok(Array.isArray(payload.roles), "JWT should contain roles array");
+  assert.equal(payload.permissions, undefined, "JWT should NOT contain permissions (server-side resolved)");
+  assert.ok(payload.exp, "JWT should contain expiration claim");
+  assert.ok(payload.iat, "JWT should contain issued-at claim");
+  console.log("✓ Test 11: JWT in HttpOnly cookie contains required claims, not in response body");
+}
+
+// Test 12: Response body never contains a raw JWT string
+{
+  const req = createRequest("POST", {
+    usernameOrEmail: "john.login@example.com",
+    password: "SecurePass123!",
+  });
+  const res = createResponse();
+  await handler(req, res);
+
+  const bodyStr = JSON.stringify(res.body);
+  // A JWT always matches three base64url segments separated by dots
+  const jwtPattern = /eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]*/;
+  assert.ok(
+    !jwtPattern.test(bodyStr),
+    "Response body must not contain a raw JWT string"
+  );
+  console.log("✓ Test 12: Response body contains no raw JWT string");
 }
 
 // Test 12: Response includes role and permissions
@@ -265,16 +309,17 @@ console.log("Running login endpoint tests...");
   console.log("✓ Test 12: Response includes role and permissions");
 }
 
-// Test 13: CORS headers are set
+// Test 13: CORS headers are set for an allowed origin
 {
   const req = createRequest("POST", {
     usernameOrEmail: "john.login@example.com",
     password: "SecurePass123!",
-  });
+  }, { origin: AUTH_TEST_ALLOWED_ORIGIN }); // cors.js requires an origin header to reflect it
   const res = createResponse();
   await handler(req, res);
 
-  assert.ok(res.headers["Access-Control-Allow-Origin"], "Should have CORS Allow-Origin header");
+  assert.ok(res.headers["Access-Control-Allow-Origin"], "Should have CORS Allow-Origin header for allowed origin");
+  assert.equal(res.headers["Access-Control-Allow-Origin"], AUTH_TEST_ALLOWED_ORIGIN, "Should reflect the request origin");
   assert.ok(res.headers["Access-Control-Allow-Credentials"], "Should have CORS Allow-Credentials header");
   console.log("✓ Test 13: CORS headers are set");
 }
@@ -319,6 +364,47 @@ console.log("Running login endpoint tests...");
   assert.equal(res.statusCode, 400, "Should return 400 for whitespace-only usernameOrEmail");
   assert.ok(res.body.error, "Should return error message");
   console.log("✓ Test 16: Whitespace-only usernameOrEmail returns 400");
+}
+
+// Test 17: Login rate limit allows normal requests before limit
+{
+  const userData = {
+    firstName: "RateLimit",
+    lastName: "Tester",
+    email: "ratelimit.login@example.com",
+    password: "SecurePass123!",
+    confirmPassword: "SecurePass123!",
+  };
+  await createTestUser(userData);
+
+  for (let i = 1; i <= 5; i += 1) {
+    const req = createRequest(
+      "POST",
+      { usernameOrEmail: "ratelimit.login@example.com", password: "SecurePass123!" },
+      { "x-forwarded-for": "127.0.0.1" }
+    );
+    const res = createResponse();
+    await handler(req, res);
+
+    assert.notEqual(res.statusCode, 429, `Request ${i} should not be rate limited`);
+  }
+  console.log("✓ Test 17: Login rate limit allows normal requests before limit");
+}
+
+// Test 18: Login rate limit blocks after max attempts
+{
+  const req = createRequest(
+    "POST",
+    { usernameOrEmail: "ratelimit.login@example.com", password: "WrongPass123!" },
+    { "x-forwarded-for": "127.0.0.1" }
+  );
+  const res = createResponse();
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 429, "Should return 429 after login attempts exceed the limit");
+  assert.equal(res.body.success, false, "Should return success false when blocked");
+  assert.equal(res.body.message, "Too many authentication attempts. Please try again later.");
+  console.log("✓ Test 18: Login rate limit blocks after max attempts");
 }
 
 console.log("\n✅ All login endpoint tests passed!");

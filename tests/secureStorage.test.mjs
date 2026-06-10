@@ -100,6 +100,7 @@ Object.defineProperty(global, 'crypto', { value: new CryptoStub(), writable: tru
 
 // Dynamic import so shims take effect before module initialization
 const { syncSecureStorage } = await import('../src/utils/secureStorage.js');
+assert.ok(syncSecureStorage, 'secureStorage module imports without duplicate declaration errors');
 
 // ---------------------------------------------------------------------------
 // Helper: build a full session user object matching AuthContext's shape
@@ -133,32 +134,37 @@ const buildDisplayProfile = (sessionUser) => {
 
 describe('syncSecureStorage', () => {
   beforeEach(() => {
+    console.log('TEST CRYPTO ACTIVE:', syncSecureStorage.isEncryptionActive());
     mockStorage.clear();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     mockStorage.clear();
+    await new Promise(resolve => setTimeout(resolve, 20));
   });
 
   describe('setItem', () => {
-    it('returns true on successful write', () => {
-      const result = syncSecureStorage.setItem('testKey', 'testValue');
+    it('returns true on successful write', async () => {
+      const result = await syncSecureStorage.setItem('testKey', 'testValue');
       assert.strictEqual(result, true);
     });
 
-    it('writes a value that can be retrieved synchronously via getItem', () => {
-      syncSecureStorage.setItem('greeting', 'hello');
+    it('writes a value that can be retrieved synchronously via getItem', async () => {
+      await syncSecureStorage.setItem('greeting', 'hello');
       const raw = syncSecureStorage.getItem('greeting');
       // Immediately after setItem the synchronous placeholder is present
       assert.notStrictEqual(raw, null);
     });
 
-    it('returns false when localStorage.setItem throws', () => {
+    it('returns false when localStorage.setItem throws', async () => {
       const original = mockStorage.setItem.bind(mockStorage);
-      mockStorage.setItem = () => { throw new Error('QuotaExceededError'); };
-      const result = syncSecureStorage.setItem('k', 'v');
-      assert.strictEqual(result, false);
-      mockStorage.setItem = original;
+      try {
+        mockStorage.setItem = () => { throw new Error('QuotaExceededError'); };
+        const result = await syncSecureStorage.setItem('k', 'v');
+        assert.strictEqual(result, false);
+      } finally {
+        mockStorage.setItem = original;
+      }
     });
   });
 
@@ -167,15 +173,15 @@ describe('syncSecureStorage', () => {
       assert.strictEqual(syncSecureStorage.getItem('nonexistent'), null);
     });
 
-    it('returns non-null after a value is stored', () => {
-      syncSecureStorage.setItem('present', 'value');
+    it('returns non-null after a value is stored', async () => {
+      await syncSecureStorage.setItem('present', 'value');
       assert.notStrictEqual(syncSecureStorage.getItem('present'), null);
     });
   });
 
   describe('removeItem', () => {
-    it('removes a stored value so getItem returns null', () => {
-      syncSecureStorage.setItem('toRemove', 'someValue');
+    it('removes a stored value so getItem returns null', async () => {
+      await syncSecureStorage.setItem('toRemove', 'someValue');
       syncSecureStorage.removeItem('toRemove');
       assert.strictEqual(syncSecureStorage.getItem('toRemove'), null);
     });
@@ -186,9 +192,9 @@ describe('syncSecureStorage', () => {
   });
 
   describe('clear', () => {
-    it('removes all stored keys', () => {
-      syncSecureStorage.setItem('a', '1');
-      syncSecureStorage.setItem('b', '2');
+    it('removes all stored keys', async () => {
+      await syncSecureStorage.setItem('a', '1');
+      await syncSecureStorage.setItem('b', '2');
       syncSecureStorage.clear();
       assert.strictEqual(syncSecureStorage.getItem('a'), null);
       assert.strictEqual(syncSecureStorage.getItem('b'), null);
@@ -207,15 +213,17 @@ describe('Authorization field stripping (persistSession security contract)', () 
     mockStorage.clear();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     mockStorage.clear();
+    await new Promise(resolve => setTimeout(resolve, 20));
   });
 
-  it('display profile stored in localStorage does NOT contain roles', () => {
+  it('display profile stored in localStorage does NOT contain roles', async () => {
     const sessionUser = buildSessionUser();
     const displayProfile = buildDisplayProfile(sessionUser);
 
     syncSecureStorage.setItem('user', JSON.stringify(displayProfile));
+    await new Promise(resolve => setTimeout(resolve, 30));
 
     // Read back whatever is in localStorage (may be plaintext placeholder or encrypted)
     const raw = mockStorage.getItem('user');
@@ -253,11 +261,12 @@ describe('Authorization field stripping (persistSession security contract)', () 
     assert.ok(!Object.prototype.hasOwnProperty.call(displayProfile, 'scopes'));
   });
 
-  it('an XSS payload reading localStorage cannot obtain admin role', () => {
+  it('an XSS payload reading localStorage cannot obtain admin role', async () => {
     const adminUser = buildSessionUser({ roles: ['ADMIN'], email: 'admin@example.com' });
     const displayProfile = buildDisplayProfile(adminUser);
 
     syncSecureStorage.setItem('user', JSON.stringify(displayProfile));
+    await new Promise(resolve => setTimeout(resolve, 30));
 
     // Simulate XSS: attacker calls localStorage.getItem('user') and parses it
     const xssRead = mockStorage.getItem('user');
@@ -275,7 +284,7 @@ describe('Authorization field stripping (persistSession security contract)', () 
     }
   });
 
-  it('an XSS payload reading localStorage cannot obtain scopes for privilege check', () => {
+  it('an XSS payload reading localStorage cannot obtain scopes for privilege check', async () => {
     const orgUser = buildSessionUser({
       roles: ['ORGANIZER'],
       scopes: ['event:write', 'event:read'],
@@ -283,6 +292,7 @@ describe('Authorization field stripping (persistSession security contract)', () 
     const displayProfile = buildDisplayProfile(orgUser);
 
     syncSecureStorage.setItem('user', JSON.stringify(displayProfile));
+    await new Promise(resolve => setTimeout(resolve, 30));
 
     const xssRead = mockStorage.getItem('user');
     if (xssRead) {
@@ -322,21 +332,26 @@ describe('syncSecureStorage edge cases', () => {
     mockStorage.clear();
   });
 
-  it('handles storing an empty string', () => {
-    const result = syncSecureStorage.setItem('empty', '');
+  afterEach(async () => {
+    mockStorage.clear();
+    await new Promise(resolve => setTimeout(resolve, 20));
+  });
+
+  it('handles storing an empty string', async () => {
+    const result = await syncSecureStorage.setItem('empty', '');
     assert.strictEqual(result, true);
   });
 
-  it('handles storing JSON with special characters', () => {
+  it('handles storing JSON with special characters', async () => {
     const value = JSON.stringify({ name: 'O\'Brien & "Co"', emoji: '🎉' });
-    syncSecureStorage.setItem('special', value);
+    await syncSecureStorage.setItem('special', value);
     const raw = syncSecureStorage.getItem('special');
     assert.notStrictEqual(raw, null);
   });
 
-  it('handles overwriting an existing key', () => {
-    syncSecureStorage.setItem('key', 'first');
-    syncSecureStorage.setItem('key', 'second');
+  it('handles overwriting an existing key', async () => {
+    await syncSecureStorage.setItem('key', 'first');
+    await syncSecureStorage.setItem('key', 'second');
     const raw = syncSecureStorage.getItem('key');
     assert.notStrictEqual(raw, null);
   });

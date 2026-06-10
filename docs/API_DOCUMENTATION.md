@@ -5,6 +5,7 @@
 Before working with the API, ensure your environment is properly configured:
 
 **\u2705 [Environment Setup Guide](ENV_SETUP_GUIDE.md)** – Complete configuration instructions including:
+
 - Backend API URL configuration (`REACT_APP_API_URL`)
 - Running the backend locally
 - Troubleshooting connection issues
@@ -505,7 +506,6 @@ GET /api/events
 
 ---
 
-
 | Method | Endpoint |
 |--------|----------|
 | GET | `/api/events/{id}` |
@@ -679,7 +679,6 @@ GET /api/users/my-events
 
 Creates a new event. This endpoint is restricted to authenticated users with `ORGANIZER` or `ADMIN` authority.
 
-
 ### Authentication
 
 ---
@@ -738,7 +737,6 @@ Authorization: Bearer <token>
 | `401 Unauthorized` | Missing or invalid JWT |
 | `403 Forbidden` | Authenticated user is not an `ORGANIZER` or `ADMIN` |
 
-
 ---
 
 ## Update Event
@@ -795,7 +793,6 @@ Authorization: Bearer <token>
 | `404 Not Found` | Event ID does not exist |
 | `409 Conflict` | Capacity is lower than current registeredCount |
 
-
 ---
 
 ## Delete Event
@@ -834,8 +831,42 @@ Authorization: Bearer <token>
 
 - Related event registrations are automatically cleaned up by the backend before the event is deleted.
 
-
 ---
+
+## Stream Event Updates (SSE)
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/events/stream` |
+
+Opens a Server-Sent Events stream connection for event updates.
+
+### Authentication
+
+Public. No authentication required.
+
+### Purpose
+
+- This endpoint currently establishes a basic SSE connection.
+- It sends an initial connected event to confirm the stream is active.
+- It prepares the backend for future real-time event broadcasts.
+- *Note: Full real-time event create/update/register broadcasting is not yet implemented.*
+
+### Response Media Type
+
+`text/event-stream`
+
+### Manual Test Command
+
+```bash
+curl -N http://localhost:8080/api/events/stream
+```
+
+### Example Stream Output
+
+```text
+event:connected
+data:Stream connected successfully
 
 # Project APIs
 
@@ -905,6 +936,7 @@ Returns the list of projects for the Projects gallery/module.
 *This documentation update corresponds to the backend implementation PR for `GET /api/projects`.*
 
 ### Authentication
+
 Not required. Public endpoint.
 
 ### Example Request
@@ -914,11 +946,12 @@ GET /api/projects
 ```
 
 ### Success Response
+
 Status: `200 OK`
 
 Returns a JSON array of project objects. Returns `[]` if no projects exist.
 
-#### Response Example:
+#### Response Example
 
 ```json
 [
@@ -954,9 +987,10 @@ Returns a JSON array of project objects. Returns `[]` if no projects exist.
 Returns the details of a specific project by its ID.
 
 ### Authentication
+
 Not required. Public endpoint.
 
-### Success response example:
+### Success response example
 
 ```json
 {
@@ -970,7 +1004,7 @@ Not required. Public endpoint.
 }
 ```
 
-### Missing project response example:
+### Missing project response example
 
 ```json
 {
@@ -993,12 +1027,14 @@ Not required. Public endpoint.
 Increments the upvote count for a project by 1 and returns the updated project details.
 
 ### Authentication
+
 Requires a valid Bearer JWT in the `Authorization` header. Any authenticated user can upvote.
 
 ### Success Response
+
 Status: `200 OK`
 
-#### Response Example:
+#### Response Example
 
 ```json
 {
@@ -1030,15 +1066,19 @@ Status: `200 OK`
 Returns the static list of supported project categories used by the Projects gallery/module.
 
 ### Authentication
+
 Not required. Public endpoint.
 
 ### Request
+
 No request body.
 
 ### Success Response
+
 Status: `200 OK`
 
-#### Response example:
+#### Response example
+
 ```json
 [
   "Mobile Development",
@@ -1053,9 +1093,464 @@ Status: `200 OK`
 ```
 
 ### Notes
+
 - This endpoint is public and does not require JWT authentication.
 - This PR only documents the project categories endpoint.
 - Other Projects APIs will be documented separately when implemented.
+
+---
+
+# Hackathon APIs
+
+*This documentation corresponds to the backend Hackathon API updates.*
+
+## List Hackathons
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/hackathons` |
+
+Fetches the list of available hackathons.
+
+### Authentication
+
+Public. No authentication required.
+
+### Example Request
+
+```bash
+curl http://localhost:8080/api/hackathons
+```
+
+### Successful Response (200)
+
+Returns a JSON array of hackathon objects. Returns `[]` if no hackathons exist.
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Hackathon Name",
+    "description": "Hackathon description",
+    "organizer": "Organizer Name",
+    "startDate": "2026-06-10",
+    "endDate": "2026-06-12",
+    "location": "Bhopal",
+    "mode": "Offline",
+    "prizePool": "50000",
+    "registrationDeadline": "2026-06-05",
+    "imageUrl": "https://example.com/hackathon.png"
+  }
+]
+```
+
+## Get Hackathon By ID
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/hackathons/{id}` |
+
+Returns complete details for a single hackathon by its ID.
+
+*This documentation update corresponds to the backend implementation for GET /api/hackathons/{id}.*
+
+### Authentication
+
+Not required. Public endpoint.
+
+### Example Request
+
+```bash
+GET /api/hackathons/1
+```
+
+### Successful Response (200)
+
+```json
+{
+  "id": 1,
+  "title": "CodeSprint 2026",
+  "description": "A beginner-friendly hackathon for building full-stack projects.",
+  "organizer": "Eventra Team",
+  "startDate": "2026-07-10T00:00:00",
+  "endDate": "2026-07-12T00:00:00",
+  "location": "Bhopal",
+  "mode": "Offline",
+  "prizePool": "50000",
+  "registrationDeadline": "2026-07-05T00:00:00",
+  "imageUrl": "https://example.com/hackathon.png"
+}
+```
+
+### Error Response (404)
+
+```json
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "Hackathon not found with id: 999",
+  "path": "/api/hackathons/999",
+  "timestamp": "2026-06-02T02:41:32.8274901"
+}
+```
+
+## Create Hackathon
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/hackathons` |
+
+Creates a new hackathon. Restricted to authorized roles: `ORGANIZER`, `ADMIN`, `SUPER_ADMIN`.
+
+### Authentication
+
+Protected endpoint. Requires Bearer JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "title": "CodeSprint 2026",
+  "description": "A beginner-friendly hackathon for building full-stack projects.",
+  "organizer": "Eventra Team",
+  "startDate": "2026-07-10T00:00:00",
+  "endDate": "2026-07-12T00:00:00",
+  "location": "Bhopal",
+  "mode": "Offline",
+  "prizePool": "50000",
+  "registrationDeadline": "2026-07-05T00:00:00",
+  "imageUrl": "https://example.com/hackathon.png"
+}
+```
+
+- `title`: required
+- `description`: required
+- `organizer`: required
+- `startDate`: required
+- `endDate`: required
+- `location`: required
+- `mode`: required
+- `registrationDeadline`: required
+- `prizePool`: optional
+- `imageUrl`: optional
+
+### Successful Response (201)
+
+```json
+{
+  "id": 1,
+  "title": "CodeSprint 2026",
+  "description": "A beginner-friendly hackathon for building full-stack projects.",
+  "organizer": "Eventra Team",
+  "startDate": "2026-07-10T00:00:00",
+  "endDate": "2026-07-12T00:00:00",
+  "location": "Bhopal",
+  "mode": "Offline",
+  "prizePool": "50000",
+  "registrationDeadline": "2026-07-05T00:00:00",
+  "imageUrl": "https://example.com/hackathon.png"
+}
+```
+
+### Error Responses
+
+- **400 Bad Request**: Validation errors for invalid payloads.
+- **401 Unauthorized**: JWT is missing or invalid.
+- **403 Forbidden**: Authenticated user does not have the required role (`ORGANIZER`, `ADMIN`, or `SUPER_ADMIN`).
+
+## Update Hackathon
+
+| Method | Endpoint |
+|--------|----------|
+| PUT | `/api/hackathons/{id}` |
+
+Updates an existing hackathon by id. Restricted to authorized roles: `ORGANIZER`, `ADMIN`, `SUPER_ADMIN`.
+
+### Authentication
+
+Protected endpoint. Requires Bearer JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "title": "Updated Hackathon",
+  "description": "Updated hackathon description",
+  "organizer": "IEEE OIST Updated",
+  "startDate": "2026-10-10T10:00:00",
+  "endDate": "2026-10-11T18:00:00",
+  "location": "Bhopal",
+  "mode": "Hybrid",
+  "prizePool": "75000 INR",
+  "registrationDeadline": "2026-10-01T23:59:59",
+  "imageUrl": "https://example.com/updated.png"
+}
+```
+
+- `title`: required
+- `description`: required
+- `organizer`: required
+- `startDate`: required
+- `endDate`: required
+- `location`: required
+- `mode`: required
+- `registrationDeadline`: required
+- `prizePool`: optional
+- `imageUrl`: optional
+
+### Successful Response (200)
+
+```json
+{
+  "id": 2,
+  "title": "Updated Hackathon",
+  "description": "Updated hackathon description",
+  "organizer": "IEEE OIST Updated",
+  "startDate": "2026-10-10T10:00:00",
+  "endDate": "2026-10-11T18:00:00",
+  "location": "Bhopal",
+  "mode": "Hybrid",
+  "prizePool": "75000 INR",
+  "registrationDeadline": "2026-10-01T23:59:59",
+  "imageUrl": "https://example.com/updated.png"
+}
+```
+
+### Error Responses
+
+- **400 Bad Request**: Validation errors for invalid payloads.
+- **401 Unauthorized**: JWT is missing or invalid.
+- **403 Forbidden**: Authenticated user does not have the required role (`ORGANIZER`, `ADMIN`, or `SUPER_ADMIN`).
+- **404 Not Found**: Hackathon id does not exist.
+
+## Delete Hackathon
+
+| Method | Endpoint |
+|--------|----------|
+| DELETE | `/api/hackathons/{id}` |
+
+Deletes an existing hackathon by id. Restricted to authorized roles: `ADMIN`, `SUPER_ADMIN`.
+
+### Authentication
+
+Protected endpoint. Requires Bearer JWT authentication.
+
+### Path Parameter
+
+- `id`: Long, hackathon id
+
+### Successful Response (204)
+
+No response body.
+
+### Error Responses
+
+- **401 Unauthorized**: JWT is missing or invalid.
+- **403 Forbidden**: Authenticated user does not have the required role (`ADMIN` or `SUPER_ADMIN`).
+- **404 Not Found**: Hackathon id does not exist.
+
+## Register for Hackathon
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/hackathons/{id}/register` |
+
+Registers the authenticated user for a hackathon by id.
+
+### Authentication
+
+Protected endpoint. Requires Bearer JWT authentication. Any authenticated user can register.
+
+### Path Parameter
+
+- `id`: Long, hackathon id
+
+### Request Body
+
+No request body required.
+
+### Successful Response (201)
+
+```json
+{
+  "registrationId": 1,
+  "hackathonId": 1,
+  "hackathonTitle": "Manual Register Test Hackathon",
+  "userEmail": "hackregisteruser@example.com",
+  "registeredAt": "2026-06-04T23:50:18.742152",
+  "status": "CONFIRMED"
+}
+```
+
+### Error Responses
+
+- **400 Bad Request**: Registration deadline has passed / registration is closed.
+- **401 Unauthorized**: JWT is missing or invalid.
+- **404 Not Found**: Hackathon id does not exist.
+- **409 Conflict**: User is already registered for the hackathon.
+
+*Note: The backend implementation is handled in the Eventra-Backend repository. This docs PR only syncs API documentation with the backend behavior.*
+
+---
+
+# Feedback APIs
+
+## Submit Feedback
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/feedback` |
+
+This endpoint allows an authenticated user to submit feedback for an event they are registered for. The backend validates the event, authenticated user, and event registration before saving feedback. Duplicate feedback from the same user for the same event is rejected.
+
+### Authentication
+
+Requires a valid Bearer JWT in the `Authorization` header. Any authenticated user can submit feedback, but the user must be registered for the event.
+
+### Request Body
+
+```json
+{
+  "eventId": 1,
+  "rating": 5,
+  "comment": "Great event!"
+}
+```
+
+### Request Validation
+
+- `eventId` is required
+- `rating` is required and must be between `1` and `5`
+- `comment` is optional and can be up to `1000` characters
+
+### Successful Response (201)
+
+```json
+{
+  "id": 1,
+  "eventId": 1,
+  "userId": 1,
+  "rating": 5,
+  "comment": "Great event!",
+  "submittedAt": "2026-06-07T18:06:22.334156"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Invalid request body or validation failure |
+| `401 Unauthorized` | If the request is unauthenticated |
+| `403 Forbidden` | If the authenticated user is not registered for the event |
+| `404 Not Found` | If the event or authenticated user does not exist |
+| `409 Conflict` | If the user has already submitted feedback for the event |
+
+
+---
+
+# Notification APIs
+
+## Get Notifications
+
+| Method | Endpoint             |
+| ------ | -------------------- |
+| GET    | `/api/notifications` |
+
+Returns the authenticated user’s notifications sorted by newest first.
+
+### Authentication
+
+Requires Bearer JWT authentication.
+
+### Success Response
+
+Status: `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Welcome Notification",
+    "message": "This is a manual test notification.",
+    "read": false,
+    "createdAt": "2026-06-09T00:38:52.335113"
+  }
+]
+```
+
+### Empty Response
+
+If the authenticated user has no notifications:
+
+```json
+[]
+```
+
+### Notes
+
+* Only notifications belonging to the authenticated user are returned.
+* The response includes read/unread status using the `read` field.
+* Notifications are returned in newest-first order.
+* Pagination is not currently included.
+
+---
+
+# Analytics APIs
+
+## Get Admin Analytics
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/admin/analytics` |
+
+Returns high-level system analytics and dashboard statistics.
+
+*This documentation update corresponds to the backend implementation for GET /api/admin/analytics.*
+
+### Authentication
+
+Requires a valid Bearer JWT in the `Authorization` header. This endpoint is restricted to users with `ADMIN`, `ORGANIZER`, or `SUPER_ADMIN` roles.
+
+### Successful Response (200)
+
+```json
+{
+  "monthlyRegistrations": [
+    { "month": "Jan", "count": 120 },
+    { "month": "Feb", "count": 150 }
+  ],
+  "categoryBreakdown": [
+    { "category": "Technology", "count": 20 },
+    { "category": "Design", "count": 8 }
+  ],
+  "registrationTrend": "up",
+  "topEvents": [
+    { "id": 1, "title": "Tech Conference 2026", "participants": 300 }
+  ]
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `401 Unauthorized` | JWT token is missing, invalid, or expired |
+| `403 Forbidden` | Authenticated user does not have the required administrative role |
 
 ---
 

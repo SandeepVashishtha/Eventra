@@ -8,6 +8,11 @@ const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const backendTarget =
+    env.BACKEND_URL ||
+    env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
+    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") ||
+    "http://localhost:8080";
 
   return {
     plugins: [
@@ -42,32 +47,29 @@ export default defineConfig(({ mode }) => {
       },
     },
 
-    define: {
-      "process.env.NODE_ENV": JSON.stringify(mode),
-      "process.env.PUBLIC_URL": JSON.stringify(""),
-      "process.env.REACT_APP_API_URL": JSON.stringify(
-        env.REACT_APP_API_URL || env.VITE_API_URL || "/api"
-      ),
-      "process.env.REACT_APP_GITHUB_REPO": JSON.stringify(
-        env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra"
-      ),
-      "process.env.REACT_APP_PUBLIC_URL": JSON.stringify(
-        env.REACT_APP_PUBLIC_URL || "https://eventra.sandeepvashishtha.tech"
-      ),
-      "process.env.REACT_APP_VAPID_PUBLIC_KEY": JSON.stringify(
-        env.REACT_APP_VAPID_PUBLIC_KEY || ""
-      ),
-      "process.env.REACT_APP_CSP_REPORT_URI": JSON.stringify(env.REACT_APP_CSP_REPORT_URI || ""),
-    },
-
     server: {
       port: 3000,
       open: false,
       hmr: { overlay: true },
+      proxy: {
+        "/api": {
+          target: backendTarget,
+          changeOrigin: true,
+        },
+        "/stream": {
+          target: backendTarget,
+          changeOrigin: true,
+        },
+      },
     },
 
     // Pre-bundle heavy deps once → node_modules/.vite/deps
     optimizeDeps: {
+      rolldownOptions: {
+        moduleTypes: {
+          ".js": "jsx",
+        },
+      },
       include: [
         "react",
         "react-dom",
@@ -97,9 +99,9 @@ export default defineConfig(({ mode }) => {
       outDir: "build",
       sourcemap: false,
       minify: "esbuild",
-      // Disable CSS minification — lightningcss (Vite 8 default) cannot parse
-      // the custom Tailwind `short` screen: (max-height: 520px) media query.
-      cssMinify: false,
+      // Use esbuild for CSS minification instead of the default lightningcss,
+      // which cannot parse the custom Tailwind `short` screen media query.
+      cssMinify: "esbuild",
       chunkSizeWarningLimit: 1500,
       rollupOptions: {
         output: {

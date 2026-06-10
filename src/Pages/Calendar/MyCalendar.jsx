@@ -167,6 +167,7 @@ const MyCalendar = () => {
       .sort((a, b) => new Date(a.event.date) - new Date(b.event.date));
   };
 
+  const today = new Date();
   const selectedEvents = getSelectedDateEvents();
   const timelineEvents = getFilteredAllEvents();
 
@@ -352,9 +353,9 @@ const MyCalendar = () => {
                           const dayEvents = getEventsForDate(day);
                           const selected = isSelected(day);
                           const isToday =
-                            new Date().getDate() === day &&
-                            new Date().getMonth() === currentMonth &&
-                            new Date().getFullYear() === currentYear;
+                            today.getDate() === day &&
+                            today.getMonth() === currentMonth &&
+                            today.getFullYear() === currentYear;
 
                           return (
                             <button
@@ -422,7 +423,7 @@ const MyCalendar = () => {
                                 <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
                                   {item.event.category || "General"}
                                 </span>
-                                <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 mt-1 truncate">
+                                <h4 title={item.event.title} className="font-extrabold text-sm text-slate-900 dark:text-slate-100 mt-1 line-clamp-2 break-words min-w-0">
                                   {item.event.title}
                                 </h4>
                                 <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 mt-2">
@@ -532,7 +533,7 @@ const MyCalendar = () => {
                                       Registered: {new Date(item.registeredAt).toLocaleDateString()}
                                     </span>
                                   </div>
-                                  <h4 className="font-extrabold text-base text-slate-900 dark:text-slate-100">
+                                  <h4 title={item.event.title} className="font-extrabold text-base text-slate-900 dark:text-slate-100 line-clamp-2 break-words min-w-0">
                                     {item.event.title}
                                   </h4>
                                   <p className="text-xs text-slate-500 max-w-xl truncate mt-1">

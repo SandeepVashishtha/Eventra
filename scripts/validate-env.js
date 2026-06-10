@@ -44,17 +44,18 @@ const SENSITIVE_KEY_PATTERNS = [
 ];
 
 const SENSITIVE_VALUE_PATTERNS = [
-  { pattern: /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, label: "PEM private key" },
-  { pattern: /AIza[0-9A-Za-z\-_]{35}/, label: "Google API key" },
-  { pattern: /sk-[a-zA-Z0-9]{48}/, label: "OpenAI secret key" },
-  { pattern: /rk_live_[0-9a-zA-Z]{24}/, label: "Stripe restricted key" },
-  { pattern: /SK[0-9a-f]{32}/, label: "Twilio auth token" },
-  { pattern: /xox[baprs]-[0-9a-zA-Z]{10,}/, label: "Slack API token" },
-  { pattern: /mongodb\+srv:\/\/[^:]+:[^@]+@/, label: "MongoDB Atlas URI with credentials" },
-  { pattern: /postgres:\/\/[^:]+:[^@]+@/, label: "PostgreSQL URI with credentials" },
-  { pattern: /mysql:\/\/[^:]+:[^@]+@/, label: "MySQL URI with credentials" },
-  { pattern: /ghp_[a-zA-Z0-9]{36}/, label: "GitHub personal access token" },
-  { pattern: /eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\./, label: "JWT token (hardcoded)" },
+  { pattern: /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, label: 'PEM private key' },
+  { pattern: /AIza[0-9A-Za-z\-_]{35}/, label: 'Google API key' },
+  { pattern: /sk-[A-Za-z0-9_-]{32,}/, label: 'OpenAI secret key' },
+  { pattern: /rk_live_[0-9a-zA-Z]{24}/, label: 'Stripe restricted key' },
+  { pattern: /SK[0-9a-f]{32}/, label: 'Twilio auth token' },
+  { pattern: /xox[baprs]-[0-9a-zA-Z]{10,}/, label: 'Slack API token' },
+  { pattern: /mongodb(\+srv)?:\/\/[^:\s]+:[^@\s]+@/, label: 'MongoDB URI with credentials' },
+  { pattern: /postgres(ql)?:\/\/[^:\s]+:[^@\s]+@/, label: 'PostgreSQL URI with credentials' },
+  { pattern: /mysql:\/\/[^:\s]+:[^@\s]+@/, label: 'MySQL URI with credentials' },
+  { pattern: /gh[pousr]_[A-Za-z0-9_]{20,}/, label: 'GitHub personal access token' },
+  { pattern: /github_pat_[A-Za-z0-9_]{22,}/, label: 'GitHub fine-grained personal access token' },
+  { pattern: /eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\./, label: 'JWT token (hardcoded)' },
 ];
 
 const ALLOWED_EXCEPTIONS = new Set([
@@ -99,6 +100,15 @@ if (process.env.REACT_APP_GROQ_API_KEY) {
   hasErrors = true;
 }
 
+const buildEnv = process.env.NODE_ENV;
+const isBuildLocal = buildEnv === "development" || buildEnv === "test" || !buildEnv;
+if (!isBuildLocal && (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim())) {
+  const msg = "[CRITICAL ERROR] JWT_SECRET environment variable is missing. A signing secret is required for production/staging builds.";
+  errors.push(msg);
+  hasErrors = true;
+  console.error(`  ERROR: ${msg}`);
+}
+
 console.log("\nOptional variables:");
 if (OPTIONAL_VARS.length === 0) {
   console.log("  (none configured)");
@@ -127,10 +137,13 @@ for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   }
 }
 
-console.log("\nScanning VITE_* variables for credential leaks...");
-const viteVars = Object.keys(process.env).filter((k) => k.startsWith("VITE_"));
+console.log("\nScanning client variables for credential leaks...");
+// Security Fix: Scan BOTH Vite and React App prefixes to prevent bypass leaks
+const clientVars = Object.keys(process.env).filter(
+  (k) => k.startsWith("VITE_") || k.startsWith("REACT_APP_")
+);
 
-for (const key of viteVars) {
+for (const key of clientVars) {
   if (ALLOWED_EXCEPTIONS.has(key)) continue;
 
   const value = process.env[key] || "";
@@ -169,7 +182,7 @@ if (errors.length > 0) {
 }
 
 const criticalErrors = errors.filter(
-  (e) => e.includes("[SECURITY LEAK]") || e.includes("[FORMAT ERROR]")
+  (e) => e.includes("[SECURITY LEAK]") || e.includes("[FORMAT ERROR]") || e.includes("[CRITICAL ERROR]")
 );
 if (criticalErrors.length > 0 || hasErrors) {
   console.error(
@@ -179,6 +192,6 @@ if (criticalErrors.length > 0 || hasErrors) {
 }
 
 console.log(
-  `\n[validate-env] Environment check passed. Scanned ${viteVars.length} VITE_* variable(s).\n`
+  `\n[validate-env] Environment check passed. Scanned ${clientVars.length} client variable(s).\n`
 );
 process.exit(0);

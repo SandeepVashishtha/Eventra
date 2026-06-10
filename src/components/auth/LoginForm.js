@@ -76,7 +76,6 @@ const LoginForm = () => {
         );
       }
     } catch (err) {
-      console.error("Login error:", err);
       const errorMsg = err.message || "Invalid email or password";
       setError({ general: errorMsg });
       toast.error(errorMsg);
@@ -129,6 +128,8 @@ const LoginForm = () => {
               value={formData.usernameOrEmail}
               onChange={handleChange}
               required
+              aria-busy={authRequest.loading}
+aria-live="polite"
               disabled={authRequest.loading}
               placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
               aria-invalid={!!error.usernameOrEmail}

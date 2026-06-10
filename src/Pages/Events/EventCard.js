@@ -108,40 +108,43 @@ const EventCard = ({ event }) => {
     });
   }, [event.id]);
 
-  const handleBookmarkToggle = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleBookmarkToggle = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    if (isBookmarked) {
-      removeBookmarkedEvent(event.id);
-      toast.info("Removed from bookmarked events.", {
+      if (isBookmarked) {
+        removeBookmarkedEvent(event.id);
+        toast.info("Removed from bookmarked events.", {
+          toastId: `bookmark-${event.id}`,
+          autoClose: 1800,
+          className: "custom-toast",
+        });
+        return;
+      }
+
+      addBookmarkedEvent({
+        ...event,
+        status: computedStatus,
+      });
+      toast.success("Event bookmarked.", {
         toastId: `bookmark-${event.id}`,
         autoClose: 1800,
         className: "custom-toast",
       });
-      return;
-    }
-
-    addBookmarkedEvent({
-      ...event,
-      status: computedStatus,
-    });
-    toast.success("Event bookmarked.", {
-      toastId: `bookmark-${event.id}`,
-      autoClose: 1800,
-      className: "custom-toast",
-   });
-}, [computedStatus, event, isBookmarked]);
+    },
+    [isBookmarked, event, computedStatus]
+  );
 
   return (
     <article
       data-aos="zoom-in"
       data-aos-duration="800"
       aria-labelledby={titleId}
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 hover:z-50 hover:shadow-2xl hover:-translate-y-2 overflow-hidden border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
     >
       {/* Action buttons */}
-      <div className="absolute top-22 right-3 z-200 flex space-x-1.5 items-center">
+      <div className="absolute top-3 right-3 z-200 flex space-x-1.5 items-center">
         <div className="relative flex items-center">
           <motion.button
             whileHover={{ scale: 1.12 }}
@@ -255,7 +258,7 @@ const EventCard = ({ event }) => {
           {randomIcon}
         </div>
 
-        <h3 id={titleId} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1">
+        <h3 id={titleId} title={event.title} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 break-words group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1 min-w-0">
           {event.title}
         </h3>
         <div className="ml-auto flex items-center gap-2">
@@ -292,9 +295,9 @@ const EventCard = ({ event }) => {
         <LazyImage
           src={event.image}
           alt={event.imageAlt || `${event.title} event thumbnail`}
-          width={800}
-          height={160}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          aspectRatio="5/1"
+          className="w-full h-full"
+          imgClassName="object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
       </div>
@@ -309,7 +312,7 @@ const EventCard = ({ event }) => {
       {/* Info Grid */}
       <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
         {/* Location */}
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-2 sm:col-span-2">
           <MapPin size={14} className="text-pink-500 shrink-0" />
           <div className="flex flex-col min-w-0">
             <span className="truncate">{event.location}</span>
@@ -404,7 +407,7 @@ const EventCard = ({ event }) => {
           </Link>
         )}
 
-        <Link to={`/events/${event.id}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-white/80 dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 px-4 py-3 text-sm font-semibold shadow-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-800 dark:hover:text-white hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
+        <Link to={`/events/${event.id}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-50/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-3 text-sm font-semibold shadow-md hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
           <span>
             View Details
           </span>

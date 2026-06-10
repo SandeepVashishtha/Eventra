@@ -1,7 +1,25 @@
-import "./helpers/authTestEnv.mjs";
-process.env.ALLOWED_ORIGIN = "http://localhost:3000";
+import { AUTH_TEST_ALLOWED_ORIGIN } from "./helpers/authTestEnv.mjs";
 import assert from "node:assert/strict";
-const { default: handler } = await import("../api/auth/signup.js");
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+
+// Reset temp database file to prevent test pollution from previous runs
+const DB_PATH = path.join(os.tmpdir(), "eventra_users_db.json");
+if (fs.existsSync(DB_PATH)) {
+  try {
+    fs.unlinkSync(DB_PATH);
+  } catch (e) {
+    // Ignore error
+  }
+}
+
+const { default: handler, users, usersById, usersByUsername } = await import("../api/auth/signup.js");
+
+// Reset in-memory maps
+if (users) users.clear();
+if (usersById) usersById.clear();
+if (usersByUsername) usersByUsername.clear();
 
 // ---------------------------------------------------------------------------
 // Mock Response Helper
@@ -41,10 +59,19 @@ const createResponse = () => {
 // Mock Request Helper
 // ---------------------------------------------------------------------------
 
-const createRequest = (method, body) => ({
-  method,
-  body,
-});
+let requestCounter = 0;
+const createRequest = (method, body, headers = {}) => {
+  const finalHeaders = { origin: "http://localhost:3000", ...headers };
+  if (!finalHeaders["x-forwarded-for"] && !finalHeaders["x-real-ip"]) {
+    requestCounter += 1;
+    finalHeaders["x-forwarded-for"] = `10.0.0.${requestCounter}`;
+  }
+  return {
+    method,
+    body,
+    headers: finalHeaders,
+  };
+};
 
 // ---------------------------------------------------------------------------
 // Test: Successful signup
@@ -67,7 +94,10 @@ console.log("Running signup endpoint tests...");
   await handler(req, res);
 
   assert.equal(res.statusCode, 201, "Should return 201 on successful signup");
-  assert.ok(res.body.token, "Should return a JWT token");
+  // Token must be in the HttpOnly Set-Cookie header, not the response body.
+  assert.equal(res.body.token, undefined, "Token must not be exposed in signup response body");
+  const setCookieSignup = res.headers?.["Set-Cookie"] || "";
+  assert.ok(setCookieSignup.includes("HttpOnly"), "Signup must set an HttpOnly cookie");
   assert.equal(res.body.firstName, "John", "Should return firstName");
   assert.equal(res.body.lastName, "Doe", "Should return lastName");
   assert.equal(res.body.email, "john.doe@example.com", "Should return email (normalized)");
@@ -334,11 +364,12 @@ console.log("Running signup endpoint tests...");
     confirmPassword: "SecurePass222!",
   };
 
-  const req = createRequest("POST", validUserData);
+  const req = createRequest("POST", validUserData, { origin: AUTH_TEST_ALLOWED_ORIGIN });
   const res = createResponse();
   await handler(req, res);
 
-  assert.ok(res.headers["Access-Control-Allow-Origin"], "Should have CORS Allow-Origin header");
+  assert.ok(res.headers["Access-Control-Allow-Origin"], "Should have CORS Allow-Origin header for allowed origin");
+  assert.equal(res.headers["Access-Control-Allow-Origin"], AUTH_TEST_ALLOWED_ORIGIN, "Should reflect request origin");
   assert.ok(res.headers["Access-Control-Allow-Credentials"], "Should have CORS Allow-Credentials header");
   console.log("✓ Test 16: CORS headers are set");
 }
@@ -397,6 +428,52 @@ console.log("Running signup endpoint tests...");
   assert.equal(res.statusCode, 400, "Should return 400 for lastName > 50 chars");
   assert.ok(res.body.error, "Should return error message");
   console.log("✓ Test 19: Last name too long (>50 chars) returns 400");
+}
+
+// Test 20: Signup rate limit allows normal requests before limit
+{
+  const baseEmail = "ratelimit.signup";
+  for (let i = 1; i <= 5; i += 1) {
+    const validUserData = {
+      firstName: "Normal",
+      lastName: `User${i}`,
+      email: `${baseEmail}${i}@example.com`,
+      password: "SecurePass123!",
+      confirmPassword: "SecurePass123!",
+    };
+
+    const req = createRequest("POST", validUserData, { "x-forwarded-for": "127.0.0.2" });
+    const res = createResponse();
+    await handler(req, res);
+
+    assert.notEqual(res.statusCode, 429, `Signup request ${i} should not be rate limited`);
+  }
+  console.log("✓ Test 20: Signup rate limit allows normal requests before limit");
+}
+
+// Test 21: Signup rate limit blocks after max attempts
+{
+  const req = createRequest(
+    "POST",
+    {
+      firstName: "Blocked",
+      lastName: "User",
+      email: "ratelimit.signup6@example.com",
+      password: "SecurePass123!",
+      confirmPassword: "SecurePass123!",
+    },
+    { "x-forwarded-for": "127.0.0.2" }
+  );
+  const res = createResponse();
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 429, "Should return 429 after signup attempts exceed the limit");
+  assert.ok(res.body.error, "Should return an error field when rate-limited");
+  assert.ok(
+    res.body.error.toLowerCase().includes("too many") || res.body.error.toLowerCase().includes("rate"),
+    "Error message should indicate rate limiting"
+  );
+  console.log("✓ Test 21: Signup rate limit blocks after max attempts");
 }
 
 console.log("\n✅ All signup endpoint tests passed!");
