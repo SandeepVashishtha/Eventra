@@ -8,13 +8,23 @@ const requireJwtSecret = () => {
     return secret;
   }
 
-  // Fallback to a test secret if in test environment
-  if (process.env.NODE_ENV === "test") {
-    return "test-secret-for-test-environments";
+  const env = process.env.NODE_ENV;
+  const isLocal = env === "development" || env === "test" || !env;
+
+  if (isLocal) {
+    console.warn(
+      "\x1b[33m%s\x1b[0m",
+      `[JWT WARNING] JWT_SECRET environment variable is not configured. Falling back to the default local ${
+        env === "test" ? "test" : "development"
+      } secret. This is insecure for staging/production environments!`
+    );
+    return env === "test"
+      ? "test-secret-for-test-environments"
+      : "eventra-local-development-jwt-secret";
   }
 
   throw new Error(
-    "Missing required environment variable: JWT_SECRET. Eventra cannot start without a JWT signing secret."
+    "Missing required environment variable: JWT_SECRET. Eventra cannot start in non-local environments without a JWT signing secret."
   );
 };
 

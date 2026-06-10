@@ -8,24 +8,26 @@ Modern event and hackathon platform for communities, organizers, and contributor
 
 ---
 
-> [!IMPORTANT]
->
-> ## Project Status Notice
->
-> Due to time constraints and other commitments, **I ([@SandeepVashishtha](https://github.com/SandeepVashishtha)) will no longer be actively contributing to or managing this project** going forward. I sincerely apologize for any inconvenience this may cause to contributors and users.
->
-> **The project will NOT be archived** - it remains open and active, especially for **GSSoC 2026** participants and the broader open-source community.
->
-> There are mentors currently involved, and the project can continue to grow with community support. However, **we are looking for 2-3 dedicated volunteers to step up as maintainers** to help review PRs, triage issues, and guide contributors.
->
-> ### Interested in becoming a maintainer?
->
-> If you are passionate about this project and willing to take on a maintainer role, please reach out by:
->
-> - Opening an issue titled **"Maintainer Volunteer - [Your Name]"**
-> - Or contacting via the existing community channels
->
-> Your contributions and leadership would mean a lot to this project and the community around it. 🙏
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Project Architecture](#project-architecture)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Local Development](#local-development)
+- [Docker Development](#docker-development)
+- [Environment Variables](#environment-variables)
+- [Available Scripts](#available-scripts)
+- [Testing and Quality](#testing-and-quality)
+- [SSE Mock Server (Optional)](#sse-mock-server-optional)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contributors](#contributors)
+- [Star History](#star-history)
 
 ---
 
@@ -283,37 +285,3 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
 Built by the Eventra community.
 
 ---
-
-## 🧑‍🏫 Mentor
-
-This project is mentored under **GSSoC'26** by:
-
-<table>
-<tr>
-<td align="center">
-<a href="https://github.com/Ayushh-Sharmaa">
-  <img src="https://avatars.githubusercontent.com/Ayushh-Sharmaa?v=4" height="140px" width="140px" alt="Ayush Sharma" style="border-radius:50%"/>
-</a><br>
-<sub><b>Ayush Sharma</b><br>
-<i>GSSoC'26 Mentor · Eventra</i><br><br>
-<a href="https://github.com/Ayushh-Sharmaa" target="_blank">
-  <img src="https://img.shields.io/badge/GitHub-Ayushh--Sharmaa-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"/>
-</a>
-&nbsp;
-<a href="https://www.linkedin.com/in/ayushh-sharmaa/" target="_blank">
-  <img src="https://img.shields.io/badge/LinkedIn-ayushh--sharmaa-0A66C2?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn"/>
-</a>
-</sub>
-</td>
-</tr>
-</table>
-
-> 💬 Have questions about contributing or the project? Reach out to the mentor on [LinkedIn](https://www.linkedin.com/in/ayushh-sharmaa/) or via the [GSSoC Discord](https://discord.gg/6MQ9r5nHT).
-
-## 🚀 Quick Start
-
-```bash
-git clone https://github.com/SandeepVashishtha/Eventra.git
-cd Eventra
-npm install
-npm run dev
