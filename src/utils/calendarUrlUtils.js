@@ -191,3 +191,91 @@ export const extractMeetingLink = (text = '') => {
   const match = text.match(/https:\/\/(us02web\.zoom\.us|teams\.microsoft\.com|meet\.google\.com)\/[^\s]+/i);
   return match ? match[0] : null;
 };
+
+/**
+ * Build a Yahoo Calendar "Add to Calendar" URL for the given event.
+ *
+ * @param {object} event  - Event object
+ * @param {string} [timezone]  - IANA tz string; defaults to browser timezone
+ * @returns {string}  A fully encoded Yahoo Calendar URL, or "" on error.
+ */
+export const getYahooCalendarUrl = (event, timezone) => {
+  if (!event) return '';
+
+  const range = getEventUTCRange(event, timezone);
+
+  if (!range) {
+    const dateFallback = (event.date || '').replace(/-/g, '');
+    return [
+      'https://calendar.yahoo.com/?v=60',
+      `&TITLE=${encodeURIComponent(event.title || '')}`,
+      `&ST=${dateFallback}T000000Z`,
+      `&ET=${dateFallback}T010000Z`,
+      `&DESC=${encodeURIComponent(event.description || '')}`,
+      `&in_loc=${encodeURIComponent(event.location || '')}`,
+    ].join('');
+  }
+
+  const start = formatUTCtoCalendarString(range.startMs, 'compact');
+  const end   = formatUTCtoCalendarString(range.endMs,   'compact');
+
+  return [
+    'https://calendar.yahoo.com/?v=60',
+    `&TITLE=${encodeURIComponent(event.title || '')}`,
+    `&ST=${start}`,
+    `&ET=${end}`,
+    `&DESC=${encodeURIComponent(event.description || '')}`,
+    `&in_loc=${encodeURIComponent(event.location || '')}`,
+  ].join('');
+};
+
+/**
+ * Generate a standard .ics file Blob URL for Apple Calendar / generic clients.
+ *
+ * @param {object} event  - Event object
+ * @param {string} [timezone]  - IANA tz string; defaults to browser timezone
+ * @returns {string|null}  A Blob URL that can be used in an <a href> tag with download attribute. Returns null on error.
+ */
+export const generateIcsFileBlobUrl = (event, timezone) => {
+  if (!event) return null;
+
+  const range = getEventUTCRange(event, timezone);
+  let start, end;
+
+  if (!range) {
+    const dateFallback = (event.date || '').replace(/-/g, '');
+    start = `${dateFallback}T000000Z`;
+    end = `${dateFallback}T010000Z`;
+  } else {
+    start = formatUTCtoCalendarString(range.startMs, 'compact');
+    end = formatUTCtoCalendarString(range.endMs, 'compact');
+  }
+
+  const now = new Date().toISOString().replace(/-|:|\.\d+/g, '');
+  
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Eventra//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${event.id || Math.random().toString(36).substring(2)}@eventra.com`,
+    `DTSTAMP:${now}`,
+    `DTSTART:${start}`,
+    `DTEND:${end}`,
+    `SUMMARY:${(event.title || '').replace(/,/g, '\\,')}`,
+    `DESCRIPTION:${(event.description || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,')}`,
+    `LOCATION:${(event.location || '').replace(/,/g, '\\,')}`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\\r\\n');
+
+  try {
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    console.error("Failed to generate ICS file blob URL", error);
+    return null;
+  }
+};

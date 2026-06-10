@@ -33,7 +33,11 @@ const UserProfileDropdown = ({
           alt="Profile"
           className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
           loading="lazy"
-          onError={(e) => (e.currentTarget.style.display = "none")}
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+            e.currentTarget.style.backgroundColor = "#f3f4f6";
+          }}
         />
       ) : (
         <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
@@ -60,7 +64,11 @@ const UserProfileDropdown = ({
                   src={user.profilePicture}
                   alt="Profile"
                   className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20"
-                  onError={(e) => (e.currentTarget.style.display = "none")}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+                    e.currentTarget.style.backgroundColor = "#f3f4f6";
+                  }}
                 />
               ) : (
                 <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">

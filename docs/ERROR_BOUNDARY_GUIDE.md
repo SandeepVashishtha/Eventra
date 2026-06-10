@@ -3,6 +3,7 @@
 ## Using the Error Boundary
 
 ### Basic Setup
+
 ```jsx
 import ErrorBoundary from "./components/common/ErrorBoundary";
 
@@ -16,6 +17,7 @@ function App() {
 ```
 
 ### Sectional Error Boundaries
+
 ```jsx
 import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
 
@@ -36,7 +38,8 @@ function Dashboard() {
 
 ## Error Recovery Actions
 
-### Users Can:
+### Users Can
+
 1. **Reload Page** - Full page reload (fastest recovery)
 2. **Try Again** - Soft retry without reload (preserves session, max 3 attempts)
 3. **Reset Cache** - Clears localStorage, preserves auth tokens
@@ -44,6 +47,7 @@ function Dashboard() {
 5. **Copy Report** - Copy diagnostic report to clipboard
 
 ### Recovery Flow
+
 ```
 Error Occurs
     ↓
@@ -61,6 +65,7 @@ App Recovers or Reloads
 ## What Gets Preserved
 
 ### Always Preserved
+
 - `eventra_user` - User session data
 - `eventra_token` - Authentication token
 - `eventra_refresh_token` - Refresh token
@@ -68,12 +73,14 @@ App Recovers or Reloads
 - `eventra_preferences` - User preferences
 
 ### Cleared on Cache Reset
+
 - Browser cache
 - SessionStorage
 - App-specific localStorage entries
 - Service worker cache
 
 ### Never Cleared
+
 - Cookies (except session-dependent)
 - IndexedDB (if used)
 - Auth tokens (explicitly preserved)
@@ -81,6 +88,7 @@ App Recovers or Reloads
 ## Diagnostic Information Captured
 
 The diagnostic report includes:
+
 - ✅ Error ID (unique reference)
 - ✅ Timestamp and URL
 - ✅ User Agent and Browser Info
@@ -95,17 +103,20 @@ The diagnostic report includes:
 ## Error Logging
 
 ### Automatic Logging
+
 ```javascript
 // In errorLogger.js
 logError(error, errorInfo, extra);
 ```
 
 ### What Gets Logged
+
 1. **Console** - Always logged to browser console
 2. **localStorage** - Persisted under `eventra_error_log`
 3. **Sentry** - Production only (if DSN configured)
 
 ### Accessing Error Log
+
 ```javascript
 import { getErrorLog, clearErrorLog } from "../utils/errorLogger";
 
@@ -119,17 +130,20 @@ clearErrorLog();
 ## Mobile Optimization
 
 ### Touch Targets
+
 - All buttons: minimum 44-48px height
 - Touch-friendly padding on all interactive elements
 - Larger text sizes on small screens
 
 ### Responsive Breakpoints
+
 - **Desktop** (1920px+): Full UI with side-by-side buttons
 - **Tablet** (768px): Adjusted spacing, grid layouts
 - **Mobile** (540px): Stacked buttons, full width
 - **Small Mobile** (360px): Compact layout, reduced padding
 
 ### Testing on Mobile
+
 ```bash
 # Chrome DevTools
 1. Open DevTools (F12)
@@ -141,22 +155,26 @@ clearErrorLog();
 ## Accessibility Features
 
 ### Keyboard Navigation
+
 - Tab through all buttons and controls
 - Enter/Space to activate buttons
 - Esc to close modals (future enhancement)
 
 ### Screen Reader Support
+
 - All buttons have descriptive ARIA labels
 - Status updates announced via `aria-live`
 - Modal properly marked with `role="alertdialog"`
 - Hidden elements marked with `aria-hidden`
 
 ### Focus Management
+
 - Clear focus visible outlines on all buttons
 - Logical tab order
 - Focus states properly styled
 
 ### Reduced Motion
+
 - Animations disabled for `prefers-reduced-motion`
 - Smooth transitions maintained
 - No involuntary motion
@@ -164,20 +182,25 @@ clearErrorLog();
 ## Common Issues & Solutions
 
 ### Issue: "Try Again" button doesn't work
+
 **Solution**: If clicked 3+ times, auto-upgrades to hard reload. Check browser console for errors.
 
 ### Issue: Copy Report button doesn't work
+
 **Solution**: May need clipboard permissions. Try manual copy (select all, Ctrl+C).
 
 ### Issue: Cache Reset didn't solve the problem
+
 **Solution**: Try full reload. If issue persists, report with diagnostic report.
 
 ### Issue: Can't see diagnostics on mobile
+
 **Solution**: Tap "View Diagnostics" button. On small screens, content scrolls within panel.
 
 ## Development Tips
 
 ### Testing Error Boundary
+
 ```javascript
 // Temporarily add error in component
 useEffect(() => {
@@ -191,6 +214,7 @@ function ErrorTest() {
 ```
 
 ### Viewing Error Logs
+
 ```javascript
 // In browser console
 localStorage.getItem('eventra_error_log') // Eventra errors
@@ -201,6 +225,7 @@ JSON.parse(localStorage.getItem('eventra_error_log'))
 ```
 
 ### Debugging State Recovery
+
 ```javascript
 // Check if state was recovered
 console.log(window.__EVENTRA_RECOVERED_STATE__);

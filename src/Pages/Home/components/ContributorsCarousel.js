@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Github, ExternalLink, GitBranch, MapPin, Building, Users, Medal, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
 import { ContributorCardSkeleton } from "../../../components/common/SkeletonLoaders";
+import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
@@ -42,12 +43,12 @@ const fetchInBatches = async (items, asyncFn, batchSize = PROFILE_BATCH_SIZE) =>
   const results = [];
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
-    // eslint-disable-next-line no-await-in-loop
+     
     const batchResults = await Promise.allSettled(batch.map(asyncFn));
     results.push(...batchResults);
     // Insert a delay between batches (but not after the last one)
     if (i + batchSize < items.length) {
-      // eslint-disable-next-line no-await-in-loop
+       
       await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
     }
   }
@@ -70,7 +71,7 @@ const getCachedContributors = () => {
   try {
     const cachedData = localStorage.getItem(STORAGE_KEY);
     if (!cachedData) return { data: null, isStale: false };
-    const { data, timestamp } = JSON.parse(cachedData);
+    const { data, timestamp } = safeJsonParse(cachedData, {});
     const age = Date.now() - timestamp;
     if (age <= CACHE_DURATION) return { data, isStale: false };
     if (age <= CACHE_DURATION + STALE_REVALIDATE_WINDOW) {
@@ -429,7 +430,7 @@ const Contributors = () => {
                         </span>
                       </div>
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                        <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
+                        <GitBranch className="text-gray-900 dark:text-indigo-400 mb-1 w-4 h-4" />
                         <span className="font-semibold">{c.contributions}</span>
                         <span className="text-xs text-gray-600 dark:text-gray-400">
                           Contribs
