@@ -506,28 +506,35 @@ class SseMultiplexer {
 
       const now = Date.now();
       let changed = false;
+      const staleTabs = [];
 
       for (const [tabId, lastSeen] of this.lastSeenFollowers) {
         if (now - lastSeen > MISSING_TIMEOUT) {
-          logger.log(
-            `[SSE Multiplexer] Follower tab ${tabId} missed heartbeats. Removing stale subscriptions.`
-          );
-          const paths = this.tabIdToPaths.get(tabId);
-          if (paths) {
-            for (const path of paths) {
-              const tabs = this.globalSubscribers.get(path);
-              if (tabs) {
-                tabs.delete(tabId);
-                if (tabs.size === 0) {
-                  this.globalSubscribers.delete(path);
-                }
+          staleTabs.push(tabId);
+        }
+      }
+
+      for (const tabId of staleTabs) {
+        logger.log(
+          `[SSE Multiplexer] Follower tab ${tabId} missed heartbeats. Removing stale subscriptions.`
+        );
+        const paths = this.tabIdToPaths.get(tabId);
+        if (paths) {
+          const pathsToRemove = [];
+          for (const path of paths) {
+            const tabs = this.globalSubscribers.get(path);
+            if (tabs) {
+              tabs.delete(tabId);
+              if (tabs.size === 0) {
+                pathsToRemove.push(path);
               }
             }
-            this.tabIdToPaths.delete(tabId);
           }
-          this.lastSeenFollowers.delete(tabId);
-          changed = true;
+          pathsToRemove.forEach((p) => this.globalSubscribers.delete(p));
+          this.tabIdToPaths.delete(tabId);
         }
+        this.lastSeenFollowers.delete(tabId);
+        changed = true;
       }
 
       if (changed) {
