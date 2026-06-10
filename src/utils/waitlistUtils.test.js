@@ -7,7 +7,6 @@ import {
   promoteNextUser,
   handleCapacityIncrease,
   getGlobalWaitlist,
-  saveGlobalWaitlist,
 } from "./waitlistUtils";
 
 // idb-keyval is async; stub it so the test environment doesn't need IndexedDB
@@ -50,10 +49,6 @@ beforeEach(() => {
 afterEach(() => {
   jest.restoreAllMocks();
 });
-
-// ---------------------------------------------------------------------------
-// parseEventId — tested indirectly through getEventWaitlist
-// ---------------------------------------------------------------------------
 
 describe("getEventWaitlist", () => {
   it("returns waiting entries sorted by joinedAt for a valid numeric id", () => {
@@ -108,10 +103,6 @@ describe("getEventWaitlist", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// getQueuePosition
-// ---------------------------------------------------------------------------
-
 describe("getQueuePosition", () => {
   it("returns 1-based position for the first user in queue", () => {
     seedWaitlist([
@@ -127,10 +118,6 @@ describe("getQueuePosition", () => {
     expect(getQueuePosition(42, "unknown")).toBe(-1);
   });
 });
-
-// ---------------------------------------------------------------------------
-// joinWaitlist
-// ---------------------------------------------------------------------------
 
 describe("joinWaitlist", () => {
   it("creates a waitlist entry with a parsed integer eventId", async () => {
@@ -158,10 +145,6 @@ describe("joinWaitlist", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// leaveWaitlist
-// ---------------------------------------------------------------------------
-
 describe("leaveWaitlist", () => {
   it("marks the entry as removed and returns true", async () => {
     seedWaitlist([makeEntry()]);
@@ -182,10 +165,6 @@ describe("leaveWaitlist", () => {
     await expect(leaveWaitlist(null, "u1")).rejects.toThrow(TypeError);
   });
 });
-
-// ---------------------------------------------------------------------------
-// organizerRemoveUser
-// ---------------------------------------------------------------------------
 
 describe("organizerRemoveUser", () => {
   it("sets status to removed for a valid entry", async () => {
@@ -209,10 +188,6 @@ describe("organizerRemoveUser", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// promoteNextUser
-// ---------------------------------------------------------------------------
-
 describe("promoteNextUser", () => {
   it("returns null when waitlist is empty", async () => {
     expect(await promoteNextUser(42)).toBeNull();
@@ -222,10 +197,6 @@ describe("promoteNextUser", () => {
     await expect(promoteNextUser(null)).rejects.toThrow(TypeError);
   });
 });
-
-// ---------------------------------------------------------------------------
-// handleCapacityIncrease
-// ---------------------------------------------------------------------------
 
 describe("handleCapacityIncrease", () => {
   it("returns 0 when new capacity is not greater than current attendees", async () => {

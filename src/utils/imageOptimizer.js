@@ -35,7 +35,10 @@ export const getOptimizedImageUrl = (originalUrl, options = {}) => {
   if (height) transformations += `,h_${height},c_fill`;
 
   // Use Cloudinary fetch API for real format conversion
-  const cloudName = import.meta.env?.VITE_CLOUDINARY_CLOUD_NAME || "demo";
+  const cloudName = import.meta.env?.VITE_CLOUDINARY_CLOUD_NAME;
+  if (!cloudName) {
+    return originalUrl;
+  }
 
   // Only apply to absolute HTTP/HTTPS URLs that Cloudinary can fetch.
   // Relative paths (/images/hero.jpg), blob: URLs, and data: URIs cannot

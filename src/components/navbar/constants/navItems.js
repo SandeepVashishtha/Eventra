@@ -16,96 +16,96 @@ import {
 
 export const NAV_ITEMS = [
   {
-    name: "Home",
+    nameKey: "nav.home",
     href: "/",
     icon: <Home className="w-5 h-5" />,
   },
   {
-    name: "Events",
+    nameKey: "nav.events",
     href: "/events",
     icon: <Calendar className="w-5 h-5" />,
     subItems: [
       {
-        name: "Explore Events",
+        nameKey: "nav.exploreEvents",
         href: "/events",
         icon: <Calendar className="w-5 h-5" />,
       },
       {
-        name: "Event Calendar",
+        nameKey: "nav.eventCalendar",
         href: "/calendar",
         icon: <CalendarDays className="w-5 h-5" />,
       },
       {
-        name: "Scheduler",
+        nameKey: "nav.scheduler",
         href: "/events/scheduler",
         icon: <Clock className="w-5 h-5" />,
       },
     ],
   },
   {
-    name: "Hackathons",
+    nameKey: "nav.hackathons",
     href: "/hackathons",
     icon: <Trophy className="w-5 h-5" />,
   },
   {
-    name: "Projects",
+    nameKey: "nav.projects",
     href: "/projects",
     icon: <FolderKanban className="w-5 h-5" />,
   },
   {
-    name: "Networking",
+    nameKey: "nav.networking",
     href: "/networking",
     icon: <Users className="w-5 h-5" />,
   },
   {
-    name: "Saved",
-    href: "/saved-events",
+    nameKey: "nav.saved",
+    href: "/bookmarks",
     icon: <Bookmark className="w-5 h-5" />,
   },
   {
-    name: "Community",
+    nameKey: "nav.community",
     href: "/community-event",
     icon: <Users className="w-5 h-5" />,
     subItems: [
       {
-        name: "Community Events",
+        nameKey: "nav.communityEvents",
         href: "/community-event",
         icon: <Users className="w-5 h-5" />,
       },
       {
-        name: "Leaderboard",
+        nameKey: "nav.leaderboard",
         href: "/leaderboard",
         icon: <Trophy className="w-5 h-5" />,
       },
       {
-        name: "Contributors",
+        nameKey: "nav.contributors",
         href: "/contributors",
         icon: <Users className="w-5 h-5" />,
       },
       {
-        name: "Contributors Guide",
+        nameKey: "nav.contributorsGuide",
         href: "/contributorguide",
         icon: <Book className="w-5 h-5" />,
       },
     ],
   },
   {
-    name: "More",
+    nameKey: "nav.more",
     href: "/about",
     icon: <MoreHorizontal className="w-5 h-5" />,
     subItems: [
       {
-        name: "About",
+        nameKey: "nav.about",
         href: "/about",
         icon: <Info className="w-5 h-5" />,
       },
       {
-        name: "FAQ",
+        nameKey: "nav.faq",
         href: "/faq",
         icon: <HelpCircle className="w-5 h-5" />,
       },
       {
-        name: "Contact",
+        nameKey: "nav.contact",
         href: "/contact",
         icon: <MessageSquare className="w-5 h-5" />,
       },

@@ -1,4 +1,4 @@
-import { Grid, List, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw, Download } from "lucide-react";
+import { Grid, List, Calendar, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw, Download } from "lucide-react";
 import { useState, useEffect, useRef, memo, useCallback } from "react";
 import StyledDropdown from "../../components/StyledDropdown";
 import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
@@ -40,6 +40,7 @@ const EventFiltersToolbar = ({
   currentFilterConfig,
   onApplyPreset,
   visibleEvents = [],
+  totalElements = 0,
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const [presetName, setPresetName] = useState("");
@@ -556,34 +557,56 @@ const EventFiltersToolbar = ({
           />
         </div>
 
-        {/* Grid / List switcher */}
-        <div className="flex items-center space-x-2 bg-slate-900/60 border border-slate-800/80 rounded-xl p-1 shadow-inner shrink-0 self-end sm:self-center">
-          <button
-            type="button"
-            onClick={() => onViewModeChange("grid")}
-            className={`p-2.5 rounded-lg transition-all duration-250 flex items-center justify-center cursor-pointer ${
-              viewMode === "grid"
-                ? "bg-slate-100 text-slate-950 shadow-md font-bold"
-                : "text-slate-400 hover:bg-slate-850 hover:text-slate-200"
-            }`}
-            aria-label="Grid view"
-            aria-pressed={viewMode === "grid"}
+        {/* Grid / List / Calendar switcher & count feedback */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 shrink-0 self-end sm:self-center w-full sm:w-auto justify-between sm:justify-end">
+          <span
+            className="text-xs font-semibold text-slate-400 dark:text-slate-500"
+            role="status"
+            aria-live="polite"
           >
-            <Grid size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={() => onViewModeChange("list")}
-            className={`p-2.5 rounded-lg transition-all duration-250 flex items-center justify-center cursor-pointer ${
-              viewMode === "list"
-                ? "bg-slate-100 text-slate-950 shadow-md font-bold"
-                : "text-slate-400 hover:bg-slate-850 hover:text-slate-200"
-            }`}
-            aria-label="List view"
-            aria-pressed={viewMode === "list"}
-          >
-            <List size={16} />
-          </button>
+            {totalElements} {totalElements === 1 ? "event" : "events"} matched
+          </span>
+          <div className="flex items-center space-x-2 bg-slate-900/60 border border-slate-800/80 rounded-xl p-1 shadow-inner">
+            <button
+              type="button"
+              onClick={() => onViewModeChange("grid")}
+              className={`p-2.5 rounded-lg transition-all duration-250 flex items-center justify-center cursor-pointer ${
+                viewMode === "grid"
+                  ? "bg-slate-100 text-slate-950 shadow-md font-bold"
+                  : "text-slate-400 hover:bg-slate-850 hover:text-slate-200"
+              }`}
+              aria-label="Grid view"
+              aria-pressed={viewMode === "grid"}
+            >
+              <Grid size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewModeChange("list")}
+              className={`p-2.5 rounded-lg transition-all duration-250 flex items-center justify-center cursor-pointer ${
+                viewMode === "list"
+                  ? "bg-slate-100 text-slate-950 shadow-md font-bold"
+                  : "text-slate-400 hover:bg-slate-850 hover:text-slate-200"
+              }`}
+              aria-label="List view"
+              aria-pressed={viewMode === "list"}
+            >
+              <List size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewModeChange("calendar")}
+              className={`p-2.5 rounded-lg transition-all duration-250 flex items-center justify-center cursor-pointer ${
+                viewMode === "calendar"
+                  ? "bg-slate-100 text-slate-950 shadow-md font-bold"
+                  : "text-slate-400 hover:bg-slate-850 hover:text-slate-200"
+              }`}
+              aria-label="Calendar view"
+              aria-pressed={viewMode === "calendar"}
+            >
+              <Calendar size={16} />
+            </button>
+          </div>
         </div>
       </div>
 
