@@ -1,4 +1,4 @@
-import React from "react";
+import { useId } from "react";
 
 const FormInput = ({
   label,
@@ -6,17 +6,24 @@ const FormInput = ({
   className = "",
   ...props
 }) => {
+  const generatedId = useId();
+  const inputId = props.id || props.name || generatedId;
+  const errorId = `${inputId}-error`;
+
   return (
     <div className="w-full space-y-2">
       
       {label && (
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label htmlFor={inputId} className="block text-sm font-medium text-slate-700 dark:text-slate-300">
           {label}
         </label>
       )}
 
       <input
         {...props}
+        id={inputId}
+        aria-invalid={error ? "true" : "false"}
+        aria-describedby={error ? errorId : props['aria-describedby']}
         className={`
           w-full
           px-4
@@ -45,7 +52,7 @@ const FormInput = ({
       />
 
       {error && (
-        <p className="text-sm text-red-500">
+        <p id={errorId} className="text-sm text-red-500" role="alert">
           {error}
         </p>
       )}

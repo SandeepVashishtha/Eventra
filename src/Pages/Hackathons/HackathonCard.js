@@ -1,25 +1,18 @@
+import { CalendarIcon, MapPinIcon, ClockIcon, UserGroupIcon, TrophyIcon, BuildingLibraryIcon, ShareIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
-import {
-  CalendarIcon,
-  MapPinIcon,
-  ClockIcon,
-  UserGroupIcon,
-  TrophyIcon,
-  BuildingLibraryIcon,
-  ShareIcon,
-} from "@heroicons/react/24/outline";
+import { getServerTime } from "../../utils/timeSync";
 
 import ShareMenu from "../../components/common/ShareMenu";
 import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";
 import { generateEventSharingData } from "../../utils/shareUtils";
 
 const useCountdown = (targetDate) => {
-  const prefersReducedMotion = useReducedMotion();
+  useReducedMotion();
   const calculateTimeLeft = useCallback(() => {
-    const difference = new Date(targetDate) - new Date();
+    const difference = new Date(targetDate) - getServerTime();
 
     if (!targetDate || difference <= 0) {
       return null;
@@ -37,11 +30,14 @@ const useCountdown = (targetDate) => {
   useEffect(() => {
     setTimeLeft(calculateTimeLeft());
 
-    const timer = setInterval(() => {
+    let timerId = null;
+    timerId = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      if (timerId !== null) clearInterval(timerId);
+    };
   }, [calculateTimeLeft]);
 
   return timeLeft;
@@ -52,9 +48,7 @@ const CountdownTimer = ({ targetDate, label }) => {
 
   if (!timeLeft) {
     return (
-      <span className="text-xs font-semibold text-red-500 dark:text-red-400">
-        Deadline passed
-      </span>
+      <span className="text-xs font-semibold text-red-500 dark:text-red-400">Deadline passed</span>
     );
   }
 
@@ -72,8 +66,7 @@ const CountdownTimer = ({ targetDate, label }) => {
       <span>{label}</span>
       <span className="font-mono">
         {timeLeft.days > 0 ? `${timeLeft.days}d ` : ""}
-        {String(timeLeft.hours).padStart(2, "0")}h{" "}
-        {String(timeLeft.minutes).padStart(2, "0")}m
+        {String(timeLeft.hours).padStart(2, "0")}h {String(timeLeft.minutes).padStart(2, "0")}m
       </span>
     </div>
   );
@@ -100,7 +93,7 @@ const UrgencyBadge = ({ startDate, endDate, status }) => {
 };
 
 const computeStatus = (startDate, endDate) => {
-  const now = new Date();
+  const now = getServerTime();
   const start = new Date(startDate);
   const end = new Date(endDate);
 
@@ -168,10 +161,11 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
     winner: hackathon?.winner || "",
   };
 
-  const status =
-    normalizedHackathon.startDate && normalizedHackathon.endDate
+  const status = useMemo(() => {
+    return normalizedHackathon.startDate && normalizedHackathon.endDate
       ? computeStatus(normalizedHackathon.startDate, normalizedHackathon.endDate)
       : normalizedHackathon.status || "upcoming";
+  }, [normalizedHackathon.startDate, normalizedHackathon.endDate, normalizedHackathon.status]);
   const style = statusStyles[status] || statusStyles.upcoming;
   const sharingData = generateEventSharingData({
     ...normalizedHackathon,
@@ -252,10 +246,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             <CalendarIcon className="h-4 w-4 flex-shrink-0 text-sky-500 dark:text-sky-400" />
             <span>
               {normalizedHackathon.startDate && normalizedHackathon.endDate
-                ? formatDateRange(
-                    normalizedHackathon.startDate,
-                    normalizedHackathon.endDate,
-                  )
+                ? formatDateRange(normalizedHackathon.startDate, normalizedHackathon.endDate)
                 : "Dates TBA"}
             </span>
           </div>
@@ -307,9 +298,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         {status === "completed" && (
           <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs dark:border-amber-500/20 dark:bg-amber-500/10">
             <TrophyIcon className="h-4 w-4 flex-shrink-0 text-amber-500" />
-            <span className="font-semibold text-slate-600 dark:text-slate-400">
-              Winner:
-            </span>
+            <span className="font-semibold text-slate-600 dark:text-slate-400">Winner:</span>
             <span className="truncate text-slate-700 dark:text-slate-300">
               {normalizedHackathon.winner || "Announced soon"}
             </span>
@@ -328,8 +317,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
               </button>
               <a
                 href={addHackathonToGoogleCalendar(normalizedHackathon)}
-                target="_blank"
-                rel="noopener noreferrer"
+                target="_blank" rel="noopener noreferrer"
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-slate-50 hover:text-indigo-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 Reminder
@@ -340,13 +328,23 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
               <button
                 type="button"
                 className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
-               aria-label="button">
+                aria-label={
+                  status === "live"
+                    ? `Join ${normalizedHackathon.title}`
+                    : `View results for ${normalizedHackathon.title}`
+                }
+              >
                 {status === "live" ? "Join Now" : "View Results"}
               </button>
               <button
                 type="button"
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-slate-50 hover:text-indigo-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-               aria-label="button">
+                aria-label={
+                  status === "live"
+                    ? `Submit project for ${normalizedHackathon.title}`
+                    : `View resources for ${normalizedHackathon.title}`
+                }
+              >
                 {status === "live" ? "Submit" : "Resources"}
               </button>
             </>

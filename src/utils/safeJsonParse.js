@@ -8,12 +8,18 @@ export const safeJsonParse = (
     }
 
     return JSON.parse(value);
-  } catch (error) {
-    console.error(
-      "Failed to parse JSON:",
-      error,
-    );
-
+  } catch {
     return fallback;
   }
+};
+
+export const safeJsonParseObject = (
+  value,
+  fallback = {}
+) => {
+  const result = safeJsonParse(value, fallback);
+  if (result !== null && typeof result === 'object' && !Array.isArray(result)) {
+    return result;
+  }
+  return fallback;
 };

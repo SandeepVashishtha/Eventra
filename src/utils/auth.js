@@ -1,4 +1,3 @@
-
 import { safeJsonParse } from "./safeJsonParse.js";
 
 /** Grace period (in seconds) to account for clock skew between browser and server. */
@@ -29,21 +28,26 @@ export function decodeJwtPayload(token) {
 
 export function isTokenExpired(token) {
   const payload = decodeJwtPayload(token);
-  if (!payload || typeof payload.exp !== "number") {
-    return true;
-  }
-
-  const nowInSeconds = Math.floor(Date.now() / 1000);
-  return payload.exp - CLOCK_SKEW_BUFFER <= nowInSeconds;
+  if (!payload) return true;
+  
+  // If 'exp' is missing, the token does not expire by time per RFC 7519
+  if (typeof payload.exp === 'undefined') return false;
+  
+  return payload.exp * 1000 < Date.now();
 }
 
 export function isTokenValid(token) {
-  if (!token || typeof token !== "string") return false;
+  const payload = decodeJwtPayload(token);
+  if (!payload || !payload.exp) return false;
+  
   return !isTokenExpired(token);
 }
 
 export function getTokenTTL(token) {
   const payload = decodeJwtPayload(token);
-  if (!payload || typeof payload.exp !== "number") return -1;
-  return payload.exp - Math.floor(Date.now() / 1000);
+  if (!payload || !payload.exp) {
+    return 0; 
+  }
+  const now = Math.floor(Date.now() / 1000);
+  return payload.exp - now;
 }

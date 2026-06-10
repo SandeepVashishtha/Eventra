@@ -1,19 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import useReducedMotion from "../hooks/useReducedMotion.js";
-import {
-  Server,
-  AlertCircle,
-  BookOpen,
-  Users,
-  Trophy,
-  Play,
-  RefreshCw,
-  Terminal,
-  Settings,
-  ShieldAlert,
-} from "lucide-react";
+import { Server, AlertCircle, BookOpen, Users, Trophy, Play, RefreshCw, Terminal, Settings } from "lucide-react";
 
 const endpoints = [
   {
@@ -98,7 +87,7 @@ const ApiDocs = () => {
     status: "all",
     hackathonId: "1",
     sortBy: "recent",
-    authHeader: "Bearer evt_dev_test_token",
+    authHeader: "Bearer [redacted]",
     role: "all",
     page: "1",
   });
@@ -135,7 +124,7 @@ const ApiDocs = () => {
       
       switch (selectedEndpoint) {
         case "/mock-api/hackathons": {
-          const limitVal = parseInt(params.limit) || 5;
+          const limitVal = parseInt(params.limit, 10) || 5;
           const statusVal = params.status || "all";
           const allHackathons = [
             { id: 1, title: "CodeFest 2025", startDate: "2025-09-20", endDate: "2025-09-25", participants: 150, status: "completed" },
@@ -189,8 +178,8 @@ const ApiDocs = () => {
           break;
         }
         case "/mock-api/leaderboard": {
-          const limitVal = parseInt(params.limit) || 10;
-          const pageVal = parseInt(params.page) || 1;
+          const limitVal = parseInt(params.limit, 10) || 10;
+          const pageVal = parseInt(params.page, 10) || 1;
           const allLeaderboard = [
             { rank: 1, username: "coder123", points: 500 },
             { rank: 2, username: "dev_ankita", points: 230 },
@@ -593,7 +582,7 @@ const ApiDocs = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-slate-600 gap-2 text-center max-w-sm mx-auto">
                   <Terminal className="w-8 h-8 text-slate-800" />
-                  <p className="text-[11px]">Terminal idle. Configure your query parameters and click "Execute Request" to display payload console details.</p>
+                  <p className="text-[11px]">Terminal idle. Configure your query parameters and click &quot;Execute Request&quot; to display payload console details.</p>
                 </div>
               )}
             </div>

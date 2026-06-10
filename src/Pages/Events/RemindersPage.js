@@ -123,13 +123,12 @@ const RemindersPage = () => {
                     <img
                       src={event.image}
                       alt={event.title}
-                      className="h-44 w-full object-cover sm:h-full"
-                    />
+                      className="h-44 w-full object-cover sm:h-full" loading="lazy"/>
 
                     <div className="p-5">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <h2 className="text-xl font-bold text-gray-950 dark:text-white">
+                          <h2 title={event.title} className="text-xl font-bold text-gray-950 dark:text-white line-clamp-2 break-words min-w-0">
                             {event.title}
                           </h2>
                           <div className="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">

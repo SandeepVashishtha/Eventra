@@ -1,20 +1,23 @@
 import StatusBadge from "./common/StatusBadge";
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import useDebounce from '../hooks/useDebounce.js';
 import { toast } from 'react-toastify';
 import './components.css';
 import CharacterCounter from "../../components/common/CharacterCounter";
 import { sanitizeInputText } from "../utils/inputSanitization";
 import EventMaterials from "./common/EventMaterials";
-import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send } from 'lucide-react';
+import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send, MessageCircle } from 'lucide-react';
 import CollaborativeWhiteboard from './common/CollaborativeWhiteboard';
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 
 const CollaborationHub = () => {
   const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState('opportunities');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const mockMaterials = [
     { id: 'slides-1', title: 'Tech Summit 2025 Keynote Presentation', type: 'ppt', size: '14.2 MB', url: '#' },
@@ -40,11 +43,39 @@ const CollaborationHub = () => {
     setNewRequest(prev => ({ ...prev, [name]: value }));
   };
 
+  const OPPORTUNITY_SCHEMA = {
+    id: "number", title: "string", organizer: "string", type: "string",
+    description: "string", skills: "array", budget: "string",
+    deadline: "string", applicants: "number", status: "string",
+  };
+
+  const validateOpportunity = (item) => {
+    if (!item || typeof item !== "object") return null;
+    const valid = {};
+    for (const [key, type] of Object.entries(OPPORTUNITY_SCHEMA)) {
+      const val = item[key];
+      if (val === undefined || val === null) continue;
+      if (type === "number") { valid[key] = Number(val); if (isNaN(valid[key])) valid[key] = 0; }
+      else if (type === "array") { valid[key] = Array.isArray(val) ? val : []; }
+      else if (type === "string") { valid[key] = String(val); }
+      else { valid[key] = val; }
+    }
+    return valid;
+  };
+
   const [collaborationOpportunities, setCollaborationOpportunities] = useState(() => {
-    const saved = localStorage.getItem('eventra_collaboration_opportunities');
+    let saved;
+    try {
+      saved = localStorage.getItem('eventra_collaboration_opportunities');
+    } catch {
+      // localStorage unavailable (private browsing, quota exceeded, etc.)
+    }
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = safeJsonParse(saved, {});
+        if (Array.isArray(parsed)) {
+          return parsed.map(validateOpportunity).filter(Boolean);
+        }
       } catch (e) {
         console.error("Failed to parse collaboration opportunities from localStorage", e);
       }
@@ -120,7 +151,7 @@ const CollaborationHub = () => {
     const updatedOpportunities = [newOpp, ...collaborationOpportunities];
     setCollaborationOpportunities(updatedOpportunities);
     localStorage.setItem('eventra_collaboration_opportunities', JSON.stringify(updatedOpportunities));
-    
+
     toast.success('Collaboration request created successfully!');
     setNewRequest({
       title: '',
@@ -139,9 +170,8 @@ const CollaborationHub = () => {
       toast.error('Please enter a proposal message.');
       return;
     }
-    
+
     // Sanitize user proposal pitch text
-    const sanitizedPitch = sanitizeInputText(applicationText);
     toast.success('Your partnership proposal has been submitted successfully!');
     setApplicationText('');
     setProposalFile(null);
@@ -190,14 +220,22 @@ const CollaborationHub = () => {
     }
   ];
 
+  // 🔥 FIX: Added safe date formatter to prevent RangeError crashes
+  const safeFormatDate = (dateStr, options = { month: 'short', day: 'numeric' }) => {
+    if (!dateStr) return "TBD";
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? "TBD" : d.toLocaleDateString(undefined, options);
+  };
+
   // Filtering opportunities dynamically
+  const query = debouncedSearchQuery.toLowerCase();
+
   const filteredOpportunities = collaborationOpportunities.filter((opp) => {
-    const query = searchQuery.toLowerCase();
     const matchesSearch =
-      opp.title.toLowerCase().includes(query) ||
-      opp.description.toLowerCase().includes(query) ||
-      opp.organizer.toLowerCase().includes(query) ||
-      opp.skills.some(skill => skill.toLowerCase().includes(query));
+      (opp.title?.toLowerCase() || "").includes(query) ||
+      (opp.description?.toLowerCase() || "").includes(query) ||
+      (opp.organizer?.toLowerCase() || "").includes(query) ||
+      (Array.isArray(opp.skills) && opp.skills.some(skill => skill?.toLowerCase().includes(query)));
 
     const matchesType = filterType === 'All' || opp.type === filterType;
     return matchesSearch && matchesType;
@@ -205,12 +243,11 @@ const CollaborationHub = () => {
 
   // Filtering networking requests dynamically
   const filteredNetworking = networkingRequests.filter((req) => {
-    const query = searchQuery.toLowerCase();
     return (
-      req.name.toLowerCase().includes(query) ||
-      req.role.toLowerCase().includes(query) ||
-      req.company.toLowerCase().includes(query) ||
-      req.skills.some(skill => skill.toLowerCase().includes(query))
+      (req.name?.toLowerCase() || "").includes(query) ||
+      (req.role?.toLowerCase() || "").includes(query) ||
+      (req.company?.toLowerCase() || "").includes(query) ||
+      (Array.isArray(req.skills) && req.skills.some(skill => skill?.toLowerCase().includes(query)))
     );
   });
 
@@ -231,7 +268,11 @@ const CollaborationHub = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="collaboration-tabs max-w-4xl mx-auto flex gap-2 justify-center mb-10 p-2 bg-slate-100 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
+      <div
+        role="tablist"
+        aria-label="Collaboration Hub sections"
+        className="collaboration-tabs max-w-4xl mx-auto flex gap-2 justify-center mb-10 p-2 bg-slate-100 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800"
+      >
         {[
           { id: 'opportunities', name: 'Opportunities', icon: '🎯' },
           { id: 'my-collaborations', name: 'My Collaborations', icon: '🤝' },
@@ -243,17 +284,19 @@ const CollaborationHub = () => {
         ].map((tab) => (
           <button
             key={tab.id}
-            className={`tab-button flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeSection === tab.id 
-                ? 'bg-indigo-600 text-white shadow-md' 
+            role="tab"
+            aria-selected={activeSection === tab.id}
+            aria-label={`${tab.name} section`}
+            className={`tab-button flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeSection === tab.id
+                ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-            }`}
+              }`}
             onClick={() => {
               setActiveSection(tab.id);
               setSearchQuery('');
             }}
           >
-            <span>{tab.icon}</span>
+            <span aria-hidden="true">{tab.icon}</span>
             {tab.name}
           </button>
         ))}
@@ -284,17 +327,19 @@ const CollaborationHub = () => {
           <div className="opportunities-section">
             <div className="section-header flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">Collaboration Opportunities</h2>
-              
+
               {/* Dynamic Filter buttons */}
               <div className="filter-buttons flex gap-2 flex-wrap">
                 {['All', 'Sponsorship', 'Content Partnership', 'Venue Partnership'].map((type) => (
                   <button
                     key={type}
-                    className={`filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      filterType === type 
-                        ? 'bg-indigo-650 dark:bg-indigo-600 text-white' 
+                    aria-pressed={filterType === type}
+                    aria-label={`Filter by ${type}`}
+                    title={`Filter by ${type}`}
+                    className={`filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterType === type
+                        ? 'bg-indigo-650 dark:bg-indigo-600 text-white'
                         : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-300'
-                    }`}
+                      }`}
                     onClick={() => setFilterType(type)}
                   >
                     {type}
@@ -314,7 +359,7 @@ const CollaborationHub = () => {
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-colors text-xs"
               />
             </div>
-            
+
             <div className="opportunities-grid">
               {filteredOpportunities.map((opportunity, index) => (
                 <motion.div
@@ -326,27 +371,28 @@ const CollaborationHub = () => {
                 >
                   <div className="opportunity-header">
                     <h3 className="opportunity-title">{opportunity.title}</h3>
-                    
-                      <StatusBadge status={opportunity.status} />
-                    
+
+                    <StatusBadge status={opportunity.status} />
+
                   </div>
-                  
+
                   <div className="opportunity-meta">
                     <span className="organizer">🏢 {opportunity.organizer}</span>
                     <span className="type">📋 {opportunity.type}</span>
                   </div>
-                  
+
                   <p className="opportunity-description">{opportunity.description}</p>
-                  
+
                   <div className="opportunity-skills">
                     <strong>Required Skills:</strong>
                     <div className="skills-tags">
-                      {opportunity.skills.map((skill) => (
-                        <span key={skill} className="skill-tag">{skill}</span>
+                      {/* 🔥 FIX: Protected map */}
+                      {Array.isArray(opportunity.skills) && opportunity.skills.map((skill) => (
+                        <span key={`${skill}-${index}`} className="skill-tag">{skill}</span>
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="opportunity-details grid grid-cols-2 gap-3 mb-5 border-t border-slate-100 dark:border-slate-800/60 pt-4">
                     <div className="detail-item">
                       <span className="label block text-[10px] text-slate-400 font-bold uppercase">Budget</span>
@@ -355,14 +401,17 @@ const CollaborationHub = () => {
                     <div className="detail-item text-right">
                       <span className="label block text-[10px] text-slate-400 font-bold uppercase">Deadline</span>
                       <span className="value text-xs font-black text-slate-800 dark:text-slate-200">
-                        {new Date(opportunity.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        {/* 🔥 FIX: Replaced raw Date parse */}
+                        {safeFormatDate(opportunity.deadline)}
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="opportunity-actions flex gap-2 pt-2">
-                    <button 
+                    <button
                       onClick={() => setSelectedOpportunity(opportunity)}
+                      aria-label={`Apply now for ${opportunity.title}`}
+                      title={`Apply now for ${opportunity.title}`}
                       className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all text-center"
                     >
                       Apply Now
@@ -383,15 +432,17 @@ const CollaborationHub = () => {
           <div className="my-collaborations-section">
             <div className="section-header flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">My Active Collaborations</h2>
-              <button 
+              <button
                 onClick={() => setActiveSection('create-request')}
+                aria-label="Create a new collaboration request"
+                title="Create a new collaboration request"
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
               >
-                <Plus size={14} />
+                <Plus size={14} aria-hidden="true" />
                 New Collaboration
               </button>
             </div>
-            
+
             <div className="collaborations-list space-y-4">
               {myCollaborations.map((collab, index) => (
                 <motion.div
@@ -405,22 +456,23 @@ const CollaborationHub = () => {
                     <h3 className="text-base font-bold text-slate-900 dark:text-white">{collab.title}</h3>
                     <StatusBadge status={collab.status} />
                   </div>
-                  
+
                   <p className="partner text-xs text-slate-500 dark:text-slate-400 mb-4">🤝 Partner: {collab.partner}</p>
-                  
+
                   <div className="progress-section mb-4">
                     <div className="progress-header flex justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
                       <span>Progress: {collab.progress}%</span>
-                      <span>Next Meeting: {new Date(collab.nextMeeting).toLocaleDateString()}</span>
+                      {/* 🔥 FIX: Replaced raw Date parse */}
+                      <span>Next Meeting: {safeFormatDate(collab.nextMeeting, undefined)}</span>
                     </div>
                     <div className="progress-bar w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div 
-                        className="progress-fill h-full bg-indigo-650" 
+                      <div
+                        className="progress-fill h-full bg-indigo-650"
                         style={{ width: `${collab.progress}%` }}
                       ></div>
                     </div>
                   </div>
-                  
+
                   <div className="tasks-section mb-5">
                     <strong className="block text-[10px] uppercase text-slate-400 mb-2">Upcoming Tasks:</strong>
                     <ul className="tasks-list space-y-1.5">
@@ -432,12 +484,12 @@ const CollaborationHub = () => {
                       ))}
                     </ul>
                   </div>
-                  
+
                   <div className="collaboration-actions flex gap-2">
-                    <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-850 dark:text-slate-200 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all" aria-label="button">
+                    <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-850 dark:text-slate-200 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all" aria-label={`View details for ${collab.title}`} title={`View details for ${collab.title}`}>
                       View Details
                     </button>
-                    <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all" aria-label="button">
+                    <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all" aria-label={`Schedule a meeting for ${collab.title}`} title={`Schedule a meeting for ${collab.title}`}>
                       Schedule Meeting
                     </button>
                   </div>
@@ -464,7 +516,7 @@ const CollaborationHub = () => {
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-colors text-xs"
               />
             </div>
-            
+
             <div className="networking-requests">
               {filteredNetworking.map((request, index) => (
                 <motion.div
@@ -482,13 +534,13 @@ const CollaborationHub = () => {
                         <p>{request.role} at {request.company}</p>
                       </div>
                     </div>
-                    
+
                     <div className="networking-actions flex gap-2">
-                      <button className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1" aria-label="button">
-                        <Check size={14} /> Accept Connection
+                      <button className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1" aria-label={`Accept connection request from ${request.name}`} title={`Accept connection request from ${request.name}`}>
+                        <Check size={14} aria-hidden="true" /> Accept Connection
                       </button>
-                      <button className="px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all" aria-label="button">
-                        Message
+                      <button className="px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all" aria-label={`Send message to ${request.name}`} title={`Send message to ${request.name}`}>
+                        <MessageCircle size={14} aria-hidden="true" /> Message
                       </button>
                     </div>
                   </div>
@@ -509,13 +561,13 @@ const CollaborationHub = () => {
             <form onSubmit={handleRequestSubmit} className="request-form p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-5">
               <div className="form-group flex flex-col gap-2">
                 <label htmlFor="collab-title" className="text-xs font-bold text-slate-700 dark:text-slate-300">Project Title *</label>
-                <input 
+                <input
                   id="collab-title"
-                  type="text" 
+                  type="text"
                   name="title"
                   value={newRequest.title}
                   onChange={handleRequestChange}
-                  placeholder="Enter your collaboration project title" 
+                  placeholder="Enter your collaboration project title"
                   className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
                   required
                   aria-required="true"
@@ -524,10 +576,10 @@ const CollaborationHub = () => {
                 />
                 <span id="title-hint" className="sr-only">Please enter a descriptive title for your project</span>
               </div>
-              
+
               <div className="form-group flex flex-col gap-2">
                 <label htmlFor="collab-type" className="text-xs font-bold text-slate-700 dark:text-slate-300">Collaboration Type *</label>
-                <select 
+                <select
                   id="collab-type"
                   name="type"
                   value={newRequest.type}
@@ -546,16 +598,16 @@ const CollaborationHub = () => {
                 </select>
                 <span id="type-hint" className="sr-only">Select the type of collaboration partnership</span>
               </div>
-              
+
               <div className="form-group flex flex-col gap-2">
                 <label htmlFor="collab-desc" className="text-xs font-bold text-slate-700 dark:text-slate-300">Description *</label>
                 <div className="space-y-2">
-                  <textarea 
+                  <textarea
                     id="collab-desc"
                     name="description"
                     value={newRequest.description}
                     onChange={handleRequestChange}
-                    rows="4" 
+                    rows="4"
                     maxLength={300}
                     placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
                     required
@@ -573,11 +625,11 @@ const CollaborationHub = () => {
                 </div>
                 <span id="desc-hint" className="sr-only">Provide context and objectives of the collaboration. Maximum 300 characters.</span>
               </div>
-              
+
               <div className="form-row grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="form-group flex flex-col gap-2">
                   <label htmlFor="collab-budget" className="text-xs font-bold text-slate-700 dark:text-slate-300">Budget Range</label>
-                  <select 
+                  <select
                     id="collab-budget"
                     name="budget"
                     value={newRequest.budget}
@@ -594,12 +646,12 @@ const CollaborationHub = () => {
                   </select>
                   <span id="budget-hint" className="sr-only">Select the financial budget range if applicable</span>
                 </div>
-                
+
                 <div className="form-group flex flex-col gap-2">
                   <label htmlFor="collab-deadline" className="text-xs font-bold text-slate-700 dark:text-slate-300">Deadline</label>
-                  <input 
+                  <input
                     id="collab-deadline"
-                    type="date" 
+                    type="date"
                     name="deadline"
                     value={newRequest.deadline}
                     onChange={handleRequestChange}
@@ -609,23 +661,23 @@ const CollaborationHub = () => {
                   <span id="deadline-hint" className="sr-only">Select target completion date</span>
                 </div>
               </div>
-              
+
               <div className="form-group flex flex-col gap-2">
                 <label htmlFor="collab-skills" className="text-xs font-bold text-slate-700 dark:text-slate-300">Required Skills</label>
-                <input 
+                <input
                   id="collab-skills"
-                  type="text" 
+                  type="text"
                   name="skills"
                   value={newRequest.skills}
                   onChange={handleRequestChange}
-                  placeholder="e.g., Event Management, Marketing, Design" 
+                  placeholder="e.g., Event Management, Marketing, Design"
                   className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
                   aria-describedby="skills-hint"
                 />
                 <span id="skills-hint" className="sr-only">Comma separated list of required skills</span>
               </div>
-              
-              <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all" aria-label="button">
+
+              <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all" aria-label="Submit and create collaboration request">
                 Create Collaboration Request
               </button>
             </form>
@@ -637,36 +689,38 @@ const CollaborationHub = () => {
       <AnimatePresence>
         {selectedOpportunity && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedOpportunity(null)}
               className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
             />
-            
-            <motion.div 
+
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl overflow-y-auto max-h-[90vh] z-10"
             >
-              <button 
+              <button
                 onClick={() => setSelectedOpportunity(null)}
+                title="Close"
                 className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                aria-label="Close modal"
               >
-                <X size={16} />
+                <X size={16} aria-hidden="true" />
               </button>
 
               <div className="flex items-center gap-2 text-indigo-500 font-extrabold text-[10px] tracking-wider uppercase mb-1.5">
                 <BriefcaseIcon size={12} />
                 <span>Collaboration Opportunity</span>
               </div>
-              
+
               <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-2 leading-snug">
                 {selectedOpportunity.title}
               </h2>
-              
+
               <div className="flex items-center gap-2 mb-4">
                 <StatusBadge status={selectedOpportunity.status} />
                 <span className="text-xs text-slate-400">By <strong>{selectedOpportunity.organizer}</strong></span>
@@ -688,7 +742,8 @@ const CollaborationHub = () => {
                   <Calendar className="w-4 h-4 text-indigo-500 mx-auto mb-1" />
                   <span className="block text-[9px] uppercase font-bold text-slate-400">Deadline</span>
                   <span className="text-xs font-black text-slate-800 dark:text-white">
-                    {new Date(selectedOpportunity.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    {/* 🔥 FIX: Replaced raw Date parse */}
+                    {safeFormatDate(selectedOpportunity.deadline)}
                   </span>
                 </div>
                 <div className="p-3 bg-slate-50 dark:bg-slate-950/30 rounded-xl text-center">
@@ -701,8 +756,9 @@ const CollaborationHub = () => {
               <div className="mb-6">
                 <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Required Core Skills</h4>
                 <div className="flex flex-wrap gap-1.5">
-                  {selectedOpportunity.skills.map((skill) => (
-                    <span key={skill} className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 border border-indigo-500/10">
+                  {/* 🔥 FIX: Protected map */}
+                  {Array.isArray(selectedOpportunity.skills) && selectedOpportunity.skills.map((skill, index) => (
+                    <span key={`${skill}-${index}`} className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 border border-indigo-500/10">
                       {skill}
                     </span>
                   ))}
@@ -715,7 +771,7 @@ const CollaborationHub = () => {
                   <Send className="w-4 h-4 text-indigo-500" />
                   <span>Submit Partnership Proposal</span>
                 </h4>
-                
+
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="proposal-message" className="text-[10px] font-bold text-slate-400 uppercase">Your Pitch / Proposal Message *</label>
                   <textarea
@@ -732,10 +788,10 @@ const CollaborationHub = () => {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Attach Pitch Deck / Document (Optional)</label>
                   <div className="relative border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center hover:bg-slate-50 dark:hover:bg-slate-950/40 transition-colors cursor-pointer">
-                    <input 
-                      type="file" 
+                    <input
+                      type="file"
                       onChange={(e) => setProposalFile(e.target.files[0] ? e.target.files[0].name : null)}
-                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                      className="absolute inset-0 opacity-0 cursor-pointer"
                     />
                     <span className="text-[11px] text-slate-500 dark:text-slate-400">
                       {proposalFile ? `Attached: ${proposalFile}` : "Drag and drop or click to upload PDF/PPTX"}
@@ -744,17 +800,19 @@ const CollaborationHub = () => {
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setSelectedOpportunity(null)}
+                    aria-label="Cancel and close proposal form"
                     className="flex-1 py-2.5 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-350 rounded-xl text-xs font-bold"
                   >
                     Cancel
                   </button>
-                  <button 
+                  <button
                     type="submit"
+                    aria-label="Submit partnership proposal"
                     className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold"
-                   aria-label="button">
+                  >
                     Submit Application
                   </button>
                 </div>

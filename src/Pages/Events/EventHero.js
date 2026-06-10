@@ -4,20 +4,18 @@ import { Award, Calendar, Clock, Code2, Sparkles, TrendingUp, Trash2, Users } fr
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
-import CountUp from "react-countup";
+import CountUpLib from "react-countup";
 import { darkTheme } from "../../components/styles/theme";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import { safeParseJson } from "../../utils/jsonUtils";
+import { SkeletonBlock } from "../../components/common/SkeletonLoaders";
+const CountUp = CountUpLib.default || CountUpLib;
 
 // 🔥 THE FIX: Single, clean declarations placed in the correct order 🔥
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
 
 const getStoredSearchHistory = () => {
-  try {
-    const stored = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || "[]");
-    return Array.isArray(stored) ? stored.slice(0, 5) : [];
-  } catch {
-    return [];
-  }
+  const stored = safeParseJson(localStorage.getItem(SEARCH_HISTORY_KEY), []);
+  return Array.isArray(stored) ? stored.slice(0, 5) : [];
 };
 
 const TRENDING_SEARCHES = [
@@ -87,17 +85,18 @@ export default function EventHero({
   };
 
   useEffect(() => {
-  // Preload hero background image for better LCP
-  const preloadLink = document.createElement('link');
-  preloadLink.rel = 'preload';
-  preloadLink.as = 'image';
-  preloadLink.href = '/assets/eventbg.png';
-  document.head.appendChild(preloadLink);
-  
-  return () => {
-    document.head.removeChild(preloadLink);
-  };
-}, []);
+    // Preload hero background image for better LCP
+    const preloadLink = document.createElement("link");
+    preloadLink.rel = "preload";
+    preloadLink.as = "image";
+    preloadLink.href = "/assets/eventbg.png";
+
+    document.head.appendChild(preloadLink);
+
+    return () => {
+      document.head.removeChild(preloadLink);
+    };
+  }, []);
   const clearSearchHistory = useCallback(() => {
     persistSearchHistory([]);
   }, [persistSearchHistory]);
@@ -150,7 +149,7 @@ export default function EventHero({
           .
         </p>
   
-        <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0">
+        <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0 relative z-50">
           <ModernSearchInput
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
@@ -177,7 +176,22 @@ export default function EventHero({
                     text-left shadow-2xl backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10
                   `}
                   onMouseDown={(e) => e.preventDefault()}
-                >
+                >{searchQuery.trim().length > 0 && searchQuery.trim().length < 3 && (
+  <div className="border-b border-slate-100 dark:border-slate-800 p-4">
+    <p className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${darkTheme.textSecondary}`}>
+      <Sparkles className="h-3.5 w-3.5" />
+      Searching...
+    </p>
+    <div className="flex flex-col gap-2">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="flex items-center gap-3 px-2 py-1.5">
+          <SkeletonBlock className="h-4 w-4 rounded" />
+          <SkeletonBlock className={`h-4 rounded ${i % 2 === 0 ? "w-3/4" : "w-1/2"}`} />
+        </div>
+      ))}
+    </div>
+  </div>
+)}
                   {searchHistory.length > 0 && (
                     <div className="border-b border-slate-100 dark:border-slate-800 p-4">
                       <div className="mb-3 flex items-center justify-between gap-3">
@@ -283,13 +297,17 @@ export default function EventHero({
               { label: "Total Prizes", value: 1, prefix: "$", suffix: "M+", icon: Award },
             ].map((stat, i) => (
               <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={isStatsInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
-                whileHover={{ y: -6 }}
-                className={`${darkTheme.card} rounded-3xl shadow-xl p-4 sm:p-6 flex flex-col items-center text-center transition-all duration-300`}
-              >
+  key={stat.label}
+  initial={{ opacity: 0, y: 20 }}
+  animate={isStatsInView ? { opacity: 1, y: 0 } : {}}
+  transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
+  whileHover={{
+    y: -6,
+    scale: 1.02,
+    transition: { duration: 0.2 }
+  }}
+  className={`${darkTheme.card} rounded-3xl shadow-xl p-4 sm:p-6 flex flex-col items-center text-center transition-all duration-200`}
+>
                 <div className="mb-3 sm:mb-4 flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700/50">
                   <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${darkTheme.textSecondary}`} />
                 </div>

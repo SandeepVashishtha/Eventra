@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -167,6 +167,7 @@ const MyCalendar = () => {
       .sort((a, b) => new Date(a.event.date) - new Date(b.event.date));
   };
 
+  const today = new Date();
   const selectedEvents = getSelectedDateEvents();
   const timelineEvents = getFilteredAllEvents();
 
@@ -352,9 +353,9 @@ const MyCalendar = () => {
                           const dayEvents = getEventsForDate(day);
                           const selected = isSelected(day);
                           const isToday =
-                            new Date().getDate() === day &&
-                            new Date().getMonth() === currentMonth &&
-                            new Date().getFullYear() === currentYear;
+                            today.getDate() === day &&
+                            today.getMonth() === currentMonth &&
+                            today.getFullYear() === currentYear;
 
                           return (
                             <button
@@ -381,7 +382,7 @@ const MyCalendar = () => {
                                     const theme = getCategoryTheme(item.event?.category);
                                     return (
                                       <span
-                                        key={i}
+                                        key={`${item.eventId}-${i}`}
                                         className={`w-1.5 h-1.5 rounded-full ${
                                           selected ? "bg-white" : `bg-gradient-to-r ${theme.color}`
                                         }`}
@@ -422,7 +423,7 @@ const MyCalendar = () => {
                                 <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
                                   {item.event.category || "General"}
                                 </span>
-                                <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 mt-1 truncate">
+                                <h4 title={item.event.title} className="font-extrabold text-sm text-slate-900 dark:text-slate-100 mt-1 line-clamp-2 break-words min-w-0">
                                   {item.event.title}
                                 </h4>
                                 <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 mt-2">
@@ -477,13 +478,14 @@ const MyCalendar = () => {
                   exit={{ opacity: 0, y: -15 }}
                   className="relative pl-6 sm:pl-10 space-y-8"
                 >
-                  {/* Vertical line */}
-                  <div className="absolute left-3.5 sm:left-5 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800/80 rounded-full" />
-                  <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-
                   {timelineEvents.length > 0 ? (
-                    <div className="space-y-8">
-                      {timelineEvents.map((item, index) => {
+                    <>
+                      {/* Vertical line */}
+                      <div className="absolute left-3.5 sm:left-5 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800/80 rounded-full" />
+                      <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+
+                      <div className="space-y-8">
+                        {timelineEvents.map((item, index) => {
                         const theme = getCategoryTheme(item.event?.category);
                         const eventDate = new Date(item.event.date);
 
@@ -531,7 +533,7 @@ const MyCalendar = () => {
                                       Registered: {new Date(item.registeredAt).toLocaleDateString()}
                                     </span>
                                   </div>
-                                  <h4 className="font-extrabold text-base text-slate-900 dark:text-slate-100">
+                                  <h4 title={item.event.title} className="font-extrabold text-base text-slate-900 dark:text-slate-100 line-clamp-2 break-words min-w-0">
                                     {item.event.title}
                                   </h4>
                                   <p className="text-xs text-slate-500 max-w-xl truncate mt-1">
@@ -578,6 +580,7 @@ const MyCalendar = () => {
                         );
                       })}
                     </div>
+                  </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
                       <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" aria-hidden="true" />

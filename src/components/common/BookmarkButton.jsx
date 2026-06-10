@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 
 const BookmarkButton = ({ event, isBookmarked, onToggle }) => {
@@ -19,7 +18,7 @@ const BookmarkButton = ({ event, isBookmarked, onToggle }) => {
         animate={{ color: isBookmarked ? '#f59e0b' : '#9ca3af' }}
         transition={{ duration: 0.2 }}
       >
-        {isBookmarked ? '🔖' : '🔖'}
+        {isBookmarked ? '⭐' : '🔖'}
       </motion.span>
     </motion.button>
   );

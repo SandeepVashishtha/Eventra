@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import mockEvents from "../Events/eventsMockData.json";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+
+import { eventService } from "../../services/eventService";
 import { getEventStatus } from "../../utils/eventUtils";
 
 const normalizeEvents = (events = []) =>
@@ -19,11 +20,13 @@ const useCalendarEvents = () => {
     setLoadError("");
 
     try {
-      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+      const response = await eventService.getAllEvents();
       const apiEvents = Array.isArray(response.data) ? response.data : [];
       setEvents(normalizeEvents(apiEvents));
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
+        console.warn("Failed to fetch events. Falling back to mock data.", error);
+        setLoadError(error?.message || "Failed to load events.");
         setEvents(normalizeEvents(mockEvents));
       } else {
         setEvents([]);

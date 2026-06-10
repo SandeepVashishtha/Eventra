@@ -2,7 +2,8 @@
 // Self-Healing Offline Queue Utility (IndexedDB backed with LocalStorage Backup)
 // ---------------------------------------------------------------------------
 import { safeJsonParse } from "./safeJsonParse.js";
-import { logger } from "../utils/logger";
+import { logger } from "./logger.js";
+import offlineSyncConfig from "../config/offlineSyncConfig.json";
 
 const QUEUE_KEY = "eventra_offline_queue";
 const DB_NAME = "eventra_offline_db";
@@ -246,7 +247,17 @@ export const getQueueIndexedDB = async () => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
       const request = store.getAll();
-      request.onsuccess = () => resolve(request.result || []);
+      request.onsuccess = () => {
+        const items = request.result || [];
+        // SECURITY (Issue #6449): Validate structural integrity to prevent cache poisoning
+        const validItems = items.filter(item => 
+          item && 
+          typeof item.id === 'string' && 
+          typeof item.actionType === 'string' &&
+          typeof item.payload === 'object'
+        );
+        resolve(validItems);
+      };
       request.onerror = () => reject(request.error);
     });
   } catch (err) {
@@ -312,6 +323,11 @@ const generateQueueId = () => {
  * cross-user action replay. If a user logs out and another user logs in,
  * the queued actions are validated for ownership before replay.
  */
+// Maximum serialised byte length for a single queue item's payload field.
+// With the 15-item slot cap, the total localStorage footprint is at most
+// 15 x 50 KB = 750 KB, safely within the 5 MB browser quota.
+const MAX_PAYLOAD_BYTES = 50 * 1024;
+
 export const pushToQueue = async (item, userId = null) => {
   // Add metadata tracking with security context
   const actionItem = {
@@ -322,6 +338,9 @@ export const pushToQueue = async (item, userId = null) => {
     eventId: item.eventId || null,
     payload: item.payload || {},
     endpoint: item.endpoint || null,
+    conflictStrategy:
+      item.conflictStrategy ||
+      offlineSyncConfig.defaultConflictStrategy,
     // SECURITY: Attach user ID to validate ownership on replay
     userId: userId || null,
     sessionId:
@@ -330,14 +349,33 @@ export const pushToQueue = async (item, userId = null) => {
         : null,
   };
 
+  // Guard against oversized payloads before they reach localStorage.
+  // An uncapped payload can fill the 5 MB quota in a single write, causing
+  // every subsequent localStorage.setItem call (including auth-state writes
+  // in AuthContext) to throw QuotaExceededError, silently corrupting the app.
+  const serialisedPayload = JSON.stringify(actionItem.payload);
+  if (serialisedPayload.length > MAX_PAYLOAD_BYTES) {
+    logger.warn(
+      `[OfflineQueue] Payload too large (${serialisedPayload.length} bytes). Dropping item to protect localStorage quota.`
+    );
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+      window.dispatchEvent(
+        new CustomEvent("eventra-offline-queue-full", {
+          detail: { reason: "payload-too-large", eventId: item.eventId },
+        })
+      );
+    }
+    return false;
+  }
+
   // 1. Sync mirror updates immediately (Synchronous fallback)
   const queue = getQueue();
-  if (queue.length >= 15) {
+  if (queue.length >= offlineSyncConfig.maxQueueSize) {
     logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
     if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
       window.dispatchEvent(
         new CustomEvent("eventra-offline-queue-full", {
-          detail: { eventId: item.eventId, limit: 15 },
+          detail: { eventId: item.eventId, limit: offlineSyncConfig.maxQueueSize },
         })
       );
     }
@@ -409,15 +447,10 @@ export const setQueue = async (newQueue) => {
           return;
         }
 
-        let completed = 0;
-        newQueue.forEach((item) => {
-          const putReq = store.put(item);
-          putReq.onsuccess = () => {
-            completed++;
-            if (completed === newQueue.length) resolve();
-          };
-          putReq.onerror = () => reject(putReq.error);
-        });
+        newQueue.forEach((item) => store.put(item));
+
+        tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(e.target?.error || new Error('IndexedDB transaction failed'));
       };
       clearReq.onerror = () => reject(clearReq.error);
     });
@@ -490,4 +523,277 @@ export const filterQueueByOwnership = (queue, currentUserId) => {
   });
 
   return validatedQueue;
+};
+
+/**
+ * SECURITY (Issue #5727): Validate that the current session is still valid and
+ * belongs to the same user before replaying queued actions.
+ *
+ * The offline queue stores a `sessionId` snapshot taken from sessionStorage at
+ * the time the action was enqueued. When connectivity restores, the session may
+ * have changed (user logged out and a different user logged in). This function
+ * compares the stored session ID against the current sessionStorage value and
+ * rejects items whose session no longer matches.
+ *
+ * IMPORTANT: This is an additional defence layer on top of filterQueueByOwnership.
+ * Both checks must pass for an item to be replayed:
+ *  1. filterQueueByOwnership — userId must match the current authenticated user.
+ *  2. validateQueueSession   — sessionId must match the current session.
+ *
+ * Items with a null/missing sessionId are dropped to be safe (no session = unknown origin).
+ *
+ * @param {Array}  queue          - Ownership-filtered offline queue
+ * @param {string} currentSession - Current session ID from sessionStorage
+ * @returns {Array} Items whose stored sessionId matches the current session
+ */
+export const validateQueueSession = (queue, currentSession) => {
+  if (!currentSession) {
+    logger.warn(
+      "[Security] No current session ID available — dropping all queued actions as a safety precaution."
+    );
+    return [];
+  }
+
+  return queue.filter((item) => {
+    if (!item.sessionId) {
+      logger.warn(
+        `[Security] Dropping queued action ${item.id}: no sessionId stored. ` +
+          "Cannot verify session ownership."
+      );
+      return false;
+    }
+    if (item.sessionId !== currentSession) {
+      logger.warn(
+        `[Security] Dropping queued action ${item.id}: ` +
+          `stored sessionId does not match current session. ` +
+          "This prevents stale-session cross-user action replay."
+      );
+      return false;
+    }
+    return true;
+  });
+};
+
+// ---------------------------------------------------------------------------
+// Processing Pipeline — exponential backoff, retry, and replay
+// ---------------------------------------------------------------------------
+
+const MAX_RETRY_COUNT = 5;
+const BASE_BACKOFF_MS = 1_000;
+const REQUEST_TIMEOUT_MS = 10_000;
+
+const notifyQueueProcessed = (result) => {
+  if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
+  window.dispatchEvent(
+    new CustomEvent("eventra-offline-queue-processed", {
+      detail: result,
+    })
+  );
+};
+
+/**
+ * Retry a single queued action with exponential backoff + jitter.
+ *
+ * @param {object}   item      - Queued action item (must have endpoint, payload, id, retryCount)
+ * @param {function} fetchFn   - Async function(url, options) => { status, data }
+ * @param {object}   [options] - { signal, onConflict }
+ * @returns {Promise<{status: "success"|"dropped"|"conflict"|"error", item: object}>}
+ */
+export const processQueueItem = async (item, fetchFn, options = {}) => {
+  const { signal, onConflict } = options;
+
+  for (let attempt = 0; attempt <= MAX_RETRY_COUNT; attempt++) {
+    if (signal?.aborted) return { status: "error", item, error: new DOMException("Aborted", "AbortError") };
+
+    if (attempt > 0) {
+      const delay = BASE_BACKOFF_MS * Math.pow(2, attempt - 1) + Math.random() * 500;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    const url = item.endpoint;
+    if (!url) {
+      logger.warn(`[OfflineQueue] Item ${item.id} has no endpoint — dropping.`);
+      return { status: "dropped", item };
+    }
+
+    let controller;
+    let timeoutId;
+
+    const clearPendingTimeout = () => {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
+    };
+
+    try {
+      controller = new AbortController();
+      timeoutId = setTimeout(() => {
+        if (controller) controller.abort();
+      }, REQUEST_TIMEOUT_MS);
+      const combinedSignal = signal
+        ? combineAbortSignals(signal, controller.signal)
+        : controller.signal;
+
+      const response = await fetchFn(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(item.payload),
+        signal: combinedSignal,
+      });
+
+      clearPendingTimeout();
+
+      if (response.ok) return { status: "success", item };
+
+      if (response.status === 409) {
+        let serverState = null;
+        try { serverState = await response.json(); } catch { serverState = {}; }
+
+        if (typeof onConflict === "function") {
+          const resolution = await onConflict(item, serverState);
+          if (resolution === "retry") { clearPendingTimeout(); continue; }
+          if (resolution === "discard") { clearPendingTimeout(); return { status: "dropped", item }; }
+          clearPendingTimeout(); return { status: "success", item };
+        }
+        clearPendingTimeout(); return { status: "conflict", item, serverState };
+      }
+
+      if (response.status >= 400 && response.status < 500) {
+        logger.warn(
+          `[OfflineQueue] Server rejected item ${item.id} with ${response.status} — dropping.`
+        );
+        clearPendingTimeout(); return { status: "dropped", item };
+      }
+
+      // 5xx — retry with backoff
+      clearPendingTimeout(); continue;
+    } catch (error) {
+      clearPendingTimeout();
+      if (error.name === "AbortError") return { status: "error", item, error };
+      logger.error(`[OfflineQueue] Network error processing item ${item.id}:`, error);
+      // Retry on network errors
+    }
+  }
+
+  return { status: "dropped", item };
+};
+
+/**
+ * Process all items in the offline queue.
+ *
+ * 1. Reads queue from IndexedDB
+ * 2. Validates ownership via filterQueueByOwnership
+ * 3. Processes each item with retry/backoff
+ * 4. Removes permanently failed items after MAX_RETRY_COUNT
+ * 5. Dispatches eventra-offline-queue-processed custom event
+ *
+ * @param {string}   currentUserId - User ID for ownership validation (REQUIRED — replay is
+ *                                   blocked if this is missing or falsy to prevent cross-user
+ *                                   action execution)
+ * @param {function} fetchFn       - Async HTTP fetch function
+ * @param {object}   [options]     - { signal, onConflict }
+ * @returns {Promise<{processed: number, succeeded: number, dropped: number, remaining: number}>}
+ * @throws {Error} If currentUserId is not provided (mandatory security guard)
+ */
+export const processQueue = async (currentUserId, fetchFn, options = {}) => {
+  // SECURITY (Issue #5727): currentUserId is MANDATORY. Replay must never proceed
+  // without a verified user identity — omitting it would allow actions queued by
+  // User A to execute under User B's authenticated session.
+  if (!currentUserId) {
+    logger.error(
+      "[Security] processQueue called without currentUserId — replay blocked. " +
+        "Always pass the authenticated user's ID to prevent cross-user action execution."
+    );
+    throw new Error(
+      "[OfflineQueue] currentUserId is required to process the queue. " +
+        "Replay is blocked without a verified user identity."
+    );
+  }
+
+  const { signal } = options;
+
+  const queue = await getQueueIndexedDB();
+  if (queue.length === 0) return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
+
+  const validated = filterQueueByOwnership(queue, currentUserId);
+  if (validated.length === 0) {
+    await clearQueue();
+    return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
+  }
+
+  // SECURITY (Issue #5727): Re-validate session ID so actions queued under a
+  // previous session cannot replay under a new session, even if the userId matches.
+  const currentSession =
+    typeof sessionStorage !== "undefined"
+      ? sessionStorage.getItem("session_id") || null
+      : null;
+  const sessionValidated = validateQueueSession(validated, currentSession);
+  if (sessionValidated.length === 0) {
+    await clearQueue();
+    return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
+  }
+
+  const succeeded = [];
+  const dropped = [];
+  const failed = [];
+
+  for (const item of sessionValidated) {
+    if (signal?.aborted) break;
+
+    if (item.retryCount >= MAX_RETRY_COUNT) {
+      dropped.push(item);
+      continue;
+    }
+
+    const result = await processQueueItem(item, fetchFn, {
+      ...options,
+      onConflict: options.onConflict
+        ? (queuedItem, serverState) => options.onConflict(queuedItem, serverState)
+        : undefined,
+    });
+
+    if (result.status === "success") {
+      succeeded.push(item);
+    } else if (result.status === "dropped") {
+      dropped.push(item);
+    } else {
+      failed.push({ ...item, retryCount: (item.retryCount || 0) + 1 });
+    }
+  }
+
+  if (failed.length > 0) {
+    await setQueue(failed);
+  } else {
+    await clearQueue();
+  }
+
+  const remaining = failed.length;
+
+  notifyQueueProcessed({ succeeded: succeeded.length, dropped: dropped.length, remaining });
+
+  return {
+    processed: sessionValidated.length,
+    succeeded: succeeded.length,
+    dropped: dropped.length,
+    remaining,
+  };
+};
+
+/**
+ * Internal: combine two AbortSignals into one so either can abort.
+ */
+const combineAbortSignals = (...signals) => {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort();
+
+  for (const signal of signals) {
+    if (signal.aborted) {
+      controller.abort();
+      return controller.signal;
+    }
+    signal.addEventListener("abort", onAbort, { once: true });
+  }
+
+  return controller.signal;
 };
