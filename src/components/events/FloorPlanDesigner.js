@@ -9,6 +9,7 @@ import { PRESETS } from "../../constants/floorPlanPresets";
 import { checkCollision, getSeatPositions } from "../../utils/floorPlanGeometry";
 import { exportAsSVG, exportAsPNG, downloadLayoutJSON, importLayoutJSON } from "../../utils/floorPlanExport";
 import "./FloorPlanDesigner.css";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const navigate = useNavigate();
@@ -163,7 +164,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     let initialElements = [];
     if (savedLayout) {
       try {
-        initialElements = JSON.parse(savedLayout);
+        initialElements = safeJsonParse(savedLayout, {});
       } catch (e) {
         toast.error("Invalid floor plan format");
         initialElements = PRESETS.banquet;

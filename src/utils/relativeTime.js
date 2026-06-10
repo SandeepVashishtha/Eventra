@@ -7,11 +7,9 @@ export function getRelativeTime(dateInput) {
   if (dateInput === null || dateInput === undefined) {
     return RELATIVE_TIME_FALLBACK;
   }
-
   if (typeof dateInput === "string" && dateInput.trim() === "") {
     return RELATIVE_TIME_FALLBACK;
   }
-
   const now = new Date();
   const date = new Date(dateInput);
 

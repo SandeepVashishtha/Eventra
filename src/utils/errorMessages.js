@@ -10,29 +10,6 @@ const t = (key) => i18n.t(key);
  * Use getPublicErrorMessage() instead of err.message in all toast/form-error calls.
  */
 
-const STATUS_MESSAGES = {
-  400: t("error.badRequest"),
-  401: t("error.unauthorized"),
-  403: t("error.forbidden"),
-  404: t("error.notFound"),
-  409: t("error.conflict"),
-  422: t("error.unprocessable"),
-  429: t("error.tooManyRequests"),
-  500: t("error.serverError"),
-  502: t("error.serviceUnavailable"),
-  503: t("error.serviceUnavailable"),
-};
-
-const KEYWORD_MESSAGES = {
-  "email.*already.*exist|already.*registered|duplicate.*email": t("error.emailExists"),
-  "invalid.*password|password.*incorrect|wrong.*password": t("error.invalidCredentials"),
-  "invalid.*credential|credentials.*incorrect": t("error.invalidCredentials"),
-  "account.*not.*found|user.*not.*found": t("error.accountNotFound"),
-  "account.*locked|too.*many.*attempt": t("error.accountLocked"),
-  "token.*expired|session.*expired|jwt.*expired": t("error.unauthorized"),
-  "network|fetch|econnrefused|enotfound": t("error.networkError"),
-};
-
 /**
  * Returns a safe, user-friendly error message.
  * Logs the original error to the console in non-production environments.
@@ -45,6 +22,29 @@ export function getPublicErrorMessage(err, fallback = t("error.generic")) {
   if (process.env.NODE_ENV !== "production") {
     console.error("[Eventra error]", err);
   }
+
+  const STATUS_MESSAGES = {
+    400: t("error.badRequest"),
+    401: t("error.unauthorized"),
+    403: t("error.forbidden"),
+    404: t("error.notFound"),
+    409: t("error.conflict"),
+    422: t("error.unprocessable"),
+    429: t("error.tooManyRequests"),
+    500: t("error.serverError"),
+    502: t("error.serviceUnavailable"),
+    503: t("error.serviceUnavailable"),
+  };
+
+  const KEYWORD_MESSAGES = {
+    "email.*already.*exist|already.*registered|duplicate.*email": t("error.emailExists"),
+    "invalid.*password|password.*incorrect|wrong.*password": t("error.invalidCredentials"),
+    "invalid.*credential|credentials.*incorrect": t("error.invalidCredentials"),
+    "account.*not.*found|user.*not.*found": t("error.accountNotFound"),
+    "account.*locked|too.*many.*attempt": t("error.accountLocked"),
+    "token.*expired|session.*expired|jwt.*expired": t("error.unauthorized"),
+    "network|fetch|econnrefused|enotfound": t("error.networkError"),
+  };
 
   if (!err) return fallback;
 

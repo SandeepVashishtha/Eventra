@@ -37,7 +37,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
-import { safeJsonParse } from "../utils/safeJsonParse";
+
 import { saveToOfflineCache, getFromOfflineCache } from "../utils/indexedDB";
 
 const MyEventsContext = createContext(null);
@@ -150,13 +150,19 @@ export const MyEventsProvider = ({ children }) => {
    */
   const addRegistration = useCallback((event, formData = {}, registrationId = null, qrToken = null) => {
     setMyEvents((prev) => {
-      if (prev.some((r) => r.eventId === event.id)) return prev;
+      const alreadyExists = prev.some(
+        (r) =>
+          r.eventId === event.id ||
+        (registrationId && r.registrationId && r.registrationId === registrationId)
+      );
+
+      if (alreadyExists) return prev;
       return [
         ...prev,
         {
           eventId: event.id,
           registeredAt: new Date().toISOString(),
-          registrationId: registrationId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`),
+          registrationId: registrationId || null,
           qrToken: qrToken || "",
           // formData and event are kept in memory for this session so the
           // success screen can display them, but they are NOT written to
@@ -174,10 +180,6 @@ export const MyEventsProvider = ({ children }) => {
    */
   const removeRegistration = useCallback((eventId) => {
     setMyEvents((prev) => prev.filter((r) => r.eventId !== eventId));
-    // Trigger automatic promotion from the waitlist
-    import("../utils/waitlistUtils.js").then(({ promoteNextUser }) => {
-      promoteNextUser(eventId);
-    }).catch(() => {});
   }, []);
 
   /**

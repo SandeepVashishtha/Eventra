@@ -8,6 +8,14 @@ const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const DEPLOYED_BACKEND_URL =
+    "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net";
+
+  const backendTarget =
+    env.BACKEND_URL ||
+    env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
+    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") ||
+    DEPLOYED_BACKEND_URL;
 
   return {
     plugins: [
@@ -46,6 +54,16 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       open: false,
       hmr: { overlay: true },
+      proxy: {
+        "/api": {
+          target: backendTarget,
+          changeOrigin: true,
+        },
+        "/stream": {
+          target: backendTarget,
+          changeOrigin: true,
+        },
+      },
     },
 
     // Pre-bundle heavy deps once → node_modules/.vite/deps
@@ -84,10 +102,6 @@ export default defineConfig(({ mode }) => {
       outDir: "build",
       sourcemap: false,
       minify: "esbuild",
-      // Disable CSS minification — lightningcss (Vite 8 default) cannot parse
-      // the custom Tailwind `short` screen: (max-height: 520px) media query.
-      cssMinify: false,
-      chunkSizeWarningLimit: 1000,
       // Use esbuild for CSS minification instead of the default lightningcss,
       // which cannot parse the custom Tailwind `short` screen media query.
       cssMinify: "esbuild",

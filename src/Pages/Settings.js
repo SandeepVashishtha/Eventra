@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { Sun, MousePointer, Bell, ShieldCheck, ArrowRight, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import useDocumentTitle from "../hooks/useDocumentTitle";
-import { showSuccessToast, showErrorToast } from "../utils/toast";
+import { toast } from "react-toastify";
+import KeyboardShortcutsHelp from "../components/accessibility/KeyboardShortcutsHelp";
 
 const Settings = () => {
   useDocumentTitle("Eventra | Settings");
@@ -57,17 +58,17 @@ const Settings = () => {
       });
       setShowKey(true);
       setIsGenerating(false);
-      showSuccessToast("New Advanced Backup Key generated successfully!");
+      toast.success("New Advanced Backup Key generated successfully!");
     }, 850);
   };
 
   const handleCopyKey = () => {
     if (!backupKey) return;
     navigator.clipboard.writeText(`Mnemonic: ${backupKey.mnemonic}\nHex: ${backupKey.hex}`)
-      .then(() => showSuccessToast("Backup key copied to clipboard!"))
+      .then(() => toast.success("Backup key copied to clipboard!"))
       .catch((err) => {
         console.error("Failed to copy key:", err);
-        showErrorToast("Could not copy key. Please copy manually.");
+        toast.error("Could not copy key. Please copy manually.");
       });
   };
 
@@ -82,7 +83,8 @@ const Settings = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showSuccessToast("Backup key file downloaded!");
+    URL.revokeObjectURL(url);
+    toast.success("Backup key file downloaded!");
   };
 
   return (
@@ -200,6 +202,9 @@ const Settings = () => {
               </p>
             </div>
           </article>
+
+          {/* Keyboard Shortcuts Help */}
+          <KeyboardShortcutsHelp />
         </div>
 
         {/* Advanced Backup Recovery Key Generator Card */}
@@ -320,7 +325,7 @@ const Settings = () => {
                   localStorage.removeItem("eventra_onboarding_completed_fired");
                   localStorage.removeItem("eventra_sandbox_executed");
                   localStorage.removeItem("eventra_ai_recommendation_generated");
-                  showSuccessToast("Onboarding checklist reset successfully!");
+                  toast.success("Onboarding checklist reset successfully!");
                   // Dispatch custom event to let widget know immediately if settings resets it
                   window.dispatchEvent(new CustomEvent("eventraOnboardingReset"));
                 }}
