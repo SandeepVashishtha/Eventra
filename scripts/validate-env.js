@@ -66,12 +66,20 @@ const ALLOWED_EXCEPTIONS = new Set([
   "REACT_APP_CSP_REPORT_URI",
 ]);
 
-const REQUIRED_VARS = ["VITE_API_URL"];
+const BACKEND_URL_VARS = ["BACKEND_URL", "VITE_API_URL", "REACT_APP_API_URL"];
 
 const FORMAT_VALIDATED_VARS = {
+  BACKEND_URL: {
+    pattern: /^https?:\/\/.+/,
+    message: "BACKEND_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
+  },
   VITE_API_URL: {
     pattern: /^https?:\/\/.+/,
     message: "VITE_API_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
+  },
+  REACT_APP_API_URL: {
+    pattern: /^https?:\/\/.+/,
+    message: "REACT_APP_API_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
   },
 };
 
@@ -83,14 +91,17 @@ const warnings = [];
 
 console.log("\n[validate-env] Scanning environment variables for security issues...\n");
 
-console.log("Required variables:");
-for (const varName of REQUIRED_VARS) {
-  if (!process.env[varName]) {
-    console.warn(`  WARNING: missing ${varName} (app may fail to connect to backend)`);
-    warnings.push(`Required variable ${varName} is not set`);
-  } else {
-    console.log(`  OK: ${varName} = [set]`);
-  }
+console.log("Required backend configuration:");
+const configuredBackendVars = BACKEND_URL_VARS.filter(
+  (varName) => process.env[varName] && process.env[varName].trim()
+);
+if (configuredBackendVars.length === 0) {
+  const msg =
+    "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application.";
+  errors.push(`[CONFIG ERROR] ${msg}`);
+  hasErrors = true;
+} else {
+  console.log(`  OK: ${configuredBackendVars.join(" or ")} = [set]`);
 }
 
 if (process.env.REACT_APP_GROQ_API_KEY) {
@@ -182,7 +193,11 @@ if (errors.length > 0) {
 }
 
 const criticalErrors = errors.filter(
-  (e) => e.includes("[SECURITY LEAK]") || e.includes("[FORMAT ERROR]") || e.includes("[CRITICAL ERROR]")
+  (e) =>
+    e.includes("[SECURITY LEAK]") ||
+    e.includes("[FORMAT ERROR]") ||
+    e.includes("[CRITICAL ERROR]") ||
+    e.includes("[CONFIG ERROR]")
 );
 if (criticalErrors.length > 0 || hasErrors) {
   console.error(

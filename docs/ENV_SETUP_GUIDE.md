@@ -10,10 +10,10 @@ This guide explains the active frontend environment variables for Eventra.
 cp .env.example .env
 ```
 
-1. Set the required API URL:
+1. Set an explicit backend URL:
 
 ```env
-REACT_APP_API_URL=http://localhost:8080/api
+VITE_API_URL=http://localhost:8080
 ```
 
 1. Start the app:
@@ -24,14 +24,30 @@ npm run dev
 
 ## Active Variables
 
+Set at least one backend URL before starting the app. `VITE_API_URL` is preferred for Vite builds, `BACKEND_URL` configures the dev proxy backend origin directly, and `REACT_APP_API_URL` remains supported for compatibility.
+
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `REACT_APP_API_URL` | Yes | Backend API base URL used by client requests and SSE streams |
+| `VITE_API_URL` | One of backend URLs | Backend API base URL used by Vite client builds and the dev proxy |
+| `BACKEND_URL` | One of backend URLs | Backend origin used by the Vite dev proxy |
+| `REACT_APP_API_URL` | One of backend URLs | Compatibility API base URL used by client requests and the dev proxy |
 | `REACT_APP_GITHUB_REPO` | No | Public repository identifier for metadata/links |
 | `REACT_APP_PUBLIC_URL` | No | Canonical public URL used for sharing/SEO helpers |
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public push-notification key |
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
 | `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN; only used in production builds |
+
+Examples:
+
+```env
+VITE_API_URL=https://api.example.com
+```
+
+or:
+
+```env
+BACKEND_URL=https://api.example.com
+```
 
 ## Security Notes
 
@@ -42,7 +58,8 @@ npm run dev
 
 ## Troubleshooting
 
-- If API calls or SSE streams fail, verify `REACT_APP_API_URL` points to a reachable backend.
+- If startup fails with "Backend URL is not configured", set `BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL`.
+- If API calls or SSE streams fail, verify the configured backend URL points to a reachable backend.
 - If shared links are wrong, check `REACT_APP_PUBLIC_URL`.
 - If build-time checks fail, run:
 
