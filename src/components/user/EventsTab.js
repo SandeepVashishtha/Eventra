@@ -182,41 +182,41 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
         </div>
       )}
 
-      <div className="px-6 py-4 flex gap-3 bg-linear-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
+      <div className="px-6 py-4 flex flex-col sm:flex-row gap-3 bg-linear-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
         {showCancel ? (
           <>
             <button
-              className="group/btn flex-1"
+             className="group/btn w-full sm:flex-1"
               onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
               disabled={isOffline}
               title={isOffline ? "Action unavailable offline" : "Cancel registration"}
               aria-disabled={isOffline}
               style={isOffline ? { opacity: 0.5, cursor: "not-allowed" } : {}}
             >
-              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lghover:shadow-2xl hover:scale-105transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Trash2 size={13} className="relative" />
                 <span className="relative">Cancel</span>
               </div>
             </button>
             <button
-              className="group/btn flex-1"
+             className="group/btn w-full sm:flex-1"
               onClick={() => onViewTicket?.(event)}
             >
-              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Ticket size={13} className="relative" />
                 <span className="relative">Ticket</span>
               </div>
             </button>
           </>
         ) : (
-          <Link to={`/events/${event?.id}/analytics`} className="group/btn flex-1">
-            <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+          <Link to={`/events/${event?.id}/analytics`}className="group/btn w-full sm:flex-1">
+            <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lghover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
               <Activity size={13} className="relative" />
               <span className="relative">Analytics</span>
             </div>
           </Link>
         )}
-        <Link to={`/events/${event?.id}`} className="group/btn flex-1">
+        <Link to={`/events/${event?.id}`} className="group/btn w-full sm:flex-1">
           <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
             <span>{showCancel ? "View Details" : "Open Event"}</span>
           </div>
