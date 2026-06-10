@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import EventTimelineReplay from "./EventTimelineReplay";
 import { Users, Clock, TrendingUp, Activity, CheckCircle2, Play, Zap } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -541,6 +542,9 @@ const [activeTab, setActiveTab] = useState('analytics');
       </div>
       </>
   )}
+
+  <EventTimelineReplay />
+
 </div>
   );
 };
