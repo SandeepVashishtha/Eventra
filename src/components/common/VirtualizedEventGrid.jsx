@@ -1,4 +1,4 @@
-import { FixedSizeGrid as Grid } from "react-window";
+// import { FixedSizeGrid as Grid } from "react-window";
 import EventCard from "../../Pages/Events/EventCard";
 
 const VirtualizedEventGrid = ({ events }) => {

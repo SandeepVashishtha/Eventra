@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   motion,
   useAnimation,
@@ -9,6 +9,7 @@ import {
 } from "framer-motion";
 
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
@@ -25,31 +26,8 @@ import projectsData from "../../Projects/mockProjectsData.json";
 
 const CountUp = CountUpLib.default || CountUpLib;
 
-// ─── FLOATING SHAPE SUB-COMPONENT ────────────────────────────────────────────
-const PARALLAX_OFFSETS = [220, -150, 100, -180, 130, -80, 250, -120, 70];
-
-const FloatingShape = ({ shape, index, scrollYProgress, isDark, floatShape, prefersReducedMotion }) => {
-  const yShape = useTransform(scrollYProgress, [0, 1], [0, PARALLAX_OFFSETS[index]]);
-
-  return (
-    <motion.div
-      style={{
-        position: "absolute",
-        top: shape.pos.top,
-        left: shape.pos.left,
-        width: shape.size,
-        height: shape.size,
-        borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%",
-        background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
-        filter: "blur(2px)",
-        boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
-        y: prefersReducedMotion ? 0 : yShape,
-        willChange: "transform",
-      }}
-      animate={prefersReducedMotion ? {} : floatShape(index)}
-    />
-  );
-};
+// ─── MOTION LINK SUB-COMPONENT ──────────────────────────────────────────────
+const MotionLink = motion(Link);
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
@@ -77,11 +55,19 @@ const HEADLINE_PHRASES = [
 ];
 const TAGLINE_TEXTS = ["Discover & Join"];
 const SEARCH_RESULT_LIMIT = 5;
-const HERO_STATS = [
-  { icon: Users, value: 1500, label: "Developers Joined", suffix: "+" },
-  { icon: Calendar, value: 75, label: "Events Organized", suffix: "+" },
-  { icon: Handshake, value: 30, label: "Partners & Sponsors", suffix: "+" },
-];
+
+
+const SEARCH_ROUTES = {
+  event: "/events",
+  hackathon: "/hackathons",
+  project: "/projects",
+};
+
+const SEARCH_ICONS = {
+  event: Calendar,
+  hackathon: Trophy,
+  project: Code,
+};
 
 const searchIndex = new Fuse(allSearchItems, {
   keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
@@ -101,19 +87,15 @@ const getResultIcon = (type) => {
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
 const Hero = () => {
-    const controls = useAnimation(); 
+  const { t, i18n } = useTranslation();
+  const controls = useAnimation(); 
   const prefersReducedMotion = useReducedMotion();
-
-  useAnimation 
-  
 
   useDocumentTitle("Eventra | Home");
 
   const containerRef = useRef(null);
 
   const [isTouch, setIsTouch] = useState(false);
-  const [isDark, setIsDark] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
   const [statsReady, setStatsReady] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
@@ -133,23 +115,6 @@ const Hero = () => {
 
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
-    setIsDark(document.documentElement.classList.contains("dark"));
-    setIsMobileView(window.innerWidth <= 420);
-
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    
-    const onResize = () => {
-      setIsMobileView(window.innerWidth <= 420);
-    };
-    
-    window.addEventListener("resize", onResize);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", onResize);
-    };
   }, []);
 
   useEffect(() => {
@@ -187,17 +152,7 @@ const Hero = () => {
     clearSearchTerm();
   }, [clearSearchTerm]);
 
-  const floatShape = (i) => ({
-    y: [0, -15 - i * 4, 0],
-    x: [0, 12 + i * 3, 0],
-    rotate: [0, 8, -8, 0],
-    transition: {
-      duration: prefersReducedMotion ? 0 : 5 + i * 0.5,
-      repeat: Infinity,
-      ease: "easeInOut",
-      delay: i * 0.2,
-    },
-  });
+
 
   const HERO_STATS = useMemo(
     () => [
@@ -261,6 +216,12 @@ const Hero = () => {
       </div>
 
       <motion.div
+        initial="hidden"
+        animate="show"
+        variants={{
+          hidden: {},
+          show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+        }}
         className="relative z-10 px-4 pt-20 sm:px-6 sm:pt-24 md:pt-28 lg:px-8"
         style={{
           y: isTouch || prefersReducedMotion ? 0 : yText,

@@ -95,11 +95,14 @@ const getInitialLiveCount = () => {
 };
 
 const AnalyticsDashboard = () => {
+  const { analytics, loading: analyticsLoading } = useAnalytics();
   const [checkins, setCheckins] = useState(getInitialCheckins);
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
   const [activeTab, setActiveTab] = useState('analytics');
+
+  const categoryData = analytics?.categoryBreakdown || FALLBACK_CATEGORY_DATA;
 
   // Real-time SSE stream — takes priority over local simulation when connected
   const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
@@ -421,13 +424,10 @@ const AnalyticsDashboard = () => {
                 ))}
               </div>
             </div>
-          ))}
-        </div>
-        {/* Closing tag for line 502 wrapper — fix for #7244 */}
-      </div>
-      </>
-  )}
-</div>
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 
