@@ -20,7 +20,7 @@ import jwt from "jsonwebtoken";
 import { getClientIp } from "../lib/getClientIp.js";
 import { loginRateLimiter, enforceRateLimit } from "../lib/rateLimiter.js";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
-import { buildCorsHeaders, corsResponse } from "./cors.js";
+import { buildCorsHeaders, corsResponse, handlePreflight } from "./cors.js";
 import { users, usersByUsername } from "./signup.js";
 
 /**
@@ -61,7 +61,7 @@ function validateLoginInput(body) {
 export default async function login(req, res, deps = {}) {
   // 1. Method guard
   if (req.method === "OPTIONS") {
-    return corsResponse(req, res, 200);
+    return handlePreflight(req, res);
   }
   if (req.method && req.method !== "POST") {
     return corsResponse(req, res, 405, { error: "Method not allowed" });

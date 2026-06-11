@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
 import { createRateLimiter } from "../lib/rateLimiter.js";
 
-import { buildCorsHeaders, corsResponse } from "./cors.js";
+import { buildCorsHeaders, corsResponse, handlePreflight } from "./cors.js";
 
 
 // ---------------------------------------------------------------------------
@@ -125,7 +125,7 @@ const DEFAULT_PERMISSIONS = [
 async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return res.status(200).set(buildCorsHeaders(req)).end();
+    return handlePreflight(req, res);
   }
 
   // Only allow POST requests
