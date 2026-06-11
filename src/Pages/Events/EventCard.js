@@ -104,9 +104,35 @@ const EventCard = ({ event }) => {
   useEffect(() => {
     setIsBookmarked(isEventBookmarked(event.id));
 
-    return subscribeToBookmarkChanges(() => {
+    const unsub = subscribeToBookmarkChanges(() => {
       setIsBookmarked(isEventBookmarked(event.id));
     });
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        setIsBookmarked(isEventBookmarked(event.id));
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    const handlePageShow = (e) => {
+      if (e.persisted) {
+        setIsBookmarked(isEventBookmarked(event.id));
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+
+    const handleFocus = () => {
+      setIsBookmarked(isEventBookmarked(event.id));
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      unsub();
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [event.id]);
 
   const handleBookmarkToggle = useCallback(
