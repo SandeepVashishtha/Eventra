@@ -1,6 +1,65 @@
 /* Fix: Removed 'Dancing Script' decorative font import — Issue #828 */
 /* Only Inter (from index.css) is used for professional, consistent typography */
 
+/* Neon Revolving Navbar Border */
+@keyframes neonRevolve {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.neon-navbar-border {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--border-color);
+  z-index: 50;
+}
+
+/* Neon Animated Logo */
+@keyframes neonLogoShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.neon-logo {
+  font-weight: 800;
+  color: var(--text-color) !important;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+  filter: none !important;
+  background: linear-gradient(
+    90deg,
+    var(--primary-color),
+    var(--secondary-color),
+    var(--evt-success),
+    var(--evt-brand-accent),
+    var(--warning-text),
+    var(--secondary-color),
+    var(--primary-color)
+  );
+  background-size: 300% 300%;
+  animation: neonLogoShift 10s ease infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 0 6px var(--glow-color));
+}
+
 main {
   position: relative;
   z-index: 10;
@@ -10,7 +69,7 @@ main {
    GLOBAL COMPONENT & SOCIAL LINKS
    ========================================================================== */
 .social-links a {
-  color: white;
+  color: var(--evt-color-white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -20,7 +79,7 @@ main {
 
 .social-links a:visited,
 .social-links a:active {
-  color: white;
+  color: var(--evt-color-white);
 }
 
 .social-links a:hover {
@@ -31,7 +90,9 @@ main {
    PRODUCTION FOOTER STYLES (With Enhanced Hover States & Theme Fixes)
    ========================================================================== */
 .site-footer {
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 /* Social link rounded container polish and elevation rules */
@@ -39,26 +100,27 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem; /* 40px */
-  height: 2.5rem; /* 40px */
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 9999px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px 0 var(--evt-shadow-subtle);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  touch-action: manipulation;
 }
 
 /* FIX: Smooth background, text, and border color shifts on hover */
 .footer-social-btn:hover {
   transform: translateY(-4px) !important;
-  background-color: #74b9ff !important; /* Elegant brand blue background */
-  color: #ffffff !important;            /* Changes the internal icon color to white */
-  border-color: #74b9ff !important;     /* Changes border color to match */
-  box-shadow: 0 10px 15px -3px rgba(116, 185, 255, 0.4) !important; /* Soft glowing blue shadow */
+  background-color: var(--evt-footer-accent) !important; /* Elegant brand blue background */
+  color: var(--evt-color-white) !important; /* Changes the internal icon color to white */
+  border-color: var(--evt-footer-accent) !important; /* Changes border color to match */
+  box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--evt-footer-accent) 40%, transparent) !important; /* Soft glowing blue shadow */
 }
 
 /* Accessible focus rings to optimize for Lighthouse audit compliance */
 .footer-nav-link:focus-visible,
 .footer-social-btn:focus-visible {
-  outline: 2px solid #74b9ff;
+  outline: 2px solid var(--evt-footer-accent);
   outline-offset: 4px;
 }
 
@@ -70,20 +132,22 @@ main {
 }
 
 .footer-newsletter-input:disabled {
-  background-color: rgba(243, 244, 246, 1); /* Light mode disabled gray */
+  background-color: var(--evt-neutral-soft); /* Light mode disabled gray */
 }
 
 .dark .footer-newsletter-input:disabled {
-  background-color: rgba(39, 39, 42, 1); /* Dark mode zinc disabled gray */
+  background-color: var(--evt-neutral-soft); /* Dark mode disabled gray */
 }
 
 /* ==========================================================================
    EVENTS SECTION STYLES
    ========================================================================== */
 .events-section {
-  padding: 4rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 5rem 0;
+  background: var(--bg-gradient);
+  color: var(--text-color);
   min-height: 100vh;
+  color: var(--evt-color-white);
 }
 
 .events-section .container {
@@ -94,20 +158,21 @@ main {
 
 .section-header {
   text-align: center;
-  margin-bottom: 3rem;
-  color: white;
+  margin-bottom: 3.5rem;
+  color: var(--text-color);
 }
 
 .section-header h1 {
   font-size: var(--font-h1);
-  margin-bottom: 1rem;
-  background: linear-gradient(45deg, #fff, #f0f0f0);
+  margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, var(--text-color) 0%, var(--text-color-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .section-header p {
   font-size: var(--font-h5);
+  color: var(--text-color-light);
   opacity: 0.9;
 }
 
@@ -128,27 +193,30 @@ main {
 
 .filter-controls button,
 .view-controls button {
-  padding: 0.5rem 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 25px;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg-color);
+  color: var(--text-color);
+  border-radius: 9999px;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
   font-size: var(--font-body);
+  box-shadow: var(--card-shadow);
 }
 
 .filter-controls button:hover,
 .view-controls button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+  background: var(--bg-secondary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .filter-controls button.active,
 .view-controls button.active {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: var(--color-primary);
+  color: var(--evt-color-white);
+  border-color: var(--color-primary);
 }
 
 .view-controls {
@@ -167,18 +235,19 @@ main {
 }
 
 .event-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
+  background: var(--card-bg-color);
+  border: var(--card-border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-color);
 }
 
 .event-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -10px var(--evt-shadow-medium);
+  border-color: var(--color-primary);
 }
 
 .event-image {
@@ -211,17 +280,17 @@ main {
 }
 
 .status-badge.upcoming {
-  background: linear-gradient(45deg, #4ade80, #22c55e);
-  color: white;
+  background: linear-gradient(45deg, var(--success-text), var(--evt-success));
+  color: var(--evt-color-white);
 }
 
 .status-badge.past {
-  background: linear-gradient(45deg, #6b7280, #9ca3af);
-  color: white;
+  background: linear-gradient(45deg, var(--evt-neutral), var(--evt-text-muted));
+  color: var(--evt-color-white);
 }
 
 .event-content {
-  color: white;
+  color: var(--text-color);
 }
 
 .event-header {
@@ -234,24 +303,28 @@ main {
 .event-header h3 {
   font-size: var(--font-h3);
   margin: 0;
+  color: var(--text-color);
 }
 
 .event-type {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-color-light);
   padding: 0.25rem 0.75rem;
-  border-radius: 15px;
+  border-radius: 9999px;
   font-size: var(--font-h6);
   text-transform: capitalize;
 }
 
 .event-description {
-  margin-bottom: 1rem;
-  opacity: 0.9;
+  margin-bottom: 1.25rem;
+  color: var(--text-color-light);
+  opacity: 0.95;
   line-height: 1.6;
 }
 
 .event-details {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .detail {
@@ -259,82 +332,101 @@ main {
   align-items: center;
   margin-bottom: 0.5rem;
   gap: 0.5rem;
+  color: var(--text-color-light);
 }
 
 .detail .icon {
   font-size: var(--font-body);
+  color: var(--color-primary);
 }
 
 .event-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .tag {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-color-light);
   padding: 0.25rem 0.75rem;
-  border-radius: 15px;
+  border-radius: 9999px;
   font-size: var(--font-h6);
 }
 
 .event-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
 .btn-primary,
 .btn-secondary,
 .btn-outline {
-  padding: 0.75rem 1.5rem;
-  border-radius: 25px;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-  background-color: #74b9ff;
-  transition: all 0.3s ease;
+  padding: 0.625rem 1.5rem;
+  border-radius: 8px;
+  font-weight: var(--fw-medium);
+  font-size: var(--font-body);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
   display: inline-block;
   text-align: center;
-  font-size: var(--font-body);
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
 .btn-primary {
-  background: linear-gradient(45deg, #ff6b6b, #efb399);
-  color: white;
-  transition: box-shadow 0.3s ease;
+  background: var(--color-primary);
+  color: var(--evt-color-white);
+  border: 1px solid var(--color-primary);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 6px 25px rgba(255, 107, 107, 0.8);
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--glow-color);
+  color: var(--evt-color-white);
 }
 
 .btn-secondary {
-  background: linear-gradient(45deg, #47a1fb, #a7d7fc);
-  color: white;
+  background: var(--bg-secondary);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
 }
 
 .btn-secondary:hover {
-  transform: translateY(-2px);
+  background: var(--border-color);
+  transform: translateY(-1px);
+  color: var(--text-color);
 }
 
 .btn-outline {
-  background: rgb(120, 120, 174);
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  color: rgb(227, 227, 227);
-  transition: all 0.3s ease;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color-light);
 }
 
 .btn-outline:hover {
-  background: rgb(79, 79, 236);
-  transform: translateY(-2px);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+.dark .btn-outline {
+  background: var(--evt-neutral-strong);
+  color: var(--text-color);
+  border-color: var(--evt-neutral);
+}
+
+.dark .btn-outline:hover {
+  background: var(--evt-neutral);
 }
 
 .no-events {
   text-align: center;
-  color: white;
+  color: var(--evt-color-white);
   padding: 3rem;
 }
 
@@ -342,8 +434,9 @@ main {
    HACKATHON HUB STYLES
    ========================================================================== */
 .hackathon-hub {
-  padding: 4rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 5rem 0;
+  background: var(--bg-gradient);
+  color: var(--text-color);
   min-height: 100vh;
 }
 
@@ -356,25 +449,28 @@ main {
 }
 
 .hackathon-tabs button {
-  padding: 0.75rem 1.5rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 25px;
+  padding: 0.625rem 1.5rem;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg-color);
+  color: var(--text-color);
+  border-radius: 9999px;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
   font-size: var(--font-body);
+  box-shadow: var(--card-shadow);
 }
 
 .hackathon-tabs button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+  background: var(--bg-secondary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .hackathon-tabs button.active {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: var(--color-primary);
+  color: var(--evt-color-white);
+  border-color: var(--color-primary);
 }
 
 .hackathon-grid {
@@ -383,7 +479,7 @@ main {
   gap: 2rem;
 }
 
-@media(max-width: 768px) {
+@media (max-width: 768px) {
   .hackathon-grid {
     gap: 1rem;
   }
@@ -394,19 +490,19 @@ main {
 }
 
 .hackathon-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-  color: white;
+  background: var(--card-bg-color);
+  border: var(--card-border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-color);
 }
 
 .hackathon-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -10px var(--evt-shadow-medium);
+  border-color: var(--color-primary);
 }
 
 .hackathon-header {
@@ -429,20 +525,19 @@ main {
 }
 
 .status-indicator.live {
-  background: #22c55e;
+  background: var(--evt-success);
   animation: pulse 2s infinite;
 }
 
 .status-indicator.upcoming {
-  background: #f59e0b;
+  background: var(--evt-warning);
 }
 
 .status-indicator.completed {
-  background: #6b7280;
+  background: var(--evt-neutral);
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -454,8 +549,8 @@ main {
 }
 
 .hackathon-prize {
-  background: linear-gradient(45deg, #ffd700, #ffed4e);
-  color: black;
+  background: linear-gradient(45deg, var(--warning-border), var(--warning-text));
+  color: var(--evt-color-black);
   padding: 0.5rem 1rem;
   border-radius: 15px;
   font-weight: bold;
@@ -495,18 +590,18 @@ main {
 }
 
 .difficulty.beginner {
-  background: #22c55e;
-  color: white;
+  background: var(--evt-success);
+  color: var(--evt-color-white);
 }
 
 .difficulty.intermediate {
-  background: #f59e0b;
-  color: white;
+  background: var(--evt-warning);
+  color: var(--evt-color-white);
 }
 
 .difficulty.advanced {
-  background: #ef4444;
-  color: white;
+  background: var(--evt-danger);
+  color: var(--evt-color-white);
 }
 
 .live-stats {
@@ -515,7 +610,7 @@ main {
   gap: 1rem;
   margin-bottom: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--evt-color-white) 10%, transparent);
   border-radius: 15px;
 }
 
@@ -527,7 +622,7 @@ main {
   display: block;
   font-size: var(--font-h3);
   font-weight: bold;
-  color: #4ade80;
+  color: var(--success-text);
 }
 
 .stat-label {
@@ -540,17 +635,17 @@ main {
   text-align: center;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid color-mix(in srgb, var(--evt-color-white) 20%, transparent);
 }
 
 .time-value {
   font-size: var(--font-h5);
   font-weight: bold;
-  color: #fbbf24;
+  color: var(--warning-border);
 }
 
 .winner-announcement {
-  background: rgba(255, 215, 0, 0.2);
+  background: color-mix(in srgb, var(--warning-border) 20%, transparent);
   padding: 1rem;
   border-radius: 15px;
   margin-bottom: 1rem;
@@ -559,7 +654,7 @@ main {
 
 .winner-name {
   font-weight: bold;
-  color: #ffd700;
+  color: var(--warning-border);
 }
 
 .tech-stack {
@@ -580,7 +675,7 @@ main {
 }
 
 .tech-tag {
-  background: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--evt-color-white) 20%, transparent);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
   font-size: var(--font-h6);
@@ -615,23 +710,24 @@ main {
 }
 
 .cta-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 2rem;
+  background: var(--card-bg-color);
+  border: var(--card-border);
+  border-radius: 16px;
+  padding: 2.5rem;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  box-shadow: var(--card-shadow);
+  color: var(--text-color);
 }
 
 .cta-card h3 {
   margin-bottom: 1rem;
   font-size: var(--font-h3);
+  color: var(--text-color);
 }
 
 .cta-card p {
-  margin-bottom: 1.5rem;
-  opacity: 0.9;
+  margin-bottom: 1.75rem;
+  color: var(--text-color-light);
   font-size: var(--font-body);
 }
 
@@ -639,8 +735,9 @@ main {
    PROJECT GALLERY STYLES
    ========================================================================= */
 .project-gallery {
-  padding: 4rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 5rem 0;
+  background: var(--bg-gradient);
+  color: var(--text-color);
   min-height: 100vh;
 }
 
@@ -648,7 +745,7 @@ main {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 3rem;
+  margin-bottom: 3.5rem;
   flex-wrap: wrap;
   gap: 1rem;
 }
@@ -658,29 +755,43 @@ main {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: white;
+  color: var(--text-color-light);
   font-size: var(--font-body);
 }
 
 .filter-select,
 .sort-select {
   padding: 0.5rem 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 15px;
-  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg-color);
+  color: var(--text-color);
+  border-radius: 8px;
   font-size: var(--font-body);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-select:focus,
+.sort-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--glow-color);
+}
+.dark .filter-select,
+.dark .sort-select {
+  background: color-mix(in srgb, var(--evt-neutral-soft) 90%, transparent);
+  color: var(--text-color);
+  border-color: color-mix(in srgb, var(--evt-color-white) 20%, transparent);
 }
 
 .filter-select option,
 .sort-select option {
-  background: #4c1d95;
-  color: white;
+  background: var(--card-bg-color);
+  color: var(--text-color);
 }
 
 .submit-project {
-  padding: 0.75rem 1.5rem !important;
+  padding: 0.625rem 1.5rem !important;
 }
 
 .projects-grid {
@@ -690,19 +801,19 @@ main {
 }
 
 .project-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-  color: white;
+  background: var(--card-bg-color);
+  border: var(--card-border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-color);
 }
 
 .project-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -10px var(--evt-shadow-medium);
+  border-color: var(--color-primary);
 }
 
 .project-image {
@@ -730,6 +841,7 @@ main {
 .project-header h3 {
   font-size: var(--font-h3);
   margin: 0;
+  color: var(--text-color);
 }
 
 .project-stats {
@@ -742,11 +854,13 @@ main {
   align-items: center;
   gap: 0.25rem;
   font-size: var(--font-body);
+  color: var(--text-color-light);
 }
 
 .project-description {
   margin-bottom: 1rem;
-  opacity: 0.9;
+  color: var(--text-color-light);
+  opacity: 0.95;
   line-height: 1.6;
   font-size: var(--font-body);
 }
@@ -760,15 +874,18 @@ main {
 .project-meta .difficulty {
   margin-bottom: 0.5rem;
   font-size: var(--font-body);
+  color: var(--text-color-light);
 }
 
 .author-name {
   font-weight: bold;
-  color: #4ade80;
+  color: var(--color-primary);
 }
 
 .category-tag {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-color-light);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
   font-size: var(--font-h6);
@@ -782,18 +899,18 @@ main {
 }
 
 .difficulty-badge.beginner {
-  background: #22c55e;
-  color: white;
+  background: var(--evt-success);
+  color: var(--evt-color-white);
 }
 
 .difficulty-badge.intermediate {
-  background: #f59e0b;
-  color: white;
+  background: var(--evt-warning);
+  color: var(--evt-color-white);
 }
 
 .difficulty-badge.advanced {
-  background: #ef4444;
-  color: white;
+  background: var(--evt-danger);
+  color: var(--evt-color-white);
 }
 
 .contributors {
@@ -805,6 +922,7 @@ main {
   margin-bottom: 0.5rem;
   opacity: 0.8;
   font-size: var(--font-body);
+  color: var(--text-color-light);
 }
 
 .contributor-list {
@@ -814,15 +932,18 @@ main {
 }
 
 .contributor {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-color-light);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
   font-size: var(--font-h6);
 }
 
 .contributor.main {
-  background: rgba(74, 222, 128, 0.3);
-  color: #4ade80;
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--primary-color) 30%, transparent);
   font-weight: bold;
 }
 
@@ -836,6 +957,7 @@ main {
   gap: 0.5rem;
   margin-bottom: 0.25rem;
   font-size: var(--font-body);
+  color: var(--text-color-light);
   opacity: 0.8;
 }
 
@@ -859,7 +981,6 @@ main {
    RESPONSIVE LAYOUT MEDIA QUERIES
    ========================================================================== */
 @media (max-width: 768px) {
-
   .events-grid,
   .hackathon-grid,
   .projects-grid {
@@ -901,8 +1022,37 @@ main {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
+  .event-header,
+  .project-header,
+  .hackathon-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
 
+  .project-stats,
+  .event-actions,
+  .project-actions,
+  .cta-actions,
+  .hackathon-actions {
+    width: 100%;
+  }
+
+  .event-actions > *,
+  .project-actions > *,
+  .cta-actions > *,
+  .hackathon-actions > * {
+    width: 100%;
+  }
+
+  .filter-select,
+  .sort-select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
   .events-grid,
   .hackathon-grid,
   .projects-grid,
@@ -956,7 +1106,7 @@ main {
 }
 
 .mission-text-column .sub-heading {
-  color: #9ca3af;
+  color: var(--evt-text-muted);
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.15em;
@@ -965,25 +1115,33 @@ main {
 }
 
 .mission-text-column .main-heading {
-  color: #000000;
   font-size: 3rem;
   font-weight: 700;
   margin-bottom: 24px;
 }
+.mission-text-column .main-heading {
+  color: var(--evt-text-heading);
+}
+
+.dark .mission-text-column .main-heading {
+  color: var(--evt-text-heading);
+}
 
 :is(.dark) .mission-text-column .main-heading {
-  color: #ffffff;
+  color: var(--evt-text-heading);
 }
 
 .mission-text-column .desc-text {
-  color: #4b5563;
+  color: var(--evt-neutral-strong);
   font-size: 1.05rem;
   line-height: 1.6;
   margin-bottom: 20px;
 }
-
+.dark .mission-text-column .desc-text {
+  color: var(--text-color-light);
+}
 :is(.dark) .mission-text-column .desc-text {
-  color: #8a99ad;
+  color: var(--evt-text-muted);
 }
 
 .eventra-animation-container {
@@ -1000,10 +1158,14 @@ main {
   position: relative;
   width: 260px;
   height: 150px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(248, 250, 252, 0.4));
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--evt-color-white) 80%, transparent),
+    color-mix(in srgb, var(--surface-muted) 40%, transparent)
+  );
+  border: 1px solid color-mix(in srgb, var(--evt-border-subtle) 80%, transparent);
   border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 30px var(--evt-shadow-subtle);
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   display: flex;
@@ -1017,24 +1179,34 @@ main {
 }
 
 :is(.dark) .eventra-brand-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--evt-color-white) 10%, transparent),
+    color-mix(in srgb, var(--evt-color-white) 2%, transparent)
+  );
+  border: 1px solid var(--evt-border-subtle);
 }
 
 .eventra-brand-card h1 {
   font-size: 3rem;
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: #000000;
+}
+.eventra-brand-card h1 {
+  color: var(--evt-text-heading);
+}
+
+.dark .eventra-brand-card h1 {
+  color: var(--evt-text-heading);
 }
 
 :is(.dark) .eventra-brand-card h1 {
-  color: #ffffff;
+  color: var(--evt-text-heading);
 }
 
 .eventra-brand-card span {
   font-size: 0.65rem;
-  color: #6b7280;
+  color: var(--evt-neutral);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   margin-top: 4px;
@@ -1046,7 +1218,7 @@ main {
   width: 240px;
   height: 140px;
   padding: 24px;
-  background: #ffffff;
+  background: var(--card-bg-color);
   border-radius: 20px;
   display: flex;
   align-items: center;
@@ -1054,11 +1226,16 @@ main {
   z-index: 10;
   opacity: 0;
   transform: translate(0, 0) scale(0.6);
-  transition: transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease;
+  transition:
+    transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.6s ease;
+}
+.dark .eventra-sub-card {
+  background: var(--evt-neutral-soft);
 }
 
 :is(.dark) .eventra-sub-card {
-  background: #1f2937;
+  background: var(--evt-neutral-soft);
 }
 
 .card-content {
@@ -1075,15 +1252,18 @@ main {
 }
 
 .eventra-sub-card p {
-  color: #4b5563;
+  color: var(--evt-neutral-strong);
   font-size: 0.95rem;
   line-height: 1.4;
   font-weight: 500;
   text-align: left;
 }
+.dark .eventra-sub-card p {
+  color: var(--text-color-light);
+}
 
 :is(.dark) .eventra-sub-card p {
-  color: #9ca3af;
+  color: var(--evt-text-muted);
 }
 
 /* ==========================================================================
@@ -1092,49 +1272,49 @@ main {
 
 /* Top Left Card - Blue/Grey Glow Profile */
 .card-tl {
-  border-bottom: 3px solid #3b82f6;
+  border-bottom: 3px solid var(--evt-brand-primary-strong);
 }
 
 .eventra-animation-container.open .card-tl {
   transform: translate(-140px, -90px) scale(1);
   opacity: 1;
-  box-shadow: 0 15px 35px rgba(59, 130, 246, 0.2);
-  transition-delay: 0.0s;
+  box-shadow: 0 15px 35px var(--glow-color);
+  transition-delay: 0s;
 }
 
 /* Top Right Card - Mint/Green Glow Profile */
 .card-tr {
-  border-bottom: 3px solid #10b981;
+  border-bottom: 3px solid var(--evt-success);
 }
 
 .eventra-animation-container.open .card-tr {
   transform: translate(140px, -90px) scale(1);
   opacity: 1;
-  box-shadow: 0 15px 35px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 15px 35px color-mix(in srgb, var(--evt-success) 20%, transparent);
   transition-delay: 0.1s;
 }
 
 /* Bottom Left Card - Soft Lavender/Purple Glow Profile */
 .card-bl {
-  border-bottom: 3px solid #8b5cf6;
+  border-bottom: 3px solid var(--evt-brand-accent);
 }
 
 .eventra-animation-container.open .card-bl {
   transform: translate(-140px, 90px) scale(1);
   opacity: 1;
-  box-shadow: 0 15px 35px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 15px 35px color-mix(in srgb, var(--evt-brand-accent) 20%, transparent);
   transition-delay: 0.2s;
 }
 
 /* Bottom Right Card - Warm Tan/Orange Glow Profile */
 .card-br {
-  border-bottom: 3px solid #f97316;
+  border-bottom: 3px solid var(--warning-text);
 }
 
 .eventra-animation-container.open .card-br {
   transform: translate(140px, 90px) scale(1);
   opacity: 1;
-  box-shadow: 0 15px 35px rgba(249, 115, 22, 0.2);
+  box-shadow: 0 15px 35px color-mix(in srgb, var(--warning-text) 20%, transparent);
   transition-delay: 0.3s;
 }
 
@@ -1184,4 +1364,11 @@ main {
   .eventra-animation-container {
     grid-template-columns: 1fr;
   }
+}
+.dark {
+  color-scheme: dark;
+}
+
+:where(.dark p, .dark span, .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6, .dark label) {
+  color: inherit;
 }

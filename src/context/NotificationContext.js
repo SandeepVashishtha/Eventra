@@ -1,129 +1,109 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
-import { apiUtils, API_ENDPOINTS } from '../config/api';
+import { createContext, useContext, useCallback, useMemo, useEffect, useRef, useState } from "react";
+import { useAuth } from "./AuthContext";
+import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnection";
+import { getNotificationCategory, getNotificationMessage, getNotificationTitle } from "../utils/notificationPreferences";
+import { useNotificationPreferences } from "../hooks/useNotificationPreferences";
+import { usePushSubscription } from "../hooks/usePushSubscription";
+import { useNotificationDelivery } from "../hooks/useNotificationDelivery";
+import { useNotificationPoller } from "../hooks/useNotificationPoller";
+import { useAchievements } from "../hooks/useAchievements";
 
 const NotificationContext = createContext();
 
-/** Polling interval: refresh notifications every 60 seconds while user is logged in */
-const POLLING_INTERVAL_MS = 60_000;
+const normalizeNotification = (n = {}) => ({
+  ...n,
+  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${getNotificationMessage(n)}`,
+  title: getNotificationTitle(n),
+  message: getNotificationMessage(n),
+  category: getNotificationCategory(n),
+  timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
+});
 
 export const NotificationProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState([]);
-  const [achievements, setAchievements] = useState({
-    totalEvents: 0,
-    currentStreak: 0,
-    badges: [],
+  const { token } = useAuth();
+  const hasCompletedInitialFetch = useRef(false);
+
+  const { preferences, defaultPreferences, updatePreferences, savePreferences } =
+    useNotificationPreferences();
+  const { pushStatus, requestPushPermission, subscribeToPush, unsubscribeFromPush } =
+    usePushSubscription(updatePreferences);
+  const { showBrowserNotification, deliverNew, markAsReadRef } =
+    useNotificationDelivery(preferences);
+  const {
+    notifications, unreadCount, loading,
+    fetchNotifications, markAsRead, markAllAsRead, deleteNotification,
+    applyList, seenIds,
+  } = useNotificationPoller(deliverNew, hasCompletedInitialFetch);
+  const { achievements, fetchAchievements } = useAchievements();
+
+  const [realtimeStatus, setRealtimeStatus] = useState(SSE_STATUS.IDLE);
+
+  const ingestRealtime = useCallback(
+    (payload) => {
+      if (!payload || typeof payload !== "object") return;
+      const n = normalizeNotification(payload);
+      const isNewUnread = !n.isRead && !seenIds.current.has(n.id);
+      applyList([n], { deliverNew: false });
+      if (isNewUnread) {
+        deliverNew([n]);
+      }
+    },
+    [applyList, deliverNew, seenIds],
+  );
+
+  const handleRealtimeMessage = useCallback(
+    (data) => {
+      if (Array.isArray(data)) { data.forEach(ingestRealtime); return; }
+      ingestRealtime(data?.notification || data);
+    },
+    [ingestRealtime],
+  );
+
+  const { status: sseStatus } = useRealTimeConnection("/stream/notifications", {
+    onMessage: handleRealtimeMessage,
+    enabled: Boolean(token),
   });
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
 
-  /** Get JWT from storage — single source of truth */
-  const getAuthToken = () => localStorage.getItem('token');
+  useEffect(() => { setRealtimeStatus(sseStatus); }, [sseStatus]);
 
-  const fetchNotifications = useCallback(async () => {
-    const token = getAuthToken();
-    if (!token) return;
-
-    try {
-      setLoading(true);
-      const response = await apiUtils.get(API_ENDPOINTS.NOTIFICATIONS.BASE, token);
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data);
-        setUnreadCount(data.filter((n) => !n.isRead).length);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchAchievements = useCallback(async () => {
-    const token = getAuthToken();
-    if (!token) return;
-
-    try {
-      const response = await apiUtils.get(API_ENDPOINTS.USERS.ACHIEVEMENTS, token);
-      if (response.ok) {
-        const data = await response.json();
-        setAchievements(data);
-      }
-    } catch (error) {
-      console.error('Error fetching achievements:', error);
-    }
-  }, []);
-
-  /** Mark a single notification as read */
-  const markAsRead = useCallback(async (notificationId) => {
-    const token = getAuthToken();
-    if (!token) return;
-
-    try {
-      const response = await apiUtils.put(
-        API_ENDPOINTS.NOTIFICATIONS.READ(notificationId),
-        {},
-        token
-      );
-      if (response.ok) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  }, []);
-
-  /** Mark ALL notifications as read in one shot */
-  const markAllAsRead = useCallback(async () => {
-    const token = getAuthToken();
-    if (!token || notifications.length === 0) return;
-
-    const unread = notifications.filter((n) => !n.isRead);
-    if (unread.length === 0) return;
-
-    try {
-      // Optimistic UI update first
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      setUnreadCount(0);
-
-      await Promise.allSettled(
-        unread.map((n) =>
-          apiUtils.put(API_ENDPOINTS.NOTIFICATIONS.READ(n.id), {}, token)
-        )
-      );
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-      // Re-fetch to restore accurate state
-      fetchNotifications();
-    }
-  }, [notifications, fetchNotifications]);
-
-  // ── Initial fetch + polling ───────────────────────────────────────────────
   useEffect(() => {
-    if (!getAuthToken()) return;
+    if (!markAsReadRef) return;
+    markAsReadRef.current = markAsRead;
+  }, [markAsRead, markAsReadRef]);
 
-    fetchNotifications();
-    fetchAchievements();
-
-    // Poll for new notifications at a fixed interval
-    const intervalId = setInterval(fetchNotifications, POLLING_INTERVAL_MS);
-
-    return () => clearInterval(intervalId);
-  }, [fetchNotifications, fetchAchievements]);
+  const groupedNotifications = useMemo(
+    () => notifications.reduce((groups, n) => {
+      const cat = getNotificationCategory(n);
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(n);
+      return groups;
+    }, {}),
+    [notifications],
+  );
 
   return (
     <NotificationContext.Provider
       value={{
         notifications,
+        groupedNotifications,
         achievements,
         unreadCount,
         loading,
+        realtimeStatus,
+        preferences,
+        pushStatus,
+        defaultPreferences,
         fetchNotifications,
         fetchAchievements,
         markAsRead,
         markAllAsRead,
+        deleteNotification,
+        updatePreferences,
+        savePreferences,
+        requestPushPermission,
+        subscribeToPush,
+        unsubscribeFromPush,
+        showBrowserNotification,
       }}
     >
       {children}
