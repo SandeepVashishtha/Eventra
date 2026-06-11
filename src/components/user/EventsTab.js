@@ -205,6 +205,14 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
           </div>
         </Link>
       </div>
+
+  </Link>
+
+  <span className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 text-white text-xs px-3 py-1 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-lg">
+    View Event Details
+  </span>
+</div>
+
     </motion.div>
   );
 };
