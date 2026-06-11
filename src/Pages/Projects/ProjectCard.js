@@ -7,6 +7,7 @@ import { safeJsonParse } from "../../utils/safeJsonParse";
 import { useAuth } from "../../context/AuthContext.js";
 import { toast } from "react-toastify";
 import { projectService } from "../../services/projectService.js";
+import LazyImage from "../../components/common/LazyImage.jsx";
 
 // Cache Keys & Constants
 const CACHE_KEY = "eventra_github_metrics_cache";
@@ -150,7 +151,6 @@ const ConcentricTechRings = ({ techStack }) => {
 const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   useReducedMotion();
   const { token, isAuthenticated } = useAuth();
-  const [isLoaded, setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
 
@@ -352,14 +352,11 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
 
       {/* Hero Image */}
       <div className="relative h-44 overflow-hidden border-b border-slate-700 bg-slate-900 z-10">
-
-        <img
+        <LazyImage
           src={project.image}
           alt={project.title || "Project preview"}
-          loading="lazy"
-          decoding="async"
-          onLoad={() => setIsLoaded(true)}
-          className="relative w-full h-full object-cover hover:scale-102 transition-transform duration-500 z-10"
+          className="w-full h-full"
+          imgClassName="object-cover z-10"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none z-20" />
       </div>
