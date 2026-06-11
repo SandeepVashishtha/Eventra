@@ -652,9 +652,7 @@ export const syncSecureStorage = {
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
-      pendingWrites.delete(key);
-      writeQueue.delete(key);
-      writeCounters.delete(key);
+      /* Removed destructive cleanup to prevent queued writes from being dropped silently */
       return false;
     }
   },
@@ -736,9 +734,7 @@ export const syncSecureStorage = {
    */
   removeItem: (key) => {
     try {
-      pendingWrites.delete(key);
-      writeQueue.delete(key);
-      writeCounters.delete(key);
+      /* Removed destructive cleanup to prevent queued writes from being dropped silently */
       localStorage.removeItem(key);
       localStorage.removeItem(key + PLAINTEXT_SUFFIX);
       untrackKey(key);
