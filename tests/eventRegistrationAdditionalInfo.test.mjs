@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const sourcePath = "src/Pages/Events/EventRegistration.js";
+const sourcePath = "src/Pages/Events/EventRegistration.jsx";
 const source = readFileSync(sourcePath, "utf8");
 
+// The label is now rendered via i18n key — match the translation call
+// instead of the English literal which was removed when the form migrated
+// to react-i18next.
 const additionalInfoLabelMatches =
-  source.match(/Additional Information \(Optional\)/g) || [];
+  source.match(/t\(["']eventRegistration\.formAdditionalInfo["']\)/g) || [];
 const additionalInfoTextareaMatches =
   source.match(/<textarea[\s\S]*?name="additionalInfo"[\s\S]*?>/g) || [];
 const additionalInfoIdMatches =
@@ -14,7 +17,7 @@ const additionalInfoIdMatches =
 assert.equal(
   additionalInfoLabelMatches.length,
   1,
-  `${sourcePath} must render exactly one Additional Information label`
+  `${sourcePath} must render exactly one Additional Information i18n label key`
 );
 
 assert.equal(
