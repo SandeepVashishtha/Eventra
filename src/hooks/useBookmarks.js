@@ -17,9 +17,6 @@ const hashUserId = (userId) => {
   return Math.abs(hash).toString(36);
 };
 
-// ---------------------------------------------------------------------------
-// Limits
-// ---------------------------------------------------------------------------
 export const MAX_BOOKMARKS = 200;
 
 // ---------------------------------------------------------------------------
@@ -36,7 +33,7 @@ const readStorage = (key) => {
   try {
     const stored = localStorage.getItem(key);
     if (!stored) return [];
-    const parsed = JSON.parse(stored);
+    const parsed = safeJsonParse(stored, []);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
@@ -58,9 +55,6 @@ const getOrPopulateCache = (key) => {
   return cache.get(key);
 };
 
-// ---------------------------------------------------------------------------
-// Entry shape
-// ---------------------------------------------------------------------------
 const toBookmarkEntry = (event) => ({
   id: event.id,
   title: event?.title ?? "",
@@ -76,24 +70,7 @@ const toBookmarkEntry = (event) => ({
  * A custom React hook that manages bookmarked events for a user,
  * persisting them to localStorage keyed by userId.
  *
- * Multiple components mounting useBookmarks(userId) share one in-memory
- * cache entry, so localStorage is read at most once per userId per session
- * instead of once per mount. Cross-tab changes are reflected via the native
- * `storage` event.
- *
  * @param {string} [userId='guest'] - The user ID used as localStorage key
- *
- * @returns {{
- *   bookmarks: Object[],
- *   toggleBookmark: (event: Object) => void,
- *   isBookmarked: (id: string|number) => boolean,
- *   clearBookmarks: () => void,
- * }}
- *
- * @example
- * const { bookmarks, toggleBookmark, isBookmarked } = useBookmarks(user.id);
- * if (isBookmarked(event.id)) { ... }
- * toggleBookmark(event);
  */
 const useBookmarks = (userId = "guest") => {
   const storageKey = `bookmarks_${hashUserId(userId)}`;
@@ -105,6 +82,8 @@ const useBookmarks = (userId = "guest") => {
   const storageKeyRef = useRef(storageKey);
   storageKeyRef.current = storageKey;
 
+  const prevBookmarksRef = useRef(null);
+
   // When userId changes, pull the new user's bookmarks out of cache / storage.
   useEffect(() => {
     setBookmarks(getOrPopulateCache(storageKey));
@@ -112,9 +91,8 @@ const useBookmarks = (userId = "guest") => {
   const isInitialSave = useRef(true);
 
   // Persist to localStorage and update the shared cache whenever state changes.
-  const prevBookmarksRef = useRef(null);
   useEffect(() => {
-    // Skip write on the very first render (data came from cache/storage already)
+    // Skip write on the very first render cycle
     if (prevBookmarksRef.current === null) {
       prevBookmarksRef.current = bookmarks;
     }
@@ -157,11 +135,6 @@ const useBookmarks = (userId = "guest") => {
 
   /**
    * Toggles bookmark state for an event.
-   *
-   * - If already bookmarked, removes the entry.
-   * - If not, appends a minimal entry.
-   * - If adding would exceed MAX_BOOKMARKS, the oldest entry (smallest
-   *   savedAt) is evicted first.
    */
   const toggleBookmark = useCallback((event) => {
     if (!event?.id) return;
@@ -177,7 +150,7 @@ const useBookmarks = (userId = "guest") => {
 
       if (withNew.length <= MAX_BOOKMARKS) return withNew;
 
-      // Evict the oldest entry to stay within the cap
+      // Evict the oldest entry to stay within the cap limits
       const sorted = [...withNew].sort((a, b) => (a.savedAt ?? 0) - (b.savedAt ?? 0));
       sorted.shift();
       return sorted;
@@ -201,7 +174,7 @@ const useBookmarks = (userId = "guest") => {
     try {
       localStorage.removeItem(storageKeyRef.current);
     } catch {
-      // ignore
+      // ignore storage access blocks
     }
   }, []);
 

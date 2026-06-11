@@ -84,6 +84,18 @@ const useEventListing = () => {
       });
     }
 
+    if (advancedFilters?.skillLevels?.length) {
+      advancedFilters.skillLevels.forEach((level) => {
+        params.append("skillLevel", level.toLowerCase());
+      });
+    }
+
+    if (advancedFilters?.tags?.length) {
+      advancedFilters.tags.forEach((tag) => {
+        params.append("tag", tag);
+      });
+    }
+
     const sortValue = SORT_MAPPING[sortType];
     if (sortValue) {
       params.append("sort", sortValue);

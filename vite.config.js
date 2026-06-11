@@ -8,14 +8,16 @@ const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const DEPLOYED_BACKEND_URL =
-    "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net";
-
   const backendTarget =
     env.BACKEND_URL ||
     env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
-    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") ||
-    DEPLOYED_BACKEND_URL;
+    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "");
+
+  if (!backendTarget) {
+    throw new Error(
+      "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application."
+    );
+  }
 
   return {
     plugins: [

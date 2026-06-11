@@ -12,6 +12,7 @@ import {
   Ticket,
   Trash2,
   Activity,
+  Copy,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -25,6 +26,15 @@ import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
 import LazyImage from "../common/LazyImage";
+import { SEARCH_ROUTES } from "../../constants/routes";
+import { SEARCH_ROUTES } from "../Hero";
+
+const SEARCH_ROUTES = {
+  events: "/events",
+  hackathons: "/hackathons",
+  projects: "/projects",
+  networking: "/networking"
+};
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -60,10 +70,10 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
   const status = getEventStatus(event);
   const shortDate = event?.date
     ? new Date(event.date).toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    })
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      })
     : "—";
 
   return (
@@ -195,6 +205,14 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
           </div>
         </Link>
       </div>
+
+  </Link>
+
+  <span className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 text-white text-xs px-3 py-1 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-lg">
+    View Event Details
+  </span>
+</div>
+
     </motion.div>
   );
 };
@@ -235,14 +253,21 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
         </div>
       )}
+<div className="px-6 py-4 flex-1">
+  <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 line-clamp-2 min-h-[56px] leading-snug mb-1">
+    {event.title}
+  </h4>
 
-      <div className="px-6 py-4 flex-1">
-        <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 truncate mb-1">{event.title}</h4>
-        <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
-          <div className="flex items-center gap-1.5"><Calendar size={12} /> {event.date}</div>
-          <div className="flex items-center gap-1.5"><MapPin size={12} /> {event.location}</div>
-        </div>
-      </div>
+  <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+    <div className="flex items-center gap-1.5">
+      <Calendar size={12} /> {event.date}
+    </div>
+
+    <div className="flex items-center gap-1.5">
+      <MapPin size={12} /> {event.location}
+    </div>
+  </div>
+</div>
 
       <div className="px-6 py-3 bg-amber-50/50 dark:bg-amber-950/10 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
         <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
@@ -315,8 +340,8 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [loading, setLoading] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
 
-  const [recentSearches,
-    setRecentSearches] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+
   const registeredEvents = useMemo(
     () =>
       myEvents.map((registration) => ({
@@ -326,9 +351,9 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
       })),
     [myEvents]
   );
+
   useEffect(() => {
     const saved = safeParseJson(localStorage.getItem("recentSearches"), []);
-
     setRecentSearches(saved);
   }, []);
 useEffect(() => {
@@ -389,6 +414,27 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
 
     return result;
   }, [registeredEvents, hostedEvents, debouncedTerm, filterStatus, filterType, sortBy]);
+
+  useEffect(() => {
+    if (debouncedTerm && debouncedTerm.trim().length > 1) {
+      let saved = [];
+      try {
+        const raw = localStorage.getItem("recentSearches");
+        saved = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(saved)) saved = [];
+      } catch (e) {
+        saved = [];
+      }
+      
+      const updatedHistory = [
+        debouncedTerm.trim(),
+        ...saved.filter((term) => term.toLowerCase() !== debouncedTerm.trim().toLowerCase())
+      ].slice(0, 5);
+
+      localStorage.setItem("recentSearches", JSON.stringify(updatedHistory));
+      setRecentSearches(updatedHistory);
+    }
+  }, [debouncedTerm]);
 
   const filteredRegisteredEvents = filteredEvents.filter((event) => event.registeredAt);
   const filteredHostedEvents = filteredEvents.filter((event) => !event.registeredAt);
@@ -513,14 +559,10 @@ const addToRecentEvents = (event) => {
             )}
           </div>
           
-          {/* 🔥 FIX 2: Relocated Rogue "Clear History" button to its proper logical location */}
           {recentSearches.length > 0 && (
             <button
               onClick={() => {
-                localStorage.removeItem(
-                  "recentSearches"
-                );
-
+                localStorage.removeItem("recentSearches");
                 setRecentSearches([]);
               }}
               className="text-sm text-red-500 hover:underline mt-2"
@@ -763,6 +805,15 @@ const addToRecentEvents = (event) => {
                 <button className="my-events-dialog-confirm" onClick={handleCancelConfirm}>
                   Yes, remove
                 </button>
+<button
+  onClick={() => handleCopyEventLink(event?.id)}
+  aria-label="Copy event link"
+  className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300 hover:scale-105"
+>
+  <Copy size={16} />
+  Copy Link
+</button>
+
               </div>
             </motion.div>
           </motion.div>,
