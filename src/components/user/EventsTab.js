@@ -253,14 +253,21 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
         </div>
       )}
+<div className="px-6 py-4 flex-1">
+  <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 line-clamp-2 min-h-[56px] leading-snug mb-1">
+    {event.title}
+  </h4>
 
-      <div className="px-6 py-4 flex-1">
-        <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 truncate mb-1">{event.title}</h4>
-        <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
-          <div className="flex items-center gap-1.5"><Calendar size={12} /> {event.date}</div>
-          <div className="flex items-center gap-1.5"><MapPin size={12} /> {event.location}</div>
-        </div>
-      </div>
+  <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+    <div className="flex items-center gap-1.5">
+      <Calendar size={12} /> {event.date}
+    </div>
+
+    <div className="flex items-center gap-1.5">
+      <MapPin size={12} /> {event.location}
+    </div>
+  </div>
+</div>
 
       <div className="px-6 py-3 bg-amber-50/50 dark:bg-amber-950/10 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
         <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
