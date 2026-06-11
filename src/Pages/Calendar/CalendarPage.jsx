@@ -379,40 +379,39 @@ const CalendarPage = () => {
 
               {!isLoading && selectedEvents.length > 0
                 ? selectedEvents.map((event) => (
-                    <div
+                    <Link
+                      to={`/events/${event.id}`}
                       key={event.id}
-                      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
+                      className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:border-sky-400 hover:shadow-md hover:scale-[1.01] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 group"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p title={event.title} className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 break-words min-w-0">
-                            {event.title}
-                          </p>
-                          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                            <span className="inline-flex items-center gap-1">
-                              <Clock className="h-3.5 w-3.5" />
-                              {event.time || event.startTime || (event.allDay ? "All day" : "TBD")}
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                              <MapPin className="h-3.5 w-3.5" />
-                              {event.location || "Location TBD"}
-                            </span>
-                          </div>
-                        </div>
-                        <Link
-                          to={`/events/${event.id}`}
-                          className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-600 transition hover:bg-sky-500/20 dark:text-sky-300"
-                        >
-                          Details
-                          <ExternalLink className="h-3 w-3" />
-                        </Link>
+                      <div className="flex items-center justify-between">
+                        {event.type ? (
+                          <span className="inline-flex rounded-[6px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+                            {event.type}
+                          </span>
+                        ) : (
+                          <span />
+                        )}
+                        <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 transition-transform group-hover:translate-x-0.5" />
                       </div>
-                      {event.type ? (
-                        <span className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-                          {event.type}
+
+                      <h4 className="mt-2 text-[15px] font-bold text-slate-900 dark:text-white line-clamp-2 break-words leading-snug">
+                        {event.title}
+                      </h4>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 dark:text-slate-400">
+                        <span className="inline-flex items-center gap-1 shrink-0">
+                          <Clock className="h-3.5 w-3.5 text-sky-500" />
+                          {event.time || event.startTime || (event.allDay ? "All day" : "TBD")}
                         </span>
-                      ) : null}
-                    </div>
+                        <span className="inline-flex items-center gap-1 min-w-0">
+                          <MapPin className="h-3.5 w-3.5 text-sky-500 shrink-0" />
+                          <span className="truncate max-w-[200px]" title={event.location || "Location TBD"}>
+                            {event.location || "Location TBD"}
+                          </span>
+                        </span>
+                      </div>
+                    </Link>
                   ))
                 : null}
             </div>
