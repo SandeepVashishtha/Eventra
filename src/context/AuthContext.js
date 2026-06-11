@@ -231,12 +231,12 @@ export const AuthProvider = ({ children }) => {
   const hasAnyRole = useCallback((...roleNames) => roleNames.some((r) => hasRole(r)), [hasRole]);
   const hasAnyPermission = useCallback((...ps) => ps.some((p) => hasPermission(p)), [hasPermission]);
 
-  const isAdmin = () => hasRole(ROLES.ADMIN);
-  const isEventManager = () => hasRole(ROLES.ORGANIZER);
-  const isSuperAdmin = () => hasRole(ROLES.SUPER_ADMIN);
-  const isOrganizer = () => hasRole(ROLES.ORGANIZER);
-  const isVolunteer = () => hasRole(ROLES.VOLUNTEER);
-  const isAttendee = () => hasRole(ROLES.ATTENDEE);
+  const isAdmin = useCallback(() => hasRole(ROLES.ADMIN), [hasRole]);
+  const isEventManager = useCallback(() => hasRole(ROLES.ORGANIZER), [hasRole]);
+  const isSuperAdmin = useCallback(() => hasRole(ROLES.SUPER_ADMIN), [hasRole]);
+  const isOrganizer = useCallback(() => hasRole(ROLES.ORGANIZER), [hasRole]);
+  const isVolunteer = useCallback(() => hasRole(ROLES.VOLUNTEER), [hasRole]);
+  const isAttendee = useCallback(() => hasRole(ROLES.ATTENDEE), [hasRole]);
 
   const value = useMemo(() => ({
     user, token, loading, authRequest, login, logout, setUser,
