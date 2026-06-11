@@ -129,3 +129,12 @@ export function csrfFetch(url, options = {}) {
 
   return fetch(url, options);
 }
+
+export function rotateCSRFToken(newToken) {
+  if (newToken && typeof newToken === "string") {
+    // Update cookies
+    if (typeof document !== "undefined") {
+      document.cookie = `${CSRF_COOKIE_NAME}=${encodeURIComponent(newToken)}; path=/; SameSite=Strict; Secure`;
+    }
+  }
+}
