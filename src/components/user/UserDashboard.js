@@ -11,6 +11,8 @@ import { useState, useEffect, useMemo } from "react";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { useAuth } from "../../context/AuthContext";
 import StatusBadge from "../common/StatusBadge";
+import { requestNotificationPermission, disableNotifications } from "../../utils/NotificationManager";
+import { readNotificationPreferences } from "../../utils/notificationPreferences";
 import EventsTab from "./EventsTab";
 import HackathonsTab from "./HackathonsTab";
 import ProjectsTab from "./ProjectsTab";
@@ -74,6 +76,17 @@ export default function UserDashboard() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState(() => readNotificationPreferences().push);
+
+  const togglePushNotifications = async () => {
+    if (pushEnabled) {
+      disableNotifications();
+      setPushEnabled(false);
+    } else {
+      const granted = await requestNotificationPermission();
+      setPushEnabled(granted);
+    }
+  };
 
   const firstName = user?.firstName || user?.username || "there";
 
@@ -248,9 +261,20 @@ export default function UserDashboard() {
                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
                     transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
                   >
-                    <div className="ud-notif-header">
+                    <div className="ud-notif-header flex items-center justify-between">
                       <span>Notifications</span>
-                      <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                          <span className="text-gray-500">Push</span>
+                          <input 
+                            type="checkbox" 
+                            checked={pushEnabled} 
+                            onChange={togglePushNotifications}
+                            className="w-3 h-3 rounded text-indigo-600 focus:ring-indigo-500" 
+                          />
+                        </label>
+                        <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
+                      </div>
                     </div>
                     {notifications.map(n => (
                       <div key={n.id} className={`ud-notif-item ${n.unread ? "ud-notif-unread" : ""}`}>
