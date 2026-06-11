@@ -1,6 +1,6 @@
 import { logger } from "./logger";
 import { writeNotificationPreferences, readNotificationPreferences } from "./notificationPreferences";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 
 export const requestNotificationPermission = async () => {
   if (!('Notification' in window)) {
@@ -36,7 +36,7 @@ export const requestNotificationPermission = async () => {
     } else {
       const prefs = readNotificationPreferences();
       writeNotificationPreferences({ ...prefs, push: false });
-      toast.warning("Push notification permission was denied");
+      toast("Push notification permission was denied");
       return false;
     }
   } catch (error) {
@@ -48,6 +48,6 @@ export const requestNotificationPermission = async () => {
 export const disableNotifications = () => {
   const prefs = readNotificationPreferences();
   writeNotificationPreferences({ ...prefs, push: false });
-  toast.info("Push notifications disabled.");
+  toast("Push notifications disabled.");
   logger.info("[NotificationManager] Push notifications disabled in preferences.");
 };

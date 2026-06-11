@@ -1288,7 +1288,7 @@ html:not(.dark) ::placeholder {
 }
 }
 
-/* Custom react-toastify overrides for premium visual consistency */
+/* Custom react-hot-toast overrides for premium visual consistency */
 .Toastify__toast {
   border-radius: 12px !important;
   font-family: inherit !important;

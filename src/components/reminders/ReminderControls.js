@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Bell, BellOff, Check } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import {
   REMINDER_TIMINGS,
   addReminder,
@@ -62,7 +62,7 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
 
   const handleReminderToggle = async (timing) => {
     if (eventHasPassed) {
-      toast.warning("Reminders are not available for past events.", {
+      toast("Reminders are not available for past events.", {
         toastId: `reminder-past-${event.id}`,
         className: "custom-toast",
       });
@@ -70,7 +70,7 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
     }
 
     if (!canSetReminder) {
-      toast.info("Bookmark or register for this event before setting a reminder.", {
+      toast("Bookmark or register for this event before setting a reminder.", {
         toastId: `reminder-locked-${event.id}`,
         className: "custom-toast",
       });
@@ -83,7 +83,7 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
     try {
       if (activeTimingSet.has(timing)) {
         removeReminder(event.id, timing);
-        toast.info("Reminder removed.", {
+        toast("Reminder removed.", {
           toastId: `reminder-remove-${event.id}-${timing}`,
           autoClose: 1800,
           className: "custom-toast",
@@ -101,7 +101,7 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
           invalid: "We could not read this event date.",
         };
 
-        toast.warning(messages[result.reason] || "Unable to set reminder.", {
+        toast(messages[result.reason] || "Unable to set reminder.", {
           toastId: `reminder-failed-${event.id}-${timing}`,
           className: "custom-toast",
         });
@@ -114,7 +114,7 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
       if (!isMounted.current) return;
 
       if (permission === "denied") {
-        toast.info("Reminder saved. Browser notifications are blocked in your settings.", {
+        toast("Reminder saved. Browser notifications are blocked in your settings.", {
           toastId: `reminder-browser-denied-${event.id}`,
           autoClose: 2600,
           className: "custom-toast",

@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import {
   getNotificationCategory,
   getNotificationMessage,
@@ -47,7 +47,7 @@ export function useNotificationDelivery(preferences) {
   const showToastNotification = useCallback(
     (notification) => {
       if (!shouldDeliverNotification(notification, preferences, "inApp")) return;
-      toast.info(`${getNotificationTitle(notification)} — ${getNotificationMessage(notification)}`, {
+      toast(`${getNotificationTitle(notification)} — ${getNotificationMessage(notification)}`, {
         toastId: `notif-${notification.id}`,
         autoClose: 5000,
         onClick: () => markAsReadRef.current?.(notification.id),

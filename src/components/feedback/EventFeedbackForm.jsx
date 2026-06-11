@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Loader2 } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { useAuth } from "../../context/AuthContext";
 import { fetchEventFeedback, submitEventFeedback } from "../../utils/feedbackUtils";
 

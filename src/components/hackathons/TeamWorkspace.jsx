@@ -12,7 +12,7 @@ import {
   RefreshCw,
   AlertTriangle,
 } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import InteractiveWhiteboard from "./InteractiveWhiteboard";
 import { logger } from "../../utils/logger";
 
@@ -239,7 +239,7 @@ const TeamWorkspace = () => {
       if (response.ok) {
         const data = await response.json();
         setTasks(data.tasks || []);
-        toast.info("Task removed from checklist.");
+        toast("Task removed from checklist.");
       } else {
         toast.error("Failed to delete task.");
       }
@@ -286,7 +286,7 @@ const TeamWorkspace = () => {
       if (response.ok) {
         const data = await response.json();
         setPins(data.pins || []);
-        toast.info("Announcement unpinned.");
+        toast("Announcement unpinned.");
       } else {
         toast.error("Failed to unpin announcement.");
       }

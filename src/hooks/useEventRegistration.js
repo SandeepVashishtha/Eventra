@@ -29,7 +29,7 @@ import { createRateLimiter } from "../../utils/rateLimiter";
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { getEventStatus } from "../../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
@@ -226,7 +226,7 @@ const useEventRegistration = (eventIdParam) => {
             },
           });
 
-          toast.warning(`Showing ${getCacheAgeLabel(cached.cachedAt)} event details.`);
+          toast(`Showing ${getCacheAgeLabel(cached.cachedAt)} event details.`);
           return;
         }
 
@@ -377,7 +377,7 @@ const useEventRegistration = (eventIdParam) => {
           setRegistered(true);
           addRegistration(event, formData);
           clearSession();
-          toast.warning("Network error. Registration queued and will sync when you are online.", {
+          toast("Network error. Registration queued and will sync when you are online.", {
             autoClose: 4000,
           });
         } else {
@@ -393,7 +393,7 @@ const useEventRegistration = (eventIdParam) => {
         toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
         addRegistration(event, formData);
         clearSession();
-        toast.info(failureMessage);
+        toast(failureMessage);
         return;
       }
 
@@ -436,7 +436,7 @@ const useEventRegistration = (eventIdParam) => {
 
     const isFull = await checkEventCapacity(eventId, event);
     if (isFull) {
-      toast.info("This event is full. You will be added to the waitlist.");
+      toast("This event is full. You will be added to the waitlist.");
     }
 
       if (await checkAndHandleConflicts()) return;
@@ -447,7 +447,7 @@ const useEventRegistration = (eventIdParam) => {
   // Handle conflict modal actions
   const handleConflictCancel = useCallback(() => {
     setShowConflictModal(false);
-    toast.info("Registration cancelled due to scheduling conflict.");
+    toast("Registration cancelled due to scheduling conflict.");
   }, []);
 
   const handleConflictProceed = useCallback(() => {
@@ -457,7 +457,7 @@ const useEventRegistration = (eventIdParam) => {
   const handleSelectAlternative = useCallback((alternativeEvent) => {
     setShowConflictModal(false);
     navigate(`/events/${alternativeEvent.id}/register`);
-    toast.info(`Redirecting to ${alternativeEvent.title}`);
+    toast(`Redirecting to ${alternativeEvent.title}`);
   }, [navigate]);
 
   return {

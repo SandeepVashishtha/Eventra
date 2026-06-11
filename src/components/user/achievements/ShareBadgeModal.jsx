@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, Check, MessageCircle, Share2, Award, Twitter, Linkedin, CheckCircle } from 'lucide-react';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 
 const ShareBadgeModal = ({ activeShareBadge, setActiveShareBadge, currentLevel, t }) => {
   const [shareStory, setShareStory] = useState("");

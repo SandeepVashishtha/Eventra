@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 import RegistrationPage from './RegistrationPage';
 import { apiUtils } from '../config/api';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 
 jest.mock('../config/api', () => ({
   API_ENDPOINTS: {
@@ -20,9 +20,9 @@ jest.mock('../utils/registerUtils', () => ({
 
 jest.mock('../hooks/useDocumentTitle', () => jest.fn());
 
-jest.mock('react-toastify', () => ({
+jest.mock('react-hot-toast', () => ({
   toast: { success: jest.fn(), error: jest.fn() },
-  ToastContainer: () => null,
+  Toaster: () => null,
 }));
 
 const renderPage = () =>

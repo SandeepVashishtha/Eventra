@@ -12,7 +12,7 @@
 import { useState, useCallback } from "react";
 import { apiUtils, API_ENDPOINTS } from "../config/api";
 import { useAuth } from "../context/AuthContext";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { logger } from "../utils/logger";
 
 /**

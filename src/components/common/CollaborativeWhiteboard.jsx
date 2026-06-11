@@ -11,7 +11,7 @@ import {
   Users, 
   Sparkles
 } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 
 // DB Configuration for Whiteboard State Cache
 const DB_NAME = "eventra_whiteboard_db";
@@ -278,7 +278,7 @@ export default function CollaborativeWhiteboard() {
         case "WHITEBOARD_CLEAR":
           setLocalStrokes([]);
           saveHistory([]);
-          toast.info("Whiteboard cleared by another peer.");
+          toast("Whiteboard cleared by another peer.");
           break;
 
         default:

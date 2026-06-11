@@ -6,7 +6,7 @@ import { syncSecureStorage } from "../utils/secureStorage.js";
 import { usePermissions, normalizeRoles } from "../hooks/usePermissions.js";
 import { useTokenExpiry } from "../hooks/useTokenExpiry.js";
 import { isTokenValid } from "../utils/tokenUtils.js";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles.js";
 
 // Create context for Authentication
@@ -143,7 +143,7 @@ export const AuthProvider = ({ children }) => {
     if (!hadPreviousSession || expiryToastShownRef.current) return;
     expiryToastShownRef.current = true;
     
-    toast.info("Session expired. Please log in again.", {
+    toast("Session expired. Please log in again.", {
       toastId: "session-expired",
       autoClose: 4000,
     });

@@ -11,7 +11,7 @@ import {
   Twitter,
   X,
 } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { createShareModalData } from "../../utils/shareModalUtils.js";
 const ModalCloseButton = memo(({ onClick }) => (
   <button

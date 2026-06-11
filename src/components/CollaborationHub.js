@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import useDebounce from '../hooks/useDebounce.js';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import './components.css';
 import { sanitizeInputText } from "../utils/inputSanitization";
 import EventMaterials from "./common/EventMaterials";

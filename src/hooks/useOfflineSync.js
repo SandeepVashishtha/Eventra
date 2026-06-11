@@ -3,7 +3,7 @@
  * @module hooks/useOfflineSync
  */
 import { useEffect, useRef } from 'react';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
 
@@ -219,7 +219,7 @@ const useOfflineSync = () => {
       // sessions, avoiding the false "session expired" failure that occurred
       // when useOfflineSync called isTokenValid("cookie-managed") directly.
       if (!currentIsAuthenticated()) {
-        toast.warning(
+        toast(
           "Offline actions are pending but your session has expired. Please log in again to sync them.",
           { autoClose: 6000 }
         );
@@ -247,7 +247,7 @@ const useOfflineSync = () => {
           'This prevents cross-user action replay.'
         );
         await clearQueue();
-        toast.warning(
+        toast(
           "Offline actions from a previous session have been cleared for security.",
           { autoClose: 5000 }
         );
@@ -271,7 +271,7 @@ const useOfflineSync = () => {
             "This prevents stale-session cross-user action replay."
         );
         await clearQueue();
-        toast.warning(
+        toast(
           "Offline actions from a previous login session have been cleared for security.",
           { autoClose: 5000 }
         );
@@ -291,7 +291,7 @@ const useOfflineSync = () => {
       isSyncing.current = true;
 
       try {
-        toast.info(`Syncing ${sessionValidatedQueue.length} cached offline action(s)...`, {
+        toast(`Syncing ${sessionValidatedQueue.length} cached offline action(s)...`, {
           autoClose: 2000,
         });
 
@@ -358,7 +358,7 @@ const useOfflineSync = () => {
 
         if (failedQueue.length > 0) {
           await setQueue(failedQueue);
-          toast.warning(
+          toast(
             `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
           );
         } else {

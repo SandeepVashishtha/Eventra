@@ -17,7 +17,7 @@ import {
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { useAuth } from "../../context/AuthContext";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import StatusBadge from "../common/StatusBadge";
 import { safeParseJson } from "../../utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";

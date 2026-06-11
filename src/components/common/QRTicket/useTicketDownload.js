@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 
 export function useTicketDownload(ticketRef, ticketId = "ticket") {
   const [downloading, setDownloading] = useState(false);

@@ -6,7 +6,7 @@ import {
   CheckCircle2, AlertTriangle, ArrowRight, User, Copy
 } from "lucide-react";
 import { parseGithubProfile, parseResumePDF } from "../../utils/aiProfileParser";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 
 const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
   const [step, setStep] = useState("input"); // "input" | "processing" | "preview"

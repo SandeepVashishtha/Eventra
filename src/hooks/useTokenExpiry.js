@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
 import { syncSecureStorage } from "../utils/secureStorage";
 
@@ -14,7 +14,7 @@ export function useTokenExpiry({ token, user, onExpired }) {
     if (!hadPreviousSession) return;
     if (expiryToastShownRef.current) return;
     expiryToastShownRef.current = true;
-    toast.info("Session expired. Please log in again.", {
+    toast("Session expired. Please log in again.", {
       toastId: "session-expired",
       autoClose: 4000,
     });

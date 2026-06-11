@@ -3,7 +3,7 @@ import {
   Square, Circle, PenTool, RotateCcw, Trash2, Plus, Move,
   Check, Palette, HelpCircle, X
 } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 
 const COLORS = [
   { name: "Indigo", value: "#6366f1" },
@@ -167,7 +167,7 @@ const InteractiveWhiteboard = () => {
 
   const handleDeleteSticky = (id) => {
     setStickies(stickies.filter(s => s.id !== id));
-    toast.info("Sticky note removed.");
+    toast("Sticky note removed.");
   };
 
   // History controls
@@ -182,7 +182,7 @@ const InteractiveWhiteboard = () => {
   const handleClear = () => {
     setElements([]);
     setStickies([]);
-    toast.info("Canvas cleared successfully.");
+    toast("Canvas cleared successfully.");
   };
 
   const getCanvasCoords = (e) => {

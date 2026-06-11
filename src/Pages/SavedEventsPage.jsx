@@ -4,7 +4,7 @@ import { Download, Inbox } from "lucide-react";
 import EmptyState from "../components/common/EmptyState";
 import useBookmarks from "../hooks/useBookmarks";
 import { exportToCSV } from "../utils/exportUtils";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 
 const SavedEventsPage = () => {
   const navigate = useNavigate();

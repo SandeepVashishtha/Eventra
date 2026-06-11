@@ -3,7 +3,7 @@ import { render, act } from "@testing-library/react";
 import TicketScanner from "./TicketScanner";
 
 // Mock toast to avoid errors during render
-jest.mock("react-toastify", () => ({
+jest.mock('react-hot-toast', () => ({
   toast: {
     error: jest.fn(),
     warning: jest.fn(),

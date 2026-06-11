@@ -10,7 +10,7 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { useSurveySimulator } from "./useSurveySimulator";
 
 // Pre-defined high-quality feedback pool for open text responses
