@@ -3,7 +3,7 @@ import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Sparkles, FileText, Github, Loader2,
-  CheckCircle2, AlertTriangle, ArrowRight, User
+  CheckCircle2, AlertTriangle, ArrowRight, User, Copy
 } from "lucide-react";
 import { parseGithubProfile, parseResumePDF } from "../../utils/aiProfileParser";
 import { toast } from "react-toastify";
@@ -82,6 +82,16 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
     handleClose();
     toast.success("Profile fields populated! You can now review and save.");
   };
+
+  const handleCopyBio = async () => {
+    console.log("BIO VALUE:", parsedData.bio);
+  try {
+    await navigator.clipboard.writeText(parsedData.bio || "");
+    toast.success("Bio copied to clipboard!");
+  } catch (err) {
+    toast.error("Failed to copy bio");
+  }
+};
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -255,7 +265,19 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                 <div className="space-y-5 bg-slate-50 dark:bg-slate-950/50 p-5 rounded-2xl border border-slate-200 dark:border-white/5">
                   {/* Bio */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Generated Bio Summary</label>
+                    <div className = "flex items-center justify-between mb-2">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Generated Bio Summary 
+                      </label>
+                      <button
+                      type = "button"
+                      onClick={handleCopyBio}
+                      className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700"
+                    >
+                      <Copy size={12} />
+                    </button>
+                    </div>
+                    
                     <textarea 
                       value={parsedData.bio || ""}
                       onChange={(e) => handlePreviewChange("bio", e.target.value)}

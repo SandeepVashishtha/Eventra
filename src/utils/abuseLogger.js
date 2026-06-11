@@ -1,8 +1,15 @@
 export const logAbuseAttempt = (type, details = {}) => {
   try {
-    const existing = JSON.parse(
-      localStorage.getItem("eventra_abuse_logs") || "[]"
-    );
+    let existing;
+    try {
+      const raw = localStorage.getItem("eventra_abuse_logs");
+      existing = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(existing)) {
+        existing = [];
+      }
+    } catch {
+      existing = [];
+    }
 
     existing.push({
       type,

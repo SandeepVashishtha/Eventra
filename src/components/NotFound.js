@@ -153,7 +153,7 @@ const NotFoundPage = () => {
               >
                 {/* UPDATED: Text colors */}
                 <div className="text-sm text-gray-500 dark:text-white/70">{event.category}</div>
-                <h4 className="font-semibold text-lg mt-1">{event.name}</h4>
+                <h4 title={event.name} className="font-semibold text-lg mt-1 break-words">{event.name}</h4>
                 <Link
                   to="/events"
                   // UPDATED: Link color

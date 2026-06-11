@@ -57,10 +57,14 @@ export function csrfFetch(url, options = {}) {
   if (needsCSRF) {
     const token = getCSRFToken();
     if (token) {
-      options.headers = {
-        ...options.headers,
-        [CSRF_HEADER_NAME]: token,
-      };
+      if (typeof Headers !== "undefined" && options.headers instanceof Headers) {
+        options.headers.set(CSRF_HEADER_NAME, token);
+      } else {
+        options.headers = {
+          ...options.headers,
+          [CSRF_HEADER_NAME]: token,
+        };
+      }
     }
   }
 
