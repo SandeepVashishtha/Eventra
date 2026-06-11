@@ -338,6 +338,7 @@ export const pushToQueue = async (item, userId = null) => {
     eventId: item.eventId || null,
     payload: item.payload || {},
     endpoint: item.endpoint || null,
+    idempotencyKey: item.idempotencyKey || null,
     conflictStrategy:
       item.conflictStrategy ||
       offlineSyncConfig.defaultConflictStrategy,
