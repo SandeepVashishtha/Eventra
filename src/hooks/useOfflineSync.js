@@ -532,8 +532,7 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, user?.id]);
+  }, [token, user?.id, isAuthenticated, loading]);
 };
 
 export default useOfflineSync;
