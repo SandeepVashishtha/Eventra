@@ -63,7 +63,7 @@ const socialLinks = [
     href: "https://github.com/sandeepvashishtha/Eventra",
     icon: (
       <FaGithub
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 hover:-translate-y-1"
         size={20}
       />
     ),
@@ -73,7 +73,7 @@ const socialLinks = [
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
     icon: (
       <FaLinkedin
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 hover:-translate-y-1"
         size={20}
       />
     ),
@@ -92,7 +92,6 @@ const socialLinks = [
 
 /* ================================
    Secure External Link Handling
-================================ */
 
 const externalLinkProps = {
   target: "_blank",

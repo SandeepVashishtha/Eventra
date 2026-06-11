@@ -229,9 +229,6 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
   await addLocalNotification(
     "Waitlist Joined (Offline)",
     `You have been added to the offline waitlist for ${registrationForm.eventTitle || "the event"}. It will sync when you are back online.`
-    "Waitlist Joined",
-    `You have successfully joined the waitlist for ${registrationForm.eventTitle || "the event"
-    }.`
   );
 
   return newEntry;

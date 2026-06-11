@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import './Auth.css'; // Keeps their existing styling intact
 
@@ -60,6 +61,12 @@ export default function LoginForm() {
             required 
             placeholder="Enter your password"
           />
+        </div>
+
+        <div style={{ textAlign: 'right', marginTop: '-12px' }}>
+          <Link to="/password-reset" className="auth-link" style={{ fontSize: '0.9rem' }}>
+            Forgot Password?
+          </Link>
         </div>
 
         <button type="submit" disabled={loading} className="btn-submit">
