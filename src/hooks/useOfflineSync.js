@@ -9,6 +9,7 @@ import { API_ENDPOINTS } from '../config/api';
 
 import { logger } from "../utils/logger";
 import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership, validateQueueSession } from '../utils/offlineQueue';
+import { ensureSessionSnapshot } from "../utils/sessionSnapshot";
 // isTokenValid import removed; authentication is now checked via isAuthenticated()
 // from AuthContext, which handles both token-based and cookie-managed sessions.
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
@@ -261,10 +262,7 @@ const useOfflineSync = () => {
       // SECURITY (Issue #5727): Re-validate session IDs — actions queued under a
       // previous session must not replay under a new session even if the userId
       // matches (e.g. same user, different device/tab login cycle).
-      const currentSession =
-        typeof sessionStorage !== "undefined"
-          ? sessionStorage.getItem("session_id") || null
-          : null;
+      const currentSession = ensureSessionSnapshot(currentUserId);
       const sessionValidatedQueue = validateQueueSession(validatedQueue, currentSession);
 
       if (sessionValidatedQueue.length === 0 && validatedQueue.length > 0) {

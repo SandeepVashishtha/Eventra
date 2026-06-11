@@ -3,7 +3,8 @@
 // ---------------------------------------------------------------------------
 import { safeJsonParse } from "./safeJsonParse.js";
 import { logger } from "./logger.js";
-import offlineSyncConfig from "../config/offlineSyncConfig.json";
+import { ensureSessionSnapshot } from "./sessionSnapshot.js";
+import offlineSyncConfig from "../config/offlineSyncConfig.json" with { type: "json" };
 
 const QUEUE_KEY = "eventra_offline_queue";
 const DB_NAME = "eventra_offline_db";
@@ -343,10 +344,7 @@ export const pushToQueue = async (item, userId = null) => {
       offlineSyncConfig.defaultConflictStrategy,
     // SECURITY: Attach user ID to validate ownership on replay
     userId: userId || null,
-    sessionId:
-      typeof sessionStorage !== "undefined"
-        ? sessionStorage.getItem("session_id") || null
-        : null,
+    sessionId: ensureSessionSnapshot(userId),
   };
 
   // Guard against oversized payloads before they reach localStorage.
@@ -553,7 +551,8 @@ export const filterQueueByOwnership = (queue, currentUserId) => {
  *  1. filterQueueByOwnership — userId must match the current authenticated user.
  *  2. validateQueueSession   — sessionId must match the current session.
  *
- * Items with a null/missing sessionId are dropped to be safe (no session = unknown origin).
+ * Legacy items with a null/missing sessionId are migrated to the current
+ * session after ownership validation has already confirmed the user match.
  *
  * @param {Array}  queue          - Ownership-filtered offline queue
  * @param {string} currentSession - Current session ID from sessionStorage
@@ -567,13 +566,14 @@ export const validateQueueSession = (queue, currentSession) => {
     return [];
   }
 
-  return queue.filter((item) => {
+  return queue.reduce((validatedItems, item) => {
     if (!item.sessionId) {
       logger.warn(
-        `[Security] Dropping queued action ${item.id}: no sessionId stored. ` +
-          "Cannot verify session ownership."
+        `[OfflineQueue] Migrating queued action ${item.id}: no sessionId stored. ` +
+          "Binding legacy item to the current verified session."
       );
-      return false;
+      validatedItems.push({ ...item, sessionId: currentSession });
+      return validatedItems;
     }
     if (item.sessionId !== currentSession) {
       logger.warn(
@@ -581,10 +581,11 @@ export const validateQueueSession = (queue, currentSession) => {
           `stored sessionId does not match current session. ` +
           "This prevents stale-session cross-user action replay."
       );
-      return false;
+      return validatedItems;
     }
-    return true;
-  });
+    validatedItems.push(item);
+    return validatedItems;
+  }, []);
 };
 
 // ---------------------------------------------------------------------------
@@ -737,10 +738,7 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
 
   // SECURITY (Issue #5727): Re-validate session ID so actions queued under a
   // previous session cannot replay under a new session, even if the userId matches.
-  const currentSession =
-    typeof sessionStorage !== "undefined"
-      ? sessionStorage.getItem("session_id") || null
-      : null;
+  const currentSession = ensureSessionSnapshot(currentUserId);
   const sessionValidated = validateQueueSession(validated, currentSession);
   if (sessionValidated.length === 0) {
     await clearQueue();
