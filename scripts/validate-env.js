@@ -69,6 +69,9 @@ const ALLOWED_EXCEPTIONS = new Set([
 const BACKEND_URL_VARS = ["BACKEND_URL", "VITE_API_URL", "REACT_APP_API_URL"];
 const REQUIRED_VARS = ["JWT_SECRET"];
 
+// Rate limiting configuration validation
+const RATE_LIMIT_VARS = ["RATE_LIMIT_REDIS_URL", "KV_REST_API_URL", "KV_REST_API_TOKEN"];
+
 const FORMAT_VALIDATED_VARS = {
   BACKEND_URL: {
     pattern: /^https?:\/\/.+/,
@@ -147,6 +150,52 @@ if (OPTIONAL_VARS.length === 0) {
       console.log(`  OK: ${varName} = [set]`);
     }
   }
+}
+
+console.log("\nRate limiting configuration:");
+const hasRateLimitConfig = RATE_LIMIT_VARS.some(v => process.env[v]);
+if (process.env.NODE_ENV === "production") {
+  if (!hasRateLimitConfig) {
+    const msg =
+      "[CRITICAL SECURITY ERROR] Production requires distributed rate limiting. " +
+      "Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN. " +
+      "RATE_LIMIT_MODE=memory is not allowed in production.";
+    console.error(`  ERROR: ${msg}`);
+    errors.push(msg);
+    hasErrors = true;
+  } else if (hasRateLimitConfig) {
+    const configured = RATE_LIMIT_VARS.filter(v => process.env[v]).join(", ");
+    console.log(`  OK: Distributed rate limiting configured (${configured})`);
+  }
+  
+  // CRITICAL: Reject RATE_LIMIT_MODE=memory in production
+  if (process.env.RATE_LIMIT_MODE === "memory") {
+    const msg = "RATE_LIMIT_MODE=memory is not allowed in production. Remove this setting.";
+    console.error(`  ERROR: ${msg}`);
+    errors.push(msg);
+    hasErrors = true;
+  }
+} else {
+  if (hasRateLimitConfig) {
+    const configured = RATE_LIMIT_VARS.filter(v => process.env[v]).join(", ");
+    console.log(`  OK: Distributed rate limiting configured (${configured})`);
+  } else {
+    console.log(`  - Using in-memory fallback (development mode)`);
+  }
+}
+
+// Validate KV configuration consistency
+if (process.env.KV_REST_API_URL && !process.env.KV_REST_API_TOKEN) {
+  const msg = "KV_REST_API_URL is set but KV_REST_API_TOKEN is missing. KV rate limiting will not work.";
+  console.error(`  ERROR: ${msg}`);
+  errors.push(msg);
+  hasErrors = true;
+}
+if (process.env.KV_REST_API_TOKEN && !process.env.KV_REST_API_URL) {
+  const msg = "KV_REST_API_TOKEN is set but KV_REST_API_URL is missing. KV rate limiting will not work.";
+  console.error(`  ERROR: ${msg}`);
+  errors.push(msg);
+  hasErrors = true;
 }
 
 console.log("\nValidating variable formats...");

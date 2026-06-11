@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
-import { createRateLimiter } from "../lib/rateLimiter.js";
+import { createRateLimiter, signupRateLimiter } from "../lib/rateLimiter.js";
 
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 
@@ -41,10 +41,9 @@ const usersByUsername = new Map();
 const JWT_SECRET = getJwtSecret();
 
 // ---------------------------------------------------------------------------
-// Rate Limiting (IP-based, 3 signups per minute)
+// Rate Limiting (IP-based, 5 signups per minute)
 // ---------------------------------------------------------------------------
-
-const signupRateLimiter = createRateLimiter(60_000, 5);
+// signupRateLimiter is imported from ../lib/rateLimiter.js
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
@@ -197,10 +196,23 @@ async function handler(req, res) {
       || req.socket?.remoteAddress
       || "unknown";
 
-    if (!signupRateLimiter.check(clientIp).allowed) {
-      return corsResponse(req, res, 429, {
-        error: "Too many signup attempts. Please try again later.",
-        retryAfter: 60,
+    try {
+      // Handle both sync (in-memory) and async (distributed) rate limiters
+      const rateLimitResult = signupRateLimiter.checkAsync
+        ? await signupRateLimiter.checkAsync(clientIp)
+        : signupRateLimiter.check(clientIp);
+      
+      if (!rateLimitResult.allowed) {
+        return corsResponse(req, res, 429, {
+          error: "Too many signup attempts. Please try again later.",
+          retryAfter: 60,
+        });
+      }
+    } catch (rateLimitError) {
+      // Fail closed: if rate limiting fails, reject the request
+      console.error('[signup] Rate limit check failed:', rateLimitError.message);
+      return corsResponse(req, res, 500, {
+        error: "Rate limiting service unavailable. Please try again later.",
       });
     }
 

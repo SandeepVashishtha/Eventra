@@ -49,6 +49,10 @@ Set at least one backend URL before starting the app. `VITE_API_URL` is preferre
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
 | `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN; only used in production builds |
 | `JWT_SECRET` | Yes (server-side) | JWT signing secret for Edge Middleware auth verification |
+| `RATE_LIMIT_REDIS_URL` | Production (one of) | Redis connection URL for distributed rate limiting |
+| `KV_REST_API_URL` | Production (one of) | Upstash Redis REST API URL for distributed rate limiting |
+| `KV_REST_API_TOKEN` | Production (with KV) | Upstash Redis REST API token |
+| `RATE_LIMIT_MODE` | No | Override rate limiting mode: "distributed" (default in prod) or "memory" (dev/test only) |
 | `BLOCKED_COUNTRIES` | No (server-side) | Comma-separated ISO 3166-1 alpha-2 country codes to block |
 
 ## Geographic Access Restrictions
@@ -80,6 +84,9 @@ BLOCKED_COUNTRIES=
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `JWT_SECRET` | **Yes** | JWT signing secret for authentication. This is MANDATORY - the application will NOT start or handle requests without it. There is NO fallback secret. |
+| `RATE_LIMIT_REDIS_URL` | Production (one of) | Redis connection URL for distributed rate limiting. Use for self-hosted Redis or Upstash Redis. |
+| `KV_REST_API_URL` | Production (one of) | Upstash Redis REST API URL for distributed rate limiting. Use for Vercel deployments. |
+| `KV_REST_API_TOKEN` | Production (with KV) | Upstash Redis REST API token. Required when using KV_REST_API_URL. |
 
 Examples:
 
@@ -93,10 +100,36 @@ or:
 BACKEND_URL=https://api.example.com
 ```
 
+### Distributed Rate Limiting Setup
+
+Production deployments require distributed rate limiting to prevent brute-force attacks across multiple server instances.
+
+**For Vercel deployments (Upstash Redis):**
+```env
+KV_REST_API_URL=https://your-redis-instance.upstash.io
+KV_REST_API_TOKEN=your-redis-rest-token
+```
+
+Note: Vercel KV was migrated to Upstash Redis in December 2024. Use the Upstash Redis REST API.
+
+**For self-hosted Redis or Upstash:**
+```env
+RATE_LIMIT_REDIS_URL=redis://user:password@host:port
+# or with TLS:
+RATE_LIMIT_REDIS_URL=rediss://user:password@host:port
+```
+
+**Development/testing:**
+- No configuration required - automatically uses in-memory fallback
+- Can explicitly set `RATE_LIMIT_MODE=memory` for testing
+- `RATE_LIMIT_MODE=memory` is NOT allowed in production
+
 ## Security Notes
 
 - **JWT_SECRET is mandatory**: The application enforces fail-closed security. Missing JWT_SECRET will cause the application to reject all requests with a 500 error. Never deploy without setting this variable.
 - Generate JWT_SECRET using: `openssl rand -base64 32`
+- **Distributed rate limiting is required in production**: Without `RATE_LIMIT_REDIS_URL` or `KV_REST_API_URL`/`KV_REST_API_TOKEN`, the build will FAIL and the application will reject requests with a 500 error in production. This prevents silent security bypasses.
+- **RATE_LIMIT_MODE=memory is not allowed in production**: Build validation will fail if this is set in production. Use distributed storage only.
 - Never place private secrets in `REACT_APP_*` variables.
 - Values prefixed with `REACT_APP_` are exposed in the browser bundle.
 - Leave `REACT_APP_SENTRY_DSN` blank for local development unless you intentionally want browser error reports sent to Sentry.
@@ -108,6 +141,9 @@ BACKEND_URL=https://api.example.com
 - If API calls or SSE streams fail, verify the configured backend URL points to a reachable backend.
 - If shared links are wrong, check `REACT_APP_PUBLIC_URL`.
 - If the application returns 500 errors with "Server configuration error", verify `JWT_SECRET` is set.
+- If the build fails with "Production requires distributed rate limiting", set `RATE_LIMIT_REDIS_URL` or `KV_REST_API_URL`/`KV_REST_API_TOKEN`.
+- If the build fails with "RATE_LIMIT_MODE=memory is not allowed in production", remove this setting.
+- If the application returns 500 errors with "Rate limiting is not configured" in production, set `RATE_LIMIT_REDIS_URL` or `KV_REST_API_URL`/`KV_REST_API_TOKEN`.
 - If build-time checks fail, run:
 
 ```bash

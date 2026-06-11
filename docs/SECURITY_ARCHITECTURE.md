@@ -62,14 +62,55 @@ sequenceDiagram
 
 ## 3. Rate Limiting Strategy
 
-Eventra protects resource-intensive API paths (like authentication and LLM recommendation probes) using a dual-layer, sliding-window rate limiter keyed by client IP.
+Eventra protects resource-intensive API paths (like authentication and LLM recommendation probes) using a distributed rate limiter keyed by client IP.
 
-- **Sliding-Window Limiter**: Eliminates the boundary-burst vulnerability inherent to fixed-window systems by tracking exact request timestamps per IP and checking counts dynamically.
-- **Periodic sweeps**: The in-memory cache prunes stale IP buckets to ensure memory consumption remains bounded under long-running processes.
-- **Configurations**:
-  - **Login Route**: Limited to 5 requests per minute per IP.
-  - **Signup Route**: Limited to 3 requests per minute per IP.
-  - **General APIs**: Throttled using Edge Middleware / Vercel KV REST API at the routing boundary.
+### 3.1 Distributed Rate Limiting
+
+**CRITICAL**: Eventra enforces distributed rate limiting in production to prevent brute-force attacks and credential stuffing across multiple server instances.
+
+- **Fixed-Window Limiter**: Uses atomic Redis/KV operations to track request counts per IP within time windows. Prevents race conditions through atomic INCR operations.
+- **Distributed Storage**: Rate limit counters are shared across all instances using:
+  - **Vercel KV** (REST API) - for Vercel deployments
+  - **Upstash Redis** (ioredis) - for general Redis deployments
+  - **Standard Redis** (ioredis) - for self-hosted Redis
+  - **In-memory** (development/test only) - NOT suitable for production
+- **Fail-Closed Security**: In production, if distributed storage is required but unavailable, requests are rejected with a 500 error rather than silently bypassing rate limiting.
+- **Atomic Operations**: Uses Redis Lua scripts or KV REST API atomic operations to prevent race conditions during concurrent requests.
+
+### 3.2 Configuration
+
+Environment variables control rate limiting behavior:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `RATE_LIMIT_REDIS_URL` | Production (one of) | Redis connection URL for distributed rate limiting |
+| `KV_REST_API_URL` | Production (one of) | Upstash Redis REST API URL (Vercel KV migrated to Upstash) |
+| `KV_REST_API_TOKEN` | Production (with KV) | Upstash Redis REST API token |
+| `RATE_LIMIT_MODE` | Optional | Override mode: "distributed" (default in prod) or "memory" (dev/test only) |
+
+**Production Setup**:
+- Set at least one of `RATE_LIMIT_REDIS_URL` or `KV_REST_API_URL`/`KV_REST_API_TOKEN`
+- Build-time validation FAILS if missing in production
+- Runtime rejects requests if misconfigured
+- `RATE_LIMIT_MODE=memory` is NOT allowed in production
+
+**Development Setup**:
+- Falls back to in-memory storage automatically
+- Can explicitly set `RATE_LIMIT_MODE=memory` for testing
+- No distributed storage required
+
+### 3.3 Rate Limit Configurations
+
+- **Login Route**: Limited to 10 requests per minute per IP.
+- **Signup Route**: Limited to 5 requests per minute per IP.
+- **General APIs**: Throttled using Edge Middleware / Vercel KV REST API at the routing boundary (60 requests per minute).
+
+### 3.4 Security Properties
+
+- **Shared State**: Counters persist across serverless cold starts and container restarts
+- **Multi-Instance Safety**: All instances enforce the same limits using shared storage
+- **Race Condition Prevention**: Atomic operations prevent concurrent request bypass
+- **Fail-Secure**: Production rejects requests when rate limiting is unavailable rather than disabling protection
 
 ---
 
