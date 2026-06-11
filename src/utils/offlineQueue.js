@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 import { safeJsonParse } from "./safeJsonParse.js";
 import { logger } from "./logger.js";
-import offlineSyncConfig from "../config/offlineSyncConfig.json";
+import offlineSyncConfig from "../config/offlineSyncConfig.json" with { type: "json" };
 
 const QUEUE_KEY = "eventra_offline_queue";
 const DB_NAME = "eventra_offline_db";

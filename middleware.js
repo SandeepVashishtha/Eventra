@@ -129,12 +129,26 @@ export const config = {
 };
 
 const SECURITY_HEADERS = {
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+  "Strict-Transport-Security":
+    "max-age=31536000; includeSubDomains; preload",
+
   "X-Frame-Options": "DENY",
+
   "X-Content-Type-Options": "nosniff",
+
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), display-capture=()",
-  "Content-Security-Policy": "default-src 'self'; script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.github.com; frame-src 'self' https://accounts.google.com",
+
+  "Permissions-Policy":
+    "camera=(), microphone=(), geolocation=(), display-capture=()",
+
+  "Content-Security-Policy":
+  "default-src 'self'; " +
+  "script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; " +
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+  "img-src 'self' data: https:; " +
+  "font-src 'self' https://fonts.gstatic.com; " +
+  "connect-src 'self' https://api.github.com https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net; " +
+  "frame-src 'self' https://accounts.google.com",
 };
 
 const addSecurityHeaders = (headers) => {
@@ -257,10 +271,22 @@ export default async function middleware(request) {
   if (url.pathname.startsWith("/api/tickets/")) {
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
-      console.warn(
-        "[middleware] JWT_SECRET is not configured. Ticket route RBAC is disabled.",
+      // SECURITY: Fail-closed behavior - reject requests when JWT_SECRET is missing
+      // This prevents unauthorized access when configuration is incomplete
+      console.error(
+        "[middleware] JWT_SECRET is not configured. Rejecting ticket route request."
       );
-      return;
+      return new Response(
+        JSON.stringify({
+          error: "Server configuration error"
+        }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
     }
 
     const token = parseTokenFromCookie(request);

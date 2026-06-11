@@ -60,3 +60,10 @@ assert.ok(validTTL > 0 && validTTL <= 120, `Expected TTL to be between 1 and 120
 
 // Fix flakiness: Change strict '< 0' to '<= 0' to handle the threshold millisecond edge case
 assert.ok(getTokenTTL(expiredToken) <= 0);
+
+// Clock skew buffer — a token expiring in 10s should NOT be treated as still valid
+// since the 30-second CLOCK_SKEW_BUFFER means we treat it as expired early
+const nearExpiry = Math.floor(Date.now() / 1000) + 10;
+const nearExpiryToken = makeToken({ exp: nearExpiry });
+assert.equal(isTokenExpired(nearExpiryToken), true, "token expiring in 10s should be considered expired with 30s skew buffer");
+assert.ok(getTokenTTL(nearExpiryToken) <= 0, `TTL should be <= 0 with skew buffer, got ${getTokenTTL(nearExpiryToken)}`);

@@ -8,6 +8,18 @@ This document describes the security architecture of Eventra, detailing the desi
 
 Eventra enforces cookie-based authentication using JSON Web Tokens (JWT) stored in secure, `HttpOnly` cookies. The client never handles the raw token directly in Javascript, mitigating Cross-Site Scripting (XSS) token exfiltration risks.
 
+### 1.1 Fail-Closed Security
+
+**CRITICAL**: Eventra enforces fail-closed security for JWT authentication. The `JWT_SECRET` environment variable is mandatory with NO fallback secret.
+
+- If `JWT_SECRET` is missing, empty, or whitespace-only:
+  - Build-time validation fails with a critical security error
+  - Runtime token signing throws an error
+  - Edge middleware returns HTTP 500 for protected routes
+  - RBAC is NEVER bypassed
+
+This prevents unauthorized access when configuration is incomplete.
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -18,7 +30,7 @@ sequenceDiagram
     Client->>API: POST /api/auth/signup or /login (Credentials)
     API->>Store: Lookup User / Compare Password (BCrypt)
     Store-->>API: User Verified
-    API->>API: Sign JWT with JWT_SECRET
+    API->>API: Sign JWT with JWT_SECRET (Mandatory)
     API-->>Client: 200/201 JSON (Set-Cookie: token=JWT; HttpOnly; SameSite=Strict; Secure)
     
     Note over Client, API: Subsequent requests carry the cookie automatically
