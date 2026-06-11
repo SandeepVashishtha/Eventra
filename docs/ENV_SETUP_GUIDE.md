@@ -50,6 +50,7 @@ Set at least one backend URL before starting the app. `VITE_API_URL` is preferre
 | `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN; only used in production builds |
 | `JWT_SECRET` | Yes (server-side) | JWT signing secret for Edge Middleware auth verification |
 | `BLOCKED_COUNTRIES` | No (server-side) | Comma-separated ISO 3166-1 alpha-2 country codes to block |
+| `ALLOWED_ORIGINS` | No (server-side) | Comma-separated list of allowed CORS origins for API access |
 
 ## Geographic Access Restrictions
 
@@ -74,6 +75,45 @@ BLOCKED_COUNTRIES=
 - Blocked requests are logged with the country code for monitoring
 - Self-hosted deployments can configure this based on their requirements
 - No restrictions are applied when the variable is empty or unset
+
+## CORS Configuration
+
+The API enforces a strict allowlist-based CORS policy via the `ALLOWED_ORIGINS` environment variable. This controls which domains can make cross-origin requests to Eventra APIs.
+
+**Configuration:**
+- Set `ALLOWED_ORIGINS` to a comma-separated list of trusted origin URLs
+- Include the full URL with protocol (http/https) and port if non-standard
+- Origins are case-sensitive and must match exactly
+- Whitespace around origins is trimmed automatically
+- Leave empty to block all cross-origin requests (fail closed)
+
+**Examples:**
+```env
+# Production deployment
+ALLOWED_ORIGINS=https://eventra.com,https://www.eventra.com,https://api.eventra.com
+
+# Development with localhost (localhost is auto-allowed in non-production)
+ALLOWED_ORIGINS=
+
+# Block all cross-origin requests
+ALLOWED_ORIGINS=
+```
+
+**Development Support:**
+In non-production environments (`NODE_ENV !== "production"`), common localhost origins are automatically allowed:
+- `http://localhost:3000`
+- `http://localhost:5173`
+- `http://127.0.0.1:3000`
+- `http://127.0.0.1:5173`
+
+These development origins are **blocked** in production unless explicitly added to `ALLOWED_ORIGINS`.
+
+**Security Notes:**
+- Never use wildcard (`*`) in production
+- Only explicitly listed origins receive CORS access
+- Untrusted origins receive no CORS headers (browser blocks the request)
+- This prevents unauthorized cross-origin access and information disclosure
+- See `docs/SECURITY_ARCHITECTURE.md` for detailed security rationale
 
 ### Server-Side Variables
 
