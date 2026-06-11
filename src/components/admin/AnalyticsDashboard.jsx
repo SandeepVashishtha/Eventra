@@ -140,7 +140,7 @@ const AnalyticsDashboard = () => {
     } else {
       toast.info(`🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`);
     }
-  }, []);
+  }, [setCheckins]);
 
   // Process real-time SSE stream
   useEffect(() => {
@@ -202,7 +202,11 @@ const AnalyticsDashboard = () => {
     }, 12000);
 
     return () => clearInterval(interval);
-  }, [isStreamActive]);
+  }, [isStreamActive,
+  setCheckins,
+  setLiveCount,
+  setActiveCheckinsPerMinute,
+  setHourlyData,]);
 
   // Manual check-in trigger
   const triggerManualCheckin = () => {

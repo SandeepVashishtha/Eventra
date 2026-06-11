@@ -126,7 +126,7 @@ const useBookmarks = (userId = "guest") => {
 
     window.addEventListener("storage", handleStorageEvent);
     return () => window.removeEventListener("storage", handleStorageEvent);
-  }, []);
+  }, [handleStorageEvent,bookmarks]);
 
   // Cache bookmarks in a Set for O(1) lookups
   const bookmarksSet = useMemo(() => {
