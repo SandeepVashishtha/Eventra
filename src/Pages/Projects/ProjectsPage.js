@@ -7,9 +7,9 @@ import ProjectHero from "./ProjectHero";
 import ProjectCard from "./ProjectCard";
 import ProjectCTA from "./ProjectCTA";
 
-import mockProjects from "./mockProjectsData.json";
-import { apiUtils, API_ENDPOINTS } from "../../config/api";
+import { projectService } from "../../services/projectService";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import useDebounce from "../../hooks/useDebounce.js";
 
 
 // Modern custom styled search input
@@ -85,6 +85,7 @@ const InnerGallery = () => {
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [categories, setCategories] = useState(["all"]);
   const [error, setError] = useState("");
 
@@ -130,67 +131,52 @@ const InnerGallery = () => {
   };
 
   const fetchProjects = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      const publicRequestConfig = {
+        skipAuth: true,
+        withCredentials: false,
+      };
+
+      // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
+      const response = await projectService.getAllProjects(publicRequestConfig);
+      const projectsData = response.data;
+      const projectsList = Array.isArray(projectsData)
+        ? projectsData
+        : projectsData?.content || projectsData?.projects || [];
+
+      // Normalize data to fit ProjectCard UI structure
+      const normalizedProjects = projectsList.map((p) => ({
+        ...p,
+        image: p.thumbnailUrl || p.image || "/Eventra.png",
+        stars: p.upvotes !== undefined ? p.upvotes : (p.stars || 0),
+        techStack: p.techStack || [],
+        author: p.author || "Anonymous",
+        status: p.status || "Active",
+        difficulty: p.difficulty || "Intermediate",
+      }));
+
+      setProjects(normalizedProjects);
+
+      // Attempt to fetch categories from API
       try {
-        setIsLoading(true);
-        setError("");
-
-        const publicRequestConfig = {
-          skipAuth: true,
-          withCredentials: false,
-        };
-
-        // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
-        const response = await apiUtils.get(
-          API_ENDPOINTS.PROJECTS.LIST,
-          publicRequestConfig
-        );
-        const projectsData = response.data;
-const projectsList = Array.isArray(projectsData)
-  ? projectsData
-  : projectsData?.content || projectsData?.projects || [];
-if (projectsList.length > 0) {
-  setProjects(projectsList);
-          // Attempt to fetch categories from API
-          try {
-            const categoriesResponse = await apiUtils.get(
-              API_ENDPOINTS.PROJECTS.CATEGORIES,
-              publicRequestConfig
-            );
-            const categoriesData = categoriesResponse.data;
-            setCategories(["all", ...(Array.isArray(categoriesData) ? categoriesData : [])]);
-          } catch {
-            // derive categories from API project data if categories endpoint throws
-            const uniqueCategories = [...new Set(projectsData.map(p => p?.category).filter(Boolean))];
-            setCategories(["all", ...uniqueCategories]);
-          }
-          return; // exit successfully
-        }
-
-        // --- MOCK DATA FALLBACK: API returned empty or invalid array ---
-        setProjects(mockProjects);
-        const mockUniqueCategories = [
-          ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
-        ];
-        setCategories(["all", ...mockUniqueCategories]);
-      } catch (err) {
-        if (err?.status === 401) {
-          setProjects(mockProjects);
-          const fallbackCategories = [
-            ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
-          ];
-          setCategories(["all", ...fallbackCategories]);
-          return;
-        }
-
-        // Always gracefully fall back to mock data when API is unavailable
-        setProjects(mockProjects);
-        const fallbackCategories = [
-          ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
-        ];
-        setCategories(["all", ...fallbackCategories]);
-      } finally {
-        setIsLoading(false);
+        const categoriesResponse = await projectService.getCategories(publicRequestConfig);
+        const categoriesData = categoriesResponse.data;
+        setCategories(["all", ...(Array.isArray(categoriesData) ? categoriesData : [])]);
+      } catch {
+        // derive categories from API project data if categories endpoint throws
+        const uniqueCategories = [...new Set(normalizedProjects.map(p => p?.category).filter(Boolean))];
+        setCategories(["all", ...uniqueCategories]);
       }
+    } catch (err) {
+      console.error("Failed to fetch projects:", err);
+      setError("Unable to load projects. Please try again later.");
+      setProjects([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -210,8 +196,8 @@ if (projectsList.length > 0) {
         return false;
       }
 
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+      if (debouncedSearchQuery) {
+        const query = debouncedSearchQuery.toLowerCase();
 
         return (
           project?.title?.toLowerCase()?.includes(query) ||
@@ -557,25 +543,35 @@ if (projectsList.length > 0) {
                 </h3>
 
                 <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                  {searchQuery ||
-                  filterCategory !== "all"
+                  {searchQuery || filterCategory !== "all"
                     ? "We couldn’t find any projects with your filters."
-                    : "No projects available right now."}
+                    : "No projects available right now. Be the first to share your creation with the community!"}
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setFilterCategory("all");
-                      setSearchQuery("");
-                      setSortBy("recent");
-                    }}
-                    className="px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
-                  >
-                    Clear Filters
-                  </motion.button>
+                  {searchQuery || filterCategory !== "all" ? (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        setFilterCategory("all");
+                        setSearchQuery("");
+                        setSortBy("recent");
+                      }}
+                      className="px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
+                    >
+                      Clear Filters
+                    </motion.button>
+                  ) : (
+                    <motion.a
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      href="/submit-project"
+                      className="px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all inline-flex items-center justify-center"
+                    >
+                      Submit a Project
+                    </motion.a>
+                  )}
                 </div>
               </div>
             </motion.div>

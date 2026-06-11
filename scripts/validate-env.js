@@ -100,6 +100,15 @@ if (process.env.REACT_APP_GROQ_API_KEY) {
   hasErrors = true;
 }
 
+const buildEnv = process.env.NODE_ENV;
+const isBuildLocal = buildEnv === "development" || buildEnv === "test" || !buildEnv;
+if (!isBuildLocal && (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim())) {
+  const msg = "[CRITICAL ERROR] JWT_SECRET environment variable is missing. A signing secret is required for production/staging builds.";
+  errors.push(msg);
+  hasErrors = true;
+  console.error(`  ERROR: ${msg}`);
+}
+
 console.log("\nOptional variables:");
 if (OPTIONAL_VARS.length === 0) {
   console.log("  (none configured)");
@@ -128,10 +137,13 @@ for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   }
 }
 
-console.log("\nScanning VITE_* variables for credential leaks...");
-const viteVars = Object.keys(process.env).filter((k) => k.startsWith("VITE_"));
+console.log("\nScanning client variables for credential leaks...");
+// Security Fix: Scan BOTH Vite and React App prefixes to prevent bypass leaks
+const clientVars = Object.keys(process.env).filter(
+  (k) => k.startsWith("VITE_") || k.startsWith("REACT_APP_")
+);
 
-for (const key of viteVars) {
+for (const key of clientVars) {
   if (ALLOWED_EXCEPTIONS.has(key)) continue;
 
   const value = process.env[key] || "";
@@ -170,7 +182,7 @@ if (errors.length > 0) {
 }
 
 const criticalErrors = errors.filter(
-  (e) => e.includes("[SECURITY LEAK]") || e.includes("[FORMAT ERROR]")
+  (e) => e.includes("[SECURITY LEAK]") || e.includes("[FORMAT ERROR]") || e.includes("[CRITICAL ERROR]")
 );
 if (criticalErrors.length > 0 || hasErrors) {
   console.error(
@@ -180,6 +192,6 @@ if (criticalErrors.length > 0 || hasErrors) {
 }
 
 console.log(
-  `\n[validate-env] Environment check passed. Scanned ${viteVars.length} VITE_* variable(s).\n`
+  `\n[validate-env] Environment check passed. Scanned ${clientVars.length} client variable(s).\n`
 );
 process.exit(0);

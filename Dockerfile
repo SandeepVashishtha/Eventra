@@ -1,11 +1,30 @@
 FROM node:22-alpine AS build
+LABEL maintainer="Eventra Community"
 WORKDIR /app
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 RUN npm ci --prefer-offline --no-audit --no-fund
+
+# Copy dependency manifests first for Docker layer caching
+COPY package.json package-lock.json ./
+
+# Install dependencies with BuildKit cache mount for npm cache persistence
+# --mount=type=cache preserves ~/.npm across builds so npm doesn't re-download
+# packages that are already cached from previous builds
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline --no-audit --no-fund --cache /root/.npm
+
+# Copy source code and build
 COPY . .
 RUN npm run build
 
 FROM nginx:stable-alpine AS serve
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+COPY --from=build /app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+RUN chown -R appuser:appgroup /usr/share/nginx/html /etc/nginx/conf.d
+USER appuser
 RUN apk add --no-cache wget
 COPY --from=build /app/build /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf

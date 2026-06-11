@@ -1,6 +1,6 @@
-import React from "react";
+
 import { motion } from "framer-motion";
-import { Calendar, FileText, Tag, Users } from "lucide-react";
+import { FileText, Tag, Users } from "lucide-react";
 import { categories } from "../../../constants/eventDefaults";
 import CharacterCounter from "../CharacterCounter";
 

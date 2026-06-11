@@ -1,4 +1,5 @@
 export function sanitizeFilename(name) {
+  if (!name || typeof name !== "string") return "file";
   return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 }
 
@@ -39,6 +40,7 @@ export function exportToCSV(data, filename) {
 }
 
 export function exportToJSON(data, filename) {
+  if (!data || !data.length) return;
   const jsonString = JSON.stringify(data, null, 2);
   const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
