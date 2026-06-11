@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { API_ENDPOINTS } from "../../config/api";
+
 import { projectService } from "../../services/projectService";
 import { sanitizeInputText } from "../../utils/inputSanitization";
 
@@ -205,9 +205,13 @@ const handleSubmit = async (e) => {
 
     setIsSubmitting(true);
     try {
-      // Sanitize text fields before sending
+      // Sanitize and map text fields before sending
       const sanitizedData = {
         ...formData,
+        title: sanitizeInputText(formData.projectName),
+        category: formData.projectCategory || formData.projectType || "Other",
+        thumbnailUrl: formData.projectImage || "",
+        githubUrl: formData.githubLink || "",
         projectName: sanitizeInputText(formData.projectName),
         teamName: sanitizeInputText(formData.teamName),
         description: sanitizeInputText(formData.description),
