@@ -1,4 +1,21 @@
 /**
+ * Determines if the current environment is for development.
+ */
+const isDevelopment = typeof import.meta.env !== "undefined" 
+  ? import.meta.env.DEV 
+  : process.env.NODE_ENV !== "production";
+
+/**
+ * Formats a log message with the specified level.
+ * @param {string} level - The log level (log, info, warn, error).
+ * @param {string} message - The message content.
+ * @returns {string} The formatted message string.
+ */
+const formatMessage = (level, message) => {
+  return `[${level.toUpperCase()}] ${message}`;
+};
+
+/**
  * A logger utility that wraps console methods.
  * Only logs messages when in a development environment.
  */
