@@ -75,37 +75,37 @@ export default function AddToCalendar({ event, className = '' }) {
     <div className={`relative inline-block ${className}`}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+        className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
         aria-haspopup="true"
         aria-expanded={open}
       >
-        <Calendar className="w-4 h-4" />
+        <Calendar className="h-4 w-4" />
         Add to Calendar
         <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-2 w-52 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-800">
+        <div className="absolute z-50 mt-2 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2 dark:border-gray-800">
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Choose calendar</span>
             <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
-              <X className="w-3.5 h-3.5" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
-          <button onClick={handleGoogle} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
-            <img src="https://www.google.com/favicon.ico" alt="" className="w-4 h-4" />
+          <button onClick={handleGoogle} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800">
+            <img src="https://www.google.com/favicon.ico" alt="" className="h-4 w-4" />
             Google Calendar
           </button>
-          <button onClick={handleOutlook} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left border-t border-gray-100 dark:border-gray-800">
-            <img src="https://outlook.live.com/favicon.ico" alt="" className="w-4 h-4" />
+          <button onClick={handleOutlook} className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:text-gray-200 dark:hover:bg-gray-800">
+            <img src="https://outlook.live.com/favicon.ico" alt="" className="h-4 w-4" />
             Outlook Calendar
           </button>
-          <button onClick={handleIcal} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left border-t border-gray-100 dark:border-gray-800">
-            <Calendar className="w-4 h-4 text-gray-400" />
+          <button onClick={handleIcal} className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:text-gray-200 dark:hover:bg-gray-800">
+            <Calendar className="h-4 w-4 text-gray-400" />
             Download iCal (.ics)
           </button>
           {added && (
-            <div className="px-4 py-2 bg-green-50 dark:bg-green-900/20 border-t border-green-100 dark:border-green-800">
+            <div className="border-t border-green-100 bg-green-50 px-4 py-2 dark:border-green-800 dark:bg-green-900/20">
               <p className="text-xs text-green-600 dark:text-green-400">Opening {added}...</p>
             </div>
           )}

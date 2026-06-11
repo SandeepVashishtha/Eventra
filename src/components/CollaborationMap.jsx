@@ -39,7 +39,7 @@ export default function CollaborationMap() {
   }, []);
 
   return (
-    <section className="py-20 dark:bg-slate-950 dark:text-white bg-white text-slate-900 relative overflow-hidden">
+    <section className="relative overflow-hidden bg-white py-20 text-slate-900 dark:bg-slate-950 dark:text-white">
       <style>{`
         /* 🔥 FIX: Namespace prefixed to prevent global CSS pollution */
         @keyframes eventra-map-dash {
@@ -59,40 +59,40 @@ export default function CollaborationMap() {
         }
       `}</style>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         {/* Header Block with fixed responsive spacing */}
-        <div className="text-center space-y-6 mb-12">
-          <span className="inline-block text-xs uppercase tracking-[0.25em] text-indigo-400 font-bold bg-indigo-500/10 px-3.5 py-1.5 rounded-full border border-indigo-500/20">
+        <div className="mb-12 space-y-6 text-center">
+          <span className="inline-block rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3.5 py-1.5 text-xs font-bold tracking-[0.25em] text-indigo-400 uppercase">
             Global Network
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-500 dark:bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text">
+          <h2 className="from-white via-slate-100 to-indigo-200 bg-clip-text text-3xl font-bold tracking-tight text-gray-500 sm:text-4xl dark:bg-gradient-to-r">
             Collaboration Hubs
           </h2>
-          <p className="max-w-xl mx-auto text-sm sm:text-base text-slate-400">
+          <p className="mx-auto max-w-xl text-sm text-slate-400 sm:text-base">
             Connecting developers and event organizers across mock world hubs. Hover over any node to view real-time contributor statistics.
           </p>
         </div>
 
         {/* Glassmorphic Map Container */}
-        <div ref={mapRef} className="relative bg-slate-900/40 backdrop-blur-xl border border-white/10 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 md:p-8 overflow-hidden">
+        <div ref={mapRef} className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/40 p-6 shadow-2xl backdrop-blur-xl md:p-8 dark:border-slate-800/50">
           
           {/* Legend/Status */}
-          <div className="absolute top-6 left-6 z-10 hidden sm:flex items-center gap-4 bg-slate-950/60 backdrop-blur border border-white/5 rounded-2xl px-4 py-2.5 text-xs text-slate-300">
+          <div className="absolute top-6 left-6 z-10 hidden items-center gap-4 rounded-2xl border border-white/5 bg-slate-950/60 px-4 py-2.5 text-xs text-slate-300 backdrop-blur sm:flex">
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-indigo-500" />
               <span>Active Nodes</span>
             </div>
-            <div className="w-px h-3 bg-slate-800" />
+            <div className="h-3 w-px bg-slate-800" />
             <div className="flex items-center gap-1.5">
-              <span className="w-4 h-0.5 border-t border-dashed border-indigo-400" />
+              <span className="h-0.5 w-4 border-t border-dashed border-indigo-400" />
               <span>Network Flow</span>
             </div>
           </div>
 
           {/* 🔥 FIX: Wrapped SVG and Tooltip in a strictly proportional inner div. 
               This ensures padding from the parent doesn't corrupt the percentage coordinates. */}
-          <div className="relative w-full aspect-[2/1]">
-            <svg viewBox="0 0 1000 500" className="absolute inset-0 w-full h-full select-none" aria-label="Global collaboration map map" role="img">
+          <div className="relative aspect-[2/1] w-full">
+            <svg viewBox="0 0 1000 500" className="absolute inset-0 h-full w-full select-none" aria-label="Global collaboration map map" role="img">
               {/* World Stylized Silhouette / Grid (Dotted map styling) */}
               <defs>
                 <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -157,7 +157,7 @@ export default function CollaborationMap() {
                   <g
                     key={city.id}
                     // 🔥 FIX: Added keyboard/touch handlers and a11y roles
-                    className="cursor-pointer city-node outline-none"
+                    className="city-node cursor-pointer outline-none"
                     onMouseEnter={() => setHoveredCity(city)}
                     onMouseLeave={() => setHoveredCity(null)}
                     onClick={() => setHoveredCity(city)}
@@ -195,7 +195,7 @@ export default function CollaborationMap() {
             {/* Structured Hub Card Popup */}
             {hoveredCity && (
               <div
-                className="absolute z-30 pointer-events-none"
+                className="pointer-events-none absolute z-30"
                 style={{
                   left: `${(hoveredCity.x / 1000) * 100}%`,
                   top: `${(hoveredCity.y / 500) * 100}%`,

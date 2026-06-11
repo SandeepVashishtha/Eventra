@@ -96,7 +96,7 @@ const Drawer = ({
               type="button"
               onClick={onClose}
               aria-label="Close drawer"
-              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:hover:bg-gray-700 dark:hover:text-gray-300"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

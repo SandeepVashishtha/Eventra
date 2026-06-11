@@ -236,9 +236,9 @@ const ContributorsInner = () => {
   if (loading) {
     return (
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
+        <section className="pastel-grid-bg bg-gradient-to-br from-indigo-50 to-white py-20 pt-20 md:pt-24 dark:from-gray-900 dark:to-black">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="mt-16 grid grid-cols-1 gap-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {[...Array(8)].map((_, i) => (
               <ContributorCardSkeleton key={i} />
             ))}
@@ -252,16 +252,16 @@ const ContributorsInner = () => {
   if (error)
     return (
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+        <section className="pastel-grid-bg bg-gradient-to-br from-indigo-50 to-white py-20 pt-20 md:pt-24 dark:from-gray-900 dark:to-black">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <h2 className="mb-4 text-3xl font-bold text-gray-800 dark:text-gray-100">
             Contributors are unavailable
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+          <p className="mb-6 text-gray-600 dark:text-gray-400">{error}</p>
           <button
             type="button"
             onClick={fetchContributors}
-            className="inline-flex items-center justify-center bg-black text-white px-6 py-3 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 transition-colors"
+            className="inline-flex items-center justify-center rounded-full bg-black px-6 py-3 text-sm font-semibold text-white shadow transition-colors hover:bg-zinc-800"
            aria-label="Retry loading contributors">
             Retry
           </button>
@@ -272,23 +272,23 @@ const ContributorsInner = () => {
   return (
     // UPDATED: Section background
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
-        <div className="max-w-7xl mx-auto px-6">
+        <section className="pastel-grid-bg bg-gradient-to-br from-indigo-50 to-white py-20 pt-20 md:pt-24 dark:from-gray-900 dark:to-black">
+        <div className="mx-auto max-w-7xl px-6">
           {/* Added The Search Bar */}
-          <div className="flex justify-center mb-8">
+          <div className="mb-8 flex justify-center">
             <input
               type="text"
             placeholder="Search contributors by name, username, role, location, or company..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             aria-label="Search contributors"
-            className="px-4 py-2 rounded-lg w-full max-w-2xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-black text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+            className="w-full max-w-2xl rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:ring-2 focus:ring-black focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
           />
         </div>
 
         <motion.h2
           // UPDATED: Title text
-          className="text-5xl font-extrabold text-center mb-16 text-gray-800 dark:text-gray-100 tracking-tight"
+          className="mb-16 text-center text-5xl font-extrabold tracking-tight text-gray-800 dark:text-gray-100"
           style={{ fontFamily: '"Anton", sans-serif' }}
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -301,7 +301,7 @@ const ContributorsInner = () => {
         </motion.h2>
 
         {filteredContributors.length === 0 ? (
-          <div className="text-center text-gray-600 dark:text-gray-400 text-lg">
+          <div className="text-center text-lg text-gray-600 dark:text-gray-400">
             <p>
               {searchTerm
                 ? `No contributors found matching "${searchTerm}"`
@@ -311,18 +311,18 @@ const ContributorsInner = () => {
               <button
                 type="button"
                 onClick={fetchContributors}
-                className="mt-5 inline-flex items-center justify-center bg-black text-white px-6 py-3 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 transition-colors"
+                className="mt-5 inline-flex items-center justify-center rounded-full bg-black px-6 py-3 text-sm font-semibold text-white shadow transition-colors hover:bg-zinc-800"
                aria-label="Retry loading contributors">
                 Retry
               </button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
+          <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filteredContributors.map((c, i) => (
               <motion.div
                 key={c.id}
-                className="relative overflow-visible bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center transition-all duration-300 ease-out"
+                className="relative flex flex-col items-center overflow-visible rounded-2xl border border-gray-100 bg-white/95 p-6 text-center shadow-lg backdrop-blur-xl transition-all duration-300 ease-out dark:border-gray-700 dark:bg-gray-800/90"
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
@@ -342,9 +342,9 @@ const ContributorsInner = () => {
                       height="80"
                       src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || "Anon")}&background=random`}
                       alt={`${c.name || c.login || "Contributor"}'s GitHub profile`}
-                      className="w-20 h-20 rounded-full border-4 border-black dark:border-gray-300 shadow-xl"
+                      className="h-20 w-20 rounded-full border-4 border-black shadow-xl dark:border-gray-300"
                     />
-                    <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 dark:bg-white/10 blur-md"></div>
+                    <div className="absolute inset-0 animate-pulse rounded-full bg-black/10 blur-md dark:bg-white/10"></div>
                   </div>
                 </div>
 
@@ -354,46 +354,46 @@ const ContributorsInner = () => {
                   <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
                     {c.name}
                   </h3>
-                  <p className="text-black dark:text-white text-sm font-medium mb-3 flex items-center justify-center gap-1">
+                  <p className="mb-3 flex items-center justify-center gap-1 text-sm font-medium text-black dark:text-white">
                     <Medal className="text-amber-300" />{" "}
                     {c.role}
                   </p>
                   {/* UPDATED: Contribution Badges */}
                   {i === 0 && (
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/50 text-black dark:text-white">
+                    <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-black dark:bg-yellow-900/50 dark:text-white">
                       🥇 Top Contributor
                     </span>
                   )}
                   {i === 1 && (
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-600 text-black dark:text-white">
+                    <span className="rounded-full bg-gray-200 px-3 py-1 text-xs font-semibold text-black dark:bg-gray-600 dark:text-white">
                       🥈 Silver Contributor
                     </span>
                   )}
                   {i === 2 && (
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/50 text-black dark:text-white">
+                    <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-black dark:bg-orange-900/50 dark:text-white">
                       🥉 Bronze Contributor
                     </span>
                   )}
                 </div>
 
                 {/* Stats Section (Glass style) */}
-                <div className="grid grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300 my-5 w-full">
-                  <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <GitBranch className="text-black dark:text-white mb-1" />
+                <div className="my-5 grid w-full grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300">
+                  <div className="flex flex-col items-center rounded-lg bg-white/60 p-2 shadow-sm backdrop-blur-md dark:bg-gray-600/50">
+                    <GitBranch className="mb-1 text-black dark:text-white" />
                     <span className="font-semibold">{c.public_repos}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       Repos
                     </span>
                   </div>
-                  <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <Users className="text-black dark:text-white mb-1" />
+                  <div className="flex flex-col items-center rounded-lg bg-white/60 p-2 shadow-sm backdrop-blur-md dark:bg-gray-600/50">
+                    <Users className="mb-1 text-black dark:text-white" />
                     <span className="font-semibold">{c.followers}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       Followers
                     </span>
                   </div>
-                  <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <span className="text-black dark:text-white font-bold">
+                  <div className="flex flex-col items-center rounded-lg bg-white/60 p-2 shadow-sm backdrop-blur-md dark:bg-gray-600/50">
+                    <span className="font-bold text-black dark:text-white">
                       🔥
                     </span>
                     <span className="font-semibold">{c.contributions}</span>
@@ -404,7 +404,7 @@ const ContributorsInner = () => {
                 </div>
 
                 {/* Contribution Progress Bar */}
-                <div className="w-full bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden mb-4">
+                <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-600">
                   <div
                     className="h-2 bg-gray-900 dark:bg-indigo-400"
                     style={{
@@ -416,14 +416,14 @@ const ContributorsInner = () => {
                 </div>
 
                 {/* Extra Info */}
-                <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
+                <div className="mb-4 flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400">
                   {c.company && (
-                    <span className="flex items-center gap-1 justify-center">
+                    <span className="flex items-center justify-center gap-1">
                       <Building /> {c.company}
                     </span>
                   )}
                   {c.location && (
-                    <span className="flex items-center gap-1 justify-center">
+                    <span className="flex items-center justify-center gap-1">
                       <MapPin /> {c.location}
                     </span>
                   )}
@@ -434,14 +434,10 @@ const ContributorsInner = () => {
                   <a
                     href={c.html_url}
                     target="_blank" rel="noopener noreferrer"
-                    className="group inline-flex items-center justify-center gap-2
-                    bg-black dark:bg-white text-white dark:text-gray-900
-                    px-5 py-2.5 rounded-full text-sm font-semibold shadow
-                    hover:bg-zinc-800 dark:hover:bg-gray-200
-                    transition-all duration-300 ease-out transform hover:scale-105 relative overflow-hidden"
+                    className="group relative inline-flex transform items-center justify-center gap-2 overflow-hidden rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white shadow transition-all duration-300 ease-out hover:scale-105 hover:bg-zinc-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
                   >
                     {/* GitHub Icon with animation */}
-                    <Github className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-blue-200" />
+                    <Github className="text-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12 group-hover:text-blue-200" />
 
                     <span>Profile</span>
 

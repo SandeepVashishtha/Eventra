@@ -91,11 +91,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="relative flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           {/* Logo - Left Section */}
-          <Link to="/" aria-label="Eventra home logo template" className="relative z-10 flex items-center shrink-0">
+          <Link to="/" aria-label="Eventra home logo template" className="relative z-10 flex shrink-0 items-center">
             <div className="flex items-center gap-2 sm:gap-2.5">
-              <div className="flex h-8 w-8 sm:h-9 sm:w-9 flex-none items-center justify-center overflow-hidden rounded-lg bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
+              <div className="flex h-8 w-8 flex-none items-center justify-center overflow-hidden rounded-lg bg-card-bg p-1 shadow-premium-sm ring-1 ring-border sm:h-9 sm:w-9">
                 <img
                   src="/favicon.png"
                   alt="Eventra Brand Logo"
@@ -106,18 +106,18 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                   height="36"
                 />
               </div>
-              <h1 className="truncate text-base sm:text-lg lg:text-xl font-heading font-semibold text-text tracking-tight">Eventra</h1>
+              <h1 className="font-heading truncate text-base font-semibold tracking-tight text-text sm:text-lg lg:text-xl">Eventra</h1>
             </div>
           </Link>
 
           {/* Desktop Links - Wrapping instead of absolute positioning */}
-          <div className="hidden lg:flex items-center justify-center flex-1 overflow-x-auto">
+          <div className="hidden flex-1 items-center justify-center overflow-x-auto lg:flex">
             <DesktopNavbar />
           </div>
 
           {/* Right Controls Container */}
-          <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0">
-            <div className="hidden lg:flex items-center gap-2.5">
+          <div className="relative z-10 flex shrink-0 items-center gap-2 sm:gap-2.5">
+            <div className="hidden items-center gap-2.5 lg:flex">
               <LanguageSelector compact />
               {authenticated ? (
                 <>
@@ -145,7 +145,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         </div>
         
         {/* Scroll Progress Bar */}
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
+        <div className="absolute bottom-0 left-0 h-1 w-full bg-transparent" aria-hidden="true">
           <div className="h-full bg-primary transition-all duration-100 ease-out" style={{ width: `${scrollProgress}%` }} />
         </div>
       </nav>

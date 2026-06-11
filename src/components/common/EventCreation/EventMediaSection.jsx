@@ -28,18 +28,15 @@ const TagInput = ({ tags, onAdd, onRemove, newTag, setNewTag, placeholder = "Add
           onChange={(e) => setNewTag(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg p-2 
-                   bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 
-                   focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="flex-1 rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
         />
         <button
           type="button"
           onClick={onAdd}
           disabled={!newTag.trim()}
-          className="flex items-center justify-center gap-1 px-4 py-2 rounded-lg 
-                   bg-indigo-600 text-white font-medium text-sm disabled:opacity-50"
+          className="flex items-center justify-center gap-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="h-4 w-4" />
           Add
         </button>
       </div>
@@ -52,12 +49,11 @@ const TagInput = ({ tags, onAdd, onRemove, newTag, setNewTag, placeholder = "Add
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              className="inline-flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900/50 
-                       text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm"
+              className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-sm text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300"
             >
               #{tag}
               <button type="button" onClick={() => onRemove(tag)} className="ml-1">
-                <X className="w-3.5 h-3.5" />
+                <X className="h-3.5 w-3.5" />
               </button>
             </motion.span>
           ))}
@@ -111,25 +107,25 @@ const EventMediaSection = ({
     <div className="space-y-6">
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          <ImageIcon className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+          <ImageIcon className="mr-2 inline-block h-5 w-5 text-indigo-500" />
           Event Banner
         </label>
         
-        <div className="relative group cursor-pointer">
+        <div className="group relative cursor-pointer">
           {formData.bannerPreview ? (
-            <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-indigo-500">
-              <img src={formData.bannerPreview} alt="Preview" className="w-full h-full object-cover" />
+            <div className="relative aspect-video overflow-hidden rounded-xl border-2 border-indigo-500">
+              <img src={formData.bannerPreview} alt="Preview" className="h-full w-full object-cover" />
               <button
                 type="button"
                 onClick={() => setFormData(prev => ({ ...prev, banner: null, bannerPreview: null }))}
-                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 rounded-full bg-red-500 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           ) : (
-            <label className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-indigo-500 transition-colors">
-              <Upload className="w-10 h-10 text-gray-400 group-hover:text-indigo-500 mb-2" />
+            <label className="flex aspect-video flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 transition-colors hover:border-indigo-500 dark:border-gray-600">
+              <Upload className="mb-2 h-10 w-10 text-gray-400 group-hover:text-indigo-500" />
               <span className="text-sm text-gray-500">Click to upload banner (max 5MB)</span>
               <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
             </label>

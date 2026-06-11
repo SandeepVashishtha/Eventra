@@ -148,7 +148,7 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
 
   return (
     <div className={compact ? "space-y-2" : "space-y-3"}>
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.14em] text-gray-500 uppercase dark:text-gray-400">
         {eventReminders.length ? (
           <Bell className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />
         ) : (

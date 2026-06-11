@@ -113,7 +113,7 @@ const MobileDrawer = ({
                 className="block h-full w-full object-contain"
               />
             </div>
-            <h2 className="truncate text-xl font-bold text-text xs:text-2xl">
+            <h2 className="xs:text-2xl truncate text-xl font-bold text-text">
               Eventra
             </h2>
           </div>
@@ -172,7 +172,7 @@ const MobileDrawer = ({
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  <Bell className="w-5 h-5" />
+                  <Bell className="h-5 w-5" />
                   Notifications
                   {unreadCount > 0 && (
                     <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
@@ -189,7 +189,7 @@ const MobileDrawer = ({
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  <Info className="w-5 h-5" />
+                  <Info className="h-5 w-5" />
                   {t("nav.about")}
                 </Link>
                 <Link
@@ -201,7 +201,7 @@ const MobileDrawer = ({
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  <HelpCircle className="w-5 h-5" />
+                  <HelpCircle className="h-5 w-5" />
                   {t("nav.faqFull")}
                 </Link>
                 <button
@@ -212,12 +212,12 @@ const MobileDrawer = ({
                   }}
                   className="mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 border-transparent px-3 py-2 text-left text-sm font-medium text-text-light transition-all duration-200 hover:bg-bg hover:text-text"
                 >
-                  <LogIn className="w-5 h-5" />
+                  <LogIn className="h-5 w-5" />
                   {t("nav.signOut")}
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col gap-4 mt-4">
+              <div className="mt-4 flex flex-col gap-4">
                 <Link
                   to="/about"
                   onClick={closeMenu}
@@ -227,7 +227,7 @@ const MobileDrawer = ({
                       : "text-text-light hover:text-text border-transparent"
                   }`}
                 >
-                  <Info className="w-5 h-5" />
+                  <Info className="h-5 w-5" />
                   {t("nav.about")}
                 </Link>
                 <Link
@@ -239,7 +239,7 @@ const MobileDrawer = ({
                       : "text-text-light hover:text-text border-transparent"
                   }`}
                 >
-                  <HelpCircle className="w-5 h-5" />
+                  <HelpCircle className="h-5 w-5" />
                   {t("nav.faqFull")}
                 </Link>
                 <Link
@@ -251,7 +251,7 @@ const MobileDrawer = ({
                       : "text-text-light hover:text-text border-transparent"
                   }`}
                 >
-                  <LogIn className="w-5 h-5" />
+                  <LogIn className="h-5 w-5" />
                   {t("nav.signIn")}
                 </Link>
                 <Link
@@ -263,7 +263,7 @@ const MobileDrawer = ({
                       : "text-text-light hover:text-text border-transparent"
                   }`}
                 >
-                  <UserPlus className="w-5 h-5" />
+                  <UserPlus className="h-5 w-5" />
                   {t("nav.signUp")}
                 </Link>
               </div>
@@ -272,14 +272,14 @@ const MobileDrawer = ({
 
           {/* Preferences Section (Theme & Cursor Toggles) - Unified Semantic Classes */}
           <div className="mt-6 border-t border-border pt-4 sm:hidden">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-light/80 mb-3 px-3">
+            <h3 className="mb-3 px-3 text-xs font-semibold tracking-wider text-text-light/80 uppercase">
               Preferences
             </h3>
             <div className="flex items-center gap-3 px-3">
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-border text-sm font-medium text-text-light hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2.5 text-sm font-medium text-text-light transition-all hover:bg-bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
                 <span>{isDarkMode ? "Light" : "Dark"}</span>

@@ -77,9 +77,9 @@ const EmptyState = ({
     >
       {/* Background decoration */}
       {!compact && (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-gradient-to-tr from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 rounded-full blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 blur-3xl dark:from-blue-900/10 dark:to-indigo-900/10" />
+          <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-gradient-to-tr from-purple-50 to-pink-50 blur-3xl dark:from-purple-900/10 dark:to-pink-900/10" />
         </div>
       )}
 
@@ -97,7 +97,7 @@ const EmptyState = ({
         </h3>
 
         {/* Message */}
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">
           {displayDescription}
         </p>
 
@@ -110,7 +110,7 @@ const EmptyState = ({
               <Link
                 to={actionPath}
                 onClick={handleAction}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
                 aria-label={displayActionLabel}
               >
                 {displayActionLabel}
@@ -119,7 +119,7 @@ const EmptyState = ({
               <button
                 type="button"
                 onClick={handleAction}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
                 aria-label={displayActionLabel}
               >
                 {displayActionLabel}

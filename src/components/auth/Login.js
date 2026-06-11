@@ -111,19 +111,19 @@ const Login = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
-      className="pastel-grid-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 section-theme"
+      className="pastel-grid-bg section-theme flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8"
     >
-      <div className="max-w-4xl w-full mx-auto">
+      <div className="mx-auto w-full max-w-4xl">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.6, delay: prefersReducedMotion ? 0 : 0.2 }}
-          className="relative w-full my-8 sm:my-12 overflow-hidden rounded-2xl border p-4 sm:p-6 lg:p-8 shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl card-theme"
+          className="card-theme relative my-8 w-full overflow-hidden rounded-2xl border p-4 shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl sm:my-12 sm:p-6 lg:p-8"
         >
           <div className="pointer-events-none absolute top-8 left-6 h-16 w-16 rounded-full bg-blue-100 opacity-60 blur-sm"></div>
           <div className="pointer-events-none absolute bottom-10 left-20 h-20 w-20 rounded-full bg-pink-100 opacity-60 blur-sm"></div>
           <div className="pointer-events-none absolute top-16 right-10 h-14 w-14 rounded-full bg-yellow-100 opacity-60 blur-sm"></div>
-          <div className="relative z-10 w-full p-10 space-y-6 backdrop-blur-xl section-theme">
+          <div className="section-theme relative z-10 w-full space-y-6 p-10 backdrop-blur-xl">
 
               {/* Session-expired banner */}
               {sessionExpired && (
@@ -145,7 +145,7 @@ const Login = () => {
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
-                  className="bg-red-50 dark:bg-red-900/40 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm font-medium"
+                  className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-700 dark:bg-red-900/40 dark:text-red-300"
                   role="alert"
                   aria-live="assertive"
                 >
@@ -158,7 +158,7 @@ const Login = () => {
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-xl text-sm"
+                  className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
                   role="status"
                   aria-live="polite"
                 >
@@ -171,18 +171,18 @@ const Login = () => {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.3, type: "spring", stiffness: 200 }}
-                className="text-center space-y-4"
+                className="space-y-4 text-center"
               >
                 <motion.div
                   whileHover={{ scale: 1.05, rotate: 5 }}
                   whileTap={{ scale: 0.95 }}
-                  className="mx-auto w-16 h-16 bg-white/10 dark:bg-white/5 rounded-3xl flex items-center justify-center shadow-md border border-white/20 dark:border-white/10"
+                  className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/20 bg-white/10 shadow-md dark:border-white/10 dark:bg-white/5"
                 >
-                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </motion.div>
-                <h1 className="text-2xl font-bold mt-2">Welcome Back</h1>
+                <h1 className="mt-2 text-2xl font-bold">Welcome Back</h1>
                 <p className="text-md" style={{ color: "var(--text-color-light)" }}>
                   Sign in to your Eventra account
                 </p>
@@ -196,7 +196,7 @@ const Login = () => {
                   <label htmlFor="usernameOrEmail" className="block text-sm font-semibold" style={{ color: "var(--text-color)" }}>
                     Email or username <sup className='ml-1 text-sm text-red-500'>*</sup>
                   </label>
-                  <div className="relative group">
+                  <div className="group relative">
                     <input
                       id="usernameOrEmail"
                       name="usernameOrEmail"
@@ -220,9 +220,9 @@ const Login = () => {
                   <label htmlFor="password" className="block text-sm font-semibold" style={{ color: "var(--text-color)" }}>
                     Password <sup className='ml-1 text-sm text-red-500'>*</sup>
                   </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="group relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                      <svg className="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     </div>
@@ -244,7 +244,7 @@ const Login = () => {
                       type="button"
                       onClick={() => setShowPassword((s) => !s)}
                       aria-label={showPassword ? "Hide password" : "Show password"}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 transition-colors hover:text-gray-600"
                     >
                       {showPassword ? (
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,7 +260,7 @@ const Login = () => {
                   </div>
                   <FieldError id="password-error" message={error.password} />
                   <div className="flex justify-end">
-                    <Link to="/password-reset" className="text-blue-600 hover:underline text-sm">
+                    <Link to="/password-reset" className="text-sm text-blue-600 hover:underline">
                       Forgot Password?
                     </Link>
                   </div>
@@ -271,7 +271,7 @@ const Login = () => {
                   <motion.div
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
+                    className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
                   >
                     {authRequest.error}
                   </motion.div>
@@ -283,13 +283,13 @@ const Login = () => {
                   whileTap={{ scale: 0.98 }}
                   type="submit"
                   disabled={isSubmitDisabled}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+                  className="flex w-full justify-center rounded-md border border-transparent bg-blue-500 px-4 py-3 text-sm font-medium text-white shadow-sm transition-all duration-300 hover:bg-blue-600 focus:ring-2 focus:ring-black focus:ring-offset-2 focus:outline-none disabled:opacity-75"
                 >
                   {isLockedOut() ? (
                     `Locked — wait ${lockedOutSeconds}s`
                   ) : authRequest.loading ? (
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                       Signing In...
                     </div>
                   ) : (
@@ -303,18 +303,18 @@ const Login = () => {
               <div className="text-center">
                 <p style={{ color: "var(--text-color-light)" }}>
                   Don&apos;t have an account?{' '}
-                  <Link to="/signup" className="text-blue-600 hover:underline font-semibold">
+                  <Link to="/signup" className="font-semibold text-blue-600 hover:underline">
                     Create one here
                   </Link>
                 </p>
               </div>
 
               {/* Terms */}
-              <p className="text-xs text-center" style={{ color: "var(--text-color-light)" }}>
+              <p className="text-center text-xs" style={{ color: "var(--text-color-light)" }}>
                 By signing in, you agree to our{' '}
-                <Link to="/terms" className="hover:underline text-blue-600 font-semibold">Terms of Service</Link>{' '}
+                <Link to="/terms" className="font-semibold text-blue-600 hover:underline">Terms of Service</Link>{' '}
                 and{' '}
-                <Link to="/privacy" className="hover:underline text-blue-600 font-semibold">Privacy Policy</Link>
+                <Link to="/privacy" className="font-semibold text-blue-600 hover:underline">Privacy Policy</Link>
               </p>
             </div>
           </motion.div>

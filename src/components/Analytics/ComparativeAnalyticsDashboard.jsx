@@ -31,10 +31,10 @@ export default function ComparativeAnalyticsDashboard() {
     setSelected(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
 
   return (
-    <div className="p-6 space-y-8 bg-gray-50 min-h-screen">
+    <div className="min-h-screen space-y-8 bg-gray-50 p-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Comparative Event Analytics</h1>
-        <p className="text-gray-500 mt-1">Compare performance across multiple events</p>
+        <p className="mt-1 text-gray-500">Compare performance across multiple events</p>
       </div>
       <div className="flex flex-wrap gap-2">
         {eventsData.map(e => (
@@ -48,25 +48,25 @@ export default function ComparativeAnalyticsDashboard() {
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-green-200 bg-green-50 p-5">
           <p className="text-sm font-medium text-green-600">Best Performing</p>
-          <p className="text-xl font-bold text-green-800 mt-1">{best.name}</p>
+          <p className="mt-1 text-xl font-bold text-green-800">{best.name}</p>
           <p className="text-sm text-green-600">{best.engagement}% engagement</p>
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
           <p className="text-sm font-medium text-blue-600">Total Registrations</p>
-          <p className="text-xl font-bold text-blue-800 mt-1">
+          <p className="mt-1 text-xl font-bold text-blue-800">
             {filtered.reduce((s, e) => s + e.registrations, 0).toLocaleString()}
           </p>
         </div>
-        <div className="bg-purple-50 border border-purple-200 rounded-xl p-5">
+        <div className="rounded-xl border border-purple-200 bg-purple-50 p-5">
           <p className="text-sm font-medium text-purple-600">Avg Attendance Rate</p>
-          <p className="text-xl font-bold text-purple-800 mt-1">{avgAttendance}%</p>
+          <p className="mt-1 text-xl font-bold text-purple-800">{avgAttendance}%</p>
         </div>
       </div>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-700 mb-4">Registrations vs Attendance</h2>
+      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-lg font-semibold text-gray-700">Registrations vs Attendance</h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={filtered}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -79,8 +79,8 @@ export default function ComparativeAnalyticsDashboard() {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-700 mb-4">Engagement Rate (%)</h2>
+      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-lg font-semibold text-gray-700">Engagement Rate (%)</h2>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={filtered}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -91,8 +91,8 @@ export default function ComparativeAnalyticsDashboard() {
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-700 mb-4">Growth Trends Over Time</h2>
+      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-lg font-semibold text-gray-700">Growth Trends Over Time</h2>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={growthData}>
             <CartesianGrid strokeDasharray="3 3" />

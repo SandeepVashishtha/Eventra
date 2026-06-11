@@ -208,8 +208,8 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     toast(
       ({ closeToast }) => (
         <div>
-          <p className="text-sm font-semibold mb-2">Load {presetName} layout?</p>
-          <p className="text-xs text-gray-500 mb-3">Current changes will be overwritten.</p>
+          <p className="mb-2 text-sm font-semibold">Load {presetName} layout?</p>
+          <p className="mb-3 text-xs text-gray-500">Current changes will be overwritten.</p>
           <div className="flex gap-2">
             <button onClick={() => {
               commitElementsChange(PRESETS[presetName]);
@@ -217,8 +217,8 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
               toast.success(`${presetName} layout loaded!`);
               announce(`${presetName} layout loaded!`);
               closeToast();
-            }} className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-colors">Yes, Load</button>
-            <button onClick={closeToast} className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition-colors">Cancel</button>
+            }} className="rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-indigo-600">Yes, Load</button>
+            <button onClick={closeToast} className="rounded-lg bg-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-300">Cancel</button>
           </div>
         </div>
       ),
@@ -475,7 +475,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
           <Layout className="text-indigo-500" size={24} />
           <div>
             <div className="fp-topbar-title">Interactive Venue Seating & Floor Planner</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">Design floors, place elements, and organize attendee seating slots</div>
+            <div className="text-xs font-medium text-gray-500 dark:text-gray-400">Design floors, place elements, and organize attendee seating slots</div>
           </div>
         </div>
         <div className="fp-topbar-actions">
@@ -503,13 +503,13 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
           >
             <Redo2 size={16} /> Redo
           </button>
-          <div className="hidden md:flex items-center gap-1.5 bg-gray-900/60 border border-gray-800/80 px-2.5 py-1.5 rounded-lg mr-2">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Presets:</span>
-            <button onClick={() => loadPreset("empty")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Clear</button>
+          <div className="mr-2 hidden items-center gap-1.5 rounded-lg border border-gray-800/80 bg-gray-900/60 px-2.5 py-1.5 md:flex">
+            <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Presets:</span>
+            <button onClick={() => loadPreset("empty")} className="px-2 py-0.5 text-xs font-semibold text-gray-300 transition-colors hover:text-indigo-400">Clear</button>
             <span className="text-gray-700">|</span>
-            <button onClick={() => loadPreset("banquet")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Banquet</button>
+            <button onClick={() => loadPreset("banquet")} className="px-2 py-0.5 text-xs font-semibold text-gray-300 transition-colors hover:text-indigo-400">Banquet</button>
             <span className="text-gray-700">|</span>
-            <button onClick={() => loadPreset("conference")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Keynote</button>
+            <button onClick={() => loadPreset("conference")} className="px-2 py-0.5 text-xs font-semibold text-gray-300 transition-colors hover:text-indigo-400">Keynote</button>
           </div>
           <button onClick={() => navigate(`/events/${eventId}/virtual-venue-walkthrough`)} className="fp-btn fp-btn-primary" aria-label="3D Walkthrough">3D Walkthrough</button>
           <button onClick={saveLayout} className="fp-btn fp-btn-primary" aria-label="button"><Save size={16} /> Save Layout</button>

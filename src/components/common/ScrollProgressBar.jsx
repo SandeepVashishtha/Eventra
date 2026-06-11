@@ -67,10 +67,10 @@ const ScrollProgressBar = () => {
 
   return (
     // 🔥 FIX: Added pointer-events-none so it doesn't intercept clicks
-    <div className="fixed top-0 left-0 w-full h-1 z-[9999] bg-transparent pointer-events-none">
+    <div className="pointer-events-none fixed top-0 left-0 z-[9999] h-1 w-full bg-transparent">
       <div
         ref={progressBarRef}
-        className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-75 ease-out shadow-md"
+        className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shadow-md transition-all duration-75 ease-out"
         style={{ width: "0%" }}
       />
     </div>

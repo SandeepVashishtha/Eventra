@@ -290,32 +290,32 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
             {quest.icon}
           </span>
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
-              <Zap className="w-3 h-3" /> +{quest.rewardXP} XP
+            <span className="flex items-center gap-1 text-[10px] font-black tracking-widest text-amber-600 uppercase dark:text-amber-400">
+              <Zap className="h-3 w-3" /> +{quest.rewardXP} XP
             </span>
             {isClaimed && (
-              <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle className="w-2.5 h-2.5" /> Claimed
+              <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black tracking-wider text-emerald-600 uppercase dark:bg-emerald-900/40 dark:text-emerald-400">
+                <CheckCircle className="h-2.5 w-2.5" /> Claimed
               </span>
             )}
           </div>
         </div>
 
         {/* title + desc */}
-        <h4 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 mt-3 tracking-tight">
+        <h4 className="mt-3 text-sm font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
           {quest.title}
         </h4>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed line-clamp-2">
+        <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
           {quest.description}
         </p>
 
         {/* progress bar */}
         <div className="mt-4 space-y-1.5">
-          <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="flex justify-between text-[10px] font-bold tracking-wider text-slate-400 uppercase">
             <span>Progress</span>
             <span>{current} / {quest.targetProgress}</span>
           </div>
-          <div className="w-full h-2 rounded-full bg-slate-200/60 dark:bg-slate-800/50 overflow-hidden">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/60 dark:bg-slate-800/50">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${pct}%` }}
@@ -339,9 +339,9 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             onClick={() => claimXP(quest.id, quest.rewardXP, isWeekly)}
-            className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-shadow flex items-center justify-center gap-2"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-2.5 text-xs font-black tracking-wider text-white uppercase shadow-md transition-shadow hover:shadow-lg"
           >
-            <Gift className="w-3.5 h-3.5" />
+            <Gift className="h-3.5 w-3.5" />
             Claim {quest.rewardXP} XP
           </motion.button>
         )}
@@ -353,7 +353,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-teal-400/10 rounded-2xl pointer-events-none"
+              className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-teal-400/10"
             />
           )}
         </AnimatePresence>
@@ -371,39 +371,39 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
   return (
     <section className="space-y-6" ref={confettiRef} style={{ position: 'relative' }}>
       {/* Section header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest">
-            <Target className="w-3.5 h-3.5" /> Quest Center
+          <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-indigo-600 uppercase dark:text-indigo-400">
+            <Target className="h-3.5 w-3.5" /> Quest Center
           </div>
-          <h2 className="text-xl font-black tracking-tight text-slate-800 dark:text-slate-100 mt-1">
+          <h2 className="mt-1 text-xl font-black tracking-tight text-slate-800 dark:text-slate-100">
             Daily & Weekly Missions
           </h2>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed max-w-lg">
+          <p className="mt-1 max-w-lg text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
             Complete missions to earn XP, climb levels, and unlock exclusive developer tokens. Quests refresh automatically.
           </p>
         </div>
 
         {/* Lifetime XP badge */}
         <div className="flex items-center gap-3">
-          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-sm">
-            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/30">
-              <Star className="w-5 h-5 text-amber-500" />
+          <div className="flex items-center gap-3 rounded-2xl border border-slate-200/50 bg-white/60 px-5 py-3 shadow-sm backdrop-blur-xl dark:border-slate-800/40 dark:bg-slate-900/60">
+            <div className="rounded-xl bg-amber-50 p-2 dark:bg-amber-950/30">
+              <Star className="h-5 w-5 text-amber-500" />
             </div>
             <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Quest XP Earned</p>
-              <p className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{state.lifetimeXP}</p>
+              <p className="text-[9px] font-black tracking-widest text-slate-400 uppercase">Quest XP Earned</p>
+              <p className="text-xl font-black tracking-tight text-slate-800 dark:text-slate-100">{state.lifetimeXP}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs + Timer row */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           {[
-            { id: 'daily', label: 'Daily Missions', icon: <Flame className="w-3.5 h-3.5" /> },
-            { id: 'weekly', label: 'Weekly Challenges', icon: <Trophy className="w-3.5 h-3.5" /> },
+            { id: 'daily', label: 'Daily Missions', icon: <Flame className="h-3.5 w-3.5" /> },
+            { id: 'weekly', label: 'Weekly Challenges', icon: <Trophy className="h-3.5 w-3.5" /> },
           ].map(tab => (
             <button
               key={tab.id}
@@ -422,11 +422,11 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
         </div>
 
         {/* Countdown timer */}
-        <div className="flex items-center gap-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-xl px-4 py-2.5 shadow-sm">
-          <Timer className="w-4 h-4 text-rose-500 animate-pulse" />
+        <div className="flex items-center gap-2 rounded-xl border border-slate-200/50 bg-white/60 px-4 py-2.5 shadow-sm backdrop-blur-xl dark:border-slate-800/40 dark:bg-slate-900/60">
+          <Timer className="h-4 w-4 animate-pulse text-rose-500" />
           <div>
-            <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 leading-none">Refreshes in</p>
-            <p className="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight mt-0.5" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <p className="text-[8px] leading-none font-black tracking-widest text-slate-400 uppercase">Refreshes in</p>
+            <p className="mt-0.5 text-sm font-black tracking-tight text-slate-800 dark:text-slate-100" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {countdown}
             </p>
           </div>
@@ -434,14 +434,14 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
       </div>
 
       {/* XP summary bar */}
-      <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200/50 bg-white/60 p-4 backdrop-blur-xl sm:flex-row sm:items-center dark:border-slate-800/40 dark:bg-slate-900/60">
         <div className="flex items-center gap-3">
-          <Sparkles className="w-4 h-4 text-violet-500" />
+          <Sparkles className="h-4 w-4 text-violet-500" />
           <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
             {claimedXP} / {totalAvailableXP} XP claimed from {activeTab} quests
           </span>
         </div>
-        <div className="w-full sm:w-48 h-2 rounded-full bg-slate-200/50 dark:bg-slate-800/40 overflow-hidden">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/50 sm:w-48 dark:bg-slate-800/40">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: totalAvailableXP > 0 ? `${(claimedXP / totalAvailableXP) * 100}%` : '0%' }}
@@ -451,7 +451,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
       </div>
 
       {/* Quest grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <AnimatePresence mode="popLayout">
           {quests.map(q => renderQuest(q, activeTab === 'weekly'))}
         </AnimatePresence>

@@ -174,12 +174,12 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
       aria-modal="true"
       aria-label="Ticket Preview"
     >
-      <div className="flex flex-col items-center gap-5 w-full max-w-sm">
+      <div className="flex w-full max-w-sm flex-col items-center gap-5">
 
         {/* Close button */}
         <button
           onClick={onClose}
-          className="self-end text-white/60 hover:text-white transition-colors text-sm flex items-center gap-1"
+          className="flex items-center gap-1 self-end text-sm text-white/60 transition-colors hover:text-white"
           aria-label="Close ticket"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -194,12 +194,12 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-3 w-full max-w-[340px]">
+        <div className="flex w-full max-w-[340px] gap-3">
           {/* Download PNG */}
           <button
             onClick={downloadPNG}
             disabled={downloading}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
             style={{ background: "#7c3aed" }}
            aria-label="Save ticket as PNG">
             <DownloadIcon />
@@ -210,7 +210,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
           <button
             onClick={downloadPDF}
             disabled={downloading}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all disabled:opacity-50"
             style={{
               background: "rgba(255,255,255,0.08)",
               color: "white",
@@ -224,7 +224,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
           {/* Share */}
           <button
             onClick={handleShare}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all"
             style={{
               background: "rgba(255,255,255,0.08)",
               color: "white",
@@ -236,7 +236,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
           </button>
         </div>
 
-        <p className="text-white/30 text-xs text-center">
+        <p className="text-center text-xs text-white/30">
           Scan QR at the venue entrance for check-in
         </p>
       </div>

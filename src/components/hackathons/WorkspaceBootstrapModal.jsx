@@ -44,12 +44,12 @@ const PhaseRow = ({ phase, currentPhase, donePhases }) => {
     <div className={`flex items-center gap-3 py-2 px-3 rounded-xl transition-all duration-300 ${
       isActive ? "bg-blue-50 dark:bg-blue-900/20" : ""
     }`}>
-      <div className="w-5 h-5 shrink-0 flex items-center justify-center">
+      <div className="flex h-5 w-5 shrink-0 items-center justify-center">
         {isDone
-          ? <Check size={14} className="text-emerald-500 stroke-[3]" />
+          ? <Check size={14} className="stroke-[3] text-emerald-500" />
           : isActive
-          ? <Loader2 size={14} className="text-blue-500 animate-spin" />
-          : <div className="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700" />
+          ? <Loader2 size={14} className="animate-spin text-blue-500" />
+          : <div className="h-2 w-2 rounded-full bg-slate-200 dark:bg-slate-700" />
         }
       </div>
       <span className={`text-xs font-medium ${
@@ -196,7 +196,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div
-      className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[500] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
       aria-modal="true"
@@ -207,26 +207,26 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.22, ease: "easeOut" }}
-        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+        className="w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
       >
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 shadow-md">
               <Rocket size={15} className="text-white" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-slate-900 dark:text-white leading-tight">
+              <h2 className="text-sm leading-tight font-black text-slate-900 dark:text-white">
                 Bootstrap Team Workspace
               </h2>
-              <p className="text-[10px] text-slate-400 font-medium">
+              <p className="text-[10px] font-medium text-slate-400">
                 {team?.hackathon || "Hackathon"} · with {team?.name}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-400"
+            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
             aria-label="Close modal"
           >
             <X size={16} />
@@ -234,13 +234,13 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
         </div>
 
         {/* ── Step indicator ── */}
-        <div className="flex items-center gap-0 px-6 py-3 bg-slate-50 dark:bg-slate-950/50 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-0 border-b border-slate-100 bg-slate-50 px-6 py-3 dark:border-slate-800 dark:bg-slate-950/50">
           {STEPS.map((s, i) => {
             const isActive   = i === step;
             const isComplete = i < step;
             const Icon = s.icon;
             return (
-              <div key={s.id} className="flex items-center flex-1 min-w-0">
+              <div key={s.id} className="flex min-w-0 flex-1 items-center">
                 <div className={`flex items-center gap-1.5 min-w-0 ${isActive ? "flex-shrink-0" : ""}`}>
                   <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-black transition-all ${
                     isComplete ? "bg-emerald-500 text-white" :
@@ -250,7 +250,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                     {isComplete ? <Check size={11} className="stroke-[3]" /> : <Icon size={11} />}
                   </div>
                   {isActive && (
-                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate">
+                    <span className="truncate text-[10px] font-bold text-slate-700 dark:text-slate-300">
                       {s.label}
                     </span>
                   )}
@@ -264,7 +264,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
         </div>
 
         {/* ── Body ── */}
-        <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="max-h-[60vh] space-y-4 overflow-y-auto px-6 py-5">
           <AnimatePresence mode="wait">
             {/* ══ STEP 0: Connect GitHub ══ */}
             {step === 0 && (
@@ -273,22 +273,22 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                 exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.18 }}
                 className="space-y-4"
               >
-                <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40">
+                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 dark:border-blue-800/40 dark:bg-blue-900/20">
                   <div className="flex items-start gap-3">
-                    <Github size={18} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                    <Github size={18} className="mt-0.5 shrink-0 text-blue-600 dark:text-blue-400" />
                     <div className="space-y-1">
                       <p className="text-xs font-bold text-blue-800 dark:text-blue-300">
                         Connect your GitHub account
                       </p>
-                      <p className="text-[11px] text-blue-700/80 dark:text-blue-400/80 leading-relaxed">
-                        Enter a Personal Access Token (Classic) with <code className="font-mono bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded text-[10px]">repo</code> scope.
+                      <p className="text-[11px] leading-relaxed text-blue-700/80 dark:text-blue-400/80">
+                        Enter a Personal Access Token (Classic) with <code className="rounded bg-blue-100 px-1 py-0.5 font-mono text-[10px] dark:bg-blue-900/50">repo</code> scope.
                         Your token is used only in-memory and never stored.
                       </p>
                       <a
                         href="https://github.com/settings/tokens/new?scopes=repo,read:user&description=Eventra+Workspace+Bootstrap"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold mt-1"
+                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:underline dark:text-blue-400"
                       >
                         <ExternalLink size={11} /> Create a token on GitHub
                       </a>
@@ -297,7 +297,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400">
+                  <label className="text-[10px] font-black text-slate-400 uppercase">
                     GitHub Personal Access Token
                   </label>
                   <div className="flex gap-2">
@@ -307,7 +307,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                       onChange={(e) => { setToken(e.target.value); setGhUser(null); setTokenError(""); }}
                       onKeyDown={(e) => { if (e.key === "Enter" && token.trim()) handleVerifyToken(); }}
                       placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                      className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-mono outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+                      className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 font-mono text-xs text-slate-900 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
                       autoComplete="off"
                       spellCheck="false"
                       aria-label="GitHub Personal Access Token"
@@ -315,7 +315,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                     <button
                       onClick={handleVerifyToken}
                       disabled={!token.trim() || tokenLoading}
-                      className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition flex items-center gap-1.5 shrink-0"
+                      className="flex shrink-0 items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {tokenLoading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
                       Verify
@@ -323,7 +323,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                   </div>
 
                   {tokenError && (
-                    <div className="flex items-center gap-2 text-[11px] text-rose-600 dark:text-rose-400 font-medium">
+                    <div className="flex items-center gap-2 text-[11px] font-medium text-rose-600 dark:text-rose-400">
                       <AlertCircle size={13} />
                       {tokenError}
                     </div>
@@ -333,12 +333,12 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                 {ghUser && (
                   <motion.div
                     initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-3 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40"
+                    className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800/40 dark:bg-emerald-900/20"
                   >
                     <img
                       src={ghUser.avatar_url}
                       alt={ghUser.login}
-                      className="w-9 h-9 rounded-full border-2 border-emerald-200 dark:border-emerald-800"
+                      className="h-9 w-9 rounded-full border-2 border-emerald-200 dark:border-emerald-800"
                     />
                     <div>
                       <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
@@ -366,7 +366,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                 className="space-y-4"
               >
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400">
+                  <label className="text-[10px] font-black text-slate-400 uppercase">
                     Repository Name *
                   </label>
                   <input
@@ -385,19 +385,19 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                     aria-label="Repository name"
                   />
                   {repoNameError && (
-                    <p className="text-[11px] text-rose-500 flex items-center gap-1.5">
+                    <p className="flex items-center gap-1.5 text-[11px] text-rose-500">
                       <AlertCircle size={11} /> {repoNameError}
                     </p>
                   )}
                   {ghUser && !repoNameError && (
-                    <p className="text-[11px] text-slate-400 font-mono">
+                    <p className="font-mono text-[11px] text-slate-400">
                       github.com/{ghUser.login}/{repoName || "…"}
                     </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400">
+                  <label className="text-[10px] font-black text-slate-400 uppercase">
                     Description
                   </label>
                   <textarea
@@ -406,10 +406,10 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                     rows={3}
                     placeholder="Describe your hackathon project…"
                     maxLength={350}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition resize-none"
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
                     aria-label="Repository description"
                   />
-                  <p className="text-[10px] text-slate-400 text-right">{repoDesc.length}/350</p>
+                  <p className="text-right text-[10px] text-slate-400">{repoDesc.length}/350</p>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -446,11 +446,11 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                 exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.18 }}
                 className="space-y-4"
               >
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700/60 dark:bg-slate-800/60">
+                  <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                     Add GitHub usernames of your teammates. They&apos;ll receive a collaboration invitation email.
                     {initialHandle && (
-                      <span className="block mt-1 text-blue-600 dark:text-blue-400">
+                      <span className="mt-1 block text-blue-600 dark:text-blue-400">
                         ✓ Pre-filled <strong>@{initialHandle}</strong> from the contact link.
                       </span>
                     )}
@@ -460,21 +460,21 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                 <div className="space-y-2">
                   {teammates.map((t, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <div className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
-                        <span className="text-slate-400 text-xs font-mono">@</span>
+                      <div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-950">
+                        <span className="font-mono text-xs text-slate-400">@</span>
                         <input
                           type="text"
                           value={t}
                           onChange={(e) => updateTeammate(i, e.target.value.replace(/[^a-zA-Z0-9-]/g, ""))}
                           placeholder="github-username"
-                          className="flex-1 bg-transparent text-slate-900 dark:text-white text-xs font-mono outline-none"
+                          className="flex-1 bg-transparent font-mono text-xs text-slate-900 outline-none dark:text-white"
                           aria-label={`Teammate ${i + 1} GitHub username`}
                         />
                       </div>
                       <button
                         onClick={() => removeTeammate(i)}
                         disabled={teammates.length === 1}
-                        className="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="rounded-lg p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-rose-900/20"
                         aria-label={`Remove teammate ${i + 1}`}
                       >
                         <Trash2 size={14} />
@@ -485,7 +485,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                   <button
                     onClick={addTeammate}
                     disabled={teammates.length >= 8}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-500 hover:border-blue-400 hover:text-blue-500 transition text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 py-2.5 text-xs font-bold text-slate-500 transition hover:border-blue-400 hover:text-blue-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800"
                   >
                     <Plus size={13} /> Add Another Teammate
                   </button>
@@ -503,13 +503,13 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                 {/* Summary card */}
                 {!result && !launching && (
                   <div className="space-y-3">
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-violet-50 dark:from-blue-900/20 dark:to-violet-900/20 border border-blue-100 dark:border-blue-800/40 space-y-2.5">
+                    <div className="space-y-2.5 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-violet-50 p-4 dark:border-blue-800/40 dark:from-blue-900/20 dark:to-violet-900/20">
                       <h3 className="text-xs font-black text-slate-800 dark:text-white">Ready to bootstrap! 🚀</h3>
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
                           <FolderGit2 size={12} className="text-blue-500" />
                           <span className="font-mono font-bold">{ghUser?.login}/{repoName}</span>
-                          <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px]">
+                          <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] dark:bg-slate-800">
                             {isPrivate ? "Private" : "Public"}
                           </span>
                         </div>
@@ -525,15 +525,15 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                     </div>
 
                     {launchError && (
-                      <div className="flex items-start gap-2 p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/40 text-[11px] text-rose-700 dark:text-rose-400">
-                        <AlertCircle size={13} className="shrink-0 mt-0.5" />
+                      <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-[11px] text-rose-700 dark:border-rose-800/40 dark:bg-rose-900/20 dark:text-rose-400">
+                        <AlertCircle size={13} className="mt-0.5 shrink-0" />
                         <span>{launchError}</span>
                       </div>
                     )}
 
                     <button
                       onClick={handleLaunch}
-                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white text-sm font-black transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-500/20 transition hover:from-blue-700 hover:to-violet-700"
                       aria-label="Create workspace on GitHub"
                     >
                       <Rocket size={16} />
@@ -563,23 +563,23 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                     animate={{ opacity: 1, scale: 1 }}
                     className="space-y-4"
                   >
-                    <div className="text-center py-4">
+                    <div className="py-4 text-center">
                       <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-500/30">
-                        <Check size={24} className="text-white stroke-[3]" />
+                        <Check size={24} className="stroke-[3] text-white" />
                       </div>
                       <h3 className="text-base font-black text-slate-900 dark:text-white">
                         Workspace Created! 🎉
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1">{result.fullName}</p>
+                      <p className="mt-1 text-xs text-slate-500">{result.fullName}</p>
                     </div>
 
-                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                      <code className="flex-1 text-[11px] font-mono text-slate-700 dark:text-slate-300 truncate">
+                    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800">
+                      <code className="flex-1 truncate font-mono text-[11px] text-slate-700 dark:text-slate-300">
                         {result.cloneUrl}
                       </code>
                       <button
                         onClick={copyCloneUrl}
-                        className="shrink-0 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition text-slate-500"
+                        className="shrink-0 rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-200 dark:hover:bg-slate-700"
                         aria-label="Copy clone URL"
                       >
                         {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
@@ -588,13 +588,13 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
 
                     {result.collaboratorResults?.length > 0 && (
                       <div className="space-y-1.5">
-                        <p className="text-[10px] font-black uppercase text-slate-400">Teammate Invites</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase">Teammate Invites</p>
                         {result.collaboratorResults.map((r) => (
                           <div
                             key={r.username}
-                            className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50"
+                            className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-700/50 dark:bg-slate-800/60"
                           >
-                            <span className="text-xs font-mono text-slate-700 dark:text-slate-300">@{r.username}</span>
+                            <span className="font-mono text-xs text-slate-700 dark:text-slate-300">@{r.username}</span>
                             <div className="flex items-center gap-1.5">
                               <StatusIcon status={r.status} />
                               <span className={`text-[10px] font-bold ${
@@ -616,7 +616,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                       href={result.repoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex w-full items-center justify-center gap-2 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-sm font-black transition"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-3 text-sm font-black text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
                     >
                       <Github size={16} />
                       Open on GitHub
@@ -631,11 +631,11 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
 
         {/* ── Footer nav (only before launch step or on launch without result) ── */}
         {!result && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4 dark:border-slate-800">
             <button
               onClick={() => setStep((s) => s - 1)}
               disabled={step === 0}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-30 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
             >
               <ChevronLeft size={14} /> Back
             </button>
@@ -644,7 +644,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
               <button
                 onClick={goNext}
                 disabled={!canGoNext()}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Continue <ChevronRight size={14} />
               </button>
@@ -660,7 +660,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
           <div className="px-6 pb-5">
             <button
               onClick={onClose}
-              className="w-full py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+              className="w-full rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
             >
               Close
             </button>

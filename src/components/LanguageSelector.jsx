@@ -72,7 +72,7 @@ export default function LanguageSelector({ className = "", compact = false }) {
             transition={{ duration: 0.15, ease: "easeOut" }}
             role="listbox"
             aria-label={t("language.switch")}
-            className="absolute right-0 mt-2 min-w-[10rem] origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-1.5 z-[300]"
+            className="absolute right-0 z-[300] mt-2 min-w-[10rem] origin-top-right rounded-xl border border-border bg-navbar p-1.5 shadow-lg"
           >
             {supportedLanguages.map((lang) => {
               const isActive = lang.code === language;

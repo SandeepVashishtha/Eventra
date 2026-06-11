@@ -63,7 +63,7 @@ export const FormField = ({
 
       <div className="relative">
         {Icon && (
-          <Icon className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+          <Icon className="pointer-events-none absolute top-1/2 left-3.5 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
         )}
 
         <input
@@ -93,7 +93,7 @@ export const FormField = ({
           <button
             type="button"
             onClick={() => setShowPassword((current) => !current)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+            className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
             aria-label={showPassword ? "Hide password" : "Show password"}
             aria-pressed={showPassword}
           >
@@ -160,7 +160,7 @@ export const PasswordField = ({
       </label>
 
       <div className="relative">
-        <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+        <Lock className="pointer-events-none absolute top-1/2 left-3.5 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
 
         <input
           id={id}
@@ -185,7 +185,7 @@ export const PasswordField = ({
         <button
           type="button"
           onClick={() => setShowPassword((current) => !current)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+          className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
           aria-label={showPassword ? "Hide password" : "Show password"}
           aria-pressed={showPassword}
         >
@@ -267,7 +267,7 @@ const Signup = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 px-4 py-8 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 sm:px-6 lg:px-8"
+      className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 px-4 py-8 sm:px-6 lg:px-8 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800"
     >
       <div className="mx-auto grid max-w-5xl items-center gap-8 md:grid-cols-2">
         <motion.section
@@ -277,8 +277,8 @@ const Signup = () => {
           className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 text-white shadow-2xl"
         >
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute left-10 top-10 h-32 w-32 rounded-full bg-white blur-3xl" />
-            <div className="absolute bottom-16 right-10 h-40 w-40 rounded-full bg-yellow-300 blur-3xl" />
+            <div className="absolute top-10 left-10 h-32 w-32 rounded-full bg-white blur-3xl" />
+            <div className="absolute right-10 bottom-16 h-40 w-40 rounded-full bg-yellow-300 blur-3xl" />
           </div>
 
           <div className="relative z-10 flex h-full flex-col justify-between gap-8">
@@ -290,7 +290,7 @@ const Signup = () => {
                 <span className="text-xl font-bold tracking-tight">Eventra</span>
               </div>
 
-              <h1 className="mb-4 text-3xl font-extrabold leading-tight md:text-4xl">
+              <h1 className="mb-4 text-3xl leading-tight font-extrabold md:text-4xl">
                 Build Your Community,
                 <br />
                 <span className="text-yellow-300">One Event at a Time</span>
@@ -319,10 +319,10 @@ const Signup = () => {
             </div>
 
             <div className="relative z-10 border-t border-white/20 pt-6">
-              <blockquote className="text-sm italic text-blue-100">
+              <blockquote className="text-sm text-blue-100 italic">
                 &quot;Eventra helped me find collaborators and ship faster for my last hackathon.&quot;
               </blockquote>
-              <cite className="mt-2 block text-xs not-italic text-blue-200">
+              <cite className="mt-2 block text-xs text-blue-200 not-italic">
                 - Priya S., Full-Stack Developer
               </cite>
             </div>
@@ -333,7 +333,7 @@ const Signup = () => {
           initial={{ x: prefersReducedMotion ? 0 : 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
-          className="rounded-3xl border border-gray-200/60 bg-white/90 p-6 shadow-2xl backdrop-blur-xl dark:border-gray-700/60 dark:bg-gray-800/85 md:p-8"
+          className="rounded-3xl border border-gray-200/60 bg-white/90 p-6 shadow-2xl backdrop-blur-xl md:p-8 dark:border-gray-700/60 dark:bg-gray-800/85"
         >
           <SignupForm />
           <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">

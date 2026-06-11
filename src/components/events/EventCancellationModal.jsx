@@ -42,26 +42,26 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
   return (
     // Backdrop
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="cancel-event-title"
     >
-      <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 shadow-2xl p-6">
+      <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
 
         {/* Close button */}
         <button
           onClick={onClose}
           disabled={isCancelling}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
+          className="absolute top-4 right-4 text-gray-400 transition hover:text-gray-600 dark:hover:text-gray-200"
           aria-label="Close cancellation dialog"
         >
           <X size={20} />
         </button>
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="flex-shrink-0 rounded-full bg-red-100 dark:bg-red-900/30 p-2">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex-shrink-0 rounded-full bg-red-100 p-2 dark:bg-red-900/30">
             <AlertTriangle className="text-red-600 dark:text-red-400" size={22} />
           </div>
           <div>
@@ -77,7 +77,7 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
           </div>
         </div>
 
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
+        <p className="mb-5 text-sm text-gray-600 dark:text-gray-300">
           This action will cancel the event, notify all registered attendees, and
           process refunds according to the selected policy. This cannot be undone.
         </p>
@@ -86,7 +86,7 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
         <div className="mb-4">
           <label
             htmlFor="cancel-reason"
-            className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1"
+            className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300"
           >
             Cancellation Reason <span className="text-red-500">*</span>
           </label>
@@ -97,20 +97,20 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
             rows={3}
             placeholder="e.g. Venue unavailable due to unforeseen circumstances..."
             disabled={isCancelling}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none disabled:opacity-50"
+            className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-red-500 focus:outline-none disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           />
         </div>
 
         {/* Refund policy */}
         <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <label className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300">
             Refund Policy <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-col gap-2">
             {Object.entries(REFUND_POLICY_LABELS).map(([value, label]) => (
               <label
                 key={value}
-                className="flex items-center gap-3 cursor-pointer"
+                className="flex cursor-pointer items-center gap-3"
               >
                 <input
                   type="radio"
@@ -134,7 +134,7 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
           <div className="mb-4">
             <label
               htmlFor="refund-percent"
-              className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1"
+              className="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300"
             >
               Refund Percentage
             </label>
@@ -158,28 +158,28 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
 
         {/* Error message */}
         {cancellationError && (
-          <p className="text-sm text-red-600 dark:text-red-400 mb-4">
+          <p className="mb-4 text-sm text-red-600 dark:text-red-400">
             {cancellationError}
           </p>
         )}
 
         {/* Actions */}
-        <div className="flex gap-3 justify-end mt-2">
+        <div className="mt-2 flex justify-end gap-3">
           <button
             onClick={onClose}
             disabled={isCancelling}
-            className="px-5 py-2 rounded-full text-sm font-semibold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50"
+            className="rounded-full border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             Keep Event
           </button>
           <button
             onClick={handleSubmit}
             disabled={isCancelling || !reason.trim()}
-            className="px-5 py-2 rounded-full text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="flex items-center gap-2 rounded-full bg-red-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isCancelling ? (
               <>
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 Cancelling...
               </>
             ) : (

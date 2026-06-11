@@ -384,7 +384,7 @@ const SpatialSeatSelector = ({
             <Sparkles size={14} className="text-amber-400" />
             <span>Interactive Floor Seating</span>
           </div>
-          <div className="flex gap-4 items-center">
+          <div className="flex items-center gap-4">
             <div className="text-xs text-zinc-400">
               Available: <span className="font-bold text-emerald-400">{seatStats.available}</span> /{" "}
               {seatStats.total}
@@ -619,11 +619,11 @@ const SpatialSeatSelector = ({
               <div className="ssp-pop-row">
                 <span className="ssp-pop-label">Status:</span>
                 {hoveredSeat.occupiedBy ? (
-                  <span className="ssp-pop-val text-red-400 flex items-center gap-1">
+                  <span className="ssp-pop-val flex items-center gap-1 text-red-400">
                     <ShieldAlert size={10} /> Occupied
                   </span>
                 ) : (
-                  <span className="ssp-pop-val text-emerald-400 flex items-center gap-1">
+                  <span className="ssp-pop-val flex items-center gap-1 text-emerald-400">
                     <CheckCircle size={10} /> Available
                   </span>
                 )}
@@ -652,7 +652,7 @@ const SpatialSeatSelector = ({
           <span>Selected</span>
         </div>
         {!readOnly && (
-          <div className="ssp-legend-tip ml-auto text-[10px] text-zinc-500 flex items-center gap-1">
+          <div className="ssp-legend-tip ml-auto flex items-center gap-1 text-[10px] text-zinc-500">
             <HelpCircle size={11} /> Scroll wheel to zoom, drag mouse to pan
           </div>
         )}

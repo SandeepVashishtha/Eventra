@@ -1311,8 +1311,8 @@ const FluidCursor = ({ enabled = true }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-[40] pointer-events-none overflow-hidden">
-      <canvas ref={canvasRef} id="fluid" className="w-full h-full" />
+    <div className="pointer-events-none fixed inset-0 z-[40] overflow-hidden">
+      <canvas ref={canvasRef} id="fluid" className="h-full w-full" />
     </div>
   );
 };

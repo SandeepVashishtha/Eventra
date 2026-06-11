@@ -257,7 +257,7 @@ const InteractiveWhiteboard = () => {
 
   return (
     <div 
-      className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative select-none"
+      className="relative flex h-full flex-col overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 shadow-2xl select-none"
       onMouseMove={handleStickyDragMove}
       onTouchMove={handleStickyDragMove}
       onMouseUp={handleStickyDragEnd}
@@ -265,10 +265,10 @@ const InteractiveWhiteboard = () => {
       ref={containerRef}
     >
       {/* Premium Toolbar Header */}
-      <div className="bg-slate-900/80 backdrop-blur-md px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 z-10">
+      <div className="z-10 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/80 px-4 py-3 backdrop-blur-md">
         
         {/* Tool Selectors */}
-        <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl p-1 shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-950 p-1">
           <button
             onClick={() => setTool("pen")}
             className={`p-2 rounded-lg transition-all ${
@@ -320,7 +320,7 @@ const InteractiveWhiteboard = () => {
         </div>
 
         {/* Color Palette Selector */}
-        <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 shrink-0">
+        <div className="flex shrink-0 items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-3 py-1.5">
           <Palette size={14} className="text-slate-400" />
           <div className="flex items-center gap-1.5">
             {COLORS.map((c) => (
@@ -340,9 +340,9 @@ const InteractiveWhiteboard = () => {
         </div>
 
         {/* Size Slider & Shapes Fill Toggle */}
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex shrink-0 items-center gap-4">
           {/* Thickness presets */}
-          <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-xl p-1">
+          <div className="flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-950 p-1">
             {BRUSH_SIZES.map((s) => (
               <button
                 key={s}
@@ -376,17 +376,17 @@ const InteractiveWhiteboard = () => {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5">
           <button
             onClick={handleUndo}
-            className="p-2 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-xl transition-all"
+            className="rounded-xl border border-slate-800 bg-slate-950 p-2 text-slate-400 transition-all hover:bg-slate-900 hover:text-white"
             title="Undo Last Drawing"
           >
             <RotateCcw size={16} />
           </button>
           <button
             onClick={handleClear}
-            className="p-2 bg-red-950/20 hover:bg-red-950/50 border border-red-500/10 hover:border-red-500/30 text-red-400 rounded-xl transition-all"
+            className="rounded-xl border border-red-500/10 bg-red-950/20 p-2 text-red-400 transition-all hover:border-red-500/30 hover:bg-red-950/50"
             title="Clear Workspace"
           >
             <Trash2 size={16} />
@@ -397,7 +397,7 @@ const InteractiveWhiteboard = () => {
 
       {/* Drawing Arena Area */}
       <div 
-        className="flex-1 relative bg-[#090a0f] overflow-hidden cursor-crosshair min-h-[450px]"
+        className="relative min-h-[450px] flex-1 cursor-crosshair overflow-hidden bg-[#090a0f]"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -414,7 +414,7 @@ const InteractiveWhiteboard = () => {
         {stickies.map((sticky) => (
           <div
             key={sticky.id}
-            className="absolute w-44 min-h-36 rounded-xl border flex flex-col overflow-hidden shadow-xl z-20"
+            className="absolute z-20 flex min-h-36 w-44 flex-col overflow-hidden rounded-xl border shadow-xl"
             style={{
               left: `${sticky.x}px`,
               top: `${sticky.y}px`,
@@ -426,21 +426,21 @@ const InteractiveWhiteboard = () => {
             <div
               onMouseDown={(e) => handleStickyDragStart(e, sticky.id)}
               onTouchStart={(e) => handleStickyDragStart(e, sticky.id)}
-              className="px-2.5 py-1.5 bg-slate-900 border-b border-slate-800/80 cursor-grab active:cursor-grabbing flex items-center justify-between text-slate-500 hover:text-slate-350 transition-colors"
+              className="hover:text-slate-350 flex cursor-grab items-center justify-between border-b border-slate-800/80 bg-slate-900 px-2.5 py-1.5 text-slate-500 transition-colors active:cursor-grabbing"
             >
               <Move size={12} />
               <button
                 onClick={(e) => { e.stopPropagation(); handleDeleteSticky(sticky.id); }}
-                className="text-gray-500 hover:text-red-400 p-0.5 rounded transition-colors bg-transparent border-none cursor-pointer"
+                className="cursor-pointer rounded border-none bg-transparent p-0.5 text-gray-500 transition-colors hover:text-red-400"
               >
                 <X size={10} />
               </button>
             </div>
 
             {/* Note Textarea Container */}
-            <div className="flex-1 p-2 bg-gradient-to-b from-[#0e101a] to-[#0a0c12]">
+            <div className="flex-1 bg-gradient-to-b from-[#0e101a] to-[#0a0c12] p-2">
               <textarea
-                className="w-full h-full min-h-[80px] bg-transparent border-none outline-none resize-none text-xs text-gray-200 select-text cursor-text leading-relaxed p-1 font-medium"
+                className="h-full min-h-[80px] w-full cursor-text resize-none border-none bg-transparent p-1 text-xs leading-relaxed font-medium text-gray-200 outline-none select-text"
                 value={sticky.text}
                 onChange={(e) => handleStickyTextChange(sticky.id, e.target.value)}
                 placeholder="Write your idea here..."
@@ -454,11 +454,11 @@ const InteractiveWhiteboard = () => {
 
         {/* Floating Help Instructions */}
         {elements.length === 0 && stickies.length === 0 && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-slate-500 pointer-events-none space-y-3 select-none">
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center space-y-3 p-6 text-center text-slate-500 select-none">
             <HelpCircle size={36} className="text-slate-600" />
             <div>
-              <div className="font-bold text-sm text-slate-400">Collaborative Whiteboard Canvas</div>
-              <p className="text-xs text-slate-600 max-w-sm mt-1 leading-relaxed">
+              <div className="text-sm font-bold text-slate-400">Collaborative Whiteboard Canvas</div>
+              <p className="mt-1 max-w-sm text-xs leading-relaxed text-slate-600">
                 Sketch flows using the pen tool, draw diagrams with rectangles/circles, or place floating Sticky Notes. Click and drag sticky headers to reorganize.
               </p>
             </div>

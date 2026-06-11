@@ -53,21 +53,21 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   // Render a login prompt for unauthenticated visitors
   if (!authenticated) {
     return (
-      <div className="w-full max-w-2xl mx-auto p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl text-center space-y-4">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
-          <LogIn className="w-7 h-7" />
+      <div className="mx-auto w-full max-w-2xl space-y-4 rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-xl dark:border-slate-800 dark:bg-slate-900">
+        <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
+          <LogIn className="h-7 w-7" />
         </div>
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">
           Sign in to leave feedback
         </h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+        <p className="mx-auto max-w-xs text-sm text-slate-500 dark:text-slate-400">
           Your feedback helps event organizers improve future events. Please log in to share your experience.
         </p>
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors"
+          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
         >
-          <LogIn className="w-4 h-4" />
+          <LogIn className="h-4 w-4" />
           Log in to submit feedback
         </Link>
       </div>
@@ -104,7 +104,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6 md:p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl">
+    <div className="mx-auto w-full max-w-2xl rounded-2xl border border-slate-100 bg-white p-6 shadow-xl md:p-8 dark:border-slate-800 dark:bg-slate-900">
       <AnimatePresence mode="wait">
         {!submitted ? (
           <motion.form
@@ -119,7 +119,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
               <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                 Share Your Feedback
               </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Help us improve by rating your experience attending {eventTitle}.
               </p>
             </div>
@@ -139,7 +139,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                     onMouseLeave={() => setHoveredRating(0)}
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.92 }}
-                    className="focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md p-0.5"
+                    className="rounded-md p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                     aria-label={`Rate ${star} Star${star > 1 ? "s" : ""}`}
                   >
                     <Star
@@ -152,7 +152,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                   </motion.button>
                 ))}
                 {rating > 0 && (
-                  <span className="ml-3 text-sm font-medium text-indigo-600 dark:text-indigo-400 transition-opacity">
+                  <span className="ml-3 text-sm font-medium text-indigo-600 transition-opacity dark:text-indigo-400">
                     {rating === 1 && "Poor"}
                     {rating === 2 && "Fair"}
                     {rating === 3 && "Good"}
@@ -172,7 +172,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                 Comments & Suggestions <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <MessageSquare className="absolute left-3.5 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
+                <MessageSquare className="absolute top-3.5 left-3.5 h-5 w-5 text-slate-400 dark:text-slate-500" />
                 <textarea
                   id="feedback-comments"
                   rows={4}
@@ -180,9 +180,9 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                   onChange={(e) => setComment(e.target.value)}
                   maxLength={1000}
                   placeholder="What did you like? What can we do better?"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-none"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 py-3 pr-4 pl-11 text-sm transition-all placeholder:text-slate-400 focus:border-transparent focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950/40 dark:placeholder:text-slate-600 dark:focus:ring-indigo-400"
                 />
-                <div className="text-right text-xs text-slate-400 mt-1">
+                <div className="mt-1 text-right text-xs text-slate-400">
                   {comment.length} / 1000 characters
                 </div>
               </div>
@@ -194,16 +194,16 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
               disabled={isSubmitting}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/15 disabled:opacity-75 transition-all"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/15 transition-all hover:bg-indigo-700 disabled:opacity-75"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Submitting...
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4" />
+                  <Send className="h-4 w-4" />
                   Submit Feedback
                 </>
               )}
@@ -214,16 +214,16 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
             key="feedback-success"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-6 space-y-4"
+            className="space-y-4 py-6 text-center"
           >
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle className="w-10 h-10" />
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+              <CheckCircle className="h-10 w-10" />
             </div>
             <div>
               <h4 className="text-lg font-bold text-slate-900 dark:text-white">
                 Thank you for your feedback!
               </h4>
-              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-2.5">
+              <p className="mx-auto mt-2.5 max-w-sm text-sm text-slate-500 dark:text-slate-400">
                 We&apos;ve received your submission. Your rating and comments have been shared with the event organizers.
               </p>
             </div>

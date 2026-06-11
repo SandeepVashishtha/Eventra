@@ -12,7 +12,7 @@ const AuthButtons = ({ isMobile, closeAllMenus }) => (
           : "text-sm font-semibold text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 transition-colors whitespace-nowrap"
       }
     >
-      {isMobile && <LogIn className="w-5 h-5" />}Sign In
+      {isMobile && <LogIn className="h-5 w-5" />}Sign In
     </Link>
     <Link
       to="/signup"
@@ -23,7 +23,7 @@ const AuthButtons = ({ isMobile, closeAllMenus }) => (
           : "flex items-center justify-center px-6 py-2.5 text-sm font-bold text-white transition-all duration-300 bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 whitespace-nowrap"
       }
     >
-      {isMobile && <Sparkles className="w-5 h-5" />}Get Started
+      {isMobile && <Sparkles className="h-5 w-5" />}Get Started
     </Link>
   </div>
 );

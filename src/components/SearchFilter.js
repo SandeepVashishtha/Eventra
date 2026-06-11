@@ -182,7 +182,7 @@ if (dateFilter === "nextMonth") {
         >
           {"Discover Amazing Events 🎯"}
         </motion.h1>
-        <p className="search-subtitle ">
+        <p className="search-subtitle">
           Find the perfect event for your interests
         </p>
       </div>

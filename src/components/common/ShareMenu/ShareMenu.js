@@ -197,8 +197,8 @@ const ShareMenu = ({
         aria-haspopup="menu"
       >
         {children || (
-          <span className="p-2.5 rounded-full shadow-sm hover:shadow-md active:shadow-inner flex items-center justify-center bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all">
-            <Share2 className="w-4 h-4" aria-hidden="true" />
+          <span className="flex items-center justify-center rounded-full bg-white p-2.5 text-gray-700 shadow-sm transition-all hover:shadow-md active:shadow-inner dark:bg-gray-800 dark:text-gray-200">
+            <Share2 className="h-4 w-4" aria-hidden="true" />
           </span>
         )}
       </button>
@@ -214,16 +214,16 @@ const ShareMenu = ({
             role="menu"
             aria-label="Sharing options"
           >
-            <div className="py-2 w-64">
+            <div className="w-64 py-2">
               {/* Native System Share (Only shows if browser supports it) */}
               {navigator.share && (
                 <button
                 onClick={() => handleShare('system')}
                 role="menuitem"
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800"
+                className="flex w-full items-center gap-3 border-b border-gray-100 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800"
                 >
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                  <Share2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400"/>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30">
+                  <Share2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400"/>
                   </div>
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Share via System
@@ -235,13 +235,13 @@ const ShareMenu = ({
               <button
                 onClick={handleCopyLink}
                 role="menuitem"
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
                aria-label="Copy link to clipboard">
-                <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
                   {copied ? (
-                    <Check className="w-4 h-4 text-green-600" />
+                    <Check className="h-4 w-4 text-green-600" />
                   ) : (
-                    <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                   )}
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -253,10 +253,10 @@ const ShareMenu = ({
               <button
                 onClick={() => handleShare('email')}
                 role="menuitem"
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                  <Mail className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                  <Mail className="h-4 w-4 text-red-600 dark:text-red-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</span>
               </button>
@@ -265,10 +265,10 @@ const ShareMenu = ({
               <button
                 onClick={() => handleShare('whatsapp')}
                 role="menuitem"
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <MessageCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                  <MessageCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">WhatsApp</span>
               </button>
@@ -277,9 +277,9 @@ const ShareMenu = ({
               <button
                 onClick={() => handleShare('twitter')}
                 role="menuitem"
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                <div className="w-8 h-8 rounded-full bg-black dark:bg-gray-700 flex items-center justify-center">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black dark:bg-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
                     <path d="M4 4l11.733 16h4.267l-11.733 -16z"></path>
                     <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path>
@@ -292,10 +292,10 @@ const ShareMenu = ({
               <button
                 onClick={() => handleShare('facebook')}
                 role="menuitem"
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Facebook className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                  <Facebook className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Facebook</span>
               </button>
@@ -304,10 +304,10 @@ const ShareMenu = ({
               <button
                 onClick={() => handleShare('linkedin')}
                 role="menuitem"
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Linkedin className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                  <Linkedin className="h-4 w-4 text-blue-700 dark:text-blue-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">LinkedIn</span>
               </button>
@@ -316,10 +316,10 @@ const ShareMenu = ({
               <button
                 onClick={() => handleShare('telegram')}
                 role="menuitem"
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Send className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                  <Send className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Telegram</span>
               </button>

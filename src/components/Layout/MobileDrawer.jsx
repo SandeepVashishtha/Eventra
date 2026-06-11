@@ -33,16 +33,16 @@ const NavList = ({ navItems, location, openDropdown, onToggleGroup, onLinkClick 
 );
 
 const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus }) => (
-  <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-zinc-800/50">
+  <div className="flex items-center justify-between border-b border-gray-100 p-4 dark:border-zinc-800/50">
     <BrandMark compact />
     <button
       ref={closeBtnRef}
       onClick={closeAllMenus}
       // 🔥 FIX 2: Added missing aria-label and focus-visible states for screen readers/keyboard users
       aria-label="Close mobile menu"
-      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-gray-400 dark:hover:bg-zinc-800"
     >
-      <ChevronDown className="w-6 h-6 rotate-90" />
+      <ChevronDown className="h-6 w-6 rotate-90" />
     </button>
   </div>
 );
@@ -61,7 +61,7 @@ const MobileDrawerFooter = ({
   cursorEnabled,
   toggleCursor,
 }) => (
-  <div className="border-t border-gray-200 dark:border-zinc-800/50 bg-gray-50 dark:bg-zinc-900/50">
+  <div className="border-t border-gray-200 bg-gray-50 dark:border-zinc-800/50 dark:bg-zinc-900/50">
     <div className="p-4">
       {isAuthenticated() ? (
         <MobileUserSection
@@ -75,7 +75,7 @@ const MobileDrawerFooter = ({
       ) : (
         <AuthButtons isMobile={true} closeAllMenus={closeAllMenus} />
       )}
-      <div className="flex gap-3 mt-4">
+      <div className="mt-4 flex gap-3">
         <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} setIsCustomizerOpen={setIsCustomizerOpen} />
         <CursorToggleButton
           cursorEnabled={cursorEnabled}
@@ -101,7 +101,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="fixed inset-y-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-[20rem] sm:max-w-sm shadow-2xl z-[110] flex flex-col bg-white/95 backdrop-blur-xl dark:bg-slate-900/95"
+          className="fixed inset-y-0 right-0 z-[110] flex h-dvh w-[88vw] max-w-[20rem] flex-col overflow-y-auto bg-white/95 shadow-2xl backdrop-blur-xl sm:max-w-sm dark:bg-slate-900/95"
           role="dialog"
           aria-modal="true"
           // 🔥 FIX 3: Added aria-label to the modal dialog so screen readers announce it properly
@@ -113,7 +113,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
         >
           <MobileDrawerHeader closeBtnRef={closeBtnRef} closeAllMenus={closeAllMenus} />
 
-          <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
+          <div className="flex-grow space-y-2 overflow-y-auto p-3.5 sm:p-4">
             <NavList
               navItems={navItems}
               location={location}

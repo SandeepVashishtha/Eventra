@@ -97,7 +97,7 @@ const BackToTop = ({
       {/* Progress ring */}
       {showProgress && (
         <svg
-        className="absolute inset-0 w-full h-full -rotate-90"
+        className="absolute inset-0 h-full w-full -rotate-90"
         viewBox="0 0 44 44"
         aria-hidden="true"
       >

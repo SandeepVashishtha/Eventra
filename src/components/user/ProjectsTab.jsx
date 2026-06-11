@@ -13,7 +13,7 @@ const ProjectsTab = ({ projects, loading, fadeUp }) => (
     </div>
     
     {!loading && projects.length === 0 ? (
-      <div className="w-full mt-4">
+      <div className="mt-4 w-full">
         <SearchEmptyState
           query=""
           itemLabel="projects"

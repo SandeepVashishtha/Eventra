@@ -128,7 +128,7 @@ const Dropdown = ({
       {label && (
         <span
           id={labelId}
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           {label}
         </span>
@@ -137,7 +137,7 @@ const Dropdown = ({
       <button
         ref={buttonRef}
         type="button"
-        className="flex w-full items-center justify-between px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all text-left"
+        className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-gray-300 bg-white px-4 py-2 text-left shadow-sm transition-all hover:ring-2 hover:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800"
         onClick={toggleDropdown}
         onKeyDown={handleButtonKeyDown}
         aria-haspopup="listbox"
@@ -170,7 +170,7 @@ const Dropdown = ({
             id={listboxId}
             role="listbox"
             aria-label={label || placeholder}
-            className="absolute mt-2 w-full z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
+            className="absolute z-50 mt-2 w-full rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}

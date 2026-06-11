@@ -61,20 +61,20 @@ const BudgetPlanner = () => {
   };
 
   return (
-    <section className="p-6 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800">
-      <header className="flex items-center justify-between mb-4">
+    <section className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-lg backdrop-blur-md dark:border-slate-800">
+      <header className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Budget Planner</h2>
         <button
           onClick={handleOptimize}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
         >
-          <Sparkles className="w-4 h-4" /> Optimize
+          <Sparkles className="h-4 w-4" /> Optimize
         </button>
       </header>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Ledger */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
+        <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-900">
           <h3 className="mb-2 font-semibold text-slate-700 dark:text-slate-300">Operational Ledger</h3>
           <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
             <li>Revenue: <span className="font-medium">${budget.revenue.toLocaleString()}</span></li>
@@ -87,7 +87,7 @@ const BudgetPlanner = () => {
 
         {/* Break‑Even Chart */}
         {/* 🔥 FIX 3: Added text-slate-500 class so 'currentColor' adapts to Dark Mode */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg h-64 text-slate-500 dark:text-slate-400">
+        <div className="h-64 rounded-lg bg-slate-50 p-4 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
           <h3 className="mb-2 font-semibold text-slate-700 dark:text-slate-300">Break‑Even Point</h3>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={breakEvenData}>
@@ -106,7 +106,7 @@ const BudgetPlanner = () => {
       </div>
 
       {/* Cost Distribution Pie */}
-      <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg h-64 text-slate-500 dark:text-slate-400">
+      <div className="mt-6 h-64 rounded-lg bg-slate-50 p-4 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
         <h3 className="mb-2 font-semibold text-slate-700 dark:text-slate-300">Cost Distribution</h3>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -133,11 +133,11 @@ const BudgetPlanner = () => {
       <div className="mt-4 flex gap-2">
         <button
           onClick={handleExportCSV}
-          className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
         >Export CSV</button>
         <button
           onClick={handleExportJSON}
-          className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
         >Export JSON</button>
       </div>
     </section>

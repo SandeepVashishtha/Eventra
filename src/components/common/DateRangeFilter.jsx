@@ -50,17 +50,17 @@ const DateRangeFilter = ({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {/* Start Date */}
         <div>
           <label
             htmlFor="start-date"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             Start Date
           </label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400 pointer-events-none" />
+            <Calendar className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-gray-400" />
             <input
               id="start-date"
               type="date"
@@ -68,7 +68,7 @@ const DateRangeFilter = ({
               onChange={(e) => setLocalStartDate(e.target.value)}
               min={minDateStr}
               max={maxDateStr}
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+              className="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-900 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-indigo-400"
             />
           </div>
         </div>
@@ -77,12 +77,12 @@ const DateRangeFilter = ({
         <div>
           <label
             htmlFor="end-date"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             End Date
           </label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400 pointer-events-none" />
+            <Calendar className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-gray-400" />
             <input
               id="end-date"
               type="date"
@@ -91,7 +91,7 @@ const DateRangeFilter = ({
               min={minDateStr}
               max={maxDateStr}
               disabled={!localStartDate}
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-900 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-indigo-400"
             />
           </div>
         </div>
@@ -101,7 +101,7 @@ const DateRangeFilter = ({
       {(localStartDate || localEndDate) && (
         <button
           onClick={handleClear}
-          className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+          className="flex items-center gap-2 text-sm text-red-600 transition-colors hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
          aria-label="button">
           <X size={14} />
           Clear dates
@@ -110,7 +110,7 @@ const DateRangeFilter = ({
 
       {/* Date Range Display */}
       {localStartDate && localEndDate && (
-        <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700">
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-2 dark:border-indigo-700 dark:bg-indigo-900/30">
           <p className="text-xs text-indigo-700 dark:text-indigo-300">
             {parseLocalDate(localStartDate).toLocaleDateString()} -
             {parseLocalDate(localEndDate).toLocaleDateString()}

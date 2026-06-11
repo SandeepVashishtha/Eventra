@@ -51,7 +51,7 @@ const AuthButtons = () => {
           aria-controls={isOpen ? menuId : undefined}
           className="flex items-center gap-2 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full text-sm font-medium text-text-light hover:bg-bg-secondary hover:text-text transition-colors">
+          <div className="flex items-center gap-2 rounded-full px-2.5 py-1.5 text-sm font-medium text-text-light transition-colors hover:bg-bg-secondary hover:text-text">
             {t("nav.profile")}
             <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
           </div>
@@ -61,39 +61,39 @@ const AuthButtons = () => {
           <div
             id={menuId}
             role="menu"
-            className="absolute right-0 mt-3 w-64 origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+            className="animate-in fade-in zoom-in-95 absolute right-0 z-50 mt-3 w-64 origin-top-right rounded-xl border border-border bg-navbar p-2 shadow-lg duration-100"
           >
             <div className="space-y-1">
               <Link
                 to="/about"
                 role="menuitem"
                 onClick={closeMenu}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light hover:bg-bg hover:text-text transition-colors"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light transition-colors hover:bg-bg hover:text-text"
               >
-                <Info className="w-4 h-4" />
+                <Info className="h-4 w-4" />
                 {t("nav.about")}
               </Link>
               <Link
                 to="/faq"
                 role="menuitem"
                 onClick={closeMenu}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light hover:bg-bg hover:text-text transition-colors"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light transition-colors hover:bg-bg hover:text-text"
               >
-                <HelpCircle className="w-4 h-4" />
+                <HelpCircle className="h-4 w-4" />
                 {t("nav.faqFull")}
               </Link>
             </div>
 
-            <div role="separator" className="h-px bg-border my-2" />
+            <div role="separator" className="my-2 h-px bg-border" />
 
             <Link
               to="/login"
               role="menuitem"
               onClick={closeMenu}
               onMouseEnter={() => prefetchLogin()}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:bg-bg transition-colors"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-bg"
             >
-              <LogIn className="w-4 h-4" />
+              <LogIn className="h-4 w-4" />
               {t("nav.signIn")}
             </Link>
           </div>
@@ -103,7 +103,7 @@ const AuthButtons = () => {
       <Link
         to="/signup"
         onMouseEnter={() => prefetchSignup()}
-        className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-all duration-200 whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
+        className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold whitespace-nowrap text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-md active:translate-y-0"
       >
         {t("nav.getStarted")}
       </Link>

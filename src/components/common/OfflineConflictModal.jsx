@@ -67,14 +67,14 @@ export default function OfflineConflictModal() {
               </p>
             </div>
           </div>
-          <button onClick={() => handleResolve("server")} aria-label="Dismiss conflict — keep server version" className="text-slate-400 hover:text-white transition-colors">
+          <button onClick={() => handleResolve("server")} aria-label="Dismiss conflict — keep server version" className="text-slate-400 transition-colors hover:text-white">
             <X size={18} aria-hidden="true" />
           </button>
         </div>
 
         {/* Comparison Area */}
         <div className="ocm-body">
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="mb-4 grid grid-cols-2 gap-4">
             <div className="ocm-panel-title flex items-center gap-1.5 text-indigo-400">
               <Edit3 size={14} />
               <span>Your Offline Changes</span>
@@ -93,12 +93,12 @@ export default function OfflineConflictModal() {
 
               return (
                 <div key={key} className={`ocm-diff-row ${isDifferent ? 'ocm-diff-changed' : ''}`}>
-                  <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1.5">{key.replace(/([A-Z])/g, ' $1')}</div>
+                  <div className="mb-1.5 text-[10px] font-bold tracking-wider text-slate-500 uppercase">{key.replace(/([A-Z])/g, ' $1')}</div>
                   <div className="grid grid-cols-2 gap-4 text-xs">
-                    <div className="ocm-diff-val local bg-indigo-500/5 border border-indigo-500/10 text-indigo-200">
+                    <div className="ocm-diff-val local border border-indigo-500/10 bg-indigo-500/5 text-indigo-200">
                       {localVal}
                     </div>
-                    <div className="ocm-diff-val server bg-rose-500/5 border border-rose-500/10 text-rose-200">
+                    <div className="ocm-diff-val server border border-rose-500/10 bg-rose-500/5 text-rose-200">
                       {serverVal}
                     </div>
                   </div>

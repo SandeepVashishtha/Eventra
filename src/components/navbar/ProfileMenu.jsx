@@ -89,11 +89,11 @@ const ProfileMenu = ({ user, logout }) => {
             loading="lazy"
             src={user.profilePicture}
             alt={`${user?.name || "User"} profile`}
-            className="w-9 h-9 rounded-full object-cover border border-border transition-colors"
+            className="h-9 w-9 rounded-full border border-border object-cover transition-colors"
           />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-card-bg border border-border flex items-center justify-center transition-colors">
-            <User className="text-text-light w-4.5 h-4.5" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card-bg transition-colors">
+            <User className="h-4.5 w-4.5 text-text-light" />
           </div>
         )}
         <ChevronDown
@@ -107,13 +107,13 @@ const ProfileMenu = ({ user, logout }) => {
           aria-modal="true"
           aria-orientation="vertical"
           aria-label="Profile menu"
-          className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+          className="animate-in fade-in zoom-in-95 absolute right-0 z-50 mt-3 w-56 origin-top-right rounded-xl border border-border bg-navbar p-2 shadow-lg duration-100"
         >
-          <div className="px-3 py-2 mb-2 border-b border-border">
-            <p className="text-sm font-semibold text-text truncate">
+          <div className="mb-2 border-b border-border px-3 py-2">
+            <p className="truncate text-sm font-semibold text-text">
               {user?.name || user?.username || "User"}
             </p>
-            <p className="text-xs text-text-light truncate">
+            <p className="truncate text-xs text-text-light">
               {user?.email || "Logged in"}
             </p>
           </div>
@@ -127,16 +127,16 @@ const ProfileMenu = ({ user, logout }) => {
                   to={item.path}
                   role="menuitem"
                   onClick={closeMenu}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light hover:bg-bg hover:text-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light transition-colors hover:bg-bg hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="h-4 w-4" />
                   {t(item.labelKey)}
                 </Link>
               );
             })}
           </div>
 
-          <div className="h-px bg-border my-2" />
+          <div className="my-2 h-px bg-border" />
 
           {/* Logout: uses semantic text-error / hover:bg-error/10 for dark-mode
               consistency, and focus-visible:ring-primary to match all other items */}
@@ -147,9 +147,9 @@ const ProfileMenu = ({ user, logout }) => {
               closeMenu();
               logout();
             }}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-error hover:bg-error/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="text-error hover:bg-error/10 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="h-4 w-4" />
             {t("nav.signOut")}
           </button>
         </div>

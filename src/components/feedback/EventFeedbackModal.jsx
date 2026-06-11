@@ -68,7 +68,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
 
       if (success) {
         toast.success(isEditing ? 'Feedback updated!' : 'Thank you for your feedback!', {
-          icon: <CheckCircle className="w-5 h-5" />,
+          icon: <CheckCircle className="h-5 w-5" />,
         });
 
         // Reset form
@@ -102,43 +102,43 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
   if (!isOpen || !event) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-800"
+        className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 p-6">
+        <div className="flex items-center justify-between border-b border-gray-200 p-6 dark:border-gray-800">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               Share Your Feedback
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{event.title}</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{event.title}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            className="rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
             aria-label="Close"
           >
-            <X className="w-6 h-6 text-gray-500" />
+            <X className="h-6 w-6 text-gray-500" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+        <div className="max-h-[70vh] space-y-6 overflow-y-auto p-6">
           {/* Star Rating */}
           <div className="text-center">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+            <label className="mb-4 block text-sm font-semibold text-gray-700 dark:text-gray-300">
               How would you rate this event?
             </label>
             <StarRating rating={rating} onRatingChange={setRating} size="xl" />
           </div>
 
           {/* Recommendation */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          <div className="rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
+            <label className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-300">
               Would you recommend this event?
             </label>
             <div className="flex gap-3">
@@ -150,7 +150,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
-                <ThumbsUp className="w-5 h-5" />
+                <ThumbsUp className="h-5 w-5" />
                 Yes
               </button>
               <button
@@ -161,7 +161,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
-                <ThumbsDown className="w-5 h-5" />
+                <ThumbsDown className="h-5 w-5" />
                 No
               </button>
             </div>
@@ -169,7 +169,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            <label className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-300">
               What stood out? (Optional)
             </label>
             <div className="flex flex-wrap gap-2">
@@ -191,38 +191,38 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
 
           {/* Comment */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            <label className="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-300">
               Additional Comments (Optional)
             </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Tell us what you think... What could we improve?"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               rows="4"
               maxLength="500"
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-right">
+            <p className="mt-2 text-right text-xs text-gray-500 dark:text-gray-400">
               {comment.length}/500
             </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 dark:border-gray-800 p-6 flex gap-3">
+        <div className="flex gap-3 border-t border-gray-200 p-6 dark:border-gray-800">
           <button
             onClick={() => {
               handleReset();
               onClose();
             }}
-            className="flex-1 py-2.5 px-4 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="flex-1 rounded-lg bg-gray-100 px-4 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || rating === 0}
-            className="flex-1 py-2.5 px-4 rounded-lg font-medium text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 rounded-lg bg-indigo-500 px-4 py-2.5 font-medium text-white transition-colors hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? 'Submitting...' : isEditing ? 'Update Feedback' : 'Submit Feedback'}
           </button>

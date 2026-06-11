@@ -120,7 +120,7 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
                   src={event.image}
                   alt={event.title}
                   aspectRatio="3/2"
-                  className="w-full h-full"
+                  className="h-full w-full"
                   imgClassName="object-cover"
                 />
               ) : (

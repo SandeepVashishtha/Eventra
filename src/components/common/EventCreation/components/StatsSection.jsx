@@ -14,19 +14,19 @@ export default function StatsSection() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.7 }}
-      className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl mt-12"
+      className="mt-12 grid w-full max-w-4xl grid-cols-1 gap-6 sm:grid-cols-3"
     >
       {STATS.map((stat, index) => (
         <motion.div
           key={index}
           whileHover={{ scale: 1.08, rotate: 1 }}
-          className="bg-white dark:bg-gray-800 border border-indigo-200 dark:border-gray-700 rounded-2xl shadow-md p-6 text-center flex flex-col items-center"
+          className="flex flex-col items-center rounded-2xl border border-indigo-200 bg-white p-6 text-center shadow-md dark:border-gray-700 dark:bg-gray-800"
         >
-          <stat.icon className="w-10 h-10 text-indigo-600 dark:text-indigo-400 mb-3 animate-bounce" />
+          <stat.icon className="mb-3 h-10 w-10 animate-bounce text-indigo-600 dark:text-indigo-400" />
           <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
             {stat.number}
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">{stat.label}</p>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">{stat.label}</p>
         </motion.div>
       ))}
     </motion.div>

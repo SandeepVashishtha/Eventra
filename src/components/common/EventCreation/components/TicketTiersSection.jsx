@@ -64,11 +64,11 @@ const TicketTiersSection = ({
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: 0.9 }}
-      className="border-t border-gray-200 dark:border-gray-600 pt-6"
+      className="border-t border-gray-200 pt-6 dark:border-gray-600"
     >
 
-    <div className="flex items-center gap-2 mb-4">
-  <Ticket className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+    <div className="mb-4 flex items-center gap-2">
+  <Ticket className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
   <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
     Ticket Tiers
   </h3>
@@ -78,9 +78,9 @@ const TicketTiersSection = ({
   {formData.ticketTiers.map((tier, index) => (
     <div
       key={index}
-      className="border border-gray-200 dark:border-gray-700 rounded-xl p-5 bg-gray-50 dark:bg-gray-800"
+      className="rounded-xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-800"
     >
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <h4 className="text-md font-semibold text-gray-800 dark:text-white">
           Ticket Tier #{index + 1}
         </h4>
@@ -89,17 +89,17 @@ const TicketTiersSection = ({
           <button
             type="button"
             onClick={() => removeTicketTier(index)}
-            className="text-red-500 hover:text-red-700 text-sm font-medium"
+            className="text-sm font-medium text-red-500 hover:text-red-700"
           >
             Remove
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Tier Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Ticket Name
           </label>
 
@@ -110,13 +110,13 @@ const TicketTiersSection = ({
               handleTicketTierChange(index, "name", e.target.value)
             }
             placeholder="VIP / Early Bird / General"
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            className="w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
 
         {/* Price */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Price (₹)
           </label>
 
@@ -135,7 +135,7 @@ const TicketTiersSection = ({
           />
 
           {errors[`ticketPrice_${index}`] && (
-            <span className="text-red-500 text-sm mt-1">
+            <span className="mt-1 text-sm text-red-500">
               {errors[`ticketPrice_${index}`]}
             </span>
           )}
@@ -143,7 +143,7 @@ const TicketTiersSection = ({
 
         {/* Capacity */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Capacity
           </label>
 
@@ -163,7 +163,7 @@ const TicketTiersSection = ({
           />
 
           {errors[`ticketCapacity_${index}`] && (
-            <span className="text-red-500 text-sm mt-1">
+            <span className="mt-1 text-sm text-red-500">
               {errors[`ticketCapacity_${index}`]}
             </span>
           )}
@@ -171,7 +171,7 @@ const TicketTiersSection = ({
 
         {/* Description */}
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Description
           </label>
 
@@ -183,7 +183,7 @@ const TicketTiersSection = ({
               handleTicketTierChange(index, "description", e.target.value)
             }
             placeholder="Describe perks and benefits"
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none"
+            className="w-full resize-none rounded-lg border border-gray-300 bg-white p-3 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
 
           <CharacterCounter
@@ -198,9 +198,9 @@ const TicketTiersSection = ({
   <button
     type="button"
     onClick={addTicketTier}
-    className="flex items-center gap-2 px-4 py-3 rounded-xl bg-black text-white hover:bg-zinc-800 transition-all duration-300"
+    className="flex items-center gap-2 rounded-xl bg-black px-4 py-3 text-white transition-all duration-300 hover:bg-zinc-800"
    aria-label="button">
-    <Plus className="w-4 h-4" />
+    <Plus className="h-4 w-4" />
     Add Ticket Tier
   </button>
 </div>

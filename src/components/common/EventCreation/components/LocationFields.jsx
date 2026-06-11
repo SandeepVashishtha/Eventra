@@ -10,7 +10,7 @@ export default function LocationFields({ formData, handleInputChange, errors, pr
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
           Virtual Event Link <span className="text-red-600">*</span>
         </label>
         <input
@@ -21,7 +21,7 @@ export default function LocationFields({ formData, handleInputChange, errors, pr
           placeholder="https://zoom.us/j/..."
           className={`w-full border ${errors.virtualLink ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
         />
-        {errors.virtualLink && <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>}
+        {errors.virtualLink && <span className="mt-1 text-sm text-red-500">{errors.virtualLink}</span>}
       </motion.div>
     );
   }
@@ -37,8 +37,8 @@ export default function LocationFields({ formData, handleInputChange, errors, pr
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          <MapPin className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <MapPin className="mr-2 inline-block h-5 w-5 text-indigo-500" />
           Location Name <span className="text-red-600">*</span>
         </label>
         <input
@@ -49,7 +49,7 @@ export default function LocationFields({ formData, handleInputChange, errors, pr
           placeholder="Convention Center, Community Hall, etc."
           className={`w-full border ${errors.location ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
         />
-        {errors.location && <span className="text-red-500 text-sm mt-1">{errors.location}</span>}
+        {errors.location && <span className="mt-1 text-sm text-red-500">{errors.location}</span>}
       </motion.div>
 
       <motion.div
@@ -58,8 +58,8 @@ export default function LocationFields({ formData, handleInputChange, errors, pr
         viewport={{ once: true }}
         transition={{ duration: dur, delay }}
       >
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          <Map className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <Map className="mr-2 inline-block h-5 w-5 text-indigo-500" />
           Address
         </label>
         <input
@@ -68,20 +68,20 @@ export default function LocationFields({ formData, handleInputChange, errors, pr
           value={formData.location.address}
           onChange={handleInputChange}
           placeholder="123 Main St, City, State ZIP"
-          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300"
+          className="w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 transition-all duration-300 focus:ring-1 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-indigo-400"
         />
       </motion.div>
 
       <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2"
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <Navigation className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Navigation className="mr-2 inline-block h-5 w-5 text-indigo-500" />
             Latitude (optional)
           </label>
           <input
@@ -91,12 +91,12 @@ export default function LocationFields({ formData, handleInputChange, errors, pr
             onChange={handleInputChange}
             placeholder="40.7128"
             step="any"
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300"
+            className="w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 transition-all duration-300 focus:ring-1 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-indigo-400"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <Compass className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Compass className="mr-2 inline-block h-5 w-5 text-indigo-500" />
             Longitude (optional)
           </label>
           <input
@@ -106,7 +106,7 @@ export default function LocationFields({ formData, handleInputChange, errors, pr
             onChange={handleInputChange}
             placeholder="-74.0060"
             step="any"
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300"
+            className="w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 transition-all duration-300 focus:ring-1 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-indigo-400"
           />
         </div>
       </motion.div>

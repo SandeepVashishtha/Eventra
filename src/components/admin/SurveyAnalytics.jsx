@@ -153,29 +153,29 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
   return (
     <div className="space-y-8">
       {/* SIMULATOR TRAFFIC BAR */}
-      <div className="flex flex-col gap-4 p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-md sm:flex-row sm:items-center sm:justify-between rounded-2xl transition-all">
+      <div className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-md transition-all sm:flex-row sm:items-center sm:justify-between dark:border-slate-800/80 dark:bg-slate-900">
         <div>
-          <h3 className="text-xs font-bold tracking-widest uppercase text-slate-400 dark:text-slate-500">
+          <h3 className="text-xs font-bold tracking-widest text-slate-400 uppercase dark:text-slate-500">
             Simulate Attendee Feedback
           </h3>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Generate synthetic survey submissions to test average calculations, option breakdowns, and scrolling log feeds.
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex shrink-0 items-center gap-3">
           <button
             onClick={handleExportCSV}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 dark:hover:border-indigo-400 text-xs text-slate-700 dark:text-slate-350 hover:text-indigo-650 dark:hover:text-indigo-400 hover:shadow-md transition active:scale-95 cursor-pointer"
+            className="dark:text-slate-350 hover:text-indigo-650 inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-indigo-500 hover:shadow-md active:scale-95 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-400 dark:hover:text-indigo-400"
            aria-label="button">
-            <Download className="w-4 h-4 text-indigo-500" />
+            <Download className="h-4 w-4 text-indigo-500" />
             Export Results to CSV
           </button>
           
           <button
             onClick={handleSimulateSubmission}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-xs font-bold text-white shadow-lg shadow-indigo-600/15 transition self-start sm:self-auto cursor-pointer"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 self-start rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/15 transition hover:bg-indigo-700 active:scale-95 sm:self-auto"
            aria-label="button">
-            <Play className="w-4 h-4 fill-white" />
+            <Play className="h-4 w-4 fill-white" />
             Inject Survey Response
           </button>
         </div>
@@ -188,14 +188,14 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             label: "Total Submissions",
             value: totalSubmissions,
             sub: "+12 submissions today",
-            icon: <Users className="w-5 h-5" />,
+            icon: <Users className="h-5 w-5" />,
             color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100/50 dark:border-indigo-900/30",
           },
           {
             label: "Completion Rate",
             value: `${completionRate}%`,
             sub: "Average time: 2m 45s",
-            icon: <Activity className="w-5 h-5" />,
+            icon: <Activity className="h-5 w-5" />,
             color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100/50 dark:border-emerald-900/30",
           },
           {
@@ -204,7 +204,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             sub: "Live submissions enabled",
             icon: (
               <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex w-full h-full rounded-full opacity-75 animate-ping bg-emerald-400" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
               </span>
             ),
@@ -214,36 +214,36 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             label: "Attendee Satisfaction",
             value: "4.4 / 5.0",
             sub: "Highly positive feedback",
-            icon: <Smile className="w-5 h-5" />,
+            icon: <Smile className="h-5 w-5" />,
             color: "text-rose-500 bg-rose-50 dark:bg-rose-950/40 border-rose-100/50 dark:border-rose-900/30",
           },
         ].map((stat, i) => (
           <div
             key={i}
-            className="p-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl shadow-sm hover:shadow-md transition duration-200"
+            className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition duration-200 hover:shadow-md dark:border-slate-800/80 dark:bg-slate-900"
           >
             <div className={`inline-flex p-2.5 rounded-xl border ${stat.color} mb-3`}>
               {stat.icon}
             </div>
-            <p className="text-[10px] font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">
+            <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
               {stat.label}
             </p>
             <h4 className="mt-1 text-2xl font-black text-slate-800 dark:text-slate-100">
               {stat.value}
             </h4>
-            <p className="text-[10px] text-slate-400 dark:text-slate-550 mt-1">{stat.sub}</p>
+            <p className="dark:text-slate-550 mt-1 text-[10px] text-slate-400">{stat.sub}</p>
           </div>
         ))}
       </div>
 
       {/* DYNAMIC ANALYTICS CONTROLLER */}
       {questions.length === 0 ? (
-        <div className="p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-900 rounded-3xl">
-          <Smile className="w-12 h-12 text-slate-355 dark:text-slate-600 mx-auto mb-4" />
+        <div className="dark:border-slate-850 rounded-3xl border-2 border-dashed border-slate-200 bg-white p-12 text-center dark:bg-slate-900">
+          <Smile className="text-slate-355 mx-auto mb-4 h-12 w-12 dark:text-slate-600" />
           <p className="text-lg font-medium text-slate-400 dark:text-slate-500">
             No active questions found in your survey.
           </p>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-sm mx-auto">
+          <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">
             Please add some questions in the **Survey Builder** tab to initialize submission analytics data streams!
           </p>
         </div>
@@ -255,15 +255,15 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             return (
               <div
                 key={question.id}
-                className="p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-3xl shadow-sm flex flex-col justify-between space-y-5 hover:shadow-md transition duration-250"
+                className="flex flex-col justify-between space-y-5 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm transition duration-250 hover:shadow-md dark:border-slate-800/80 dark:bg-slate-900"
               >
                 {/* QUESTION LABEL */}
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 text-[10px] font-extrabold">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-50 text-[10px] font-extrabold text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
                       {qIdx + 1}
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-550">
+                    <span className="dark:text-slate-550 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                       {question.type === "rating"
                         ? "Rating Scale Analyzer"
                         : question.type === "choice"
@@ -271,23 +271,23 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                         : "Open Text Feedback Stream"}
                     </span>
                   </div>
-                  <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 leading-tight">
+                  <h3 className="text-base leading-tight font-extrabold text-slate-800 dark:text-slate-100">
                     {question.questionText || "Untitled Question"}
                   </h3>
                 </div>
 
                 {/* VISUAL BREAKDOWN COMPONENT */}
-                <div className="flex-1 flex flex-col justify-center">
+                <div className="flex flex-1 flex-col justify-center">
                   {/* A. RATING ANALYZER */}
                   {question.type === "rating" && hasData && (
                     <div className="space-y-4">
                       {/* AVERAGE BADGE */}
                       <div className="flex items-end gap-3">
-                        <div className="text-4xl font-black text-indigo-650 dark:text-indigo-400">
+                        <div className="text-indigo-650 text-4xl font-black dark:text-indigo-400">
                           {analyzedRatings[question.id]?.average || 0.0}
                         </div>
                         <div className="space-y-1 pb-1">
-                          <div className="flex text-amber-400 text-sm">
+                          <div className="flex text-sm text-amber-400">
                             {[1, 2, 3, 4, 5].map((star) => {
                               const avg = analyzedRatings[question.id]?.average || 0;
                               return (
@@ -297,7 +297,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                               );
                             })}
                           </div>
-                          <div className="text-[10px] text-slate-400 font-semibold leading-none">
+                          <div className="text-[10px] leading-none font-semibold text-slate-400">
                             out of 5.0 stars &bull; {analyzedRatings[question.id]?.total || 0} votes
                           </div>
                         </div>
@@ -312,16 +312,16 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
 
                           return (
                             <div key={star} className="flex items-center gap-3 text-xs">
-                              <span className="w-10 font-bold text-slate-400 shrink-0 flex items-center gap-0.5">
-                                {star} <Star className="w-3 h-3 fill-slate-300 dark:fill-slate-650" />
+                              <span className="flex w-10 shrink-0 items-center gap-0.5 font-bold text-slate-400">
+                                {star} <Star className="dark:fill-slate-650 h-3 w-3 fill-slate-300" />
                               </span>
-                              <div className="flex-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                 <div
                                   className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-400 transition-all duration-500"
                                   style={{ width: `${percent}%` }}
                                 />
                               </div>
-                              <span className="w-8 text-right font-black text-slate-500 dark:text-slate-350 shrink-0">
+                              <span className="dark:text-slate-350 w-8 shrink-0 text-right font-black text-slate-500">
                                 {percent}%
                               </span>
                             </div>
@@ -333,9 +333,9 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
 
                   {/* B. MULTIPLE CHOICE BAR CHART */}
                   {question.type === "choice" && hasData && (
-                    <div className="w-full h-44">
+                    <div className="h-44 w-full">
                       {question.options.length === 0 ? (
-                        <div className="text-center py-6 text-xs text-slate-400">
+                        <div className="py-6 text-center text-xs text-slate-400">
                           No options defined for this choice question.
                         </div>
                       ) : (
@@ -385,12 +385,12 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
 
                   {/* C. OPEN TEXT COMMENTS FEED */}
                   {question.type === "text" && (
-                    <div className="max-h-44 overflow-y-auto pr-1 space-y-3 custom-scrollbar">
+                    <div className="custom-scrollbar max-h-44 space-y-3 overflow-y-auto pr-1">
                       {(() => {
                         const qFeed = textFeed.find((t) => t.questionId === question.id);
                         if (!qFeed || qFeed.comments.length === 0) {
                           return (
-                            <div className="text-center py-6 text-xs text-slate-400">
+                            <div className="py-6 text-center text-xs text-slate-400">
                               No submissions received for this open question yet.
                             </div>
                           );
@@ -399,21 +399,21 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                         return qFeed.comments.map((comment) => (
                           <div
                             key={comment.id}
-                            className="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/40 rounded-2xl space-y-1.5 flex items-start gap-2.5 hover:bg-slate-100/50 dark:hover:bg-slate-900/30 transition"
+                            className="flex items-start gap-2.5 space-y-1.5 rounded-2xl border border-slate-100 bg-slate-50 p-3 transition hover:bg-slate-100/50 dark:border-slate-800/40 dark:bg-slate-950/40 dark:hover:bg-slate-900/30"
                           >
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-400 text-white flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 shadow-sm">
+                            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-sky-400 text-[10px] font-black text-white shadow-sm">
                               {comment.author.charAt(0)}
                             </div>
                             <div className="flex-1 space-y-0.5">
-                              <div className="flex justify-between items-center">
+                              <div className="flex items-center justify-between">
                                 <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
                                   {comment.author}
                                 </span>
-                                <span className="text-[9px] text-slate-400 shrink-0">
+                                <span className="shrink-0 text-[9px] text-slate-400">
                                   {comment.time}
                                 </span>
                               </div>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                              <p className="text-xs leading-normal text-slate-500 dark:text-slate-400">
                                 &quot;{comment.text}&quot;
                               </p>
                             </div>

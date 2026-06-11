@@ -28,9 +28,9 @@ const ThemeCustomizer = () => {
   if (!isCustomizerOpen) return null;
 
   const baseThemeOptions = [
-    { id: "light", label: "Light", icon: <Sun className="w-5 h-5" /> },
-    { id: "dark", label: "Dark", icon: <Moon className="w-5 h-5" /> },
-    { id: "system", label: "System", icon: <Monitor className="w-5 h-5" /> },
+    { id: "light", label: "Light", icon: <Sun className="h-5 w-5" /> },
+    { id: "dark", label: "Dark", icon: <Moon className="h-5 w-5" /> },
+    { id: "system", label: "System", icon: <Monitor className="h-5 w-5" /> },
   ];
 
   return (
@@ -50,24 +50,24 @@ const ThemeCustomizer = () => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]"
+          className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800">
+          <div className="flex items-center justify-between border-b border-gray-100 p-6 dark:border-slate-800">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Theme Customizer</h2>
             <button
               onClick={() => setIsCustomizerOpen(false)}
-              className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 dark:text-gray-400 transition-colors"
+              className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800"
               aria-label="Close customizer"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="p-6 overflow-y-auto space-y-8">
+          <div className="space-y-8 overflow-y-auto p-6">
             {/* Base Theme Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <h3 className="text-sm font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Base Mode
               </h3>
               <div className="grid grid-cols-3 gap-3">
@@ -93,10 +93,10 @@ const ThemeCustomizer = () => {
 
             {/* Skins / Color Themes Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <h3 className="text-sm font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Color Themes
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {Object.values(THEMES).map((themeOption) => {
                   const isActive = activeThemeId === themeOption.id;
                   return (
@@ -112,7 +112,7 @@ const ThemeCustomizer = () => {
                       <div
                         className={`w-8 h-8 rounded-full bg-gradient-to-br ${themeOption.accent} flex items-center justify-center shadow-sm shrink-0`}
                       >
-                        {isActive && <Check className="w-4 h-4 text-white" />}
+                        {isActive && <Check className="h-4 w-4 text-white" />}
                       </div>
                       <span
                         className={`text-sm font-medium flex-1 truncate ${

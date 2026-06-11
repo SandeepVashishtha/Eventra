@@ -116,16 +116,16 @@ const AdvancedFilterPanel = ({
   const initPriceMax = filters.priceRange?.max ?? (priceStats.max || 1500);
 
   return (
-    <div className="w-full bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+    <div className="w-full rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       {/* Header */}
       <button
         onClick={onToggleOpen}
-        className="w-full px-4 py-3 sm:px-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        className="flex w-full items-center justify-between px-4 py-3 transition-colors hover:bg-gray-50 sm:px-6 dark:hover:bg-gray-700"
        aria-label="button">
-        <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">
           Advanced Filters
           {hasFilters && (
-            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-indigo-600 rounded-full">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
               {
                 Object.values(filters).filter(
                   (v) =>
@@ -143,7 +143,7 @@ const AdvancedFilterPanel = ({
                 e.stopPropagation();
                 handleClearAll();
               }}
-              className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+              className="rounded p-1 text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
               title="Clear all filters"
             >
               <RotateCcw size={16} />
@@ -157,9 +157,9 @@ const AdvancedFilterPanel = ({
 
       {/* Filters Panel */}
       {isOpen && (
-        <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-4 sm:px-6 space-y-4">
+        <div className="space-y-4 border-t border-gray-200 px-4 py-4 sm:px-6 dark:border-gray-700">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+            <p className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
               Presets
             </p>
             <div className="flex flex-wrap gap-2">
@@ -168,7 +168,7 @@ const AdvancedFilterPanel = ({
                   key={preset.id}
                   type="button"
                   onClick={() => handlePresetApply(preset.filters)}
-                  className="px-3 py-1.5 text-xs font-medium rounded-full border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+                  className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
                 >
                   {preset.label}
                 </button>
@@ -180,12 +180,12 @@ const AdvancedFilterPanel = ({
           <div>
             <button
               onClick={() => toggleSection("category")}
-              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+              className="flex w-full items-center justify-between py-2 text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
             >
               <span className="flex items-center gap-2">
                 <span>Categories</span>
                 {isSectionActive("category") && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" aria-hidden="true" />
                 )}
               </span>
               <ChevronDown
@@ -210,12 +210,12 @@ const AdvancedFilterPanel = ({
           <div>
             <button
               onClick={() => toggleSection("mode")}
-              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+              className="flex w-full items-center justify-between py-2 text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
             >
               <span className="flex items-center gap-2">
                 <span>Event Mode</span>
                 {isSectionActive("mode") && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" aria-hidden="true" />
                 )}
               </span>
               <ChevronDown
@@ -240,12 +240,12 @@ const AdvancedFilterPanel = ({
           <div>
             <button
               onClick={() => toggleSection("status")}
-              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+              className="flex w-full items-center justify-between py-2 text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
             >
               <span className="flex items-center gap-2">
                 <span>Event Status</span>
                 {isSectionActive("status") && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" aria-hidden="true" />
                 )}
               </span>
               <ChevronDown
@@ -270,12 +270,12 @@ const AdvancedFilterPanel = ({
           <div>
             <button
               onClick={() => toggleSection("location")}
-              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+              className="flex w-full items-center justify-between py-2 text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
             >
               <span className="flex items-center gap-2">
                 <span>Location</span>
                 {isSectionActive("location") && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" aria-hidden="true" />
                 )}
               </span>
               <ChevronDown
@@ -291,14 +291,14 @@ const AdvancedFilterPanel = ({
                   Filter by location
                 </label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <MapPin className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <input
                     id="event-location-filter"
                     type="text"
                     value={filters.location || ""}
                     onChange={handleLocationChange}
                     placeholder="City, venue, or region"
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                    className="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-900 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-indigo-400"
                   />
                 </div>
               </div>
@@ -309,12 +309,12 @@ const AdvancedFilterPanel = ({
           <div>
             <button
               onClick={() => toggleSection("price")}
-              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+              className="flex w-full items-center justify-between py-2 text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
             >
               <span className="flex items-center gap-2">
                 <span>Price Range</span>
                 {isSectionActive("price") && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" aria-hidden="true" />
                 )}
               </span>
               <ChevronDown
@@ -325,7 +325,7 @@ const AdvancedFilterPanel = ({
               />
             </button>
             {expandedSections.price && (
-              <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="mt-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-700/50">
                 <PriceRangeSlider
                   minPrice={initPriceMin}
                   maxPrice={initPriceMax}
@@ -341,12 +341,12 @@ const AdvancedFilterPanel = ({
           <div>
             <button
               onClick={() => toggleSection("date")}
-              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+              className="flex w-full items-center justify-between py-2 text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
             >
               <span className="flex items-center gap-2">
                 <span>Date Range</span>
                 {isSectionActive("date") && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" aria-hidden="true" />
                 )}
               </span>
               <ChevronDown
@@ -357,7 +357,7 @@ const AdvancedFilterPanel = ({
               />
             </button>
             {expandedSections.date && (
-              <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="mt-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-700/50">
                 <DateRangeFilter
                   onDateRangeChange={handleDateRangeChange}
                   minDate={dateRange.earliest}
@@ -373,7 +373,7 @@ const AdvancedFilterPanel = ({
           {hasFilters && (
             <button
               onClick={handleClearAll}
-              className="w-full mt-4 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+              className="mt-4 w-full rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
              aria-label="button">
               Clear All Filters
             </button>

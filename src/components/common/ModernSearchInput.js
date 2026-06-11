@@ -42,7 +42,7 @@ const ModernSearchInput = ({
           scale: isFocused ? 1.02 : 1,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className="relative group"
+        className="group relative"
       >
         <div
           className={`absolute inset-y-0 left-0 pl-4 flex items-center z-20 pointer-events-none transition-colors duration-300 ${
@@ -67,7 +67,7 @@ const ModernSearchInput = ({
             ref={searchInputRef}
             type="text"
             placeholder={tags && tags.length > 0 ? "" : placeholder}
-            className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 min-w-[120px] placeholder-gray-400 dark:placeholder-gray-500"
+            className="min-w-[120px] flex-1 border-none bg-transparent text-gray-900 placeholder-gray-400 outline-none dark:text-gray-100 dark:placeholder-gray-500"
             style={{ color: "inherit" }}
             value={value}
             onChange={onChange}
@@ -86,7 +86,7 @@ const ModernSearchInput = ({
             whileHover={{ rotate: 90, scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => onChange({ target: { value: "" } })}
-            className="absolute inset-y-0 right-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-20"
+            className="absolute inset-y-0 right-4 z-20 flex items-center text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
             aria-label="Clear search input"
           >
             <X className="h-5 w-5" />

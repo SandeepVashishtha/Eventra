@@ -73,11 +73,11 @@ const AuthPage = () => {
   }), [prefersReducedMotion]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+    <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-12 transition-colors duration-300 sm:px-6 lg:px-8">
       <div className="w-full max-w-[32rem]">
-        <div className="bg-card-bg border border-border rounded-3xl shadow-premium-lg p-6 sm:p-8">
+        <div className="rounded-3xl border border-border bg-card-bg p-6 shadow-premium-lg sm:p-8">
           <div className="mb-6 text-center">
-            <h2 className="text-3xl font-extrabold text-text tracking-tight">{isLogin ? "Welcome Back" : "Create Your Account"}</h2>
+            <h2 className="text-3xl font-extrabold tracking-tight text-text">{isLogin ? "Welcome Back" : "Create Your Account"}</h2>
             <p className="mt-2 text-sm text-text-light">
               {isLogin
                 ? "Sign in to continue to your Eventra dashboard."
@@ -91,13 +91,13 @@ const AuthPage = () => {
               <motion.div
                 initial={{ opacity: 0, y: -12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full mb-4 flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-700 text-sm"
+                className="mb-4 flex w-full items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700"
               >
                 <AlertCircle size={18} className="shrink-0 text-amber-500" />
                 <span className="flex-1">Your session has expired. Please log in again.</span>
                 <button
                   onClick={() => setShowExpiredBanner(false)}
-                  className="shrink-0 p-1 rounded-md hover:bg-amber-100 transition-colors"
+                  className="shrink-0 rounded-md p-1 transition-colors hover:bg-amber-100"
                   aria-label="Dismiss session expired notice"
                 >
                   <XIcon size={14} />
@@ -105,8 +105,8 @@ const AuthPage = () => {
               </motion.div>
             )}
             <Suspense fallback={
-              <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+              <div className="flex min-h-[400px] items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-indigo-500"></div>
               </div>
             }>
               <AnimatePresence mode="wait" custom={isLogin}>

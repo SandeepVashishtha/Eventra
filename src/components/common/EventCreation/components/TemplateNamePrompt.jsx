@@ -59,13 +59,13 @@ export default function TemplateNamePrompt({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-2xl border border-gray-200 dark:border-gray-700"
+            className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-2xl dark:border-gray-700 dark:bg-gray-900"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
               Save as Template
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
+            <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">
               Give your template a descriptive name (e.g., &ldquo;Workshop Template&rdquo;, &ldquo;Meetup 2026&rdquo;)
             </p>
 
@@ -78,16 +78,16 @@ export default function TemplateNamePrompt({
               placeholder="Enter template name..."
               maxLength={100}
               disabled={loading}
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:opacity-50"
+              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-500 transition focus:border-transparent focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
             />
 
-            <div className="flex justify-end gap-3 mt-8">
+            <div className="mt-8 flex justify-end gap-3">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleCancel}
                 disabled={loading}
-                className="px-5 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium transition disabled:opacity-50"
+                className="rounded-lg border border-gray-300 px-5 py-2 font-medium text-gray-700 transition hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
                 aria-label="Cancel"
               >
                 Cancel
@@ -97,14 +97,14 @@ export default function TemplateNamePrompt({
                 whileTap={{ scale: 0.98 }}
                 onClick={handleSave}
                 disabled={!templateName.trim() || loading}
-                className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-lg bg-indigo-600 px-5 py-2 font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Save template"
               >
                 {loading ? "Saving..." : "Save"}
               </motion.button>
             </div>
 
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+            <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
               {templateName.length > 0 && (
                 <p>{templateName.length}/100 characters</p>
               )}

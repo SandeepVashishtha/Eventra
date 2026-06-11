@@ -73,12 +73,12 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
           <>
             <motion.span
               layoutId="activeBox"
-              className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+              className="absolute inset-0 -z-0 rounded-lg border border-indigo-200/80 bg-indigo-100/60 dark:border-indigo-500/50 dark:bg-indigo-500/20"
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
             />
             <motion.span
               layoutId="activeBoxGlow"
-              className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+              className="absolute right-3 -bottom-0.5 left-3 -z-0 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 blur-[1.5px] dark:via-indigo-400"
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
             />
           </>
@@ -104,7 +104,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
               transform: 'translateX(-50%)',
               zIndex: 9999,
             }}
-            className="w-60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
+            className="w-60 overflow-hidden rounded-2xl border border-white/40 bg-white/95 p-2 shadow-[0_8px_32px_rgba(0,0,0,0.1)] backdrop-blur-3xl dark:border-zinc-700/40 dark:bg-zinc-900/95 dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)]"
           >
             {item.subItems.map((sub) => (
               <Link

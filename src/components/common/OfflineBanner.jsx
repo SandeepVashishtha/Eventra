@@ -37,14 +37,14 @@ const OfflineBanner = () => {
           transition={{ duration: 0.3, ease: "easeOut" }}
           role="alert"
           aria-live="assertive"
-          className="fixed top-20 left-0 right-0 z-[999] flex justify-center px-4"
+          className="fixed top-20 right-0 left-0 z-[999] flex justify-center px-4"
         >
-          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-red-600 text-white shadow-lg text-sm font-semibold max-w-md w-full">
+          <div className="flex w-full max-w-md items-center gap-3 rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg">
             <WifiOff size={16} className="shrink-0" aria-hidden="true" />
             <span className="flex-1">You&apos;re offline. Some features may not work.</span>
             <button
               onClick={() => window.location.reload()}
-              className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-xs font-bold"
+              className="rounded-lg bg-white/20 px-3 py-1 text-xs font-bold transition-colors hover:bg-white/30"
               aria-label="Try again"
             >
               Try Again
@@ -61,9 +61,9 @@ const OfflineBanner = () => {
           transition={{ duration: 0.3, ease: "easeOut" }}
           role="status"
           aria-live="polite"
-          className="fixed top-20 left-0 right-0 z-[999] flex justify-center px-4"
+          className="fixed top-20 right-0 left-0 z-[999] flex justify-center px-4"
         >
-          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-green-600 text-white shadow-lg text-sm font-semibold max-w-md w-full">
+          <div className="flex w-full max-w-md items-center gap-3 rounded-2xl bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-lg">
             <Wifi size={16} className="shrink-0" aria-hidden="true" />
             <span>You&apos;re back online!</span>
           </div>

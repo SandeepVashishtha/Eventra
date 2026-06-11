@@ -189,7 +189,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                       }`
                     }
                   >
-                    <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">{sub.icon}</span>
+                    <span className="flex-none text-current [&>svg]:h-4 [&>svg]:w-4">{sub.icon}</span>
                     <span>{t(sub.nameKey)}</span>
                   </NavLink>
                 ))}
@@ -208,7 +208,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
               `${!vertical ? "flex-none min-w-max" : ""} ${getNavLinkClasses(isActive, secondaryItemKeys.includes(item.nameKey))}`
             }
           >
-            <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">{item.icon}</span>
+            <span className="flex-none text-current [&>svg]:h-4 [&>svg]:w-4">{item.icon}</span>
             <span>{itemLabel}</span>
           </NavLink>
         );

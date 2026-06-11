@@ -53,11 +53,11 @@ const PriceRangeSlider = ({
     <div className="space-y-4">
       <div className="relative pt-2">
         {/* Track background */}
-        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+        <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700"></div>
 
         {/* Active range track */}
         <div
-          className="absolute h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full top-2"
+          className="absolute top-2 h-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600"
           style={{
             left: `${minPercent}%`,
             right: `${100 - maxPercent}%`,
@@ -76,7 +76,7 @@ const PriceRangeSlider = ({
           onTouchEnd={commitRange}
           onKeyUp={commitRange}
           disabled={disabled}
-          className="absolute w-full h-2 top-2 rounded-full appearance-none cursor-pointer bg-transparent pointer-events-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-indigo-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-indigo-500 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:shadow-md disabled:opacity-50"
+          className="pointer-events-none absolute top-2 h-2 w-full cursor-pointer appearance-none rounded-full bg-transparent disabled:opacity-50 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-indigo-500 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-md [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-indigo-500 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md"
         />
 
         {/* Max slider — visual updates on onChange, parent notified on release */}
@@ -91,7 +91,7 @@ const PriceRangeSlider = ({
           onTouchEnd={commitRange}
           onKeyUp={commitRange}
           disabled={disabled}
-          className="absolute w-full h-2 top-2 rounded-full appearance-none cursor-pointer bg-transparent pointer-events-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-purple-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-purple-600 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:shadow-md disabled:opacity-50"
+          className="pointer-events-none absolute top-2 h-2 w-full cursor-pointer appearance-none rounded-full bg-transparent disabled:opacity-50 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-purple-600 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-md [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-purple-600 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md"
         />
       </div>
 
@@ -99,13 +99,13 @@ const PriceRangeSlider = ({
       <div className="flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300">
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-600 dark:text-gray-400">Min:</span>
-          <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
+          <span className="font-semibold text-indigo-600 dark:text-indigo-400">
             ${min.toLocaleString()}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-600 dark:text-gray-400">Max:</span>
-          <span className="text-purple-600 dark:text-purple-400 font-semibold">
+          <span className="font-semibold text-purple-600 dark:text-purple-400">
             ${max.toLocaleString()}
           </span>
         </div>

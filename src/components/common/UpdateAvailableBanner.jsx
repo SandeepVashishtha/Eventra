@@ -43,18 +43,18 @@ export default function UpdateAvailableBanner() {
   if (!updateAvailable) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl shadow-lg">
+    <div className="fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-xl bg-blue-600 px-4 py-3 text-white shadow-lg">
       <span className="text-sm font-medium">New version available!</span>
       <button
         onClick={handleRefresh}
-        className="flex items-center gap-1.5 bg-white text-blue-600 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-50 transition-colors"
+        className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50"
       >
         <RefreshCw size={14} />
         Refresh
       </button>
       <button
         onClick={handleDismiss}
-        className="text-white/80 hover:text-white transition-colors"
+        className="text-white/80 transition-colors hover:text-white"
         aria-label="Dismiss"
       >
         <X size={16} />

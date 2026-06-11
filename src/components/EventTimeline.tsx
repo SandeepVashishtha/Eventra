@@ -191,31 +191,31 @@ export const EventTimeline: React.FC = () => {
   };
 
   return (
-    <section className="w-full py-12 px-4 sm:px-6 lg:px-8 dark:bg-slate-950 dark:text-slate-100 text-slate-950 bg-slate-100 rounded-3xl border border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.4)] my-12 relative overflow-hidden">
+    <section className="relative my-12 w-full overflow-hidden rounded-3xl border border-slate-800 bg-slate-100 px-4 py-12 text-slate-950 shadow-[0_20px_50px_rgba(0,0,0,0.4)] sm:px-6 lg:px-8 dark:bg-slate-950 dark:text-slate-100">
       {/* Absolute Decorative Background Elements */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="pointer-events-none absolute top-0 right-0 h-96 w-96 rounded-full bg-indigo-600/5 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-0 h-96 w-96 rounded-full bg-purple-600/5 blur-3xl" />
 
-      <div className="max-w-6xl mx-auto relative z-10">
+      <div className="relative z-10 mx-auto max-w-6xl">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 pb-6 border-b border-slate-800 gap-4">
+        <div className="mb-10 flex flex-col justify-between gap-4 border-b border-slate-800 pb-6 md:flex-row md:items-center">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles size={20} className="text-indigo-400 animate-pulse" />
+            <div className="mb-2 flex items-center gap-2">
+              <Sparkles size={20} className="animate-pulse text-indigo-400" />
               <span className="text-xs font-semibold tracking-wider text-indigo-400 uppercase">
                 Interactive Schedule
               </span>
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight dark:text-white sm:text-4xl bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-slate-950">
+            <h2 className="bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl dark:text-white">
               My Timeline Planner
             </h2>
-            <p className="mt-2 text-sm text-slate-400 max-w-xl">
+            <p className="mt-2 max-w-xl text-sm text-slate-400">
               Design your personalized conference day. Seamlessly schedule your registered events, track timing, and resolve conflicts instantly.
             </p>
           </div>
-          <div className="flex items-center gap-3 self-start md:self-center bg-slate-900/60 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-800">
+          <div className="flex items-center gap-3 self-start rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-2.5 backdrop-blur-md md:self-center">
             <div className="flex flex-col">
-              <span className="text-[11px] dark:text-slate-500 text-white uppercase tracking-wider font-semibold">
+              <span className="text-[11px] font-semibold tracking-wider text-white uppercase dark:text-slate-500">
                 Timeline Slots
               </span>
               <span className="text-lg font-bold text-indigo-400 tabular-nums">
@@ -232,18 +232,18 @@ export const EventTimeline: React.FC = () => {
               initial={{ opacity: 0, y: -20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              className="mb-8 p-4.5 bg-red-950/60 border border-red-500/40 rounded-2xl text-red-200 flex items-start gap-4 shadow-[0_10px_30px_rgba(239,68,68,0.15)] backdrop-blur-md"
+              className="mb-8 flex items-start gap-4 rounded-2xl border border-red-500/40 bg-red-950/60 p-4.5 text-red-200 shadow-[0_10px_30px_rgba(239,68,68,0.15)] backdrop-blur-md"
             >
-              <AlertCircle className="text-red-400 shrink-0 mt-0.5" size={20} />
+              <AlertCircle className="mt-0.5 shrink-0 text-red-400" size={20} />
               <div className="flex-1">
-                <h4 className="font-bold text-red-300 text-sm">Schedule Conflict Detected!</h4>
-                <p className="text-xs text-red-200/90 mt-1">
+                <h4 className="text-sm font-bold text-red-300">Schedule Conflict Detected!</h4>
+                <p className="mt-1 text-xs text-red-200/90">
                   Cannot schedule <strong className="text-white">"{clashAlert.newEventTitle}"</strong>. It conflicts directly with <strong className="text-white">"{clashAlert.clashingEventTitle}"</strong> on <strong className="underline decoration-red-400/50">{clashAlert.dateTime}</strong>.
                 </p>
               </div>
               <button
                 onClick={() => setClashAlert(null)}
-                className="text-red-400 hover:text-red-300 text-xs font-bold transition"
+                className="text-xs font-bold text-red-400 transition hover:text-red-300"
               >
                 Dismiss
               </button>
@@ -255,7 +255,7 @@ export const EventTimeline: React.FC = () => {
               initial={{ opacity: 0, y: 15, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 15, scale: 0.95 }}
-              className="fixed bottom-6 right-6 z-50 px-5 py-3.5 bg-slate-900 border border-indigo-500/30 rounded-2xl text-indigo-200 flex items-center gap-3 shadow-[0_15px_30px_rgba(0,0,0,0.5)] backdrop-blur-md"
+              className="fixed right-6 bottom-6 z-50 flex items-center gap-3 rounded-2xl border border-indigo-500/30 bg-slate-900 px-5 py-3.5 text-indigo-200 shadow-[0_15px_30px_rgba(0,0,0,0.5)] backdrop-blur-md"
             >
               <CheckCircle className="text-indigo-400" size={18} />
               <span className="text-sm font-semibold">{successToast}</span>
@@ -264,37 +264,37 @@ export const EventTimeline: React.FC = () => {
         </AnimatePresence>
 
         {/* Unified Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
           
           {/* Left Panel: Available Registered Events (5 Columns) */}
-          <div className="lg:col-span-5 flex flex-col gap-6">
-            <div className="bg-slate-900/50 rounded-2xl p-5 border border-slate-800">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <div className="flex flex-col gap-6 lg:col-span-5">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
+              <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
                 <CheckCircle size={18} className="text-indigo-400" />
                 Registered Events
               </h3>
-              <p className="text-xs text-slate-400 mb-5 leading-relaxed">
+              <p className="mb-5 text-xs leading-relaxed text-slate-400">
                 These are the events you are registered to attend. Select them below to add to your custom visual schedule timeline.
               </p>
 
               {availableRegisteredEvents.length === 0 ? (
-                <div className="text-center py-8 px-4 rounded-xl border border-dashed border-slate-800 bg-slate-950/50">
-                  <HelpCircle className="mx-auto text-slate-600 mb-3" size={32} />
-                  <p className="text-sm text-slate-400 font-medium">No registrations yet</p>
-                  <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                <div className="rounded-xl border border-dashed border-slate-800 bg-slate-950/50 px-4 py-8 text-center">
+                  <HelpCircle className="mx-auto mb-3 text-slate-600" size={32} />
+                  <p className="text-sm font-medium text-slate-400">No registrations yet</p>
+                  <p className="mx-auto mt-1 max-w-xs text-xs text-slate-500">
                     Register for upcoming events on the dashboard above, and they will appear here to plan!
                   </p>
                 </div>
               ) : unscheduledEvents.length === 0 ? (
-                <div className="text-center py-6 px-4 rounded-xl border border-dashed border-indigo-900/20 bg-indigo-950/5">
-                  <CheckCircle className="mx-auto text-indigo-400 mb-2" size={24} />
-                  <p className="text-xs text-indigo-300 font-semibold">All set!</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                <div className="rounded-xl border border-dashed border-indigo-900/20 bg-indigo-950/5 px-4 py-6 text-center">
+                  <CheckCircle className="mx-auto mb-2 text-indigo-400" size={24} />
+                  <p className="text-xs font-semibold text-indigo-300">All set!</p>
+                  <p className="mt-0.5 text-[11px] text-slate-400">
                     All your registered events have been successfully scheduled in your timeline.
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3 max-h-[360px] overflow-y-auto pr-1">
+                <div className="flex max-h-[360px] flex-col gap-3 overflow-y-auto pr-1">
                   <AnimatePresence initial={false}>
                     {unscheduledEvents.map((event) => (
                       <motion.div
@@ -304,16 +304,16 @@ export const EventTimeline: React.FC = () => {
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         whileHover={{ y: -1 }}
-                        className="p-3.5 bg-slate-950/80 rounded-xl border border-slate-800/80 hover:border-slate-700 hover:bg-slate-900 transition flex items-center justify-between gap-4"
+                        className="flex items-center justify-between gap-4 rounded-xl border border-slate-800/80 bg-slate-950/80 p-3.5 transition hover:border-slate-700 hover:bg-slate-900"
                       >
                         <div className="min-w-0">
                           <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-1.5 ${getCategoryStyles(event.category)}`}>
                             {event.category}
                           </span>
-                          <h4 className="text-sm font-semibold text-slate-200 truncate pr-2">
+                          <h4 className="truncate pr-2 text-sm font-semibold text-slate-200">
                             {event.title}
                           </h4>
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500 mt-1">
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
                             <span className="flex items-center gap-1 font-medium text-slate-400">
                               <Calendar size={11} className="text-slate-500" />
                               {event.date}
@@ -329,7 +329,7 @@ export const EventTimeline: React.FC = () => {
                           whileHover={{ scale: 1.08 }}
                           whileTap={{ scale: 0.92 }}
                           onClick={() => addToPlanner(event)}
-                          className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl p-2 cursor-pointer flex items-center justify-center shrink-0 shadow-lg hover:shadow-indigo-500/20 transition-all border border-indigo-500/20"
+                          className="flex shrink-0 cursor-pointer items-center justify-center rounded-xl border border-indigo-500/20 bg-indigo-600 p-2 text-white shadow-lg transition-all hover:bg-indigo-500 hover:shadow-indigo-500/20"
                           title="Schedule this event"
                         >
                           <Plus size={16} />
@@ -343,22 +343,22 @@ export const EventTimeline: React.FC = () => {
           </div>
 
           {/* Right Panel: Sleek Chronological Vertical Timeline (7 Columns) */}
-          <div className="lg:col-span-7 bg-slate-900/20 border border-slate-850 rounded-2xl p-6 flex flex-col gap-6 min-h-[400px]">
-            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+          <div className="border-slate-850 flex min-h-[400px] flex-col gap-6 rounded-2xl border bg-slate-900/20 p-6 lg:col-span-7">
+            <h3 className="mb-2 flex items-center gap-2 text-lg font-bold text-white">
               <Calendar size={18} className="text-indigo-400" />
               My Schedule Timeline
             </h3>
 
             {sortedTimeline.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-12 px-6 rounded-xl border border-dashed border-slate-800 bg-slate-950/20 text-center">
-                <Clock className="text-slate-600 mb-3 animate-pulse" size={40} />
+              <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-slate-800 bg-slate-950/20 px-6 py-12 text-center">
+                <Clock className="mb-3 animate-pulse text-slate-600" size={40} />
                 <p className="text-sm font-semibold text-slate-300">Your timeline is empty</p>
-                <p className="text-xs text-slate-500 mt-1 max-w-xs">
+                <p className="mt-1 max-w-xs text-xs text-slate-500">
                   Schedule some of your registered events using the panel on the left to map your day visually.
                 </p>
               </div>
             ) : (
-              <div className="relative pl-6 sm:pl-8 border-l border-slate-800 ml-3 flex flex-col gap-6 py-2">
+              <div className="relative ml-3 flex flex-col gap-6 border-l border-slate-800 py-2 pl-6 sm:pl-8">
                 <AnimatePresence initial={false}>
                   {sortedTimeline.map((item, index) => {
                     const parsedDate = new Date(item.date);
@@ -379,20 +379,20 @@ export const EventTimeline: React.FC = () => {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
                         transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                        className="relative group"
+                        className="group relative"
                       >
                         {/* 5. Custom bullet points on the border-left vertical line */}
-                        <div className="absolute -left-[31px] sm:-left-[39px] top-1.5 w-4.5 h-4.5 rounded-full border-3 border-indigo-950 bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] group-hover:bg-purple-500 group-hover:scale-110 group-hover:shadow-[0_0_12px_rgba(168,85,247,0.7)] transition-all duration-300 z-10 shrink-0" />
+                        <div className="absolute top-1.5 -left-[31px] z-10 h-4.5 w-4.5 shrink-0 rounded-full border-3 border-indigo-950 bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-300 group-hover:scale-110 group-hover:bg-purple-500 group-hover:shadow-[0_0_12px_rgba(168,85,247,0.7)] sm:-left-[39px]" />
 
                         {/* Event Details Card */}
-                        <div className="p-4 bg-slate-950/80 hover:bg-slate-900/90 rounded-2xl border border-slate-850 hover:border-slate-750 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-0.5 flex flex-col sm:flex-row items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
+                        <div className="border-slate-850 hover:border-slate-750 flex flex-col items-start justify-between gap-4 rounded-2xl border bg-slate-950/80 p-4 shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/90 hover:shadow-xl sm:flex-row">
+                          <div className="min-w-0 flex-1">
                             {/* Date, Time & Category Tags */}
-                            <div className="flex flex-wrap items-center gap-2 mb-2">
-                              <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-md px-2 py-0.5">
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                              <span className="flex items-center gap-1 rounded-md border border-slate-800 bg-slate-900 px-2 py-0.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                                 {formattedDate}
                               </span>
-                              <span className="text-[10px] font-bold text-indigo-400 tracking-wider uppercase flex items-center gap-1 bg-indigo-950/30 border border-indigo-900/20 rounded-md px-2 py-0.5">
+                              <span className="flex items-center gap-1 rounded-md border border-indigo-900/20 bg-indigo-950/30 px-2 py-0.5 text-[10px] font-bold tracking-wider text-indigo-400 uppercase">
                                 <Clock size={10} />
                                 {item.time}
                               </span>
@@ -402,18 +402,18 @@ export const EventTimeline: React.FC = () => {
                             </div>
 
                             {/* Title */}
-                            <h4 className="text-base font-bold text-white tracking-tight leading-tight group-hover:text-indigo-400 transition duration-300">
+                            <h4 className="text-base leading-tight font-bold tracking-tight text-white transition duration-300 group-hover:text-indigo-400">
                               {item.title}
                             </h4>
 
                             {/* Optional Details (Location, Description) */}
                             <div className="mt-2.5 flex items-center gap-3 text-xs text-slate-400">
-                              <span className="flex items-center gap-1 text-[11px] text-slate-400 shrink-0">
+                              <span className="flex shrink-0 items-center gap-1 text-[11px] text-slate-400">
                                 <MapPin size={11} className="text-pink-500/80" />
                                 {item.location || "Online"}
                               </span>
                               {item.description && (
-                                <span className="hidden sm:inline-block text-[11px] text-slate-500 truncate max-w-sm">
+                                <span className="hidden max-w-sm truncate text-[11px] text-slate-500 sm:inline-block">
                                   — {item.description}
                                 </span>
                               )}
@@ -425,7 +425,7 @@ export const EventTimeline: React.FC = () => {
                             whileHover={{ scale: 1.1, color: "#f87171" }}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => removeFromPlanner(item.id)}
-                            className="text-slate-500 hover:text-red-400 p-2 rounded-xl bg-slate-900 border border-slate-800/80 cursor-pointer hover:border-red-500/20 transition-all self-end sm:self-center shrink-0 shadow-inner"
+                            className="shrink-0 cursor-pointer self-end rounded-xl border border-slate-800/80 bg-slate-900 p-2 text-slate-500 shadow-inner transition-all hover:border-red-500/20 hover:text-red-400 sm:self-center"
                             title="Remove from timeline"
                             aria-label={`Remove ${item.title} from timeline`}
                           >

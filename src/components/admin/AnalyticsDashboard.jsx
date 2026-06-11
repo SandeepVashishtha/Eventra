@@ -52,9 +52,9 @@ const FALLBACK_CATEGORY_DATA = [
 function AnalyticsStreamBadge({ status }) {
   if (status === SSE_STATUS.CONNECTED) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 normal-case">
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 normal-case dark:text-emerald-400">
         <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex w-full h-full rounded-full opacity-75 animate-ping bg-emerald-400" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
         </span>
         SSE Live
@@ -63,8 +63,8 @@ function AnalyticsStreamBadge({ status }) {
   }
   if (status === SSE_STATUS.RECONNECTING) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-500 dark:text-amber-400 normal-case">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-500 normal-case dark:text-amber-400">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
         Reconnecting
       </span>
     );
@@ -235,12 +235,12 @@ const AnalyticsDashboard = () => {
   return (
     <div className="space-y-8 text-slate-800 dark:text-slate-100">
       {/* Tab Navigation */}
-      <div className="flex gap-2 mb-4">
+      <div className="mb-4 flex gap-2">
         <button
           onClick={triggerManualCheckin}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md transition self-start sm:self-auto"
+          className="inline-flex items-center justify-center gap-1.5 self-start rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-indigo-700 sm:self-auto"
          aria-label="Trigger manual check-in scan">
-          <Play className="w-3.5 h-3.5 fill-white" />
+          <Play className="h-3.5 w-3.5 fill-white" />
           Trigger Check-in Scan
         </button>
       </div>
@@ -250,9 +250,9 @@ const AnalyticsDashboard = () => {
       ) : (
         <>
           {/* CONTROL BANNER */}
-          <div className="flex flex-col gap-4 p-5 bg-white border shadow-sm sm:flex-row sm:items-center sm:justify-between dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl">
+          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-900">
             <div>
-              <h3 className="text-sm font-extrabold tracking-widest uppercase text-slate-400 dark:text-slate-500">
+              <h3 className="text-sm font-extrabold tracking-widest text-slate-400 uppercase dark:text-slate-500">
                 Simulate Attendee Traffic
               </h3>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -261,10 +261,10 @@ const AnalyticsDashboard = () => {
             </div>
             <button
               onClick={triggerManualCheckin}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md transition self-start sm:self-auto"
+              className="inline-flex items-center justify-center gap-1.5 self-start rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-indigo-700 sm:self-auto"
               aria-label="button"
             >
-              <Play className="w-3.5 h-3.5 fill-white" />
+              <Play className="h-3.5 w-3.5 fill-white" />
               Trigger Check-in Scan
             </button>
           </div>
@@ -276,43 +276,43 @@ const AnalyticsDashboard = () => {
                 label: "Live Checked-in Attendees",
                 value: analyticsLoading ? "—" : liveCount,
                 sub: analyticsLoading ? "Loading..." : "Real-time updates",
-                icon: <Users className="w-5 h-5" />,
+                icon: <Users className="h-5 w-5" />,
                 color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40",
               },
               {
                 label: "Scan Velocity",
                 value: `${activeCheckinsPerMinute}/min`,
                 sub: "Scans per minute avg",
-                icon: <Activity className="w-5 h-5" />,
+                icon: <Activity className="h-5 w-5" />,
                 color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40",
               },
               {
                 label: "Hours Active",
                 value: analytics?.hoursActive ?? "08h 24m",
                 sub: "Since event start",
-                icon: <Clock className="w-5 h-5" />,
+                icon: <Clock className="h-5 w-5" />,
                 color: "text-amber-500 bg-amber-50 dark:bg-amber-950/40",
               },
               {
                 label: "Security Health",
                 value: analytics?.securityHealth ?? "99.8%",
                 sub: analytics?.activeAlerts === 0 ? "Zero active alerts" : `${analytics?.activeAlerts} active alert(s)`,
-                icon: <CheckCircle2 className="w-5 h-5" />,
+                icon: <CheckCircle2 className="h-5 w-5" />,
                 color: "text-rose-500 bg-rose-50 dark:bg-rose-950/40",
               },
             ].map((stat, i) => (
               <div
                 key={i}
-                className="p-5 transition bg-white border shadow-sm dark:bg-slate-900 border-slate-205 dark:border-slate-800/80 rounded-2xl hover:shadow-md"
+                className="border-slate-205 rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-800/80 dark:bg-slate-900"
               >
                 <div className={`inline-flex p-2.5 rounded-xl ${stat.color} mb-3`}>{stat.icon}</div>
-                <p className="text-xs font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">
+                <p className="text-xs font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
                   {stat.label}
                 </p>
-                <h4 className="mt-1 text-2xl font-black text-slate-850 dark:text-slate-100">
+                <h4 className="text-slate-850 mt-1 text-2xl font-black dark:text-slate-100">
                   {stat.value}
                 </h4>
-                <p className="text-[10px] text-slate-450 dark:text-slate-400 mt-1">{stat.sub}</p>
+                <p className="text-slate-450 mt-1 text-[10px] dark:text-slate-400">{stat.sub}</p>
               </div>
             ))}
           </div>
@@ -320,12 +320,12 @@ const AnalyticsDashboard = () => {
           {/* REAL-TIME CHARTS GRID */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* HOURLY REGISTRATION GRAPH */}
-            <div className="p-6 bg-white border shadow-md lg:col-span-2 dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
-                <TrendingUp className="w-4 h-4 text-indigo-500" />
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md lg:col-span-2 dark:border-slate-800/80 dark:bg-slate-900">
+              <h3 className="mb-4 flex items-center gap-1.5 text-sm font-black tracking-widest text-slate-400 uppercase">
+                <TrendingUp className="h-4 w-4 text-indigo-500" />
                 Check-in Velocity Graph (Live)
               </h3>
-              <div className="w-full h-64">
+              <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={hourlyData}>
                     <defs>
@@ -359,24 +359,24 @@ const AnalyticsDashboard = () => {
             </div>
 
             {/* CATEGORIES DISTRIBUTION */}
-            <div className="flex flex-col justify-between p-6 bg-white border shadow-md dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl">
+            <div className="flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-md dark:border-slate-800/80 dark:bg-slate-900">
               <div>
-                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
-                  <Zap className="w-4 h-4 text-amber-500 fill-amber-500/20" />
+                <h3 className="mb-4 flex items-center gap-1.5 text-sm font-black tracking-widest text-slate-400 uppercase">
+                  <Zap className="h-4 w-4 fill-amber-500/20 text-amber-500" />
                   Category Registration Distribution
                   {!analyticsLoading && analytics?.categoryBreakdown && (
-                    <span className="ml-auto text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                    <span className="ml-auto rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
                       Live
                     </span>
                   )}
                 </h3>
 
                 {analyticsLoading ? (
-                  <div className="flex items-center justify-center w-full h-44">
-                    <span className="text-xs text-slate-400 animate-pulse">Loading data...</span>
+                  <div className="flex h-44 w-full items-center justify-center">
+                    <span className="animate-pulse text-xs text-slate-400">Loading data...</span>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center w-full h-44">
+                  <div className="flex h-44 w-full items-center justify-center">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -407,13 +407,13 @@ const AnalyticsDashboard = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2 mt-4">
+              <div className="mt-4 grid grid-cols-2 gap-2">
                 {categoryData.map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-2 p-2 border bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-850 rounded-xl"
+                    className="dark:border-slate-850 flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-2 dark:bg-slate-950"
                   >
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: item.color }} />
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} />
                     <div>
                       <div className="text-[10px] font-bold text-slate-400">{item.name}</div>
                       <div className="text-xs font-black text-slate-800 dark:text-slate-100">

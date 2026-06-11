@@ -18,7 +18,7 @@ const FeedbackButton = () => {
     >
       <Link
         to="/feedback"
-        className="relative flex items-center justify-center p-3.5 bg-white text-black border border-black/15 rounded-full shadow-lg hover:bg-gray-50 transition-all duration-300 group"
+        className="group relative flex items-center justify-center rounded-full border border-black/15 bg-white p-3.5 text-black shadow-lg transition-all duration-300 hover:bg-gray-50"
         // title="Share Feedback"
         aria-label="Share Feedback"
       >
@@ -31,9 +31,9 @@ const FeedbackButton = () => {
         </motion.div>
 
         {/* 🔥 FIX: Changed mr-3 to ml-3. Since it's positioned left-full (on the right), it needs left margin to not overlap the button */}
-        <div className="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-lg bg-white border border-black/15 px-3 py-2 text-sm text-black opacity-0 shadow-md transition-opacity duration-300 group-hover:opacity-100">
+        <div className="pointer-events-none absolute left-full ml-3 rounded-lg border border-black/15 bg-white px-3 py-2 text-sm whitespace-nowrap text-black opacity-0 shadow-md transition-opacity duration-300 group-hover:opacity-100">
           Share your feedback
-          <div className="absolute right-full top-1/2 -translate-y-1/2 transform border-4 border-transparent border-r-white"></div>
+          <div className="absolute top-1/2 right-full -translate-y-1/2 transform border-4 border-transparent border-r-white"></div>
         </div>
       </Link>
     </motion.div>

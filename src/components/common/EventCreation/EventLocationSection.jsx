@@ -7,16 +7,16 @@ const FormField = ({ htmlFor, label, icon: Icon, error, children, required, hint
 
   return (
     <div className="space-y-2">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
-        {Icon && <Icon className="w-5 h-5 text-indigo-500 inline-block mr-2" aria-hidden="true" />}
+      <label htmlFor={htmlFor} className="block cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+        {Icon && <Icon className="mr-2 inline-block h-5 w-5 text-indigo-500" aria-hidden="true" />}
         {label}
-        {required && <span className="text-red-600 ml-1" aria-hidden="true">*</span>}
+        {required && <span className="ml-1 text-red-600" aria-hidden="true">*</span>}
         {required && <span className="sr-only"> (Required)</span>}
       </label>
       {children}
       {hint && <p id={`${htmlFor}-hint`} className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
       {error && (
-        <p id={errorId} className="text-red-500 text-sm flex items-center gap-1" role="alert">
+        <p id={errorId} className="flex items-center gap-1 text-sm text-red-500" role="alert">
           <span role="img" aria-hidden="true">⚠️</span>
           {error}
         </p>
@@ -32,7 +32,7 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
   return (
     <div className="space-y-8">
       {/* Type Switcher */}
-      <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl max-w-sm" role="group" aria-label="Event Type Selection">
+      <div className="flex max-w-sm rounded-xl bg-gray-100 p-1 dark:bg-gray-800" role="group" aria-label="Event Type Selection">
         <button
           type="button"
           // Deep Fix 3: Added aria-pressed for screen reader state context
@@ -42,7 +42,7 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
             !formData.isVirtual ? "bg-white dark:bg-gray-700 shadow-sm text-indigo-600" : "text-gray-500"
           }`}
         >
-          <MapPin className="w-4 h-4" aria-hidden="true" /> In-Person
+          <MapPin className="h-4 w-4" aria-hidden="true" /> In-Person
         </button>
         <button
           type="button"
@@ -52,11 +52,11 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
             formData.isVirtual ? "bg-white dark:bg-gray-700 shadow-sm text-indigo-600" : "text-gray-500"
           }`}
         >
-          <Globe className="w-4 h-4" aria-hidden="true" /> Virtual
+          <Globe className="h-4 w-4" aria-hidden="true" /> Virtual
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {formData.isVirtual ? (
           <FormField htmlFor="virtual-link-input" label="Meeting Link" icon={Link2} error={errors.virtualLink} required>
             <input
@@ -96,7 +96,7 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
                 value={formData.location.city}
                 onChange={(e) => handleNestedChange("location", "city", e.target.value)}
                 placeholder="e.g., Mumbai"
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-gray-300 bg-white p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700"
               />
             </FormField>
           </>
@@ -104,7 +104,7 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
       </div>
 
       {/* Date and Time */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <FormField htmlFor="date-input" label="Date" icon={Calendar} error={errors.date} required>
           <input
             type="date"

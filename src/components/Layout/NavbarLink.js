@@ -4,7 +4,7 @@ const NavbarLink = ({ navItems = [] }) => { // 🔥 FIX: Default prop to prevent
   const location = useLocation(); // get current path
 
   return (
-    <div className="hidden md:flex space-x-3">
+    <div className="hidden space-x-3 md:flex">
       {navItems.map((item) => {
         // 🔥 FIX: Improved active state logic to handle sub-routes (e.g., /events/123)
         const isActive = 
@@ -38,7 +38,7 @@ const NavbarLink = ({ navItems = [] }) => { // 🔥 FIX: Default prop to prevent
 
             {/* Optional subtle hover background */}
             {/* UPDATED: Hover background color and opacity */}
-            <span className="absolute inset-0 rounded-lg bg-indigo-50 dark:bg-indigo-900/50 opacity-0 transition-opacity duration-300 group-hover:opacity-20 dark:group-hover:opacity-40"></span>
+            <span className="absolute inset-0 rounded-lg bg-indigo-50 opacity-0 transition-opacity duration-300 group-hover:opacity-20 dark:bg-indigo-900/50 dark:group-hover:opacity-40"></span>
           </Link>
         );
       })}

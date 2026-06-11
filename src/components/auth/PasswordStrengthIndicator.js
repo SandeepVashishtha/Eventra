@@ -73,7 +73,7 @@ const PasswordStrengthIndicator = ({ password }) => {
     <AnimatePresence>
       {password && (
         <motion.div
-          className="mt-3 p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-800/80 backdrop-blur-md"
+          className="mt-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/30"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
@@ -90,7 +90,7 @@ const PasswordStrengthIndicator = ({ password }) => {
           </div>
 
           {/* Smooth Dynamic Progress Bar */}
-          <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 mt-2 overflow-hidden relative">
+          <div className="relative mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
             <motion.div
               className={`h-full rounded-full transition-all duration-500 ${getBarColorClass(score)}`}
               initial={{ width: "0%" }}
@@ -112,7 +112,7 @@ const PasswordStrengthIndicator = ({ password }) => {
           </motion.p>
 
           {/* Responsive live 2-column checklist grid */}
-          <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-slate-200/40 dark:border-slate-800/40 pt-3">
+          <ul className="mt-4 grid grid-cols-1 gap-2 border-t border-slate-200/40 pt-3 sm:grid-cols-2 dark:border-slate-800/40">
             {criteria.map((c, index) => (
               <li
                 key={index}
@@ -131,7 +131,7 @@ const PasswordStrengthIndicator = ({ password }) => {
                 >
                   {c.met ? "✓" : "•"}
                 </span>
-                <span className="font-semibold truncate">{c.label}</span>
+                <span className="truncate font-semibold">{c.label}</span>
               </li>
             ))}
           </ul>

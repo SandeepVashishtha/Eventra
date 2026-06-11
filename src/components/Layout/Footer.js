@@ -63,7 +63,7 @@ const socialLinks = [
     href: "https://github.com/sandeepvashishtha/Eventra",
     icon: (
       <FaGithub
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        className="size-10 rounded-full bg-white p-2 text-black shadow-sm transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:bg-gray-100 hover:shadow-lg dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
         size={20}
       />
     ),
@@ -73,7 +73,7 @@ const socialLinks = [
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
     icon: (
       <FaLinkedin
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        className="size-10 rounded-full bg-white p-2 text-black shadow-sm transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:bg-gray-100 hover:shadow-lg dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
         size={20}
       />
     ),
@@ -83,7 +83,7 @@ const socialLinks = [
   href: "https://discord.gg/6MQ9r5nHT",
   icon: (
     <SiDiscord
-      className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+      className="size-10 rounded-full bg-white p-2 text-black shadow-sm transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:bg-gray-100 hover:shadow-lg dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
       size={20}
       />
     ),
@@ -208,20 +208,20 @@ const Newsletter = () => {
 
   return (
     <div className="mt-4">
-      <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-2">
+      <h4 className="mb-2 text-sm font-semibold tracking-wider text-gray-900 uppercase dark:text-white">
         {t("footer.newsletter.heading")}
       </h4>
 
-      <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">
+      <p className="mb-2 text-sm text-gray-600 dark:text-gray-300">
         {t("footer.newsletter.description")}
       </p>
 
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col sm:flex-row gap-3"
+        className="flex flex-col gap-3 sm:flex-row"
       >
         <div className="relative flex-grow">
-          <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <FaEnvelope className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
 
           <input
             type="email"
@@ -237,7 +237,7 @@ const Newsletter = () => {
               }
             }}
             placeholder={t("footer.newsletter.placeholder")}
-            className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
+            className="w-full rounded-md border border-gray-300 bg-white py-2.5 pr-4 pl-10 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             disabled={isSubmitting}
             aria-describedby={
               feedback.message
@@ -253,7 +253,7 @@ const Newsletter = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="...bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 dark:from-white dark:to-gray-200...text-white dark:text-black..."
+          className="...bg-gradient-to-r dark:to-gray-200...text-white dark:text-black... from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 dark:from-white"
         >
           {isSubmitting
             ? t("footer.newsletter.subscribing")
@@ -286,7 +286,7 @@ const SocialLinksRender = () => {
   const { t } = useTranslation();
   return (
   <div className="mt-6">
-    <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-3">
+    <h4 className="mb-3 text-sm font-semibold tracking-wider text-gray-900 uppercase dark:text-white">
       {t("footer.followUs")}
     </h4>
 
@@ -295,7 +295,7 @@ const SocialLinksRender = () => {
         <ExternalLink
           key={link.name}
           href={link.href}
-          className="text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 rounded-full"
+          className="rounded-full text-gray-500 transition-colors hover:text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:outline-none dark:text-gray-300 dark:hover:text-indigo-400"
           aria-label={link.name}
           title={link.name}
         >
@@ -321,7 +321,7 @@ const FooterLinksRender = () => {
           key={key}
           className="py-2"
         >
-          <h4 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-widest mb-6">
+          <h4 className="mb-6 text-xs font-bold tracking-widest text-gray-900 uppercase dark:text-white">
             {t(footerSectionKeys[key])}
           </h4>
 
@@ -330,10 +330,10 @@ const FooterLinksRender = () => {
               <li key={link.nameKey}>
                 <Link
                   to={link.href}
-                  className="text-sm text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 rounded"
+                  className="group flex items-center gap-4 rounded text-sm text-gray-600 transition-all duration-300 hover:translate-x-1 hover:text-black focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:outline-none dark:text-gray-300 dark:hover:text-white"
                 >
                   {link.icon && (
-                    <span className="text-gray-700 dark:text-gray-200 group-hover:scale-110 transition-all duration-300">
+                    <span className="text-gray-700 transition-all duration-300 group-hover:scale-110 dark:text-gray-200">
                       {link.icon}
                     </span>
                   )}
@@ -353,12 +353,12 @@ const FooterLinksRender = () => {
 const Footer = () => {
   const { t } = useTranslation();
   return (
-    <footer className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100  dark:border-gray-800 transition-colors duration-500">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+    <footer className="relative z-50 border-t border-gray-100 bg-white transition-colors duration-500 dark:border-gray-800 dark:bg-gray-900">
+      <div className="mx-auto max-w-7xl px-4 pt-12 pb-6 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-4 lg:col-span-2">
             <h2
-              className="text-2xl sm:text-3xl font-bold inline-block text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-black dark:from-white dark:to-gray-300 hover:from-indigo-600 hover:to-purple-600 dark:hover:from-indigo-400 dark:hover:to-purple-400 transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-default"
+              className="inline-block cursor-default bg-gradient-to-r from-gray-900 to-black bg-clip-text text-2xl font-bold text-transparent transition-all duration-300 hover:-translate-y-1 hover:scale-105 hover:from-indigo-600 hover:to-purple-600 sm:text-3xl dark:from-white dark:to-gray-300 dark:hover:from-indigo-400 dark:hover:to-purple-400"
               style={{
                 fontFamily:
                   "Anton, sans-serif",
@@ -367,7 +367,7 @@ const Footer = () => {
               Eventra
             </h2>
 
-            <p className="text-gray-600 dark:text-gray-300 text-sm">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               {t("footer.tagline")}
             </p>
 
@@ -381,22 +381,22 @@ const Footer = () => {
       </div>
 
       {/* Bottom Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-        <p className="text-gray-600 dark:text-gray-300 text-sm">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 border-t border-gray-100 px-4 py-6 sm:px-6 md:flex-row lg:px-8 dark:border-gray-800">
+        <p className="text-sm text-gray-600 dark:text-gray-300">
           © {new Date().getFullYear()} Eventra. {t("footer.rights")}
         </p>
 
         <div className="flex gap-6 text-sm text-gray-600 dark:text-gray-300">
           <Link
             to="/privacy"
-            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 rounded"
+            className="rounded transition-colors hover:text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:outline-none dark:hover:text-indigo-400"
           >
             {t("footer.privacy")}
           </Link>
 
           <Link
             to="/terms"
-            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 rounded"
+            className="rounded transition-colors hover:text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:outline-none dark:hover:text-indigo-400"
           >
             {t("footer.terms")}
           </Link>
