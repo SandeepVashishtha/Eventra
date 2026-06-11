@@ -483,7 +483,7 @@ const EventRegistration = () => {
     // guards above rather than being allowed to start a parallel flow.
     isSubmittingRef.current = true;
     registrationLocks.set(eventId, true);
-
+    setSubmitting(true);  
     let conflictDetected = false;
     try {
       const isFull = await checkEventCapacity(eventId, event);
@@ -512,6 +512,7 @@ const EventRegistration = () => {
       // without blocking future attempts. handleConflictProceed re-acquires.
       isSubmittingRef.current = false;
       registrationLocks.delete(eventId);
+      setSubmitting(false);             // ← ADD THIS LINE
       return;
     }
 
