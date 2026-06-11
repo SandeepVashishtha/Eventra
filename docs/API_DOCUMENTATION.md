@@ -1460,7 +1460,6 @@ Requires a valid Bearer JWT in the `Authorization` header. Any authenticated use
 | `404 Not Found` | If the event or authenticated user does not exist |
 | `409 Conflict` | If the user has already submitted feedback for the event |
 
-
 ---
 
 # Notification APIs
@@ -1503,10 +1502,10 @@ If the authenticated user has no notifications:
 
 ### Notes
 
-* Only notifications belonging to the authenticated user are returned.
-* The response includes read/unread status using the `read` field.
-* Notifications are returned in newest-first order.
-* Pagination is not currently included.
+- Only notifications belonging to the authenticated user are returned.
+- The response includes read/unread status using the `read` field.
+- Notifications are returned in newest-first order.
+- Pagination is not currently included.
 
 ---
 
