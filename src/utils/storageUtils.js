@@ -2,29 +2,19 @@ export const saveToStorage = (key, value) => {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
-    console.error(`Failed to save "${key}" to storage:`, error);
+    console.error("Storage save failed:", error);
   }
 };
 
 export const loadFromStorage = (key, fallbackValue) => {
   try {
-    const storedValue = localStorage.getItem(key);
+    const stored = localStorage.getItem(key);
 
-    if (storedValue === null || storedValue === undefined) {
-      return fallbackValue;
-    }
+    if (!stored) return fallbackValue;
 
-    return JSON.parse(storedValue);
+    return JSON.parse(stored);
   } catch (error) {
-    console.error(`Failed to load "${key}" from storage:`, error);
+    console.error("Storage load failed:", error);
     return fallbackValue;
-  }
-};
-
-export const removeFromStorage = (key) => {
-  try {
-    localStorage.removeItem(key);
-  } catch (error) {
-    console.error(`Failed to remove "${key}" from storage:`, error);
   }
 };
