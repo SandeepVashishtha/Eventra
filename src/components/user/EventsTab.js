@@ -23,6 +23,8 @@ import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import { saveToStorage, loadFromStorage } from "../../utils/storageUtils";
+
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -331,11 +333,21 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     debouncedTerm,
     setSearchTerm: setSearchQuery,
     isDebouncing,
-  } = useDebouncedSearch("", 300);
+  } = useDebouncedSearch(
+  loadFromStorage("eventSearchQuery", ""),
+  300
+)
+const [filterStatus, setFilterStatus] = useState(() =>
+  loadFromStorage("eventFilterStatus", "All")
+);
 
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [filterType, setFilterType] = useState("All");
-  const [sortBy, setSortBy] = useState("soonest");
+const [filterType, setFilterType] = useState(() =>
+  loadFromStorage("eventFilterType", "All")
+);
+
+const [sortBy, setSortBy] = useState(() =>
+  loadFromStorage("eventSortBy", "soonest")
+);
   const [cancelTarget, setCancelTarget] = useState(null);
 
   const [recentSearches,
@@ -360,11 +372,21 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     return types.map((type) => type.charAt(0).toUpperCase() + type.slice(1));
   }, [registeredEvents, hostedEvents]);
 
+
+const normalizedSearch = debouncedTerm.trim().toLowerCase();
+
+useEffect(() => {
+  saveToStorage("eventSearchQuery", searchQuery);
+  saveToStorage("eventFilterStatus", filterStatus);
+  saveToStorage("eventFilterType", filterType);
+  saveToStorage("eventSortBy", sortBy);
+}, [searchQuery, filterStatus, filterType, sortBy]);
+
   const filteredEvents = useMemo(() => {
     const pool = [...registeredEvents, ...hostedEvents];
     const result = pool.filter((event) => {
       const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
-      const matchSearch = !debouncedTerm || searchTarget.includes(debouncedTerm.toLowerCase());
+  const matchSearch = !debouncedTerm || searchTarget.includes(normalizedSearch);
       const status = getEventStatus(event);
       const matchStatus = filterStatus === "All" || status === filterStatus;
       const typeLabel = event?.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : "";
