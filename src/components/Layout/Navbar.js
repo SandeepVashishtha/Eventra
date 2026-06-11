@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
@@ -254,7 +254,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         Skip to main content
       </a>
       <div
-        className={`fixed inset-0 z-[100] transition-opacity duration-300 ${
+        className={`fixed inset-0 z-100 transition-opacity duration-300 ${
           isMobileMenuOpen || showLogoutModal
             ? "bg-black/60 opacity-100"
             : showProfileDropdown || openDropdown
@@ -270,11 +270,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
-        className="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 max-w-7xl mx-auto z-[90] shadow-lg shadow-indigo-500/5 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border border-gray-200/50 dark:border-slate-800/80 transition-all duration-300 overflow-visible rounded-2xl"
+        className="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 max-w-7xl mx-auto z-90 shadow-lg shadow-indigo-500/5 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border border-gray-200/50 dark:border-slate-800/80 transition-all duration-300 overflow-visible rounded-2xl"
       >
         <div className="neon-navbar-border"></div>
 
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between min-h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-visible">
+        <div className="max-w-screen-2xl mx-auto flex items-center justify-between min-h-17 px-4 md:px-6 xl:px-10 gap-4 w-full overflow-visible">
           
           {/* Logo */}
           <Link
