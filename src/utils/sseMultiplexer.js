@@ -550,6 +550,14 @@ class SseMultiplexer {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
     }
+    if (this.localStorageInterval) {
+      clearInterval(this.localStorageInterval);
+      this.localStorageInterval = null;
+    }
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
     this.lastSeenFollowers = null;
   }
 
