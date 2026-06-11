@@ -130,6 +130,9 @@ const useBookmarks = (userId = "guest") => {
   }, [bookmarks]);
 
   // Cross-tab sync: update state when another tab writes to the same key.
+  const bookmarksRef = useRef(bookmarks);
+  bookmarksRef.current = bookmarks;
+
   useEffect(() => {
     const handleStorageEvent = (e) => {
       if (e.key !== storageKeyRef.current) return;
@@ -138,7 +141,7 @@ const useBookmarks = (userId = "guest") => {
           const p = JSON.parse(e.newValue); 
           if (!Array.isArray(p)) return [];
           // Deep merge: combine existing local state with incoming storage state, keeping newest by savedAt
-          const merged = new Map([...bookmarks.map(b => [b.id, b]), ...p.map(b => [b.id, b])]);
+          const merged = new Map([...bookmarksRef.current.map(b => [b.id, b]), ...p.map(b => [b.id, b])]);
           return Array.from(merged.values()).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
         } catch { return []; }
       })() : [];
