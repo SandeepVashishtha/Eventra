@@ -20,6 +20,11 @@ const SponsorDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [leads, setLeads] = useState([]);
+  const [analytics, setAnalytics] = useState({
+  boothVisits: 0,
+  qrScans: 0,
+  engagementRate: 0,
+});
   const [isSaving, setIsSaving] = useState(false);
 
   // Mock analytics for the dashboard
@@ -42,13 +47,31 @@ const SponsorDashboard = () => {
 
     // Load captured leads
     const savedLeads = localStorage.getItem("eventra_sponsor_leads");
-    if (savedLeads) {
-      try {
-        setLeads(safeJsonParse(savedLeads, []).reverse()); // Newest first
-      } catch (e) {
-        console.error("Failed to parse sponsor leads", e);
-      }
-    }
+if (savedLeads) {
+  try {
+    const parsedLeads = safeJsonParse(savedLeads, []);
+
+    setLeads([...parsedLeads].reverse());
+
+    setAnalytics({
+      boothVisits: parsedLeads.length * 3,
+      qrScans: parsedLeads.length,
+      engagementRate:
+        parsedLeads.length > 0
+          ? (
+              (parsedLeads.length /
+                (parsedLeads.length * 3)) *
+              100
+            ).toFixed(1)
+          : 0,
+    });
+  } catch (e) {
+    console.error(
+      "Failed to parse sponsor leads",
+      e
+    );
+  }
+}
   }, []);
 
   const handleSaveSettings = (e) => {
@@ -89,6 +112,12 @@ const SponsorDashboard = () => {
     if (window.confirm("Are you sure you want to clear all leads? This cannot be undone.")) {
       localStorage.removeItem("eventra_sponsor_leads");
       setLeads([]);
+
+      setAnalytics({
+        boothVisits: 0,
+        qrScans: 0,
+        engagementRate: 0,
+      });
       toast.success("Leads cleared.");
     }
   };
@@ -143,6 +172,34 @@ const SponsorDashboard = () => {
                 <BarChart size={18} className="text-indigo-500" />
                 Real-Time Booth Analytics
               </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
+    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+      Booth Visits
+    </h3>
+    <p className="text-3xl font-black">
+      {analytics.boothVisits}
+    </p>
+  </div>
+
+  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
+    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+      QR Lead Scans
+    </h3>
+    <p className="text-3xl font-black">
+      {analytics.qrScans}
+    </p>
+  </div>
+
+  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
+    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+      Engagement Rate
+    </h3>
+    <p className="text-3xl font-black">
+      {analytics.engagementRate}%
+    </p>
+  </div>
+</div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
