@@ -48,7 +48,7 @@ Set at least one backend URL before starting the app. `VITE_API_URL` is preferre
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public push-notification key |
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
 | `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN; only used in production builds |
-| `JWT_SECRET` | Yes (server-side) | JWT signing secret for Edge Middleware auth verification |
+| `JWT_SECRET` | Yes (server-side) | JWT signing secret for Edge Middleware auth verification and SSE mock server token generation/validation |
 | `BLOCKED_COUNTRIES` | No (server-side) | Comma-separated ISO 3166-1 alpha-2 country codes to block |
 
 ## Geographic Access Restrictions
