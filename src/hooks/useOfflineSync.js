@@ -375,6 +375,23 @@ const useOfflineSync = () => {
         }
       } finally {
         isSyncing.current = false;
+
+        // Emit the unified completion event so UI components (e.g. OfflineManager)
+        // that listen for eventra-offline-queue-processed can reset their sync state.
+        // offlineQueue.processQueue() emits this event via notifyQueueProcessed(),
+        // but useOfflineSync runs its own replay loop independently and previously
+        // never emitted it, leaving the OfflineManager spinner stuck permanently.
+        if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+          window.dispatchEvent(
+            new CustomEvent("eventra-offline-queue-processed", {
+              detail: {
+                succeeded: successCount,
+                dropped: droppedCount,
+                remaining: failedQueue.length,
+              },
+            })
+          );
+        }
       }
     };
 
