@@ -2,13 +2,6 @@ import axios from "axios";
 import { ENV } from "./env.js";
 import { logger } from "../utils/logger.js";
 import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
-import {
-  setOnUnauthorizedHandler,
-  setAuthToken,
-  createRequestInterceptor,
-  createResponseInterceptor,
-} from "./api/interceptors.js";
-import { ApiError, RateLimitError } from "./api/errors.js";
 import { setupRequestInterceptor, setupResponseInterceptor } from "./api/interceptors.js";
 
 // ---------------------------------------------------------------------------
@@ -35,12 +28,6 @@ const DEPLOYED_BACKEND_URL =
 
 const resolveEnvApiBaseUrl = () => {
   const envUrl = ENV.API_URL;
-  if (envUrl) return normalizeApiBaseUrl(envUrl);
-  if (!isDev) {
-    logger.warn(`VITE_API_URL missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
-    return "";
-  }
-  return "http://localhost:8080";
   if (envUrl) {
     return normalizeApiBaseUrl(envUrl);
   }
@@ -71,46 +58,15 @@ const API = axios.create({
   withCredentials: true,
 });
 
-API.interceptors.request.use(createRequestInterceptor(isDev));
+let onUnauthorized = null;
+let _authToken = null;
 
-const { fulfill, reject } = createResponseInterceptor(API);
-API.interceptors.response.use(fulfill, reject);
-
-export { setOnUnauthorizedHandler, setAuthToken };
-
-// ---------------------------------------------------------------------------
-// Request helpers
-// ---------------------------------------------------------------------------
-
-const normalizeRequestConfig = (configOrToken = {}) => {
-  const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-  if ("skipAuth" in config) delete config.skipAuth;
-  return config;
+export const setOnUnauthorizedHandler = (handler) => {
+  onUnauthorized = handler;
 };
-
-const wrapHeaders = (headers) => {
-  if (!headers) return { get: () => null };
-  if (typeof headers.get === "function") return headers;
-  return {
-    get: (key) => headers[key] || headers[key.toLowerCase()] || null,
-  };
+export const setAuthToken = (token) => {
+  _authToken = token;
 };
-
-const wrapAxiosResponse = (response) => {
-  const wrappedHeaders = wrapHeaders(response.headers);
-  return {
-    ...response,
-    headers: wrappedHeaders,
-    ok: response.status >= 200 && response.status < 300,
-    json: async () => response.data,
-    text: async () =>
-      typeof response.data === "string" ? response.data : JSON.stringify(response.data),
-  };
-};
-
-export { ApiError, RateLimitError, normalizeApiError };
-export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
-export const setAuthToken = (token) => { _authToken = token; };
 
 const getAuthToken = () => _authToken;
 const getOnUnauthorized = () => onUnauthorized;
@@ -202,7 +158,6 @@ export const API_ENDPOINTS = {
   },
 };
 
-
 const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
   if ("skipAuth" in config) delete config.skipAuth;
@@ -225,49 +180,6 @@ const wrapAxiosResponse = (response) => {
     text: async () =>
       typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };
-};
-
-const normalizeApiError = (error) => {
-  const config = error.config || {};
-  const status = error?.response?.status;
-
-  if (
-    error.code === "ECONNABORTED" ||
-    error.name === "AbortError" ||
-    error.message?.includes("timeout")
-  ) {
-    return new ApiError(
-      `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-      { status, isTimeout: true },
-    );
-  }
-
-  if (!error.response) {
-    return new ApiError(
-      error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-      { status, isNetworkError: true },
-    );
-  }
-
-  if (status === 429) {
-    return new RateLimitError(
-      error.response?.data?.message || "Too many requests, please try again later.",
-      { status, data: error.response?.data || null },
-    );
-  }
-
-  return new ApiError(
-    error.response?.data?.message || error.message || `Request failed with status ${status}`,
-    { status, data: error.response?.data || null },
-  );
-};
-
-const buildAxiosConfig = (url, options = {}) => {
-  const { signal, headers, ...rest } = options;
-  const config = normalizeRequestConfig(rest);
-  if (signal) config.signal = signal;
-  if (headers) config.headers = { ...config.headers, ...headers };
-  return { url, config };
 };
 
 export const apiUtils = {
@@ -301,9 +213,18 @@ export const apiUtils = {
 
 export default API;
 
+export { ApiError, RateLimitError, normalizeApiError };
+
+// Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {
   store: new Map(),
-  get(key) { return this.store.get(key); },
-  set(key, val) { this.store.set(key, val); },
-  clear() { this.store.clear(); },
+  get(key) {
+    return this.store.get(key);
+  },
+  set(key, val) {
+    this.store.set(key, val);
+  },
+  clear() {
+    this.store.clear();
+  },
 };

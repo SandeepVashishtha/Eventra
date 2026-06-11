@@ -1,11 +1,7 @@
 import { logger } from "../../utils/logger.js";
 import { getCSRFToken } from "../../utils/csrfToken.js";
 import { syncServerTimeFromHeader } from "../../utils/timeSync.js";
-import { normalizeApiError } from "./errors.js";
-import { syncServerTimeFromHeader } from "../../utils/timeSync.js";
-import { getCSRFToken } from "../../utils/csrfToken.js";
-import { logger } from "../../utils/logger.js";
-import { ApiError, RateLimitError } from "./errors.js";
+import { ApiError, RateLimitError, normalizeApiError } from "./errors.js";
 
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
 const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
@@ -82,7 +78,7 @@ export const createResponseInterceptor = (API) => {
 
   return { fulfill, reject };
 };
-const normalizeApiError = (error, timeoutMs) => {
+const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
   const config = error.config || {};
   const status = error?.response?.status;
 
@@ -187,7 +183,7 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
         await new Promise((resolve) => setTimeout(resolve, delay));
         return api(config);
       }
-      throw normalizeApiError(error, timeoutMs);
+      throw normalizeApiErrorWithTimeout(error, timeoutMs);
     },
   );
 }
