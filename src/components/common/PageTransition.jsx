@@ -61,21 +61,19 @@ const getTransition = (pathname) => {
     return { duration: 0.28, ease: [0.32, 0, 0.67, 0] };
   }
   return { duration: 0.22, ease: [0.25, 0.1, 0.25, 1] };
-};
-
 const PageTransition = ({ children }) => {
   const location = useLocation();
   const prefersReducedMotion = useReducedMotion();
-  const [isSlow, setIsSlow] = useState(false);
-
-  useEffect(() => {
-    setIsSlow(checkSlowConnection());
-  }, []);
+  const [isSlow] = useState(() => checkSlowConnection());
 
   const skipAnimation = prefersReducedMotion || isSlow;
 
   if (skipAnimation) {
-    return <>{children}</>;
+    return (
+      <Suspense fallback={<div className="min-h-screen w-full bg-bg" />}>
+        {children}
+      </Suspense>
+    );
   }
 
   const variants = getVariants(location.pathname);
@@ -97,10 +95,10 @@ const PageTransition = ({ children }) => {
           backfaceVisibility: "hidden", // Prevent flicker
         }}
       >
-        {children}
+        <Suspense fallback={<div className="min-h-[50vh] w-full bg-bg" />}>
+          {children}
+        </Suspense>
       </motion.div>
     </AnimatePresence>
   );
 };
-
-export default PageTransition;

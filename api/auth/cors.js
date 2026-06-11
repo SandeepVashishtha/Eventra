@@ -23,14 +23,21 @@ const isLocalDevelopmentOrigin = (origin) =>
 
 export const buildCorsHeaders = (req = {}) => {
   const requestOrigin = req.headers?.origin || "";
+  
+  if (!requestOrigin) {
+    // Reject requests without Origin header to prevent CSRF/resource leakage
+    return {};
+  }
+
   const allowedOrigins = parseAllowedOrigins();
-  const allowedOrigin =
-    requestOrigin && (allowedOrigins.includes(requestOrigin) || isLocalDevelopmentOrigin(requestOrigin))
-      ? requestOrigin
-      : allowedOrigins[0];
+  const isAllowed = allowedOrigins.includes(requestOrigin) || isLocalDevelopmentOrigin(requestOrigin);
+
+  if (!isAllowed) {
+    return {};
+  }
 
   return {
-    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Origin": requestOrigin,
     "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
