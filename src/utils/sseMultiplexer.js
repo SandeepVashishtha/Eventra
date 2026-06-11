@@ -1,4 +1,5 @@
 import { logger } from "./logger.js";
+import { ENV } from "../config/env.js";
 import { API_BASE_URL } from "../config/api.js";
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
@@ -423,6 +424,7 @@ class SseMultiplexer {
   }
 
   openEventSource(path) {
+    const sseBaseUrl = ENV.API_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
     const sseBaseUrl =
       API_BASE_URL ||
       (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
