@@ -181,6 +181,8 @@ Use `.env.example` as the source of truth. Backend configuration is explicit: se
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public web-push key |
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
 | `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN, used only in production |
+| `JWT_SECRET` | Yes (server-side) | JWT signing secret for Edge Middleware auth verification |
+| `BLOCKED_COUNTRIES` | No (server-side) | Comma-separated ISO 3166-1 alpha-2 country codes to block |
 
 Examples:
 
@@ -195,6 +197,30 @@ BACKEND_URL=https://api.example.com
 ```
 
 Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variables because they are exposed to the client bundle.
+
+### Geographic Access Restrictions
+
+The Edge Middleware supports configurable country-based access restrictions via the `BLOCKED_COUNTRIES` environment variable. This is a server-side configuration that affects all incoming requests.
+
+**Configuration:**
+- Set `BLOCKED_COUNTRIES` to a comma-separated list of two-letter ISO 3166-1 alpha-2 country codes
+- Leave empty to allow access from all countries (default behavior)
+- Country codes are case-insensitive and whitespace is trimmed automatically
+
+**Examples:**
+```env
+# Block specific countries
+BLOCKED_COUNTRIES=CU,IR,KP,SY,RU
+
+# Allow all countries (default)
+BLOCKED_COUNTRIES=
+```
+
+**Behavior:**
+- Requests from blocked countries receive HTTP 451 (Unavailable For Legal Reasons)
+- Blocked requests are logged with the country code for monitoring
+- Self-hosted deployments can configure this based on their requirements
+- No restrictions are applied when the variable is empty or unset
 
 ## Available Scripts
 
