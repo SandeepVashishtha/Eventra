@@ -1,25 +1,73 @@
 /**
- * @typedef {Object} ErrorEntry
- * @property {string} timestamp - ISO timestamp of when the error occurred.
- * @property {string} url - The URL where the error happened.
- * @property {string} userAgent - The browser user agent string.
- * @property {string} message - The error message or stringified error.
- * @property {string} [stack] - The error stack trace.
- * @property {string} [componentStack] - React component stack trace (if applicable).
+ * @fileoverview errorLogger.js
+ * @module utils/errorLogger
+ *
+ * Centrally manages error logging, local storage error persistence, and optional
+ * Sentry integration for real-time remote monitoring. 
+ *
+ * Implements defensive checks for restricted environments (e.g. environments where
+ * localStorage or Sentry SDK might be unavailable or blocked due to security policies).
+ * 
+ * Strict ES Module (ESM) paths must always include explicit file extensions (.js).
  */
 
 import { SENTRY_DSN, isSentryEnabled } from "../config/env.js";
-import { safeParseJson } from "./jsonUtils";
-import { logger } from "./logger";
-
-// ... [Existing initialization logic remains the same] ...
+import { safeParseJson } from "./jsonUtils.js";
+import { logger } from "./logger.js";
 
 /**
- * Builds an error entry object for persistent storage.
- * @param {Error|string} error - The error object or message.
- * @param {Object} [errorInfo] - Optional metadata (e.g., componentStack).
- * @param {Object} [extra] - Additional context to log.
- * @returns {ErrorEntry} The formatted error entry.
+ * Lazy-loaded reference to the Sentry browser SDK.
+ * Dynamically imported only if Sentry is enabled and the runtime is a browser.
+ * @type {object|null}
+ */
+let Sentry = null;
+
+// Initialize Sentry asynchronously to avoid blocking initial application load
+if (isSentryEnabled && typeof window !== "undefined") {
+  (async () => {
+    try {
+      // Dynamically import @sentry/browser to minimize bundle size on initial load
+      const SentryModule = await import("@sentry/browser");
+      Sentry = SentryModule.default || SentryModule;
+
+      const runtimeEnv =
+        typeof import.meta !== "undefined" && import.meta.env
+          ? import.meta.env
+          : typeof process !== "undefined" && process.env
+            ? process.env
+            : {};
+
+      // Initialize the Sentry client with performance and replay metrics
+      Sentry.init({
+        dsn: SENTRY_DSN,
+        integrations: [
+          typeof SentryModule.browserTracingIntegration === "function"
+            ? SentryModule.browserTracingIntegration()
+            : null,
+          typeof SentryModule.replayIntegration === "function"
+            ? SentryModule.replayIntegration()
+            : null,
+        ].filter(Boolean),
+        tracesSampleRate: 0.25,
+        replaysSessionSampleRate: 0.1,
+        replaysOnErrorSampleRate: 1.0,
+        environment: runtimeEnv.MODE || runtimeEnv.NODE_ENV || "development",
+      });
+      logger.info("[ErrorLogger] Sentry initialized successfully.");
+    } catch (importError) {
+      // Fallback: Sentry SDK is missing, failed to load, or blocked by ad-blocker
+      logger.warn("[ErrorLogger] Sentry SDK unavailable or failed to initialize. Falling back to local logging.", importError);
+    }
+  })();
+}
+
+/**
+ * Builds a standardized error log entry with contextual environment information.
+ *
+ * @param {Error|null} error - The caught JavaScript error object.
+ * @param {object|null} errorInfo - React component stack trace metadata (if applicable).
+ * @param {object} [extra={}] - Additional key-value pairs of context.
+ * @returns {object} A standardized error entry object.
  */
 function buildErrorEntry(error, errorInfo, extra = {}) {
   return {
@@ -34,38 +82,54 @@ function buildErrorEntry(error, errorInfo, extra = {}) {
 }
 
 /**
- * Persists an error to localStorage.
- * @param {ErrorEntry} entry - The error entry to save.
+ * Safely persists a standardized error entry to local storage.
+ * Ensures that quota errors do not crash the application.
+ *
+ * @param {object} entry - The error entry object to append.
  */
 function persistToLocalStorage(entry) {
-  const existing = safeParseJson(localStorage.getItem("eventra_error_log"), []);
-  existing.unshift(entry);
   try {
+    if (typeof localStorage === "undefined" || localStorage === null) {
+      return;
+    }
+    const rawData = localStorage.getItem("eventra_error_log");
+    const existing = safeParseJson(rawData, []);
+    
+    // Add new error to the top of the queue
+    existing.unshift(entry);
+    
+    // Cap log history size at 10 to conserve space
     localStorage.setItem("eventra_error_log", JSON.stringify(existing.slice(0, 10)));
-  } catch {
-    // Silently fail if localStorage is full or restricted
+  } catch (storageError) {
+    // Graceful fallback for quota exceeded or storage blocked
+    logger.warn("[ErrorLogger] Failed to write error log to localStorage:", storageError);
   }
 }
 
 /**
- * Logs an error to console, Sentry (if enabled), and local storage.
- * @param {Error} error - The error instance.
- * @param {Object} [errorInfo] - React error information.
- * @param {Object} [extra] - Additional contextual data.
+ * Logs an error to standard console logger, optional Sentry server, and localStorage.
+ *
+ * @param {Error} error - The caught Error object.
+ * @param {object} [errorInfo] - Optional React component stack or lifecycle metadata.
+ * @param {object} [extra={}] - Optional key-value pairs of context variables.
  */
 export const logError = (error, errorInfo, extra = {}) => {
   try {
-    logger.error("[ErrorLogger]", error);
+    // 1. Output to local logger
+    logger.error("[ErrorLogger] Caught exception:", error);
     if (errorInfo?.componentStack) {
-      logger.error("[ComponentStack]", errorInfo);
+      logger.error("[ComponentStack] React lifecycle traceback:", errorInfo.componentStack);
     }
-    if (Object.keys(extra).length) {
-      logger.info("[ErrorLogger] Context:", extra);
+    if (extra && Object.keys(extra).length) {
+      logger.info("[ErrorLogger] Accompanying metadata context:", extra);
     }
 
+    // 2. Transmit details to Sentry if integration is active
     if (Sentry) {
       Sentry.withScope((scope) => {
-        if (extra) scope.setExtras(extra);
+        if (extra) {
+          scope.setExtras(extra);
+        }
         if (errorInfo?.componentStack) {
           scope.setExtra("componentStack", errorInfo.componentStack);
         }
@@ -73,58 +137,87 @@ export const logError = (error, errorInfo, extra = {}) => {
       });
     }
 
+    // 3. Persist log locally for UI debugging capabilities
     const entry = buildErrorEntry(error, errorInfo, extra);
     persistToLocalStorage(entry);
   } catch (loggerError) {
-    logger.warn("[Eventra ErrorLogger] Failed to log error:", loggerError);
+    // Fail-safe to avoid throwing errors during error handling
+    logger.warn("[ErrorLogger] Failed to process logError pipeline:", loggerError);
   }
 };
 
 /**
- * Persists custom log entries to a specific key in localStorage.
- * @param {string} key - The storage key suffix.
- * @param {Object} entry - The entry data to save.
- * @param {number} [maxEntries=10] - Max number of items to keep.
+ * Persist feature-specific or module-specific errors to localStorage.
+ *
+ * @param {string} key - Unique key identifier (e.g. 'auth', 'payment').
+ * @param {object} entry - Standardized or custom error metadata object.
+ * @param {number} [maxEntries=10] - Maximum capacity limit before slicing queue.
  */
 export const persistErrors = (key, entry, maxEntries = 10) => {
   try {
+    if (typeof localStorage === "undefined" || localStorage === null) return;
     const storageKey = `eventra_${key}`;
-    const existing = safeParseJson(localStorage.getItem(storageKey), []);
+    const rawData = localStorage.getItem(storageKey);
+    const existing = safeParseJson(rawData, []);
+    
     existing.unshift(entry);
     localStorage.setItem(storageKey, JSON.stringify(existing.slice(0, maxEntries)));
-  } catch {}
+  } catch (error) {
+    logger.warn(`[ErrorLogger] Failed to persist errors for key '${key}':`, error);
+  }
 };
 
 /**
- * Retrieves error logs from localStorage by key.
- * @param {string} key - The storage key suffix.
- * @returns {Array} List of error entries.
+ * Reads feature-specific errors from localStorage.
+ *
+ * @param {string} key - Unique key identifier.
+ * @returns {Array} List of logged error entries.
  */
-export const getErrors = (key) =>
-  safeParseJson(localStorage.getItem(`eventra_${key}`), []);
+export const getErrors = (key) => {
+  try {
+    if (typeof localStorage === "undefined" || localStorage === null) return [];
+    return safeParseJson(localStorage.getItem(`eventra_${key}`), []);
+  } catch {
+    return [];
+  }
+};
 
 /**
- * Clears error logs for a specific key.
- * @param {string} key - The storage key suffix.
+ * Clears feature-specific errors from localStorage.
+ *
+ * @param {string} key - Unique key identifier.
  */
 export const clearErrors = (key) => {
   try {
+    if (typeof localStorage === "undefined" || localStorage === null) return;
     localStorage.removeItem(`eventra_${key}`);
-  } catch {}
+  } catch (error) {
+    logger.warn(`[ErrorLogger] Failed to clear errors for key '${key}':`, error);
+  }
 };
 
 /**
- * Retrieves the global error log.
- * @returns {Array<ErrorEntry>}
+ * Retrieves the general system error log entries.
+ *
+ * @returns {Array} List of general error logs.
  */
-export const getErrorLog = () =>
-  safeParseJson(localStorage.getItem("eventra_error_log"), []);
+export const getErrorLog = () => {
+  try {
+    if (typeof localStorage === "undefined" || localStorage === null) return [];
+    return safeParseJson(localStorage.getItem("eventra_error_log"), []);
+  } catch {
+    return [];
+  }
+};
 
 /**
- * Clears the global error log.
+ * Clears the general system error log entries.
  */
 export const clearErrorLog = () => {
   try {
+    if (typeof localStorage === "undefined" || localStorage === null) return;
     localStorage.removeItem("eventra_error_log");
-  } catch {}
+  } catch (error) {
+    logger.warn("[ErrorLogger] Failed to clear general error log:", error);
+  }
 };
