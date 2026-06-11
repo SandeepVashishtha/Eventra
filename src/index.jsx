@@ -17,6 +17,7 @@ import { HelmetProvider } from "react-helmet-async";
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
 
+
 // Attach CSP violation listener — surfaces policy breaches in dev console
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
 initCspReporting();
