@@ -17,6 +17,7 @@ import EventsTab from "./EventsTab";
 import HackathonsTab from "./HackathonsTab";
 import ProjectsTab from "./ProjectsTab";
 import RegistrationsTab from "./RegistrationsTab";
+import AnalyticsTab from "./AnalyticsTab";
 import {
   DashboardListCardSkeleton,
   DashboardProfileSkeleton,
@@ -192,6 +193,7 @@ export default function UserDashboard() {
             { id: "hackathons", icon: <Trophy size={18} />, label: "Hackathons" },
             { id: "projects", icon: <FolderOpen size={18} />, label: "Projects" },
             { id: "registrations", icon: <Users size={18} />, label: "Registrations" },
+            { id: "analytics", icon: <Activity size={18} />, label: "Analytics" },
           ].map(item => (
             <button
               key={item.id}
@@ -506,6 +508,15 @@ export default function UserDashboard() {
                   setFilterStatus={setFilterStatus}
                   setSelectedTicketEvent={setSelectedTicketEvent}
                 />
+              </ErrorBoundary>
+            </motion.div>
+          )}
+
+          {/* Analytics tab */}
+          {activeTab === "analytics" && (
+            <motion.div key="analytics" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <ErrorBoundary level="feature">
+                <AnalyticsTab loading={loading} />
               </ErrorBoundary>
             </motion.div>
           )}
