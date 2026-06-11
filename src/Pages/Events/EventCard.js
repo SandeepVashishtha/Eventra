@@ -19,13 +19,13 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import LazyImage from "../../components/common/LazyImage";
 import ShareModal from "../../components/common/ShareModal";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
+import AddToCalendar from "../../components/common/AddToCalendar";
 import {
   addBookmarkedEvent,
   isEventBookmarked,
@@ -239,17 +239,7 @@ const EventCard = ({ event }) => {
           </svg>
         </button>
 
-        <a
-          href={addEventToGoogleCalendar(event)}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          title="Add to Google Calendar"
-          aria-label={`Add ${event.title} to Google Calendar`}
-          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
-        >
-          <Calendar size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
-        </a>
+        <AddToCalendar event={event} iconOnly={true} />
       </div>
 
       {/* Header */}
