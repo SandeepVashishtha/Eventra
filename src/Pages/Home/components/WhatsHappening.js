@@ -38,8 +38,30 @@ const WhatsHappening = () => {
   const formatEventsData = (events) => {
     const now = new Date();
     const dayMs = 1000 * 60 * 60 * 24;
+
+    const getEventTimeLeft = (event) => {
+      const startDate = new Date(event.startDate || event.date);
+      const endDate = event.endDate
+        ? new Date(event.endDate)
+        : new Date(new Date(event.date).setHours(23, 59, 59, 999));
+
+      if (now < startDate) {
+        const daysUntilStart = Math.ceil((startDate - now) / dayMs);
+        return `${daysUntilStart} day${daysUntilStart === 1 ? "" : "s"}`;
+      }
+      if (now <= endDate) {
+        return "Live Now";
+      }
+      return "Ended";
+    };
+
     return events
-      .filter((event) => new Date(event.date) >= now)
+      .filter((event) => {
+        const endDate = event.endDate
+          ? new Date(event.endDate)
+          : new Date(new Date(event.date).setHours(23, 59, 59, 999));
+        return endDate >= now;
+      })
       .map((event) => ({
         id: `event-${event.id}`,
         title: event.title,
@@ -49,7 +71,7 @@ const WhatsHappening = () => {
           day: "numeric",
           year: "numeric",
         }),
-        rawDate: event.date,
+        rawDate: event.startDate || event.date,
         type: event.type.charAt(0).toUpperCase() + event.type.slice(1),
         status:
           event.status === "upcoming" ? "Registration Open" : "Live Event",
@@ -57,15 +79,28 @@ const WhatsHappening = () => {
         featured: event.attendees > 200,
         location: event.location,
         attendees: event.attendees,
-        timeLeft: `${Math.ceil(
-          (new Date(event.rawDate || event.date) - now) / dayMs
-        )} days`,
+        timeLeft: getEventTimeLeft(event),
       }));
   };
 
   const formatHackathonsData = (hackathons) => {
     const now = new Date();
     const dayMs = 1000 * 60 * 60 * 24;
+
+    const getHackathonTimeLeft = (hackathon) => {
+      const startDate = new Date(hackathon.startDate);
+      const endDate = new Date(hackathon.endDate);
+
+      if (now < startDate) {
+        const daysUntilStart = Math.ceil((startDate - now) / dayMs);
+        return `${daysUntilStart} day${daysUntilStart === 1 ? "" : "s"}`;
+      }
+      if (now <= endDate) {
+        return "Live Now";
+      }
+      return "Ended";
+    };
+
     return hackathons
       .filter(
         (hackathon) =>
@@ -76,12 +111,7 @@ const WhatsHappening = () => {
         id: `hackathon-${hackathon.id}`,
         title: hackathon.title,
         description: hackathon.description,
-        timeLeft:
-          new Date(hackathon.endDate) < now
-            ? "Ended"
-            : `${Math.ceil(
-                (new Date(hackathon.startDate) - now) / dayMs
-              )} days`,
+        timeLeft: getHackathonTimeLeft(hackathon),
         date: `${new Date(hackathon.startDate).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
@@ -362,10 +392,20 @@ const WhatsHappening = () => {
                                 {event.date}
                               </div>
 
-                              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-500/20">
+                              <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold border ${
+                                event.timeLeft === "Ended"
+                                  ? "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20"
+                                  : event.timeLeft === "Live Now"
+                                  ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
+                                  : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
+                              }`}>
                                 {event.timeLeft === "Ended" ? (
                                   <>
                                     <CheckCircle2 className="w-3.5 h-3.5" /> Ended
+                                  </>
+                                ) : event.timeLeft === "Live Now" ? (
+                                  <>
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Live Now
                                   </>
                                 ) : (
                                   <>

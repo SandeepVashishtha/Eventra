@@ -16,7 +16,7 @@ const optionalEnvVars = {
   },
   PUBLIC_URL: {
     keys: ["VITE_PUBLIC_URL", "REACT_APP_PUBLIC_URL"],
-    fallback: "https://eventra.sandeepvashishtha.tech",
+    fallback: "https://eventra.sandeepvashishtha.in",
   },
   SENTRY_DSN: {
     keys: ["VITE_SENTRY_DSN", "REACT_APP_SENTRY_DSN"],
