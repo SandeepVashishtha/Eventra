@@ -71,9 +71,6 @@ body {
   --color-text-primary: #f9fafb;
   --color-text-secondary: #9ca3af;
   --color-border: #374151;
-  .dark {
-  color: #f9fafb;
-}
   --color-accent: #818cf8;
   --color-accent-hover: #6366f1;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
