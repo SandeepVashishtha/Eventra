@@ -130,7 +130,7 @@ describe("useOfflineSync", () => {
 
      
     await act(async () => {
-      window.dispatchEvent(new Event("online"));
+      window.dispatchEvent(new Event("eventra-offline-queue-updated"));
       await new Promise((resolve) => setTimeout(resolve, 100));
     });
 
@@ -139,6 +139,36 @@ describe("useOfflineSync", () => {
     // Verify setQueue was called to preserve the item
     expect(setQueue).toHaveBeenCalledWith(queue);
     expect(clearQueue).not.toHaveBeenCalled();
+  });
+
+  it("resets retryCount to 0 and retries items when the online or manual sync event is triggered", async () => {
+    const queue = [
+      { id: "1", userId: "mock-user-id", retryCount: 3, payload: { name: "test-expired" } }
+    ];
+    getQueueIndexedDB.mockResolvedValue(queue);
+
+    const TestComponent = () => {
+      useOfflineSync();
+      return null;
+    };
+
+    await act(async () => {
+      root = createRoot(container);
+      root.render(<TestComponent />);
+    });
+
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+
+    // Verify setQueue was called to update retryCount to 0
+    expect(setQueue).toHaveBeenCalledWith([
+      { id: "1", userId: "mock-user-id", retryCount: 0, payload: { name: "test-expired" } }
+    ]);
+    // Verify fetch WAS called because retryCount was reset to 0
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(clearQueue).toHaveBeenCalled();
   });
 
   // ── Security: Issue #5727 — cross-user action replay prevention ───────────
