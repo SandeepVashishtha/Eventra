@@ -23,6 +23,9 @@ import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import { removeFromStorage } from "../../utils/storageUtils";
+import { usePersistentState } from "../../hooks/usePersistentState";
+
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -333,13 +336,38 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     isDebouncing,
   } = useDebouncedSearch("", 300);
 
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [filterType, setFilterType] = useState("All");
-  const [sortBy, setSortBy] = useState("soonest");
+ const [filterStatus, setFilterStatus] = usePersistentState(
+  "eventFilterStatus",
+  "All"
+);
+
+const [filterType, setFilterType] = usePersistentState(
+  "eventFilterType",
+  "All"
+);
+
+const [sortBy, setSortBy] = usePersistentState(
+  "eventSortBy",
+  "soonest"
+);
   const [cancelTarget, setCancelTarget] = useState(null);
 
   const [recentSearches,
     setRecentSearches] = useState([]);
+
+const [persistentSearch, setPersistentSearch] = usePersistentState(
+  "eventSearchQuery",
+  ""
+);
+
+useEffect(() => {
+  setSearchQuery(persistentSearch);
+}, []);
+
+useEffect(() => {
+  setPersistentSearch(searchQuery);
+}, [searchQuery]);
+
   const registeredEvents = useMemo(
     () =>
       myEvents.map((registration) => ({
@@ -360,11 +388,13 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     return types.map((type) => type.charAt(0).toUpperCase() + type.slice(1));
   }, [registeredEvents, hostedEvents]);
 
+
+  const normalizedSearch = debouncedTerm.trim().toLowerCase();
   const filteredEvents = useMemo(() => {
     const pool = [...registeredEvents, ...hostedEvents];
     const result = pool.filter((event) => {
       const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
-      const matchSearch = !debouncedTerm || searchTarget.includes(debouncedTerm.toLowerCase());
+     const matchSearch = !debouncedTerm || searchTarget.includes(normalizedSearch);
       const status = getEventStatus(event);
       const matchStatus = filterStatus === "All" || status === filterStatus;
       const typeLabel = event?.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : "";
@@ -470,7 +500,10 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
               className="ud-search"
               placeholder="Search your events…"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+  const value = e.target.value;
+  setSearchQuery(value);
+}}
             />
             {searchQuery && (
               <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query">
@@ -501,9 +534,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           {recentSearches.length > 0 && (
             <button
               onClick={() => {
-                localStorage.removeItem(
-                  "recentSearches"
-                );
+               removeFromStorage("recentSearches");
 
                 setRecentSearches([]);
               }}
@@ -564,12 +595,17 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             itemLabel="events"
             browseLabel="Browse Events"
             browsePath="/events"
-            onClear={() => {
-              setSearchQuery("");
-              setFilterStatus("All");
-              setFilterType("All");
-              setSortBy("soonest");
-            }}
+          onClear={() => {
+  setSearchQuery("");
+  setFilterStatus("All");
+  setFilterType("All");
+  setSortBy("soonest");
+
+  removeFromStorage("eventSearchQuery");
+  removeFromStorage("eventFilterStatus");
+  removeFromStorage("eventFilterType");
+  removeFromStorage("eventSortBy");
+}}
           />
         </motion.div>
       ) : (
