@@ -29,5 +29,20 @@ export const logger = {
       console.error(formatMessage("error", args[0]), ...args.slice(1));
     }
   },
+
+  security: (event, data = {}) => {
+    const timestamp = new Date().toISOString();
+    const logEntry = {
+      timestamp,
+      event,
+      ...data,
+    };
+
+    if (isDevelopment) {
+      console.warn(formatMessage("security", event), data);
+    } else {
+      console.warn(JSON.stringify(logEntry));
+    }
+  },
 };
 // ... rest of your code
