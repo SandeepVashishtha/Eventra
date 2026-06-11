@@ -12,6 +12,7 @@ import {
   Ticket,
   Trash2,
   Activity,
+  Copy,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -789,6 +790,15 @@ const addToRecentEvents = (event) => {
                 <button className="my-events-dialog-confirm" onClick={handleCancelConfirm}>
                   Yes, remove
                 </button>
+<button
+  onClick={() => handleCopyEventLink(event?.id)}
+  aria-label="Copy event link"
+  className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300 hover:scale-105"
+>
+  <Copy size={16} />
+  Copy Link
+</button>
+
               </div>
             </motion.div>
           </motion.div>,
