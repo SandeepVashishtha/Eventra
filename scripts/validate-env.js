@@ -150,6 +150,12 @@ if (OPTIONAL_VARS.length === 0) {
 }
 
 console.log("\nValidating variable formats...");
+  if (process.env.NODE_ENV === "production" && process.env.VITE_API_URL && !process.env.VITE_API_URL.startsWith("https://")) {
+    const msg = "[CRITICAL SECURITY WARNING] VITE_API_URL must use HTTPS in production";
+    errors.push(msg);
+    hasErrors = true;
+    console.error(`  ERROR: ${msg}`);
+  }
 for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   const value = process.env[varName];
   if (!value) continue;
