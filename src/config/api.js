@@ -1,6 +1,13 @@
 import axios from "axios";
 import { ENV } from "./env.js";
 import { logger } from "../utils/logger.js";
+import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
+import {
+  setOnUnauthorizedHandler,
+  setAuthToken,
+  createRequestInterceptor,
+  createResponseInterceptor,
+} from "./api/interceptors.js";
 import { ApiError, RateLimitError } from "./api/errors.js";
 import { setupRequestInterceptor, setupResponseInterceptor } from "./api/interceptors.js";
 
@@ -9,12 +16,8 @@ import { setupRequestInterceptor, setupResponseInterceptor } from "./api/interce
 // ---------------------------------------------------------------------------
 
 const normalizeApiBaseUrl = (value = "") => {
-  if (!value) {
-    return "";
-  }
-
+  if (!value) return "";
   const trimmed = value.replace(/\/+$/, "").replace(/\/api$/, "");
-
   try {
     const parsed = new URL(trimmed);
     return `${parsed.origin}${parsed.pathname === "/" ? "" : parsed.pathname}`;
@@ -32,6 +35,12 @@ const DEPLOYED_BACKEND_URL =
 
 const resolveEnvApiBaseUrl = () => {
   const envUrl = ENV.API_URL;
+  if (envUrl) return normalizeApiBaseUrl(envUrl);
+  if (!isDev) {
+    logger.warn(`VITE_API_URL missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
+    return "";
+  }
+  return "http://localhost:8080";
   if (envUrl) {
     return normalizeApiBaseUrl(envUrl);
   }
@@ -42,20 +51,10 @@ const resolveEnvApiBaseUrl = () => {
 export const API_BASE_URL = resolveEnvApiBaseUrl();
 
 const buildApiUrl = (path = "") => {
-  if (!path) {
-    return "";
-  }
-
-  if (/^https?:\/\//i.test(path)) {
-    return path;
-  }
-
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-
-  if (!API_BASE_URL) {
-    return normalizedPath;
-  }
-
+  if (!API_BASE_URL) return normalizedPath;
   return `${API_BASE_URL}${normalizedPath}`;
 };
 
@@ -72,9 +71,44 @@ const API = axios.create({
   withCredentials: true,
 });
 
-let onUnauthorized = null;
-let _authToken = null;
+API.interceptors.request.use(createRequestInterceptor(isDev));
 
+const { fulfill, reject } = createResponseInterceptor(API);
+API.interceptors.response.use(fulfill, reject);
+
+export { setOnUnauthorizedHandler, setAuthToken };
+
+// ---------------------------------------------------------------------------
+// Request helpers
+// ---------------------------------------------------------------------------
+
+const normalizeRequestConfig = (configOrToken = {}) => {
+  const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
+  if ("skipAuth" in config) delete config.skipAuth;
+  return config;
+};
+
+const wrapHeaders = (headers) => {
+  if (!headers) return { get: () => null };
+  if (typeof headers.get === "function") return headers;
+  return {
+    get: (key) => headers[key] || headers[key.toLowerCase()] || null,
+  };
+};
+
+const wrapAxiosResponse = (response) => {
+  const wrappedHeaders = wrapHeaders(response.headers);
+  return {
+    ...response,
+    headers: wrappedHeaders,
+    ok: response.status >= 200 && response.status < 300,
+    json: async () => response.data,
+    text: async () =>
+      typeof response.data === "string" ? response.data : JSON.stringify(response.data),
+  };
+};
+
+export { ApiError, RateLimitError, normalizeApiError };
 export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
 export const setAuthToken = (token) => { _authToken = token; };
 
@@ -104,10 +138,8 @@ export const API_ENDPOINTS = {
     SCHEDULE: (id) => buildApiUrl(`/api/events/${id}/schedule`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
     AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
-    CANCEL: (id) => buildApiUrl(`/api/events/${id}/cancel`),  
+    CANCEL: (id) => buildApiUrl(`/api/events/${id}/cancel`),
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
-    // Convenience helper — appends ?page=&size= for callers that build the
-    // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/api/events?page=${page}&size=${size}`),
   },
   PROJECTS: {
@@ -139,10 +171,8 @@ export const API_ENDPOINTS = {
   },
   SESSION_RECOVERY: {
     BASE: buildApiUrl("/api/session-recovery"),
-    SESSION: (sessionId) =>
-      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}`),
-    RESTORE: (sessionId) =>
-      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}/restore`),
+    SESSION: (sessionId) => buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}`),
+    RESTORE: (sessionId) => buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}/restore`),
     CLEANUP_EXPIRED: buildApiUrl("/api/session-recovery/expired"),
   },
   TICKETS: {
@@ -251,7 +281,6 @@ export const apiUtils = {
     API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
   delete: (url, config = {}) =>
     API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
-
   request: async (method, url, data = null, options = {}) => {
     const config = normalizeRequestConfig(options);
     if (options.signal) config.signal = options.signal;
@@ -272,21 +301,9 @@ export const apiUtils = {
 
 export default API;
 
-export { normalizeApiError };
-
-// Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {
   store: new Map(),
-
-  get(key) {
-    return this.store.get(key);
-  },
-
-  set(key, val) {
-    this.store.set(key, val);
-  },
-
-  clear() {
-    this.store.clear();
-  },
+  get(key) { return this.store.get(key); },
+  set(key, val) { this.store.set(key, val); },
+  clear() { this.store.clear(); },
 };
