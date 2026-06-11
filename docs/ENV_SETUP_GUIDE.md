@@ -10,11 +10,10 @@ This guide explains the active frontend environment variables for Eventra.
 cp .env.example .env
 ```
 
-1. Set the required API URL:
+1. Set an explicit backend URL:
 
 ```env
 VITE_API_URL=http://localhost:8080
-REACT_APP_API_URL=http://localhost:8080/api
 ```
 
 1. Set the required JWT secret:
@@ -37,12 +36,13 @@ npm run dev
 
 ## Active Variables
 
-### Frontend Variables
+Set at least one backend URL before starting the app. `VITE_API_URL` is preferred for Vite builds, `BACKEND_URL` configures the dev proxy backend origin directly, and `REACT_APP_API_URL` remains supported for compatibility.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `VITE_API_URL` | Yes | Backend API base URL used by client requests and SSE streams |
-| `REACT_APP_API_URL` | Yes | Backend API base URL (legacy compatibility) |
+| `VITE_API_URL` | One of backend URLs | Backend API base URL used by Vite client builds and the dev proxy |
+| `BACKEND_URL` | One of backend URLs | Backend origin used by the Vite dev proxy |
+| `REACT_APP_API_URL` | One of backend URLs | Compatibility API base URL used by client requests and the dev proxy |
 | `REACT_APP_GITHUB_REPO` | No | Public repository identifier for metadata/links |
 | `REACT_APP_PUBLIC_URL` | No | Canonical public URL used for sharing/SEO helpers |
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public push-notification key |
@@ -55,6 +55,18 @@ npm run dev
 | --- | --- | --- |
 | `JWT_SECRET` | **Yes** | JWT signing secret for authentication. This is MANDATORY - the application will NOT start or handle requests without it. There is NO fallback secret. |
 
+Examples:
+
+```env
+VITE_API_URL=https://api.example.com
+```
+
+or:
+
+```env
+BACKEND_URL=https://api.example.com
+```
+
 ## Security Notes
 
 - **JWT_SECRET is mandatory**: The application enforces fail-closed security. Missing JWT_SECRET will cause the application to reject all requests with a 500 error. Never deploy without setting this variable.
@@ -66,7 +78,8 @@ npm run dev
 
 ## Troubleshooting
 
-- If API calls or SSE streams fail, verify `VITE_API_URL` points to a reachable backend.
+- If startup fails with "Backend URL is not configured", set `BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL`.
+- If API calls or SSE streams fail, verify the configured backend URL points to a reachable backend.
 - If shared links are wrong, check `REACT_APP_PUBLIC_URL`.
 - If the application returns 500 errors with "Server configuration error", verify `JWT_SECRET` is set.
 - If build-time checks fail, run:
