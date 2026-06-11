@@ -75,6 +75,53 @@ BLOCKED_COUNTRIES=
 - Self-hosted deployments can configure this based on their requirements
 - No restrictions are applied when the variable is empty or unset
 
+## Content Security Policy (CSP) Backend Origin Configuration
+
+The Edge Middleware dynamically configures the Content-Security-Policy (CSP) `connect-src` directive using backend origins from environment variables. This allows flexible deployment across different environments without modifying source code.
+
+**Configuration:**
+- The middleware reads backend origins from `BACKEND_URL`, `VITE_API_URL`, and `REACT_APP_API_URL` (in that priority order)
+- Each valid origin is validated and added to the CSP `connect-src` directive
+- Only `http` and `https` protocols are allowed
+- Invalid URLs are rejected with a warning logged to the console
+
+**Security Considerations:**
+- Origins are validated before being added to CSP
+- Malformed URLs or unsupported protocols are safely rejected
+- If no valid backend origin is configured, CSP will not include backend origins (API calls may be blocked, but the application will not crash)
+- The application fails safely with a warning rather than crashing
+
+**Examples:**
+
+Development environment:
+```env
+BACKEND_URL=http://localhost:8080
+VITE_API_URL=http://localhost:8080
+REACT_APP_API_URL=http://localhost:8080/api
+```
+
+Production environment:
+```env
+BACKEND_URL=https://api.example.com
+VITE_API_URL=https://api.example.com
+REACT_APP_API_URL=https://api.example.com/api
+```
+
+Multiple backends (if needed):
+```env
+# All valid origins will be added to CSP
+BACKEND_URL=https://api-primary.example.com
+VITE_API_URL=https://api-secondary.example.com
+REACT_APP_API_URL=https://api-tertiary.example.com
+```
+
+**Behavior:**
+- The middleware checks environment variables in priority order: `BACKEND_URL` → `VITE_API_URL` → `REACT_APP_API_URL`
+- Duplicate origins are automatically deduplicated
+- If no valid backend origin is configured, a warning is logged but the application continues to run
+- The CSP will still include other trusted sources like `https://api.github.com`
+- Changes to environment variables require a redeployment of the Edge Middleware
+
 ### Server-Side Variables
 
 | Variable | Required | Purpose |
