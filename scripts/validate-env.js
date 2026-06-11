@@ -67,6 +67,7 @@ const ALLOWED_EXCEPTIONS = new Set([
 ]);
 
 const BACKEND_URL_VARS = ["BACKEND_URL", "VITE_API_URL", "REACT_APP_API_URL"];
+const REQUIRED_VARS = ["JWT_SECRET"];
 
 const FORMAT_VALIDATED_VARS = {
   BACKEND_URL: {
@@ -104,20 +105,35 @@ if (configuredBackendVars.length === 0) {
   console.log(`  OK: ${configuredBackendVars.join(" or ")} = [set]`);
 }
 
+console.log("\nRequired server variables:");
+for (const varName of REQUIRED_VARS) {
+  if (!process.env[varName]) {
+    const isJwtSecret = varName === "JWT_SECRET";
+    const errorMsg = isJwtSecret
+      ? `[CRITICAL SECURITY ERROR] ${varName} is missing. This is a critical security vulnerability that allows unauthorized access. Generate a secure secret using: openssl rand -base64 32`
+      : `Required variable ${varName} is not set`;
+    
+    console.error(`  ERROR: ${errorMsg}`);
+    errors.push(errorMsg);
+    hasErrors = true;
+  } else {
+    // Additional validation for JWT_SECRET to ensure it's not empty or whitespace
+    if (varName === "JWT_SECRET" && !process.env[varName].trim()) {
+      const errorMsg = `[CRITICAL SECURITY ERROR] JWT_SECRET is empty or whitespace-only. This is a critical security vulnerability. Generate a secure secret using: openssl rand -base64 32`;
+      console.error(`  ERROR: ${errorMsg}`);
+      errors.push(errorMsg);
+      hasErrors = true;
+    } else {
+      console.log(`  OK: ${varName} = [set]`);
+    }
+  }
+}
+
 if (process.env.REACT_APP_GROQ_API_KEY) {
   const msg =
     "[SECURITY LEAK] REACT_APP_GROQ_API_KEY must not be exposed via REACT_APP_. Move it server-side only.";
   errors.push(msg);
   hasErrors = true;
-}
-
-const buildEnv = process.env.NODE_ENV;
-const isBuildLocal = buildEnv === "development" || buildEnv === "test" || !buildEnv;
-if (!isBuildLocal && (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim())) {
-  const msg = "[CRITICAL ERROR] JWT_SECRET environment variable is missing. A signing secret is required for production/staging builds.";
-  errors.push(msg);
-  hasErrors = true;
-  console.error(`  ERROR: ${msg}`);
 }
 
 console.log("\nOptional variables:");
