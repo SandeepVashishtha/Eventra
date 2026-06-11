@@ -25,6 +25,15 @@ import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
 import LazyImage from "../common/LazyImage";
+import { SEARCH_ROUTES } from "../../constants/routes";
+import { SEARCH_ROUTES } from "../Hero";
+
+const SEARCH_ROUTES = {
+  events: "/events",
+  hackathons: "/hackathons",
+  projects: "/projects",
+  networking: "/networking"
+};
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -60,10 +69,10 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
   const status = getEventStatus(event);
   const shortDate = event?.date
     ? new Date(event.date).toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    })
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      })
     : "—";
 
   return (
@@ -315,8 +324,8 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [loading, setLoading] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
 
-  const [recentSearches,
-    setRecentSearches] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+
   const registeredEvents = useMemo(
     () =>
       myEvents.map((registration) => ({
@@ -326,9 +335,9 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
       })),
     [myEvents]
   );
+
   useEffect(() => {
     const saved = safeParseJson(localStorage.getItem("recentSearches"), []);
-
     setRecentSearches(saved);
   }, []);
 useEffect(() => {
@@ -389,6 +398,27 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
 
     return result;
   }, [registeredEvents, hostedEvents, debouncedTerm, filterStatus, filterType, sortBy]);
+
+  useEffect(() => {
+    if (debouncedTerm && debouncedTerm.trim().length > 1) {
+      let saved = [];
+      try {
+        const raw = localStorage.getItem("recentSearches");
+        saved = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(saved)) saved = [];
+      } catch (e) {
+        saved = [];
+      }
+      
+      const updatedHistory = [
+        debouncedTerm.trim(),
+        ...saved.filter((term) => term.toLowerCase() !== debouncedTerm.trim().toLowerCase())
+      ].slice(0, 5);
+
+      localStorage.setItem("recentSearches", JSON.stringify(updatedHistory));
+      setRecentSearches(updatedHistory);
+    }
+  }, [debouncedTerm]);
 
   const filteredRegisteredEvents = filteredEvents.filter((event) => event.registeredAt);
   const filteredHostedEvents = filteredEvents.filter((event) => !event.registeredAt);
@@ -513,14 +543,10 @@ const addToRecentEvents = (event) => {
             )}
           </div>
           
-          {/* 🔥 FIX 2: Relocated Rogue "Clear History" button to its proper logical location */}
           {recentSearches.length > 0 && (
             <button
               onClick={() => {
-                localStorage.removeItem(
-                  "recentSearches"
-                );
-
+                localStorage.removeItem("recentSearches");
                 setRecentSearches([]);
               }}
               className="text-sm text-red-500 hover:underline mt-2"
