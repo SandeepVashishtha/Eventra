@@ -296,7 +296,7 @@ const ModernTestimonialTrain = () => {
         
         <button
           onClick={() => { setCurrentIndex(prev => Math.max(0, prev - 1)); jumpToIndex(Math.max(0, currentIndex - 1)); }}
-          className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all shadow-sm disabled:opacity-40"
+          className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all shadow-sm disabled:bg-gray-100 disabled:text-gray-400 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500 disabled:border-transparent"
           disabled={currentIndex === 0}
           aria-label="Previous testimonial"
           title="← Arrow Key"
@@ -306,7 +306,7 @@ const ModernTestimonialTrain = () => {
         
         <button
           onClick={() => { setCurrentIndex(prev => Math.min(filteredTestimonials.length - 1, prev + 1)); jumpToIndex(Math.min(filteredTestimonials.length - 1, currentIndex + 1)); }}
-          className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all shadow-sm disabled:opacity-40"
+          className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all shadow-sm disabled:bg-gray-100 disabled:text-gray-400 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500 disabled:border-transparent"
           disabled={currentIndex === filteredTestimonials.length - 1}
           aria-label="Next testimonial"
           title="Arrow Key →"

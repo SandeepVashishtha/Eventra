@@ -6,6 +6,7 @@ import {
 import useReducedMotion from "../../hooks/useReducedMotion";
 import VirtualBoothModal from "../../components/events/VirtualBoothModal";
 import { toast } from "react-toastify";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Default premium developer sponsor booths (fallback if none loaded from designer)
 const DEFAULT_SPONSORS = [
@@ -137,7 +138,7 @@ const VirtualVenueWalkthrough = () => {
     // Check if the floorplan designer has overriding sponsors
     if (savedLayout) {
       try {
-        const elements = JSON.parse(savedLayout);
+        const elements = safeJsonParse(savedLayout, {});
         const sponsors = elements.filter(el => el.isSponsorBooth);
         if (sponsors.length > 0) {
           baseSponsors = sponsors;
@@ -151,7 +152,7 @@ const VirtualVenueWalkthrough = () => {
     const dashboardSettings = localStorage.getItem("eventra_sponsor_settings");
     if (dashboardSettings) {
       try {
-        const customSponsor = JSON.parse(dashboardSettings);
+        const customSponsor = safeJsonParse(dashboardSettings, {});
         // Ensure it's in the array (replace the first sponsor for demo purposes, or push it)
         if (baseSponsors.length > 0) {
           baseSponsors[0] = customSponsor;
