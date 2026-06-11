@@ -39,10 +39,10 @@ const RecommendationBanner = () => {
             </div>
 
             {/* Heading */}
-            <h1 className="mt-5 text-4xl md:text-5xl font-extrabold leading-tight text-slate-900 dark:text-white">
+            <h2 className="mt-5 text-4xl md:text-5xl font-extrabold leading-tight text-slate-900 dark:text-white">
               Find Events Tailored
               <span className="block text-brand-violet mt-1">Just For You</span>
-            </h1>
+            </h2>
 
             {/* Description */}
             <p className="mt-4 text-base md:text-lg leading-relaxed text-slate-600 dark:text-slate-300 max-w-2xl">

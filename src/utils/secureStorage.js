@@ -392,6 +392,63 @@ export const getCryptoConfig = () => {
   return { ...CRYPTO_CONFIG };
 };
 
+/**
+ * Derives an AES-256-GCM key from an explicit password and salt using PBKDF2.
+ * Useful for callers (e.g. SessionRecoveryContext) that manage their own
+ * key material outside the module-level DERIVED_KEY_MATERIAL / DERIVED_KEY_SALT.
+ *
+ * @param {string|Uint8Array} password - PBKDF2 input keying material
+ * @param {Uint8Array}        salt     - PBKDF2 salt (at least 16 bytes recommended)
+ * @returns {Promise<CryptoKey>}
+ */
+export const deriveKey = async (password, salt) => {
+  const encoder = new TextEncoder();
+  const material = password instanceof Uint8Array ? password : encoder.encode(password);
+  const keyMaterial = await crypto.subtle.importKey("raw", material, "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+    keyMaterial,
+    { name: CRYPTO_ALGORITHM, length: KEY_LENGTH },
+    false,
+    ["encrypt", "decrypt"],
+  );
+};
+
+/**
+ * Encrypts plaintext with an already-derived AES-256-GCM key.
+ * Returns ciphertext in the same `ivBase64:ctBase64` format used by the
+ * module-level encryptValue, but does NOT attach additional authenticated data.
+ *
+ * @param {CryptoKey} key       - AES-GCM key from deriveKey()
+ * @param {string}    plaintext - Value to encrypt
+ * @returns {Promise<string>} `ivBase64:ctBase64`
+ */
+export const encryptWithKey = async (key, plaintext) => {
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: CRYPTO_ALGORITHM, iv },
+    key,
+    new TextEncoder().encode(plaintext),
+  );
+  return `${btoa(String.fromCharCode(...iv))}:${btoa(String.fromCharCode(...new Uint8Array(encrypted)))}`;
+};
+
+/**
+ * Decrypts a ciphertext produced by encryptWithKey or the old encryptSession.
+ *
+ * @param {CryptoKey} key      - AES-GCM key from deriveKey()
+ * @param {string}    stored   - Ciphertext string in `ivBase64:ctBase64` format
+ * @returns {Promise<string>} Decrypted plaintext
+ */
+export const decryptWithKey = async (key, stored) => {
+  const colonIdx = stored.indexOf(":");
+  if (colonIdx === -1) throw new Error("Invalid ciphertext format");
+  const iv = Uint8Array.from(atob(stored.slice(0, colonIdx)), (c) => c.charCodeAt(0));
+  const ciphertext = Uint8Array.from(atob(stored.slice(colonIdx + 1)), (c) => c.charCodeAt(0));
+  const decrypted = await crypto.subtle.decrypt({ name: CRYPTO_ALGORITHM, iv }, key, ciphertext);
+  return new TextDecoder().decode(decrypted);
+};
+
 const isCryptoAvailable = () => {
   try {
     return (
