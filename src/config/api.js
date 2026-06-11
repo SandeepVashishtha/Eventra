@@ -1,5 +1,6 @@
 import axios from "axios";
-import { ApiError, RateLimitError } from "./api/errors.js";
+import { logger } from "../utils/logger.js";
+import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
 import { setupRequestInterceptor, setupResponseInterceptor } from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
@@ -16,20 +17,10 @@ if (!configValidation.isValid && isDev) {
 }
 
 const buildApiUrl = (path = "") => {
-  if (!path) {
-    return "";
-  }
-
-  if (/^https?:\/\//i.test(path)) {
-    return path;
-  }
-
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-
-  if (!API_BASE_URL) {
-    return normalizedPath;
-  }
-
+  if (!API_BASE_URL) return normalizedPath;
   return `${API_BASE_URL}${normalizedPath}`;
 };
 
@@ -49,8 +40,12 @@ const API = axios.create({
 let onUnauthorized = null;
 let _authToken = null;
 
-export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
-export const setAuthToken = (token) => { _authToken = token; };
+export const setOnUnauthorizedHandler = (handler) => {
+  onUnauthorized = handler;
+};
+export const setAuthToken = (token) => {
+  _authToken = token;
+};
 
 const getAuthToken = () => _authToken;
 const getOnUnauthorized = () => onUnauthorized;
@@ -78,7 +73,7 @@ export const API_ENDPOINTS = {
     SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
     REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
     AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
-    CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),  
+    CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
     REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
@@ -146,7 +141,6 @@ export const API_ENDPOINTS = {
   },
 };
 
-
 const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
   if ("skipAuth" in config) delete config.skipAuth;
@@ -171,49 +165,6 @@ const wrapAxiosResponse = (response) => {
   };
 };
 
-const normalizeApiError = (error) => {
-  const config = error.config || {};
-  const status = error?.response?.status;
-
-  if (
-    error.code === "ECONNABORTED" ||
-    error.name === "AbortError" ||
-    error.message?.includes("timeout")
-  ) {
-    return new ApiError(
-      `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-      { status, isTimeout: true },
-    );
-  }
-
-  if (!error.response) {
-    return new ApiError(
-      error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-      { status, isNetworkError: true },
-    );
-  }
-
-  if (status === 429) {
-    return new RateLimitError(
-      error.response?.data?.message || "Too many requests, please try again later.",
-      { status, data: error.response?.data || null },
-    );
-  }
-
-  return new ApiError(
-    error.response?.data?.message || error.message || `Request failed with status ${status}`,
-    { status, data: error.response?.data || null },
-  );
-};
-
-const buildAxiosConfig = (url, options = {}) => {
-  const { signal, headers, ...rest } = options;
-  const config = normalizeRequestConfig(rest);
-  if (signal) config.signal = signal;
-  if (headers) config.headers = { ...config.headers, ...headers };
-  return { url, config };
-};
-
 export const apiUtils = {
   get: (url, config = {}) =>
     API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
@@ -225,7 +176,6 @@ export const apiUtils = {
     API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
   delete: (url, config = {}) =>
     API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
-
   request: async (method, url, data = null, options = {}) => {
     const config = normalizeRequestConfig(options);
     if (options.signal) config.signal = options.signal;
@@ -246,20 +196,17 @@ export const apiUtils = {
 
 export default API;
 
-export { normalizeApiError };
+export { ApiError, RateLimitError, normalizeApiError };
 
 // Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {
   store: new Map(),
-
   get(key) {
     return this.store.get(key);
   },
-
   set(key, val) {
     this.store.set(key, val);
   },
-
   clear() {
     this.store.clear();
   },

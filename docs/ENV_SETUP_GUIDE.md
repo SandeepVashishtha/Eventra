@@ -23,6 +23,18 @@ BACKEND_URL=http://localhost:8080
 REACT_APP_API_URL=http://localhost:8080
 ```
 
+1. Set the required JWT secret:
+
+```env
+JWT_SECRET=<your-generated-secret>
+```
+
+Generate a secure JWT secret using:
+
+```bash
+openssl rand -base64 32
+```
+
 1. Start the app:
 
 ```bash
@@ -64,6 +76,8 @@ The following modules all use the centralized configuration:
 
 ## Active Variables
 
+### Frontend Variables
+
 | Variable | Required | Purpose | Priority |
 | --- | --- | --- | --- |
 | `BACKEND_URL` | No | Backend origin (overrides others) | 1 (highest) |
@@ -75,8 +89,16 @@ The following modules all use the centralized configuration:
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint | - |
 | `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN; only used in production builds | - |
 
+### Server-Side Variables
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `JWT_SECRET` | **Yes** | JWT signing secret for authentication. This is MANDATORY - the application will NOT start or handle requests without it. There is NO fallback secret. |
+
 ## Security Notes
 
+- **JWT_SECRET is mandatory**: The application enforces fail-closed security. Missing JWT_SECRET will cause the application to reject all requests with a 500 error. Never deploy without setting this variable.
+- Generate JWT_SECRET using: `openssl rand -base64 32`
 - Never place private secrets in `REACT_APP_*` or `VITE_*` variables.
 - Values prefixed with `REACT_APP_` or `VITE_` are exposed in the browser bundle.
 - Leave `REACT_APP_SENTRY_DSN` blank for local development unless you intentionally want browser error reports sent to Sentry.
@@ -87,6 +109,7 @@ The following modules all use the centralized configuration:
 - If API calls or SSE streams fail, verify your backend URL variable points to a reachable backend.
 - Check the browser console for configuration validation errors from `src/config/backendConfig.js`.
 - If shared links are wrong, check `REACT_APP_PUBLIC_URL`.
+- If the application returns 500 errors with "Server configuration error", verify `JWT_SECRET` is set.
 - If build-time checks fail, run:
 
 ```bash

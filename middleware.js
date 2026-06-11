@@ -257,10 +257,22 @@ export default async function middleware(request) {
   if (url.pathname.startsWith("/api/tickets/")) {
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
-      console.warn(
-        "[middleware] JWT_SECRET is not configured. Ticket route RBAC is disabled.",
+      // SECURITY: Fail-closed behavior - reject requests when JWT_SECRET is missing
+      // This prevents unauthorized access when configuration is incomplete
+      console.error(
+        "[middleware] JWT_SECRET is not configured. Rejecting ticket route request."
       );
-      return;
+      return new Response(
+        JSON.stringify({
+          error: "Server configuration error"
+        }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
     }
 
     const token = parseTokenFromCookie(request);

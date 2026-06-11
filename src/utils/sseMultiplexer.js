@@ -29,8 +29,8 @@ const MESSAGE_REQUIRED_FIELDS = {
   UNSUBSCRIBE_ALL: ["tabId", "paths"],
   QUERY_SUBSCRIBERS: ["tabId"],
   SUBSCRIBERS_RESPONSE: ["tabId", "paths"],
-  SSE_MESSAGE: ["path", "data"],
-  SSE_STATUS: ["path", "status"],
+  SSE_MESSAGE: ["tabId", "path", "data"],
+  SSE_STATUS: ["tabId", "path", "status"],
   RECONNECT_REQUEST: ["path"],
   PING: ["tabId"],
   PONG: ["tabId"],
@@ -447,6 +447,7 @@ class SseMultiplexer {
       // Broadcast to follower tabs
       this.broadcastMessage({
         type: "SSE_MESSAGE",
+        tabId: this.tabId,
         path,
         data: payload,
         eventType: evt.type,
@@ -476,7 +477,7 @@ class SseMultiplexer {
 
     // Broadcast status to other tabs if we are the leader
     if (this.isLeader) {
-      this.broadcastMessage({ type: "SSE_STATUS", path, status });
+      this.broadcastMessage({ type: "SSE_STATUS", tabId: this.tabId, path, status });
     }
 
     // Trigger local status listeners
@@ -545,6 +546,14 @@ class SseMultiplexer {
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
+    }
+    if (this.localStorageInterval) {
+      clearInterval(this.localStorageInterval);
+      this.localStorageInterval = null;
+    }
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
     }
     this.lastSeenFollowers = null;
   }

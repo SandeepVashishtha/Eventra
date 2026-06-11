@@ -294,8 +294,8 @@ const Contributors = () => {
       )}
       <div className="max-w-7xl mx-auto px-6">
         <motion.h2
-          // UPDATED: Title text
-          className="text-5xl font-extrabold text-center mb-16 text-gray-800 dark:text-gray-100 tracking-tight"
+          // UPDATED: Title text (responsive text and mb-12 spacing)
+          className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-center mb-12 text-gray-800 dark:text-gray-100 tracking-tight"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
@@ -495,11 +495,11 @@ const Contributors = () => {
             ))}
           </div>
 
-          <div className="flex justify-center mt-8">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mt-8 w-full max-w-md mx-auto sm:max-w-none">
             <Link
               to="/contributors"
               onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out"
+              className="inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>View All Contributors</span>
               <FaExternalLinkAlt className="text-sm" />
@@ -507,7 +507,7 @@ const Contributors = () => {
             <Link
               to="/ContributorGuide"
               onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out ml-10"
+              className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>Guide</span>
               <FaExternalLinkAlt className="text-sm" />
