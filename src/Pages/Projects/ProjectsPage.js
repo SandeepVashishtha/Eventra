@@ -8,6 +8,7 @@ import ProjectCard from "./ProjectCard";
 import ProjectCTA from "./ProjectCTA";
 
 import { projectService } from "../../services/projectService";
+import EmptyState from "../../components/common/EmptyState";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 import useDebounce from "../../hooks/useDebounce.js";
 
@@ -520,58 +521,35 @@ const InnerGallery = () => {
               )}
             </motion.div>
           ) : (
-            <motion.div
-              className="relative overflow-hidden rounded-3xl p-10 text-center shadow-xl border border-gray-100 dark:border-gray-900 bg-white dark:bg-gray-800"
-              initial={{
-                opacity: 0,
-                y: 30,
-                scale: 0.95,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-                scale: 1,
-              }}
-            >
-              <div className="mx-auto max-w-sm relative z-10">
-                <div className="flex justify-center items-center w-20 h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg mx-auto border border-sky-100 dark:border-gray-600">
-                  <Search className="h-10 w-10 text-black dark:text-white" />
-                </div>
-
-                <h3 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  No Projects Found
-                </h3>
-
-                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                  {searchQuery || filterCategory !== "all"
-                    ? "We couldn’t find any projects with your filters."
-                    : "No projects available right now. Be the first to share your creation with the community!"}
-                </p>
-
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                  {searchQuery || filterCategory !== "all" ? (
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        setFilterCategory("all");
-                        setSearchQuery("");
-                        setSortBy("recent");
-                      }}
-                      className="px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
-                    >
-                      Clear Filters
-                    </motion.button>
-                  ) : (
-                    <motion.a
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      href="/submit-project"
-                      className="px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all inline-flex items-center justify-center"
-                    >
-                      Submit a Project
-                    </motion.a>
-                  )}
+            <EmptyState
+              icon={Search}
+              title="No Projects Found"
+              description={
+                searchQuery || filterCategory !== "all"
+                  ? "We couldn't find any projects with your filters."
+                  : "No projects available right now. Be the first to share your creation with the community!"
+              }
+              actionLabel={
+                searchQuery || filterCategory !== "all"
+                  ? "Clear Filters"
+                  : "Submit a Project"
+              }
+              actionPath={
+                searchQuery || filterCategory !== "all"
+                  ? undefined
+                  : "/submit-project"
+              }
+              onAction={
+                searchQuery || filterCategory !== "all"
+                  ? () => {
+                      setFilterCategory("all");
+                      setSearchQuery("");
+                      setSortBy("recent");
+                    }
+                  : undefined
+              }
+            />
+          )}
                 </div>
               </div>
             </motion.div>
