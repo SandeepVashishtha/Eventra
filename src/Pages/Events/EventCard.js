@@ -26,6 +26,7 @@ import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
 import AddToCalendar from "../../components/common/AddToCalendar";
+import SocialShareButtons from "../../components/common/SocialShareButtons";
 import {
   addBookmarkedEvent,
   isEventBookmarked,
@@ -378,6 +379,11 @@ const EventCard = ({ event }) => {
           </div>
         );
       })()}
+
+      {/* Social Sharing */}
+      <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-center">
+        <SocialShareButtons event={event} layout="inline" />
+      </div>
 
       {/* CTA */}
       <div className="px-5 py-4 flex gap-3 mt-auto">
