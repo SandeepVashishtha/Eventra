@@ -1,4 +1,5 @@
 import { logger } from "./logger.js";
+import { ENV } from "../config/env.js";
 import { API_BASE_URL } from "../config/api.js";
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
@@ -29,8 +30,8 @@ const MESSAGE_REQUIRED_FIELDS = {
   UNSUBSCRIBE_ALL: ["tabId", "paths"],
   QUERY_SUBSCRIBERS: ["tabId"],
   SUBSCRIBERS_RESPONSE: ["tabId", "paths"],
-  SSE_MESSAGE: ["path", "data"],
-  SSE_STATUS: ["path", "status"],
+  SSE_MESSAGE: ["tabId", "path", "data"],
+  SSE_STATUS: ["tabId", "path", "status"],
   RECONNECT_REQUEST: ["path"],
   PING: ["tabId"],
   PONG: ["tabId"],
@@ -424,6 +425,7 @@ class SseMultiplexer {
 
   openEventSource(path) {
     const sseBaseUrl =
+      ENV.API_URL ||
       API_BASE_URL ||
       (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
 
@@ -449,6 +451,7 @@ class SseMultiplexer {
       // Broadcast to follower tabs
       this.broadcastMessage({
         type: "SSE_MESSAGE",
+        tabId: this.tabId,
         path,
         data: payload,
         eventType: evt.type,
@@ -478,7 +481,7 @@ class SseMultiplexer {
 
     // Broadcast status to other tabs if we are the leader
     if (this.isLeader) {
-      this.broadcastMessage({ type: "SSE_STATUS", path, status });
+      this.broadcastMessage({ type: "SSE_STATUS", tabId: this.tabId, path, status });
     }
 
     // Trigger local status listeners
@@ -506,28 +509,35 @@ class SseMultiplexer {
 
       const now = Date.now();
       let changed = false;
+      const staleTabs = [];
 
       for (const [tabId, lastSeen] of this.lastSeenFollowers) {
         if (now - lastSeen > MISSING_TIMEOUT) {
-          logger.log(
-            `[SSE Multiplexer] Follower tab ${tabId} missed heartbeats. Removing stale subscriptions.`
-          );
-          const paths = this.tabIdToPaths.get(tabId);
-          if (paths) {
-            for (const path of paths) {
-              const tabs = this.globalSubscribers.get(path);
-              if (tabs) {
-                tabs.delete(tabId);
-                if (tabs.size === 0) {
-                  this.globalSubscribers.delete(path);
-                }
+          staleTabs.push(tabId);
+        }
+      }
+
+      for (const tabId of staleTabs) {
+        logger.log(
+          `[SSE Multiplexer] Follower tab ${tabId} missed heartbeats. Removing stale subscriptions.`
+        );
+        const paths = this.tabIdToPaths.get(tabId);
+        if (paths) {
+          const pathsToRemove = [];
+          for (const path of paths) {
+            const tabs = this.globalSubscribers.get(path);
+            if (tabs) {
+              tabs.delete(tabId);
+              if (tabs.size === 0) {
+                pathsToRemove.push(path);
               }
             }
-            this.tabIdToPaths.delete(tabId);
           }
-          this.lastSeenFollowers.delete(tabId);
-          changed = true;
+          pathsToRemove.forEach((p) => this.globalSubscribers.delete(p));
+          this.tabIdToPaths.delete(tabId);
         }
+        this.lastSeenFollowers.delete(tabId);
+        changed = true;
       }
 
       if (changed) {
@@ -540,6 +550,14 @@ class SseMultiplexer {
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
+    }
+    if (this.localStorageInterval) {
+      clearInterval(this.localStorageInterval);
+      this.localStorageInterval = null;
+    }
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
     }
     this.lastSeenFollowers = null;
   }

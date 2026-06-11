@@ -66,7 +66,7 @@ const ALLOWED_EXCEPTIONS = new Set([
   "REACT_APP_CSP_REPORT_URI",
 ]);
 
-const REQUIRED_VARS = ["VITE_API_URL"];
+const REQUIRED_VARS = ["VITE_API_URL", "JWT_SECRET"];
 
 const FORMAT_VALIDATED_VARS = {
   VITE_API_URL: {
@@ -86,10 +86,24 @@ console.log("\n[validate-env] Scanning environment variables for security issues
 console.log("Required variables:");
 for (const varName of REQUIRED_VARS) {
   if (!process.env[varName]) {
-    console.warn(`  WARNING: missing ${varName} (app may fail to connect to backend)`);
-    warnings.push(`Required variable ${varName} is not set`);
+    const isJwtSecret = varName === "JWT_SECRET";
+    const errorMsg = isJwtSecret
+      ? `[CRITICAL SECURITY ERROR] ${varName} is missing. This is a critical security vulnerability that allows unauthorized access. Generate a secure secret using: openssl rand -base64 32`
+      : `Required variable ${varName} is not set`;
+    
+    console.error(`  ERROR: ${errorMsg}`);
+    errors.push(errorMsg);
+    hasErrors = true;
   } else {
-    console.log(`  OK: ${varName} = [set]`);
+    // Additional validation for JWT_SECRET to ensure it's not empty or whitespace
+    if (varName === "JWT_SECRET" && !process.env[varName].trim()) {
+      const errorMsg = `[CRITICAL SECURITY ERROR] JWT_SECRET is empty or whitespace-only. This is a critical security vulnerability. Generate a secure secret using: openssl rand -base64 32`;
+      console.error(`  ERROR: ${errorMsg}`);
+      errors.push(errorMsg);
+      hasErrors = true;
+    } else {
+      console.log(`  OK: ${varName} = [set]`);
+    }
   }
 }
 
@@ -98,15 +112,6 @@ if (process.env.REACT_APP_GROQ_API_KEY) {
     "[SECURITY LEAK] REACT_APP_GROQ_API_KEY must not be exposed via REACT_APP_. Move it server-side only.";
   errors.push(msg);
   hasErrors = true;
-}
-
-const buildEnv = process.env.NODE_ENV;
-const isBuildLocal = buildEnv === "development" || buildEnv === "test" || !buildEnv;
-if (!isBuildLocal && (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim())) {
-  const msg = "[CRITICAL ERROR] JWT_SECRET environment variable is missing. A signing secret is required for production/staging builds.";
-  errors.push(msg);
-  hasErrors = true;
-  console.error(`  ERROR: ${msg}`);
 }
 
 console.log("\nOptional variables:");

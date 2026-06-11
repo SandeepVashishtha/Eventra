@@ -38,15 +38,18 @@ export function isTokenExpired(token) {
 
 export function isTokenValid(token) {
   const payload = decodeJwtPayload(token);
-  if (!payload || !payload.exp) return false;
+  if (!payload) return false;
   
   return !isTokenExpired(token);
 }
 
 export function getTokenTTL(token) {
   const payload = decodeJwtPayload(token);
-  if (!payload || !payload.exp) {
-    return 0; 
+  if (!payload) {
+    return 0;
+  }
+  if (typeof payload.exp === "undefined") {
+    return -1;
   }
   const now = Math.floor(Date.now() / 1000);
   return payload.exp - now;

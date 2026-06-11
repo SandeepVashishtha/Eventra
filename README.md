@@ -8,8 +8,13 @@ Modern event and hackathon platform for communities, organizers, and contributor
 
 ---
 
+## Project Status Notice
+
+🚧 Eventra is actively maintained and welcomes contributions from the open-source community. Please check existing issues before creating new ones and follow the contribution guidelines when submitting pull requests.
+
 ## Table of Contents
 
+- [Project Status Notice](#project-status-notice)
 - [Overview](#overview)
 - [Key Features](#key-features)
 - [Tech Stack](#tech-stack)
@@ -27,6 +32,8 @@ Modern event and hackathon platform for communities, organizers, and contributor
 - [Contributing](#contributing)
 - [License](#license)
 - [Contributors](#contributors)
+- [Maintainers](#maintainers)
+- [Mentor](#mentor)
 - [Star History](#star-history)
 
 ---
@@ -35,8 +42,7 @@ Modern event and hackathon platform for communities, organizers, and contributor
 
 Eventra is an open-source frontend application built with React and Vite. It supports event discovery, registration, dashboards, hackathons, collaboration features, feedback flows, and role-based access experiences.
 
-This repository contains the frontend and serverless API helpers under `api/`.
-The Spring Boot backend is maintained in a separate repository.
+This repository contains the frontend application. The Spring Boot backend is maintained in a separate repository — all API traffic is proxied to it both in production (via Vercel rewrites) and in local development (via Vite proxy).
 
 - Frontend repo: <https://github.com/SandeepVashishtha/Eventra>
 - Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
@@ -71,15 +77,16 @@ Below is the high-level architecture of Eventra:
 graph TD
     Client[Client: React/Vite] --> Assets[Assets: public/]
     Client --> State[State: Context/Hooks]
-    Client --> API[API: Serverless Helpers]
-    API --> Backend[Backend: Spring Boot API]
+    Client --> Backend[Backend: Spring Boot API]
+    Backend --> Azure[Azure Spring Boot]
+    Client -.-> VercelRewrite[Vercel /api/* Rewrite]
+    VercelRewrite --> Backend
 ```
 
 ## Project Structure
 
 ```text
 Eventra/
-|-- api/                 # Serverless API routes and middleware
 |-- docs/                # Architecture, env setup, onboarding, security docs
 |-- public/              # Static assets
 |-- scripts/             # Validation and automation scripts
@@ -216,7 +223,8 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
 - Build command: `npm run lint && GENERATE_SOURCEMAP=false npm run build`
 - Output directory: `build`
-- `/api/*` is rewritten to the hosted Spring Boot backend
+- `/api/*` is rewritten to the hosted Spring Boot backend (the sole API provider)
+- No serverless functions are deployed — the `api/` directory was removed as dead code
 
 ## Documentation
 
@@ -270,6 +278,10 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
 </td>
 </tr>
 </table>
+
+## Mentor
+
+Guidance and mentorship for the Eventra project are provided by the project leadership team. Contributors are encouraged to use GitHub Issues and Discussions for questions, suggestions, and collaboration.
 
 ## Star History
 

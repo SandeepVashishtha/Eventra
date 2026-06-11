@@ -133,6 +133,7 @@ export const filterByCategory = (events, selectedCategories) => {
   }
 
   return events.filter((event) => {
+    if (!event) return false;
     const eventCategory = normalizeFilterValue(event.category);
     return selectedCategories.some((cat) => {
       const mappedCategory = EVENT_CATEGORIES.find(
@@ -182,6 +183,7 @@ export const filterByMode = (events, selectedModes) => {
   }
 
   return events.filter((event) => {
+    if (!event) return false;
     // Safely extract the raw mode without implicitly falling back to a valid filter value
     const rawMode = event.eventMode !== undefined ? event.eventMode : (event.mode !== undefined ? event.mode : "");
     return selectedModes.includes(normalizeFilterValue(rawMode));
