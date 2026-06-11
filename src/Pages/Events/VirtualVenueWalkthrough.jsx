@@ -393,7 +393,7 @@ const VirtualVenueWalkthrough = () => {
                           {booth.sponsorLogo ? (
                             <img
                               src={booth.sponsorLogo}
-                              alt=""
+                              alt={booth.label ? `${booth.label} logo` : "Sponsor logo"}
                               className="w-5 h-5 object-contain"
                               onError={(e) => {
                                 e.target.onerror = null;
