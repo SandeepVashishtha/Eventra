@@ -51,7 +51,7 @@ const socialLinks = [
     href: "https://github.com/sandeepvashishtha/Eventra",
     icon: (
       <FaGithub
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 hover:-translate-y-1"
         size={20}
       />
     ),
@@ -61,7 +61,7 @@ const socialLinks = [
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
     icon: (
       <FaLinkedin
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 hover:-translate-y-1"
         size={20}
       />
     ),
@@ -71,7 +71,7 @@ const socialLinks = [
     href: "https://www.discord.com/",
     icon: (
       <FaDiscord
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 hover:-translate-y-1"
         size={20}
       />
     ),
@@ -81,7 +81,7 @@ const socialLinks = [
     href: "https://t.me/eventra",
     icon: (
       <FaTelegram
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 hover:-translate-y-1"
         size={20}
       />
     ),
@@ -91,7 +91,7 @@ const socialLinks = [
     href: "https://www.instagram.com/",
     icon: (
       <FaInstagram
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 hover:-translate-y-1"
         size={20}
       />
     ),
@@ -147,7 +147,7 @@ const Newsletter = () => {
       <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">
         Subscribe to our newsletter
       </h4>
-      <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
+      <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">
         Get the latest updates, event tips, and community news.
       </p>
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
@@ -163,7 +163,7 @@ const Newsletter = () => {
               }
             }}
             placeholder="Enter your email"
-            className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
+            className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full placeholder:text-gray-400 dark:placeholder:text-gray-400"
             disabled={isSubmitting}
             aria-describedby={feedback.message ? feedbackId : undefined}
             aria-invalid={feedback.type === "error"}
@@ -202,7 +202,7 @@ const SocialLinksRender = () => (
         <a
           key={link.name}
           href={link.href}
-          className="text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          className="text-gray-400 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
           target="_blank"
           rel="noopener noreferrer"
           aria-label={link.name}
@@ -233,10 +233,10 @@ const FooterLinksRender = () => (
             <li key={link.name}>
               <Link
                 to={link.href}
-                className="text-sm text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
+                className="text-sm text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
               >
                 {link.icon && (
-                  <span className="text-black dark:text-white group-hover:text-black dark:group-hover:text-white group-hover:scale-110 transition-all duration-300">
+                  <span className="text-gray-500 dark:text-gray-300 group-hover:text-black dark:group-hover:text-white group-hover:scale-110 transition-all duration-300">
                     {link.icon}
                   </span>
                 )}
@@ -253,7 +253,7 @@ const FooterLinksRender = () => (
 const Footer = () => {
   return (
     <footer 
-      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
       data-aos="fade-up"
       data-aos-duration="1000"
       data-aos-offset="100"
@@ -271,7 +271,7 @@ const Footer = () => {
             >
               Eventra
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
+            <p className="text-gray-600 dark:text-gray-300 text-sm">
               Open-source event management for communities worldwide.
             </p>
 
