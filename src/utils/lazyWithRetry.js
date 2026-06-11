@@ -1,26 +1,19 @@
- 
 import { lazy } from "react";
 
-export function lazyWithRetry(importFn, retries = 2, delay = 1000) {
-  let attempt = 0;
-
-  const retryImport = async () => {
-    while (attempt <= retries) {
+export function lazyWithRetry(importFunc, maxRetries = 3) {
+  return lazy(async () => {
+    let attempt = 0;
+    while (true) {
       try {
-        return await importFn();
-      } catch (err) {
+        return await importFunc();
+      } catch (error) {
         attempt++;
-        if (attempt > retries) {
-          console.warn(
-            `[lazyWithRetry] Failed to load chunk after ${retries + 1} attempts:`,
-            err.message
-          );
-          throw err;
+        if (attempt >= maxRetries) {
+          throw error;
         }
-        await new Promise((resolve) => setTimeout(resolve, delay * attempt));
+        // Wait prior retry
+        await new Promise((resolve) => setTimeout(resolve, attempt * 500));
       }
     }
-  };
-
-  return lazy(retryImport);
+  });
 }
