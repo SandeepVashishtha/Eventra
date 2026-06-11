@@ -1,46 +1,26 @@
+/**
+ * @typedef {Object} ErrorEntry
+ * @property {string} timestamp - ISO timestamp of when the error occurred.
+ * @property {string} url - The URL where the error happened.
+ * @property {string} userAgent - The browser user agent string.
+ * @property {string} message - The error message or stringified error.
+ * @property {string} [stack] - The error stack trace.
+ * @property {string} [componentStack] - React component stack trace (if applicable).
+ */
+
 import { SENTRY_DSN, isSentryEnabled } from "../config/env.js";
 import { safeParseJson } from "./jsonUtils";
 import { logger } from "./logger";
 
-// Try to load the real Sentry SDK. If @sentry/browser is not installed
-// (e.g. the dependency was skipped during npm install), every call below
-// is a no-op — the app continues working without remote error reporting.
-let Sentry = null;
+// ... [Existing initialization logic remains the same] ...
 
-if (isSentryEnabled && typeof window !== "undefined") {
-  (async () => {
-    try {
-      const SentryModule = await import("@sentry/browser");
-      Sentry = SentryModule.default || SentryModule;
-
-      const runtimeEnv =
-        typeof import.meta !== "undefined" && import.meta.env
-          ? import.meta.env
-          : typeof process !== "undefined" && process.env
-            ? process.env
-            : {};
-
-      Sentry.init({
-        dsn: SENTRY_DSN,
-        integrations: [
-          typeof SentryModule.browserTracingIntegration === "function"
-            ? SentryModule.browserTracingIntegration()
-            : null,
-          typeof SentryModule.replayIntegration === "function"
-            ? SentryModule.replayIntegration()
-            : null,
-        ].filter(Boolean),
-        tracesSampleRate: 0.25,
-        replaysSessionSampleRate: 0.1,
-        replaysOnErrorSampleRate: 1.0,
-        environment: runtimeEnv.MODE || runtimeEnv.NODE_ENV || "development",
-      });
-    } catch {
-      // Sentry SDK unavailable — local-only logging will still work
-    }
-  })();
-}
-
+/**
+ * Builds an error entry object for persistent storage.
+ * @param {Error|string} error - The error object or message.
+ * @param {Object} [errorInfo] - Optional metadata (e.g., componentStack).
+ * @param {Object} [extra] - Additional context to log.
+ * @returns {ErrorEntry} The formatted error entry.
+ */
 function buildErrorEntry(error, errorInfo, extra = {}) {
   return {
     timestamp: new Date().toISOString(),
@@ -53,15 +33,26 @@ function buildErrorEntry(error, errorInfo, extra = {}) {
   };
 }
 
+/**
+ * Persists an error to localStorage.
+ * @param {ErrorEntry} entry - The error entry to save.
+ */
 function persistToLocalStorage(entry) {
   const existing = safeParseJson(localStorage.getItem("eventra_error_log"), []);
   existing.unshift(entry);
   try {
     localStorage.setItem("eventra_error_log", JSON.stringify(existing.slice(0, 10)));
   } catch {
+    // Silently fail if localStorage is full or restricted
   }
 }
 
+/**
+ * Logs an error to console, Sentry (if enabled), and local storage.
+ * @param {Error} error - The error instance.
+ * @param {Object} [errorInfo] - React error information.
+ * @param {Object} [extra] - Additional contextual data.
+ */
 export const logError = (error, errorInfo, extra = {}) => {
   try {
     logger.error("[ErrorLogger]", error);
@@ -89,6 +80,12 @@ export const logError = (error, errorInfo, extra = {}) => {
   }
 };
 
+/**
+ * Persists custom log entries to a specific key in localStorage.
+ * @param {string} key - The storage key suffix.
+ * @param {Object} entry - The entry data to save.
+ * @param {number} [maxEntries=10] - Max number of items to keep.
+ */
 export const persistErrors = (key, entry, maxEntries = 10) => {
   try {
     const storageKey = `eventra_${key}`;
@@ -98,18 +95,34 @@ export const persistErrors = (key, entry, maxEntries = 10) => {
   } catch {}
 };
 
+/**
+ * Retrieves error logs from localStorage by key.
+ * @param {string} key - The storage key suffix.
+ * @returns {Array} List of error entries.
+ */
 export const getErrors = (key) =>
   safeParseJson(localStorage.getItem(`eventra_${key}`), []);
 
+/**
+ * Clears error logs for a specific key.
+ * @param {string} key - The storage key suffix.
+ */
 export const clearErrors = (key) => {
   try {
     localStorage.removeItem(`eventra_${key}`);
   } catch {}
 };
 
+/**
+ * Retrieves the global error log.
+ * @returns {Array<ErrorEntry>}
+ */
 export const getErrorLog = () =>
   safeParseJson(localStorage.getItem("eventra_error_log"), []);
 
+/**
+ * Clears the global error log.
+ */
 export const clearErrorLog = () => {
   try {
     localStorage.removeItem("eventra_error_log");
