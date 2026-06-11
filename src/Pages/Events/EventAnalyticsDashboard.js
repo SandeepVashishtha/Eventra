@@ -8,7 +8,7 @@ import {
   TrendingUp, Users, DollarSign, Download, Calendar, 
   Map as MapIcon, ArrowUpRight, ArrowDownRight, Filter
 } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -59,7 +59,7 @@ const EventAnalyticsDashboard = ({ eventId, eventData }) => {
     const dashboard = document.getElementById("analytics-dashboard");
     if (!dashboard) return;
 
-    toast.info("Generating report...");
+    toast("Generating report...");
     try {
       const canvas = await html2canvas(dashboard, { scale: 2 });
       const imgData = canvas.toDataURL("image/png");

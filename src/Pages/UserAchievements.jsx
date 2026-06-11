@@ -4,7 +4,7 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 import QuestCenter from '../components/gamification/QuestCenter';
 import EventBadgeGenerator from '../components/user/EventBadgeGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import {
   Award,
   Zap,

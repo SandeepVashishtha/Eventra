@@ -2,7 +2,7 @@ import { ArrowRightIcon, LightBulbIcon, FolderOpenIcon, CodeBracketIcon, CheckCi
   UserGroupIcon, EnvelopeIcon, LinkIcon, RectangleGroupIcon, CpuChipIcon, BookmarkIcon, UsersIcon, ClockIcon, UserPlusIcon, PhotoIcon, ArchiveBoxIcon, DocumentTextIcon, PencilSquareIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";

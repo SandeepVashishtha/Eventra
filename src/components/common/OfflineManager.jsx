@@ -5,7 +5,7 @@ import {
   AlertTriangle, History, X, ChevronRight, Clock
 } from "lucide-react";
 import { getQueueIndexedDB, setQueue, clearQueue } from "../../utils/offlineQueue";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 
 const OfflineManager = ({ isOpen, onClose }) => {
   const [pendingActions, setPendingActions] = useState([]);

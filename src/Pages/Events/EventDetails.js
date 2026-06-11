@@ -2,7 +2,7 @@ import "./EventDetails.print.css";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { Link, useParams } from "react-router-dom";
 import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2 } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";

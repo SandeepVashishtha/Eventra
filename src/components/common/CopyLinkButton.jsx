@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link2, Check } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 
 const CopyLinkButton = () => {
   const [copied, setCopied] = useState(false);

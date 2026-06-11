@@ -15,7 +15,7 @@ import {
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import QRCode from "react-qr-code";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 
 // Predefined premium templates
 const BADGE_TEMPLATES = {

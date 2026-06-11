@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 import RegistrationPage from './RegistrationPage';
 import { apiUtils } from '../config/api';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 
 jest.mock('../config/api', () => ({
   API_ENDPOINTS: {

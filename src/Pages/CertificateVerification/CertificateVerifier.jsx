@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Input } from '../../components/common/Input';
 import { exportToCSV } from '../../utils/exportUtils';
 import { verifyCertificate } from '../../utils/certificateUtils';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import { LinkedInShareButton } from '../../components/common/LinkedInShareButton';
 
 // Glassmorphic container style

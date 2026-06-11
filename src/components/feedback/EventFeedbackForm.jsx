@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Loader2 } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 
 const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   const [rating, setRating] = useState(0);

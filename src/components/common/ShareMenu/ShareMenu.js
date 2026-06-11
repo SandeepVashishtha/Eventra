@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Copy, Mail, Check } from 'lucide-react';
 import { generateSharingUrl, copyToClipboard } from '../../../utils/shareUtils';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import './ShareMenu.css';
 
 /**

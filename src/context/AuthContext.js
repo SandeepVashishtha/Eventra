@@ -10,7 +10,7 @@ import {
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from "../config/api";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
 import { syncSecureStorage } from "../utils/secureStorage";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles";
 
 const AuthContext = createContext();
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     expiryToastShownRef.current = true;
-    toast.info("Session expired. Please log in again.", {
+    toast("Session expired. Please log in again.", {
       toastId: "session-expired",
       autoClose: 5000,
     });

@@ -2,7 +2,7 @@ import StatusBadge from "./common/StatusBadge";
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import './components.css';
 import CharacterCounter from "../../components/common/CharacterCounter";
 import { sanitizeInputText } from "../utils/inputSanitization";

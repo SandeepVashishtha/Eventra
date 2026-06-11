@@ -1,24 +1,17 @@
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Toaster } from "react-hot-toast";
 
 const NotificationToastContainer = () => {
   return (
-    <ToastContainer
+    <Toaster
       position="bottom-right"
-      autoClose={3000}
-      hideProgressBar={false}
-      newestOnTop
-      closeOnClick
-      closeButton
-      rtl={false}
-      pauseOnFocusLoss
-      draggable
-      pauseOnHover
-      theme="colored"
-      limit={3}
-      style={{ 
+      reverseOrder={false}
+      gutter={8}
+      containerStyle={{
         zIndex: 10050,
-        marginBottom: '1rem'
+        marginBottom: "1rem",
+      }}
+      toastOptions={{
+        duration: 3000,
       }}
     />
   );

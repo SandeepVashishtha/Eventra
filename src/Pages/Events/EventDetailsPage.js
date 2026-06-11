@@ -6,7 +6,7 @@ import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
 import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { getEventStatus } from "../../utils/eventUtils";
 import { logError } from "../../utils/errorLogger";
 // Note: eventsMockData.json is NOT statically imported here.

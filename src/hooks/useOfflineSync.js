@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
 import { logger } from "../utils/logger";
@@ -165,7 +165,7 @@ const useOfflineSync = () => {
       // The queue was saved under a previous session; firing it now could
       // attach those actions to whichever user happens to be logged in.
       if (!token || !isTokenValid(token)) {
-        toast.warning(
+        toast(
           "Offline actions are pending but your session has expired. Please log in again to sync them.",
           { autoClose: 6000 }
         );
@@ -196,7 +196,7 @@ const useOfflineSync = () => {
           'This prevents cross-user action replay.'
         );
         await clearQueue();
-        toast.warning(
+        toast(
           "Offline actions from a previous session have been cleared for security.",
           { autoClose: 5000 }
         );
@@ -211,7 +211,7 @@ const useOfflineSync = () => {
       isSyncing.current = true;
 
       try {
-        toast.info(`Syncing ${validatedQueue.length} cached offline action(s)...`, {
+        toast(`Syncing ${validatedQueue.length} cached offline action(s)...`, {
           autoClose: 2000,
         });
 
@@ -284,7 +284,7 @@ const useOfflineSync = () => {
           await setQueue(failedQueue);
           // Only show toast if we didn't abort completely
           if (!conflictController.signal.aborted) {
-            toast.warning(
+            toast(
               `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
             );
           }

@@ -2,7 +2,7 @@ import { BarChart, Calendar, Check, CheckCircle, ChevronDown, Mail, MessageSquar
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { analyzeSentiment, getSentimentDisplay } from "../../utils/sentiment.js";
 

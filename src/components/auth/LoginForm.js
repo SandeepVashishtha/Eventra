@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { showAuthToast } from "../../utils/toast";
 import { ValidationMessage } from "../forms";
 import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";

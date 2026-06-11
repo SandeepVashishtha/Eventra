@@ -1,7 +1,7 @@
 import { Plus, Trash2, PlusCircle, Save, ArrowUp, ArrowDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import SurveyAnalytics from "../../components/admin/SurveyAnalytics";
 import { validate } from "../../validation";
@@ -101,7 +101,7 @@ const SurveyEngine = () => {
     setDraftDetected(false);
     setCachedDraft(null);
     setIsInitialized(true);
-    toast.info("Survey template draft discarded");
+    toast("Survey template draft discarded");
   };
 
   // Question type configuration
@@ -121,14 +121,14 @@ const SurveyEngine = () => {
       options: type === "choice" ? ["Option 1", "Option 2"] : [],
     };
     setQuestions([...questions, newQuestion]);
-    toast.info(`Added a new ${type} question!`);
+    toast(`Added a new ${type} question!`);
   };
 
   // Update question properties
   const updateQuestionText = (id, text) => {
     // Show validation notifications if HTML is detected
     if (validate.detectHTML(text)) {
-      toast.warning("HTML elements detected. They will be automatically sanitized to prevent XSS.");
+      toast("HTML elements detected. They will be automatically sanitized to prevent XSS.");
     }
     const sanitized = validate.sanitizeSurveyPrompt(text);
     setQuestions(
@@ -169,7 +169,7 @@ const SurveyEngine = () => {
 
   const updateOptionText = (questionId, optionIndex, text) => {
     if (validate.detectHTML(text)) {
-      toast.warning("HTML elements detected. They will be automatically sanitized to prevent XSS.");
+      toast("HTML elements detected. They will be automatically sanitized to prevent XSS.");
     }
     const sanitized = validate.sanitizeSurveyOption(text);
     setQuestions(

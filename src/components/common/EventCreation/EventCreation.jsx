@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { Download, Calendar, Globe, Link2, Plus } from "lucide-react";
 import { logger } from "../../../utils/logger";
 import useReducedMotion from "../../../hooks/useReducedMotion";
@@ -315,7 +315,7 @@ const EventCreation = () => {
   const handleDiscardDraft = () => {
     localStorage.removeItem(DRAFT_KEY);
     setShowRestoreModal(false);
-    toast.info("Saved draft discarded.");
+    toast("Saved draft discarded.");
   };
 
   useEffect(() => {

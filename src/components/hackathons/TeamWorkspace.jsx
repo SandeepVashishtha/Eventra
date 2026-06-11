@@ -12,7 +12,7 @@ import {
   RefreshCw,
   AlertTriangle,
 } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import InteractiveWhiteboard from "./InteractiveWhiteboard";
 
 const INITIAL_TASKS = [
@@ -177,7 +177,7 @@ const TeamWorkspace = () => {
               time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             },
           ]);
-          toast.info(`New message from ${incoming.sender}!`);
+          toast(`New message from ${incoming.sender}!`);
           msgIndex++;
         }
       }, 5000);
@@ -218,7 +218,7 @@ const TeamWorkspace = () => {
 
   const handleDeleteTask = (id) => {
     setTasks(tasks.filter((t) => t.id !== id));
-    toast.info("Task removed from checklist.");
+    toast("Task removed from checklist.");
   };
 
   // Pins / Announcements handlers
@@ -240,7 +240,7 @@ const TeamWorkspace = () => {
 
   const handleDeletePin = (id) => {
     setPins(pins.filter((p) => p.id !== id));
-    toast.info("Announcement unpinned.");
+    toast("Announcement unpinned.");
   };
 
   // Chat message sending

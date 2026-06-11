@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { popDueReminders } from "../../utils/reminderUtils";
 
 const CHECK_INTERVAL_MS = 30 * 1000;
@@ -59,7 +59,7 @@ const ReminderChecker = () => {
         }
 
         // Trigger notification
-        toast.info(`${reminder.event.title} starts ${reminder.timingLabel}.`, {
+        toast(`${reminder.event.title} starts ${reminder.timingLabel}.`, {
           toastId: `reminder-due-${reminder.id}`,
           autoClose: 6000,
           className: "custom-toast",

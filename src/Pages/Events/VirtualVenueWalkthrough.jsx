@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import VirtualBoothModal from "../../components/events/VirtualBoothModal";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 
 // Default premium developer sponsor booths (fallback if none loaded from designer)
 const DEFAULT_SPONSORS = [
@@ -413,7 +413,7 @@ const VirtualVenueWalkthrough = () => {
               </div>
             </div>
             <button
-              onClick={() => toast.info("Full screen expansion would display optimized layout HUD.")}
+              onClick={() => toast("Full screen expansion would display optimized layout HUD.")}
               className="p-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 hover:border-indigo-500/40 rounded-lg text-indigo-400 transition-colors cursor-pointer"
               title="Full Screen View"
             >

@@ -10,7 +10,7 @@ import {
   Twitter,
   X,
 } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { isValidShareUrl } from "../../utils/shareUtils";
 
 const ModalCloseButton = memo(({ onClick }) => (

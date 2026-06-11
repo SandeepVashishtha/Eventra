@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { X, CheckCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
 import StarRating from './StarRating';
 import { saveFeedback, getUserFeedback } from '../../utils/feedbackUtils';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 
 /**
  * EventFeedbackModal Component
@@ -49,7 +49,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      toast.warning('Please select a rating');
+      toast('Please select a rating');
       return;
     }
 
