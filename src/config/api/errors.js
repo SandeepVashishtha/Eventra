@@ -1,7 +1,6 @@
 export class ApiError extends Error {
   constructor(
     message,
-    { status = null, data = null, isTimeout = false, isNetworkError = false } = {}
     { status = null, data = null, isTimeout = false, isNetworkError = false } = {},
   ) {
     super(message);
