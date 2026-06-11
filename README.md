@@ -8,24 +8,33 @@ Modern event and hackathon platform for communities, organizers, and contributor
 
 ---
 
-> [!IMPORTANT]
->
-> ## Project Status Notice
->
-> Due to time constraints and other commitments, **I ([@SandeepVashishtha](https://github.com/SandeepVashishtha)) will no longer be actively contributing to or managing this project** going forward. I sincerely apologize for any inconvenience this may cause to contributors and users.
->
-> **The project will NOT be archived** - it remains open and active, especially for **GSSoC 2026** participants and the broader open-source community.
->
-> There are mentors currently involved, and the project can continue to grow with community support. However, **we are looking for 2-3 dedicated volunteers to step up as maintainers** to help review PRs, triage issues, and guide contributors.
->
-> ### Interested in becoming a maintainer?
->
-> If you are passionate about this project and willing to take on a maintainer role, please reach out by:
->
-> - Opening an issue titled **"Maintainer Volunteer - [Your Name]"**
-> - Or contacting via the existing community channels
->
-> Your contributions and leadership would mean a lot to this project and the community around it. 🙏
+## Project Status Notice
+
+🚧 Eventra is actively maintained and welcomes contributions from the open-source community. Please check existing issues before creating new ones and follow the contribution guidelines when submitting pull requests.
+
+## Table of Contents
+
+- [Project Status Notice](#project-status-notice)
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Project Architecture](#project-architecture)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Local Development](#local-development)
+- [Docker Development](#docker-development)
+- [Environment Variables](#environment-variables)
+- [Available Scripts](#available-scripts)
+- [Testing and Quality](#testing-and-quality)
+- [SSE Mock Server (Optional)](#sse-mock-server-optional)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contributors](#contributors)
+- [Maintainers](#maintainers)
+- [Mentor](#mentor)
+- [Star History](#star-history)
 
 ---
 
@@ -33,8 +42,7 @@ Modern event and hackathon platform for communities, organizers, and contributor
 
 Eventra is an open-source frontend application built with React and Vite. It supports event discovery, registration, dashboards, hackathons, collaboration features, feedback flows, and role-based access experiences.
 
-This repository contains the frontend and serverless API helpers under `api/`.
-The Spring Boot backend is maintained in a separate repository.
+This repository contains the frontend application. The Spring Boot backend is maintained in a separate repository — all API traffic is proxied to it both in production (via Vercel rewrites) and in local development (via Vite proxy).
 
 - Frontend repo: <https://github.com/SandeepVashishtha/Eventra>
 - Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
@@ -69,15 +77,16 @@ Below is the high-level architecture of Eventra:
 graph TD
     Client[Client: React/Vite] --> Assets[Assets: public/]
     Client --> State[State: Context/Hooks]
-    Client --> API[API: Serverless Helpers]
-    API --> Backend[Backend: Spring Boot API]
+    Client --> Backend[Backend: Spring Boot API]
+    Backend --> Azure[Azure Spring Boot]
+    Client -.-> VercelRewrite[Vercel /api/* Rewrite]
+    VercelRewrite --> Backend
 ```
 
 ## Project Structure
 
 ```text
 Eventra/
-|-- api/                 # Serverless API routes and middleware
 |-- docs/                # Architecture, env setup, onboarding, security docs
 |-- public/              # Static assets
 |-- scripts/             # Validation and automation scripts
@@ -111,22 +120,20 @@ cd Eventra
 npm install
 ```
 
-1. Create your env file:
+2. Create your env file:
 
 ```bash
 cp .env.example .env
 ```
 > **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
 
-1. Start dev server:
+3. Start dev server:
 
-2. Start dev server:
-
-```bash
 npm run dev
-```
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
+
+
 
 ## Docker Development
 
@@ -143,7 +150,7 @@ cp .env.example .env
 1. Start the local development container:
 
 ```bash
-docker-compose up eventra-dev
+docker compose up eventra-dev
 ```
 
 The app will be available at `http://localhost:3000` with hot-reloading enabled.
@@ -151,7 +158,7 @@ The app will be available at `http://localhost:3000` with hot-reloading enabled.
 1. Build and test the production container locally:
 
 ```bash
-docker-compose up --build eventra-prod
+docker compose up --build eventra-prod
 ```
 
 The production-optimized build will be served via Nginx at `http://localhost:8080`.
@@ -184,6 +191,7 @@ Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variable
 | `npm run format` | Run Prettier on source files |
 | `npm run test` | Run unit test suite |
 | `npm run test:e2e` | Run Playwright E2E tests |
+| `npm run check` | Run lint + tests together (CI validation) |
 | `npm run storybook` | Start Storybook |
 | `npm run build-storybook` | Build Storybook static output |
 
@@ -215,7 +223,8 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
 - Build command: `npm run lint && GENERATE_SOURCEMAP=false npm run build`
 - Output directory: `build`
-- `/api/*` is rewritten to the hosted Spring Boot backend
+- `/api/*` is rewritten to the hosted Spring Boot backend (the sole API provider)
+- No serverless functions are deployed — the `api/` directory was removed as dead code
 
 ## Documentation
 
@@ -270,6 +279,10 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
 </tr>
 </table>
 
+## Mentor
+
+Guidance and mentorship for the Eventra project are provided by the project leadership team. Contributors are encouraged to use GitHub Issues and Discussions for questions, suggestions, and collaboration.
+
 ## Star History
 
 <a href="https://www.star-history.com/?repos=sandeepvashishtha%2Feventra&type=date&legend=top-left">
@@ -283,37 +296,3 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
 Built by the Eventra community.
 
 ---
-
-## 🧑‍🏫 Mentor
-
-This project is mentored under **GSSoC'26** by:
-
-<table>
-<tr>
-<td align="center">
-<a href="https://github.com/Ayushh-Sharmaa">
-  <img src="https://avatars.githubusercontent.com/Ayushh-Sharmaa?v=4" height="140px" width="140px" alt="Ayush Sharma" style="border-radius:50%"/>
-</a><br>
-<sub><b>Ayush Sharma</b><br>
-<i>GSSoC'26 Mentor · Eventra</i><br><br>
-<a href="https://github.com/Ayushh-Sharmaa" target="_blank">
-  <img src="https://img.shields.io/badge/GitHub-Ayushh--Sharmaa-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"/>
-</a>
-&nbsp;
-<a href="https://www.linkedin.com/in/ayushh-sharmaa/" target="_blank">
-  <img src="https://img.shields.io/badge/LinkedIn-ayushh--sharmaa-0A66C2?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn"/>
-</a>
-</sub>
-</td>
-</tr>
-</table>
-
-> 💬 Have questions about contributing or the project? Reach out to the mentor on [LinkedIn](https://www.linkedin.com/in/ayushh-sharmaa/) or via the [GSSoC Discord](https://discord.gg/6MQ9r5nHT).
-
-## 🚀 Quick Start
-
-```bash
-git clone https://github.com/SandeepVashishtha/Eventra.git
-cd Eventra
-npm install
-npm run dev

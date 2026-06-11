@@ -1,5 +1,5 @@
  
-const isDevelopment = import.meta.env.DEV;
+const isDevelopment = typeof import.meta.env !== "undefined" ? import.meta.env.DEV : process.env.NODE_ENV !== "production";
 
 const formatMessage = (level, message) => {
   return `[${level.toUpperCase()}] ${message}`;

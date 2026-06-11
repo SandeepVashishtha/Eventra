@@ -40,78 +40,81 @@ export default function FAQSection() {
 function FAQSectionInner() {
   const { t } = useTranslation();
 
-  const faqs = useMemo(() => [
-    {
-      category: t("faq.categories.gettingStarted"),
-      tab: "Hackathons",
-      icon: <Sparkles size={18} />,
-      question: t("faqQuestions.q1"),
-      answer: t("faqQuestions.a1"),
-    },
-    {
-      category: t("faq.categories.eventCreation"),
-      tab: "Hackathons",
-      icon: <Calendar size={18} />,
-      question: t("faqQuestions.q2"),
-      answer: t("faqQuestions.a2"),
-    },
-    {
-      category: t("faq.categories.eventTypes"),
-      tab: "General",
-      icon: <BookOpen size={18} />,
-      question: t("faqQuestions.q3"),
-      answer: t("faqQuestions.a3"),
-    },
-    {
-      category: t("faq.categories.pricing"),
-      tab: "General",
-      icon: <Zap size={18} />,
-      question: t("faqQuestions.q4"),
-      answer: t("faqQuestions.a4"),
-    },
-    {
-      category: t("faq.categories.community"),
-      tab: "Hackathons",
-      icon: <Users size={18} />,
-      question: t("faqQuestions.q5"),
-      answer: t("faqQuestions.a5"),
-    },
-    {
-      category: t("faq.categories.accountManagement"),
-      tab: "Account",
-      icon: <Shield size={18} />,
-      question: t("faqQuestions.q6"),
-      answer: t("faqQuestions.a6"),
-    },
-    {
-      category: t("faq.categories.technicalSupport"),
-      tab: "General",
-      icon: <MessageCircle size={18} />,
-      question: t("faqQuestions.q7"),
-      answer: t("faqQuestions.a7"),
-    },
-    {
-      category: t("faq.categories.eventFeatures"),
-      tab: "General",
-      icon: <Globe size={18} />,
-      question: t("faqQuestions.q8"),
-      answer: t("faqQuestions.a8"),
-    },
-    {
-      category: t("faq.categories.eventManagement"),
-      tab: "Hackathons",
-      icon: <Calendar size={18} />,
-      question: t("faqQuestions.q9"),
-      answer: t("faqQuestions.a9"),
-    },
-    {
-      category: t("faq.categories.privacySecurity"),
-      tab: "Account",
-      icon: <Shield size={18} />,
-      question: t("faqQuestions.q10"),
-      answer: t("faqQuestions.a10"),
-    },
-  ], [t]);
+  const faqs = useMemo(
+    () => [
+      {
+        category: t("faq.categories.gettingStarted"),
+        tab: "Hackathons",
+        icon: <Sparkles size={18} />,
+        question: t("faqQuestions.q1"),
+        answer: t("faqQuestions.a1"),
+      },
+      {
+        category: t("faq.categories.eventCreation"),
+        tab: "Hackathons",
+        icon: <Calendar size={18} />,
+        question: t("faqQuestions.q2"),
+        answer: t("faqQuestions.a2"),
+      },
+      {
+        category: t("faq.categories.eventTypes"),
+        tab: "General",
+        icon: <BookOpen size={18} />,
+        question: t("faqQuestions.q3"),
+        answer: t("faqQuestions.a3"),
+      },
+      {
+        category: t("faq.categories.pricing"),
+        tab: "General",
+        icon: <Zap size={18} />,
+        question: t("faqQuestions.q4"),
+        answer: t("faqQuestions.a4"),
+      },
+      {
+        category: t("faq.categories.community"),
+        tab: "Hackathons",
+        icon: <Users size={18} />,
+        question: t("faqQuestions.q5"),
+        answer: t("faqQuestions.a5"),
+      },
+      {
+        category: t("faq.categories.accountManagement"),
+        tab: "Account",
+        icon: <Shield size={18} />,
+        question: t("faqQuestions.q6"),
+        answer: t("faqQuestions.a6"),
+      },
+      {
+        category: t("faq.categories.technicalSupport"),
+        tab: "General",
+        icon: <MessageCircle size={18} />,
+        question: t("faqQuestions.q7"),
+        answer: t("faqQuestions.a7"),
+      },
+      {
+        category: t("faq.categories.eventFeatures"),
+        tab: "General",
+        icon: <Globe size={18} />,
+        question: t("faqQuestions.q8"),
+        answer: t("faqQuestions.a8"),
+      },
+      {
+        category: t("faq.categories.eventManagement"),
+        tab: "Hackathons",
+        icon: <Calendar size={18} />,
+        question: t("faqQuestions.q9"),
+        answer: t("faqQuestions.a9"),
+      },
+      {
+        category: t("faq.categories.privacySecurity"),
+        tab: "Account",
+        icon: <Shield size={18} />,
+        question: t("faqQuestions.q10"),
+        answer: t("faqQuestions.a10"),
+      },
+    ],
+    [t]
+  );
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -270,6 +273,13 @@ function FAQSectionInner() {
       <style>{`
         .faq-section-root {
           transition: background-color 0.3s ease, color 0.3s ease;
+          --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+          --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+          --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+          --shadow-xl: 0 16px 40px rgba(0,0,0,0.18);
+          --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+          --bg-secondary: rgba(0,0,0,0.03);
+          --text-muted: #9ca3af;
           --bg-primary: #fafbfc;
           --bg-secondary: #ffffff;
           --text-primary: #0f172a;
@@ -295,6 +305,12 @@ function FAQSectionInner() {
         }
 
         .dark .faq-section-root {
+          --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+          --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+          --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+          --shadow-xl: 0 16px 40px rgba(0,0,0,0.6);
+          --bg-secondary: rgba(255,255,255,0.03);
+          --text-muted: #6b7280;
           --bg-primary: #0f172a;
           --bg-secondary: #1e293b;
           --text-primary: #f1f5f9;
@@ -335,7 +351,7 @@ function FAQSectionInner() {
 
         .faq-heading-block {
           text-align: center;
-          padding: 80px 20px 40px;
+          padding: 72px 20px 40px;
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           width: 100%;
@@ -349,7 +365,7 @@ function FAQSectionInner() {
         }
 
         .faq-heading-inner {
-          max-width: 800px;
+          max-width: 760px;
           width: 100%;
           padding: 0 20px;
           box-sizing: border-box;
@@ -393,8 +409,9 @@ function FAQSectionInner() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 40px 20px 0 20px;
-          max-width: 100%;
+          padding: 32px 20px 60px;
+          max-width: 860px;
+          margin: 0 auto;
           box-sizing: border-box;
           position: relative;
           z-index: 1;
@@ -403,7 +420,6 @@ function FAQSectionInner() {
         .card-pin-wrapper {
           position: relative;
           width: 100%;
-          max-width: 850px;
           margin-bottom: 20px;
         }
 
@@ -426,8 +442,8 @@ function FAQSectionInner() {
         .faq-accordion-header {
           display: flex;
           align-items: center;
-          gap: 16px;
-          padding: 24px 28px;
+          gap: 18px;
+          padding: 26px 28px;
           cursor: pointer;
           user-select: none;
           transition: all 0.2s ease;
@@ -512,6 +528,8 @@ function FAQSectionInner() {
         .faq-accordion-content {
           max-height: 0;
           overflow: hidden;
+          width: 100%;
+          box-sizing: border-box;
           transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           border-top: 1px solid transparent;
         }
@@ -521,10 +539,10 @@ function FAQSectionInner() {
         }
 
         .faq-answer-wrapper {
-          padding: 24px 28px 28px;
+          padding: 26px 28px 32px;
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 24px;
         }
 
         .faq-accordion-content p {
@@ -535,8 +553,8 @@ function FAQSectionInner() {
         }
 
         .faq-helpfulness {
-          margin-top: 12px;
-          padding-top: 20px;
+          margin-top: 8px;
+          padding-top: 24px;
           border-top: 1px solid var(--card-border);
           display: flex;
           flex-direction: column;
@@ -835,20 +853,20 @@ function FAQSectionInner() {
           }
 
           .faq-accordion-header {
-            padding: 20px;
-            gap: 14px;
+            padding: 22px 20px;
+            gap: 16px;
           }
 
           .faq-answer-wrapper {
-            padding: 20px;
+            padding: 22px 20px 28px;
           }
 
           .faq-accordion-header h3 {
-            font-size: 1rem;
+            font-size: 1.05rem;
           }
 
           .faq-cards-container {
-            padding: 32px 16px 0 16px;
+            padding: 28px 16px 50px;
           }
 
           .card-pin-wrapper {
@@ -1027,9 +1045,7 @@ function FAQSectionInner() {
                         <p>{faq.answer}</p>
 
                         <div className="faq-helpfulness">
-                          <span className="faq-helpfulness-label">
-                            {t("faq.helpfulnessLabel")}
-                          </span>
+                          <span className="faq-helpfulness-label">{t("faq.helpfulnessLabel")}</span>
                           <div className="faq-vote-buttons">
                             <button
                               onClick={() => handleVote(faq.question, "yes")}

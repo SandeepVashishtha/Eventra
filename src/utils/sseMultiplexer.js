@@ -1,8 +1,11 @@
 import { logger } from "./logger.js";
+import { ENV } from "../config/env.js";
 import { API_BASE_URL } from "../config/api.js";
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
-const LOCK_NAME = "eventra_sse_leader_lock";
+const WEB_LOCKS_LOCK_NAME = "eventra_sse_leader_lock";
+const LS_LOCK_KEY = "eventra_sse_leader_ls_lock";
+const LS_LOCK_TIMEOUT = 10000;
 const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
 const LOCAL_STORAGE_CONFIRM_MIN_MS = 25;
 const LOCAL_STORAGE_CONFIRM_JITTER_MS = 75;
@@ -76,16 +79,14 @@ class SseMultiplexer {
   // --- 1. Leadership Election Management ---
   setupLeaderElection() {
     if (typeof navigator?.locks?.request === "function") {
-      // Modern Browsers: Web Locks API provides automatic, zero-latency coordination
       navigator.locks
-        .request(LOCK_NAME, async () => {
+        .request(WEB_LOCKS_LOCK_NAME, async () => {
           logger.log(`[SSE Multiplexer] Tab ${this.tabId} acquired lock and became LEADER.`);
           this.isLeader = true;
           this.startHeartbeatChecks();
           this.queryGlobalSubscribers();
           this.reconcileConnections();
 
-          // Keep the lock active until tab unloads/unmounts
           await new Promise((resolve) => {
             this.releaseLockPromise = resolve;
           });
@@ -103,9 +104,28 @@ class SseMultiplexer {
   }
 
   setupLocalStorageElection() {
-    const HEARTBEAT_INTERVAL = 3000;
-    const HEARTBEAT_TIMEOUT = 7000;
+    const POLL_INTERVAL = 3000;
 
+    const tryAcquireLock = () => {
+      if (this.isLeader) return;
+
+      const now = Date.now();
+      const existing = localStorage.getItem(LS_LOCK_KEY);
+
+      if (existing) {
+        try {
+          const parsed = JSON.parse(existing);
+          if (now - parsed.timestamp < LS_LOCK_TIMEOUT && parsed.owner !== this.tabId) {
+            return;
+          }
+        } catch {}
+      }
+
+      const myClaim = JSON.stringify({ owner: this.tabId, timestamp: now });
+      localStorage.setItem(LS_LOCK_KEY, myClaim);
+
+      const actual = localStorage.getItem(LS_LOCK_KEY);
+      if (!actual) return;
     const readHeartbeat = () => {
       try {
         const heartbeat = localStorage.getItem(HEARTBEAT_KEY);
@@ -180,10 +200,9 @@ class SseMultiplexer {
     this.localStorageLeadershipToken = token;
     logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
 
-    // Write an immediate heartbeat so other tabs see the new leader without
-    // waiting up to HEARTBEAT_INTERVAL (3 s) for the first interval tick.
-    const writeHeartbeat = () => {
       try {
+        const winner = JSON.parse(actual);
+        if (winner.owner !== this.tabId) return;
         const current = JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "null");
         if (
           current?.tabId &&
@@ -213,17 +232,27 @@ class SseMultiplexer {
           })
         );
       } catch {
-        // localStorage unavailable — non-fatal, leadership still held in memory
+        return;
       }
+
+      logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
+      this.isLeader = true;
+
+      const writeHeartbeat = () => {
+        try {
+          localStorage.setItem(HEARTBEAT_KEY, JSON.stringify({ owner: this.tabId, timestamp: Date.now() }));
+        } catch {}
+      };
+      writeHeartbeat();
+      this.heartbeatInterval = setInterval(writeHeartbeat, 2000);
+
+      this.startHeartbeatChecks();
+      this.queryGlobalSubscribers();
+      this.reconcileConnections();
     };
-    writeHeartbeat();
 
-    // Heartbeat loop — keep the entry fresh while leadership is held
-    this.heartbeatInterval = setInterval(writeHeartbeat, 2000);
-
-    this.startHeartbeatChecks();
-    this.queryGlobalSubscribers();
-    this.reconcileConnections();
+    this.localStorageInterval = setInterval(tryAcquireLock, POLL_INTERVAL);
+    tryAcquireLock();
   }
 
   // --- 2. Subscription Management ---
@@ -423,6 +452,7 @@ class SseMultiplexer {
   }
 
   openEventSource(path) {
+    const sseBaseUrl = ENV.API_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
     const sseBaseUrl =
       API_BASE_URL ||
       (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
@@ -506,28 +536,35 @@ class SseMultiplexer {
 
       const now = Date.now();
       let changed = false;
+      const staleTabs = [];
 
       for (const [tabId, lastSeen] of this.lastSeenFollowers) {
         if (now - lastSeen > MISSING_TIMEOUT) {
-          logger.log(
-            `[SSE Multiplexer] Follower tab ${tabId} missed heartbeats. Removing stale subscriptions.`
-          );
-          const paths = this.tabIdToPaths.get(tabId);
-          if (paths) {
-            for (const path of paths) {
-              const tabs = this.globalSubscribers.get(path);
-              if (tabs) {
-                tabs.delete(tabId);
-                if (tabs.size === 0) {
-                  this.globalSubscribers.delete(path);
-                }
+          staleTabs.push(tabId);
+        }
+      }
+
+      for (const tabId of staleTabs) {
+        logger.log(
+          `[SSE Multiplexer] Follower tab ${tabId} missed heartbeats. Removing stale subscriptions.`
+        );
+        const paths = this.tabIdToPaths.get(tabId);
+        if (paths) {
+          const pathsToRemove = [];
+          for (const path of paths) {
+            const tabs = this.globalSubscribers.get(path);
+            if (tabs) {
+              tabs.delete(tabId);
+              if (tabs.size === 0) {
+                pathsToRemove.push(path);
               }
             }
-            this.tabIdToPaths.delete(tabId);
           }
-          this.lastSeenFollowers.delete(tabId);
-          changed = true;
+          pathsToRemove.forEach((p) => this.globalSubscribers.delete(p));
+          this.tabIdToPaths.delete(tabId);
         }
+        this.lastSeenFollowers.delete(tabId);
+        changed = true;
       }
 
       if (changed) {
@@ -540,6 +577,14 @@ class SseMultiplexer {
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
+    }
+    if (this.localStorageInterval) {
+      clearInterval(this.localStorageInterval);
+      this.localStorageInterval = null;
+    }
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
     }
     this.lastSeenFollowers = null;
   }
@@ -573,23 +618,11 @@ class SseMultiplexer {
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
     if (this.localStorageClaimTimeout) clearTimeout(this.localStorageClaimTimeout);
 
-    // Remove the heartbeat key from localStorage when this tab was the leader.
-    //
-    // Without this, the stale heartbeat persists after the tab closes. Remaining
-    // tabs read it in checkLeader() and see `now - parsed.timestamp < HEARTBEAT_TIMEOUT`
-    // (7 000 ms) as still valid, so they refuse to claim leadership for up to 7
-    // seconds. During that window no tab owns an SSE connection and real-time
-    // updates are silently dropped for all users.
-    //
-    // A browser crash bypasses beforeunload so the key may still linger —
-    // setupLocalStorageElection already handles that via the HEARTBEAT_TIMEOUT
-    // expiry. This removal covers the clean-close path.
     if (this.isLeader) {
       try {
+        localStorage.removeItem(LS_LOCK_KEY);
         localStorage.removeItem(HEARTBEAT_KEY);
-      } catch {
-        // Non-fatal — the timeout mechanism in checkLeader will handle expiry
-      }
+      } catch {}
     }
   }
 }

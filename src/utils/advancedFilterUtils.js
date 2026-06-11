@@ -133,6 +133,7 @@ export const filterByCategory = (events, selectedCategories) => {
   }
 
   return events.filter((event) => {
+    if (!event) return false;
     const eventCategory = normalizeFilterValue(event.category);
     return selectedCategories.some((cat) => {
       const mappedCategory = EVENT_CATEGORIES.find(
@@ -181,11 +182,12 @@ export const filterByMode = (events, selectedModes) => {
     return events;
   }
 
-  return events.filter((event) =>
-    event ? selectedModes.includes(
-      normalizeFilterValue(event.eventMode || event.mode || "offline"),
-    ) : false,
-  );
+  return events.filter((event) => {
+    if (!event) return false;
+    // Safely extract the raw mode without implicitly falling back to a valid filter value
+    const rawMode = event.eventMode !== undefined ? event.eventMode : (event.mode !== undefined ? event.mode : "");
+    return selectedModes.includes(normalizeFilterValue(rawMode));
+  });
 };
 
 /**
@@ -309,8 +311,10 @@ export const applyAdvancedFilters = (events, filters = {}) => {
 export const getUniqueCategories = (events) => {
   const categories = new Set();
   events.forEach((event) => {
-    if (event.category) {
-      categories.add(event.category);
+    // Fallback to event.type if event.category is missing
+    const categoryValue = event.category || event.type;
+    if (categoryValue) {
+      categories.add(categoryValue);
     }
   });
   return Array.from(categories).sort((a, b) => a.localeCompare(b));
@@ -347,16 +351,18 @@ export const getPriceStats = (events) => {
  * @returns {Object} { earliest: Date, latest: Date }
  */
 export const getDateRange = (events) => {
-  if (events.length === 0) {
-    return { earliest: new Date(), latest: new Date() };
+  // Gracefully return null if the array is missing or entirely empty
+  if (!events || events.length === 0) {
+    return { earliest: null, latest: null };
   }
 
   const dates = events
     .map((e) => new Date(e.date || e.startDate))
     .filter((d) => !Number.isNaN(d.getTime()));
 
+  // Handle cases where events exist but none contain a structurally valid date format
   if (dates.length === 0) {
-    return { earliest: new Date(), latest: new Date() };
+    return { earliest: null, latest: null };
   }
 
   return {

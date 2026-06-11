@@ -47,6 +47,8 @@ jobs:
           key: npm-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
+      - name: Security audit
+        run: npm audit --audit-level=high
       - name: Lint
         run: npm run lint
 
@@ -65,6 +67,8 @@ jobs:
           key: npm-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
+      - name: Security audit
+        run: npm audit --audit-level=high
       - name: TypeScript check
         run: npx tsc --noEmit --allowJs
 
@@ -83,6 +87,8 @@ jobs:
           key: npm-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
+      - name: Security audit
+        run: npm audit --audit-level=high
       - name: Unit tests
         run: npm test 2>&1
 
@@ -139,9 +145,12 @@ jobs:
           key: npm-node-modules-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
+      - name: Security audit
+        run: npm audit --audit-level=high
       - name: Build
         run: npm run build
         env:
           NODE_ENV: production
+          JWT_SECRET: "mock-jwt-secret-for-ci-build-verification-only"
       - name: Check bundle size
         run: npx bundlesize
