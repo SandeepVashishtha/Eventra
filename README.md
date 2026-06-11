@@ -120,7 +120,7 @@ cd Eventra
 npm install
 ```
 
-2. Create your env file:
+1. Create your env file:
 
 ```bash
 cp .env.example .env
@@ -133,13 +133,11 @@ Set at least one backend URL before starting the app:
 VITE_API_URL=http://localhost:8080
 ```
 
-3. Start dev server:
+1. Start dev server:
 
 npm run dev
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
-
-
 
 ## Docker Development
 
