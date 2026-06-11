@@ -19,7 +19,10 @@ const FormField = ({ label, icon: Icon, error, children, required, hint }) => (
   </div>
 );
 
-const EventLocationSection = ({ formData, handleInputChange, handleNestedChange, errors }) => {
+const EventLocationSection = ({ formData, handleInputChange, handleNestedChange, handleFieldBlur, errors }) => {
+  // Today's date in YYYY-MM-DD — used as the `min` attribute on date pickers
+  // so the browser's native date-picker UI also blocks past dates.
+  const todayStr = new Date().toISOString().split("T")[0];
   return (
     <div className="space-y-8">
       {/* Type Switcher */}
@@ -52,8 +55,11 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
               name="virtualLink"
               value={formData.virtualLink}
               onChange={handleInputChange}
+              onBlur={handleFieldBlur}
               placeholder="https://zoom.us/j/..."
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700"
+              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+                errors.virtualLink ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+              }`}
             />
           </FormField>
         ) : (
@@ -61,10 +67,14 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
             <FormField label="Venue Name" icon={MapPin} error={errors.location} required>
               <input
                 type="text"
+                name="location"
                 value={formData.location.name}
                 onChange={(e) => handleNestedChange("location", "name", e.target.value)}
+                onBlur={handleFieldBlur}
                 placeholder="e.g., Grand Ballroom, Hotel Plaza"
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700"
+                className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+                  errors.location ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                }`}
               />
             </FormField>
             <FormField label="City" icon={MapPin}>
@@ -87,8 +97,12 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
             type="date"
             name="date"
             value={formData.date}
+            min={todayStr}
             onChange={handleInputChange}
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700"
+            onBlur={handleFieldBlur}
+            className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+              errors.date ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+            }`}
           />
         </FormField>
         <div className="grid grid-cols-2 gap-3">
@@ -98,7 +112,10 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
               name="startTime"
               value={formData.startTime}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700"
+              onBlur={handleFieldBlur}
+              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+                errors.startTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+              }`}
             />
           </FormField>
           <FormField label="End Time" error={errors.endTime} required>
@@ -107,7 +124,10 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
               name="endTime"
               value={formData.endTime}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700"
+              onBlur={handleFieldBlur}
+              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+                errors.endTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+              }`}
             />
           </FormField>
         </div>
