@@ -76,20 +76,25 @@ export function fetchProfileWithCache(username, fetcher) {
   const existing = inFlightRequests.get(username);
   if (existing) return existing;
 
-  // 🔥 FIX: Create a timeout promise that rejects after 10 seconds
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error(`Fetch timeout for profile: ${username}`)), FETCH_TIMEOUT_MS)
-  );
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`Fetch timeout for profile: ${username}`)), FETCH_TIMEOUT_MS);
+  });
 
-  // 🔥 FIX: Race the fetcher against the timeout
-  const request = Promise.race([fetcher(username), timeoutPromise]).then(
+  const request = Promise.race([
+    fetcher(username).then((data) => {
+      clearTimeout(timeoutId);
+      return data;
+    }),
+    timeoutPromise
+  ]).then(
     (data) => {
       setCachedProfile(username, data);
       inFlightRequests.delete(username);
       return data;
     },
     (err) => {
-      // If the fetch fails OR the timeout triggers, we properly clean up the Map
+      clearTimeout(timeoutId);
       inFlightRequests.delete(username);
       throw err;
     }

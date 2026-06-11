@@ -129,12 +129,26 @@ export const config = {
 };
 
 const SECURITY_HEADERS = {
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+  "Strict-Transport-Security":
+    "max-age=31536000; includeSubDomains; preload",
+
   "X-Frame-Options": "DENY",
+
   "X-Content-Type-Options": "nosniff",
+
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), display-capture=()",
-  "Content-Security-Policy": "default-src 'self'; script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.github.com; frame-src 'self' https://accounts.google.com",
+
+  "Permissions-Policy":
+    "camera=(), microphone=(), geolocation=(), display-capture=()",
+
+  "Content-Security-Policy":
+  "default-src 'self'; " +
+  "script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; " +
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+  "img-src 'self' data: https:; " +
+  "font-src 'self' https://fonts.gstatic.com; " +
+  "connect-src 'self' https://api.github.com https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net; " +
+  "frame-src 'self' https://accounts.google.com",
 };
 
 const addSecurityHeaders = (headers) => {
@@ -169,16 +183,49 @@ const forbiddenResponse = (url) =>
       },
     },
   );
-const BLOCKED_COUNTRIES = ['CU', 'IR', 'KP', 'SY', 'RU'];
+
+// ---------------------------------------------------------------------------
+// Geographic access restrictions — configurable via BLOCKED_COUNTRIES env var
+// ---------------------------------------------------------------------------
+
+const getBlockedCountries = () => {
+  return new Set(
+    (process.env.BLOCKED_COUNTRIES || "")
+      .split(",")
+      .map((country) => country.trim().toUpperCase())
+      .filter(Boolean)
+  );
+};
+
+const isCountryBlocked = (country) => {
+  const blockedCountries = getBlockedCountries();
+  return blockedCountries.has(country?.toUpperCase());
+};
+
+const createGeoBlockedResponse = () =>
+  new Response(
+    JSON.stringify({
+      error: "Unavailable For Legal Reasons",
+      code: "COUNTRY_BLOCKED"
+    }),
+    {
+      status: 451,
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }
+  );
 
 export default async function middleware(request) {
-  const country = request.geo?.country || 'US';
-  if (BLOCKED_COUNTRIES.includes(country)) {
-    return new Response(JSON.stringify({ error: "Unavailable For Legal Reasons" }), {
-      status: 451,
-      headers: { "Content-Type": "application/json" }
-    });
+  const country = request.geo?.country;
+  
+  if (isCountryBlocked(country)) {
+    console.warn(
+      `[Geo Restriction] Blocked request from country: ${country}`
+    );
+    return createGeoBlockedResponse();
   }
+  
   const url = new URL(request.url);
 
   if (request.method === "OPTIONS") return;

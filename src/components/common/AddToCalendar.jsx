@@ -47,7 +47,7 @@ const downloadIcal = (event) => {
   URL.revokeObjectURL(url);
 };
 
-export default function AddToCalendar({ event, className = '' }) {
+export default function AddToCalendar({ event, className = '', iconOnly = false }) {
   const [open, setOpen] = useState(false);
   const [added, setAdded] = useState('');
 
@@ -75,13 +75,20 @@ export default function AddToCalendar({ event, className = '' }) {
     <div className={`relative inline-block ${className}`}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+        className={iconOnly 
+          ? "rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
+          : "flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"}
         aria-haspopup="true"
         aria-expanded={open}
+        title="Add to Calendar"
       >
-        <Calendar className="w-4 h-4" />
-        Add to Calendar
-        <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <Calendar className={iconOnly ? "w-3.5 h-3.5 text-gray-600 dark:text-gray-300" : "w-4 h-4"} />
+        {!iconOnly && (
+          <>
+            Add to Calendar
+            <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+          </>
+        )}
       </button>
 
       {open && (
