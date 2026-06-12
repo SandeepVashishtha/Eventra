@@ -1,5 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
-import useBookmarks from "./useBookmarks";
+import useBookmarks, { _cache } from "./useBookmarks";
 import { safeJsonParse } from "../utils/safeJsonParse";
 
 const makeEvent = (id, title = `Event ${id}`) => ({ id, title, date: "2025-10-01" });
@@ -18,6 +18,7 @@ const hashUserId = (userId) => {
 describe("useBookmarks", () => {
   beforeEach(() => {
     localStorage.clear();
+    _cache?.clear();
   });
 
   // ─── Initial state ──────────────────────────────────────────────────────────

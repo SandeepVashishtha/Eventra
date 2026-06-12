@@ -50,6 +50,9 @@ function resetReact() {
   _effectStates = [];
   _effectIndex = 0;
   _cleanups = [];
+  if (typeof useBookmarksModule !== "undefined" && useBookmarksModule._cache) {
+    useBookmarksModule._cache.clear();
+  }
 }
 
 globalThis.React = {
