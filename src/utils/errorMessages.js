@@ -26,6 +26,56 @@ import i18n from "../i18n/i18n.js";
  * @returns {string} The localized text corresponding to the language environment, or key if missing.
  */
 const t = (key) => i18n.t(key);
+const MAX_KEYWORD_GAP = "[\\s\\S]{0,200}?";
+
+const KEYWORD_MESSAGES = [
+  [
+    new RegExp(
+      `email${MAX_KEYWORD_GAP}already${MAX_KEYWORD_GAP}exist|already${MAX_KEYWORD_GAP}registered|duplicate${MAX_KEYWORD_GAP}email`,
+      "i"
+    ),
+    t("error.emailExists"),
+  ],
+  [
+    new RegExp(
+      `invalid${MAX_KEYWORD_GAP}password|password${MAX_KEYWORD_GAP}incorrect|wrong${MAX_KEYWORD_GAP}password`,
+      "i"
+    ),
+    t("error.invalidCredentials"),
+  ],
+  [
+    new RegExp(
+      `invalid${MAX_KEYWORD_GAP}credential|credentials${MAX_KEYWORD_GAP}incorrect`,
+      "i"
+    ),
+    t("error.invalidCredentials"),
+  ],
+  [
+    new RegExp(
+      `account${MAX_KEYWORD_GAP}not${MAX_KEYWORD_GAP}found|user${MAX_KEYWORD_GAP}not${MAX_KEYWORD_GAP}found`,
+      "i"
+    ),
+    t("error.accountNotFound"),
+  ],
+  [
+    new RegExp(
+      `account${MAX_KEYWORD_GAP}locked|too${MAX_KEYWORD_GAP}many${MAX_KEYWORD_GAP}attempt`,
+      "i"
+    ),
+    t("error.accountLocked"),
+  ],
+  [
+    new RegExp(
+      `token${MAX_KEYWORD_GAP}expired|session${MAX_KEYWORD_GAP}expired|jwt${MAX_KEYWORD_GAP}expired`,
+      "i"
+    ),
+    t("error.unauthorized"),
+  ],
+  [
+    /network|fetch|econnrefused|enotfound/i,
+    t("error.networkError"),
+  ],
+];
 
 /**
  * Retrieves a safe, sanitized, user-facing error message suitable for displaying in the UI.
@@ -58,30 +108,6 @@ export function getPublicErrorMessage(err, fallback = t("error.generic")) {
     503: t("error.serviceUnavailable"),   // System overload or scheduled maintenance
   };
 
-  // 2. Regular Expression (Regex) Keyword Recognition Matrix
-  // When an HTTP code is unavailable, we parse raw message strings to discover matching patterns.
-  // Using case-insensitive patterns to resolve common relational database or microservice issues.
-  const KEYWORD_MESSAGES = {
-    // Matches database constraints related to duplicate email registrations
-    "email.*already.*exist|already.*registered|duplicate.*email": t("error.emailExists"),
-    
-    // Matches authentication failures (wrong passwords or invalid username keys)
-    "invalid.*password|password.*incorrect|wrong.*password": t("error.invalidCredentials"),
-    "invalid.*credential|credentials.*incorrect": t("error.invalidCredentials"),
-    
-    // Matches account lookup failures
-    "account.*not.*found|user.*not.*found": t("error.accountNotFound"),
-    
-    // Matches rate-limiter or security login lockout conditions
-    "account.*locked|too.*many.*attempt": t("error.accountLocked"),
-    
-    // Matches expired sessions, expired JWT tokens, or signatures
-    "token.*expired|session.*expired|jwt.*expired": t("error.unauthorized"),
-    
-    // Matches network timeout, ECONNREFUSED, or server offline states
-    "network|fetch|econnrefused|enotfound": t("error.networkError"),
-  };
-
   // Safe Guard Clause: if the error argument itself is falsy, immediately yield the fallback
   if (!err) {
     return fallback;
@@ -111,9 +137,9 @@ export function getPublicErrorMessage(err, fallback = t("error.generic")) {
     ""
   ).toLowerCase();
 
-  // Iterate over each regex rule in the keyword table
-  for (const [pattern, message] of Object.entries(KEYWORD_MESSAGES)) {
-    if (new RegExp(pattern, "i").test(rawMessage)) {
+  // Iterate over each precompiled regex rule in the keyword table.
+  for (const [pattern, message] of KEYWORD_MESSAGES) {
+    if (pattern.test(rawMessage)) {
       return message;
     }
   }
