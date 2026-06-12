@@ -1,17 +1,15 @@
 import { safeJsonParse } from "./safeJsonParse.js";
 
-const BOOKMARKS_STORAGE_KEY = "eventra_bookmarked_events";
+const BOOKMARKS_STORAGE_KEY = "bookmarks_guest";
 const BOOKMARKS_CHANGED_EVENT = "eventraBookmarksChanged";
 
 // ---------------------------------------------------------------------------
 // Limits
 //
-// MAX_BOOKMARKS caps the number of entries in the `eventra_bookmarked_events`
-// localStorage key to prevent quota exhaustion. This is a separate code path
-// from useBookmarks.js (which uses `bookmarks_<userId>` keys). Both must
-// enforce the same cap independently.
+// MAX_BOOKMARKS caps the number of entries in the `bookmarks_guest`
+// localStorage key to prevent quota exhaustion.
 //
-// When the cap is exceeded the oldest entry (smallest bookmarkedAt) is dropped
+// When the cap is exceeded the oldest entry (smallest savedAt/bookmarkedAt) is dropped
 // so the total stays within bounds.
 // ---------------------------------------------------------------------------
 export const MAX_BOOKMARKS = 200;
@@ -19,21 +17,23 @@ export const MAX_BOOKMARKS = 200;
 // ---------------------------------------------------------------------------
 // Minimal bookmark shape
 //
-// Previously: { ...event, bookmarkedAt }  — the full event object spread
-// Now: only the fields needed to render the bookmarks list and navigate
-// to the event detail page. The full event is fetched on demand when the
-// user opens the event.
+// Keep both savedAt (timestamp) and bookmarkedAt (ISO string) for compatibility
+// with both useBookmarks and existing legacy unit tests.
 // ---------------------------------------------------------------------------
-const toBookmarkEntry = (event) => ({
-  id: event?.id,
-  title: event?.title ?? "",
-  date: event?.date ?? "",
-  location: event?.location ?? "",
-  type: event?.type ?? event?.category ?? "",
-  image: event?.image ?? event?.imageUrl ?? "",
-  status: event?.status ?? "",
-  bookmarkedAt: new Date().toISOString(),
-});
+const toBookmarkEntry = (event) => {
+  const now = Date.now();
+  return {
+    id: event?.id,
+    title: event?.title ?? "",
+    date: event?.date ?? "",
+    location: event?.location ?? "",
+    type: event?.type ?? event?.category ?? "",
+    image: event?.image ?? event?.imageUrl ?? "",
+    status: event?.status ?? "",
+    savedAt: event?.savedAt ?? now,
+    bookmarkedAt: event?.bookmarkedAt ?? new Date(now).toISOString(),
+  };
+};
 
 const normalizeEventId = (eventId) => String(eventId);
 
@@ -54,7 +54,11 @@ const writeBookmarks = (bookmarks) => {
 
   try {
     window.localStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(bookmarks));
-    window.dispatchEvent(new CustomEvent(BOOKMARKS_CHANGED_EVENT, { detail: bookmarks }));
+    window.dispatchEvent(
+      new CustomEvent(BOOKMARKS_CHANGED_EVENT, {
+        detail: { key: BOOKMARKS_STORAGE_KEY, value: bookmarks },
+      })
+    );
   } catch {
     // localStorage can be unavailable or full — keep the UI usable if persistence fails
   }
@@ -95,14 +99,18 @@ export const addBookmarkedEvent = (event) => {
   if (nextBookmarks.length > MAX_BOOKMARKS) {
     // Sort oldest-first and drop the last (oldest) entry to stay within limit
     nextBookmarks = [...nextBookmarks].sort((a, b) => {
-      const timeDiff = new Date(a.bookmarkedAt).getTime() - new Date(b.bookmarkedAt).getTime();
+      const aTime = a.savedAt || new Date(a.bookmarkedAt).getTime();
+      const bTime = b.savedAt || new Date(b.bookmarkedAt).getTime();
+      const timeDiff = aTime - bTime;
       return timeDiff !== 0 ? timeDiff : String(a.id).localeCompare(String(b.id));
     });
     nextBookmarks.shift();
     // Re-sort newest-first for consistent read order
-    nextBookmarks.sort(
-      (a, b) => new Date(b.bookmarkedAt).getTime() - new Date(a.bookmarkedAt).getTime(),
-    );
+    nextBookmarks.sort((a, b) => {
+      const aTime = a.savedAt || new Date(a.bookmarkedAt).getTime();
+      const bTime = b.savedAt || new Date(b.bookmarkedAt).getTime();
+      return bTime - aTime;
+    });
   }
 
   writeBookmarks(nextBookmarks);
@@ -145,9 +153,11 @@ export const pruneBookmarks = () => {
   const bookmarks = readBookmarks();
   if (bookmarks.length <= MAX_BOOKMARKS) return bookmarks;
 
-  const sorted = [...bookmarks].sort(
-    (a, b) => new Date(b.bookmarkedAt).getTime() - new Date(a.bookmarkedAt).getTime(),
-  );
+  const sorted = [...bookmarks].sort((a, b) => {
+    const aTime = a.savedAt || new Date(a.bookmarkedAt).getTime();
+    const bTime = b.savedAt || new Date(b.bookmarkedAt).getTime();
+    return bTime - aTime;
+  });
   const pruned = sorted.slice(0, MAX_BOOKMARKS);
   writeBookmarks(pruned);
   return pruned;
@@ -157,7 +167,14 @@ export const subscribeToBookmarkChanges = (callback) => {
   if (typeof window === "undefined") return () => {};
 
   const handleLocalChange = (event) => {
-    callback(Array.isArray(event.detail) ? event.detail : readBookmarks());
+    const detail = event?.detail;
+    if (detail && detail.key === BOOKMARKS_STORAGE_KEY) {
+      callback(detail.value || []);
+    } else if (Array.isArray(detail)) {
+      callback(detail);
+    } else {
+      callback(readBookmarks());
+    }
   };
 
   const handleStorageChange = (event) => {

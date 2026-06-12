@@ -2,13 +2,14 @@ import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Download, Inbox } from "lucide-react";
 import EmptyState from "../components/common/EmptyState";
+import Loading from "../components/common/Loading";
 import useBookmarks from "../hooks/useBookmarks";
 import { exportToCSV } from "../utils/exportUtils";
 import { toast } from "react-toastify";
 
 const SavedEventsPage = () => {
   const navigate = useNavigate();
-  const { bookmarks, toggleBookmark } = useBookmarks();
+  const { bookmarks, toggleBookmark, loading } = useBookmarks();
   const [sortBy, setSortBy] = useState("savedAt");
   const [exporting, setExporting] = useState(false);
 
@@ -31,6 +32,14 @@ const SavedEventsPage = () => {
       setTimeout(() => setExporting(false), 800);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] px-4 py-12 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100 sm:px-6 lg:px-8 flex items-center justify-center">
+        <Loading text="Loading saved events..." />
+      </div>
+    );
+  }
 
   if (bookmarks.length === 0) {
     return (

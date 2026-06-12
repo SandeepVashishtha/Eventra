@@ -1,22 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Bookmark, CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import EventCard from "./EventCard";
 import { getEventStatus } from "../../utils/eventUtils";
-import {
-  getBookmarkedEvents,
-  subscribeToBookmarkChanges,
-} from "../../utils/bookmarkUtils";
+import useBookmarks from "../../hooks/useBookmarks";
+import Loading from "../../components/common/Loading";
 
 const BookmarkedEvents = () => {
   useDocumentTitle("Eventra | Bookmarked Events");
-  const [bookmarkedEvents, setBookmarkedEvents] = useState(() => getBookmarkedEvents());
-
-  useEffect(() => {
-    setBookmarkedEvents(getBookmarkedEvents());
-    return subscribeToBookmarkChanges(setBookmarkedEvents);
-  }, []);
+  const { bookmarks: bookmarkedEvents, loading } = useBookmarks();
 
   const normalizedEvents = useMemo(
     () =>
@@ -26,6 +19,17 @@ const BookmarkedEvents = () => {
       })),
     [bookmarkedEvents]
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 text-slate-900 dark:text-gray-100 pt-12 pb-16 bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] flex items-center justify-center" style={{
+        minHeight: "100vh",
+        width: "100vw"
+      }}>
+        <Loading text="Loading bookmarked events..." />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 text-slate-900 dark:text-gray-100 pt-12 pb-16 bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] " style={{

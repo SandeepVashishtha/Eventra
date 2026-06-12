@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useId, useState } from "react";
+import { memo, useCallback, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
@@ -27,12 +27,7 @@ import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
 import AddToCalendar from "../../components/common/AddToCalendar";
 import SocialShareButtons from "../../components/common/SocialShareButtons";
-import {
-  addBookmarkedEvent,
-  isEventBookmarked,
-  removeBookmarkedEvent,
-  subscribeToBookmarkChanges,
-} from "../../utils/bookmarkUtils";
+import useBookmarks from "../../hooks/useBookmarks";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
 const getCapacityStyles = (ratio, isFull) => {
@@ -55,7 +50,8 @@ const getCapacityStyles = (ratio, isFull) => {
 };
 
 const EventCard = ({ event }) => {
-  const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
+  const { toggleBookmark, isBookmarked: checkIsBookmarked } = useBookmarks();
+  const isBookmarked = checkIsBookmarked(event.id);
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
   const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
@@ -101,41 +97,29 @@ const EventCard = ({ event }) => {
   const computedStatus = getEventStatus(event);
   const canSetReminder = isBookmarked || isRegistered(event.id);
 
-  useEffect(() => {
-    setIsBookmarked(isEventBookmarked(event.id));
+  const handleBookmarkToggle = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-    return subscribeToBookmarkChanges(() => {
-      setIsBookmarked(isEventBookmarked(event.id));
+    toggleBookmark({
+      ...event,
+      status: computedStatus,
     });
-  }, [event.id]);
 
-  const handleBookmarkToggle = useCallback(
-    (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (isBookmarked) {
-        removeBookmarkedEvent(event.id);
-        toast.info("Removed from bookmarked events.", {
-          toastId: `bookmark-${event.id}`,
-          autoClose: 1800,
-          className: "custom-toast",
-        });
-        return;
-      }
-
-      addBookmarkedEvent({
-        ...event,
-        status: computedStatus,
+    if (isBookmarked) {
+      toast.info("Removed from bookmarked events.", {
+        toastId: `bookmark-${event.id}`,
+        autoClose: 1800,
+        className: "custom-toast",
       });
+    } else {
       toast.success("Event bookmarked.", {
         toastId: `bookmark-${event.id}`,
         autoClose: 1800,
         className: "custom-toast",
       });
-    },
-    [isBookmarked, event, computedStatus]
-  );
+    }
+  }, [computedStatus, event, isBookmarked, toggleBookmark]);
 
   return (
     <article

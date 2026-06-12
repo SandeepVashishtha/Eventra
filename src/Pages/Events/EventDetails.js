@@ -8,7 +8,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2, Check } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
-import { isEventBookmarked } from "../../utils/bookmarkUtils";
+import useBookmarks from "../../hooks/useBookmarks";
 import { DRAFT_KEY } from "../../constants/eventDefaults";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { logger } from "../../utils/logger";
@@ -42,6 +42,7 @@ const EventDetails = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { addRecentlyViewed } = useRecentlyViewed();
+  const { isBookmarked } = useBookmarks();
 
   const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
 
@@ -286,7 +287,7 @@ const EventDetails = () => {
     );
   }
 
-  const canSetReminder = isEventBookmarked(event.id) || isRegistered(event.id);
+  const canSetReminder = isBookmarked(event.id) || isRegistered(event.id);
   const isRegistrationClosed = isEventRegistrationClosed(event);
 
   return (
