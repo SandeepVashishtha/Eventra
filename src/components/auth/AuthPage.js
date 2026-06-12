@@ -35,10 +35,10 @@ const AuthPage = () => {
     if (isAuthenticated()) {
       // 🔥 FIX 1B: The Infinite Redirect Guard
       // Prevents redirecting authenticated users back into an auth-loop.
-      const safeRedirectPath = 
-        rawRedirectPath.includes('/login') || rawRedirectPath.includes('/register')
-          ? '/dashboard' 
-          : rawRedirectPath;
+      // Only redirect to dashboard for actual auth routes, not event registration pages
+      const authRoutes = ['/login', '/register', '/signup', '/unauthorized', '/password-reset'];
+      const isAuthRoute = authRoutes.includes(rawRedirectPath);
+      const safeRedirectPath = isAuthRoute ? '/dashboard' : rawRedirectPath;
 
       navigate(safeRedirectPath, { replace: true });
     }

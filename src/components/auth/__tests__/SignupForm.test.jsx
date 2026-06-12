@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
-import SignupForm from "../SignupForm";
+import SignupForm, { normalizeSignupRoles } from "../SignupForm";
 import { apiUtils } from "../../../config/api";
 import {
   validateEmailAvailability,
@@ -54,16 +54,16 @@ vi.mock("../../../validation", () => ({
 let container;
 let root;
 
-/* eslint-disable no-undef */
+ 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
-/* eslint-enable no-undef */
+ 
 
 const renderSignup = () => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
-  // eslint-disable-next-line testing-library/no-unnecessary-act
+   
   act(() => {
     root.render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -124,7 +124,7 @@ beforeEach(() => {
 
 afterEach(() => {
   if (root) {
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     act(() => {
       root.unmount();
     });
@@ -135,6 +135,19 @@ afterEach(() => {
 });
 
 describe("SignupForm integration", () => {
+  it("preserves server-assigned signup roles arrays", () => {
+    expect(
+      normalizeSignupRoles({
+        role: "ATTENDEE",
+        roles: ["ORGANIZER"],
+      }),
+    ).toEqual(["ORGANIZER"]);
+  });
+
+  it("falls back to a valid app role when signup response has no roles", () => {
+    expect(normalizeSignupRoles({})).toEqual(["ATTENDEE"]);
+  });
+
   it("blocks submission and marks required fields invalid", async () => {
     renderSignup();
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast } from "react-toastify";
-import { API_ENDPOINTS, apiUtils } from "../config/api";
+import { API_ENDPOINTS } from "../config/api";
+import { eventService } from "../services/eventService";
 import { useFormSubmit } from "./useFormSubmit";
 import {
   DRAFT_KEY,
@@ -12,6 +13,7 @@ import {
 import { sanitizeHtml } from "../utils/sanitizeHtml";
 import { logger } from "../utils/logger";
 import { useAuth } from "../context/AuthContext";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 // 🎯 Constants for better maintainability
 const MAX_CAPACITY = 100000;
@@ -295,7 +297,7 @@ export const useEventForm = () => {
       return { id: "mock-event-id", success: true };
     }
 
-    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, sanitized);
+    const response = await eventService.createEvent(sanitized);
     const result = response.data;
 
     if (!(response.status === 200 && result?.success)) {
@@ -352,9 +354,23 @@ export const useEventForm = () => {
   }, [formData, isDraftLoaded, scopedDraftKey]);
 
   // 🔍 Validation Logic
+
+  /**
+   * Returns today's date string in YYYY-MM-DD format (local time) — used
+   * as the `min` attribute on date pickers and for past-date comparisons.
+   */
+  const getTodayDateString = () => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   const validateForm = useCallback(() => {
     const newErrors = {};
     const data = formDataRef.current;
+    const todayStr = getTodayDateString();
 
     const title = data.title?.trim();
     if (!title) {
@@ -367,13 +383,24 @@ export const useEventForm = () => {
     if (!data.category) newErrors.category = "Please select a category";
 
     if (data.isMultiDay) {
-      if (!data.startDate) newErrors.startDate = "Start date is required";
-      if (!data.endDate) newErrors.endDate = "End date is required";
-      if (data.startDate && data.endDate && new Date(data.endDate) < new Date(data.startDate)) {
+      if (!data.startDate) {
+        newErrors.startDate = "Start date is required";
+      } else if (data.startDate < todayStr) {
+        newErrors.startDate = "Event date cannot be in the past";
+      }
+      if (!data.endDate) {
+        newErrors.endDate = "End date is required";
+      } else if (data.endDate < todayStr) {
+        newErrors.endDate = "Event date cannot be in the past";
+      } else if (data.startDate && data.endDate && new Date(data.endDate) < new Date(data.startDate)) {
         newErrors.endDate = "End date must be after start date";
       }
     } else {
-      if (!data.date) newErrors.date = "Event date is required";
+      if (!data.date) {
+        newErrors.date = "Event date is required";
+      } else if (data.date < todayStr) {
+        newErrors.date = "Event date cannot be in the past";
+      }
     }
 
     if (!data.startTime) newErrors.startTime = "Start time is required";
@@ -424,6 +451,101 @@ export const useEventForm = () => {
     return Object.keys(newErrors).length === 0;
   }, []);
 
+  /**
+   * validateField — validates a single named field on blur and merges the
+   * result into `errors`.  Supports the same field names used by validateForm.
+   * Called by `handleFieldBlur` which form inputs wire up to their `onBlur`.
+   */
+  const validateField = useCallback((fieldName, value) => {
+    const data = formDataRef.current;
+    const todayStr = getTodayDateString();
+    let fieldError = "";
+
+    switch (fieldName) {
+      case "title": {
+        const title = (value ?? data.title)?.trim();
+        if (!title) fieldError = "Event title is required";
+        else if (title.length < MIN_TITLE_LENGTH || title.length > MAX_TITLE_LENGTH)
+          fieldError = `Title must be between ${MIN_TITLE_LENGTH} and ${MAX_TITLE_LENGTH} characters`;
+        break;
+      }
+      case "description":
+        if (!(value ?? data.description)?.trim()) fieldError = "Event description is required";
+        break;
+      case "category":
+        if (!(value ?? data.category)) fieldError = "Please select a category";
+        break;
+      case "date": {
+        const date = value ?? data.date;
+        if (!date) fieldError = "Event date is required";
+        else if (date < todayStr) fieldError = "Event date cannot be in the past";
+        break;
+      }
+      case "startDate": {
+        const startDate = value ?? data.startDate;
+        if (!startDate) fieldError = "Start date is required";
+        else if (startDate < todayStr) fieldError = "Event date cannot be in the past";
+        break;
+      }
+      case "endDate": {
+        const endDate = value ?? data.endDate;
+        if (!endDate) fieldError = "End date is required";
+        else if (endDate < todayStr) fieldError = "Event date cannot be in the past";
+        else if (data.startDate && new Date(endDate) < new Date(data.startDate))
+          fieldError = "End date must be after start date";
+        break;
+      }
+      case "startTime":
+        if (!(value ?? data.startTime)) fieldError = "Start time is required";
+        break;
+      case "endTime": {
+        const endTime = value ?? data.endTime;
+        if (!endTime) {
+          fieldError = "End time is required";
+        } else if (data.startTime && !data.isMultiDay) {
+          const startMin = parseTimeToMinutes(data.startTime);
+          const endMin = parseTimeToMinutes(endTime);
+          if (startMin >= endMin) fieldError = "End time must be after start time";
+        }
+        break;
+      }
+      case "location": {
+        if (!data.isVirtual && !(value ?? data.location?.name)?.trim())
+          fieldError = "Location name is required for in-person events";
+        break;
+      }
+      case "virtualLink": {
+        const link = (value ?? data.virtualLink)?.trim();
+        if (data.isVirtual) {
+          if (!link) fieldError = "Virtual link is required for online events";
+          else if (!/^https:\/\//i.test(link)) fieldError = "Virtual link must use HTTPS protocol";
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    setErrors((prev) => {
+      if (!fieldError) {
+        const next = { ...prev };
+        delete next[fieldName];
+        return next;
+      }
+      return { ...prev, [fieldName]: fieldError };
+    });
+  }, []);
+
+  /**
+   * handleFieldBlur — standard `onBlur` handler to wire to any <input> /
+   * <select> / <textarea>.  Reads the field name from `e.target.name` and
+   * delegates to validateField.
+   */
+  const handleFieldBlur = useCallback((e) => {
+    const { name, value } = e.target;
+    if (name) validateField(name, value);
+  }, [validateField]);
+
   const resetForm = useCallback(() => {
     setFormData(initialFormData);
     setErrors({});
@@ -459,14 +581,13 @@ export const useEventForm = () => {
         [name]: type === "checkbox" ? checked : value,
       }));
     }
-    if (errors[name]) {
-      setErrors((prev) => {
-        const newErrs = { ...prev };
-        delete newErrs[name];
-        return newErrs;
-      });
-    }
-  }, [errors]);
+    setErrors((prev) => {
+      if (!prev[name]) return prev;
+      const newErrs = { ...prev };
+      delete newErrs[name];
+      return newErrs;
+    });
+  }, []);
 
   const handleNestedChange = useCallback((category, field, value) => {
     setFormData((prev) => ({
@@ -476,25 +597,23 @@ export const useEventForm = () => {
         [field]: value,
       },
     }));
-    if (errors[category]) {
-      setErrors((prev) => {
-        const newErrs = { ...prev };
-        delete newErrs[category];
-        return newErrs;
-      });
-    }
-  }, [errors]);
+    setErrors((prev) => {
+      if (!prev[category]) return prev;
+      const newErrs = { ...prev };
+      delete newErrs[category];
+      return newErrs;
+    });
+  }, []);
 
   const addTag = useCallback(() => {
     const tag = newTag.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (tag && !formData.tags.includes(tag)) {
-      setFormData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, tag],
-      }));
-      setNewTag("");
-    }
-  }, [newTag, formData.tags]);
+    if (!tag) return;
+    setFormData((prev) => {
+      if (prev.tags.includes(tag)) return prev;
+      return { ...prev, tags: [...prev.tags, tag] };
+    });
+    setNewTag("");
+  }, [newTag]);
 
   const removeTag = useCallback((tagToRemove) => {
     setFormData((prev) => ({
@@ -533,7 +652,7 @@ export const useEventForm = () => {
     try {
       const saved = localStorage.getItem(scopedDraftKey);
       if (saved) {
-        setFormData((prev) => ({ ...prev, ...JSON.parse(saved), banner: null, bannerPreview: null }));
+        setFormData((prev) => ({ ...prev, ...safeJsonParse(saved, {}), banner: null, bannerPreview: null }));
         toast.success("Draft restored successfully!");
       }
     } catch (error) {
@@ -597,6 +716,30 @@ export const useEventForm = () => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
+  /**
+   * isFormValid — true when the errors object is empty AND all required
+   * fields have been touched / filled.  Used to disable the submit button
+   * before the user has attempted any submission.
+   */
+  const isFormValid = useMemo(() => {
+    if (Object.keys(errors).length > 0) return false;
+    const data = formData;
+    const todayStr = getTodayDateString();
+    if (!data.title?.trim() || data.title.trim().length < MIN_TITLE_LENGTH) return false;
+    if (!data.description?.trim()) return false;
+    if (!data.category) return false;
+    if (data.isMultiDay) {
+      if (!data.startDate || data.startDate < todayStr) return false;
+      if (!data.endDate || data.endDate < todayStr) return false;
+    } else {
+      if (!data.date || data.date < todayStr) return false;
+    }
+    if (!data.startTime || !data.endTime) return false;
+    if (!data.isVirtual && !data.location?.name?.trim()) return false;
+    if (data.isVirtual && !data.virtualLink?.trim()) return false;
+    return true;
+  }, [formData, errors]);
+
   return {
     formData,
     setFormData,
@@ -613,6 +756,9 @@ export const useEventForm = () => {
     submitSuccess,
     submitEventForm,
     validateForm,
+    validateField,
+    handleFieldBlur,
+    isFormValid,
     resetForm,
     handleInputChange,
     handleNestedChange,

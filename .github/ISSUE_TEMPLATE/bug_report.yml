@@ -1,86 +1,27 @@
-name: 🐛 Bug Report
-description: Report a bug or unexpected behavior in Eventra
-labels: ["bug", "mentor:Ayushh-Sharmaa"]
+name: Bug report
+description: Create a report to help us improve
+labels: bug
 body:
-  - type: markdown
-    attributes:
-      value: |
-        ## 🐛 Bug Report
-        Thanks for taking the time to report a bug! Please fill this form as thoroughly as possible so we can investigate and fix it quickly.
-        > **GSSoC Contributors:** Make sure you have been assigned this issue before submitting a PR.
-
   - type: textarea
-    id: description
     attributes:
-      label: 📝 Describe the Bug
-      description: A clear and concise description of what the bug is.
-      placeholder: "Ex. The event card does not render correctly on mobile screens when..."
+      label: Describe the bug
+      description: Describe the bug.
+      placeholder: >
+        A clear and concise description of what the bug is.
     validations:
       required: true
-
   - type: textarea
-    id: reproduce
     attributes:
-      label: 🔁 Steps to Reproduce
-      description: Tell us exactly how to reproduce this bug.
-      placeholder: |
-        1. Go to '...'
-        2. Click on '...'
-        3. Scroll down to '...'
-        4. See error
-    validations:
-      required: true
-
+      label: To Reproduce
+      placeholder: >
+        Steps to reproduce the behavior:
   - type: textarea
-    id: expected
     attributes:
-      label: ✅ Expected Behavior
-      description: What did you expect to happen?
-      placeholder: "The event card should display correctly on all screen sizes."
-    validations:
-      required: true
-
+      label: Expected behavior
+      placeholder: >
+        A clear and concise description of what you expected to happen.
   - type: textarea
-    id: screenshots
     attributes:
-      label: 📸 Screenshots / Logs
-      description: If applicable, add screenshots or console error logs to help explain the problem.
-      placeholder: "Paste screenshots or error output here..."
-
-  - type: dropdown
-    id: severity
-    attributes:
-      label: 🚨 Severity
-      description: How severe is this bug?
-      options:
-        - "🔴 Critical — App crashes or data loss"
-        - "🟠 High — Major feature broken"
-        - "🟡 Medium — Feature partially broken"
-        - "🟢 Low — Minor cosmetic or UX issue"
-    validations:
-      required: true
-
-  - type: input
-    id: environment
-    attributes:
-      label: 🖥️ Environment
-      description: "Browser, OS, Node.js version, etc."
-      placeholder: "Ex. Chrome 124, Windows 11, Node 20.x"
-
-  - type: textarea
-    id: additional
-    attributes:
-      label: 📎 Additional Context
-      placeholder: "Any other context about the problem, related issues, or possible fixes."
-
-  - type: checkboxes
-    id: checklist
-    attributes:
-      label: ✅ Contributor Checklist
-      options:
-        - label: I have searched existing issues and this is not a duplicate
-          required: true
-        - label: I have read the [Contributing Guide](https://github.com/Ayushh-Sharmaa/Eventra/blob/main/CONTRIBUTING.md)
-          required: true
-        - label: I am a GSSoC'26 contributor and will only raise a PR after being assigned
-          required: false
+      label: Additional context
+      placeholder: >
+        Add any other context about the problem here.
