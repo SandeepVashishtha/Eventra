@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../auth/jwt-config.js";
 import { users, usersById } from "../auth/signup.js";
-import { isTokenBlacklisted } from "../auth/logout.js";
 
 // ---------------------------------------------------------------------------
 // JWT Middleware
@@ -31,12 +30,7 @@ export const verifyAuth = (handler) => {
       return res.status(401).json({ error: "Unauthorized: Missing authentication token" });
     }
 
-    // 2. Check if token is blacklisted (invalidated by logout)
-    if (isTokenBlacklisted(token)) {
-      return res.status(401).json({ error: "Unauthorized: Token has been invalidated" });
-    }
-
-    // 3. Verify token signature and expiry
+    // 2. Verify token signature and expiry
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
@@ -47,7 +41,7 @@ export const verifyAuth = (handler) => {
       return res.status(401).json({ error: "Unauthorized: Invalid token" });
     }
 
-    // 4. Verify the user referenced by the JWT still exists in the user store.
+    // 3. Verify the user referenced by the JWT still exists in the user store.
     //
     //    CONTEXT: user records are held in a module-scoped in-memory Map that
     //    resets on every serverless cold start. A JWT issued before a cold start
