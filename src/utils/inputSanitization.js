@@ -7,6 +7,44 @@ import createDOMPurify from "dompurify";
  * and ensure data integrity across API boundaries.
  */
 
+const createPlainTextPurifier = () => {
+  if (typeof createDOMPurify?.sanitize === "function") {
+    return createDOMPurify;
+  }
+
+  const domWindow =
+    typeof window !== "undefined" && window?.document
+      ? window
+      : globalThis?.window?.document
+        ? globalThis.window
+        : null;
+
+  if (domWindow && typeof createDOMPurify === "function") {
+    return createDOMPurify(domWindow);
+  }
+
+  return null;
+};
+
+const stripHtmlToPlainText = (value) =>
+  value
+    .replace(/<\s*(script|style)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, " ")
+    .replace(/<[^>]*>/g, " ");
+
+const sanitizeHtmlToPlainText = (value) => {
+  const purifier = createPlainTextPurifier();
+
+  if (purifier?.sanitize) {
+    return purifier.sanitize(value, {
+      ALLOWED_TAGS: [],
+      ALLOWED_ATTR: [],
+      KEEP_CONTENT: false,
+    });
+  }
+
+  return stripHtmlToPlainText(value);
+};
+
 /**
  * Sanitize search query to prevent XSS and NoSQL injection attacks.
  * Uses DOMPurify with no allowed tags to safely remove all HTML
@@ -22,7 +60,7 @@ export const sanitizeSearchQuery = (query = '') => {
 
   const MAX_QUERY_LENGTH = 200;
 
-  let sanitized = query.trim();
+  let sanitized = sanitizeHtmlToPlainText(query.trim());
 
   // Use DOMPurify to strip ALL HTML tags (including SVG, math, data URI,
   // obfuscated event handlers) instead of a fragile regex cascade.
@@ -43,6 +81,10 @@ export const sanitizeSearchQuery = (query = '') => {
   // Manual tag stripping as final safeguard (catches any DOMPurify bypass)
   sanitized = sanitized
     .replace(/<[^>]*>/g, '')
+    .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s<>]+)/gi, ' ')
+    .replace(/\bdata\s*:[^\s]+/gi, ' ')
+    .replace(/\b(?:java|vb)script\s*:/gi, ' ')
+    .replace(/\b(?:alert|confirm|prompt)\s*\([^)]*\)/gi, ' ')
     .replace(/[${}\[\];'`|\\/\n\r<>]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -95,7 +137,6 @@ export const validateSearchQuery = (query = '') => {
 export const prepareSafeSearchQuery = (rawQuery = '') => {
   const validation = validateSearchQuery(rawQuery);
   if (!validation.isValid) {
-     
     console.warn(`[Security] Invalid search query: ${validation.error}`);
     return '';
   }
@@ -121,10 +162,11 @@ export const sanitizeInputText = (text = '') => {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#x27;'
+    "'": '&#x27;',
+    '/': '&#x2F;'
   };
 
-  return text.replace(/[&<>"']/g, (match) => htmlEscapes[match]);
+  return text.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
 };
 
 /**
