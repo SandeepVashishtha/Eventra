@@ -1,6 +1,7 @@
 import { get as idbGet, set as idbSet } from "idb-keyval";
 import { safeJsonParse } from "./safeJsonParse.js";
 import { logger } from "./logger.js";
+import { getOrMigrateKey } from "./storageKeyManager.js";
 
 const GLOBAL_WAITLIST_KEY = "eventra_global_waitlists";
 const NOTIFICATIONS_STORAGE_KEY = "eventra_notifications";
@@ -87,7 +88,8 @@ export const getQueuePosition = (eventId, userId) => {
 
 // Add registration to specific user's localStorage registered events
 export const addRegistrationToUserStorage = (userId, event) => {
-  const storageKey = `my_events_${userId}`;
+  const legacyKey = `my_events_${userId}`;
+  const storageKey = getOrMigrateKey("my_events", userId, legacyKey);
   try {
     const raw = localStorage.getItem(storageKey);
     const current = raw ? safeJsonParse(raw, []) : [];
@@ -138,7 +140,8 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
   if (!userId) throw new Error("Authentication required to join waitlist.");
 
   // Check if already registered
-  const userRegKey = `my_events_${userId}`;
+  const legacyKey = `my_events_${userId}`;
+  const userRegKey = getOrMigrateKey("my_events", userId, legacyKey);
   try {
     const rawRegs = localStorage.getItem(userRegKey);
     const regs = rawRegs ? safeJsonParse(rawRegs, []) : [];

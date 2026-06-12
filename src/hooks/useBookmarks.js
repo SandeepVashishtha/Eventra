@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { getOrMigrateKey } from "../utils/storageKeyManager";
 
 // Simple synchronous hash to avoid exposing raw userId (email) in localStorage keys.
 const hashUserId = (userId) => {
@@ -54,7 +55,8 @@ const toBookmarkEntry = (event) => ({
 });
 
 const useBookmarks = (userId = "guest") => {
-  const storageKey = `bookmarks_${hashUserId(userId)}`;
+  const legacyKey = `bookmarks_${hashUserId(userId)}`;
+  const storageKey = getOrMigrateKey("bookmarks", userId, legacyKey);
 
   const [bookmarks, setBookmarks] = useState(() => {
     try {
