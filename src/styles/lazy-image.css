@@ -114,3 +114,23 @@
     transform: scale(0.95);
   }
 }
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .lazy-img {
+    transition: none !important;
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+
+  .lazy-img--loading {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+
+  .lazy-img-skeleton {
+    animation: none;
+  }
+}
