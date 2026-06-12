@@ -37,28 +37,30 @@ export default function LoginForm() {
       <form onSubmit={handleSubmit} className="auth-form">
         <h2>Login to Eventra</h2>
         
-        {error && <div className="error-banner" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+        {error && <div className="error-banner" role="alert" aria-live="polite" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
         
         <div className="form-group">
-          <label>Username or Email</label>
-          <input 
-            type="text" 
+          <label htmlFor="login-email">Username or Email</label>
+          <input
+            id="login-email"
+            type="text"
             value={emailOrUsername}
             onChange={(e) => setEmailOrUsername(e.target.value)}
             disabled={loading}
-            required 
+            required
             placeholder="Enter your username or email"
           />
         </div>
 
         <div className="form-group">
-          <label>Password</label>
-          <input 
-            type="password" 
+          <label htmlFor="login-password">Password</label>
+          <input
+            id="login-password"
+            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
-            required 
+            required
             placeholder="Enter your password"
           />
         </div>
