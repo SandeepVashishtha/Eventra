@@ -1,6 +1,5 @@
 import { getClientIp } from "./lib/getClientIp.js";
 import { fetchWithTimeout } from "./lib/fetchWithTimeout.js";
-import { buildCorsHeaders } from "./auth/cors.js";
 
 const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
 
@@ -65,7 +64,7 @@ const calculatePrPoints = (labels) => {
 const fetchPrPage = async (page, headers) => {
   const url = `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`;
   try {
-    const response = await fetch(url, { headers });
+    const response = await fetchWithTimeout(url, { headers }, 10000);
     if (!response.ok) {
       console.warn(`[Leaderboard API] PR page ${page} failed with status: ${response.status}`);
       return [];
@@ -117,9 +116,6 @@ const aggregatePrs = (prs, contributorsInfo) => {
 };
 
 export default async function handler(req, res) {
-  const corsHeaders = buildCorsHeaders(req);
-  res.set(corsHeaders);
-
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
@@ -136,7 +132,6 @@ export default async function handler(req, res) {
 
   const now = Date.now();
   if (cachedLeaderboard && now - cacheTimestamp < CACHE_TTL_MS) {
-    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
     res.setHeader("X-Cache", "HIT");
     return res.status(200).json(cachedLeaderboard);
   }
@@ -148,9 +143,8 @@ export default async function handler(req, res) {
   };
 
   try {
-    const contributorsUrl = `https://api.github.com/repos/${GITHUB_REPO}/contributors`;
     const [contributorsRes, firstPagePrs] = await Promise.all([
-      fetchWithTimeout(contributorsUrl, { headers }, 10000),
+      fetchWithTimeout(`https://api.github.com/repos/${GITHUB_REPO}/contributors`, { headers }, 10000),
       fetchPrPage(1, headers),
     ]);
 
@@ -205,14 +199,10 @@ export default async function handler(req, res) {
       (a, b) => b.points - a.points,
     );
 
-    // 5. Populate the in-process cache so subsequent warm-instance calls skip
-    //    the GitHub round-trips entirely for the next CACHE_TTL_MS window.
     cachedLeaderboard = sortedContributors;
     cacheTimestamp = Date.now();
 
-    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
     res.setHeader("X-Cache", "MISS");
-
     return res.status(200).json(sortedContributors);
   } catch (error) {
     console.error("[Leaderboard API] Aggregation Error:", error);
