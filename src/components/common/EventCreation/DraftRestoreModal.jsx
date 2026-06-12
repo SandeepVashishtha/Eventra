@@ -1,4 +1,4 @@
-
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, History, Trash2, ArrowRight } from "lucide-react";
 

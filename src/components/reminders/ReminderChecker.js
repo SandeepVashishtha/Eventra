@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { popDueReminders } from "../../utils/reminderUtils";
-import { parseEventDateTimeLocal } from "../../utils/timezoneUtils";
 
 const CHECK_INTERVAL_MS = 30 * 1000;
 const CHANNEL_NAME = "eventra_reminders_sync_channel";
@@ -10,7 +9,7 @@ const showBrowserNotification = (reminder) => {
   if (typeof window === "undefined" || !("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
 
-  const eventDate = parseEventDateTimeLocal(reminder.event.date, reminder.event.time) || new Date();
+  const eventDate = new Date(`${reminder.event.date} ${reminder.event.time || "12:00 AM"}`);
 
   new Notification(`Reminder: ${reminder.event.title}`, {
     body: `${reminder.timingLabel} at ${eventDate.toLocaleTimeString([], {
@@ -48,11 +47,6 @@ const ReminderChecker = () => {
           return;
         }
 
-        // 🔥 FIX: Prevent unbounded memory growth over long user sessions
-        if (notifiedIdsRef.current.size > 500) {
-          notifiedIdsRef.current.clear();
-        }
-
         // Add to our locally tracked notified set
         notifiedIdsRef.current.add(reminder.id);
 
@@ -74,16 +68,8 @@ const ReminderChecker = () => {
       });
     };
 
-    // 🔥 FIX: Inject 0-500ms mathematical jitter to stagger simultaneous tab executions.
-    // This solves the race condition where 3 tabs fire at the exact same millisecond 
-    // before the BroadcastChannel has time to deliver the message.
-    const runWithJitter = () => {
-      const randomJitterDelay = Math.random() * 500;
-      setTimeout(checkReminders, randomJitterDelay);
-    };
-
-    runWithJitter();
-    const intervalId = window.setInterval(runWithJitter, CHECK_INTERVAL_MS);
+    checkReminders();
+    const intervalId = window.setInterval(checkReminders, CHECK_INTERVAL_MS);
 
     return () => {
       window.clearInterval(intervalId);

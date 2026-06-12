@@ -7,7 +7,6 @@ This is a **systemic anti-pattern** — the async operation has zero coordinatio
 The fix introduces a **cancellation token pattern** using a boolean ref (`isCancelled`) that is atomically set to `true` in the effect's cleanup function. Every async continuation guard-checks this flag before touching React state, ensuring only the latest invocation's results are committed.
 
 **Fixes:**
-
 - Stale `setEvent(foundEvent)` overwriting correct event data during rapid navigation
 - Stale `addRecentlyViewed(...)` populating history with wrong events
 - `setLoading(false)` firing after the component has moved on
@@ -34,7 +33,6 @@ useEffect(() => {
 ```
 
 **Race timeline:**
-
 1. `eventId = "5"` → effect fires → `fetchEvent()` starts → 1s timer begins
 2. User clicks Event B (300ms later) → `eventId = "10"` → effect fires → NEW `fetchEvent()` starts
 3. **500ms later**: OLD timer resolves → `setEvent(eventA)` → **Event A's data overwrites Event B**
@@ -68,7 +66,6 @@ useEffect(() => {
 ```
 
 **Why this works:**
-
 - The `isCancelled` variable is captured by closure in both `fetchEvent` and the cleanup
 - When React runs the cleanup (either on re-render with new deps or on unmount), it sets `isCancelled = true`
 - Every async continuation point checks the flag before touching state
@@ -141,7 +138,6 @@ N/A — the bug is temporal (race condition). Before: rapid-clicking between eve
 
 1. **Real API integration**: When the simulated delay is replaced with a real `fetch`/`axios` call, the `AbortController` pattern should be used instead of the boolean flag so the network request itself is cancelled, not just the state updates.
 2. **Custom hook extraction**: The cancellation flag pattern is reusable. Consider extracting it into a shared `useAsyncEffect` hook:
-
    ```javascript
    const useAsyncEffect = (fn, deps) => {
      useEffect(() => {
@@ -151,7 +147,6 @@ N/A — the bug is temporal (race condition). Before: rapid-clicking between eve
      }, deps);
    };
    ```
-
 3. **Component-level code splitting**: `EventDetailsPage` could be split into `EventDetailsLoading`, `EventDetailsContent`, and `EventDetailsError` subcomponents to reduce re-render scope.
 
 ## 🔗 Related

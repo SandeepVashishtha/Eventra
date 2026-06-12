@@ -2,7 +2,7 @@
  * Implement tests to verify server sets and clears auth cookies,
  * and that the client can restore a session via profile endpoint.
  */
-import { test, expect } from '@playwright/test';
+const { test, expect } = require('@playwright/test');
 
 test.describe('HttpOnly cookie auth', () => {
   test('server should set auth cookie on login (placeholder)', async ({ page }) => {

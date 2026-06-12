@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -14,7 +14,6 @@ import {
   ChevronDown
 } from "lucide-react";
 import { safeJsonParse } from "../../utils/safeJsonParse";
-import { syncSecureStorage } from "../../utils/secureStorage";
 
 // Confetti Component for celebration
 const OnboardingConfetti = () => {
@@ -106,23 +105,17 @@ export default function OnboardingChecklist() {
   ]);
 
   // Check storage values and update task statuses
-  const checkTaskStatus = useCallback(async () => {
+  const checkTaskStatus = () => {
     // 1. Check user profile / skills in local storage or state
     let interestsDone = false;
-    try {
-      const storedUser = await syncSecureStorage.getItemAsync("user");
-      if (storedUser) {
-        const parsed = safeJsonParse(storedUser, {});
-        if (parsed.skills && parsed.skills.length > 0) {
-          interestsDone = true;
-        }
-      } else if (user?.skills && user.skills.length > 0) {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsed = safeJsonParse(storedUser, {});
+      if (parsed.skills && parsed.skills.length > 0) {
         interestsDone = true;
       }
-    } catch {
-      if (user?.skills && user.skills.length > 0) {
-        interestsDone = true;
-      }
+    } else if (user?.skills && user.skills.length > 0) {
+      interestsDone = true;
     }
     
     const storedInterests = localStorage.getItem("user_interests");
@@ -177,7 +170,7 @@ export default function OnboardingChecklist() {
 
       return updated;
     });
-  }, [user]);
+  };
 
   // Perform checks periodically and on routing
   useEffect(() => {
@@ -187,7 +180,7 @@ export default function OnboardingChecklist() {
     const interval = setInterval(checkTaskStatus, 1500);
 
     return () => clearInterval(interval);
-  }, [user, isDismissed, location, checkTaskStatus]);
+  }, [user, isDismissed, location]);
 
   // Listen to custom reset event to show checklist immediately
   useEffect(() => {
@@ -201,7 +194,7 @@ export default function OnboardingChecklist() {
     return () => {
       window.removeEventListener("eventraOnboardingReset", handleResetEvent);
     };
-  }, [checkTaskStatus]);
+  }, []);
 
   const handleDismiss = () => {
     localStorage.setItem("eventra_onboarding_dismissed", "true");

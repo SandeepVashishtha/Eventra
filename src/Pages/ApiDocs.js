@@ -87,7 +87,7 @@ const ApiDocs = () => {
     status: "all",
     hackathonId: "1",
     sortBy: "recent",
-    authHeader: "Bearer [redacted]",
+    authHeader: "Bearer evt_dev_test_token",
     role: "all",
     page: "1",
   });
@@ -124,7 +124,7 @@ const ApiDocs = () => {
       
       switch (selectedEndpoint) {
         case "/mock-api/hackathons": {
-          const limitVal = parseInt(params.limit, 10) || 5;
+          const limitVal = parseInt(params.limit) || 5;
           const statusVal = params.status || "all";
           const allHackathons = [
             { id: 1, title: "CodeFest 2025", startDate: "2025-09-20", endDate: "2025-09-25", participants: 150, status: "completed" },
@@ -178,8 +178,8 @@ const ApiDocs = () => {
           break;
         }
         case "/mock-api/leaderboard": {
-          const limitVal = parseInt(params.limit, 10) || 10;
-          const pageVal = parseInt(params.page, 10) || 1;
+          const limitVal = parseInt(params.limit) || 10;
+          const pageVal = parseInt(params.page) || 1;
           const allLeaderboard = [
             { rank: 1, username: "coder123", points: 500 },
             { rank: 2, username: "dev_ankita", points: 230 },

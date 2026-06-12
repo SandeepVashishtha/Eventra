@@ -67,13 +67,6 @@
   cursor: pointer;
 }
 
-.fp-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-  transform: none;
-  box-shadow: none;
-}
-
 .fp-btn-primary {
   background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
   color: #ffffff;

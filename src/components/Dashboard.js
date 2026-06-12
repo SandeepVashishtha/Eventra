@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { useAuth } from "../context/AuthContext";
-import ErrorBoundary from "../components/common/ErrorBoundary";
+import FeatureErrorBoundary from "../components/common/FeatureErrorBoundary";
 import SEOHead from "../components/SEOHead";
 import Loading from "./common/Loading";
 
@@ -8,28 +8,20 @@ const AdminDashboard = lazy(() => import("./admin/AdminDashboard"));
 const UserDashboard = lazy(() => import("./user/UserDashboard"));
 
 const Dashboard = () => {
-  // 🔥 FIX: Added safe destructuring with a fallback to prevent crashes if context is missing
-  const { isAdmin } = useAuth() || {};
-
-  // 🔥 FIX: Safely access window to prevent SSR (Server-Side Rendering) or testing environment crashes
-  const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+  const { isAdmin } = useAuth();
 
   return (
     <>
       <SEOHead
         title="My Dashboard"
         description="Manage your events, registrations, and account settings on Eventra."
-        url={currentUrl}
+        url={window.location.href}
       />
-      <ErrorBoundary level="feature">
-        {/* Contrast Fix: Added a wrapper with explicit background and text styling to ensure all nested layout statements meet WCAG AA contrast guidelines. */}
-        <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+      <FeatureErrorBoundary>
         <Suspense fallback={<Loading text="Loading dashboard..." />}>
-          {/* 🔥 FIX: Safely invoked isAdmin with optional chaining to prevent TypeError crashes */}
-          {isAdmin?.() ? <AdminDashboard /> : <UserDashboard />}
+          {isAdmin() ? <AdminDashboard /> : <UserDashboard />}
         </Suspense>
-        </div>
-      </ErrorBoundary>
+      </FeatureErrorBoundary>
     </>
   );
 };

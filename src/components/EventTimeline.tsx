@@ -26,12 +26,7 @@ export interface Event {
 
 // Helper to convert date ("YYYY-MM-DD") and time ("HH:MM AM/PM") into a Unix timestamp for precise sorting/comparison
 const parseDateTime = (dateStr: string, timeStr: string): number => {
-  // 🔥 FIX: Added safe fallbacks to prevent NaN sorting breaks
-  if (!dateStr) return 0;
-  
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return 0;
-
   let hours = 0;
   let minutes = 0;
 
@@ -58,9 +53,6 @@ export const EventTimeline: React.FC = () => {
 
   // 2. React Hooks to manage state & localStorage synchronization
   const [timeline, setTimeline] = useState<Event[]>(() => {
-    // 🔥 FIX: SSR Guard to prevent ReferenceError crashes in test/server environments
-    if (typeof window === "undefined") return [];
-    
     try {
       const stored = localStorage.getItem("eventra_timeline");
       return stored ? JSON.parse(stored) : [];
@@ -191,7 +183,7 @@ export const EventTimeline: React.FC = () => {
   };
 
   return (
-    <section className="w-full py-12 px-4 sm:px-6 lg:px-8 dark:bg-slate-950 dark:text-slate-100 text-slate-950 bg-slate-100 rounded-3xl border border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.4)] my-12 relative overflow-hidden">
+    <section className="w-full py-12 px-4 sm:px-6 lg:px-8 bg-slate-950 text-slate-100 rounded-3xl border border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.4)] my-12 relative overflow-hidden">
       {/* Absolute Decorative Background Elements */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/5 rounded-full blur-3xl pointer-events-none" />
@@ -206,7 +198,7 @@ export const EventTimeline: React.FC = () => {
                 Interactive Schedule
               </span>
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight dark:text-white sm:text-4xl bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-slate-950">
+            <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent">
               My Timeline Planner
             </h2>
             <p className="mt-2 text-sm text-slate-400 max-w-xl">
@@ -215,7 +207,7 @@ export const EventTimeline: React.FC = () => {
           </div>
           <div className="flex items-center gap-3 self-start md:self-center bg-slate-900/60 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-800">
             <div className="flex flex-col">
-              <span className="text-[11px] dark:text-slate-500 text-white uppercase tracking-wider font-semibold">
+              <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
                 Timeline Slots
               </span>
               <span className="text-lg font-bold text-indigo-400 tabular-nums">
@@ -362,14 +354,11 @@ export const EventTimeline: React.FC = () => {
                 <AnimatePresence initial={false}>
                   {sortedTimeline.map((item, index) => {
                     const parsedDate = new Date(item.date);
-                    // 🔥 FIX: Safe date formatting to prevent RangeError crash
-                    const formattedDate = isNaN(parsedDate.getTime()) 
-                      ? "Date TBD" 
-                      : parsedDate.toLocaleDateString("en-US", {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                        });
+                    const formattedDate = parsedDate.toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    });
 
                     return (
                       <motion.div

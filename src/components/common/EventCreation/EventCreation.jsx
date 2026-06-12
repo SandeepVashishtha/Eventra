@@ -1,5 +1,4 @@
-﻿import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download, Calendar, Globe, Link2, Plus } from "lucide-react";
@@ -17,8 +16,6 @@ import LocationFields from "./components/LocationFields";
 import RegistrationDatesFields from "./components/RegistrationDatesFields";
 import TagsInput from "./components/TagsInput";
 import StatsSection from "./components/StatsSection";
-import { useAutoSaveDraft } from "../../../hooks/useAutoSaveDraft";
-import { formatDraftAge } from "../../../utils/eventDraftUtils";
 import {
   DRAFT_KEY,
   CREATION_STEPS,
@@ -34,7 +31,6 @@ import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
 import { validateCoordinates } from "../../../utils/eventCreationUtils";
 import { validateForm } from "../../../utils/eventFormValidation";
-import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -47,7 +43,7 @@ const EventCreation = () => {
     error: submitError,
     success: submitSuccess,
   } = useFormSubmit(async (eventData) => {
-    // Auth is handled by the HttpOnly session cookie ΓÇö apiUtils sends it
+    // Auth is handled by the HttpOnly session cookie — apiUtils sends it
     // automatically via withCredentials. Never read tokens from sessionStorage;
     // setToken was removed as part of the HttpOnly cookie migration.
 
@@ -83,11 +79,6 @@ const EventCreation = () => {
   const [newTag, setNewTag] = useState("");
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState(null);
-  const [restoreDraftMessage, setRestoreDraftMessage] = useState(
-    `A previously saved event draft was found${lastSavedAt ? " (saved " + formatDraftAge(lastSavedAt) + ")" : ""}. Would you like to restore it?`
-  );
-  const location = useLocation();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -290,26 +281,20 @@ const EventCreation = () => {
 
   useEffect(() => {
     const saved = localStorage.getItem(DRAFT_KEY);
-    const isDuplicateDraft = location.state?.duplicateDraft;
 
     if (saved) {
       setShowRestoreModal(true);
-      if (isDuplicateDraft) {
-        setRestoreDraftMessage(
-          "A duplicated event draft is ready. Would you like to restore it and continue editing?"
-        );
-      }
     }
 
     setIsDraftLoaded(true);
-  }, [location.state]);
+  }, []);
 
   const handleRestoreDraft = () => {
     try {
       const saved = localStorage.getItem(DRAFT_KEY);
 
       if (saved) {
-        const parsed = safeJsonParse(saved, {});
+        const parsed = JSON.parse(saved);
 
         setFormData((prev) => ({
           ...prev,
@@ -340,8 +325,7 @@ const EventCreation = () => {
     delete saveable.banner;
     delete saveable.bannerPreview;
 
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ data: saveable, savedAt: new Date().toISOString() }));
-    setLastSavedAt(new Date().toISOString());
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
   }, [formData, isDraftLoaded]);
 
   useEffect(() => {
@@ -406,7 +390,6 @@ const EventCreation = () => {
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
         onDiscard={handleDiscardDraft}
-        message={restoreDraftMessage}
       />
       {showRestoreModal && (
         <div
@@ -605,7 +588,7 @@ const EventCreation = () => {
 
               {/* Date and Time Fields */}
               {formData.isMultiDay ? (
-                // ≡ƒö╣ Multi-day Event
+                // 🔹 Multi-day Event
                 <motion.div
                   className="grid grid-cols-1 sm:grid-cols-4 gap-4"
                   initial={{ opacity: 0, x: -20 }}
@@ -695,7 +678,7 @@ const EventCreation = () => {
                   </div>
                 </motion.div>
               ) : (
-                // ≡ƒö╕ Single-day Event
+                // 🔸 Single-day Event
                 <motion.div
                   className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                   initial={{ opacity: 0, x: -20 }}
@@ -952,7 +935,7 @@ const EventCreation = () => {
                         onClick={() => removeTag(tag)}
                         className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-bold"
                       >
-                        ├ù
+                        ×
                       </button>
                     </span>
                   ))}

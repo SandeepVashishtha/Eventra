@@ -26,127 +26,130 @@ import {
 } from "lucide-react";
  // ✅ Community icons
 import { Link } from "react-router-dom"; // ✅ Import for navigation
-import { useTranslation } from "react-i18next";
+
+const categories = [
+  {
+    icon: <Calendar className="w-8 h-8 text-blue-500" />,
+    title: "Hosting Hackathons",
+    description: "Learn how to create, manage, and publish hackathons.",
+    link: "/hackathons",
+  },
+  {
+    icon: <FileText className="w-8 h-8 text-green-500" />,
+    title: "Project Submission",
+    description: "Step-by-step guide for submitting projects correctly.",
+    link: "/submit-project",
+  },
+  {
+    icon: <Search className="w-8 h-8 text-yellow-500" />,
+    title: "Explore Projects",
+    description: "Search, filter, and bookmark projects on the platform.",
+    link: "/projects",
+  },
+  {
+    icon: <Users className="w-8 h-8 text-purple-500" />,
+    title: "Contributing",
+    description: "Guides for contributors and GSOC participants.",
+    link: "/contributorguide",
+  },
+  {
+    icon: <Award className="w-8 h-8 text-red-500" />,
+    title: "Leaderboard",
+    description: "Understand points, ranks, and top contributors.",
+    link: "/leaderboard",
+  },
+  {
+    icon: <Star className="w-8 h-8 text-pink-500" />,
+    title: "Tips & Best Practices",
+    description: "Maximize your visibility, submissions, and participation.",
+    link: "/documentation",
+  },
+  {
+    icon: <Calendar className="w-8 h-8 text-indigo-500" />,
+    title: "Events",
+    description: "Stay updated with upcoming hackathons and events.",
+    link: "/events",
+  },
+  {
+    icon: <FileText className="w-8 h-8 text-gray-600" />,
+    title: "See on GitHub",
+    description: "Browse our open-source repositories and contributions.",
+    link: "https://github.com/your-repo", // 🔗 replace with actual repo URL
+  },
+  {
+    icon: <Settings className="w-8 h-8 text-teal-500" />,
+    title: "API Docs",
+    description: "Explore our API documentation for developers.",
+    link: "/api-docs",
+  },
+  {
+    icon: <Users className="w-8 h-8 text-orange-500" />,
+    title: "Contributors",
+    description: "Meet the amazing contributors powering this project.",
+    link: "/contributors",
+  },
+  {
+    icon: <Calendar className="w-8 h-8 text-cyan-500" />,
+    title: "Community Events",
+    description: "Join upcoming community-driven meetups and activities.",
+    link: "/community-event",
+  },
+  {
+    icon: <Star className="w-8 h-8 text-rose-500" />,
+    title: "Contact Us",
+    description: "Reach out for support, feedback, or collaboration.",
+    link: "/contact",
+  },
+];
+
+const faqs = [
+  {
+    id: 1,
+    category: "Hackathons",
+    icon: <Calendar className="w-5 h-5" />,
+    question: "How do I host a hackathon?",
+    answer:
+      "Go to the 'Host Hackathon' page, fill in the details including title, dates, description, prizes, and publish. Ensure all fields are correctly filled.",
+  },
+  {
+    id: 2,
+    category: "Project Submission",
+    icon: <BookOpen className="w-5 h-5" />,
+    question: "How can I submit a project?",
+    answer:
+      "Navigate to 'Submit Project', fill in the required fields, upload your files, and submit before the deadline.",
+  },
+  {
+    id: 3,
+    category: "Leaderboard",
+    icon: <Award className="w-5 h-5" />,
+    question: "How are leaderboard points calculated?",
+    answer:
+      "Points are awarded based on hackathon wins, contributions, and project submissions. Leaderboard updates in real-time.",
+  },
+  {
+    id: 4,
+    category: "Contributing",
+    icon: <Users className="w-5 h-5" />,
+    question: "How can I contribute to GSSOC tasks?",
+    answer:
+      "Check the 'Contribute' page for open issues, fork the repository, make a PR, and follow contribution guidelines.",
+  },
+  {
+    id: 5,
+    category: "Explore Projects",
+    icon: <Search className="w-5 h-5" />,
+    question: "Can I explore projects without signing up?",
+    answer:
+      "Yes, projects are publicly viewable, but you need an account to submit or bookmark projects.",
+  },
+];
 
 const HelpCenter = () => {
-  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
-  useDocumentTitle(t("helpCenter.pageTitle"));
+  useDocumentTitle("Eventra | Help Center");
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const controls = useAnimation();
-
-  const categories = [
-    {
-      icon: <Calendar className="w-8 h-8 text-blue-500" />,
-      title: t("helpCenter.categories.hostingHackathons.title"),
-      description: t("helpCenter.categories.hostingHackathons.description"),
-      link: "/hackathons",
-    },
-    {
-      icon: <FileText className="w-8 h-8 text-green-500" />,
-      title: t("helpCenter.categories.projectSubmission.title"),
-      description: t("helpCenter.categories.projectSubmission.description"),
-      link: "/submit-project",
-    },
-    {
-      icon: <Search className="w-8 h-8 text-yellow-500" />,
-      title: t("helpCenter.categories.exploreProjects.title"),
-      description: t("helpCenter.categories.exploreProjects.description"),
-      link: "/projects",
-    },
-    {
-      icon: <Users className="w-8 h-8 text-purple-500" />,
-      title: t("helpCenter.categories.contributing.title"),
-      description: t("helpCenter.categories.contributing.description"),
-      link: "/contributorguide",
-    },
-    {
-      icon: <Award className="w-8 h-8 text-red-500" />,
-      title: t("helpCenter.categories.leaderboard.title"),
-      description: t("helpCenter.categories.leaderboard.description"),
-      link: "/leaderboard",
-    },
-    {
-      icon: <Star className="w-8 h-8 text-pink-500" />,
-      title: t("helpCenter.categories.tipsBestPractices.title"),
-      description: t("helpCenter.categories.tipsBestPractices.description"),
-      link: "/documentation",
-    },
-    {
-      icon: <Calendar className="w-8 h-8 text-indigo-500" />,
-      title: t("helpCenter.categories.events.title"),
-      description: t("helpCenter.categories.events.description"),
-      link: "/events",
-    },
-    {
-      icon: <FileText className="w-8 h-8 text-gray-600" />,
-      title: t("helpCenter.categories.seeOnGitHub.title"),
-      description: t("helpCenter.categories.seeOnGitHub.description"),
-      link: "https://github.com/your-repo",
-    },
-    {
-      icon: <Settings className="w-8 h-8 text-teal-500" />,
-      title: t("helpCenter.categories.apiDocs.title"),
-      description: t("helpCenter.categories.apiDocs.description"),
-      link: "/api-docs",
-    },
-    {
-      icon: <Users className="w-8 h-8 text-orange-500" />,
-      title: t("helpCenter.categories.contributors.title"),
-      description: t("helpCenter.categories.contributors.description"),
-      link: "/contributors",
-    },
-    {
-      icon: <Calendar className="w-8 h-8 text-cyan-500" />,
-      title: t("helpCenter.categories.communityEvents.title"),
-      description: t("helpCenter.categories.communityEvents.description"),
-      link: "/community-event",
-    },
-    {
-      icon: <Star className="w-8 h-8 text-rose-500" />,
-      title: t("helpCenter.categories.contactUs.title"),
-      description: t("helpCenter.categories.contactUs.description"),
-      link: "/contact",
-    },
-  ];
-
-  const faqs = [
-    {
-      id: 1,
-      category: t("helpCenter.faqs.1.category"),
-      icon: <Calendar className="w-5 h-5" />,
-      question: t("helpCenter.faqs.1.question"),
-      answer: t("helpCenter.faqs.1.answer"),
-    },
-    {
-      id: 2,
-      category: t("helpCenter.faqs.2.category"),
-      icon: <BookOpen className="w-5 h-5" />,
-      question: t("helpCenter.faqs.2.question"),
-      answer: t("helpCenter.faqs.2.answer"),
-    },
-    {
-      id: 3,
-      category: t("helpCenter.faqs.3.category"),
-      icon: <Award className="w-5 h-5" />,
-      question: t("helpCenter.faqs.3.question"),
-      answer: t("helpCenter.faqs.3.answer"),
-    },
-    {
-      id: 4,
-      category: t("helpCenter.faqs.4.category"),
-      icon: <Users className="w-5 h-5" />,
-      question: t("helpCenter.faqs.4.question"),
-      answer: t("helpCenter.faqs.4.answer"),
-    },
-    {
-      id: 5,
-      category: t("helpCenter.faqs.5.category"),
-      icon: <Search className="w-5 h-5" />,
-      question: t("helpCenter.faqs.5.question"),
-      answer: t("helpCenter.faqs.5.answer"),
-    },
-  ];
 
   const toggleFAQ = (id) => {
     setExpandedFAQ(expandedFAQ === id ? null : id);
@@ -168,7 +171,7 @@ const HelpCenter = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
         >
-          {t("helpCenter.heroHeading")}
+          Need Help with Hackathons, Projects, or Contributions?
         </motion.h1>
         <motion.p
           className="text-gray-600 dark:text-gray-300 max-w-xl mx-auto mt-10"
@@ -176,13 +179,13 @@ const HelpCenter = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.9 }}
         >
-          {t("helpCenter.heroSubtitle")}
+          Find step-by-step guides, FAQs, and tips to make the most of our platform.
         </motion.p>
       </section>
 
       {/* Categories Section */}
       <section className="py-16 px-4 max-w-6xl mx-auto">
-        <h2 className="text-3xl font-semibold mb-8 text-center">{t("helpCenter.categoriesHeading")}</h2>
+        <h2 className="text-3xl font-semibold mb-8 text-center">Browse by Category</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {categories.map((cat, idx) => (
             <motion.div key={idx} whileHover={{ scale: 1.05 }}>
@@ -201,9 +204,9 @@ const HelpCenter = () => {
 
       {/* Community Links Section */}
       <section className="py-12 px-4 max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold mb-8 text-center">{t("helpCenter.communityHeading")}</h2>
+        <h2 className="text-3xl font-bold mb-8 text-center">Connect with the Community</h2>
         <p className="text-center text-gray-600 dark:text-gray-300 mb-12">
-          {t("helpCenter.communitySubtitle")}
+          Join discussions, meet contributors, and stay updated through our community platforms.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
@@ -260,7 +263,7 @@ const HelpCenter = () => {
                 {item.title}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                {t("helpCenter.communityVisitLink")}
+                Click to visit and connect with other contributors and enthusiasts.
               </p>
             </a>
           ))}
@@ -276,7 +279,7 @@ const HelpCenter = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
           >
-            {t("helpCenter.tutorialsHeading")}
+            Step-by-Step Tutorials
           </motion.h2>
           <motion.p
             className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
@@ -284,49 +287,54 @@ const HelpCenter = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.8 }}
           >
-            {t("helpCenter.tutorialsSubtitle")}
+            Master every aspect of the platform with our comprehensive guides. From hosting events
+            to contributing code.
           </motion.p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             {
-              title: t("helpCenter.tutorials.hostingHackathon.title"),
-              description: t("helpCenter.tutorials.hostingHackathon.description"),
+              title: "Hosting a Hackathon",
+              description:
+                "Learn to create, manage, and publish successful hackathons with prizes and timelines.",
               icon: <CalendarDays className="w-8 h-8" />,
               link: "/host-hackathon",
               gradient: "from-blue-500 via-blue-600 to-indigo-600",
-              difficulty: t("helpCenter.difficultyBeginner"),
+              difficulty: "Beginner",
               time: "10 min",
               step: "01",
             },
             {
-              title: t("helpCenter.tutorials.submittingProject.title"),
-              description: t("helpCenter.tutorials.submittingProject.description"),
+              title: "Submitting a Project",
+              description:
+                "Complete guide to submitting projects with proper documentation and meeting deadlines.",
               icon: <FileCode2 className="w-8 h-8" />,
               link: "/submit-project",
               gradient: "from-green-500 via-emerald-600 to-teal-600",
-              difficulty: t("helpCenter.difficultyBeginner"),
+              difficulty: "Beginner",
               time: "8 min",
               step: "02",
             },
             {
-              title: t("helpCenter.tutorials.creatingEvent.title"),
-              description: t("helpCenter.tutorials.creatingEvent.description"),
+              title: "Creating an Event",
+              description:
+                "Step-by-step guide to creating and managing events on the platform with ease.",
               icon: <CalendarClock className="w-8 h-8" />,
               link: "/create-event",
               gradient: "from-gray-700 via-gray-800 to-black",
-              difficulty: t("helpCenter.difficultyBeginner"),
+              difficulty: "Beginner",
               time: "12 min",
               step: "03",
             },
             {
-              title: t("helpCenter.tutorials.contributingGsoc.title"),
-              description: t("helpCenter.tutorials.contributingGsoc.description"),
+              title: "Contributing to GSOC",
+              description:
+                "Follow best practices for open-source contributions and GSOC participation.",
               icon: <GitMerge className="w-8 h-8" />,
               link: "/contributorguide",
               gradient: "from-yellow-500 via-orange-500 to-red-500",
-              difficulty: t("helpCenter.difficultyIntermediate"),
+              difficulty: "Intermediate",
               time: "15 min",
               step: "04",
             },
@@ -417,10 +425,11 @@ const HelpCenter = () => {
       <section className="py-16 px-4 max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
-            {t("helpCenter.guidelinesHeading")}
+            Platform Guidelines
           </h2>
           <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            {t("helpCenter.guidelinesSubtitle")}
+            Follow these best practices to make the most of your experience and contribute
+            effectively to the community.
           </p>
         </div>
 
@@ -428,47 +437,53 @@ const HelpCenter = () => {
           {[
             {
               icon: <CheckCircle className="w-6 h-6" />,
-              title: t("helpCenter.guidelines.checkHackathonRules.title"),
-              description: t("helpCenter.guidelines.checkHackathonRules.description"),
+              title: "Check Hackathon Rules",
+              description:
+                "Always review the hackathon rules and requirements before submitting a project.",
               highlight: "rules",
               color: "from-blue-500 to-cyan-500",
               link: "/hackathons",
             },
             {
               icon: <FileText className="w-6 h-6" />,
-              title: t("helpCenter.guidelines.documentYourWork.title"),
-              description: t("helpCenter.guidelines.documentYourWork.description"),
+              title: "Document Your Work",
+              description:
+                "Use descriptive titles and provide proper documentation for all your submissions.",
               highlight: "documentation",
               color: "from-green-500 to-emerald-500",
               link: "/documentation",
             },
             {
               icon: <GitPullRequest className="w-6 h-6" />,
-              title: t("helpCenter.guidelines.followContributionGuidelines.title"),
-              description: t("helpCenter.guidelines.followContributionGuidelines.description"),
+              title: "Follow Contribution Guidelines",
+              description:
+                "Adhere to contribution guidelines for GSOC and other open-source tasks.",
               highlight: "guidelines",
               color: "from-gray-700 to-black",
               link: "/contributorguide",
             },
             {
               icon: <Clock className="w-6 h-6" />,
-              title: t("helpCenter.guidelines.respectDeadlines.title"),
-              description: t("helpCenter.guidelines.respectDeadlines.description"),
+              title: "Respect Deadlines",
+              description:
+                "Submit your projects and contributions before the specified deadlines to ensure participation.",
               highlight: "deadlines",
               color: "from-orange-500 to-red-500",
             },
             {
               icon: <FileSearch className="w-6 h-6" />,
-              title: t("helpCenter.guidelines.avoidDuplicates.title"),
-              description: t("helpCenter.guidelines.avoidDuplicates.description"),
+              title: "Avoid Duplicates",
+              description:
+                "Explore existing projects before submitting to ensure your work is unique and adds value.",
               highlight: "duplicates",
               color: "from-yellow-500 to-orange-400",
               link: "/projects",
             },
             {
               icon: <HelpCircle className="w-6 h-6" />,
-              title: t("helpCenter.guidelines.getSupport.title"),
-              description: t("helpCenter.guidelines.getSupport.description"),
+              title: "Get Support",
+              description:
+                "Reach out to our support team if you encounter any issues, errors, or have questions.",
               highlight: "support",
               color: "from-gray-700 to-black",
               link: "/contact",
@@ -506,7 +521,7 @@ const HelpCenter = () => {
                       to={guideline.link}
                       className="inline-flex items-center mt-3 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
                     >
-                      {t("helpCenter.guidelinesLearnMore")}
+                      Learn more
                       <AlertCircle className="w-4 h-4 ml-1" />
                     </Link>
                   )}
@@ -527,10 +542,11 @@ const HelpCenter = () => {
       <section className="py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-center mb-4 text-gray-900 dark:text-white">
-            {t("helpCenter.faqHeading")}
+            Frequently Asked Questions
           </h2>
           <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">
-            {t("helpCenter.faqSubtitle")}
+            Everything you need to know about using our platform. Can&apos;t find what you&apos;re looking
+            for? Reach out to our community!
           </p>
 
           <div className="space-y-6">
@@ -623,7 +639,7 @@ const HelpCenter = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
           >
-            {t("helpCenter.ctaHeading")}
+            Need Help or Have Feedback?
           </motion.h2>
 
           <motion.p
@@ -632,7 +648,7 @@ const HelpCenter = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.8 }}
           >
-            {t("helpCenter.ctaSubtitle")}
+            Reach out to our support team or share your thoughts to improve the platform.
           </motion.p>
 
           {/* Buttons */}
@@ -642,7 +658,7 @@ const HelpCenter = () => {
                 to="/contact"
                 className="inline-flex items-center justify-center gap-2 bg-white text-black font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-gray-100 transition-transform duration-300"
               >
-                <Mail size={20} /> {t("helpCenter.ctaContactUs")}
+                <Mail size={20} /> Contact Us
               </Link>
             </motion.div>
 
@@ -651,7 +667,7 @@ const HelpCenter = () => {
                 to="/feedback"
                 className="inline-flex items-center justify-center gap-2 bg-white text-black dark:bg-gray-200 dark:text-black font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
               >
-                <MessageCircle size={20} /> {t("helpCenter.ctaGiveFeedback")}
+                <MessageCircle size={20} /> Give Feedback
               </Link>
             </motion.div>
           </div>

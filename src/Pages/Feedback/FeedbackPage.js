@@ -5,12 +5,10 @@ import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { analyzeSentiment, getSentimentDisplay } from "../../utils/sentiment.js";
-import { useTranslation } from "react-i18next";
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
-  const { t } = useTranslation();
-  const prefersReducedMotion = useReducedMotion();
+  useReducedMotion();
   const [hoveredRating, setHoveredRating] = useState(0);
 
   const handleStarClick = (star) => {
@@ -31,7 +29,7 @@ const StarRating = ({ rating, onRatingChange, error }) => {
         initial={false}
         animate={{ opacity: 1 }}
       >
-        {t("feedback.starRatingLabel")}
+        Overall Rating <span className="text-red-500">*</span>
       </motion.label>
       <div className="flex items-center space-x-1">
         {[1, 2, 3, 4, 5].map((star) => (
@@ -42,8 +40,8 @@ const StarRating = ({ rating, onRatingChange, error }) => {
             onMouseEnter={() => setHoveredRating(star)}
             onMouseLeave={() => setHoveredRating(0)}
             className="focus:outline-none"
-            whileHover={prefersReducedMotion ? {} : { scale: 1.1 }}
-            whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
             aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
             title={`Click to rate ${star} star${star > 1 ? "s" : ""
               } (click again to deselect)`}
@@ -62,11 +60,11 @@ const StarRating = ({ rating, onRatingChange, error }) => {
             animate={{ opacity: 1, x: 0 }}
             className="ml-3 text-sm text-gray-600 dark:text-gray-400"
           >
-            {rating === 1 && t("feedback.starRatingLabels.1")}
-            {rating === 2 && t("feedback.starRatingLabels.2")}
-            {rating === 3 && t("feedback.starRatingLabels.3")}
-            {rating === 4 && t("feedback.starRatingLabels.4")}
-            {rating === 5 && t("feedback.starRatingLabels.5")}
+            {rating === 1 && "Poor"}
+            {rating === 2 && "Fair"}
+            {rating === 3 && "Good"}
+            {rating === 4 && "Very Good"}
+            {rating === 5 && "Excellent"}
           </motion.span>
         )}
       </div>
@@ -186,7 +184,7 @@ const CustomFloatingSelect = ({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [dropdownRef]);
 
   const handleSelect = (optionValue) => {
     const selectedOption = options.find((opt) => opt.value === optionValue);
@@ -200,7 +198,10 @@ const CustomFloatingSelect = ({
 
   return (
     <div className="relative mt-6" ref={dropdownRef}>
-      <div className="relative">        
+      <div className="relative">
+        {selectedIcon && (
+          <selectedIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
+        )}
 
         <button
           type="button"
@@ -301,9 +302,8 @@ const CustomFloatingSelect = ({
 
 // Feedback Page Component
 const FeedbackPage = () => {
-  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
-  useDocumentTitle(t("feedback.pageTitle"))
+  useDocumentTitle("Eventra | Feedback")
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -329,13 +329,13 @@ const FeedbackPage = () => {
 
   const formRef = useRef(null);
   const feedbackTypes = [
-    { value: "general", label: t("feedback.feedbackTypes.general"), icon: MessageSquare },
-    { value: "bug", label: t("feedback.feedbackTypes.bug"), icon: Bug },
-    { value: "feature", label: t("feedback.feedbackTypes.feature"), icon: Plus },
-    { value: "ui", label: t("feedback.feedbackTypes.uiux"), icon: Monitor },
-    { value: "performance", label: t("feedback.feedbackTypes.performance"), icon: BarChart },
-    { value: "event", label: t("feedback.feedbackTypes.event"), icon: Calendar },
-    { value: "other", label: t("feedback.feedbackTypes.other"), icon: MoreHorizontal },
+    { value: "general", label: "General Feedback", icon: MessageSquare },
+    { value: "bug", label: "Bug Report", icon: Bug },
+    { value: "feature", label: "Feature Request", icon: Plus },
+    { value: "ui", label: "UI/UX Feedback", icon: Monitor },
+    { value: "performance", label: "Performance Issue", icon: BarChart },
+    { value: "event", label: "Event Feedback", icon: Calendar },
+    { value: "other", label: "Other", icon: MoreHorizontal },
   ];
 
   useEffect(() => {
@@ -348,37 +348,40 @@ const FeedbackPage = () => {
 
     // Name validation
     if (!formData.name || !formData.name.trim()) {
-      newErrors.name = t("validation.feedbackNameRequired");
+      newErrors.name = "Name is required";
     } else if (formData.name.trim().length < 3) {
-      newErrors.name = t("validation.feedbackNameMinLength");
+      newErrors.name = "Name must be at least 3 characters";
     }
 
     // Email validation
     if (!formData.email || !formData.email.trim()) {
-      newErrors.email = t("validation.feedbackEmailRequired");
+      newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      newErrors.email = t("validation.feedbackEmailValid");
+      newErrors.email = "Please enter a valid email address";
     }
 
     // Feedback type validation
     if (!formData.feedbackType || formData.feedbackType === "") {
-      newErrors.feedbackType = t("validation.feedbackTypeRequired");
+      newErrors.feedbackType = "Please select a feedback type";
     }
 
     // Message validation
     if (!formData.message || !formData.message.trim()) {
-      newErrors.message = t("validation.feedbackMessageRequired");
+      newErrors.message = "Message is required";
     } else if (formData.message.trim().length < 20) {
-      newErrors.message = t("validation.feedbackMessageMinLength");
+      newErrors.message = "Message must be at least 20 characters";
     }
 
     // Rating validation
     if (!formData.rating || formData.rating === 0) {
-      newErrors.rating = t("validation.feedbackRatingRequired");
+      newErrors.rating = "Please provide a rating";
     }
 
     setErrors(newErrors);
 
+    // Log for debugging
+    if (Object.keys(newErrors).length > 0) {
+    }
 
     return Object.keys(newErrors).length === 0;
   };
@@ -426,7 +429,7 @@ const FeedbackPage = () => {
       }
 
       // Show error toast
-      toast.error(t("feedback.toastValidationError"));
+      toast.error("Please fill in all required fields correctly");
       return;
     }
 
@@ -438,7 +441,9 @@ const FeedbackPage = () => {
       // Store feedback in component state instead of localStorage
 
 
-      toast.success(t("feedback.toastSuccess"));
+      toast.success(
+        "Thank you for your feedback! We've received your submission and will review it shortly"
+      );
 
       setFormData({
         name: "",
@@ -450,8 +455,10 @@ const FeedbackPage = () => {
       setSentimentScore(0);
       setErrors({});
       setIsSubmitting(false);
-    } catch {
-      toast.error(t("feedback.toastError"));
+    } catch (error) {
+      toast.error(
+        "There was an error submitting your feedback. Please try again."
+      );
       setIsSubmitting(false);
     }
   };
@@ -475,11 +482,12 @@ const FeedbackPage = () => {
                   className="text-4xl font-extrabold mb-6 tracking-wide"
                   style={{ fontFamily: '"Anton", sans-serif' }}
                 >
-                  {t("feedback.heroHeading")}
+                  Share Your Feedback
                 </h2>
 
                 <p className="mb-8 text-lg opacity-90 leading-relaxed">
-                  {t("feedback.heroDescription")}
+                  Your feedback helps us improve Eventra and create better
+                  experiences for our community. We value your input!
                 </p>
 
                 <div className="space-y-6">
@@ -492,11 +500,11 @@ const FeedbackPage = () => {
 
                     <div>
                       <p className="font-semibold text-white">
-                        {t("feedback.infoQuickResponseTitle")}
+                        Quick Response
                       </p>
 
                       <p className="text-sm opacity-80">
-                        {t("feedback.infoQuickResponseDescription")}
+                        We review all feedback within 24 hours
                       </p>
                     </div>
                   </div>
@@ -509,11 +517,11 @@ const FeedbackPage = () => {
 
                     <div>
                       <p className="font-semibold text-white">
-                        {t("feedback.infoAnonymousTitle")}
+                        Anonymous Option
                       </p>
 
                       <p className="text-sm opacity-80">
-                        {t("feedback.infoAnonymousDescription")}
+                        Share feedback anonymously if preferred
                       </p>
                     </div>
                   </div>
@@ -526,11 +534,11 @@ const FeedbackPage = () => {
 
                     <div>
                       <p className="font-semibold text-white">
-                        {t("feedback.infoActionTakenTitle")}
+                        Action Taken
                       </p>
 
                       <p className="text-sm opacity-80">
-                        {t("feedback.infoActionTakenDescription")}
+                        We implement improvements based on feedback
                       </p>
                     </div>
                   </div>
@@ -546,11 +554,11 @@ const FeedbackPage = () => {
                   className="text-3xl font-extrabold text-gray-900 dark:text-gray-100"
                   style={{ fontFamily: '"Anton", sans-serif' }}
                 >
-                  {t("feedback.formHeading")}
+                  We&apos;d Love to Hear From You
                 </h2>
 
                 <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  {t("feedback.formSubtitle")}
+                  Help us make Eventra better for everyone
                 </p>
               </div>
 
@@ -562,7 +570,7 @@ const FeedbackPage = () => {
 
                 <FloatingInput
                   id="name"
-                  label={t("feedback.formName")}
+                  label="Your Name"
                   value={formData.name}
                   onChange={handleChange}
                   error={errors.name}
@@ -572,7 +580,7 @@ const FeedbackPage = () => {
 
                 <FloatingInput
                   id="email"
-                  label={t("feedback.formEmail")}
+                  label="Email Address"
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
@@ -583,7 +591,7 @@ const FeedbackPage = () => {
 
                 <CustomFloatingSelect
                   id="feedbackType"
-                  label={t("feedback.formFeedbackType")}
+                  label="Feedback Type"
                   value={formData.feedbackType}
                   onChange={handleSelectChange}
                   options={feedbackTypes}
@@ -621,7 +629,7 @@ const FeedbackPage = () => {
                             : "text-gray-500 dark:text-gray-400"
                         }`}
                     >
-                      {t("feedback.formMessage")}
+                      Your Message <span className="text-red-500">*</span>
                     </label>
                   </div>
 
@@ -667,11 +675,11 @@ const FeedbackPage = () => {
                                 : "text-green-600 dark:text-green-400"
                             }`}
                           >
-                            {messageLength === 0 && t("feedback.charCountMin")}
-                            {messageLength > 0 && messageLength < 20 && t("feedback.charCountRemaining", { count: 20 - messageLength })}
-                            {messageLength >= 20 && messageLength < 400 && t("feedback.charCountExcellent")}
-                            {messageLength >= 400 && messageLength < MAX_MESSAGE_LENGTH && t("feedback.charCountApproaching")}
-                            {messageLength === MAX_MESSAGE_LENGTH && t("feedback.charCountLimit")}
+                            {messageLength === 0 && "Provide at least 20 characters."}
+                            {messageLength > 0 && messageLength < 20 && `⚠️ Write ${20 - messageLength} more character${20 - messageLength > 1 ? "s" : ""} to meet min length.`}
+                            {messageLength >= 20 && messageLength < 400 && "✅ Excellent message length!"}
+                            {messageLength >= 400 && messageLength < MAX_MESSAGE_LENGTH && "⚠️ Approaching character limit."}
+                            {messageLength === MAX_MESSAGE_LENGTH && "🚫 Character limit reached."}
                           </span>
 
                           {/* Character Counter */}
@@ -713,10 +721,10 @@ const FeedbackPage = () => {
                         </motion.span>
                         <div>
                           <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            {t("feedback.sentimentLabel", { sentiment: getSentimentDisplay(sentimentScore).label })}
+                            Live Sentiment: <span className={getSentimentDisplay(sentimentScore).color}>{getSentimentDisplay(sentimentScore).label}</span>
                           </p>
                           <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                            {t("feedback.sentimentSubtitle")}
+                            Based on your live message description
                           </p>
                         </div>
                       </div>
@@ -751,7 +759,7 @@ const FeedbackPage = () => {
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                     )}
-                    {isSubmitting ? t("feedback.formSubmitting") : t("feedback.formSubmit")}
+                    {isSubmitting ? "Submitting..." : "Submit Feedback"}
                   </motion.button>
                 </div>
 

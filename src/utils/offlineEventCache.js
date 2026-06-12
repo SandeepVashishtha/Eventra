@@ -82,26 +82,6 @@ export const getCachedEvents = () => {
 // Event detail cache
 // ---------------------------------------------------------------------------
 
-const MAX_CACHE_SIZE = 50;
-
-const enforceLRU = (cached) => {
-  const keys = Object.keys(cached);
-  if (keys.length <= MAX_CACHE_SIZE) return;
-
-  // Sort keys by cachedAt ascending (oldest first)
-  keys.sort((a, b) => {
-    const timeA = new Date(cached[a]?.cachedAt || 0).getTime();
-    const timeB = new Date(cached[b]?.cachedAt || 0).getTime();
-    return timeA - timeB;
-  });
-
-  // Delete oldest entries until we're at or below the limit
-  const numToRemove = keys.length - MAX_CACHE_SIZE;
-  for (let i = 0; i < numToRemove; i++) {
-    delete cached[keys[i]];
-  }
-};
-
 export const saveCachedEventDetail = (event) => {
   if (!event?.id) {
     return false;
@@ -111,7 +91,6 @@ export const saveCachedEventDetail = (event) => {
     cachedAt: new Date().toISOString(),
     event,
   };
-  enforceLRU(cached);
   return writeJson(EVENT_DETAILS_CACHE_KEY, cached);
 };
 
@@ -144,7 +123,6 @@ export const saveAllCachedEventDetails = (events = []) => {
     }
   });
 
-  enforceLRU(cached);
   return writeJson(EVENT_DETAILS_CACHE_KEY, cached);
 };
 

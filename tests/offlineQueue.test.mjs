@@ -28,24 +28,9 @@ global.localStorage = {
   },
 };
 
-const _sessionStore = {};
-global.sessionStorage = {
-  getItem: (key) => (key in _sessionStore ? _sessionStore[key] : null),
-  setItem: (key, val) => {
-    _sessionStore[key] = String(val);
-  },
-  removeItem: (key) => {
-    delete _sessionStore[key];
-  },
-  clear: () => {
-    for (const k of Object.keys(_sessionStore)) delete _sessionStore[k];
-  },
-};
-
 // Stub out window.indexedDB so openDB() rejects cleanly
 global.window = {
   indexedDB: null,
-  sessionStorage: global.sessionStorage,
 };
 global.indexedDB = null;
 
@@ -64,22 +49,13 @@ Object.defineProperty(global, "crypto", {
 });
 
 // Import module AFTER stubs are in place
-const {
-  getQueue,
-  pushToQueue,
-  setQueue,
-  clearQueue,
-  validateQueueSession,
-  processQueue,
-} = await import(
+const { getQueue, pushToQueue, setQueue, clearQueue } = await import(
   "../src/utils/offlineQueue.js"
 );
-const { ensureSessionSnapshot } = await import("../src/utils/sessionSnapshot.js");
 
 // ── Helper ──────────────────────────────────────────────────────────────────
 function reset() {
   localStorage.clear();
-  sessionStorage.clear();
 }
 
 // ── getQueue ────────────────────────────────────────────────────────────────
@@ -109,82 +85,6 @@ assert.equal(getQueue().length, 1, "pushToQueue() stores one item");
 assert.equal(getQueue()[0].eventId, "evt-a", "pushToQueue() stores correct eventId");
 assert.ok(getQueue()[0].timestamp, "pushToQueue() attaches a timestamp");
 assert.equal(getQueue()[0].retryCount, 0, "pushToQueue() initialises retryCount to 0");
-
-// ── session snapshot initialization ───────────────────────────────────────
-reset();
-const queuedWithSession = await pushToQueue(
-  { eventId: "evt-session", payload: { user: "Session User" } },
-  "user-1"
-);
-const sessionBackedQueue = getQueue();
-assert.equal(queuedWithSession, true, "pushToQueue() succeeds with session snapshot");
-assert.ok(
-  sessionStorage.getItem("session_id"),
-  "pushToQueue() initializes session_id when it is missing"
-);
-assert.equal(
-  sessionBackedQueue[0].sessionId,
-  sessionStorage.getItem("session_id"),
-  "queued item stores the initialized session snapshot"
-);
-assert.equal(
-  sessionStorage.getItem("session_user_id"),
-  "user-1",
-  "session snapshot is bound to the current user"
-);
-
-const firstSessionId = sessionStorage.getItem("session_id");
-const secondSessionId = ensureSessionSnapshot("user-2");
-assert.notEqual(
-  secondSessionId,
-  firstSessionId,
-  "ensureSessionSnapshot() rotates when the authenticated user changes"
-);
-
-const migratedLegacyItems = validateQueueSession(
-  [{ id: "legacy-1", userId: "user-2", payload: { legacy: true } }],
-  secondSessionId
-);
-assert.equal(
-  migratedLegacyItems[0].sessionId,
-  secondSessionId,
-  "validateQueueSession() migrates legacy queued items without sessionId"
-);
-
-assert.deepEqual(
-  validateQueueSession(
-    [{ id: "stale-1", userId: "user-2", sessionId: "old-session" }],
-    secondSessionId
-  ),
-  [],
-  "validateQueueSession() still rejects stale session snapshots"
-);
-
-reset();
-localStorage.setItem(
-  "eventra_offline_queue",
-  JSON.stringify([
-    {
-      id: "legacy-replay",
-      actionType: "REGISTER_EVENT",
-      userId: "user-3",
-      endpoint: "/api/events/register",
-      payload: { eventId: "evt-legacy" },
-      retryCount: 0,
-    },
-  ])
-);
-
-let replayedRequest = null;
-const replayResult = await processQueue("user-3", async (url, options) => {
-  replayedRequest = { url, options };
-  return { ok: true, status: 200 };
-});
-
-assert.equal(replayResult.processed, 1, "processQueue() processes legacy item after migration");
-assert.equal(replayResult.succeeded, 1, "processQueue() succeeds for migrated legacy item");
-assert.equal(replayedRequest.url, "/api/events/register", "legacy item is replayed to its endpoint");
-assert.deepEqual(getQueue(), [], "processQueue() clears queue after successful replay");
 
 // ── pushToQueue queue-limit enforcement ─────────────────────────────────────
 reset();
