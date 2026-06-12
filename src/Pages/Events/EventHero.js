@@ -10,14 +10,11 @@ import { safeParseJson } from "../../utils/jsonUtils";
 import { SkeletonBlock } from "../../components/common/SkeletonLoaders";
 const CountUp = CountUpLib.default || CountUpLib;
 
-// 🔥 THE FIX: Single, clean declarations placed in the correct order 🔥
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
-
 const getStoredSearchHistory = () => {
   const stored = safeParseJson(localStorage.getItem(SEARCH_HISTORY_KEY), []);
   return Array.isArray(stored) ? stored.slice(0, 5) : [];
 };
-
 const TRENDING_SEARCHES = [
   "Workshop",
   "Hackathon",
@@ -35,21 +32,17 @@ export default function EventHero({
 }) {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
-
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchHistory, setSearchHistory] = useState([]);
   const searchContainerRef = useRef(null);
   const dropdownRef = useRef(null);
   const statsRef = useRef(null);
-
-  // Trigger stats animation only when visible
   const isStatsInView = useInView(statsRef, { once: true, margin: "-100px" });
 
   useEffect(() => {
     setSearchHistory(getStoredSearchHistory());
   }, []);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
@@ -81,22 +74,19 @@ export default function EventHero({
   const selectSearchQuery = (query) => {
     handleSearch(query);
     saveSearchQuery(query);
-    // Note: Assuming saveRecentSearch is handled upstream or passed correctly in full context
   };
 
   useEffect(() => {
-    // Preload hero background image for better LCP
     const preloadLink = document.createElement("link");
     preloadLink.rel = "preload";
     preloadLink.as = "image";
     preloadLink.href = "/assets/eventbg.png";
-
     document.head.appendChild(preloadLink);
-
     return () => {
       document.head.removeChild(preloadLink);
     };
   }, []);
+
   const clearSearchHistory = useCallback(() => {
     persistSearchHistory([]);
   }, [persistSearchHistory]);
@@ -139,7 +129,6 @@ export default function EventHero({
             Events
           </span>
         </h1>
-
         <p className="mt-4 text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto text-center">
           Discover exciting events, compete with talented participants, learn
           new skills, and{" "}
@@ -148,50 +137,62 @@ export default function EventHero({
           </span>
           .
         </p>
-  
-        <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0 relative z-50">
-          <ModernSearchInput
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-            onFocus={() => setIsSearchFocused(true)}
-            onBlur={handleSearchBlur}
-            onKeyDown={handleSearchKeyDown}
-            autoFocus
-            placeholder="Search events by name, location, or tags..."
-            aria-expanded={isSearchFocused}
-            aria-haspopup="listbox"
-          >
-            <AnimatePresence>
-              {showDropdown && (
-                <motion.div
-                  ref={dropdownRef}
-                  role="listbox"
-                  initial={{ opacity: 0, y: 12, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                  transition={{ duration: prefersReducedMotion ? 0 : 0.18, ease: "easeOut" }}
-                  className={`
-                    absolute left-0 right-0 top-full z-30 mt-3 overflow-hidden rounded-3xl
-                    border border-slate-200 dark:border-slate-700/60 ${darkTheme.card}
-                    text-left shadow-2xl backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10
-                  `}
-                  onMouseDown={(e) => e.preventDefault()}
-                >{searchQuery.trim().length > 0 && searchQuery.trim().length < 3 && (
-  <div className="border-b border-slate-100 dark:border-slate-800 p-4">
-    <p className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${darkTheme.textSecondary}`}>
-      <Sparkles className="h-3.5 w-3.5" />
-      Searching...
-    </p>
-    <div className="flex flex-col gap-2">
-      {[...Array(4)].map((_, i) => (
-        <div key={i} className="flex items-center gap-3 px-2 py-1.5">
-          <SkeletonBlock className="h-4 w-4 rounded" />
-          <SkeletonBlock className={`h-4 rounded ${i % 2 === 0 ? "w-3/4" : "w-1/2"}`} />
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+
+
+        {/* FIX 1: Added `relative z-20` so this container creates a stacking context
+            above the CTA buttons (z-10), letting the absolute dropdown float over them */}
+       {/* FIX 1: Added stacking context so dropdown appears above CTA buttons */}
+<div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0 relative z-50">
+  <div ref={searchContainerRef} className="relative">
+    <ModernSearchInput
+      value={searchQuery}
+      onChange={(e) => handleSearch(e.target.value)}
+      onFocus={() => setIsSearchFocused(true)}
+      onBlur={handleSearchBlur}
+      onKeyDown={handleSearchKeyDown}
+      autoFocus
+      placeholder="Search events by name, location, or tags..."
+      aria-expanded={isSearchFocused}
+      aria-haspopup="listbox"
+    />
+
+    <AnimatePresence>
+      {showDropdown && (
+        <motion.div
+          ref={dropdownRef}
+          role="listbox"
+          initial={{ opacity: 0, y: 12, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 8, scale: 0.98 }}
+          transition={{
+            duration: prefersReducedMotion ? 0 : 0.18,
+            ease: "easeOut",
+          }}
+          className="
+            absolute left-0 right-0 top-full z-30 mt-3 overflow-hidden rounded-3xl
+            border border-slate-200 dark:border-slate-700/60
+            bg-white dark:bg-slate-900
+            text-left shadow-2xl ring-1 ring-black/5 dark:ring-white/10
+          "
+          onMouseDown={(e) => e.preventDefault()}
+        >
+                  {searchQuery.trim().length > 0 && searchQuery.trim().length < 3 && (
+                    <div className="border-b border-slate-100 dark:border-slate-800 p-4">
+                      <p className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${darkTheme.textSecondary}`}>
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Searching...
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {[...Array(4)].map((_, i) => (
+                          <div key={i} className="flex items-center gap-3 px-2 py-1.5">
+                            <SkeletonBlock className="h-4 w-4 rounded" />
+                            <SkeletonBlock className={`h-4 rounded ${i % 2 === 0 ? "w-3/4" : "w-1/2"}`} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {searchHistory.length > 0 && (
                     <div className="border-b border-slate-100 dark:border-slate-800 p-4">
                       <div className="mb-3 flex items-center justify-between gap-3">
@@ -266,7 +267,9 @@ export default function EventHero({
           </div>
         </div>
 
-        <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-xl px-4">
+        {/* FIX 3: Added `relative z-10` so CTA buttons sit in a lower stacking layer
+            than the search container (z-20), ensuring the dropdown renders on top of them */}
+        <div className="relative z-10 mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-xl px-4">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -276,7 +279,6 @@ export default function EventHero({
             <Sparkles className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Explore Events
           </motion.button>
-
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
