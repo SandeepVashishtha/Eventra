@@ -1,5 +1,5 @@
-import React from 'react';
-import { useFocusTrap } from '../../hooks/useFocusTrap';
+import React from "react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 /**
  * FocusTrap
@@ -21,7 +21,7 @@ import { useFocusTrap } from '../../hooks/useFocusTrap';
  * @param {React.ReactNode} props.children
  * @param {string}  [props.className] - Optional class forwarded to the wrapper div.
  */
-const FocusTrap = ({ isActive, onEscape, children, className = '' }) => {
+const FocusTrap = ({ isActive, onEscape, children, className = "" }) => {
   const { containerRef } = useFocusTrap(isActive, onEscape);
 
   return (

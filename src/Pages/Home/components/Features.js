@@ -3,7 +3,7 @@
 // import { motion } from 'framer-motion';
 // import { useNavigate } from 'react-router-dom';
 // import { useRef } from 'react';
-// 
+//
 // const Features = () => {
 //   const navigate = useNavigate();
 

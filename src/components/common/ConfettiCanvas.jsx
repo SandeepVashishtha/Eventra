@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
 
-const ConfettiCanvas = ({ 
-  particleCount = 150, 
-  duration = 4000, 
-  colors = ["#6366f1", "#a855f7", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"] 
+const ConfettiCanvas = ({
+  particleCount = 150,
+  duration = 4000,
+  colors = ["#6366f1", "#a855f7", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"],
 }) => {
   const canvasRef = useRef(null);
 
@@ -45,7 +45,7 @@ const ConfettiCanvas = ({
         if (p.y < canvas.height) {
           finished = false;
         }
-        
+
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rotation);
@@ -80,13 +80,13 @@ const ConfettiCanvas = ({
       cancelAnimationFrame(animationFrameId);
       clearTimeout(timer);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [particleCount, duration]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-[9999]"
+      className="pointer-events-none fixed inset-0 z-[9999]"
       style={{ mixBlendMode: "screen" }}
     />
   );

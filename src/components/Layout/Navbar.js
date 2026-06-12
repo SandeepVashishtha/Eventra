@@ -23,11 +23,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import ConfirmationModal from "../common/ConfirmationModal";
 import CommandPalette from "../common/CommandPalette";
-import {
-  getUserDisplayNames,
-  clearBodyScrollStyles,
-  setBodyScrollStyles,
-} from "./navbarHelpers";
+import { getUserDisplayNames, clearBodyScrollStyles, setBodyScrollStyles } from "./navbarHelpers";
 import BrandMark from "./BrandMark";
 import ThemeToggleButton from "./ThemeToggleButton";
 import CursorToggleButton from "./CursorToggleButton";
@@ -39,36 +35,36 @@ import MobileDrawer from "./MobileDrawer";
 import ThemeCustomizer from "./ThemeCustomizer";
 
 const NAV_ITEMS = [
-  { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
+  { name: "Home", href: "/", icon: <Home className="h-5 w-5" /> },
   {
     name: "Events",
-    icon: <Calendar className="w-5 h-5" />,
+    icon: <Calendar className="h-5 w-5" />,
     subItems: [
-      { name: "Explore Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
-      { name: "Event Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
-      { name: "Bookmarks",      href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
-      { name: "Reminders",      href: "/reminders", icon: <Bell className="w-5 h-5" /> },
+      { name: "Explore Events", href: "/events", icon: <Calendar className="h-5 w-5" /> },
+      { name: "Event Calendar", href: "/calendar", icon: <CalendarDays className="h-5 w-5" /> },
+      { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="h-5 w-5" /> },
+      { name: "Reminders", href: "/reminders", icon: <Bell className="h-5 w-5" /> },
     ],
   },
-  { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
-  { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
+  { name: "Hackathons", href: "/hackathons", icon: <Trophy className="h-5 w-5" /> },
+  { name: "Projects", href: "/projects", icon: <FolderKanban className="h-5 w-5" /> },
   {
     name: "Community",
-    icon: <Users className="w-5 h-5" />,
+    icon: <Users className="h-5 w-5" />,
     subItems: [
-      { name: "Leaderboard", href: "/leaderboard", icon: <Trophy className="w-5 h-5" /> },
-      { name: "Contributors", href: "/contributors", icon: <Users className="w-5 h-5" /> },
-      { name: "Contributors Guide", href: "/contributorguide", icon: <Book className="w-5 h-5" /> },
-      { name: "Community Events", href: "/community-event", icon: <Users className="w-5 h-5" /> },
+      { name: "Leaderboard", href: "/leaderboard", icon: <Trophy className="h-5 w-5" /> },
+      { name: "Contributors", href: "/contributors", icon: <Users className="h-5 w-5" /> },
+      { name: "Contributors Guide", href: "/contributorguide", icon: <Book className="h-5 w-5" /> },
+      { name: "Community Events", href: "/community-event", icon: <Users className="h-5 w-5" /> },
     ],
   },
   {
     name: "More",
-    icon: <MoreHorizontal className="w-5 h-5" />,
+    icon: <MoreHorizontal className="h-5 w-5" />,
     subItems: [
-      { name: "About", href: "/about", icon: <Info className="w-5 h-5" /> },
-      { name: "FAQ", href: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
-      { name: "Contact", href: "/contact", icon: <MessageSquare className="w-5 h-5" /> },
+      { name: "About", href: "/about", icon: <Info className="h-5 w-5" /> },
+      { name: "FAQ", href: "/faq", icon: <HelpCircle className="h-5 w-5" /> },
+      { name: "Contact", href: "/contact", icon: <MessageSquare className="h-5 w-5" /> },
     ],
   },
 ];
@@ -76,15 +72,27 @@ const NAV_ITEMS = [
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
+    <div className="hidden min-w-0 flex-1 items-center justify-center pl-6 lg:flex">
       {NAV_ITEMS.map((item) => {
         const isActive = item.href
-          ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
-          : item.subItems?.some(s => location.pathname.startsWith(s.href));
+          ? item.href === "/"
+            ? location.pathname === "/"
+            : location.pathname.startsWith(item.href)
+          : item.subItems?.some((s) => location.pathname.startsWith(s.href));
 
         if (item.subItems) {
           return (
-            <DesktopNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === item.name ? null : item.name); }} setOpenDropdown={setOpenDropdown} />
+            <DesktopNavGroup
+              key={item.name}
+              item={item}
+              isActive={isActive}
+              isOpen={openDropdown === item.name}
+              onToggle={(e) => {
+                e.stopPropagation();
+                setOpenDropdown(openDropdown === item.name ? null : item.name);
+              }}
+              setOpenDropdown={setOpenDropdown}
+            />
           );
         }
         return <DesktopNavLink key={item.name} item={item} isActive={isActive} />;
@@ -120,7 +128,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const touchStartXRef = useRef(null);
   const touchCurrentXRef = useRef(null);
   const navRef = useRef(null);
-  
+
   // 🔥 FIX: Track mounted state for async logout safety
   const isMounted = useRef(true);
 
@@ -229,10 +237,10 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     if (isMounted.current) {
       setShowLogoutModal(false);
     }
-    
+
     // Await logout to ensure backend token/context clears before navigation
     await logout();
-    
+
     if (isMounted.current) {
       toast.success("You have been logged out successfully.", {
         className: "custom-toast",
@@ -241,7 +249,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       navigate("/");
     }
   };
-  
+
   const handleCancelLogout = () => setShowLogoutModal(false);
 
   return (
@@ -249,7 +257,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       {/* Skip navigation — visible only on keyboard focus, WCAG 2.4.1 */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-indigo-600 focus:text-white focus:px-4 focus:py-2 focus:rounded focus:outline-none"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded focus:bg-indigo-600 focus:px-4 focus:py-2 focus:text-white focus:outline-none"
       >
         Skip to main content
       </a>
@@ -259,7 +267,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             ? "bg-black/60 opacity-100"
             : showProfileDropdown || openDropdown
               ? "bg-transparent opacity-100"
-              : "opacity-0 pointer-events-none"
+              : "pointer-events-none opacity-0"
         }`}
         onClick={closeAllMenus}
         aria-hidden="true"
@@ -270,17 +278,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
-        className="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 max-w-7xl mx-auto z-[90] shadow-lg shadow-indigo-500/5 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border border-gray-200/50 dark:border-slate-800/80 transition-all duration-300 overflow-visible rounded-2xl"
+        className="fixed top-2 right-2 left-2 z-[90] mx-auto max-w-7xl overflow-visible rounded-2xl border border-gray-200/50 bg-white/80 shadow-lg shadow-indigo-500/5 backdrop-blur-xl transition-all duration-300 sm:top-4 sm:right-4 sm:left-4 dark:border-slate-800/80 dark:bg-slate-950/80"
       >
         <div className="neon-navbar-border"></div>
 
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between min-h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-visible">
-          
+        <div className="mx-auto flex min-h-[68px] w-full max-w-screen-2xl items-center justify-between gap-4 overflow-visible px-4 md:px-6 xl:px-10">
           {/* Logo */}
-          <Link
-            to="/"
-            className="flex items-center shrink-0 z-20 mr-2 min-w-0"
-          >
+          <Link to="/" className="z-20 mr-2 flex min-w-0 shrink-0 items-center">
             <BrandMark />
           </Link>
 
@@ -288,16 +292,16 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
           {/* Right Controls */}
-          <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
+          <div className="hidden shrink-0 items-center gap-2 pl-2 lg:flex">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowCommandPalette(true)}
               title="Open Command Palette (⌘K)"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group mr-1"
+              className="group mr-1 flex items-center gap-2 rounded-full border border-zinc-200/60 bg-zinc-100 px-3 py-1.5 transition-all duration-300 hover:bg-indigo-50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] focus:outline-none dark:border-zinc-700/50 dark:bg-zinc-800/80 dark:hover:bg-indigo-900/40"
             >
-              <Search className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400" />
-              <div className="flex items-center gap-0.5 text-[9px] font-black tracking-widest text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
+              <Search className="h-4 w-4 text-zinc-500 group-hover:text-indigo-500 dark:text-zinc-400 dark:group-hover:text-indigo-400" />
+              <div className="flex items-center gap-0.5 text-[9px] font-black tracking-widest text-zinc-400 uppercase group-hover:text-indigo-500 dark:group-hover:text-indigo-400">
                 <span>⌘</span>
                 <span>K</span>
               </div>
@@ -316,7 +320,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               isMobile={false}
             />
 
-            <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
+            <div className="h-5 w-px bg-zinc-200 dark:bg-zinc-700"></div>
 
             {isAuthenticated() ? (
               <UserProfileDropdown
@@ -334,14 +338,14 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="lg:hidden ml-auto">
+          <div className="ml-auto lg:hidden">
             <button
               ref={toggleBtnRef}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-drawer"
               aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"}
-              className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+              className="rounded-md p-2 text-gray-700 hover:bg-gray-100 hover:text-black dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white"
             >
               <svg
                 className="h-5 w-5 sm:h-6 sm:w-6"

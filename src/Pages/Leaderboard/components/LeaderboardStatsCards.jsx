@@ -31,7 +31,7 @@ const cards = [
 
 export default function LeaderboardStatsCards({ stats, loading }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
       {cards.map((card, idx) => (
         <motion.div
           key={card.key}
@@ -44,12 +44,12 @@ export default function LeaderboardStatsCards({ stats, loading }) {
             <card.icon className="text-2xl" aria-hidden="true" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
               {card.title}
             </p>
             <p className="mt-1 text-3xl font-extrabold text-slate-950">
               {loading ? (
-                <span className="inline-block w-12 h-8 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                <span className="inline-block h-8 w-12 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
               ) : (
                 <AnimatedCounter value={stats[card.key]} />
               )}

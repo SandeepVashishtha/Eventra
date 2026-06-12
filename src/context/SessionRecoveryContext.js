@@ -178,7 +178,7 @@ export const SessionRecoveryProvider = ({ children }) => {
         } catch (decryptError) {
           logger.error(
             "Decryption of session recovery state failed (invalid key or tampered state):",
-            decryptError,
+            decryptError
           );
           localStorage.removeItem(SESSION_KEY);
           return;
@@ -197,7 +197,7 @@ export const SessionRecoveryProvider = ({ children }) => {
           const currentFingerprint = getDeviceFingerprint();
           if (!parsed.deviceFingerprint || parsed.deviceFingerprint !== currentFingerprint) {
             logger.error(
-              "Security Alert: Session recovery attempted from a mismatched device/browser fingerprint. Rejecting session restoration.",
+              "Security Alert: Session recovery attempted from a mismatched device/browser fingerprint. Rejecting session restoration."
             );
             localStorage.removeItem(SESSION_KEY);
             if (typeof window !== "undefined" && window.location) {
@@ -277,7 +277,7 @@ export const SessionRecoveryProvider = ({ children }) => {
         }
       }, 1000);
     },
-    [cloudRecovery, multiRecovery],
+    [cloudRecovery, multiRecovery]
   );
 
   const clearSession = useCallback(() => {
@@ -302,7 +302,7 @@ export const SessionRecoveryProvider = ({ children }) => {
   const restoreRecoverySessionById = useCallback(
     async (sessionId) => {
       const session = multiRecovery.sessions.find(
-        (item) => item.id === sessionId || item.sessionId === sessionId,
+        (item) => item.id === sessionId || item.sessionId === sessionId
       );
       if (!session) return null;
 
@@ -313,27 +313,27 @@ export const SessionRecoveryProvider = ({ children }) => {
 
       return session.draftData;
     },
-    [cloudRecovery, multiRecovery.sessions],
+    [cloudRecovery, multiRecovery.sessions]
   );
 
   const deleteRecoverySessionById = useCallback(
     async (sessionId) => {
       const session = multiRecovery.sessions.find(
-        (item) => item.id === sessionId || item.sessionId === sessionId,
+        (item) => item.id === sessionId || item.sessionId === sessionId
       );
       multiRecovery.deleteSession(sessionId);
       if (session?.source === "cloud" || session?.source === "cloud-newer") {
         await cloudRecovery.dismissCloudSession(session.sessionId);
       }
     },
-    [cloudRecovery, multiRecovery],
+    [cloudRecovery, multiRecovery]
   );
 
   const renameRecoverySessionById = useCallback(
     (sessionId, name) => {
       multiRecovery.renameSession(sessionId, name);
     },
-    [multiRecovery],
+    [multiRecovery]
   );
 
   const dismissRecoveryPrompt = useCallback(() => {

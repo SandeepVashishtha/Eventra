@@ -1,22 +1,24 @@
 export default function EmptySearchState({ query = "", onClear }) {
   return (
-    <div className="text-center py-20 px-6">
+    <div className="px-6 py-20 text-center">
       {/* 🔥 FIX: Wrapped emoji to hide it from screen readers, improving accessibility */}
-      <span className="text-7xl mb-5 block" role="img" aria-hidden="true">🔍</span>
-      
+      <span className="mb-5 block text-7xl" role="img" aria-hidden="true">
+        🔍
+      </span>
+
       {/* 🔥 FIX: Added 'break-words max-w-2xl mx-auto' to prevent long spam queries from destroying the layout */}
-      <h3 className="text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-3 break-words max-w-2xl mx-auto">
+      <h3 className="mx-auto mb-3 max-w-2xl text-2xl font-semibold break-words text-gray-700 dark:text-gray-200">
         No results for &ldquo;{query}&rdquo;
       </h3>
-      
-      <p className="text-gray-500 dark:text-gray-400 mb-8">
+
+      <p className="mb-8 text-gray-500 dark:text-gray-400">
         Try different keywords or clear the search to see all events.
       </p>
-      
+
       <button
         type="button" // 🔥 FIX: Explicit button type to prevent unintended form submissions
         onClick={() => onClear?.()} // 🔥 FIX: Optional chaining prevents fatal TypeErrors if prop is missing
-        className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        className="rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
         aria-label="Clear search filters"
       >
         ✕ Clear Search

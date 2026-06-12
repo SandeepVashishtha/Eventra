@@ -10,9 +10,9 @@ const NotFoundPage = () => {
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { 
+    visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.15, delayChildren: 0.3 }
+      transition: { staggerChildren: 0.15, delayChildren: 0.3 },
     },
   };
 
@@ -26,7 +26,9 @@ const NotFoundPage = () => {
     float: (i) => ({
       y: prefersReducedMotion ? 0 : [0, -20 - i * 3, 0],
       x: prefersReducedMotion ? 0 : [0, 20 + i * 5, 0],
-      transition: prefersReducedMotion ? {} : { duration: 6 + i, repeat: Infinity, ease: "easeInOut" },
+      transition: prefersReducedMotion
+        ? {}
+        : { duration: 6 + i, repeat: Infinity, ease: "easeInOut" },
     }),
   };
 
@@ -37,8 +39,7 @@ const NotFoundPage = () => {
     { name: "AI Expo", category: "Exhibition" },
     { name: "Startup Pitch Night", category: "Startup" },
     { name: "Cloud Computing Workshop", category: "Workshop" },
-];
-
+  ];
 
   // Predefined bubble positions along edges (top, bottom, left, right)
   const bubblePositions = [
@@ -55,7 +56,7 @@ const NotFoundPage = () => {
     <main
       ref={ref}
       // UPDATED: Added a light mode background and made the dark theme conditional
-      className="relative min-h-screen flex flex-col justify-center items-center overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-indigo-900 dark:via-blue-900 dark:to-black p-6"
+      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 p-6 dark:from-indigo-900 dark:via-blue-900 dark:to-black"
     >
       {/* Floating bubbles along edges */}
       {bubblePositions.map((pos, i) => (
@@ -81,20 +82,26 @@ const NotFoundPage = () => {
         variants={containerVariants}
         initial="hidden"
         animate={inView ? "visible" : "hidden"}
-        className="relative z-10 text-center max-w-4xl w-full"
+        className="relative z-10 w-full max-w-4xl text-center"
       >
         {/* 404 */}
         <motion.h1
           variants={itemVariants}
           // UPDATED: Text color for light mode
-          className="text-[8rem] md:text-[10rem] font-extrabold text-gray-900 dark:text-white drop-shadow-lg"
+          className="text-[8rem] font-extrabold text-gray-900 drop-shadow-lg md:text-[10rem] dark:text-white"
         >
           <span className="relative">
             {/* UPDATED: Glow/blur effect for light mode */}
-            <span className="absolute top-0 left-0 text-indigo-600/50 dark:text-blue-400 opacity-70 blur-sm" aria-hidden="true">
+            <span
+              className="absolute top-0 left-0 text-indigo-600/50 opacity-70 blur-sm dark:text-blue-400"
+              aria-hidden="true"
+            >
               404
             </span>
-            <span className="absolute top-0 left-0 text-purple-600/50 dark:text-indigo-400 opacity-70 blur-sm" aria-hidden="true">
+            <span
+              className="absolute top-0 left-0 text-purple-600/50 opacity-70 blur-sm dark:text-indigo-400"
+              aria-hidden="true"
+            >
               404
             </span>
             <span className="relative">404</span>
@@ -105,7 +112,7 @@ const NotFoundPage = () => {
         <motion.h2
           variants={itemVariants}
           // UPDATED: Text colors
-                    className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 text-gray-900 dark:text-white"
+          className="px-4 text-3xl leading-tight font-extrabold text-gray-900 sm:text-4xl md:text-5xl lg:text-6xl dark:text-white"
         >
           Lost in the <span className="text-indigo-600 dark:text-blue-400">Eventra</span> Space
         </motion.h2>
@@ -114,25 +121,23 @@ const NotFoundPage = () => {
         <motion.p
           variants={itemVariants}
           // UPDATED: Text color
-          className="text-gray-600 dark:text-white/80 mb-8 md:text-lg"
+          className="mb-8 text-gray-600 md:text-lg dark:text-white/80"
         >
-          The page you’re looking for doesn’t exist. While you’re here, explore some of our popular events.
+          The page you’re looking for doesn’t exist. While you’re here, explore some of our popular
+          events.
         </motion.p>
 
         {/* Buttons (work on both themes) */}
-        <motion.div
-          variants={itemVariants}
-          className="flex flex-wrap justify-center gap-4 mb-12"
-        >
+        <motion.div variants={itemVariants} className="mb-12 flex flex-wrap justify-center gap-4">
           <Link
             to="/"
-            className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-500 transition"
+            className="rounded-full bg-indigo-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-indigo-500"
           >
             Return Home
           </Link>
           <Link
             to="/events"
-            className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-full shadow-lg hover:bg-blue-400 transition"
+            className="rounded-full bg-blue-500 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-blue-400"
           >
             Browse Events
           </Link>
@@ -141,23 +146,25 @@ const NotFoundPage = () => {
         {/* Suggestions */}
         <motion.div variants={itemVariants} className="text-left">
           {/* UPDATED: Text color */}
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Popular Events</h3>
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+          <h3 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">Popular Events</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {suggestions.map((event, i) => (
               <motion.div
                 key={i}
                 whileHover={{ scale: 1.05, y: -5 }}
                 transition={{ type: "spring", stiffness: 300 }}
                 // UPDATED: Card background and text colors
-                className="p-4 bg-white dark:bg-white/10 backdrop-blur-md rounded-2xl text-gray-900 dark:text-white border border-gray-100 dark:border-transparent"
+                className="rounded-2xl border border-gray-100 bg-white p-4 text-gray-900 backdrop-blur-md dark:border-transparent dark:bg-white/10 dark:text-white"
               >
                 {/* UPDATED: Text colors */}
                 <div className="text-sm text-gray-500 dark:text-white/70">{event.category}</div>
-                <h4 title={event.name} className="font-semibold text-lg mt-1 break-words">{event.name}</h4>
+                <h4 title={event.name} className="mt-1 text-lg font-semibold break-words">
+                  {event.name}
+                </h4>
                 <Link
                   to="/events"
                   // UPDATED: Link color
-                  className="mt-2 inline-block text-indigo-600 dark:text-blue-400 underline font-medium"
+                  className="mt-2 inline-block font-medium text-indigo-600 underline dark:text-blue-400"
                 >
                   View Event
                 </Link>

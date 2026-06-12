@@ -1,7 +1,4 @@
-export const safeJsonParse = (
-  value,
-  fallback = null,
-) => {
+export const safeJsonParse = (value, fallback = null) => {
   try {
     if (!value || typeof value !== "string") {
       return fallback;
@@ -13,12 +10,9 @@ export const safeJsonParse = (
   }
 };
 
-export const safeJsonParseObject = (
-  value,
-  fallback = {}
-) => {
+export const safeJsonParseObject = (value, fallback = {}) => {
   const result = safeJsonParse(value, fallback);
-  if (result !== null && typeof result === 'object' && !Array.isArray(result)) {
+  if (result !== null && typeof result === "object" && !Array.isArray(result)) {
     return result;
   }
   return fallback;

@@ -1,4 +1,3 @@
-
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2, Ticket } from "lucide-react";
 import CharacterCounter from "../CharacterCounter";
@@ -6,12 +5,12 @@ import CharacterCounter from "../CharacterCounter";
 const FormField = ({ label, icon: Icon, error, children, required }) => (
   <div className="space-y-2">
     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-      {Icon && <Icon className="w-5 h-5 text-indigo-500 inline-block mr-2" />}
+      {Icon && <Icon className="mr-2 inline-block h-5 w-5 text-indigo-500" />}
       {label}
-      {required && <span className="text-red-600 ml-1">*</span>}
+      {required && <span className="ml-1 text-red-600">*</span>}
     </label>
     {children}
-    {error && <p className="text-red-500 text-sm">{error}</p>}
+    {error && <p className="text-sm text-red-500">{error}</p>}
   </div>
 );
 
@@ -22,13 +21,17 @@ const TicketTierCard = ({ tier, index, onChange, onRemove, canRemove, errors }) 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4 space-y-4"
+      className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700/50"
     >
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h4 className="font-semibold text-gray-700 dark:text-gray-300">Tier {index + 1}</h4>
         {canRemove && (
-          <button type="button" onClick={() => onRemove(index)} className="text-red-500 hover:text-red-700 flex items-center gap-1 text-sm">
-            <Trash2 className="w-4 h-4" /> Remove
+          <button
+            type="button"
+            onClick={() => onRemove(index)}
+            className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700"
+          >
+            <Trash2 className="h-4 w-4" /> Remove
           </button>
         )}
       </div>
@@ -40,7 +43,7 @@ const TicketTierCard = ({ tier, index, onChange, onRemove, canRemove, errors }) 
             value={tier.name}
             onChange={(e) => onChange(index, "name", e.target.value)}
             placeholder="e.g., Early Bird"
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700"
+            className="w-full rounded-lg border border-gray-300 bg-white p-3 dark:border-gray-600 dark:bg-gray-700"
           />
         </FormField>
 
@@ -51,7 +54,7 @@ const TicketTierCard = ({ tier, index, onChange, onRemove, canRemove, errors }) 
               value={tier.price}
               onChange={(e) => onChange(index, "price", e.target.value)}
               placeholder="0.00"
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700"
+              className="w-full rounded-lg border border-gray-300 bg-white p-3 dark:border-gray-600 dark:bg-gray-700"
             />
           </FormField>
           <FormField label="Capacity" error={errors[`ticketTier_${index}_capacity`]}>
@@ -60,19 +63,21 @@ const TicketTierCard = ({ tier, index, onChange, onRemove, canRemove, errors }) 
               value={tier.capacity}
               onChange={(e) => onChange(index, "capacity", e.target.value)}
               placeholder="Unlimited"
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700"
+              className="w-full rounded-lg border border-gray-300 bg-white p-3 dark:border-gray-600 dark:bg-gray-700"
             />
           </FormField>
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Description
+          </label>
           <textarea
             value={tier.description}
             onChange={(e) => onChange(index, "description", e.target.value)}
             rows={2}
             maxLength={200}
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 resize-none"
+            className="w-full resize-none rounded-lg border border-gray-300 bg-white p-3 dark:border-gray-600 dark:bg-gray-700"
           />
           <div className="flex justify-end">
             <CharacterCounter current={tier.description.length} max={200} />
@@ -83,19 +88,25 @@ const TicketTierCard = ({ tier, index, onChange, onRemove, canRemove, errors }) 
   );
 };
 
-const EventTicketSection = ({ formData, addTicketTier, removeTicketTier, updateTicketTier, errors }) => {
+const EventTicketSection = ({
+  formData,
+  addTicketTier,
+  removeTicketTier,
+  updateTicketTier,
+  errors,
+}) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <Ticket className="w-5 h-5 text-indigo-500" /> Ticket Tiers
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <Ticket className="h-5 w-5 text-indigo-500" /> Ticket Tiers
         </h3>
         <button
           type="button"
           onClick={addTicketTier}
           className="flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
         >
-          <Plus className="w-4 h-4" /> Add Tier
+          <Plus className="h-4 w-4" /> Add Tier
         </button>
       </div>
 

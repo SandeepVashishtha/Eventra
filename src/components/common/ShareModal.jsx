@@ -1,23 +1,14 @@
 import { memo, useCallback, useEffect, useMemo } from "react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Copy,
-  Facebook,
-  Linkedin,
-  Mail,
-  MessageCircle,
-  Send,
-  Twitter,
-  X,
-} from "lucide-react";
+import { Copy, Facebook, Linkedin, Mail, MessageCircle, Send, Twitter, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { createShareModalData } from "../../utils/shareModalUtils.js";
 const ModalCloseButton = memo(({ onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className="flex h-8 w-8 items-center justify-center rounded-full text-xl font-medium text-slate-400 transition-all duration-200 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+    className="flex h-8 w-8 items-center justify-center rounded-full text-xl font-medium text-slate-400 transition-all duration-200 hover:bg-slate-100 hover:text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:hover:bg-slate-800 dark:hover:text-slate-200"
     aria-label="Close Share Modal"
   >
     <X size={18} />
@@ -70,14 +61,14 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     <AnimatePresence>
       {isOpen && shareData ? (
         <motion.div
-  ref={containerRef}
-  className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
-  initial={{ opacity: 0, scale: 0.96, y: 12 }}
-  animate={{ opacity: 1, scale: 1, y: 0 }}
-  exit={{ opacity: 0, scale: 0.96, y: 12 }}
-  transition={{ duration: 0.2 }}
-  onClick={(e) => e.stopPropagation()}
->
+          ref={containerRef}
+          className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
+          initial={{ opacity: 0, scale: 0.96, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 12 }}
+          transition={{ duration: 0.2 }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <motion.div
             className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
             initial={{ opacity: 0, scale: 0.96, y: 12 }}
@@ -87,7 +78,10 @@ const ShareModal = ({ isOpen, onClose, event }) => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800/40">
-              <h2 id="share-modal-title" className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+              <h2
+                id="share-modal-title"
+                className="text-xl font-black tracking-tight text-slate-900 dark:text-white"
+              >
                 Share Event
               </h2>
               <ModalCloseButton onClick={onClose} />
@@ -116,22 +110,50 @@ const ShareModal = ({ isOpen, onClose, event }) => {
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
-              <a href={shareData.links.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 text-sm font-medium text-white transition-all hover:bg-slate-800">
+              <a
+                href={shareData.links.twitter}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 text-sm font-medium text-white transition-all hover:bg-slate-800"
+              >
                 <Twitter size={16} /> Twitter/X
               </a>
-              <a href={shareData.links.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-blue-800">
+              <a
+                href={shareData.links.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-blue-800"
+              >
                 <Linkedin size={16} /> LinkedIn
               </a>
-              <a href={shareData.links.whatsapp} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-green-700">
+              <a
+                href={shareData.links.whatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-green-700"
+              >
                 <MessageCircle size={16} /> WhatsApp
               </a>
-              <a href={shareData.links.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-blue-700">
+              <a
+                href={shareData.links.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-blue-700"
+              >
                 <Facebook size={16} /> Facebook
               </a>
-              <a href={shareData.links.telegram} target="_blank" rel="noopener noreferrer" className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-sky-600">
+              <a
+                href={shareData.links.telegram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-sky-600"
+              >
                 <Send size={16} /> Telegram
               </a>
-              <a href={shareData.links.email} className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-800 transition-all hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">
+              <a
+                href={shareData.links.email}
+                className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-800 transition-all hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+              >
                 <Mail size={16} /> Email
               </a>
               <button

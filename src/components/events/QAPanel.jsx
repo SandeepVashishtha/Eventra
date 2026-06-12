@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 const QAPanel = ({ questions = [], onAskQuestion = () => {}, isLoading = false }) => {
-  const [draftQuestion, setDraftQuestion] = useState('');
+  const [draftQuestion, setDraftQuestion] = useState("");
 
   const submitQuestion = (event) => {
     event.preventDefault();
     const trimmed = draftQuestion.trim();
     if (!trimmed) return;
     onAskQuestion(trimmed);
-    setDraftQuestion('');
+    setDraftQuestion("");
   };
 
   return (
@@ -39,7 +39,10 @@ const QAPanel = ({ questions = [], onAskQuestion = () => {}, isLoading = false }
           <p className="text-xs text-white/60">No questions yet.</p>
         ) : (
           questions.map((question) => (
-            <div key={question.id ?? question.text} className="rounded-lg bg-black/20 px-3 py-2 text-sm">
+            <div
+              key={question.id ?? question.text}
+              className="rounded-lg bg-black/20 px-3 py-2 text-sm"
+            >
               {question.text ?? String(question)}
             </div>
           ))

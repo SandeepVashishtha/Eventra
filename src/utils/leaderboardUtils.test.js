@@ -244,11 +244,7 @@ describe("totalLeaderboardPages", () => {
 
 describe("buildRanksMap", () => {
   it("maps usernames to 1-based ranks", () => {
-    const contributors = [
-      { username: "alice" },
-      { username: "bob" },
-      { username: "carol" },
-    ];
+    const contributors = [{ username: "alice" }, { username: "bob" }, { username: "carol" }];
     const map = buildRanksMap(contributors);
     expect(map.alice).toBe(1);
     expect(map.bob).toBe(2);

@@ -36,7 +36,9 @@ const normalizeSlug = (value) =>
     .replace(/^-+|-+$/g, "");
 
 export const normalizePresetName = (name) =>
-  String(name || "").replace(/\s+/g, " ").trim();
+  String(name || "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const normalizeCategoryFilter = (value) => {
   const raw = String(value || "").trim();
@@ -67,36 +69,25 @@ export const normalizeEventFilterConfig = (filters = {}) => {
   const defaults = getDefaultEventFilterConfig();
   const advancedInput = filters.advancedFilters || {};
   const legacyPriceRange = normalizePriceRange(filters.price);
-  const legacyLocation =
-    typeof filters.location === "string" ? filters.location.trim() : "";
+  const legacyLocation = typeof filters.location === "string" ? filters.location.trim() : "";
 
   const advancedFilters = normalizeAdvancedFilters({
     ...advancedInput,
     location: advancedInput.location || legacyLocation,
     priceRange: advancedInput.priceRange || legacyPriceRange,
-    dateRange:
-      typeof filters.dateRange === "object"
-        ? filters.dateRange
-        : advancedInput.dateRange,
+    dateRange: typeof filters.dateRange === "object" ? filters.dateRange : advancedInput.dateRange,
   });
 
   const filterType = FILTER_TYPES.has(filters.filterType)
     ? filters.filterType
     : defaults.filterType;
-  const sortType = SORT_TYPES.has(filters.sortType)
-    ? filters.sortType
-    : defaults.sortType;
-  const viewMode = VIEW_MODES.has(filters.viewMode)
-    ? filters.viewMode
-    : defaults.viewMode;
+  const sortType = SORT_TYPES.has(filters.sortType) ? filters.sortType : defaults.sortType;
+  const viewMode = VIEW_MODES.has(filters.viewMode) ? filters.viewMode : defaults.viewMode;
 
   return {
-    searchQuery:
-      typeof filters.searchQuery === "string" ? filters.searchQuery : "",
+    searchQuery: typeof filters.searchQuery === "string" ? filters.searchQuery : "",
     filterType,
-    categoryFilter: normalizeCategoryFilter(
-      filters.categoryFilter || filters.category,
-    ),
+    categoryFilter: normalizeCategoryFilter(filters.categoryFilter || filters.category),
     sortType,
     viewMode,
     advancedFilters: serializeAdvancedFilters(advancedFilters),
@@ -132,7 +123,7 @@ export const normalizeFilterPresets = (value) => {
 
 export const readFilterPresets = (
   storage = globalThis.localStorage,
-  key = EVENT_FILTER_PRESETS_STORAGE_KEY,
+  key = EVENT_FILTER_PRESETS_STORAGE_KEY
 ) => {
   if (!storage?.getItem) return [];
 
@@ -158,7 +149,7 @@ export const readFilterPresets = (
 export const writeFilterPresets = (
   presets,
   storage = globalThis.localStorage,
-  key = EVENT_FILTER_PRESETS_STORAGE_KEY,
+  key = EVENT_FILTER_PRESETS_STORAGE_KEY
 ) => {
   const normalized = normalizeFilterPresets(presets);
   if (!storage?.setItem) return normalized;
@@ -170,7 +161,7 @@ export const createFilterPreset = (
   presets,
   name,
   filters,
-  idFactory = () => `preset-${Date.now()}`,
+  idFactory = () => `preset-${Date.now()}`
 ) => {
   const normalizedName = normalizePresetName(name);
   const existing = normalizeFilterPresets(presets);
@@ -180,7 +171,7 @@ export const createFilterPreset = (
   }
 
   const duplicate = existing.some(
-    (preset) => preset.name.toLowerCase() === normalizedName.toLowerCase(),
+    (preset) => preset.name.toLowerCase() === normalizedName.toLowerCase()
   );
   if (duplicate) {
     return {
@@ -207,9 +198,7 @@ export const renameFilterPreset = (presets, presetId, name) => {
   }
 
   const duplicate = existing.some(
-    (preset) =>
-      preset.id !== presetId &&
-      preset.name.toLowerCase() === normalizedName.toLowerCase(),
+    (preset) => preset.id !== presetId && preset.name.toLowerCase() === normalizedName.toLowerCase()
   );
   if (duplicate) {
     return {
@@ -220,7 +209,7 @@ export const renameFilterPreset = (presets, presetId, name) => {
 
   return {
     presets: existing.map((preset) =>
-      preset.id === presetId ? { ...preset, name: normalizedName } : preset,
+      preset.id === presetId ? { ...preset, name: normalizedName } : preset
     ),
     error: "",
   };
@@ -229,9 +218,7 @@ export const renameFilterPreset = (presets, presetId, name) => {
 export const updateFilterPreset = (presets, presetId, filters) => {
   const existing = normalizeFilterPresets(presets);
   return existing.map((preset) =>
-    preset.id === presetId
-      ? { ...preset, filters: normalizeEventFilterConfig(filters) }
-      : preset,
+    preset.id === presetId ? { ...preset, filters: normalizeEventFilterConfig(filters) } : preset
   );
 };
 

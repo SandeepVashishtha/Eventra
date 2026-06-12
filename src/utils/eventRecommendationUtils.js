@@ -1,9 +1,6 @@
 const DEFAULT_RECOMMENDATION_LIMIT = 6;
 
-const normalizeText = (value = "") =>
-  String(value)
-    .trim()
-    .toLowerCase();
+const normalizeText = (value = "") => String(value).trim().toLowerCase();
 
 const getTokenSet = (value) =>
   new Set(
@@ -13,11 +10,7 @@ const getTokenSet = (value) =>
   );
 
 const getInterestTokens = (interests = []) =>
-  new Set(
-    interests
-      .flatMap((interest) => Array.from(getTokenSet(interest)))
-      .filter(Boolean)
-  );
+  new Set(interests.flatMap((interest) => Array.from(getTokenSet(interest))).filter(Boolean));
 
 const getEventTokens = (event) =>
   new Set([

@@ -56,9 +56,7 @@ export const exportAsPNG = (canvasRef, eventId) => {
       img.onload = null;
       img.onerror = null;
       URL.revokeObjectURL(url);
-      console.warn(
-        "exportAsPNG: image load timed out after 10 s — blob URL revoked"
-      );
+      console.warn("exportAsPNG: image load timed out after 10 s — blob URL revoked");
     }, 10_000);
 
     img.onload = () => {
@@ -139,11 +137,13 @@ export const importLayoutJSON = (e, onImport) => {
       if (!Array.isArray(importedData)) {
         throw new Error("Floor plan config layout must be a valid JSON array.");
       }
-      const isValid = importedData.every(el =>
-        el && typeof el === "object" && "id" in el && "type" in el && "x" in el && "y" in el
+      const isValid = importedData.every(
+        (el) => el && typeof el === "object" && "id" in el && "type" in el && "x" in el && "y" in el
       );
       if (!isValid) {
-        throw new Error("One or more grid elements are missing mandatory properties (id, type, x, y).");
+        throw new Error(
+          "One or more grid elements are missing mandatory properties (id, type, x, y)."
+        );
       }
       onImport(importedData);
     } catch (err) {

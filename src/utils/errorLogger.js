@@ -3,11 +3,11 @@
  * @module utils/errorLogger
  *
  * Centrally manages error logging, local storage error persistence, and optional
- * Sentry integration for real-time remote monitoring. 
+ * Sentry integration for real-time remote monitoring.
  *
  * Implements defensive checks for restricted environments (e.g. environments where
  * localStorage or Sentry SDK might be unavailable or blocked due to security policies).
- * 
+ *
  * Strict ES Module (ESM) paths must always include explicit file extensions (.js).
  */
 
@@ -56,7 +56,10 @@ if (isSentryEnabled && typeof window !== "undefined") {
       logger.info("[ErrorLogger] Sentry initialized successfully.");
     } catch (importError) {
       // Fallback: Sentry SDK is missing, failed to load, or blocked by ad-blocker
-      logger.warn("[ErrorLogger] Sentry SDK unavailable or failed to initialize. Falling back to local logging.", importError);
+      logger.warn(
+        "[ErrorLogger] Sentry SDK unavailable or failed to initialize. Falling back to local logging.",
+        importError
+      );
     }
   })();
 }
@@ -94,10 +97,10 @@ function persistToLocalStorage(entry) {
     }
     const rawData = localStorage.getItem("eventra_error_log");
     const existing = safeParseJson(rawData, []);
-    
+
     // Add new error to the top of the queue
     existing.unshift(entry);
-    
+
     // Cap log history size at 10 to conserve space
     localStorage.setItem("eventra_error_log", JSON.stringify(existing.slice(0, 10)));
   } catch (storageError) {
@@ -159,7 +162,7 @@ export const persistErrors = (key, entry, maxEntries = 10) => {
     const storageKey = `eventra_${key}`;
     const rawData = localStorage.getItem(storageKey);
     const existing = safeParseJson(rawData, []);
-    
+
     existing.unshift(entry);
     localStorage.setItem(storageKey, JSON.stringify(existing.slice(0, maxEntries)));
   } catch (error) {

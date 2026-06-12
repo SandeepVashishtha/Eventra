@@ -1,5 +1,26 @@
-import { ArrowRightIcon, LightBulbIcon, FolderOpenIcon, CodeBracketIcon, CheckCircleIcon, ArrowUpTrayIcon, ClipboardDocumentCheckIcon, // Icons for form fields
-  UserGroupIcon, EnvelopeIcon, LinkIcon, RectangleGroupIcon, CpuChipIcon, BookmarkIcon, UsersIcon, ClockIcon, UserPlusIcon, PhotoIcon, ArchiveBoxIcon, DocumentTextIcon, PencilSquareIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowRightIcon,
+  LightBulbIcon,
+  FolderOpenIcon,
+  CodeBracketIcon,
+  CheckCircleIcon,
+  ArrowUpTrayIcon,
+  ClipboardDocumentCheckIcon, // Icons for form fields
+  UserGroupIcon,
+  EnvelopeIcon,
+  LinkIcon,
+  RectangleGroupIcon,
+  CpuChipIcon,
+  BookmarkIcon,
+  UsersIcon,
+  ClockIcon,
+  UserPlusIcon,
+  PhotoIcon,
+  ArchiveBoxIcon,
+  DocumentTextIcon,
+  PencilSquareIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -117,58 +138,64 @@ const SubmitProject = () => {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-const validateForm = (data) => {
-  const newErrors = {};
+  const validateForm = (data) => {
+    const newErrors = {};
 
-  const formatFieldName = (fieldName) => {
-    const result = fieldName.replace(/([A-Z])/g, " $1");
-    return result.charAt(0).toUpperCase() + result.slice(1);
+    const formatFieldName = (fieldName) => {
+      const result = fieldName.replace(/([A-Z])/g, " $1");
+      return result.charAt(0).toUpperCase() + result.slice(1);
+    };
+
+    // Required fields
+    for (const field of requiredFields) {
+      if (!data[field]?.trim()) {
+        const formattedName = formatFieldName(field);
+        newErrors[field] = `${formattedName} is required.`;
+      }
+    }
+
+    // Length validations
+    if (
+      data.projectName &&
+      (data.projectName.trim().length < 3 || data.projectName.trim().length > 100)
+    ) {
+      newErrors.projectName = "Project Name must be between 3 and 100 characters.";
+    }
+    if (data.teamName && (data.teamName.trim().length < 3 || data.teamName.trim().length > 100)) {
+      newErrors.teamName = "Team Name must be between 3 and 100 characters.";
+    }
+    if (
+      data.description &&
+      (data.description.trim().length < 20 || data.description.trim().length > 2000)
+    ) {
+      newErrors.description = "Description must be between 20 and 2000 characters.";
+    }
+
+    // Existing validation logic
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+      newErrors.email = "Please enter a valid email address.";
+    }
+    if (
+      data.githubLink &&
+      !/^(https?:\/\/)?(www\.)?github\.com\/[\w-]+\/[\w-]+(\/)?$/i.test(data.githubLink.trim())
+    ) {
+      newErrors.githubLink = "Please enter a valid GitHub repository URL.";
+    }
+    const urlRegex = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
+    if (data.liveDemoLink?.trim() && !urlRegex.test(data.liveDemoLink)) {
+      newErrors.liveDemoLink = "Please enter a valid URL.";
+    }
+    if (data.projectImage?.trim()) {
+      const isBase64 = data.projectImage.startsWith("data:image/");
+      if (!isBase64 && !urlRegex.test(data.projectImage)) {
+        newErrors.projectImage = "Please enter a valid image URL.";
+      }
+    }
+
+    return newErrors;
   };
 
-  // Required fields
-  for (const field of requiredFields) {
-    if (!data[field]?.trim()) {
-      const formattedName = formatFieldName(field);
-      newErrors[field] = `${formattedName} is required.`;
-    }
-  }
-
-  // Length validations
-  if (data.projectName && (data.projectName.trim().length < 3 || data.projectName.trim().length > 100)) {
-    newErrors.projectName = "Project Name must be between 3 and 100 characters.";
-  }
-  if (data.teamName && (data.teamName.trim().length < 3 || data.teamName.trim().length > 100)) {
-    newErrors.teamName = "Team Name must be between 3 and 100 characters.";
-  }
-  if (data.description && (data.description.trim().length < 20 || data.description.trim().length > 2000)) {
-    newErrors.description = "Description must be between 20 and 2000 characters.";
-  }
-
-  // Existing validation logic
-  if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
-    newErrors.email = "Please enter a valid email address.";
-  }
-  if (
-    data.githubLink &&
-    !/^(https?:\/\/)?(www\.)?github\.com\/[\w-]+\/[\w-]+(\/)?$/i.test(data.githubLink.trim())
-  ) {
-    newErrors.githubLink = "Please enter a valid GitHub repository URL.";
-  }
-  const urlRegex = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
-  if (data.liveDemoLink?.trim() && !urlRegex.test(data.liveDemoLink)) {
-    newErrors.liveDemoLink = "Please enter a valid URL.";
-  }
-  if (data.projectImage?.trim()) {
-    const isBase64 = data.projectImage.startsWith("data:image/");
-    if (!isBase64 && !urlRegex.test(data.projectImage)) {
-      newErrors.projectImage = "Please enter a valid image URL.";
-    }
-  }
-
-  return newErrors;
-};
-
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!isAuthenticated()) {
@@ -184,14 +211,12 @@ const handleSubmit = async (e) => {
       toast.error("Please fix the errors before submitting!");
 
       const fieldsInOrder = [
-        ...formFields.map(field => field.name),
+        ...formFields.map((field) => field.name),
         "description",
-        "additionalNotes"
+        "additionalNotes",
       ];
 
-      const firstErrorField = fieldsInOrder.find(
-        (field) => validationErrors[field]
-      );
+      const firstErrorField = fieldsInOrder.find((field) => validationErrors[field]);
 
       if (inputRefs[firstErrorField]?.current) {
         inputRefs[firstErrorField].current.scrollIntoView({
@@ -220,8 +245,8 @@ const handleSubmit = async (e) => {
       };
       await projectService.submitProject(sanitizedData, {
         headers: {
-          Authorization: token
-        }
+          Authorization: token,
+        },
       });
 
       toast.success("Project submitted successfully!");
@@ -249,7 +274,7 @@ const handleSubmit = async (e) => {
         // Provide a retry button in the toast
         action: {
           label: "Retry",
-          onClick: () => handleSubmit(new Event('submit')),
+          onClick: () => handleSubmit(new Event("submit")),
         },
         duration: 8000,
       });
@@ -257,117 +282,117 @@ const handleSubmit = async (e) => {
       setIsSubmitting(false);
     }
   };
-  
+
   // Define form fields with icons
   const formFields = [
-      {
-        label: "Project Name",
-        name: "projectName",
-        type: "text",
-        placeholder: "Enter project name",
-        icon: LightBulbIcon,
-      },
-      {
-        label: "Team Name",
-        name: "teamName",
-        type: "text",
-        placeholder: "Enter team name",
-        icon: UserGroupIcon,
-      },
-      {
-        label: "Email",
-        name: "email",
-        type: "email",
-        placeholder: "your@email.com",
-        icon: EnvelopeIcon,
-      },
-      {
-        label: "GitHub Link",
-        name: "githubLink",
-        type: "url",
-        placeholder: "https://github.com/username/project",
-        icon: CodeBracketIcon,
-      },
-      {
-        label: "Live Demo Link",
-        name: "liveDemoLink",
-        type: "url",
-        placeholder: "https://project-demo.com",
-        icon: LinkIcon,
-      },
-      {
-        label: "Project Type",
-        name: "projectType",
-        type: "text",
-        placeholder: "e.g., Web, Mobile, AI",
-        icon: RectangleGroupIcon,
-      },
-      {
-        label: "Tech Stack",
-        name: "techStack",
-        type: "text",
-        placeholder: "e.g., React, Node.js, Python",
-        icon: CpuChipIcon,
-      },
-      {
-        label: "Project Category",
-        name: "projectCategory",
-        type: "text",
-        placeholder: "e.g., Social Impact, Education, Gaming",
-        icon: BookmarkIcon,
-      },
-      {
-        label: "Team Members Count",
-        name: "teamMembersCount",
-        type: "number",
-        placeholder: "Number of team members",
-        icon: UserPlusIcon,
-      },
-      {
-        label: "Project Duration",
-        name: "projectDuration",
-        type: "text",
-        placeholder: "Estimated duration or timeline",
-        icon: ClockIcon,
-      },
-      {
-        label: "Target Audience",
-        name: "targetAudience",
-        type: "text",
-        placeholder: "Who will benefit from this project?",
-        icon: UsersIcon,
-      },
-      {
-        label: "Project Logo / Image Link",
-        name: "projectImage",
-        type: "url",
-        placeholder: "Image URL for your project",
-        icon: PhotoIcon,
-      },
-      {
-        label: "Submission Category",
-        name: "submissionCategory",
-        type: "text",
-        placeholder: "Hackathon / Open Submission / Other",
-        icon: ArchiveBoxIcon,
-      },
-    ];
+    {
+      label: "Project Name",
+      name: "projectName",
+      type: "text",
+      placeholder: "Enter project name",
+      icon: LightBulbIcon,
+    },
+    {
+      label: "Team Name",
+      name: "teamName",
+      type: "text",
+      placeholder: "Enter team name",
+      icon: UserGroupIcon,
+    },
+    {
+      label: "Email",
+      name: "email",
+      type: "email",
+      placeholder: "your@email.com",
+      icon: EnvelopeIcon,
+    },
+    {
+      label: "GitHub Link",
+      name: "githubLink",
+      type: "url",
+      placeholder: "https://github.com/username/project",
+      icon: CodeBracketIcon,
+    },
+    {
+      label: "Live Demo Link",
+      name: "liveDemoLink",
+      type: "url",
+      placeholder: "https://project-demo.com",
+      icon: LinkIcon,
+    },
+    {
+      label: "Project Type",
+      name: "projectType",
+      type: "text",
+      placeholder: "e.g., Web, Mobile, AI",
+      icon: RectangleGroupIcon,
+    },
+    {
+      label: "Tech Stack",
+      name: "techStack",
+      type: "text",
+      placeholder: "e.g., React, Node.js, Python",
+      icon: CpuChipIcon,
+    },
+    {
+      label: "Project Category",
+      name: "projectCategory",
+      type: "text",
+      placeholder: "e.g., Social Impact, Education, Gaming",
+      icon: BookmarkIcon,
+    },
+    {
+      label: "Team Members Count",
+      name: "teamMembersCount",
+      type: "number",
+      placeholder: "Number of team members",
+      icon: UserPlusIcon,
+    },
+    {
+      label: "Project Duration",
+      name: "projectDuration",
+      type: "text",
+      placeholder: "Estimated duration or timeline",
+      icon: ClockIcon,
+    },
+    {
+      label: "Target Audience",
+      name: "targetAudience",
+      type: "text",
+      placeholder: "Who will benefit from this project?",
+      icon: UsersIcon,
+    },
+    {
+      label: "Project Logo / Image Link",
+      name: "projectImage",
+      type: "url",
+      placeholder: "Image URL for your project",
+      icon: PhotoIcon,
+    },
+    {
+      label: "Submission Category",
+      name: "submissionCategory",
+      type: "text",
+      placeholder: "Hackathon / Open Submission / Other",
+      icon: ArchiveBoxIcon,
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="bg-bg text-text flex min-h-screen flex-col items-center justify-center px-4 py-12 pt-20 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
-        className="text-center mb-10"
+        className="mb-10 text-center"
         data-aos="fade-down"
         data-aos-once="true"
       >
         {/* UPDATED: Text colors */}
-        <h1 className="text-4xl sm:text-5xl font-extrabold text-primary mb-4">
+        <h1 className="text-primary mb-4 text-4xl font-extrabold sm:text-5xl">
           Submit Your Project
         </h1>
-        <p className="text-xs sm:text-base text-text-light">
+        <p className="text-text-light text-xs sm:text-base">
           &quot;Fill in the details below to showcase your project.&quot;
         </p>
       </motion.div>
@@ -376,59 +401,47 @@ const handleSubmit = async (e) => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-4xl bg-card-bg border border-border shadow-lg rounded-2xl p-6 mb-10"
+        className="bg-card-bg border-border mb-10 w-full max-w-4xl rounded-2xl border p-6 shadow-lg"
         data-aos="fade-up"
         data-aos-delay="200"
       >
-        <div className="flex items-center gap-2 mb-4">
+        <div className="mb-4 flex items-center gap-2">
           {/* UPDATED: Icon and title colors */}
-          <LightBulbIcon className="w-6 h-6 text-primary" />
-          <h2 className="text-2xl font-bold text-text">
-            Project Submission Guidelines
-          </h2>
+          <LightBulbIcon className="text-primary h-6 w-6" />
+          <h2 className="text-text text-2xl font-bold">Project Submission Guidelines</h2>
         </div>
-        <ul className="list-disc pl-6 space-y-3 text-text-light text-sm sm:text-base">
+        <ul className="text-text-light list-disc space-y-3 pl-6 text-sm sm:text-base">
           <li>
-            Fill out <span className="font-medium">all mandatory fields</span>{" "}
-            marked with an asterisk (*) to ensure your project is valid for
-            submission.
+            Fill out <span className="font-medium">all mandatory fields</span> marked with an
+            asterisk (*) to ensure your project is valid for submission.
           </li>
           <li>
-            Provide a{" "}
-            <span className="font-medium">clear and concise project name</span>{" "}
-            and description to help reviewers understand your work quickly.
+            Provide a <span className="font-medium">clear and concise project name</span> and
+            description to help reviewers understand your work quickly.
           </li>
           <li>
-            Include <span className="font-medium">all relevant links</span> such
-            as GitHub repository and live demo (if any) to demonstrate your
-            project effectively.
+            Include <span className="font-medium">all relevant links</span> such as GitHub
+            repository and live demo (if any) to demonstrate your project effectively.
           </li>
           <li>
-            Specify your{" "}
-            <span className="font-medium">team name and members count</span>{" "}
-            accurately to reflect team participation.
+            Specify your <span className="font-medium">team name and members count</span> accurately
+            to reflect team participation.
           </li>
           <li>
             Clearly mention the{" "}
-            <span className="font-medium">
-              project type, tech stack, and category
-            </span>{" "}
-            to help categorize your submission.
+            <span className="font-medium">project type, tech stack, and category</span> to help
+            categorize your submission.
           </li>
           <li>
-            Add any{" "}
-            <span className="font-medium">
-              additional notes or special instructions
-            </span>{" "}
+            Add any <span className="font-medium">additional notes or special instructions</span>{" "}
             that reviewers should know about your project.
           </li>
           <li>
-            Ensure <span className="font-medium">all links are accessible</span>{" "}
-            and valid before submitting to avoid disqualification.
+            Ensure <span className="font-medium">all links are accessible</span> and valid before
+            submitting to avoid disqualification.
           </li>
           <li>
-            Keep your submission{" "}
-            <span className="font-medium">professional and accurate</span> —
+            Keep your submission <span className="font-medium">professional and accurate</span> —
             this helps your project stand out and get fair evaluation.
           </li>
         </ul>
@@ -438,7 +451,7 @@ const handleSubmit = async (e) => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-4xl bg-card-bg shadow-xl rounded-2xl p-8 border border-border"
+        className="bg-card-bg border-border w-full max-w-4xl rounded-2xl border p-8 shadow-xl"
         data-aos="fade-up"
         data-aos-delay="400"
       >
@@ -451,11 +464,11 @@ const handleSubmit = async (e) => {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.05 }}
             >
-              <label className="flex items-center text-sm font-medium text-text-light mb-1">
-                <field.icon className="w-5 h-5 mr-2 text-primary" />
+              <label className="text-text-light mb-1 flex items-center text-sm font-medium">
+                <field.icon className="text-primary mr-2 h-5 w-5" />
                 {field.label}
                 {requiredFields.includes(field.name) && (
-                  <span className="text-red-500 ml-1">*</span>
+                  <span className="ml-1 text-red-500">*</span>
                 )}
               </label>
               {field.name === "projectImage" ? (
@@ -464,7 +477,7 @@ const handleSubmit = async (e) => {
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
+                  className={`flex w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-all duration-300 ${
                     isDragging
                       ? "border-primary bg-primary/10"
                       : "border-border hover:border-primary hover:bg-bg/50"
@@ -478,28 +491,32 @@ const handleSubmit = async (e) => {
                     onChange={handleFileChange}
                   />
                   {formData.projectImage ? (
-                    <div className="relative w-full max-w-[200px] aspect-square flex items-center justify-center rounded-lg border border-border overflow-hidden bg-bg group">
+                    <div className="border-border bg-bg group relative flex aspect-square w-full max-w-[200px] items-center justify-center overflow-hidden rounded-lg border">
                       <img
                         src={formData.projectImage}
                         alt="Project Preview"
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                       <button
                         type="button"
                         onClick={handleRemoveImage}
-                        className="absolute top-2 right-2 p-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-full shadow-md transition-all duration-200 cursor-pointer"
+                        className="absolute top-2 right-2 cursor-pointer rounded-full bg-rose-600 p-1.5 text-white shadow-md transition-all duration-200 hover:bg-rose-500"
                         title="Remove image"
-                       aria-label="button">
-                        <XMarkIcon className="w-3.5 h-3.5" />
+                        aria-label="button"
+                      >
+                        <XMarkIcon className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ) : (
-                    <div className="text-center space-y-2 pointer-events-none">
-                      <ArrowUpTrayIcon className={`w-8 h-8 mx-auto text-primary transition-transform duration-300 ${isDragging ? "animate-bounce" : ""}`} />
-                      <div className="text-sm font-semibold text-text">
-                        Drag and drop your project logo here, or <span className="text-primary underline decoration-wavy">browse</span>
+                    <div className="pointer-events-none space-y-2 text-center">
+                      <ArrowUpTrayIcon
+                        className={`text-primary mx-auto h-8 w-8 transition-transform duration-300 ${isDragging ? "animate-bounce" : ""}`}
+                      />
+                      <div className="text-text text-sm font-semibold">
+                        Drag and drop your project logo here, or{" "}
+                        <span className="text-primary underline decoration-wavy">browse</span>
                       </div>
-                      <div className="text-xs text-text-light/60">
+                      <div className="text-text-light/60 text-xs">
                         Supports PNG, JPG, JPEG, SVG up to 5MB
                       </div>
                     </div>
@@ -513,13 +530,11 @@ const handleSubmit = async (e) => {
                   onChange={handleChange}
                   placeholder={field.placeholder}
                   ref={inputRefs[field.name]}
-                  className="w-full border border-border rounded-lg p-3 bg-bg text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
+                  className="border-border bg-bg text-text focus:ring-primary focus:border-primary w-full rounded-lg border p-3 transition-all duration-300 focus:ring-1 focus:outline-none"
                 />
               )}
               {errors[field.name] && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors[field.name]}
-                </p>
+                <p className="mt-1 text-xs text-red-500">{errors[field.name]}</p>
               )}
             </motion.div>
           ))}
@@ -529,9 +544,9 @@ const handleSubmit = async (e) => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <label className="flex items-center text-sm font-medium text-text-light mb-1">
-              <DocumentTextIcon className="w-5 h-5 mr-2 text-primary" />
-              Project Description <span className="text-red-500 ml-1">*</span>
+            <label className="text-text-light mb-1 flex items-center text-sm font-medium">
+              <DocumentTextIcon className="text-primary mr-2 h-5 w-5" />
+              Project Description <span className="ml-1 text-red-500">*</span>
             </label>
             <textarea
               name="description"
@@ -540,10 +555,10 @@ const handleSubmit = async (e) => {
               ref={inputRefs.description}
               rows="4"
               placeholder="Briefly describe your project, its purpose, and features."
-              className="w-full border border-border rounded-lg p-3 bg-bg text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
+              className="border-border bg-bg text-text focus:ring-primary focus:border-primary w-full rounded-lg border p-3 transition-all duration-300 focus:ring-1 focus:outline-none"
             />
             {errors.description && (
-              <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+              <p className="mt-1 text-xs text-red-500">{errors.description}</p>
             )}
           </motion.div>
           <motion.div
@@ -552,8 +567,8 @@ const handleSubmit = async (e) => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <label className="flex items-center text-sm font-medium text-text-light mb-1">
-              <PencilSquareIcon className="w-5 h-5 mr-2 text-primary" />
+            <label className="text-text-light mb-1 flex items-center text-sm font-medium">
+              <PencilSquareIcon className="text-primary mr-2 h-5 w-5" />
               Additional Notes
             </label>
             <textarea
@@ -562,7 +577,7 @@ const handleSubmit = async (e) => {
               onChange={handleChange}
               rows="3"
               placeholder="Any other information for the reviewers"
-              className="w-full border border-border rounded-lg p-3 bg-bg text-text focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
+              className="border-border bg-bg text-text focus:ring-primary focus:border-primary w-full rounded-lg border p-3 transition-all duration-300 focus:ring-1 focus:outline-none"
             />
           </motion.div>
           <motion.button
@@ -570,10 +585,10 @@ const handleSubmit = async (e) => {
             disabled={isSubmitting}
             whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
             whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
-            className="w-full flex items-center justify-center gap-2 text-white font-semibold p-3 rounded-xl shadow-lg transition-all duration-300 bg-primary hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="bg-primary flex w-full items-center justify-center gap-2 rounded-xl p-3 font-semibold text-white shadow-lg transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Submitting..." : "Submit Project"}
-            {!isSubmitting && <ArrowRightIcon className="w-5 h-5" />}
+            {!isSubmitting && <ArrowRightIcon className="h-5 w-5" />}
           </motion.button>
         </form>
       </motion.div>
@@ -582,7 +597,7 @@ const handleSubmit = async (e) => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.7 }}
-        className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-5xl mb-8 mt-12"
+        className="mt-12 mb-8 grid w-full max-w-5xl grid-cols-1 gap-6 sm:grid-cols-3"
         data-aos="fade-up"
         data-aos-delay="1500"
       >
@@ -598,17 +613,13 @@ const handleSubmit = async (e) => {
           <motion.div
             key={index}
             whileHover={{ scale: 1.05 }}
-            className="bg-card-bg border border-border shadow-xl rounded-2xl p-6 text-center flex flex-col items-center"
+            className="bg-card-bg border-border flex flex-col items-center rounded-2xl border p-6 text-center shadow-xl"
             data-aos="zoom-in"
             data-aos-delay={1500 + index * 100}
           >
-            <stat.icon className="w-10 h-10 text-primary mb-3" />
-            <h3 className="text-3xl font-bold">
-              {stat.number}
-            </h3>
-            <p className="text-text-light mt-2">
-              {stat.label}
-            </p>
+            <stat.icon className="text-primary mb-3 h-10 w-10" />
+            <h3 className="text-3xl font-bold">{stat.number}</h3>
+            <p className="text-text-light mt-2">{stat.label}</p>
           </motion.div>
         ))}
       </motion.div>
@@ -617,37 +628,34 @@ const handleSubmit = async (e) => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="w-full max-w-5xl mt-10 text-center bg-card-bg border border-border rounded-2xl p-10 shadow-2xl"
+        className="bg-card-bg border-border mt-10 w-full max-w-5xl rounded-2xl border p-10 text-center shadow-2xl"
         data-aos="fade-up"
         data-aos-delay="1900"
       >
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <LightBulbIcon className="w-8 h-8 text-white" />
-          <h2 className="text-3xl font-bold text-white">
-            Ready to Launch Your Next Idea?
-          </h2>
+        <div className="mb-4 flex items-center justify-center gap-2">
+          <LightBulbIcon className="h-8 w-8 text-white" />
+          <h2 className="text-3xl font-bold text-white">Ready to Launch Your Next Idea?</h2>
         </div>
         <p className="text-text-light mb-6 text-lg">
-          Showcase your innovative projects to the community and track your
-          progress easily.
+          Showcase your innovative projects to the community and track your progress easily.
         </p>
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
+        <div className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <motion.button
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
             whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
-            className="inline-flex items-center justify-center gap-2 bg-primary text-white px-8 py-3 rounded-xl shadow-lg hover:opacity-90 transition-all duration-300"
+            className="bg-primary inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3 text-white shadow-lg transition-all duration-300 hover:opacity-90"
           >
-            <ArrowUpTrayIcon className="w-5 h-5" /> Submit Another Project
+            <ArrowUpTrayIcon className="h-5 w-5" /> Submit Another Project
           </motion.button>
-          
+
           <motion.a
             href="/projects"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center gap-2 bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
+            className="bg-bg text-text border-border hover:bg-card-bg inline-flex items-center justify-center gap-2 rounded-xl border px-8 py-3 shadow-lg transition-all duration-300"
           >
-            <ClipboardDocumentCheckIcon className="w-5 h-5" />
+            <ClipboardDocumentCheckIcon className="h-5 w-5" />
             Explore Projects
           </motion.a>
         </div>

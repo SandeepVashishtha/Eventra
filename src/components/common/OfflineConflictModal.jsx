@@ -27,18 +27,21 @@ export default function OfflineConflictModal() {
   const serverPayload = serverState || {};
 
   // Find all unique keys to compare
-  const allKeys = Array.from(new Set([...Object.keys(localPayload), ...Object.keys(serverPayload)]))
-    .filter(key => key !== "id" && key !== "userId" && key !== "eventId" && key !== "timestamp");
+  const allKeys = Array.from(
+    new Set([...Object.keys(localPayload), ...Object.keys(serverPayload)])
+  ).filter((key) => key !== "id" && key !== "userId" && key !== "eventId" && key !== "timestamp");
 
   const handleResolve = (resolution) => {
     // Dispatch resolution result
-    window.dispatchEvent(new CustomEvent("eventra-offline-conflict-resolved", {
-      detail: {
-        itemId: item.id,
-        resolution, // "local", "server", or "merge"
-        mergedPayload: resolution === "merge" ? { ...serverPayload, ...localPayload } : null
-      }
-    }));
+    window.dispatchEvent(
+      new CustomEvent("eventra-offline-conflict-resolved", {
+        detail: {
+          itemId: item.id,
+          resolution, // "local", "server", or "merge"
+          mergedPayload: resolution === "merge" ? { ...serverPayload, ...localPayload } : null,
+        },
+      })
+    );
     setIsOpen(false);
     setConflictData(null);
   };
@@ -52,7 +55,9 @@ export default function OfflineConflictModal() {
         aria-modal="true"
         aria-labelledby="ocm-title"
         tabIndex={-1}
-        onKeyDown={(e) => { if (e.key === 'Escape') handleResolve("server"); }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") handleResolve("server");
+        }}
       >
         {/* Header */}
         <div className="ocm-header">
@@ -61,20 +66,26 @@ export default function OfflineConflictModal() {
               <AlertTriangle size={20} aria-hidden="true" />
             </div>
             <div>
-              <h3 id="ocm-title" className="text-base font-bold text-white">Offline Synchronization Conflict</h3>
+              <h3 id="ocm-title" className="text-base font-bold text-white">
+                Offline Synchronization Conflict
+              </h3>
               <p className="text-xs text-slate-400">
                 The offline action failed because the server version changed in the meantime.
               </p>
             </div>
           </div>
-          <button onClick={() => handleResolve("server")} aria-label="Dismiss conflict — keep server version" className="text-slate-400 hover:text-white transition-colors">
+          <button
+            onClick={() => handleResolve("server")}
+            aria-label="Dismiss conflict — keep server version"
+            className="text-slate-400 transition-colors hover:text-white"
+          >
             <X size={18} aria-hidden="true" />
           </button>
         </div>
 
         {/* Comparison Area */}
         <div className="ocm-body">
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="mb-4 grid grid-cols-2 gap-4">
             <div className="ocm-panel-title flex items-center gap-1.5 text-indigo-400">
               <Edit3 size={14} />
               <span>Your Offline Changes</span>
@@ -88,17 +99,20 @@ export default function OfflineConflictModal() {
           <div className="ocm-diff-list">
             {allKeys.map((key) => {
               const localVal = localPayload[key] !== undefined ? String(localPayload[key]) : "--";
-              const serverVal = serverPayload[key] !== undefined ? String(serverPayload[key]) : "--";
+              const serverVal =
+                serverPayload[key] !== undefined ? String(serverPayload[key]) : "--";
               const isDifferent = localVal !== serverVal;
 
               return (
-                <div key={key} className={`ocm-diff-row ${isDifferent ? 'ocm-diff-changed' : ''}`}>
-                  <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1.5">{key.replace(/([A-Z])/g, ' $1')}</div>
+                <div key={key} className={`ocm-diff-row ${isDifferent ? "ocm-diff-changed" : ""}`}>
+                  <div className="mb-1.5 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                    {key.replace(/([A-Z])/g, " $1")}
+                  </div>
                   <div className="grid grid-cols-2 gap-4 text-xs">
-                    <div className="ocm-diff-val local bg-indigo-500/5 border border-indigo-500/10 text-indigo-200">
+                    <div className="ocm-diff-val local border border-indigo-500/10 bg-indigo-500/5 text-indigo-200">
                       {localVal}
                     </div>
-                    <div className="ocm-diff-val server bg-rose-500/5 border border-rose-500/10 text-rose-200">
+                    <div className="ocm-diff-val server border border-rose-500/10 bg-rose-500/5 text-rose-200">
                       {serverVal}
                     </div>
                   </div>
@@ -110,24 +124,15 @@ export default function OfflineConflictModal() {
 
         {/* Footer resolutions */}
         <div className="ocm-footer">
-          <button 
-            className="ocm-btn ocm-btn-secondary" 
-            onClick={() => handleResolve("server")}
-          >
+          <button className="ocm-btn ocm-btn-secondary" onClick={() => handleResolve("server")}>
             Discard Local & Keep Server
           </button>
-          
-          <button 
-            className="ocm-btn ocm-btn-primary" 
-            onClick={() => handleResolve("local")}
-          >
+
+          <button className="ocm-btn ocm-btn-primary" onClick={() => handleResolve("local")}>
             Overwrite Server with Local
           </button>
-          
-          <button 
-            className="ocm-btn ocm-btn-accent" 
-            onClick={() => handleResolve("merge")}
-          >
+
+          <button className="ocm-btn ocm-btn-accent" onClick={() => handleResolve("merge")}>
             Merge Both Changes
           </button>
         </div>

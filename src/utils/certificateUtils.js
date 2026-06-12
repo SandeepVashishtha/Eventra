@@ -17,10 +17,8 @@ const sanitizeUid = (uid) => {
  * route) and causes response.json() to throw a SyntaxError.
  */
 const resolveApiBaseUrl = () => {
-  const viteUrl =
-    typeof import.meta !== "undefined" ? import.meta.env?.VITE_API_URL : undefined;
-  const craUrl =
-    typeof process !== "undefined" ? process.env?.REACT_APP_API_URL : undefined;
+  const viteUrl = typeof import.meta !== "undefined" ? import.meta.env?.VITE_API_URL : undefined;
+  const craUrl = typeof process !== "undefined" ? process.env?.REACT_APP_API_URL : undefined;
   return viteUrl || craUrl || "";
 };
 

@@ -9,7 +9,7 @@
  * timezoneUtils.js to ensure time correctness.
  */
 
-import { parseEventToUTC, getUserTimezone } from './timezoneUtils.js';
+import { parseEventToUTC, getUserTimezone } from "./timezoneUtils.js";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -24,21 +24,21 @@ import { parseEventToUTC, getUserTimezone } from './timezoneUtils.js';
  *   - 'iso'     → "YYYY-MM-DDTHH:mm:ss" (Outlook startdt/enddt param)
  * @returns {string} Formatted date-time string.
  */
-const formatUTCtoCalendarString = (utcMs, mode = 'compact') => {
+const formatUTCtoCalendarString = (utcMs, mode = "compact") => {
   const d = new Date(utcMs);
 
   // Pad a number to at least 2 digits
-  const pad = (n) => String(n).padStart(2, '0');
+  const pad = (n) => String(n).padStart(2, "0");
 
   // Extract UTC components (we are already in UTC, so no tz offset needed)
-  const year   = d.getUTCFullYear();
-  const month  = pad(d.getUTCMonth() + 1);
-  const day    = pad(d.getUTCDate());
-  const hour   = pad(d.getUTCHours());
+  const year = d.getUTCFullYear();
+  const month = pad(d.getUTCMonth() + 1);
+  const day = pad(d.getUTCDate());
+  const hour = pad(d.getUTCHours());
   const minute = pad(d.getUTCMinutes());
   const second = pad(d.getUTCSeconds());
 
-  if (mode === 'iso') {
+  if (mode === "iso") {
     // "YYYY-MM-DDTHH:mm:ss" — no trailing Z; Outlook interprets it as UTC
     // when passed alongside the timezone-neutral startdt param.
     return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
@@ -60,13 +60,15 @@ const formatUTCtoCalendarString = (utcMs, mode = 'compact') => {
  *   Returns null when date/time are unparseable.
  */
 const getEventUTCRange = (event, timezone) => {
-  if (!event || typeof event !== 'object') {
+  if (!event || typeof event !== "object") {
     console.error("[getEventUTCRange] Invalid event argument: must be an object.");
     return null;
   }
-  
+
   if (!event.date || !event.time) {
-    console.warn("[getEventUTCRange] Missing required event fields: 'date' and 'time' are mandatory.");
+    console.warn(
+      "[getEventUTCRange] Missing required event fields: 'date' and 'time' are mandatory."
+    );
     return null;
   }
 
@@ -77,7 +79,9 @@ const getEventUTCRange = (event, timezone) => {
   // and 12h/24h time strings, with DST-correct conversion via Intl.DateTimeFormat.
   const startMs = parseEventToUTC(event.date, event.time, tz);
   if (startMs === null || isNaN(startMs)) {
-    console.warn(`[getEventUTCRange] Date '${event.date}' or time '${event.time}' could not be parsed.`);
+    console.warn(
+      `[getEventUTCRange] Date '${event.date}' or time '${event.time}' could not be parsed.`
+    );
     return null;
   }
 
@@ -108,32 +112,32 @@ const getEventUTCRange = (event, timezone) => {
  * @returns {string}  A fully encoded Google Calendar URL, or "" on error.
  */
 export const getGoogleCalendarUrl = (event, timezone) => {
-  if (!event) return '';
+  if (!event) return "";
 
   const range = getEventUTCRange(event, timezone);
 
   // Fall back to a best-effort date-only URL when time parsing fails
   if (!range) {
-    const dateFallback = String(event.date || '').replace(/-/g, '');
+    const dateFallback = String(event.date || "").replace(/-/g, "");
     return [
-      'https://calendar.google.com/calendar/render?action=TEMPLATE',
-      `&text=${encodeURIComponent(event.title || '')}`,
+      "https://calendar.google.com/calendar/render?action=TEMPLATE",
+      `&text=${encodeURIComponent(event.title || "")}`,
       `&dates=${dateFallback}T000000Z/${dateFallback}T010000Z`,
-      `&details=${encodeURIComponent(event.description || '')}`,
-      `&location=${encodeURIComponent(event.location || '')}`,
-    ].join('');
+      `&details=${encodeURIComponent(event.description || "")}`,
+      `&location=${encodeURIComponent(event.location || "")}`,
+    ].join("");
   }
 
-  const start = formatUTCtoCalendarString(range.startMs, 'compact');
-  const end   = formatUTCtoCalendarString(range.endMs,   'compact');
+  const start = formatUTCtoCalendarString(range.startMs, "compact");
+  const end = formatUTCtoCalendarString(range.endMs, "compact");
 
   return [
-    'https://calendar.google.com/calendar/render?action=TEMPLATE',
-    `&text=${encodeURIComponent(event.title || '')}`,
+    "https://calendar.google.com/calendar/render?action=TEMPLATE",
+    `&text=${encodeURIComponent(event.title || "")}`,
     `&dates=${start}/${end}`,
-    `&details=${encodeURIComponent(event.description || '')}`,
-    `&location=${encodeURIComponent(event.location || '')}`,
-  ].join('');
+    `&details=${encodeURIComponent(event.description || "")}`,
+    `&location=${encodeURIComponent(event.location || "")}`,
+  ].join("");
 };
 
 /**
@@ -144,35 +148,35 @@ export const getGoogleCalendarUrl = (event, timezone) => {
  * @returns {string}  A fully encoded Outlook Live URL, or "" on error.
  */
 export const getOutlookCalendarUrl = (event, timezone) => {
-  if (!event) return '';
+  if (!event) return "";
 
   const range = getEventUTCRange(event, timezone);
 
   if (!range) {
-    const dateFallback = String(event.date || '').replace(/-/g, '');
+    const dateFallback = String(event.date || "").replace(/-/g, "");
     return [
-      'https://outlook.live.com/calendar/0/deeplink/compose',
-      '?path=/calendar/action/compose&rru=addevent',
-      `&subject=${encodeURIComponent(event.title || '')}`,
+      "https://outlook.live.com/calendar/0/deeplink/compose",
+      "?path=/calendar/action/compose&rru=addevent",
+      `&subject=${encodeURIComponent(event.title || "")}`,
       `&startdt=${dateFallback}T000000`,
       `&enddt=${dateFallback}T010000`,
-      `&body=${encodeURIComponent(event.description || '')}`,
-      `&location=${encodeURIComponent(event.location || '')}`,
-    ].join('');
+      `&body=${encodeURIComponent(event.description || "")}`,
+      `&location=${encodeURIComponent(event.location || "")}`,
+    ].join("");
   }
 
-  const start = formatUTCtoCalendarString(range.startMs, 'iso');
-  const end   = formatUTCtoCalendarString(range.endMs,   'iso');
+  const start = formatUTCtoCalendarString(range.startMs, "iso");
+  const end = formatUTCtoCalendarString(range.endMs, "iso");
 
   return [
-    'https://outlook.live.com/calendar/0/deeplink/compose',
-    '?path=/calendar/action/compose&rru=addevent',
-    `&subject=${encodeURIComponent(event.title || '')}`,
+    "https://outlook.live.com/calendar/0/deeplink/compose",
+    "?path=/calendar/action/compose&rru=addevent",
+    `&subject=${encodeURIComponent(event.title || "")}`,
     `&startdt=${start}`,
     `&enddt=${end}`,
-    `&body=${encodeURIComponent(event.description || '')}`,
-    `&location=${encodeURIComponent(event.location || '')}`,
-  ].join('');
+    `&body=${encodeURIComponent(event.description || "")}`,
+    `&location=${encodeURIComponent(event.location || "")}`,
+  ].join("");
 };
 
 /**
@@ -181,9 +185,11 @@ export const getOutlookCalendarUrl = (event, timezone) => {
  * @param {string} text - The event description or location string
  * @returns {string|null} - The URL if found, else null
  */
-export const extractMeetingLink = (text = '') => {
-  if (typeof text !== 'string') return null;
-  const match = text.match(/https:\/\/(us02web\.zoom\.us|teams\.microsoft\.com|meet\.google\.com)\/[^\s]+/i);
+export const extractMeetingLink = (text = "") => {
+  if (typeof text !== "string") return null;
+  const match = text.match(
+    /https:\/\/(us02web\.zoom\.us|teams\.microsoft\.com|meet\.google\.com)\/[^\s]+/i
+  );
   return match ? match[0] : null;
 };
 
@@ -195,33 +201,33 @@ export const extractMeetingLink = (text = '') => {
  * @returns {string}  A fully encoded Yahoo Calendar URL, or "" on error.
  */
 export const getYahooCalendarUrl = (event, timezone) => {
-  if (!event) return '';
+  if (!event) return "";
 
   const range = getEventUTCRange(event, timezone);
 
   if (!range) {
-    const dateFallback = String(event.date || '').replace(/-/g, '');
+    const dateFallback = String(event.date || "").replace(/-/g, "");
     return [
-      'https://calendar.yahoo.com/?v=60',
-      `&TITLE=${encodeURIComponent(event.title || '')}`,
+      "https://calendar.yahoo.com/?v=60",
+      `&TITLE=${encodeURIComponent(event.title || "")}`,
       `&ST=${dateFallback}T000000Z`,
       `&ET=${dateFallback}T010000Z`,
-      `&DESC=${encodeURIComponent(event.description || '')}`,
-      `&in_loc=${encodeURIComponent(event.location || '')}`,
-    ].join('');
+      `&DESC=${encodeURIComponent(event.description || "")}`,
+      `&in_loc=${encodeURIComponent(event.location || "")}`,
+    ].join("");
   }
 
-  const start = formatUTCtoCalendarString(range.startMs, 'compact');
-  const end   = formatUTCtoCalendarString(range.endMs,   'compact');
+  const start = formatUTCtoCalendarString(range.startMs, "compact");
+  const end = formatUTCtoCalendarString(range.endMs, "compact");
 
   return [
-    'https://calendar.yahoo.com/?v=60',
-    `&TITLE=${encodeURIComponent(event.title || '')}`,
+    "https://calendar.yahoo.com/?v=60",
+    `&TITLE=${encodeURIComponent(event.title || "")}`,
     `&ST=${start}`,
     `&ET=${end}`,
-    `&DESC=${encodeURIComponent(event.description || '')}`,
-    `&in_loc=${encodeURIComponent(event.location || '')}`,
-  ].join('');
+    `&DESC=${encodeURIComponent(event.description || "")}`,
+    `&in_loc=${encodeURIComponent(event.location || "")}`,
+  ].join("");
 };
 
 /**
@@ -238,36 +244,36 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
   let start, end;
 
   if (!range) {
-    const dateFallback = String(event.date || '').replace(/-/g, '');
+    const dateFallback = String(event.date || "").replace(/-/g, "");
     start = `${dateFallback}T000000Z`;
     end = `${dateFallback}T010000Z`;
   } else {
-    start = formatUTCtoCalendarString(range.startMs, 'compact');
-    end = formatUTCtoCalendarString(range.endMs, 'compact');
+    start = formatUTCtoCalendarString(range.startMs, "compact");
+    end = formatUTCtoCalendarString(range.endMs, "compact");
   }
 
-  const now = new Date().toISOString().replace(/-|:|\.\d+/g, '');
-  
+  const now = new Date().toISOString().replace(/-|:|\.\d+/g, "");
+
   const icsContent = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Eventra//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    'BEGIN:VEVENT',
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Eventra//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
     `UID:${event.id || Math.random().toString(36).substring(2)}@eventra.com`,
     `DTSTAMP:${now}`,
     `DTSTART:${start}`,
     `DTEND:${end}`,
-    `SUMMARY:${(event.title || '').replace(/,/g, '\\,')}`,
-    `DESCRIPTION:${(event.description || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,')}`,
-    `LOCATION:${(event.location || '').replace(/,/g, '\\,')}`,
-    'END:VEVENT',
-    'END:VCALENDAR'
-  ].join('\r\n');
+    `SUMMARY:${(event.title || "").replace(/,/g, "\\,")}`,
+    `DESCRIPTION:${(event.description || "").replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,")}`,
+    `LOCATION:${(event.location || "").replace(/,/g, "\\,")}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
 
   try {
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
     return URL.createObjectURL(blob);
   } catch (error) {
     console.error("[calendarUrlUtils] Failed to generate ICS file blob URL", error);

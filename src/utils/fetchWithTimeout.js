@@ -11,11 +11,7 @@ export class FetchError extends Error {
   }
 }
 
-export const fetchWithTimeout = async (
-  url,
-  options = {},
-  timeout = DEFAULT_TIMEOUT
-) => {
+export const fetchWithTimeout = async (url, options = {}, timeout = DEFAULT_TIMEOUT) => {
   const controller = new AbortController();
 
   const timeoutId = setTimeout(() => {
@@ -36,13 +32,14 @@ export const fetchWithTimeout = async (
   if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
     const headers = new Headers(options.headers || {});
     if (!headers.has("Idempotency-Key")) {
-      const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-          });
+      const idempotencyKey =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+              const r = (Math.random() * 16) | 0;
+              const v = c === "x" ? r : (r & 0x3) | 0x8;
+              return v.toString(16);
+            });
       headers.set("Idempotency-Key", idempotencyKey);
     }
     options.headers = headers;
@@ -63,7 +60,11 @@ export const fetchWithTimeout = async (
       } else {
         const text = await response.text().catch(() => null);
         if (typeof text === "string") {
-          try { data = JSON.parse(text); } catch { data = text; }
+          try {
+            data = JSON.parse(text);
+          } catch {
+            data = text;
+          }
         }
       }
     } catch {
@@ -74,7 +75,7 @@ export const fetchWithTimeout = async (
       throw new FetchError(
         data?.message || `Request failed with status ${response.status}`,
         response.status,
-        data,
+        data
       );
     }
 
@@ -90,9 +91,7 @@ export const fetchWithTimeout = async (
 
     if (error.name === "AbortError") {
       logger.error("[fetchWithTimeout] Request aborted or timed out:", url);
-      throw new FetchError(
-        `Request timed out after ${timeout}ms or was manually aborted`
-      );
+      throw new FetchError(`Request timed out after ${timeout}ms or was manually aborted`);
     }
 
     // Network-level failure (e.g. TypeError: Failed to fetch) — wrap in FetchError

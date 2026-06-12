@@ -13,9 +13,10 @@ const SavedEventsPage = () => {
   const [exporting, setExporting] = useState(false);
 
   const sorted = useMemo(
-    () => [...bookmarks].sort((a, b) =>
-      sortBy === "savedAt" ? b.savedAt - a.savedAt : new Date(a.date) - new Date(b.date)
-    ),
+    () =>
+      [...bookmarks].sort((a, b) =>
+        sortBy === "savedAt" ? b.savedAt - a.savedAt : new Date(a.date) - new Date(b.date)
+      ),
     [bookmarks, sortBy]
   );
 
@@ -34,7 +35,7 @@ const SavedEventsPage = () => {
 
   if (bookmarks.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] px-4 py-12 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] px-4 py-12 text-slate-900 sm:px-6 lg:px-8 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100">
         <section className="mx-auto max-w-4xl">
           <EmptyState
             title="No saved events yet!"
@@ -49,14 +50,14 @@ const SavedEventsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] px-4 py-12 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] px-4 py-12 text-slate-900 sm:px-6 lg:px-8 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100">
       <section className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-950 dark:text-slate-100 sm:text-4xl">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl dark:text-slate-100">
               Saved Events ({bookmarks.length})
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-slate-400 sm:text-base">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 sm:text-base dark:text-slate-400">
               Revisit the events you saved while exploring Eventra.
             </p>
           </div>
@@ -66,7 +67,7 @@ const SavedEventsPage = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
             >
               <option value="savedAt">Recently Saved</option>
               <option value="date">Event Date</option>
@@ -93,7 +94,10 @@ const SavedEventsPage = () => {
               key={event.id}
               className="rounded-3xl border border-gray-100 bg-white p-5 shadow-[0_10px_25px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl dark:border-gray-800 dark:bg-gray-900 dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] dark:hover:border-indigo-700"
             >
-              <h3 title={event.title || event.name} className="mb-2 text-lg font-bold tracking-tight text-gray-950 dark:text-slate-100 line-clamp-2 break-words min-w-0">
+              <h3
+                title={event.title || event.name}
+                className="mb-2 line-clamp-2 min-w-0 text-lg font-bold tracking-tight break-words text-gray-950 dark:text-slate-100"
+              >
                 {event.title || event.name}
               </h3>
               <p className="text-sm text-gray-600 dark:text-slate-400">{event.date}</p>

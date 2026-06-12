@@ -35,14 +35,16 @@
 .rv-title {
   font-size: 1.35rem;
   font-weight: 700;
-  color: #1a202c;           /* dark text */
+  color: #1a202c; /* dark text */
   margin: 0;
   letter-spacing: -0.02em;
 }
 
 /* Dark-mode friendliness */
 @media (prefers-color-scheme: dark) {
-  .rv-title { color: #f7fafc; }
+  .rv-title {
+    color: #f7fafc;
+  }
 }
 
 .rv-count {
@@ -77,7 +79,11 @@
   font-weight: 600;
   cursor: pointer;
   border: 1.5px solid transparent;
-  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s,
+    transform 0.1s;
   line-height: 1.4;
 }
 
@@ -110,9 +116,15 @@
 }
 
 @keyframes pulse-danger {
-  0%   { transform: scale(1);    }
-  40%  { transform: scale(1.06); }
-  100% { transform: scale(1);    }
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* ── Card grid ── */
@@ -128,9 +140,13 @@
   border-radius: 12px;
   overflow: hidden;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.06);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   border: 1.5px solid #e8eaf0;
@@ -192,7 +208,7 @@
 .rv-card__thumb {
   position: relative;
   width: 100%;
-  padding-top: 52%;        /* ~19:10 aspect ratio */
+  padding-top: 52%; /* ~19:10 aspect ratio */
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   overflow: hidden;
   flex-shrink: 0;
@@ -260,7 +276,9 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .rv-card__title { color: #e2e8f0; }
+  .rv-card__title {
+    color: #e2e8f0;
+  }
 }
 
 .rv-card__meta {
@@ -276,7 +294,9 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .rv-card__meta { color: #a0aec0; }
+  .rv-card__meta {
+    color: #a0aec0;
+  }
 }
 
 /* ── Responsive ── */

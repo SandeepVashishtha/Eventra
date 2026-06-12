@@ -25,7 +25,7 @@
  * </CanAccess>
  */
 
-import Guard from './Guard';
+import Guard from "./Guard";
 
 /**
  * CanAccess - Backward Compatible Access Control Component
@@ -55,7 +55,7 @@ import Guard from './Guard';
 const CanAccess = ({
   roles = [],
   permissions = [],
-  permissionsMatch = 'any',
+  permissionsMatch = "any",
   fallback = null,
   children,
 }) => {

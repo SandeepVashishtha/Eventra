@@ -4,7 +4,12 @@ import useOfflineSync from "./useOfflineSync";
 import { getQueueIndexedDB, setQueue, clearQueue } from "../utils/offlineQueue";
 
 jest.mock("../context/AuthContext", () => ({
-  useAuth: () => ({ token: "mock-valid-token", user: { id: "mock-user-id" }, isAuthenticated: () => true, loading: false }),
+  useAuth: () => ({
+    token: "mock-valid-token",
+    user: { id: "mock-user-id" },
+    isAuthenticated: () => true,
+    loading: false,
+  }),
 }));
 
 jest.mock("../utils/tokenUtils", () => ({
@@ -18,7 +23,6 @@ jest.mock("../utils/offlineQueue", () => ({
   filterQueueByOwnership: jest.fn((queue) => queue),
   validateQueueSession: jest.fn((queue) => queue),
 }));
-
 
 describe("useOfflineSync", () => {
   let container;
@@ -56,7 +60,6 @@ describe("useOfflineSync", () => {
   });
 
   afterEach(() => {
-     
     act(() => {
       if (root) {
         root.unmount();
@@ -74,7 +77,7 @@ describe("useOfflineSync", () => {
   it("attempts to sync immediately without backoff delay on first try in active sync run", async () => {
     const queue = [
       { id: "1", userId: "mock-user-id", retryCount: 0, payload: { name: "test-1" } },
-      { id: "2", userId: "mock-user-id", retryCount: 0, payload: { name: "test-2" } }
+      { id: "2", userId: "mock-user-id", retryCount: 0, payload: { name: "test-2" } },
     ];
     getQueueIndexedDB.mockResolvedValue(queue);
 
@@ -83,7 +86,6 @@ describe("useOfflineSync", () => {
       return null;
     };
 
-     
     await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
@@ -91,7 +93,7 @@ describe("useOfflineSync", () => {
     const startTime = Date.now();
 
     // Trigger online event to run the sync
-     
+
     await act(async () => {
       window.dispatchEvent(new Event("online"));
 
@@ -113,7 +115,7 @@ describe("useOfflineSync", () => {
 
   it("preserves items with retryCount >= MAX_RETRIES in the offline queue instead of deleting them", async () => {
     const queue = [
-      { id: "1", userId: "mock-user-id", retryCount: 3, payload: { name: "test-expired" } }
+      { id: "1", userId: "mock-user-id", retryCount: 3, payload: { name: "test-expired" } },
     ];
     getQueueIndexedDB.mockResolvedValue(queue);
 
@@ -122,13 +124,11 @@ describe("useOfflineSync", () => {
       return null;
     };
 
-     
     await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
 
-     
     await act(async () => {
       window.dispatchEvent(new Event("online"));
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -182,7 +182,13 @@ describe("useOfflineSync", () => {
 
   it("[Security] does not replay actions with a stale session ID", async () => {
     const queue = [
-      { id: "s1", userId: "mock-user-id", sessionId: "old-session-xyz", retryCount: 0, payload: { name: "stale-session-action" } },
+      {
+        id: "s1",
+        userId: "mock-user-id",
+        sessionId: "old-session-xyz",
+        retryCount: 0,
+        payload: { name: "stale-session-action" },
+      },
     ];
     getQueueIndexedDB.mockResolvedValue(queue);
 
@@ -260,7 +266,13 @@ describe("useOfflineSync", () => {
 
   it("[Security] validateQueueSession is always called during replay", async () => {
     const queue = [
-      { id: "v1", userId: "mock-user-id", sessionId: "sess-abc", retryCount: 0, payload: { name: "action" } },
+      {
+        id: "v1",
+        userId: "mock-user-id",
+        sessionId: "sess-abc",
+        retryCount: 0,
+        payload: { name: "action" },
+      },
     ];
     getQueueIndexedDB.mockResolvedValue(queue);
 

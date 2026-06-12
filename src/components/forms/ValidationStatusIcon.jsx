@@ -1,11 +1,4 @@
-import {
-  AlertCircle,
-  CheckCircle2,
-  Circle,
-  Info,
-  LoaderCircle,
-  XCircle,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Circle, Info, LoaderCircle, XCircle } from "lucide-react";
 
 const stateConfig = {
   idle: {
@@ -100,7 +93,7 @@ const ValidationStatusIcon = ({
       className={joinClasses(
         "inline-flex h-5 w-5 shrink-0 items-center justify-center",
         config.className,
-        className,
+        className
       )}
       data-state={state}
       role={ariaHidden ? undefined : config.role}

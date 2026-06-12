@@ -5,7 +5,7 @@
 }
 
 .contributors-section::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -87,7 +87,9 @@
   background: white;
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   border: 1px solid #e2e8f0;
   position: relative;
@@ -99,7 +101,7 @@
 }
 
 .contributor-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -109,7 +111,9 @@
 }
 
 .contributor-card:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   transform: translateY(-5px);
 }
 
@@ -218,7 +222,7 @@
 }
 
 .contribute-cta::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -250,7 +254,8 @@
   flex-wrap: wrap;
 }
 
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -300,8 +305,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-state p {
@@ -359,36 +368,37 @@
   .contributors-section {
     padding: 60px 0;
   }
-  
+
   .contributors-header h2 {
     font-size: 2.5rem;
   }
-  
+
   .contributors-grid {
     margin-bottom: 60px;
   }
-  
+
   .contributor-card {
     min-width: 250px;
     max-width: 250px;
     padding: 15px;
     margin-right: 15px;
   }
-  
+
   .contributors-track {
     animation: scroll-left 25s linear infinite;
   }
-  
+
   .contribute-cta {
     padding: 30px 20px;
   }
-  
+
   .cta-buttons {
     flex-direction: column;
     align-items: center;
   }
-  
-  .btn-primary, .btn-secondary {
+
+  .btn-primary,
+  .btn-secondary {
     width: 100%;
     max-width: 250px;
     justify-content: center;
@@ -399,36 +409,36 @@
   .contributors-header h2 {
     font-size: 2rem;
   }
-  
+
   .contributor-card {
     min-width: 200px;
     max-width: 200px;
     padding: 12px;
     margin-right: 12px;
   }
-  
+
   .contributor-avatar img {
     width: 50px;
     height: 50px;
   }
-  
+
   .contributor-info h3 {
     font-size: 1rem;
   }
-  
+
   .contributor-role {
     font-size: 0.8rem;
   }
-  
+
   .contributor-bio {
     font-size: 0.75rem;
   }
-  
+
   .github-link {
     padding: 6px 10px;
     font-size: 0.75rem;
   }
-  
+
   .contribute-cta {
     padding: 20px 15px;
   }

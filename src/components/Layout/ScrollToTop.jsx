@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 const ScrollToTop = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -13,14 +13,14 @@ const ScrollToTop = () => {
       }
     };
 
-    window.addEventListener('scroll', toggleVisibility);
-    return () => window.removeEventListener('scroll', toggleVisibility);
+    window.addEventListener("scroll", toggleVisibility);
+    return () => window.removeEventListener("scroll", toggleVisibility);
   }, []);
 
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth',
+      behavior: "smooth",
     });
   };
 
@@ -30,27 +30,27 @@ const ScrollToTop = () => {
     <button
       onClick={scrollToTop}
       style={{
-        position: 'fixed',
-        bottom: '30px',
-        right: '30px',
+        position: "fixed",
+        bottom: "30px",
+        right: "30px",
         zIndex: 1000,
-        width: '45px',
-        height: '45px',
-        borderRadius: '50%',
-        backgroundColor: '#6366f1', // Classic sleek modern theme color (Indigo)
-        color: '#ffffff',
-        border: 'none',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-        fontSize: '20px',
-        transition: 'all 0.3s ease',
+        width: "45px",
+        height: "45px",
+        borderRadius: "50%",
+        backgroundColor: "#6366f1", // Classic sleek modern theme color (Indigo)
+        color: "#ffffff",
+        border: "none",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+        fontSize: "20px",
+        transition: "all 0.3s ease",
       }}
       aria-label="Scroll to top"
-      onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.1)')}
-      onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+      onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
+      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
     >
       ▲
     </button>

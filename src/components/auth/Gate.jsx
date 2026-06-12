@@ -18,7 +18,8 @@ const Gate = ({
   const { isAuthenticated, hasRole, hasPermission, loading, user, token, logout } = useAuth();
   const location = useLocation();
 
-  const sessionExpired = requireAuth && !loading && !isAuthenticated() && !!token && !isTokenValid(token);
+  const sessionExpired =
+    requireAuth && !loading && !isAuthenticated() && !!token && !isTokenValid(token);
 
   useEffect(() => {
     if (sessionExpired) logout();
@@ -40,7 +41,8 @@ const Gate = ({
   const needsRedirect = !fallback || typeof fallback === "undefined";
   const deny = (reason) => {
     if (!needsRedirect) return fallback;
-    if (!isAuthenticated()) return <Navigate to={redirectTo} replace state={{ from: location, sessionExpired }} />;
+    if (!isAuthenticated())
+      return <Navigate to={redirectTo} replace state={{ from: location, sessionExpired }} />;
     return <Navigate to="/unauthorized" replace state={{ from: location, reason }} />;
   };
 
@@ -50,9 +52,10 @@ const Gate = ({
   }
 
   if (requiredPermissions.length > 0) {
-    const ok = permissionsMatch === "all"
-      ? requiredPermissions.every((p) => hasPermission(p))
-      : requiredPermissions.some((p) => hasPermission(p));
+    const ok =
+      permissionsMatch === "all"
+        ? requiredPermissions.every((p) => hasPermission(p))
+        : requiredPermissions.some((p) => hasPermission(p));
     if (!ok) return deny("permission");
   }
 

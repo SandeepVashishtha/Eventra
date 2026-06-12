@@ -73,12 +73,11 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        const [repoResult, contributorsResult, prResult] =
-          await Promise.allSettled([
-            fetchStat(GITHUB_USER, GITHUB_REPO),
-            fetchStat(GITHUB_USER, GITHUB_REPO, 1, 1),
-            fetchStat(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
-          ]);
+        const [repoResult, contributorsResult, prResult] = await Promise.allSettled([
+          fetchStat(GITHUB_USER, GITHUB_REPO),
+          fetchStat(GITHUB_USER, GITHUB_REPO, 1, 1),
+          fetchStat(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+        ]);
 
         if (repoResult.status === "rejected") {
           const cached = readCache();
@@ -146,80 +145,83 @@ export default function GitHubStats() {
     };
   }, []);
 
-  const statCards = useMemo(() => [
-    {
-      label: "Stars",
-      value: stats.stars,
-      icon: <Star className="text-yellow-500" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/stargazers`,
-    },
-    {
-      label: "Forks",
-      value: stats.forks,
-      icon: <GitFork className="text-blue-500" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/network/members`,
-    },
-    {
-      label: "Issues",
-      value: stats.issues,
-      icon: <AlertCircle className="text-red-500" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/issues`,
-    },
-    {
-      label: "Pull Requests",
-      value: stats.pullRequests,
-      icon: <GitPullRequest className="text-pink-500" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/pulls`,
-    },
+  const statCards = useMemo(
+    () => [
+      {
+        label: "Stars",
+        value: stats.stars,
+        icon: <Star className="text-yellow-500" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/stargazers`,
+      },
+      {
+        label: "Forks",
+        value: stats.forks,
+        icon: <GitFork className="text-blue-500" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/network/members`,
+      },
+      {
+        label: "Issues",
+        value: stats.issues,
+        icon: <AlertCircle className="text-red-500" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/issues`,
+      },
+      {
+        label: "Pull Requests",
+        value: stats.pullRequests,
+        icon: <GitPullRequest className="text-pink-500" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/pulls`,
+      },
 
-    {
-      label: "Contributors",
-      value: stats.contributors,
-      icon: <Users className="text-black" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/graphs/contributors`,
-    },
-    {
-      label: "Watchers",
-      value: stats.watchers,
-      icon: <Eye className="text-cyan-500" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/watchers`,
-    },
-    {
-      label: "License",
-      value: stats.license,
-      icon: <Scale className="text-gray-600 dark:text-gray-400" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/main/LICENSE`,
-    },
-    {
-      label: "Last Update",
-      value: stats.lastCommit,
-      icon: <Clock className="text-black" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/commits`,
-    },
-    {
-      label: "Code Size",
-      value: `${(stats.size / 1024).toFixed(1)} MB`,
-      icon: <Code2 className="text-green-500" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
-    },
-    {
-      label: "Languages",
-      value: Object.keys(stats.languages).length
-        ? Object.keys(stats.languages).join(", ")
-        : "React",
-      icon: <Languages className="text-amber-600" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
-    },
-  ], [stats]);
+      {
+        label: "Contributors",
+        value: stats.contributors,
+        icon: <Users className="text-black" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/graphs/contributors`,
+      },
+      {
+        label: "Watchers",
+        value: stats.watchers,
+        icon: <Eye className="text-cyan-500" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/watchers`,
+      },
+      {
+        label: "License",
+        value: stats.license,
+        icon: <Scale className="text-gray-600 dark:text-gray-400" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/main/LICENSE`,
+      },
+      {
+        label: "Last Update",
+        value: stats.lastCommit,
+        icon: <Clock className="text-black" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/commits`,
+      },
+      {
+        label: "Code Size",
+        value: `${(stats.size / 1024).toFixed(1)} MB`,
+        icon: <Code2 className="text-green-500" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
+      },
+      {
+        label: "Languages",
+        value: Object.keys(stats.languages).length
+          ? Object.keys(stats.languages).join(", ")
+          : "React",
+        icon: <Languages className="text-amber-600" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
+      },
+    ],
+    [stats]
+  );
 
   return (
-    <section className="py-16 bg-white dark:bg-black ">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="bg-white py-16 dark:bg-black">
+      <div className="mx-auto max-w-7xl px-6">
         <motion.h2
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-3xl sm:text-4xl font-extrabold text-center text-gray-900 dark:text-gray-100 mb-8 sm:mb-10 px-4"
+          className="mb-8 px-4 text-center text-3xl font-extrabold text-gray-900 sm:mb-10 sm:text-4xl dark:text-gray-100"
         >
           Project Statistics
         </motion.h2>
@@ -227,7 +229,7 @@ export default function GitHubStats() {
         <motion.div
           initial="hidden"
           animate="show"
-          className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 max-w-6xl mx-auto"
+          className="mx-auto grid max-w-6xl grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
         >
           {isLoading
             ? [...Array(10)].map((_, i) => <GitHubStatCardSkeleton key={`skeleton-${i}`} />)
@@ -235,28 +237,29 @@ export default function GitHubStats() {
                 <motion.a
                   key={label}
                   href={link}
-                  target="_blank" rel="noopener noreferrer"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, rotate: 1 }}
                   whileTap={{ scale: 0.95 }}
-                  className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden"
+                  className="group relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-white px-3 py-4 shadow-lg transition-all duration-300 hover:shadow-2xl sm:px-6 sm:py-6 md:px-8 dark:border-gray-700 dark:bg-gray-800"
                 >
-                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
+                  <div className="absolute inset-0 rounded-2xl bg-black/5 opacity-0 blur-3xl transition duration-700 group-hover:opacity-100"></div>
 
                   <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3">
-                    <div className="p-2 sm:p-3 md:p-4 bg-gray-50 dark:bg-gray-700 rounded-full shadow-inner [&>svg]:w-7 [&>svg]:h-7 sm:[&>svg]:w-9 sm:[&>svg]:h-9 md:[&>svg]:w-10 md:[&>svg]:h-10">
+                    <div className="rounded-full bg-gray-50 p-2 shadow-inner sm:p-3 md:p-4 dark:bg-gray-700 [&>svg]:h-7 [&>svg]:w-7 sm:[&>svg]:h-9 sm:[&>svg]:w-9 md:[&>svg]:h-10 md:[&>svg]:w-10">
                       {icon}
                     </div>
-                    <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center break-words px-1">
+                    <p className="px-1 text-center text-base font-bold break-words text-gray-900 sm:text-lg md:text-xl dark:text-gray-100">
                       {value}
                     </p>
-                    <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 text-center px-1">
+                    <p className="px-1 text-center text-xs font-medium text-gray-500 sm:text-sm dark:text-gray-400">
                       {label}
                     </p>
                   </div>
 
                   <ExternalLink
                     size={16}
-                    className="absolute top-3 right-3 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition duration-300"
+                    className="absolute top-3 right-3 text-gray-400 opacity-0 transition duration-300 group-hover:opacity-100 dark:text-gray-500"
                   />
                 </motion.a>
               ))}

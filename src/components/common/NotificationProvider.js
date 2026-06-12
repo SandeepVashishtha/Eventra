@@ -19,9 +19,9 @@ const NotificationToastContainer = () => {
       pauseOnHover
       theme={isDarkMode ? "dark" : "light"}
       limit={3}
-      style={{ 
+      style={{
         zIndex: 10050,
-        marginBottom: '1rem'
+        marginBottom: "1rem",
       }}
     />
   );

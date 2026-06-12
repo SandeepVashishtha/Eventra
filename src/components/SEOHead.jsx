@@ -24,14 +24,14 @@ export default function SEOHead({
     // Helper to set, create, or remove a meta tag
     const setMeta = (attr, key, content) => {
       let el = document.querySelector(`meta[${attr}="${key}"]`);
-      
+
       // 🔥 FIX: If the new page doesn't have this content, destroy the old tag
       // to prevent stale data from leaking across SPA routes.
       if (!content) {
         if (el) el.remove();
         return;
       }
-      
+
       if (!el) {
         el = document.createElement("meta");
         el.setAttribute(attr, key);

@@ -6,84 +6,38 @@ import mockHackathons from "../../Pages/Hackathons/hackathonMockData.json";
 
 import useRecommendations from "../../hooks/useRecommendations";
 
-
 const RecommendedEvents = () => {
-
   const [recommendedHackathons, setRecommendedHackathons] = useState([]);
 
   // Intelligent recommendation engine
-  const recommendations =
-    useRecommendations(mockHackathons);
+  const recommendations = useRecommendations(mockHackathons);
 
   useEffect(() => {
-
     // Show top 3 recommendations
-    setRecommendedHackathons(
-      recommendations.slice(0, 3)
-    );
-
+    setRecommendedHackathons(recommendations.slice(0, 3));
   }, [recommendations]);
 
   return (
-
-    <section className="bg-bg text-text py-12 border-b border-border">
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
+    <section className="bg-bg text-text border-border border-b py-12">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Heading */}
-        <div className="flex justify-between items-center mb-8">
-
+        <div className="mb-8 flex items-center justify-between">
           <div>
-
-            <h2 className="text-3xl font-bold text-text">
-
-              Recommended For You
-
-            </h2>
+            <h2 className="text-text text-3xl font-bold">Recommended For You</h2>
 
             <p className="text-text-light mt-2">
-
               Personalized hackathons based on your interests, activity, and recommendation score.
-
             </p>
-
           </div>
-
         </div>
 
         {/* Recommendations */}
         {recommendedHackathons.length > 0 ? (
-
-          <div className="grid gap-10 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3">
             {recommendedHackathons.map((hackathon, index) => (
-
-              <div
-                key={hackathon.id}
-                className="
-                  relative
-                  rounded-2xl
-                  overflow-hidden
-                "
-              >
-
+              <div key={hackathon.id} className="relative overflow-hidden rounded-2xl">
                 {/* Recommendation Score Badge */}
-                <div
-                  className="
-                    absolute
-                    top-4
-                    right-4
-                    z-20
-                    bg-primary
-                    text-white
-                    text-xs
-                    font-bold
-                    px-3
-                    py-1
-                    rounded-full
-                    shadow-lg
-                  "
-                >
+                <div className="bg-primary absolute top-4 right-4 z-20 rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg">
                   {hackathon.recommendationScore}% Match
                 </div>
 
@@ -95,71 +49,27 @@ const RecommendedEvents = () => {
                 />
 
                 {/* Recommendation Reasons */}
-                <div
-                  className="
-                    px-4
-                    pb-4
-                    pt-2
-                    flex
-                    flex-wrap
-                    gap-2
-                    bg-card-bg
-                    border-x
-                    border-b
-                    border-border
-                    rounded-b-2xl
-                  "
-                >
-
-                  {hackathon.recommendationReasons?.map(
-                    (reason, reasonIndex) => (
-
-                      <span
-                        key={reasonIndex}
-                        className="
-                          text-xs
-                          bg-primary/10
-                          text-primary
-                          px-3
-                          py-1
-                          rounded-full
-                          font-medium
-                        "
-                      >
-                        {reason}
-                      </span>
-
-                    )
-                  )}
-
+                <div className="bg-card-bg border-border flex flex-wrap gap-2 rounded-b-2xl border-x border-b px-4 pt-2 pb-4">
+                  {hackathon.recommendationReasons?.map((reason, reasonIndex) => (
+                    <span
+                      key={reasonIndex}
+                      className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-medium"
+                    >
+                      {reason}
+                    </span>
+                  ))}
                 </div>
-
               </div>
-
             ))}
-
           </div>
-
         ) : (
-
-          <div className="text-center py-10">
-
-            <p className="text-text-light">
-
-              No recommendations available right now.
-
-            </p>
-
+          <div className="py-10 text-center">
+            <p className="text-text-light">No recommendations available right now.</p>
           </div>
-
         )}
-
       </div>
-
     </section>
-
   );
-
 };
 
 export default RecommendedEvents;

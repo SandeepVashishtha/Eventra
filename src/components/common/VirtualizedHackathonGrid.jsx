@@ -14,17 +14,13 @@ import HackathonCard from "../../Pages/Hackathons/HackathonCard";
  *   hackathons — array of hackathon objects (same shape as HackathonCard expects)
  */
 const VirtualizedHackathonGrid = ({ hackathons }) => {
-
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {hackathons.map((hackathon) => (
-                <HackathonCard
-                    key={hackathon.id || hackathon._id}
-                    hackathon={hackathon}
-                />
-            ))}
-        </div>
-    );
+  return (
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+      {hackathons.map((hackathon) => (
+        <HackathonCard key={hackathon.id || hackathon._id} hackathon={hackathon} />
+      ))}
+    </div>
+  );
 };
 
 export default VirtualizedHackathonGrid;

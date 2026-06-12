@@ -1,14 +1,12 @@
 export const createCollaborationTransport = (
   roomId,
   {
-    BroadcastChannelImpl = typeof BroadcastChannel === "undefined"
-      ? null
-      : BroadcastChannel,
+    BroadcastChannelImpl = typeof BroadcastChannel === "undefined" ? null : BroadcastChannel,
     clientId = typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID()
       : `client-${Date.now()}`,
     onMessage,
-  } = {},
+  } = {}
 ) => {
   const channelName = `eventra-collaboration-${roomId}`;
   const channel = BroadcastChannelImpl ? new BroadcastChannelImpl(channelName) : null;

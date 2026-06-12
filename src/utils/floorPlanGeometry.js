@@ -1,11 +1,13 @@
 export const checkCollision = (el1, el2) => {
   if (!el1 || !el2 || el1.id === el2.id) return false;
-  
+
   // Validate that all coordinates and dimensions are finite numbers
   const coords1 = [el1.x, el1.y, el1.width, el1.height];
   const coords2 = [el2.x, el2.y, el2.width, el2.height];
-  if (coords1.some(val => typeof val !== 'number' || !isFinite(val)) ||
-      coords2.some(val => typeof val !== 'number' || !isFinite(val))) {
+  if (
+    coords1.some((val) => typeof val !== "number" || !isFinite(val)) ||
+    coords2.some((val) => typeof val !== "number" || !isFinite(val))
+  ) {
     return false;
   }
 
@@ -23,14 +25,16 @@ export const getSeatPositions = (el) => {
   if (!el) return positions;
 
   // Validate seatsCount type and value, clamp to a maximum of 100 to prevent browser hangs
-  const seatsCount = typeof el.seatsCount === 'number' && isFinite(el.seatsCount) ? el.seatsCount : 0;
+  const seatsCount =
+    typeof el.seatsCount === "number" && isFinite(el.seatsCount) ? el.seatsCount : 0;
   const count = Math.min(Math.max(0, Math.floor(seatsCount)), 100);
   if (count <= 0) return positions;
 
   // Validate width and height are finite positive numbers
-  const width = typeof el.width === 'number' && isFinite(el.width) && el.width > 0 ? el.width : 100;
-  const height = typeof el.height === 'number' && isFinite(el.height) && el.height > 0 ? el.height : 100;
-  const rotation = typeof el.rotation === 'number' && isFinite(el.rotation) ? el.rotation : 0;
+  const width = typeof el.width === "number" && isFinite(el.width) && el.width > 0 ? el.width : 100;
+  const height =
+    typeof el.height === "number" && isFinite(el.height) && el.height > 0 ? el.height : 100;
+  const rotation = typeof el.rotation === "number" && isFinite(el.rotation) ? el.rotation : 0;
 
   const projOffset = 10;
 
@@ -45,7 +49,7 @@ export const getSeatPositions = (el) => {
       positions.push({
         x: centerX + chairDistance * Math.cos(angle),
         y: centerY + chairDistance * Math.sin(angle),
-        index: i
+        index: i,
       });
     }
   } else if (el.type === "rect-table") {
@@ -65,7 +69,7 @@ export const getSeatPositions = (el) => {
       const dy = py - cY;
       return {
         x: cX + dx * Math.cos(rad) - dy * Math.sin(rad),
-        y: cY + dx * Math.sin(rad) + dy * Math.cos(rad)
+        y: cY + dx * Math.sin(rad) + dy * Math.cos(rad),
       };
     };
 
@@ -86,4 +90,3 @@ export const getSeatPositions = (el) => {
   }
   return positions;
 };
-

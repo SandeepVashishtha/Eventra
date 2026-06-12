@@ -18,7 +18,6 @@ import { Trophy, Award, Star, Zap } from "lucide-react";
  * test without mounting a React component.
  */
 
-
 // ─── Scoring constants ────────────────────────────────────────────────────────
 
 /** Points awarded per GSSoC label level. */
@@ -34,7 +33,7 @@ export const DEFAULT_MERGED_PR_POINTS = 1;
 /** Bonus points thresholds for volume-based achievement badges. */
 export const ACHIEVEMENT_THRESHOLDS = [
   { minPrs: 10, bonus: 10 },
-  { minPrs: 5,  bonus: 5  },
+  { minPrs: 5, bonus: 5 },
 ];
 
 // ─── Label normalisation ──────────────────────────────────────────────────────
@@ -120,7 +119,7 @@ export function filterContributors(contributors, search, activeCategory) {
   const q = (search || "").trim().toLowerCase();
 
   // 🔥 FIX: Hoisted the threshold calculation OUTSIDE the filter loop.
-  // Previously, this math was executing on every single iteration of the filter, 
+  // Previously, this math was executing on every single iteration of the filter,
   // causing a massive O(N) performance bottleneck on large contributor datasets.
   let monthlyThreshold = 0;
   if (activeCategory === "monthly" && contributors.length > 0) {
@@ -129,9 +128,7 @@ export function filterContributors(contributors, search, activeCategory) {
 
   return contributors.filter((c) => {
     const matchSearch =
-      !q ||
-      c.username.toLowerCase().includes(q) ||
-      (c.name && c.name.toLowerCase().includes(q));
+      !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
 
     if (!matchSearch) return false;
 
@@ -158,7 +155,7 @@ export function filterContributors(contributors, search, activeCategory) {
  */
 export function sortContributors(contributors, sortBy) {
   return [...contributors].sort((a, b) => {
-    if (sortBy === "prs")      return b.prs - a.prs;
+    if (sortBy === "prs") return b.prs - a.prs;
     if (sortBy === "username") return a.username.localeCompare(b.username);
     return b.points - a.points; // default: "points"
   });
@@ -175,7 +172,7 @@ export function sortContributors(contributors, sortBy) {
  * @returns {Array}
  */
 export function paginateContributors(sorted, currentPage, perPage) {
-  const indexOfLast  = currentPage * perPage;
+  const indexOfLast = currentPage * perPage;
   const indexOfFirst = indexOfLast - perPage;
   return sorted.slice(indexOfFirst, indexOfLast);
 }
@@ -222,8 +219,8 @@ export function computeLeaderboardStats(contributors) {
   let totalPoints = 0;
 
   for (const c of contributors) {
-    totalPRs    += (c.prs || 0);
-    totalPoints += (c.points || 0);
+    totalPRs += c.prs || 0;
+    totalPoints += c.points || 0;
   }
 
   return {
@@ -237,39 +234,44 @@ export const getAchievementBadge = (rank) => {
   if (rank === 1) {
     return {
       label: "Diamond Tier",
-      color: "from-sky-300 via-indigo-400 to-pink-300 text-indigo-950 border-indigo-300/40 shadow-[0_0_12px_rgba(99,102,241,0.4)]",
+      color:
+        "from-sky-300 via-indigo-400 to-pink-300 text-indigo-950 border-indigo-300/40 shadow-[0_0_12px_rgba(99,102,241,0.4)]",
       icon: Trophy,
-      description: "Rank 1 - Top contributor"
+      description: "Rank 1 - Top contributor",
     };
   }
   if (rank === 2 || rank === 3) {
     return {
       label: "Platinum Tier",
-      color: "from-teal-300 via-emerald-400 to-cyan-300 text-emerald-950 border-teal-300/40 shadow-[0_0_12px_rgba(20,184,166,0.3)]",
+      color:
+        "from-teal-300 via-emerald-400 to-cyan-300 text-emerald-950 border-teal-300/40 shadow-[0_0_12px_rgba(20,184,166,0.3)]",
       icon: Award,
-      description: "Rank 2-3 - Elite contributor"
+      description: "Rank 2-3 - Elite contributor",
     };
   }
   if (rank >= 4 && rank <= 10) {
     return {
       label: "Gold Tier",
-      color: "from-yellow-300 via-amber-400 to-yellow-500 text-amber-950 border-yellow-300/40 shadow-[0_0_8px_rgba(234,179,8,0.25)]",
+      color:
+        "from-yellow-300 via-amber-400 to-yellow-500 text-amber-950 border-yellow-300/40 shadow-[0_0_8px_rgba(234,179,8,0.25)]",
       icon: Star,
-      description: "Rank 4-10 - Gold contributor"
+      description: "Rank 4-10 - Gold contributor",
     };
   }
   if (rank >= 11 && rank <= 100) {
     return {
       label: "Silver Tier",
-      color: "from-slate-300 via-slate-400 to-slate-500 text-slate-950 border-slate-300/40 shadow-[0_0_8px_rgba(148,163,184,0.25)]",
+      color:
+        "from-slate-300 via-slate-400 to-slate-500 text-slate-950 border-slate-300/40 shadow-[0_0_8px_rgba(148,163,184,0.25)]",
       icon: Zap,
-      description: "Rank 11-100 - Silver contributor"
+      description: "Rank 11-100 - Silver contributor",
     };
   }
   return {
     label: "Bronze Tier",
-    color: "from-orange-200 via-orange-300 to-red-400 text-orange-950 border-orange-300/40 shadow-[0_0_6px_rgba(217,119,6,0.2)]",
+    color:
+      "from-orange-200 via-orange-300 to-red-400 text-orange-950 border-orange-300/40 shadow-[0_0_6px_rgba(217,119,6,0.2)]",
     icon: Zap,
-    description: "Rank 101+ - Contributor"
+    description: "Rank 101+ - Contributor",
   };
 };

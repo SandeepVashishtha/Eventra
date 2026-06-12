@@ -33,24 +33,19 @@ export const useEventFilterPresets = ({
       setPresets(persisted);
       return persisted;
     },
-    [storage, storageKey],
+    [storage, storageKey]
   );
 
   const savePreset = useCallback(
     (name, filters) => {
-      const result = createFilterPreset(
-        presets,
-        name,
-        filters,
-        createPresetId,
-      );
+      const result = createFilterPreset(presets, name, filters, createPresetId);
       setError(result.error || "");
       if (!result.error) {
         persist(result.presets);
       }
       return result;
     },
-    [persist, presets],
+    [persist, presets]
   );
 
   const renamePreset = useCallback(
@@ -62,7 +57,7 @@ export const useEventFilterPresets = ({
       }
       return result;
     },
-    [persist, presets],
+    [persist, presets]
   );
 
   const updatePreset = useCallback(
@@ -72,7 +67,7 @@ export const useEventFilterPresets = ({
       persist(nextPresets);
       return nextPresets;
     },
-    [persist, presets],
+    [persist, presets]
   );
 
   const deletePreset = useCallback(
@@ -82,7 +77,7 @@ export const useEventFilterPresets = ({
       persist(nextPresets);
       return nextPresets;
     },
-    [persist, presets],
+    [persist, presets]
   );
 
   return {

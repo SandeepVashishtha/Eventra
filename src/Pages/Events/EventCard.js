@@ -142,10 +142,10 @@ const EventCard = ({ event }) => {
       data-aos="zoom-in"
       data-aos-duration="800"
       aria-labelledby={titleId}
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
+      className="group event-card-hoverable relative z-10 flex flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white text-gray-900 shadow-lg backdrop-blur-sm transition-all duration-300 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100"
     >
       {/* Action buttons */}
-      <div className="absolute top-3 right-3 z-200 flex space-x-1.5 items-center">
+      <div className="absolute top-3 right-3 z-200 flex items-center space-x-1.5">
         <div className="relative flex items-center">
           <motion.button
             whileHover={{ scale: 1.12 }}
@@ -156,10 +156,10 @@ const EventCard = ({ event }) => {
             onMouseLeave={() => setShowBookmarkTooltip(false)}
             aria-label={isBookmarked ? "Remove event bookmark" : "Bookmark event"}
             aria-pressed={isBookmarked}
-            className={`rounded-full p-2 shadow cursor-pointer border transition-all duration-300 relative flex items-center justify-center ${
+            className={`relative flex cursor-pointer items-center justify-center rounded-full border p-2 shadow transition-all duration-300 ${
               isBookmarked
-                ? "border-indigo-400 dark:border-indigo-500 text-white bg-linear-to-r from-indigo-500 to-indigo-600 shadow-[0_0_12px_rgba(99,102,241,0.45)]"
-                : "border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 bg-white/90 dark:bg-gray-900/90 hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 hover:shadow-[0_0_12px_rgba(99,102,241,0.35)]"
+                ? "border-indigo-400 bg-linear-to-r from-indigo-500 to-indigo-600 text-white shadow-[0_0_12px_rgba(99,102,241,0.45)] dark:border-indigo-500"
+                : "border-gray-200 bg-white/90 text-gray-600 hover:border-indigo-500 hover:text-indigo-600 hover:shadow-[0_0_12px_rgba(99,102,241,0.35)] dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-400 dark:hover:border-indigo-400 dark:hover:text-indigo-400"
             }`}
           >
             <motion.div
@@ -184,7 +184,7 @@ const EventCard = ({ event }) => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 4, scale: 0.95 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
-                className="absolute bottom-full right-0 mb-2 px-2.5 py-1 text-[10px] font-bold text-white bg-slate-900 dark:bg-slate-950 border border-slate-800 rounded-lg shadow-xl whitespace-nowrap pointer-events-none z-300"
+                className="pointer-events-none absolute right-0 bottom-full z-300 mb-2 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-[10px] font-bold whitespace-nowrap text-white shadow-xl dark:bg-slate-950"
               >
                 {isBookmarked ? "Remove Bookmark" : "Save to Bookmarks"}
               </motion.div>
@@ -199,7 +199,7 @@ const EventCard = ({ event }) => {
             e.stopPropagation();
             setIsShareModalOpen(true);
           }}
-          className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200 group/share transition-all duration-200"
+          className="group/share cursor-pointer rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm transition-all duration-200 hover:shadow-md"
           aria-label={`Share ${event.title}`}
         >
           <Share2 size={14} className="text-gray-600" aria-hidden="true" />
@@ -218,7 +218,7 @@ const EventCard = ({ event }) => {
         <button
           type="button"
           onClick={handleCopyLink}
-          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm transition-all duration-200 hover:border-indigo-200 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500"
           title="Copy Event Link"
           aria-label={`Copy link for ${event.title}`}
         >
@@ -244,32 +244,44 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Header */}
-      <div className="flex items-center px-5 py-4 gap-4 bg-linear-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800 rounded-t-3xl">
-        <div className="p-2 bg-linear-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-inner shrink-0">
+      <div className="flex items-center gap-4 rounded-t-3xl border-b border-gray-100 bg-linear-to-r from-white/80 to-indigo-50/60 px-5 py-4 dark:border-gray-800 dark:from-gray-900/80 dark:to-indigo-950/60">
+        <div className="shrink-0 rounded-xl bg-linear-to-br from-gray-100 to-white p-2 shadow-inner dark:from-gray-800 dark:to-gray-700">
           {randomIcon}
         </div>
 
-        <h3 id={titleId} title={event.title} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 break-words group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1 min-w-0">
+        <h3
+          id={titleId}
+          title={event.title}
+          className="line-clamp-2 min-w-0 flex-1 text-lg font-bold tracking-tight break-words text-gray-900 transition-colors duration-300 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400"
+        >
           {event.title}
         </h3>
-        <div className="ml-auto flex items-center gap-1.5 shrink-0">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
           {/* Conflict Indicator */}
           {hasConflict && !isUserRegistered && (
             <div
-              className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-amber-100 dark:bg-amber-900/30 rounded-[6px] border border-amber-300 dark:border-amber-700 shrink-0 text-[12px] font-medium leading-none text-amber-700 dark:text-amber-300"
+              className="inline-flex shrink-0 items-center gap-[5px] rounded-[6px] border border-amber-300 bg-amber-100 px-[10px] py-1 text-[12px] leading-none font-medium text-amber-700 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
               title="This event conflicts with your registered events"
             >
-              <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+              <AlertTriangle
+                size={12}
+                className="shrink-0 text-amber-600 dark:text-amber-400"
+                aria-hidden="true"
+              />
               <span>Conflict</span>
             </div>
           )}
           {/* Registered Indicator */}
           {isUserRegistered && (
             <div
-              className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-green-100 dark:bg-green-900/30 rounded-[6px] border border-green-300 dark:border-green-700 shrink-0 text-[12px] font-medium leading-none text-green-700 dark:text-green-300"
+              className="inline-flex shrink-0 items-center gap-[5px] rounded-[6px] border border-green-300 bg-green-100 px-[10px] py-1 text-[12px] leading-none font-medium text-green-700 dark:border-green-700 dark:bg-green-900/30 dark:text-green-300"
               title="You are registered for this event"
             >
-              <BookmarkCheck size={12} className="text-green-600 dark:text-green-400 shrink-0" aria-hidden="true" />
+              <BookmarkCheck
+                size={12}
+                className="shrink-0 text-green-600 dark:text-green-400"
+                aria-hidden="true"
+              />
               <span>Registered</span>
             </div>
           )}
@@ -283,25 +295,25 @@ const EventCard = ({ event }) => {
           src={event.image}
           alt={event.imageAlt || `${event.title} event thumbnail`}
           aspectRatio="5/1"
-          className="w-full h-full"
+          className="h-full w-full"
           imgClassName="object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
       </div>
 
       {/* Description */}
-      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-        <p className="text-gray-500 dark:text-gray-400 text-sm leading-6 line-clamp-2">
+      <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+        <p className="line-clamp-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
           {event.description}
         </p>
       </div>
 
       {/* Info Grid */}
-      <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
+      <div className="grid grid-cols-1 gap-x-4 gap-y-4 bg-gray-50/50 px-5 py-4 text-sm text-gray-600 sm:grid-cols-2 dark:bg-gray-800/30 dark:text-gray-400">
         {/* Location */}
         <div className="flex items-start gap-2 sm:col-span-2">
-          <MapPin size={14} className="text-pink-500 shrink-0" />
-          <div className="flex flex-col min-w-0">
+          <MapPin size={14} className="shrink-0 text-pink-500" />
+          <div className="flex min-w-0 flex-col">
             <span className="truncate">{event.location}</span>
             <span className="text-[11px] text-gray-500 dark:text-gray-400">
               {getUserTimezone()}
@@ -311,98 +323,101 @@ const EventCard = ({ event }) => {
 
         {/* Event Type */}
         <div className="flex items-center gap-2">
-          <Tag size={14} className="text-green-500 shrink-0" aria-hidden="true" />
+          <Tag size={14} className="shrink-0 text-green-500" aria-hidden="true" />
           <span className="truncate">{event.type}</span>
         </div>
 
         {/* Event Date */}
         <div className="flex items-start gap-2">
-          <Calendar size={14} className="text-indigo-500 shrink-0 mt-0.5" />
+          <Calendar size={14} className="mt-0.5 shrink-0 text-indigo-500" />
           <div className="flex flex-col">
-            <span className="truncate">
-              {getSmartDateLabel(event.date, event.time)}
-            </span>
+            <span className="truncate">{getSmartDateLabel(event.date, event.time)}</span>
             <span className="text-[11px] text-gray-500 dark:text-gray-400">
               {new Date(event.date).toLocaleDateString("en-US", {
-                weekday: "short", day: "numeric", month: "short", year: "numeric",
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+                year: "numeric",
               })}
             </span>
           </div>
         </div>
       </div>
-      <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <div className="border-t border-gray-100 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
         <ReminderControls event={event} canSetReminder={canSetReminder} compact />
       </div>
       {/* Seats / Capacity */}
-      {typeof event.maxAttendees === "number" && event.maxAttendees > 0 && (() => {
-        const registered = Number(event.attendees) || 0;
-        const capacity = Number(event.maxAttendees);
-        const isFull = registered >= capacity;
-        const ratio = Math.min(registered / capacity, 1);
-        const percent = Math.round(ratio * 100);
-        const spotsLeft = Math.max(capacity - registered, 0);
+      {typeof event.maxAttendees === "number" &&
+        event.maxAttendees > 0 &&
+        (() => {
+          const registered = Number(event.attendees) || 0;
+          const capacity = Number(event.maxAttendees);
+          const isFull = registered >= capacity;
+          const ratio = Math.min(registered / capacity, 1);
+          const percent = Math.round(ratio * 100);
+          const spotsLeft = Math.max(capacity - registered, 0);
 
-        const { barColor, textColor } = getCapacityStyles(ratio, isFull);
+          const { barColor, textColor } = getCapacityStyles(ratio, isFull);
 
-        return (
-          <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                Seats
-              </span>
-              {isFull ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
-                  Full
-                </span>
-              ) : (
-                <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
-                  {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
-                </span>
-              )}
-            </div>
-            <div
-              className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
-              role="progressbar"
-              aria-valuenow={percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`${registered} of ${capacity} seats filled`}
-            >
+          return (
+            <div className="border-t border-gray-100 bg-gray-50/50 px-5 py-3 dark:border-gray-800 dark:bg-gray-800/30">
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Seats</span>
+                {isFull ? (
+                  <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                    Full
+                  </span>
+                ) : (
+                  <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
+                    {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
+                  </span>
+                )}
+              </div>
               <div
-                className={`h-full ${barColor} transition-all duration-500 ease-out`}
-                style={{ width: `${percent}%` }}
-              />
+                className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
+                role="progressbar"
+                aria-valuenow={percent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`${registered} of ${capacity} seats filled`}
+              >
+                <div
+                  className={`h-full ${barColor} transition-all duration-500 ease-out`}
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+              <div className="mt-1 text-[11px] text-gray-500 tabular-nums dark:text-gray-500">
+                {registered} / {capacity} registered
+              </div>
             </div>
-            <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
-              {registered} / {capacity} registered
-            </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* Social Sharing */}
-      <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-center">
+      <div className="flex justify-center border-t border-gray-100 bg-white px-5 py-3 dark:border-gray-800 dark:bg-gray-900">
         <SocialShareButtons event={event} layout="inline" />
       </div>
 
       {/* CTA */}
-      <div className="px-5 py-4 flex gap-3 mt-auto">
+      <div className="mt-auto flex gap-3 px-5 py-4">
         {isPastEvent ? (
-          <div className="flex-1 inline-flex items-center justify-center rounded-2xl bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-4 py-3 text-sm font-semibold shadow-md cursor-not-allowed">
+          <div className="inline-flex flex-1 cursor-not-allowed items-center justify-center rounded-2xl bg-gray-300 px-4 py-3 text-sm font-semibold text-gray-600 shadow-md dark:bg-gray-700 dark:text-gray-300">
             Event Ended
           </div>
         ) : (
-          <Link to={`/events/${event.id}/register`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-linear-to-r from-indigo-600 via-indigo-700 to-slate-900 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 text-white px-4 py-3 text-sm font-semibold shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl">
-            <span>
-              Register Now
-            </span>
+          <Link
+            to={`/events/${event.id}/register`}
+            className="inline-flex flex-1 items-center justify-center rounded-2xl bg-linear-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-[1.03] hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
+          >
+            <span>Register Now</span>
           </Link>
         )}
 
-        <Link to={`/events/${event.id}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-50/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-3 text-sm font-semibold shadow-md hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
-          <span>
-            View Details
-          </span>
+        <Link
+          to={`/events/${event.id}`}
+          className="inline-flex flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-slate-700 shadow-md transition-all duration-300 hover:scale-[1.03] hover:bg-slate-100 hover:shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/80"
+        >
+          <span>View Details</span>
         </Link>
       </div>
     </article>

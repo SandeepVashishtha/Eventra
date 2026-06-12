@@ -30,8 +30,14 @@
 }
 
 @keyframes eb-glow-pulse {
-  from { opacity: 0.6; transform: scale(1); }
-  to   { opacity: 1;   transform: scale(1.08); }
+  from {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.08);
+  }
 }
 
 /* ── Full-screen overlay ────────────────────────────────────── */
@@ -47,7 +53,12 @@
     linear-gradient(to right, rgba(147, 197, 253, 0.18) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(167, 139, 250, 0.12) 1px, transparent 1px);
   background-size: 40px 40px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   z-index: 9999;
   overflow-y: auto;
 }
@@ -100,8 +111,14 @@
 
 /* ── Entrance animation ─────────────────────────────────────── */
 @keyframes eb-fade-up {
-  from { opacity: 0; transform: translateY(28px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* ── Glassmorphic glow orbs inside card ─────────────────────── */
@@ -147,8 +164,13 @@
   border-color: rgba(102, 126, 234, 0.3);
 }
 @keyframes eb-icon-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.3); }
-  50%       { box-shadow: 0 0 0 12px rgba(102, 126, 234, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(102, 126, 234, 0);
+  }
 }
 
 .eb-icon {
@@ -233,7 +255,7 @@
   margin-bottom: 6px;
 }
 .eb-error-text {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
   font-size: 0.8125rem;
   color: #b91c1c;
   word-break: break-all;
@@ -307,13 +329,22 @@
 
 /* ── Spinner animation ──────────────────────────────────────── */
 @keyframes eb-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes eb-pulse-opacity {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .eb-spinner {
@@ -453,7 +484,9 @@
   cursor: pointer;
   padding: 6px 12px;
   border-radius: 8px;
-  transition: color 0.2s, background 0.2s;
+  transition:
+    color 0.2s,
+    background 0.2s;
   margin-top: 4px;
   position: relative;
   z-index: 1;
@@ -486,7 +519,10 @@
   overflow: hidden;
   max-height: 0;
   opacity: 0;
-  transition: max-height 0.4s ease, opacity 0.3s ease, margin-top 0.3s ease;
+  transition:
+    max-height 0.4s ease,
+    opacity 0.3s ease,
+    margin-top 0.3s ease;
   margin-top: 0;
   position: relative;
   z-index: 1;
@@ -532,7 +568,7 @@
   font-size: 0.78rem;
   color: #1e293b;
   word-break: break-all;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
 }
 .dark .eb-meta-value {
   color: #e2e8f0;
@@ -562,7 +598,7 @@
   border: 1px solid #1e293b;
   border-radius: 10px;
   padding: 14px;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
   font-size: 0.72rem;
   line-height: 1.65;
   white-space: pre-wrap;
@@ -576,8 +612,12 @@
   border-color: #0f172a;
   color: #cbd5e1;
 }
-.eb-stack::-webkit-scrollbar { width: 6px; }
-.eb-stack::-webkit-scrollbar-track { background: transparent; }
+.eb-stack::-webkit-scrollbar {
+  width: 6px;
+}
+.eb-stack::-webkit-scrollbar-track {
+  background: transparent;
+}
 .eb-stack::-webkit-scrollbar-thumb {
   background: rgba(102, 126, 234, 0.4);
   border-radius: 999px;
@@ -884,14 +924,14 @@
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  border: 1px solid rgba(239,68,68,0.2);
-  background: rgba(239,68,68,0.04);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.04);
   padding: 24px;
   text-align: center;
 }
 .dark .eb-feature-fallback {
-  background: rgba(239,68,68,0.08);
-  border-color: rgba(239,68,68,0.15);
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.15);
 }
 .eb-feature-icon {
   color: #f87171;
@@ -929,7 +969,7 @@
 }
 .eb-feature-retry-badge {
   font-size: 0.65rem;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   padding: 1px 6px;
   font-weight: 700;

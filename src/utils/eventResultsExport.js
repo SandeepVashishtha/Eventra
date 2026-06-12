@@ -20,11 +20,7 @@ export const EVENT_EXPORT_COLUMNS = [
   {
     header: "Organizer",
     value: (event) =>
-      event?.organizer ||
-      event?.organizerName ||
-      event?.host ||
-      event?.createdBy ||
-      "",
+      event?.organizer || event?.organizerName || event?.host || event?.createdBy || "",
   },
   {
     header: "Status",
@@ -57,13 +53,7 @@ export const formatLocation = (event) => {
   }
 
   if (typeof location === "object") {
-    return [
-      location.name,
-      location.venue,
-      location.city,
-      location.state,
-      location.country,
-    ]
+    return [location.name, location.venue, location.city, location.state, location.country]
       .filter(Boolean)
       .join(", ");
   }
@@ -91,7 +81,7 @@ const stringifyCsvRow = (row) => row.map(sanitizeCsvField).join(",");
 
 export const buildEventExportRows = (events = []) =>
   (Array.isArray(events) ? events : []).map((event) =>
-    EVENT_EXPORT_COLUMNS.map((column) => column.value(event)),
+    EVENT_EXPORT_COLUMNS.map((column) => column.value(event))
   );
 
 export const buildEventExportMetadata = ({
@@ -138,7 +128,7 @@ export const generateEventsJson = (events = [], filters = {}, now = new Date()) 
       events: safeEvents,
     },
     null,
-    2,
+    2
   );
 };
 
@@ -188,7 +178,7 @@ export const exportEventsResultFile = ({
   downloadTextFile(
     content,
     filename,
-    isJson ? "application/json;charset=utf-8;" : "text/csv;charset=utf-8;",
+    isJson ? "application/json;charset=utf-8;" : "text/csv;charset=utf-8;"
   );
 
   return {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from "react";
 
 /**
  * useFormValidation
@@ -77,9 +77,9 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     if (!validationRulesRef.current[name]) return null;
     const validator = validationRulesRef.current[name];
     let error;
-    if (typeof validator === 'function') {
+    if (typeof validator === "function") {
       error = validator(value, allValues);
-    } else if (typeof validator === 'object' && validator.validate) {
+    } else if (typeof validator === "object" && validator.validate) {
       error = validator.validate(value, allValues);
     }
     return error === true ? null : error;
@@ -104,45 +104,51 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   // Handle input change — clears the field error immediately for responsiveness
   // then schedules a debounced validation run. Uses optionsRef so this callback
   // is never recreated when debounceMs or validateOnBlur changes.
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
+  const handleChange = useCallback(
+    (e) => {
+      const { name, value } = e.target;
 
-    setValues((prev) => ({ ...prev, [name]: value }));
-    setTouched((prev) => ({ ...prev, [name]: true }));
-    setErrors((prev) => ({ ...prev, [name]: null }));
+      setValues((prev) => ({ ...prev, [name]: value }));
+      setTouched((prev) => ({ ...prev, [name]: true }));
+      setErrors((prev) => ({ ...prev, [name]: null }));
 
-    if (!validationRulesRef.current[name]) return;
-    if (optionsRef.current.validateOnBlur) return;
+      if (!validationRulesRef.current[name]) return;
+      if (optionsRef.current.validateOnBlur) return;
 
-    clearValidationTimer();
-    const validationRun = validationRunRef.current + 1;
-    validationRunRef.current = validationRun;
+      clearValidationTimer();
+      const validationRun = validationRunRef.current + 1;
+      validationRunRef.current = validationRun;
 
-    timeoutRef.current = setTimeout(() => {
-      timeoutRef.current = null;
-      if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
+      timeoutRef.current = setTimeout(() => {
+        timeoutRef.current = null;
+        if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
 
-      setValues((prev) => {
-        const currentValues = { ...prev, [name]: value };
-        const error = validateField(name, value, currentValues);
-        if (isMountedRef.current && validationRunRef.current === validationRun) {
-          setErrors((errs) => ({ ...errs, [name]: error }));
-        }
-        return prev;
-      });
-    }, optionsRef.current.debounceMs);
-  }, [validateField, clearValidationTimer]);
+        setValues((prev) => {
+          const currentValues = { ...prev, [name]: value };
+          const error = validateField(name, value, currentValues);
+          if (isMountedRef.current && validationRunRef.current === validationRun) {
+            setErrors((errs) => ({ ...errs, [name]: error }));
+          }
+          return prev;
+        });
+      }, optionsRef.current.debounceMs);
+    },
+    [validateField, clearValidationTimer]
+  );
 
   // Cleanup handled by the unified clearValidationTimer effect above
 
   // Handle blur — run validation immediately without waiting for the debounce.
-  const handleBlur = useCallback((e) => {
-    const { name, value } = e.target;
-    setTouched((prev) => ({ ...prev, [name]: true }));
-    if (!validationRulesRef.current[name]) return;
-    const error = validateField(name, value, values);
-    setErrors((prev) => ({ ...prev, [name]: error }));
-  }, [validateField, values]);
+  const handleBlur = useCallback(
+    (e) => {
+      const { name, value } = e.target;
+      setTouched((prev) => ({ ...prev, [name]: true }));
+      if (!validationRulesRef.current[name]) return;
+      const error = validateField(name, value, values);
+      setErrors((prev) => ({ ...prev, [name]: error }));
+    },
+    [validateField, values]
+  );
 
   // Derive overall form validity whenever field values, errors, or touch
   // state changes. A field is considered satisfied when it has been touched
@@ -150,7 +156,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   useEffect(() => {
     const hasErrors = Object.values(errors).some((error) => error !== null);
     const allRequiredFieldsSatisfied = Object.keys(validationRulesRef.current).every(
-      (key) => touched[key] || values[key] !== '',
+      (key) => touched[key] || values[key] !== ""
     );
     setIsFormValid(!hasErrors && allRequiredFieldsSatisfied);
   }, [errors, touched, values]);

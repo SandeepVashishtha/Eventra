@@ -47,11 +47,11 @@ textarea:focus-visible {
   .text-gray-500 {
     color: #374151 !important;
   }
-  
+
   .dark .text-gray-400 {
     color: #d1d5db !important;
   }
-  
+
   button,
   a {
     border: 2px solid currentColor !important;
@@ -136,7 +136,6 @@ textarea:focus-visible {
 
 /* Mobile Responsiveness */
 @media screen and (max-width: 768px) {
-
   .navbar {
     flex-direction: column;
     align-items: center;
@@ -156,7 +155,6 @@ textarea:focus-visible {
 
 /* Small Mobile Devices */
 @media screen and (max-width: 480px) {
-
   .navbar {
     padding: 0.8rem;
   }

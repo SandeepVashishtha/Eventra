@@ -3,10 +3,7 @@ import { apiUtils, API_ENDPOINTS } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 import { logger } from "../utils/logger";
 import { safeJsonParse } from "../utils/safeJsonParse";
-import {
-  PUSH_SUBSCRIPTION_KEY,
-  urlBase64ToUint8Array,
-} from "../utils/notificationPreferences";
+import { PUSH_SUBSCRIPTION_KEY, urlBase64ToUint8Array } from "../utils/notificationPreferences";
 
 const getEnv = () =>
   typeof import.meta !== "undefined" && import.meta.env
@@ -69,7 +66,9 @@ export function usePushSubscription(updatePreferences) {
     }
   }, []);
 
-  useEffect(() => { updatePushStatus(); }, [updatePushStatus]);
+  useEffect(() => {
+    updatePushStatus();
+  }, [updatePushStatus]);
 
   const requestPushPermission = useCallback(async () => {
     if (typeof window === "undefined" || !("Notification" in window)) {
@@ -97,7 +96,10 @@ export function usePushSubscription(updatePreferences) {
     if (!VAPID_PUBLIC_KEY) {
       updatePreferences((c) => ({ ...c, push: true }));
       setPushStatus((c) => ({
-        ...c, supported: true, permission, subscribed: false,
+        ...c,
+        supported: true,
+        permission,
+        subscribed: false,
         error: "Add a VAPID key for server push delivery.",
       }));
       return { subscribed: false, reason: "missing-vapid-key" };
@@ -119,8 +121,10 @@ export function usePushSubscription(updatePreferences) {
       try {
         const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
         if (existing) {
-          try { if (safeJsonParse(existing, {}).keys) logger.info("[usePushSubscription] Migrating legacy record."); }
-          catch {}
+          try {
+            if (safeJsonParse(existing, {}).keys)
+              logger.info("[usePushSubscription] Migrating legacy record.");
+          } catch {}
         }
         window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
       } catch {}
@@ -151,5 +155,11 @@ export function usePushSubscription(updatePreferences) {
     }
   }, [token, updatePreferences, updatePushStatus]);
 
-  return { pushStatus, requestPushPermission, subscribeToPush, unsubscribeFromPush, updatePushStatus };
+  return {
+    pushStatus,
+    requestPushPermission,
+    subscribeToPush,
+    unsubscribeFromPush,
+    updatePushStatus,
+  };
 }

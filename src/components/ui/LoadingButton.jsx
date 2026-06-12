@@ -1,4 +1,3 @@
-
 export function LoadingButton({
   isLoading,
   children,
@@ -11,15 +10,14 @@ export function LoadingButton({
       disabled={isLoading}
       aria-busy={isLoading}
       aria-label={isLoading ? loadingText : undefined}
-      className={`btn-primary relative ${isLoading ? "opacity-70 cursor-not-allowed" : ""} ${className}`}
+      className={`btn-primary relative ${isLoading ? "cursor-not-allowed opacity-70" : ""} ${className}`}
       {...props}
     >
       {isLoading ? (
-        <span className="flex items-center gap-2 justify-center">
+        <span className="flex items-center justify-center gap-2">
           {/* CSS spinner — no library needed */}
           <span
-            className="inline-block w-4 h-4 border-2 border-white
-                       border-t-transparent rounded-full animate-spin"
+            className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
             aria-hidden="true"
           />
           {loadingText}

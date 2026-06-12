@@ -6,11 +6,11 @@ export const ErrorFallback = ({ error, resetErrorBoundary }) => {
   return (
     <div
       role="alert"
-      className="flex flex-col items-center justify-center gap-4 p-8 rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-center max-w-md mx-auto"
+      className="mx-auto flex max-w-md flex-col items-center justify-center gap-4 rounded-2xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-800 dark:bg-red-950/30"
     >
-      <div className="w-12 h-12 flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
         <svg
-          className="w-6 h-6 text-red-600 dark:text-red-400"
+          className="h-6 w-6 text-red-600 dark:text-red-400"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -25,21 +25,15 @@ export const ErrorFallback = ({ error, resetErrorBoundary }) => {
         </svg>
       </div>
 
-      <h2 className="text-lg font-semibold text-red-700 dark:text-red-300">
-        Something went wrong
-      </h2>
+      <h2 className="text-lg font-semibold text-red-700 dark:text-red-300">Something went wrong</h2>
 
-      {error?.message && (
-        <p className="text-sm text-red-600 dark:text-red-400">
-          {error.message}
-        </p>
-      )}
+      {error?.message && <p className="text-sm text-red-600 dark:text-red-400">{error.message}</p>}
 
-      <div className="flex gap-3 flex-wrap justify-center">
+      <div className="flex flex-wrap justify-center gap-3">
         {resetErrorBoundary && (
           <button
             onClick={resetErrorBoundary}
-            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
           >
             Try Again
           </button>
@@ -47,14 +41,14 @@ export const ErrorFallback = ({ error, resetErrorBoundary }) => {
 
         <button
           onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-gray-700 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+          className="rounded-lg bg-gray-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
         >
           Reload Page
         </button>
 
         <button
           onClick={() => navigate("/")}
-          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
         >
           Go Home
         </button>

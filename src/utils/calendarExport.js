@@ -7,13 +7,7 @@ export const downloadICS = (event) => {
     title: event.title,
     description: event.description || "",
     location: event.location || "",
-    start: [
-      startDate.getFullYear(),
-      startDate.getMonth() + 1,
-      startDate.getDate(),
-      10,
-      0,
-    ],
+    start: [startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate(), 10, 0],
     duration: { hours: 2 },
   };
 
@@ -43,14 +37,11 @@ export const getGoogleCalendarUrl = (event) => {
 
   const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
 
-  const formatDate = (date) =>
-    date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const formatDate = (date) => date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
     event.title
-  )}&dates=${formatDate(start)}/${formatDate(
-    end
-  )}&details=${encodeURIComponent(
+  )}&dates=${formatDate(start)}/${formatDate(end)}&details=${encodeURIComponent(
     event.description || ""
   )}&location=${encodeURIComponent(event.location || "")}`;
 };

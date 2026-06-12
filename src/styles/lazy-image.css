@@ -17,9 +17,10 @@
   opacity: 0;
   filter: blur(20px);
   transform: scale(1.02);
-  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-              filter 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    filter 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .lazy-img--loaded {
@@ -39,24 +40,14 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(
-    90deg,
-    #f3f4f6 0%,
-    #e5e7eb 50%,
-    #f3f4f6 100%
-  );
+  background: linear-gradient(90deg, #f3f4f6 0%, #e5e7eb 50%, #f3f4f6 100%);
   background-size: 200% 100%;
   animation: lazy-image-shimmer 1.5s infinite linear;
 }
 
 :global(.dark) .lazy-img-skeleton,
 .dark .lazy-img-skeleton {
-  background: linear-gradient(
-    90deg,
-    #1f2937 0%,
-    #374151 50%,
-    #1f2937 100%
-  );
+  background: linear-gradient(90deg, #1f2937 0%, #374151 50%, #1f2937 100%);
   background-size: 200% 100%;
 }
 
@@ -105,7 +96,8 @@
 }
 
 @keyframes lazy-image-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }

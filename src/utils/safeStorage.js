@@ -108,5 +108,3 @@ export const safeSessionStorage = createSafeStorage(() =>
 );
 
 export const isLocalStorageAvailable = () => safeLocalStorage.isAvailable();
-
-

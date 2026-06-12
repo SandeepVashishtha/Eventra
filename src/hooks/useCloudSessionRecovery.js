@@ -70,10 +70,7 @@ export const useCloudSessionRecovery = ({
     setSyncError("");
     try {
       const result = await syncPendingRecoverySessions(storage);
-      const merged = mergeRecoverySessions(
-        readRecoverySessionsFromStorage(storage),
-        result.synced,
-      );
+      const merged = mergeRecoverySessions(readRecoverySessionsFromStorage(storage), result.synced);
       writeRecoverySessionsToStorage(merged, storage);
       if (mountedRef.current) setCloudSessions(merged);
       return result;
@@ -117,7 +114,10 @@ export const useCloudSessionRecovery = ({
 
       if (!payload) return null;
 
-      const localSessions = mergeRecoverySessions([payload], readRecoverySessionsFromStorage(storage));
+      const localSessions = mergeRecoverySessions(
+        [payload],
+        readRecoverySessionsFromStorage(storage)
+      );
       writeRecoverySessionsToStorage(localSessions, storage);
       if (mountedRef.current) setCloudSessions(localSessions);
 
@@ -140,7 +140,7 @@ export const useCloudSessionRecovery = ({
         return payload;
       }
     },
-    [canSync, storage, userId],
+    [canSync, storage, userId]
   );
 
   const restoreCloudSession = useCallback(
@@ -155,7 +155,7 @@ export const useCloudSessionRecovery = ({
         return localSession || null;
       }
     },
-    [canSync, cloudSessions],
+    [canSync, cloudSessions]
   );
 
   const dismissCloudSession = useCallback(
@@ -172,7 +172,7 @@ export const useCloudSessionRecovery = ({
         }
       }
     },
-    [canSync, cloudSessions, storage],
+    [canSync, cloudSessions, storage]
   );
 
   return useMemo(
@@ -196,7 +196,7 @@ export const useCloudSessionRecovery = ({
       saveCloudSession,
       syncError,
       syncPending,
-    ],
+    ]
   );
 };
 

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import FocusTrap from './FocusTrap';
+import React, { useEffect } from "react";
+import FocusTrap from "./FocusTrap";
 
 /**
  * Drawer
@@ -24,12 +24,12 @@ import FocusTrap from './FocusTrap';
  */
 const SIDE_CLASSES = {
   left: {
-    panel: 'left-0 translate-x-0',
-    hidden: '-translate-x-full',
+    panel: "left-0 translate-x-0",
+    hidden: "-translate-x-full",
   },
   right: {
-    panel: 'right-0 translate-x-0',
-    hidden: 'translate-x-full',
+    panel: "right-0 translate-x-0",
+    hidden: "translate-x-full",
   },
 };
 
@@ -37,20 +37,20 @@ const Drawer = ({
   isOpen,
   onClose,
   title,
-  titleId = 'drawer-title',
-  side = 'right',
+  titleId = "drawer-title",
+  side = "right",
   children,
-  className = '',
+  className = "",
 }) => {
   // Lock background scroll while the drawer is open.
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [isOpen]);
 
@@ -60,13 +60,13 @@ const Drawer = ({
   return (
     /* Portal-like overlay; always rendered so CSS transitions work */
     <div
-      className={`fixed inset-0 z-50 ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+      className={`fixed inset-0 z-50 ${isOpen ? "pointer-events-auto" : "pointer-events-none"}`}
       aria-hidden={!isOpen}
     >
       {/* Backdrop */}
       <div
         className={`absolute inset-0 bg-black transition-opacity duration-300 ${
-          isOpen ? 'opacity-50' : 'opacity-0'
+          isOpen ? "opacity-50" : "opacity-0"
         }`}
         onClick={onClose}
         aria-hidden="true"
@@ -83,10 +83,7 @@ const Drawer = ({
           {/* Header */}
           <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700">
             {title ? (
-              <h2
-                id={titleId}
-                className="text-base font-semibold text-gray-900 dark:text-white"
-              >
+              <h2 id={titleId} className="text-base font-semibold text-gray-900 dark:text-white">
                 {title}
               </h2>
             ) : (
@@ -96,7 +93,7 @@ const Drawer = ({
               type="button"
               onClick={onClose}
               aria-label="Close drawer"
-              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:hover:bg-gray-700 dark:hover:text-gray-300"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

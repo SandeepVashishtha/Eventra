@@ -29,7 +29,7 @@ const ProfileMenu = ({ user, logout }) => {
     if (!isOpen) return;
     const menuEl = menuRef.current;
     if (!menuEl) return;
-    const firstFocusable = menuEl.querySelector('a[href], button:not([aria-expanded])');
+    const firstFocusable = menuEl.querySelector("a[href], button:not([aria-expanded])");
     firstFocusable?.focus();
   }, [isOpen]);
 
@@ -82,22 +82,22 @@ const ProfileMenu = ({ user, logout }) => {
         aria-label={isOpen ? "Close profile menu" : "Open profile menu"}
         aria-expanded={isOpen}
         aria-haspopup="true"
-        className="flex items-center gap-2 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+        className="focus-visible:ring-primary focus-visible:ring-offset-bg flex items-center gap-2 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
       >
         {user?.profilePicture ? (
           <img
             loading="lazy"
             src={user.profilePicture}
             alt={`${user?.name || "User"} profile`}
-            className="w-9 h-9 rounded-full object-cover border border-border transition-colors"
+            className="border-border h-9 w-9 rounded-full border object-cover transition-colors"
           />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-card-bg border border-border flex items-center justify-center transition-colors">
-            <User className="text-text-light w-4.5 h-4.5" />
+          <div className="bg-card-bg border-border flex h-9 w-9 items-center justify-center rounded-full border transition-colors">
+            <User className="text-text-light h-4.5 w-4.5" />
           </div>
         )}
         <ChevronDown
-          className={`w-4 h-4 text-text-light transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          className={`text-text-light h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -107,15 +107,13 @@ const ProfileMenu = ({ user, logout }) => {
           aria-modal="true"
           aria-orientation="vertical"
           aria-label="Profile menu"
-          className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+          className="border-border bg-navbar animate-in fade-in zoom-in-95 absolute right-0 z-50 mt-3 w-56 origin-top-right rounded-xl border p-2 shadow-lg duration-100"
         >
-          <div className="px-3 py-2 mb-2 border-b border-border">
-            <p className="text-sm font-semibold text-text truncate">
+          <div className="border-border mb-2 border-b px-3 py-2">
+            <p className="text-text truncate text-sm font-semibold">
               {user?.name || user?.username || "User"}
             </p>
-            <p className="text-xs text-text-light truncate">
-              {user?.email || "Logged in"}
-            </p>
+            <p className="text-text-light truncate text-xs">{user?.email || "Logged in"}</p>
           </div>
 
           <div className="space-y-1">
@@ -127,16 +125,16 @@ const ProfileMenu = ({ user, logout }) => {
                   to={item.path}
                   role="menuitem"
                   onClick={closeMenu}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light hover:bg-bg hover:text-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="text-text-light hover:bg-bg hover:text-text focus-visible:ring-primary flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2"
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="h-4 w-4" />
                   {t(item.labelKey)}
                 </Link>
               );
             })}
           </div>
 
-          <div className="h-px bg-border my-2" />
+          <div className="bg-border my-2 h-px" />
 
           {/* Logout: uses semantic text-error / hover:bg-error/10 for dark-mode
               consistency, and focus-visible:ring-primary to match all other items */}
@@ -147,9 +145,9 @@ const ProfileMenu = ({ user, logout }) => {
               closeMenu();
               logout();
             }}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-error hover:bg-error/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="text-error hover:bg-error/10 focus-visible:ring-primary flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="h-4 w-4" />
             {t("nav.signOut")}
           </button>
         </div>

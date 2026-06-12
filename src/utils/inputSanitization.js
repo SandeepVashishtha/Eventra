@@ -15,9 +15,9 @@ import createDOMPurify from "dompurify";
  * @param {string} query - The raw search query from user input
  * @returns {string} - Sanitized query safe for API transmission
  */
-export const sanitizeSearchQuery = (query = '') => {
-  if (typeof query !== 'string') {
-    return '';
+export const sanitizeSearchQuery = (query = "") => {
+  if (typeof query !== "string") {
+    return "";
   }
 
   const MAX_QUERY_LENGTH = 200;
@@ -28,12 +28,12 @@ export const sanitizeSearchQuery = (query = '') => {
   // obfuscated event handlers) instead of a fragile regex cascade.
   try {
     let purify;
-    if (typeof createDOMPurify?.sanitize === 'function') {
+    if (typeof createDOMPurify?.sanitize === "function") {
       purify = createDOMPurify;
-    } else if (typeof createDOMPurify === 'function' && typeof window?.document !== 'undefined') {
+    } else if (typeof createDOMPurify === "function" && typeof window?.document !== "undefined") {
       purify = createDOMPurify(window);
     }
-    if (purify && typeof purify.sanitize === 'function') {
+    if (purify && typeof purify.sanitize === "function") {
       sanitized = purify.sanitize(sanitized, { ALLOWED_TAGS: [] });
     }
   } catch {
@@ -42,9 +42,9 @@ export const sanitizeSearchQuery = (query = '') => {
 
   // Manual tag stripping as final safeguard (catches any DOMPurify bypass)
   sanitized = sanitized
-    .replace(/<[^>]*>/g, '')
-    .replace(/[${}\[\];'`|\\/\n\r<>]/g, '')
-    .replace(/\s+/g, ' ')
+    .replace(/<[^>]*>/g, "")
+    .replace(/[${}\[\];'`|\\/\n\r<>]/g, "")
+    .replace(/\s+/g, " ")
     .trim();
 
   // Ensure max length to prevent ReDoS attacks
@@ -61,9 +61,9 @@ export const sanitizeSearchQuery = (query = '') => {
  * @param {string} query - The search query to validate
  * @returns {object} - { isValid: boolean, error: string|null }
  */
-export const validateSearchQuery = (query = '') => {
-  if (typeof query !== 'string') {
-    return { isValid: false, error: 'Search query must be a string' };
+export const validateSearchQuery = (query = "") => {
+  if (typeof query !== "string") {
+    return { isValid: false, error: "Search query must be a string" };
   }
 
   const trimmed = query.trim();
@@ -73,13 +73,13 @@ export const validateSearchQuery = (query = '') => {
   }
 
   if (trimmed.length > 200) {
-    return { isValid: false, error: 'Search query must be less than 200 characters' };
+    return { isValid: false, error: "Search query must be less than 200 characters" };
   }
 
   // Check for obvious injection patterns
   const hasInjectionPatterns = /[\$\{\}\[\];'`|\\]/.test(trimmed);
   if (hasInjectionPatterns) {
-    return { isValid: false, error: 'Search query contains invalid characters' };
+    return { isValid: false, error: "Search query contains invalid characters" };
   }
 
   return { isValid: true, error: null };
@@ -92,12 +92,11 @@ export const validateSearchQuery = (query = '') => {
  * @param {string} rawQuery - Raw user input
  * @returns {string} - Safe query for API, or empty string if invalid
  */
-export const prepareSafeSearchQuery = (rawQuery = '') => {
+export const prepareSafeSearchQuery = (rawQuery = "") => {
   const validation = validateSearchQuery(rawQuery);
   if (!validation.isValid) {
-     
     console.warn(`[Security] Invalid search query: ${validation.error}`);
-    return '';
+    return "";
   }
 
   return sanitizeSearchQuery(rawQuery);
@@ -110,18 +109,18 @@ export const prepareSafeSearchQuery = (rawQuery = '') => {
  * @param {string} text - Raw input text from the UI
  * @returns {string} - Clean, safe plain-text
  */
-export const sanitizeInputText = (text = '') => {
-  if (typeof text !== 'string') {
-    return '';
+export const sanitizeInputText = (text = "") => {
+  if (typeof text !== "string") {
+    return "";
   }
 
   // Escape HTML special characters for absolute safety
   const htmlEscapes = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#x27;'
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#x27;",
   };
 
   return text.replace(/[&<>"']/g, (match) => htmlEscapes[match]);
@@ -134,9 +133,9 @@ export const sanitizeInputText = (text = '') => {
  * @param {string} text - Raw input text
  * @returns {string} - Text with HTML tags stripped
  */
-export const stripHtmlTags = (text = '') => {
-  if (typeof text !== 'string') {
-    return '';
+export const stripHtmlTags = (text = "") => {
+  if (typeof text !== "string") {
+    return "";
   }
-  return text.replace(/<[^>]*>?/gm, '');
+  return text.replace(/<[^>]*>?/gm, "");
 };

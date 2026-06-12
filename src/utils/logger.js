@@ -1,9 +1,10 @@
 /**
  * Determines if the current environment is for development.
  */
-const isDevelopment = typeof import.meta.env !== "undefined" 
-  ? import.meta.env.DEV 
-  : process.env.NODE_ENV !== "production";
+const isDevelopment =
+  typeof import.meta.env !== "undefined"
+    ? import.meta.env.DEV
+    : process.env.NODE_ENV !== "production";
 
 /**
  * Formats a log message with the specified level.

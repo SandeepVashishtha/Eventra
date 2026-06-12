@@ -111,15 +111,24 @@ const useBookmarks = (userId = "guest") => {
   useEffect(() => {
     const handleStorageEvent = (e) => {
       if (e.key !== storageKeyRef.current) return;
-      const fresh = e.newValue ? (() => {
-        try { 
-          const p = JSON.parse(e.newValue); 
-          if (!Array.isArray(p)) return [];
-          // Deep merge: combine existing local state with incoming storage state, keeping newest by savedAt
-          const merged = new Map([...bookmarks.map(b => [b.id, b]), ...p.map(b => [b.id, b])]);
-          return Array.from(merged.values()).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
-        } catch { return []; }
-      })() : [];
+      const fresh = e.newValue
+        ? (() => {
+            try {
+              const p = JSON.parse(e.newValue);
+              if (!Array.isArray(p)) return [];
+              // Deep merge: combine existing local state with incoming storage state, keeping newest by savedAt
+              const merged = new Map([
+                ...bookmarks.map((b) => [b.id, b]),
+                ...p.map((b) => [b.id, b]),
+              ]);
+              return Array.from(merged.values()).sort(
+                (a, b) => (a.savedAt || 0) - (b.savedAt || 0)
+              );
+            } catch {
+              return [];
+            }
+          })()
+        : [];
       cache.set(storageKeyRef.current, fresh);
       setBookmarks(fresh);
     };
@@ -130,7 +139,7 @@ const useBookmarks = (userId = "guest") => {
 
   // Cache bookmarks in a Set for O(1) lookups
   const bookmarksSet = useMemo(() => {
-    return new Set(bookmarks.map(e => e.id));
+    return new Set(bookmarks.map((e) => e.id));
   }, [bookmarks]);
 
   /**
@@ -160,10 +169,7 @@ const useBookmarks = (userId = "guest") => {
   /**
    * Returns true if an event with the given id is currently bookmarked.
    */
-  const isBookmarked = useCallback(
-    (id) => bookmarksSet.has(id),
-    [bookmarksSet],
-  );
+  const isBookmarked = useCallback((id) => bookmarksSet.has(id), [bookmarksSet]);
 
   /**
    * Removes all bookmarks for the current user from both state and localStorage.

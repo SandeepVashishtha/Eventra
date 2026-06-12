@@ -73,9 +73,7 @@ export const getEventStatus = (event) => {
 
 export const isEventRegistrationClosed = (eventOrStatus) => {
   const status =
-    typeof eventOrStatus === "string"
-      ? mapStatusKey(eventOrStatus)
-      : getEventStatus(eventOrStatus);
+    typeof eventOrStatus === "string" ? mapStatusKey(eventOrStatus) : getEventStatus(eventOrStatus);
 
   return status === "past" || status === "ended" || status === "cancelled";
 };

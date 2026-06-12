@@ -1,4 +1,20 @@
-import { BookOpen, Layers, Cpu, Code2, Play, GitBranch, Users, Info, PlayCircle, CheckCircle, Smartphone, AlertCircle, PlusCircle, Bell, Lock } from "lucide-react";
+import {
+  BookOpen,
+  Layers,
+  Cpu,
+  Code2,
+  Play,
+  GitBranch,
+  Users,
+  Info,
+  PlayCircle,
+  CheckCircle,
+  Smartphone,
+  AlertCircle,
+  PlusCircle,
+  Bell,
+  Lock,
+} from "lucide-react";
 // src/Pages/Documentation/DocumentationPage.jsx
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,55 +31,55 @@ export default function DocumentationPage() {
       question: "What is Eventra?",
       answer:
         "Eventra is a platform that provides information about projects, hackathons, events, and more. It helps users stay updated and participate in opportunities that match their interests.",
-      icon: <Info className="w-6 h-6 text-blue-500" />,
+      icon: <Info className="h-6 w-6 text-blue-500" />,
     },
     {
       question: "How do I get started with Eventra?",
       answer:
         "1. Sign up or log in to Eventra.\n2. Explore the latest projects, hackathons, and events.\n3. Participate or bookmark events that interest you.",
-      icon: <PlayCircle className="w-6 h-6 text-green-500" />,
+      icon: <PlayCircle className="h-6 w-6 text-green-500" />,
     },
     {
       question: "Is Eventra free to use?",
       answer:
         "Yes, Eventra is free to use for browsing and accessing basic event information. Some premium features may require a subscription in the future.",
-      icon: <CheckCircle className="w-6 h-6 text-yellow-500" />,
+      icon: <CheckCircle className="h-6 w-6 text-yellow-500" />,
     },
     {
       question: "What platforms does Eventra support?",
       answer:
         "Eventra is accessible on Web and Mobile platforms, ensuring you can check events anytime, anywhere.",
-      icon: <Smartphone className="w-6 h-6 text-black" />,
+      icon: <Smartphone className="h-6 w-6 text-black" />,
     },
     {
       question: "How can I suggest an event or report an issue?",
       answer:
         "You can submit suggestions or report issues via our Contact Form or by reaching out to our support email. Please provide detailed information to help us improve Eventra.",
-      icon: <AlertCircle className="w-6 h-6 text-red-500" />,
+      icon: <AlertCircle className="h-6 w-6 text-red-500" />,
     },
     {
       question: "Can I create my own events on Eventra?",
       answer:
         "Yes! Eventra allows registered users to create and manage their own events, hackathons, or project showcases directly from the platform.",
-      icon: <PlusCircle className="w-6 h-6 text-black" />,
+      icon: <PlusCircle className="h-6 w-6 text-black" />,
     },
     {
       question: "How do I stay updated about upcoming events?",
       answer:
         "You can subscribe to notifications, follow specific categories, or bookmark events to get timely updates and reminders.",
-      icon: <Bell className="w-6 h-6 text-pink-500" />,
+      icon: <Bell className="h-6 w-6 text-pink-500" />,
     },
     {
       question: "Does Eventra support team collaborations?",
       answer:
         "Absolutely. Users can form teams, collaborate on projects, and participate in hackathons together through Eventra's Collaboration Hub.",
-      icon: <Users className="w-6 h-6 text-teal-500" />,
+      icon: <Users className="h-6 w-6 text-teal-500" />,
     },
     {
       question: "Is my personal information safe on Eventra?",
       answer:
         "Yes. Eventra prioritizes user privacy and security. All personal information is stored securely and is never shared without consent.",
-      icon: <Lock className="w-6 h-6 text-gray-700" />,
+      icon: <Lock className="h-6 w-6 text-gray-700" />,
     },
   ];
 
@@ -77,9 +93,9 @@ export default function DocumentationPage() {
   };
   return (
     // UPDATED: Main page background and text color
-    <div className="pastel-grid-bg min-h-screen bg-gray-100 text-black px-6 py-12 space-y-12">
+    <div className="pastel-grid-bg min-h-screen space-y-12 bg-gray-100 px-6 py-12 text-black">
       {/* Header */}
-      <header className="text-center max-w-4xl mx-auto">
+      <header className="mx-auto max-w-4xl text-center">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -87,16 +103,12 @@ export default function DocumentationPage() {
           data-aos="fade-down"
           data-aos-once="true"
           // UPDATED: Header text colors
-          className="text-5xl font-extrabold text-black mb-4"
+          className="mb-4 text-5xl font-extrabold text-black"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Eventra Documentation
         </motion.h1>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-black text-xl"
-        >
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xl text-black">
           Modern Event Management Platform for Builders & Communities
         </motion.p>
       </header>
@@ -104,7 +116,7 @@ export default function DocumentationPage() {
       {/* Features Section */}
       <motion.section
         // UPDATED: Card background
-        className="relative max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md overflow-hidden"
+        className="relative mx-auto max-w-5xl overflow-hidden rounded-2xl bg-white p-8 shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -114,51 +126,50 @@ export default function DocumentationPage() {
         data-aos-delay="0"
       >
         <div className="relative z-10">
-        {/* UPDATED: Title icon and text colors */}
-        <div className="flex items-center mb-6 text-black">
-          <BookOpen className="mr-3 text-3xl" />
-          <h2 className="text-3xl font-bold">Features</h2>
-        </div>
-        <div className="grid md:grid-cols-2 gap-6 text-black">
-          <div className="space-y-2">
-            <h3 className="font-semibold text-xl">Core Features</h3>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Create and manage hackathons</li>
-              <li>Register participants and teams</li>
-              <li>Project submission and tracking</li>
-              <li>Event schedule and agenda management</li>
-              <li>Real-time updates and notifications</li>
-              <li>Judging and scoring system</li>
-              <li>Winner announcement and certificates</li>
-              <li>Discussion forums for participants</li>
-              <li>Resource sharing (guides, datasets, APIs)</li>
-              <li>Customizable hackathon branding</li>
-            </ul>
+          {/* UPDATED: Title icon and text colors */}
+          <div className="mb-6 flex items-center text-black">
+            <BookOpen className="mr-3 text-3xl" />
+            <h2 className="text-3xl font-bold">Features</h2>
           </div>
-          <div className="space-y-2">
-            <h3 className="font-semibold text-xl">Platform Features</h3>
-            <ul className="list-disc list-inside space-y-1">
-              <li>User authentication and profiles</li>
-              <li>Dark mode and theme support</li>
-              <li>Responsive and mobile-friendly design</li>
-              <li>Search and filter events/projects</li>
-              <li>Integration with calendar apps</li>
-              <li>Notifications for upcoming deadlines</li>
-              <li>Team collaboration tools</li>
-              <li>Analytics dashboard for organizers</li>
-              <li>Social media sharing and promotion</li>
-              <li>Cloud storage for project files</li>
-            </ul>
+          <div className="grid gap-6 text-black md:grid-cols-2">
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold">Core Features</h3>
+              <ul className="list-inside list-disc space-y-1">
+                <li>Create and manage hackathons</li>
+                <li>Register participants and teams</li>
+                <li>Project submission and tracking</li>
+                <li>Event schedule and agenda management</li>
+                <li>Real-time updates and notifications</li>
+                <li>Judging and scoring system</li>
+                <li>Winner announcement and certificates</li>
+                <li>Discussion forums for participants</li>
+                <li>Resource sharing (guides, datasets, APIs)</li>
+                <li>Customizable hackathon branding</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold">Platform Features</h3>
+              <ul className="list-inside list-disc space-y-1">
+                <li>User authentication and profiles</li>
+                <li>Dark mode and theme support</li>
+                <li>Responsive and mobile-friendly design</li>
+                <li>Search and filter events/projects</li>
+                <li>Integration with calendar apps</li>
+                <li>Notifications for upcoming deadlines</li>
+                <li>Team collaboration tools</li>
+                <li>Analytics dashboard for organizers</li>
+                <li>Social media sharing and promotion</li>
+                <li>Cloud storage for project files</li>
+              </ul>
+            </div>
           </div>
         </div>
-        </div>
-
       </motion.section>
 
       {/* Tech Stack Section */}
       <motion.section
         // UPDATED: Card background
-        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md"
+        className="mx-auto max-w-5xl rounded-2xl bg-white p-8 shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -168,14 +179,14 @@ export default function DocumentationPage() {
         data-aos-delay="100"
       >
         {/* UPDATED: Title icon and text colors */}
-        <div className="flex items-center mb-6 text-black">
+        <div className="mb-6 flex items-center text-black">
           <Cpu className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Tech Stack</h2>
         </div>
-        <div className="grid md:grid-cols-2 gap-6 text-black text-lg">
+        <div className="grid gap-6 text-lg text-black md:grid-cols-2">
           <div>
-            <h3 className="text-2xl font-semibold mb-3">Backend</h3>
-            <ul className="list-disc list-inside space-y-1">
+            <h3 className="mb-3 text-2xl font-semibold">Backend</h3>
+            <ul className="list-inside list-disc space-y-1">
               <li>Spring Boot 3.3.1 (Java 17)</li>
               <li>Database: MySQL (Aiven) / H2 (dev)</li>
               <li>Spring Security + JWT</li>
@@ -183,8 +194,8 @@ export default function DocumentationPage() {
             </ul>
           </div>
           <div>
-            <h3 className="text-2xl font-semibold mb-3">Frontend</h3>
-            <ul className="list-disc list-inside space-y-1">
+            <h3 className="mb-3 text-2xl font-semibold">Frontend</h3>
+            <ul className="list-inside list-disc space-y-1">
               <li>React 18.2.0</li>
               <li>React Router DOM 6.8.0</li>
               <li>Framer Motion 8.5.2 for animations</li>
@@ -198,7 +209,7 @@ export default function DocumentationPage() {
       {/* Architecture Section */}
       <motion.section
         // UPDATED: Card background
-        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md"
+        className="mx-auto max-w-5xl rounded-2xl bg-white p-8 shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -208,7 +219,7 @@ export default function DocumentationPage() {
         data-aos-delay="200"
       >
         {/* UPDATED: Title icon and text colors */}
-        <div className="flex items-center mb-6 text-black">
+        <div className="mb-6 flex items-center text-black">
           <Layers className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Architecture</h2>
         </div>
@@ -310,7 +321,7 @@ export default function DocumentationPage() {
       {/* Quick Start Section */}
       <motion.section
         // UPDATED: Card background
-        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md"
+        className="mx-auto max-w-5xl rounded-2xl bg-white p-8 shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -320,11 +331,11 @@ export default function DocumentationPage() {
         data-aos-delay="300"
       >
         {/* UPDATED: Title icon and text colors */}
-        <div className="flex items-center mb-6 text-black">
+        <div className="mb-6 flex items-center text-black">
           <Play className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Quick Start</h2>
         </div>
-        <p className="text-black text-lg mb-3">
+        <p className="mb-3 text-lg text-black">
           <strong>Prerequisites:</strong> Node.js 16+, npm/yarn, Git
         </p>
         <pre className={codeBlockClass}>
@@ -337,7 +348,7 @@ npm start`}
 
       {/* Deployment Section */}
       <motion.section
-        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md"
+        className="mx-auto max-w-5xl rounded-2xl bg-white p-8 shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -346,11 +357,11 @@ npm start`}
         data-aos="fade-up"
         data-aos-delay="400"
       >
-        <div className="flex items-center mb-6 text-black">
+        <div className="mb-6 flex items-center text-black">
           <GitBranch className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Deployment</h2>
         </div>
-        <ul className="list-disc list-inside text-black text-lg space-y-1">
+        <ul className="list-inside list-disc space-y-1 text-lg text-black">
           <li>Frontend: Hosted on Vercel</li>
           <li>Backend: Spring Boot deployment on Azure or preferred host</li>
         </ul>
@@ -358,7 +369,7 @@ npm start`}
 
       {/* License Section */}
       <motion.section
-        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md"
+        className="mx-auto max-w-5xl rounded-2xl bg-white p-8 shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -367,18 +378,16 @@ npm start`}
         data-aos="fade-up"
         data-aos-delay="500"
       >
-        <div className="flex items-center mb-6 text-black">
+        <div className="mb-6 flex items-center text-black">
           <Code2 className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">License</h2>
         </div>
-        <p className="text-black text-lg">
-          Apache License 2.0 - see the LICENSE file for details.
-        </p>
+        <p className="text-lg text-black">Apache License 2.0 - see the LICENSE file for details.</p>
       </motion.section>
 
       {/* Contributing Section */}
       <motion.section
-        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md"
+        className="mx-auto max-w-5xl rounded-2xl bg-white p-8 shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -387,21 +396,21 @@ npm start`}
         data-aos="fade-up"
         data-aos-delay="600"
       >
-        <div className="flex items-center mb-6 text-black">
+        <div className="mb-6 flex items-center text-black">
           <Users className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Contributing</h2>
         </div>
-        <ol className="list-decimal list-inside space-y-2 text-black text-lg">
+        <ol className="list-inside list-decimal space-y-2 text-lg text-black">
           <li>Fork the repository</li>
           <li>
             Create a feature branch:{" "}
-            <code className="bg-gray-100 px-2 py-1 rounded">
+            <code className="rounded bg-gray-100 px-2 py-1">
               git checkout -b feature/your-feature
             </code>
           </li>
           <li>
             Commit changes:{" "}
-            <code className="bg-gray-100 px-2 py-1 rounded">
+            <code className="rounded bg-gray-100 px-2 py-1">
               git commit -m &quot;Add feature&quot;
             </code>
           </li>
@@ -410,35 +419,33 @@ npm start`}
       </motion.section>
 
       {/* FAQ Section */}
-      <section 
-        className="max-w-5xl mx-auto p-6 bg-gray-50 rounded-2xl shadow-lg"
+      <section
+        className="mx-auto max-w-5xl rounded-2xl bg-gray-50 p-6 shadow-lg"
         // AOS Implementation
         data-aos="fade-up"
         data-aos-delay="700"
       >
-        <h2 className="text-3xl font-bold mb-10 text-center text-black font-['Big_Shoulders_Display']">
+        <h2 className="mb-10 text-center font-['Big_Shoulders_Display'] text-3xl font-bold text-black">
           Frequently Asked Questions
         </h2>
         <div className="space-y-6">
           {faqs.map((faq, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl shadow p-4 cursor-pointer hover:shadow-lg transition-shadow duration-200"
+              className="cursor-pointer rounded-xl bg-white p-4 shadow transition-shadow duration-200 hover:shadow-lg"
               onClick={() => toggleFAQ(index)}
               data-aos="zoom-in-up"
               data-aos-delay={750 + index * 50}
             >
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-6">
                   {faq.icon}
-                  <h3 className="text-lg font-semibold text-black">
-                    {faq.question}
-                  </h3>
+                  <h3 className="text-lg font-semibold text-black">{faq.question}</h3>
                 </div>
                 {openIndex === index ? (
-                  <ChevronUp className="w-5 h-5 text-black" />
+                  <ChevronUp className="h-5 w-5 text-black" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-black" />
+                  <ChevronDown className="h-5 w-5 text-black" />
                 )}
               </div>
               <AnimatePresence>
@@ -448,7 +455,7 @@ npm start`}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="mt-2 text-black whitespace-pre-line"
+                    className="mt-2 whitespace-pre-line text-black"
                   >
                     {faq.answer}
                   </motion.div>
@@ -460,20 +467,19 @@ npm start`}
       </section>
 
       {/* UPDATED: Footer text, border, and link colors */}
-      <footer 
-        className="text-center text-black mt-24 border-t border-gray-300 pt-8 pb-6"
+      <footer
+        className="mt-24 border-t border-gray-300 pt-8 pb-6 text-center text-black"
         data-aos="fade-up"
         data-aos-offset="50"
       >
-        <p className="text-black text-lg font-medium">
-          Built with <span className="text-black">❤️</span> by the Eventra
-          Team.
+        <p className="text-lg font-medium text-black">
+          Built with <span className="text-black">❤️</span> by the Eventra Team.
         </p>
-        <p className="mt-2 text-black text-base">
+        <p className="mt-2 text-base text-black">
           Visit{" "}
           <a
             href="https://eventra-psi.vercel.app/"
-            className="text-black font-semibold underline hover:text-zinc-700 transition-colors"
+            className="font-semibold text-black underline transition-colors hover:text-zinc-700"
           >
             Live Demo
           </a>

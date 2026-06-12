@@ -10,7 +10,7 @@ import Lenis from "@studio-freight/lenis";
  *
  * ### Behavior & Touch Device Safeguard
  * To preserve native OS-level scrolling feel, the hook checks if the primary pointer is coarse
- * (e.g., touch-based screens like mobile devices or tablets). If detected, it bypasses Lenis 
+ * (e.g., touch-based screens like mobile devices or tablets). If detected, it bypasses Lenis
  * initialization completely to avoid interfering with native kinetic scrolling behavior.
  *
  * ### Lifecycle & Cleanup
@@ -67,7 +67,7 @@ import Lenis from "@studio-freight/lenis";
 const useLenis = (options = {}) => {
   useEffect(() => {
     // Check if the primary pointer is coarse (touch device) to preserve native feel
-    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
     if (isTouchDevice) {
       return;
     }
@@ -107,7 +107,7 @@ const useLenis = (options = {}) => {
       lenis.destroy();
       window.lenis = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // NOTE: options is intentionally excluded from deps — Lenis is initialized
   // once on mount. If you need to react to option changes, pass a stable

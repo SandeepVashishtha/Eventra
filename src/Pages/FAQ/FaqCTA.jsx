@@ -43,17 +43,17 @@ export default function FAQCTA() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <section className="relative z-10 bg-gradient-to-tr from-[#0C0C1F] via-[#1A1F36] to-[#0B1E2E] py-16 px-6 sm:px-8 lg:px-12 overflow-visible mt-16 mb-12 mx-auto max-w-5xl rounded-3xl">
-      <div className="relative max-w-4xl mx-auto text-center">
+    <section className="relative z-10 mx-auto mt-16 mb-12 max-w-5xl overflow-visible rounded-3xl bg-gradient-to-tr from-[#0C0C1F] via-[#1A1F36] to-[#0B1E2E] px-6 py-16 sm:px-8 lg:px-12">
+      <div className="relative mx-auto max-w-4xl text-center">
         {/* Tag */}
         <motion.div
-          className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-6 py-1 mb-8 justify-center mx-auto border border-white/20"
+          className="mx-auto mb-8 inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-1 backdrop-blur-sm"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <HelpCircle className="w-5 h-5 text-white/90" aria-hidden="true" />
-          <span className="text-white/90 text-sm tracking-wider font-medium">
+          <HelpCircle className="h-5 w-5 text-white/90" aria-hidden="true" />
+          <span className="text-sm font-medium tracking-wider text-white/90">
             {t("faq.ctaBadge")}
           </span>
         </motion.div>
@@ -61,7 +61,7 @@ export default function FAQCTA() {
         {/* Main heading */}
         <motion.h2
           id="faq-cta-heading"
-          className="text-4xl sm:text-5xl font-extrabold text-white mb-10 tracking-tight"
+          className="mb-10 text-4xl font-extrabold tracking-tight text-white sm:text-5xl"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
@@ -71,7 +71,7 @@ export default function FAQCTA() {
 
         {/* Glass cards */}
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-8"
+          className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -89,8 +89,8 @@ export default function FAQCTA() {
               aria-label={`${card.title}: ${card.description}`}
             >
               {card.icon}
-              <h3 className="text-white font-semibold text-lg text-center">{card.title}</h3>
-              <p className="text-white/70 text-sm text-center leading-relaxed">
+              <h3 className="text-center text-lg font-semibold text-white">{card.title}</h3>
+              <p className="text-center text-sm leading-relaxed text-white/70">
                 {card.description}
               </p>
             </MotionLink>

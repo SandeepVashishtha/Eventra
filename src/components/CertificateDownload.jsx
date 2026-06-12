@@ -13,10 +13,17 @@ const sanitizeText = (text, maxLength) => {
 const TEMPLATES = {
   classic: { bg: [10, 15, 30], accent: [99, 102, 241], text: [255, 255, 255] },
   elegant: { bg: [255, 255, 240], accent: [180, 130, 40], text: [30, 30, 30] },
-  modern:  { bg: [15, 23, 42],  accent: [16, 185, 129], text: [255, 255, 255] },
+  modern: { bg: [15, 23, 42], accent: [16, 185, 129], text: [255, 255, 255] },
 };
 
-export const generateCertificatePDF = ({ participantName, eventName, eventDate, eventType, organizerName, template = 'classic' }) => {
+export const generateCertificatePDF = ({
+  participantName,
+  eventName,
+  eventDate,
+  eventType,
+  organizerName,
+  template = "classic",
+}) => {
   const t = TEMPLATES[template] || TEMPLATES.classic;
   const doc = new jsPDF("landscape", "mm", "a4");
 
@@ -36,7 +43,10 @@ export const generateCertificatePDF = ({ participantName, eventName, eventDate, 
 
   doc.setFontSize(26);
   doc.setTextColor(...t.accent);
-  doc.text(sanitizeText(participantName || "Guest Participant", 40), 148, 90, { align: "center", maxWidth: 240 });
+  doc.text(sanitizeText(participantName || "Guest Participant", 40), 148, 90, {
+    align: "center",
+    maxWidth: 240,
+  });
 
   doc.setTextColor(...t.text);
   doc.setFontSize(15);
@@ -52,7 +62,10 @@ export const generateCertificatePDF = ({ participantName, eventName, eventDate, 
   doc.text(`Date: ${eventDate || ""}`, 148, 162, { align: "center", maxWidth: 240 });
 
   if (organizerName) {
-    doc.text(`Organized by: ${sanitizeText(organizerName, 40)}`, 148, 174, { align: "center", maxWidth: 240 });
+    doc.text(`Organized by: ${sanitizeText(organizerName, 40)}`, 148, 174, {
+      align: "center",
+      maxWidth: 240,
+    });
   }
 
   doc.setFontSize(11);
@@ -62,7 +75,13 @@ export const generateCertificatePDF = ({ participantName, eventName, eventDate, 
   return doc;
 };
 
-const CertificateDownload = ({ eventName, eventDate, eventType, organizerName, template = 'classic' }) => {
+const CertificateDownload = ({
+  eventName,
+  eventDate,
+  eventType,
+  organizerName,
+  template = "classic",
+}) => {
   const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -79,14 +98,32 @@ const CertificateDownload = ({ eventName, eventDate, eventType, organizerName, t
     setIsGenerating(true);
     const toastId = toast.loading("Generating your certificate...");
     try {
-      await new Promise(resolve => setTimeout(resolve, 50));
-      const participantName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Guest Participant";
-      const doc = generateCertificatePDF({ participantName, eventName, eventDate, eventType, organizerName, template });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const participantName =
+        `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Guest Participant";
+      const doc = generateCertificatePDF({
+        participantName,
+        eventName,
+        eventDate,
+        eventType,
+        organizerName,
+        template,
+      });
       const safeFileName = `${sanitizeText(eventName || "Event", 30).replace(/[^a-zA-Z0-9]/g, "_")}_Certificate.pdf`;
       doc.save(safeFileName);
-      toast.update(toastId, { render: "Certificate downloaded!", type: "success", isLoading: false, autoClose: 3000 });
+      toast.update(toastId, {
+        render: "Certificate downloaded!",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
     } catch (err) {
-      toast.update(toastId, { render: "Failed to generate certificate.", type: "error", isLoading: false, autoClose: 3000 });
+      toast.update(toastId, {
+        render: "Failed to generate certificate.",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+      });
     } finally {
       setIsGenerating(false);
     }

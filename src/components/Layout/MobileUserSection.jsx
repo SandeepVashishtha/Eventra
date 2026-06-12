@@ -1,11 +1,5 @@
 import { Link } from "react-router-dom";
-import {
-  LayoutDashboard,
-  LogOut,
-  Trophy,
-  UserCog,
-  UserIcon,
-} from "lucide-react";
+import { LayoutDashboard, LogOut, Trophy, UserCog, UserIcon } from "lucide-react";
 
 const MobileUserSection = ({
   user,
@@ -16,53 +10,55 @@ const MobileUserSection = ({
   handleLogoutClick,
 }) => (
   <div className="space-y-1">
-    <div className="flex items-center gap-3 px-3 py-2 mb-2">
+    <div className="mb-2 flex items-center gap-3 px-3 py-2">
       {user?.profilePicture ? (
         <img
           src={user.profilePicture}
           alt="Profile"
-          className="w-10 h-10 rounded-full object-cover" loading="lazy"/>
+          className="h-10 w-10 rounded-full object-cover"
+          loading="lazy"
+        />
       ) : (
-        <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white">
-          <UserIcon className="w-6 h-6" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-white">
+          <UserIcon className="h-6 w-6" />
         </div>
       )}
       <div>
-        <p className="font-semibold text-gray-800 dark:text-white truncate">{primaryLine}</p>
+        <p className="truncate font-semibold text-gray-800 dark:text-white">{primaryLine}</p>
         {secondaryLine && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>
+          <p className="truncate text-sm text-gray-500 dark:text-gray-400">{secondaryLine}</p>
         )}
       </div>
     </div>
     <Link
       to="/dashboard"
       onClick={closeAllMenus}
-      className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${location.pathname === "/dashboard" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}
+      className={`flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-base font-medium transition-colors ${location.pathname === "/dashboard" ? "border border-black/10 bg-black/10 text-black dark:border-white/20 dark:bg-white/15 dark:text-white" : "text-gray-700 hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10"}`}
     >
-      <LayoutDashboard className="w-5 h-5" />
+      <LayoutDashboard className="h-5 w-5" />
       Dashboard
     </Link>
     <Link
       to="/dashboard/achievements"
       onClick={closeAllMenus}
-      className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${location.pathname === "/dashboard/achievements" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}
+      className={`flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-base font-medium transition-colors ${location.pathname === "/dashboard/achievements" ? "border border-black/10 bg-black/10 text-black dark:border-white/20 dark:bg-white/15 dark:text-white" : "text-gray-700 hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10"}`}
     >
-      <Trophy className="w-5 h-5" />
+      <Trophy className="h-5 w-5" />
       Achievements
     </Link>
     <Link
       to="/dashboard/profile"
       onClick={closeAllMenus}
-      className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${location.pathname === "/dashboard/profile" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}
+      className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-lg font-medium transition-colors ${location.pathname === "/dashboard/profile" ? "border border-black/10 bg-black/10 text-black dark:border-white/20 dark:bg-white/15 dark:text-white" : "text-gray-700 hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10"}`}
     >
-      <UserCog className="w-5 h-5" />
+      <UserCog className="h-5 w-5" />
       View Profile
     </Link>
     <button
       onClick={handleLogoutClick}
-      className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors font-medium"
+      className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 font-medium text-gray-700 transition-colors hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10"
     >
-      <LogOut className="w-5 h-5" />
+      <LogOut className="h-5 w-5" />
       Logout
     </button>
   </div>

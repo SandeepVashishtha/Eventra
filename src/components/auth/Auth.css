@@ -151,7 +151,6 @@
   color: #f9fafb;
 }
 
-
 .role-select:focus {
   outline: none;
   border-color: var(--color-primary);
@@ -260,23 +259,23 @@
   .auth-container {
     padding: 16px;
   }
-  
+
   .auth-card {
     padding: 24px;
   }
-  
+
   .auth-header h2 {
     font-size: 1.75rem;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .form-group input {
     padding: 10px 12px;
   }
-  
+
   .auth-button {
     padding: 12px 20px;
   }
@@ -284,7 +283,7 @@
 
 /* Loading Animation */
 .auth-button:disabled::after {
-  content: '';
+  content: "";
   display: inline-block;
   width: 16px;
   height: 16px;
@@ -296,8 +295,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Unauthorized Page Styles */
@@ -343,9 +346,15 @@
 }
 
 @keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.7; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .login-container {
@@ -365,4 +374,3 @@
   text-align: center;
   color: var(--text-color);
 }
-

@@ -34,7 +34,7 @@ export const createRecoverySessionId = ({
 } = {}) =>
   `${type}-${userId}-${now}-${Math.random().toString(36).slice(2, 8)}`.replace(
     /[^a-zA-Z0-9_-]/g,
-    "-",
+    "-"
   );
 
 const getDraftSize = (draftData) => {
@@ -74,7 +74,7 @@ export const normalizeRecoverySession = (
     userId = session.userId || "",
     now = new Date(),
     retentionDays = DEFAULT_RECOVERY_RETENTION_DAYS,
-  } = {},
+  } = {}
 ) => {
   if (!session || typeof session !== "object" || Array.isArray(session)) {
     return null;
@@ -82,9 +82,12 @@ export const normalizeRecoverySession = (
 
   const lastUpdated = getIsoString(
     session.lastUpdated || session.updatedAt || session.timestamp,
-    now,
+    now
   );
-  const createdAt = getIsoString(session.createdAt || session.created || lastUpdated, new Date(lastUpdated));
+  const createdAt = getIsoString(
+    session.createdAt || session.created || lastUpdated,
+    new Date(lastUpdated)
+  );
   const type = inferRecoveryType(session);
   const draftData = sanitizeSessionState(session.draftData || session.data || session);
 
@@ -105,10 +108,7 @@ export const normalizeRecoverySession = (
     createdAt,
     updatedAt: lastUpdated,
     lastUpdated,
-    expiresAt: getIsoString(
-      session.expiresAt,
-      new Date(getExpiry(lastUpdated, retentionDays)),
-    ),
+    expiresAt: getIsoString(session.expiresAt, new Date(getExpiry(lastUpdated, retentionDays))),
     version: Number(session.version) || 1,
     source: session.source || "local",
   };
@@ -123,7 +123,9 @@ export const normalizeRecoverySessions = (sessions = [], options = {}) =>
   (Array.isArray(sessions) ? sessions : [])
     .map((session) => normalizeRecoverySession(session, options))
     .filter(Boolean)
-    .filter((session) => !isRecoverySessionExpired(session, options.now?.getTime?.() || Date.now()));
+    .filter(
+      (session) => !isRecoverySessionExpired(session, options.now?.getTime?.() || Date.now())
+    );
 
 export const resolveRecoveryConflict = (localSession, cloudSession) => {
   if (!localSession) return cloudSession || null;
@@ -157,13 +159,13 @@ export const mergeRecoverySessions = (localSessions = [], cloudSessions = []) =>
   });
 
   return [...byId.values()].sort(
-    (a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime(),
+    (a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
   );
 };
 
 export const readRecoverySessionsFromStorage = (
   storage = globalThis.localStorage,
-  key = CLOUD_RECOVERY_CACHE_KEY,
+  key = CLOUD_RECOVERY_CACHE_KEY
 ) => {
   if (!storage?.getItem) return [];
   try {
@@ -178,7 +180,7 @@ export const readRecoverySessionsFromStorage = (
 export const writeRecoverySessionsToStorage = (
   sessions = [],
   storage = globalThis.localStorage,
-  key = CLOUD_RECOVERY_CACHE_KEY,
+  key = CLOUD_RECOVERY_CACHE_KEY
 ) => {
   const normalized = normalizeRecoverySessions(sessions);
   storage?.setItem?.(key, JSON.stringify(normalized));
@@ -187,7 +189,7 @@ export const writeRecoverySessionsToStorage = (
 
 export const readPendingRecoveryQueue = (
   storage = globalThis.localStorage,
-  key = CLOUD_RECOVERY_PENDING_KEY,
+  key = CLOUD_RECOVERY_PENDING_KEY
 ) => {
   if (!storage?.getItem) return [];
   try {
@@ -202,7 +204,7 @@ export const readPendingRecoveryQueue = (
 export const queuePendingRecoverySession = (
   session,
   storage = globalThis.localStorage,
-  key = CLOUD_RECOVERY_PENDING_KEY,
+  key = CLOUD_RECOVERY_PENDING_KEY
 ) => {
   const normalized = normalizeRecoverySession(session);
   if (!normalized) return readPendingRecoveryQueue(storage, key);
@@ -214,7 +216,7 @@ export const queuePendingRecoverySession = (
 
 export const clearPendingRecoveryQueue = (
   storage = globalThis.localStorage,
-  key = CLOUD_RECOVERY_PENDING_KEY,
+  key = CLOUD_RECOVERY_PENDING_KEY
 ) => {
   storage?.removeItem?.(key);
 };
@@ -237,7 +239,7 @@ export const createRecoveryPayload = ({
       draftData: state,
       lastUpdated: now.toISOString(),
     },
-    { userId, now, retentionDays },
+    { userId, now, retentionDays }
   );
 
 export const saveRecoverySession = async (payload) => {
@@ -279,9 +281,7 @@ export const cleanupExpiredRecoverySessions = async () => {
   return response.data || { deleted: 0 };
 };
 
-export const syncPendingRecoverySessions = async (
-  storage = globalThis.localStorage,
-) => {
+export const syncPendingRecoverySessions = async (storage = globalThis.localStorage) => {
   const queue = readPendingRecoveryQueue(storage);
   const synced = [];
   const failed = [];

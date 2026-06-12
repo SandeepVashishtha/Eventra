@@ -20,13 +20,13 @@ export const SSE_STATUS = {
  * ### Connection Lifecycle
  * - **Establishment**: Runs automatically when the hook mounts, or when `path` or `enabled` transitions.
  *   If `enabled` is set to `false`, the connection remains in `idle` state.
- * - **Cleanup**: On component unmount or when `enabled` changes to `false`, the hook automatically calls 
+ * - **Cleanup**: On component unmount or when `enabled` changes to `false`, the hook automatically calls
  *   the returned `unsubscribe` callback from the multiplexer. This cleans up event listeners and safely
  *   closes the underlying EventSource connection if no other tabs or components are listening to that path.
  *
  * ### Callback Stability Guard
- * To prevent connection teardown/restart loops when the user passes anonymous or unstable callback functions 
- * as the `onMessage` handler, the hook stores `onMessage` in a mutable `useRef` object (`onMessageRef`). 
+ * To prevent connection teardown/restart loops when the user passes anonymous or unstable callback functions
+ * as the `onMessage` handler, the hook stores `onMessage` in a mutable `useRef` object (`onMessageRef`).
  * The subscription only depends on the stable `path` and `enabled` parameters.
  *
  * ### Error Handling & Reconnection
@@ -73,7 +73,7 @@ export const SSE_STATUS = {
  */
 export default function useRealTimeConnection(path, { onMessage, enabled = true } = {}) {
   const [status, setStatus] = useState(SSE_STATUS.IDLE);
-  
+
   // Stable reference to callback ensures the connection does not restart on prop changes
   const onMessageRef = useRef(onMessage);
   useEffect(() => {

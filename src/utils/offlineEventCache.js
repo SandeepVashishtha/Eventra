@@ -14,8 +14,8 @@ const EVENT_DETAILS_CACHE_KEY = "eventra_cached_event_details";
 // Event detail: 6 hours  — individual events can be edited or cancelled
 //               more frequently (capacity, schedule changes).
 // ---------------------------------------------------------------------------
-export const EVENTS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;  // 24 hours
-export const DETAIL_CACHE_TTL_MS =  6 * 60 * 60 * 1000;  //  6 hours
+export const EVENTS_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+export const DETAIL_CACHE_TTL_MS = 6 * 60 * 60 * 1000; //  6 hours
 
 const readJson = (key, fallback) => {
   try {
@@ -66,7 +66,11 @@ export const getCachedEvents = () => {
     return null;
   }
   if (cacheAgeMs(cached.cachedAt) > EVENTS_CACHE_TTL_MS) {
-    try { localStorage.removeItem(EVENTS_CACHE_KEY); } catch { /* non-fatal */ }
+    try {
+      localStorage.removeItem(EVENTS_CACHE_KEY);
+    } catch {
+      /* non-fatal */
+    }
     return null;
   }
   return cached;

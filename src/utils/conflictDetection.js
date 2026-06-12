@@ -160,9 +160,9 @@ export const findConflictingEvents = (
   const tz = timezone || getUserTimezone();
 
   return registeredEvents
-    .filter(Boolean)                           // drop null/undefined registration entries
+    .filter(Boolean) // drop null/undefined registration entries
     .map((reg) => reg.event || reg)
-    .filter(Boolean)                           // drop registrations whose .event is also null
+    .filter(Boolean) // drop registrations whose .event is also null
     .filter((event) => !newEvent.id || !event.id || event.id !== newEvent.id)
     .filter((event) => doEventsOverlap(newEvent, event, fallbackDuration, tz));
 };
@@ -223,12 +223,7 @@ export const suggestAlternativeEvents = (
 
   // Keep only events that don't conflict with existing registrations
   const nonConflictingEvents = availableEvents.filter((event) => {
-    const { hasConflict } = checkRegistrationConflict(
-      event,
-      safeRegistered,
-      fallbackDuration,
-      tz
-    );
+    const { hasConflict } = checkRegistrationConflict(event, safeRegistered, fallbackDuration, tz);
     return !hasConflict;
   });
 

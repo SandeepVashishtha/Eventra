@@ -99,9 +99,7 @@ export const writeNotificationPreferences = (preferences) => {
   if (typeof window === "undefined") return preferences;
   const normalized = normalizeNotificationPreferences(preferences);
   window.localStorage.setItem(NOTIFICATION_PREFERENCES_KEY, JSON.stringify(normalized));
-  window.dispatchEvent(
-    new CustomEvent("eventra-notification-preferences", { detail: normalized })
-  );
+  window.dispatchEvent(new CustomEvent("eventra-notification-preferences", { detail: normalized }));
   return normalized;
 };
 
@@ -112,7 +110,9 @@ export const shouldDeliverNotification = (notification, preferences, channel) =>
 };
 
 export const getNotificationTitle = (notification = {}) =>
-  notification.title || notification.heading || NOTIFICATION_CATEGORIES[getNotificationCategory(notification)].label;
+  notification.title ||
+  notification.heading ||
+  NOTIFICATION_CATEGORIES[getNotificationCategory(notification)].label;
 
 export const getNotificationMessage = (notification = {}) =>
   notification.message || notification.body || notification.description || "You have a new update.";

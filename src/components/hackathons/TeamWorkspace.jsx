@@ -81,10 +81,7 @@ const TeamWorkspace = () => {
             ]);
           }
         } catch (err) {
-          setPollingLogs((prev) => [
-            ...prev,
-            `[HTTP-Poll] Fetch network error: ${err.message}`,
-          ]);
+          setPollingLogs((prev) => [...prev, `[HTTP-Poll] Fetch network error: ${err.message}`]);
         }
       };
 
@@ -321,11 +318,11 @@ const TeamWorkspace = () => {
   };
 
   return (
-    <div className="bg-[#0b0c16] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative text-white">
+    <div className="relative flex flex-col overflow-hidden rounded-3xl border border-slate-800 bg-[#0b0c16] text-white shadow-2xl">
       {/* Workspace Header Panel */}
-      <div className="bg-slate-900/80 px-6 py-4 border-b border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-4 z-10">
+      <div className="z-10 flex flex-col gap-4 border-b border-slate-800 bg-slate-900/80 px-6 py-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+          <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-3 text-indigo-400">
             <Users size={20} className="animate-pulse" />
           </div>
           <div>
@@ -333,11 +330,11 @@ const TeamWorkspace = () => {
               <h2 className="text-lg font-black tracking-tight">
                 Active Hacking Collaboration Suite
               </h2>
-              <span className="px-2 py-0.5 text-[9px] font-black tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded uppercase">
+              <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black tracking-widest text-emerald-400 uppercase">
                 Active Room
               </span>
             </div>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="mt-0.5 text-xs text-gray-400">
               Manage tasks, share announcements, brainstorm on the canvas, and chat in real-time.
             </p>
           </div>
@@ -346,20 +343,20 @@ const TeamWorkspace = () => {
         {/* Real-time Connection status Pill */}
         <div className="flex items-center gap-3 self-start md:self-center">
           {connectionStatus === "connecting" && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/25 rounded-full text-xs text-amber-400 font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-xs font-bold tracking-wider text-amber-400 uppercase">
               <RefreshCw size={12} className="animate-spin" />
               <span>Connecting Stream...</span>
             </div>
           )}
           {connectionStatus === "sse" && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/25 rounded-full text-xs text-emerald-400 font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-bold tracking-wider text-emerald-400 uppercase">
               <Sparkles size={12} />
               <span>SSE Realtime Stream</span>
             </div>
           )}
           {connectionStatus === "polling_fallback" && (
             <div
-              className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/25 rounded-full text-xs text-indigo-400 font-bold uppercase tracking-wider"
+              className="flex items-center gap-1.5 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-3 py-1 text-xs font-bold tracking-wider text-indigo-400 uppercase"
               title="Server Sent Events failed. Polling actively every 4s."
             >
               <AlertTriangle size={12} className="text-indigo-400" />
@@ -370,7 +367,7 @@ const TeamWorkspace = () => {
           {/* Chat Drawer Toggle */}
           <button
             onClick={() => setIsChatOpen(true)}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-500/10 cursor-pointer"
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-500/10 transition hover:bg-indigo-700"
           >
             <MessageSquare size={14} />
             <span>Team Chat ({chatHistory.length})</span>
@@ -379,12 +376,12 @@ const TeamWorkspace = () => {
       </div>
 
       {/* Tabs Subheader */}
-      <div className="bg-slate-950 border-b border-slate-800/80 px-6 py-1 flex items-center gap-4">
+      <div className="flex items-center gap-4 border-b border-slate-800/80 bg-slate-950 px-6 py-1">
         <button
           onClick={() => setActiveTab("dashboard")}
-          className={`py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+          className={`cursor-pointer border-b-2 py-3 text-xs font-black tracking-wider uppercase transition-all ${
             activeTab === "dashboard"
-              ? "border-indigo-500 text-indigo-400 font-extrabold"
+              ? "border-indigo-500 font-extrabold text-indigo-400"
               : "border-transparent text-gray-500 hover:text-white"
           }`}
         >
@@ -392,9 +389,9 @@ const TeamWorkspace = () => {
         </button>
         <button
           onClick={() => setActiveTab("whiteboard")}
-          className={`py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+          className={`cursor-pointer border-b-2 py-3 text-xs font-black tracking-wider uppercase transition-all ${
             activeTab === "whiteboard"
-              ? "border-indigo-500 text-indigo-400 font-extrabold"
+              ? "border-indigo-500 font-extrabold text-indigo-400"
               : "border-transparent text-gray-500 hover:text-white"
           }`}
         >
@@ -405,21 +402,21 @@ const TeamWorkspace = () => {
       {/* Main Workspace Body */}
       <div className="flex-1 p-6">
         {activeTab === "dashboard" ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3">
             {/* Left/Middle Column: Operational Checklist & Logs */}
-            <div className="lg:col-span-2 space-y-6 flex flex-col justify-between">
+            <div className="flex flex-col justify-between space-y-6 lg:col-span-2">
               {/* Checklist */}
-              <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 md:p-6 shadow-sm">
-                <h3 className="text-sm font-extrabold text-gray-300 uppercase tracking-widest flex items-center gap-2 mb-4">
+              <div className="rounded-3xl border border-slate-800/60 bg-slate-900/40 p-5 shadow-sm md:p-6">
+                <h3 className="mb-4 flex items-center gap-2 text-sm font-extrabold tracking-widest text-gray-300 uppercase">
                   <CheckCircle2 size={16} className="text-indigo-400" />
                   <span>Interactive Phase Milestone Checklist</span>
                 </h3>
 
                 {/* Add task form */}
-                <form onSubmit={handleAddTask} className="flex gap-2 mb-5">
+                <form onSubmit={handleAddTask} className="mb-5 flex gap-2">
                   <input
                     type="text"
-                    className="flex-1 bg-slate-950 border border-slate-800 hover:border-slate-700 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-all placeholder-slate-500"
+                    className="flex-1 rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs text-white placeholder-slate-500 transition-all outline-none hover:border-slate-700 focus:border-indigo-500"
                     placeholder="Create a new collaborative team task..."
                     value={newTaskText}
                     onChange={(e) => setNewTaskText(e.target.value)}
@@ -427,18 +424,18 @@ const TeamWorkspace = () => {
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all shrink-0 cursor-pointer"
+                    className="shrink-0 cursor-pointer rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold tracking-wider text-white uppercase transition-all hover:bg-indigo-700"
                   >
                     Add Milestone
                   </button>
                 </form>
 
                 {/* Task list render */}
-                <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+                <div className="max-h-[220px] space-y-2.5 overflow-y-auto pr-1">
                   {tasks.map((task) => (
                     <div
                       key={task.id}
-                      className={`flex items-center justify-between p-3.5 bg-slate-950 border rounded-2xl transition-all ${
+                      className={`flex items-center justify-between rounded-2xl border bg-slate-950 p-3.5 transition-all ${
                         task.done
                           ? "border-emerald-500/10 bg-emerald-500/[0.01] text-emerald-400"
                           : "border-slate-800 text-gray-300 hover:border-slate-700"
@@ -446,20 +443,20 @@ const TeamWorkspace = () => {
                     >
                       <button
                         onClick={() => handleToggleTask(task.id)}
-                        className="flex items-start gap-3 flex-1 text-left cursor-pointer"
+                        className="flex flex-1 cursor-pointer items-start gap-3 text-left"
                       >
                         <div className="mt-0.5 shrink-0">
                           {task.done ? (
                             <CheckCircle2
                               size={18}
-                              className="text-emerald-500 fill-emerald-950/30"
+                              className="fill-emerald-950/30 text-emerald-500"
                             />
                           ) : (
-                            <div className="w-[18px] h-[18px] rounded-full border-2 border-slate-700 hover:border-indigo-500 transition-colors" />
+                            <div className="h-[18px] w-[18px] rounded-full border-2 border-slate-700 transition-colors hover:border-indigo-500" />
                           )}
                         </div>
                         <span
-                          className={`text-xs font-semibold leading-relaxed ${task.done ? "line-through opacity-50" : ""}`}
+                          className={`text-xs leading-relaxed font-semibold ${task.done ? "line-through opacity-50" : ""}`}
                         >
                           {task.text}
                         </span>
@@ -467,7 +464,7 @@ const TeamWorkspace = () => {
 
                       <button
                         onClick={() => handleDeleteTask(task.id)}
-                        className="p-1 text-gray-500 hover:text-red-400 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
+                        className="cursor-pointer rounded-lg p-1 text-gray-500 transition-all hover:bg-white/5 hover:text-red-400"
                         title="Delete Milestone"
                       >
                         <Trash2 size={14} />
@@ -479,17 +476,17 @@ const TeamWorkspace = () => {
 
               {/* Real-time Fallback Logs Console */}
               {connectionStatus === "polling_fallback" && pollingLogs.length > 0 && (
-                <div className="bg-black/90 border border-slate-800 rounded-2xl p-4 mt-6">
-                  <div className="text-[10px] font-bold tracking-widest text-indigo-400 uppercase mb-2 flex items-center justify-between">
+                <div className="mt-6 rounded-2xl border border-slate-800 bg-black/90 p-4">
+                  <div className="mb-2 flex items-center justify-between text-[10px] font-bold tracking-widest text-indigo-400 uppercase">
                     <span>Synchronizer Fallback Console Logs</span>
-                    <span className="text-gray-600 font-mono">
+                    <span className="font-mono text-gray-600">
                       Status: Connected via short-polling
                     </span>
                   </div>
-                  <div className="font-mono text-[9px] text-gray-500 space-y-1 max-h-24 overflow-y-auto pr-1">
+                  <div className="max-h-24 space-y-1 overflow-y-auto pr-1 font-mono text-[9px] text-gray-500">
                     {pollingLogs.slice(-6).map((log, i) => (
                       <div key={i} className="flex gap-2">
-                        <span className="text-indigo-600/70 shrink-0">⚡</span>
+                        <span className="shrink-0 text-indigo-600/70">⚡</span>
                         <span className="break-all">{log}</span>
                       </div>
                     ))}
@@ -501,25 +498,25 @@ const TeamWorkspace = () => {
             {/* Right Column: Pinned Announcements & Team info */}
             <div className="space-y-6">
               {/* Pins announcements list */}
-              <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 md:p-6 shadow-sm">
-                <h3 className="text-sm font-extrabold text-gray-300 uppercase tracking-widest flex items-center gap-2 mb-4">
+              <div className="rounded-3xl border border-slate-800/60 bg-slate-900/40 p-5 shadow-sm md:p-6">
+                <h3 className="mb-4 flex items-center gap-2 text-sm font-extrabold tracking-widest text-gray-300 uppercase">
                   <Pin size={16} className="text-indigo-400" />
                   <span>Pinned Team Announcements</span>
                 </h3>
 
                 {/* Add Pin Form */}
-                <form onSubmit={handleAddPin} className="space-y-2 mb-4">
+                <form onSubmit={handleAddPin} className="mb-4 space-y-2">
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      className="flex-1 bg-slate-950 border border-slate-800 hover:border-slate-700 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none transition-all placeholder-slate-500"
+                      className="flex-1 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-500 transition-all outline-none hover:border-slate-700 focus:border-indigo-500"
                       placeholder="Pin an update to the dashboard..."
                       value={newPinText}
                       onChange={(e) => setNewPinText(e.target.value)}
                       maxLength={120}
                     />
                     <select
-                      className="bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-xs text-indigo-400 outline-none cursor-pointer"
+                      className="cursor-pointer rounded-xl border border-slate-800 bg-slate-950 px-2 py-2 text-xs text-indigo-400 outline-none"
                       value={newPinTag}
                       onChange={(e) => setNewPinTag(e.target.value)}
                     >
@@ -530,35 +527,35 @@ const TeamWorkspace = () => {
                   </div>
                   <button
                     type="submit"
-                    className="w-full py-2 bg-indigo-650/15 hover:bg-indigo-650/30 border border-indigo-500/20 text-indigo-400 font-bold rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer"
+                    className="bg-indigo-650/15 hover:bg-indigo-650/30 w-full cursor-pointer rounded-xl border border-indigo-500/20 py-2 text-xs font-bold tracking-wider text-indigo-400 uppercase transition-all"
                   >
                     Pin Announcement
                   </button>
                 </form>
 
                 {/* Pins render */}
-                <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                <div className="max-h-[220px] space-y-3 overflow-y-auto pr-1">
                   {pins.map((pin) => (
                     <div
                       key={pin.id}
-                      className="p-3.5 bg-slate-950 border border-slate-800/80 rounded-2xl flex flex-col relative group"
+                      className="group relative flex flex-col rounded-2xl border border-slate-800/80 bg-slate-950 p-3.5"
                     >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="px-2 py-0.5 text-[8px] font-black tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded uppercase">
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <span className="rounded border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-indigo-400 uppercase">
                           {pin.tag}
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-[9px] text-gray-600">{pin.time}</span>
                           <button
                             onClick={() => handleDeletePin(pin.id)}
-                            className="p-0.5 text-gray-600 hover:text-red-400 rounded transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                            className="cursor-pointer rounded p-0.5 text-gray-600 opacity-0 transition-all group-hover:opacity-100 hover:text-red-400"
                             title="Unpin Announcement"
                           >
                             <X size={10} />
                           </button>
                         </div>
                       </div>
-                      <p className="text-xs font-medium text-gray-300 leading-relaxed">
+                      <p className="text-xs leading-relaxed font-medium text-gray-300">
                         {pin.text}
                       </p>
                     </div>
@@ -567,18 +564,18 @@ const TeamWorkspace = () => {
               </div>
 
               {/* Assembled Team Members */}
-              <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 shadow-sm">
-                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">
+              <div className="rounded-3xl border border-slate-800/60 bg-slate-900/40 p-5 shadow-sm">
+                <h4 className="mb-3 text-xs font-black tracking-widest text-gray-500 uppercase">
                   Hackathon Squad
                 </h4>
                 <div className="space-y-2">
                   {TEAM_MEMBERS.map((member, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between p-2 bg-slate-950/60 rounded-xl border border-white/[0.02]"
+                      className="flex items-center justify-between rounded-xl border border-white/[0.02] bg-slate-950/60 p-2"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-slate-900 border border-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-400">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-indigo-500/20 bg-slate-900 text-xs font-bold text-indigo-400">
                           <User size={12} />
                         </div>
                         <div>
@@ -588,7 +585,7 @@ const TeamWorkspace = () => {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`w-1.5 h-1.5 rounded-full ${member.status === "online" ? "bg-emerald-500" : "bg-amber-500"}`}
+                          className={`h-1.5 w-1.5 rounded-full ${member.status === "online" ? "bg-emerald-500" : "bg-amber-500"}`}
                         />
                         <span className="text-[9px] text-gray-500 capitalize">{member.status}</span>
                       </div>
@@ -600,7 +597,7 @@ const TeamWorkspace = () => {
           </div>
         ) : (
           /* Interactive Whiteboard Tab */
-          <div className="h-[550px] relative">
+          <div className="relative h-[550px]">
             <InteractiveWhiteboard />
           </div>
         )}
@@ -608,21 +605,21 @@ const TeamWorkspace = () => {
 
       {/* Slide-out Team Chat Drawer (Framer-Motion style CSS) */}
       {isChatOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm transition-all duration-350 animate-fade-in">
+        <div className="animate-fade-in fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm transition-all duration-350">
           {/* Backdrop closer */}
           <div className="absolute inset-0 cursor-default" onClick={() => setIsChatOpen(false)} />
 
           {/* Drawer Panel Container */}
-          <div className="relative w-full max-w-md h-full bg-[#07080e] border-l border-slate-800 shadow-2xl flex flex-col z-10 animate-slide-in">
+          <div className="animate-slide-in relative z-10 flex h-full w-full max-w-md flex-col border-l border-slate-800 bg-[#07080e] shadow-2xl">
             {/* Drawer Header */}
-            <div className="px-6 py-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-6 py-4">
               <div className="flex items-center gap-2.5">
                 <MessageSquare className="text-indigo-400" size={18} />
                 <div>
                   <h3 className="text-sm font-black text-white">Live Team Channel</h3>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                    <span className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">
+                  <div className="mt-0.5 flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 animate-ping rounded-full bg-emerald-500" />
+                    <span className="text-[9px] font-bold tracking-widest text-gray-500 uppercase">
                       SSE Fallback Enabled
                     </span>
                   </div>
@@ -630,27 +627,27 @@ const TeamWorkspace = () => {
               </div>
               <button
                 onClick={() => setIsChatOpen(false)}
-                className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer bg-transparent border-none"
+                className="cursor-pointer rounded-full border-none bg-transparent p-2 text-gray-400 transition-all hover:bg-white/10 hover:text-white"
               >
                 <X size={16} />
               </button>
             </div>
 
             {/* Chat History Panel */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 space-y-4 overflow-y-auto p-6">
               {chatHistory.map((msg, i) => {
                 const isMe = msg.sender.includes("You");
                 return (
                   <div
                     key={i}
-                    className={`flex gap-3 max-w-[85%] ${isMe ? "ml-auto flex-row-reverse" : ""}`}
+                    className={`flex max-w-[85%] gap-3 ${isMe ? "ml-auto flex-row-reverse" : ""}`}
                   >
                     {/* Member Avatar */}
                     <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 border ${
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
                         isMe
-                          ? "bg-purple-950 border-purple-500/20 text-purple-400"
-                          : "bg-indigo-950 border-indigo-500/20 text-indigo-400"
+                          ? "border-purple-500/20 bg-purple-950 text-purple-400"
+                          : "border-indigo-500/20 bg-indigo-950 text-indigo-400"
                       }`}
                     >
                       <User size={12} />
@@ -658,19 +655,19 @@ const TeamWorkspace = () => {
                     {/* Speech Balloon */}
                     <div className="space-y-1">
                       {!isMe && (
-                        <div className="text-[9px] text-gray-500 font-bold ml-1">{msg.sender}</div>
+                        <div className="ml-1 text-[9px] font-bold text-gray-500">{msg.sender}</div>
                       )}
                       <div
-                        className={`px-3 py-2 rounded-2xl text-xs leading-relaxed ${
+                        className={`rounded-2xl px-3 py-2 text-xs leading-relaxed ${
                           isMe
-                            ? "bg-indigo-650 text-white rounded-tr-none"
-                            : "bg-slate-900 text-gray-250 border border-slate-800/80 rounded-tl-none"
+                            ? "bg-indigo-650 rounded-tr-none text-white"
+                            : "text-gray-250 rounded-tl-none border border-slate-800/80 bg-slate-900"
                         }`}
                       >
                         {msg.text}
                       </div>
                       <div
-                        className={`text-[8px] text-gray-600 ${isMe ? "text-right mr-1" : "ml-1"}`}
+                        className={`text-[8px] text-gray-600 ${isMe ? "mr-1 text-right" : "ml-1"}`}
                       >
                         {msg.time}
                       </div>
@@ -684,18 +681,18 @@ const TeamWorkspace = () => {
             {/* Chat Send Form */}
             <form
               onSubmit={handleSendMessage}
-              className="p-4 bg-slate-900 border-t border-slate-800 flex gap-2"
+              className="flex gap-2 border-t border-slate-800 bg-slate-900 p-4"
             >
               <input
                 type="text"
-                className="flex-1 bg-slate-950 border border-slate-800 hover:border-slate-700 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition-all placeholder-slate-500"
+                className="flex-1 rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs text-white placeholder-slate-500 transition-all outline-none hover:border-slate-700 focus:border-indigo-500"
                 placeholder="Type a team message..."
                 value={chatMessage}
                 onChange={(e) => setChatMessage(e.target.value)}
               />
               <button
                 type="submit"
-                className="p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shrink-0 cursor-pointer flex items-center justify-center"
+                className="flex shrink-0 cursor-pointer items-center justify-center rounded-xl bg-indigo-600 p-2.5 text-white transition-all hover:bg-indigo-700"
                 aria-label="Send Message"
               >
                 <Send size={14} />

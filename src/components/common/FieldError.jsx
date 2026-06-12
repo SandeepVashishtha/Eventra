@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const FieldError = ({ id, message }) => (
   <AnimatePresence>
@@ -11,7 +11,7 @@ const FieldError = ({ id, message }) => (
         exit={{ opacity: 0, y: -6 }}
         transition={{ duration: 0.15 }}
         role="alert"
-        className="text-red-500 text-xs mt-1 flex items-center gap-1"
+        className="mt-1 flex items-center gap-1 text-xs text-red-500"
       >
         {message}
       </motion.p>

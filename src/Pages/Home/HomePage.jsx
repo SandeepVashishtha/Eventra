@@ -20,13 +20,16 @@ const HomePage = () => {
   useDocumentTitle("Home | Eventra");
 
   return (
-    <main className="min-h-screen bg-bg">
+    <main className="bg-bg min-h-screen">
       {/* ─── SEO & SOCIAL META TAGS ─────────────────────────────────────── */}
       <Helmet>
         {/* Primary Meta Tags */}
         <title>{SITE_TITLE}</title>
         <meta name="description" content={SITE_DESCRIPTION} />
-        <meta name="keywords" content="tech events, hackathons, workshops, developer community, open source" />
+        <meta
+          name="keywords"
+          content="tech events, hackathons, workshops, developer community, open source"
+        />
         <meta name="author" content="Eventra Team" />
         <link rel="canonical" href={SITE_URL} />
 

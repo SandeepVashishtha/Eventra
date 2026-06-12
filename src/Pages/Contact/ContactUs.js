@@ -30,34 +30,38 @@ const FloatingField = ({
   return (
     <div className="space-y-1">
       <div
-        className={`relative rounded-2xl border bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm transition-all duration-300 ${error
+        className={`relative rounded-2xl border bg-white/80 backdrop-blur-sm transition-all duration-300 dark:bg-slate-900/70 ${
+          error
             ? "border-red-400 bg-red-50/40 dark:border-red-500 dark:bg-red-950/20"
             : hasValue && !isFocused
               ? "border-green-400 dark:border-green-500"
               : isActive
-                ? "border-indigo-500 dark:border-indigo-400 shadow-[0_0_0_4px_rgba(99,102,241,0.16)] dark:shadow-[0_0_0_4px_rgba(99,102,241,0.22)]"
-                : "border-slate-200/90 dark:border-slate-700/90 hover:border-indigo-300 dark:hover:border-indigo-500/70"
-          }`}
+                ? "border-indigo-500 shadow-[0_0_0_4px_rgba(99,102,241,0.16)] dark:border-indigo-400 dark:shadow-[0_0_0_4px_rgba(99,102,241,0.22)]"
+                : "border-slate-200/90 hover:border-indigo-300 dark:border-slate-700/90 dark:hover:border-indigo-500/70"
+        }`}
       >
         {Icon && (
           <Icon
-            className={`pointer-events-none absolute left-4 h-5 w-5 text-slate-400 transition-colors duration-300 ${isTextArea ? "top-5" : "top-1/2 -translate-y-1/2"
-              } ${error
+            className={`pointer-events-none absolute left-4 h-5 w-5 text-slate-400 transition-colors duration-300 ${
+              isTextArea ? "top-5" : "top-1/2 -translate-y-1/2"
+            } ${
+              error
                 ? "text-red-500 dark:text-red-400"
                 : isActive
                   ? "text-indigo-500 dark:text-indigo-300"
                   : ""
-              }`}
+            }`}
           />
         )}
         <label
           htmlFor={id}
-          className={`pointer-events-none absolute z-10 origin-left transition-all duration-300 ${isActive
-              ? "left-3 -top-2 rounded-md bg-white/95 px-2 text-xs font-semibold text-indigo-600 dark:bg-gray-900/95 dark:text-indigo-300"
+          className={`pointer-events-none absolute z-10 origin-left transition-all duration-300 ${
+            isActive
+              ? "-top-2 left-3 rounded-md bg-white/95 px-2 text-xs font-semibold text-indigo-600 dark:bg-gray-900/95 dark:text-indigo-300"
               : isTextArea
-                ? "left-11 top-5 text-sm text-slate-500 dark:text-slate-400"
-                : "left-11 top-1/2 -translate-y-1/2 text-sm text-slate-500 dark:text-slate-400"
-            } ${error ? "text-red-500 dark:text-red-400" : ""}`}
+                ? "top-5 left-11 text-sm text-slate-500 dark:text-slate-400"
+                : "top-1/2 left-11 -translate-y-1/2 text-sm text-slate-500 dark:text-slate-400"
+          } ${error ? "text-red-500 dark:text-red-400" : ""}`}
         >
           {label} {required && <span className="text-red-500">*</span>}
         </label>
@@ -75,10 +79,11 @@ const FloatingField = ({
           autoComplete={autoComplete}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${id}-error` : undefined}
-          className={`block w-full appearance-none border-0 bg-transparent text-slate-900 outline-none shadow-none ring-0 transition-colors duration-200 placeholder-transparent focus:border-0 focus:outline-none focus:ring-0 dark:text-slate-100 ${isTextArea
-              ? "min-h-[152px] resize-y pl-11 pr-4 pt-7 pb-4 leading-relaxed"
-              : "h-14 pl-11 pr-4 pt-5 pb-2"
-            }`}
+          className={`block w-full appearance-none border-0 bg-transparent text-slate-900 placeholder-transparent shadow-none ring-0 transition-colors duration-200 outline-none focus:border-0 focus:ring-0 focus:outline-none dark:text-slate-100 ${
+            isTextArea
+              ? "min-h-[152px] resize-y pt-7 pr-4 pb-4 pl-11 leading-relaxed"
+              : "h-14 pt-5 pr-4 pb-2 pl-11"
+          }`}
         />
       </div>
       {error && (
@@ -86,7 +91,7 @@ const FloatingField = ({
           id={`${id}-error`}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="ml-1 mt-1 flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400"
+          className="mt-1 ml-1 flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400"
         >
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
@@ -190,13 +195,13 @@ const ContactUsInner = () => {
 
     // Simulate API call
     try {
-  await apiUtils.post(API_ENDPOINTS.CONTACT, {
-    name: formData.name,
-    email: formData.email,
-    subject: formData.subject,
-    message: formData.message,
-  });
-  toast.success(t("contactUs.toastSuccess"));
+      await apiUtils.post(API_ENDPOINTS.CONTACT, {
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      });
+      toast.success(t("contactUs.toastSuccess"));
 
       // Reset form
       setFormData({
@@ -213,8 +218,8 @@ const ContactUsInner = () => {
   };
 
   return (
-    <div className="pastel-grid-bg min-h-screen bg-white bg-gradient-to-r from-slate-900 to-black hover:from-black hover:to-slate-800 shadow-xl shadow-black/20 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="max-w-4xl w-full mx-auto">
+    <div className="pastel-grid-bg relative flex min-h-screen items-center justify-center overflow-hidden bg-white bg-gradient-to-r from-slate-900 to-black px-4 py-12 shadow-xl shadow-black/20 hover:from-black hover:to-slate-800 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -224,36 +229,36 @@ const ContactUsInner = () => {
           data-aos-duration="1000"
           data-aos-once="true"
           // UPDATED: Card background and border
-          className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
+          className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900"
         >
-          <div className="md:flex gap-0">
+          <div className="gap-0 md:flex">
             <div
-              className="md:w-3/5 lg:w-2/5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
+              className="flex flex-col justify-between rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 p-12 text-white shadow-xl backdrop-blur-lg md:w-3/5 lg:w-2/5"
               data-aos="fade-right"
               data-aos-duration="1000"
               data-aos-anchor=".ContactUs"
             >
               <div>
                 <h2
-                  className="text-4xl font-extrabold mb-6 tracking-wide"
+                  className="mb-6 text-4xl font-extrabold tracking-wide"
                   style={{ fontFamily: '"Anton", sans-serif' }}
                 >
                   {t("contactUs.heroHeading")}
                 </h2>
-                <p className="mb-8 text-lg text-slate-100/95 leading-relaxed">
+                <p className="mb-8 text-lg leading-relaxed text-slate-100/95">
                   {t("contactUs.heroDescription")}
                 </p>
 
                 <div className="space-y-6">
                   {/* Email */}
                   <div
-                    className="flex items-start gap-4 p-4 bg-white/12 rounded-2xl border border-white/15 shadow-lg shadow-slate-950/20 transition duration-300 ease-in-out hover:bg-white/18 sm:items-center"
+                    className="flex items-start gap-4 rounded-2xl border border-white/15 bg-white/12 p-4 shadow-lg shadow-slate-950/20 transition duration-300 ease-in-out hover:bg-white/18 sm:items-center"
                     data-aos="zoom-in"
                     data-aos-delay="200"
                   >
-                    <div className="flex items-center justify-center rounded-full bg-white/20 p-3 shrink-0">
+                    <div className="flex shrink-0 items-center justify-center rounded-full bg-white/20 p-3">
                       <svg
-                        className="w-7 h-7 text-white"
+                        className="h-7 w-7 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -267,9 +272,9 @@ const ContactUsInner = () => {
                         ></path>
                       </svg>
                     </div>
-                    <div className="min-w-0 overflow-hidden break-words max-w-full">
+                    <div className="max-w-full min-w-0 overflow-hidden break-words">
                       <p className="font-semibold text-white">{t("contactUs.infoEmailTitle")}</p>
-                      <p className="text-sm font-medium text-slate-100/90 break-all max-w-full leading-snug">
+                      <p className="max-w-full text-sm leading-snug font-medium break-all text-slate-100/90">
                         {t("contactUs.infoEmailValue")}
                       </p>
                     </div>
@@ -277,16 +282,18 @@ const ContactUsInner = () => {
 
                   {/* Quick Response */}
                   <div
-                    className="flex items-start gap-4 p-4 bg-white/12 rounded-2xl border border-white/15 shadow-lg shadow-slate-950/20 transition duration-300 ease-in-out hover:bg-white/18 sm:items-center"
+                    className="flex items-start gap-4 rounded-2xl border border-white/15 bg-white/12 p-4 shadow-lg shadow-slate-950/20 transition duration-300 ease-in-out hover:bg-white/18 sm:items-center"
                     data-aos="zoom-in"
                     data-aos-delay="300"
                   >
-                    <div className="flex items-center justify-center rounded-full bg-white/20 p-3 shrink-0">
-                      <MessageSquare className="w-7 h-7 text-white" aria-hidden="true" />
+                    <div className="flex shrink-0 items-center justify-center rounded-full bg-white/20 p-3">
+                      <MessageSquare className="h-7 w-7 text-white" aria-hidden="true" />
                     </div>
-                    <div className="min-w-0 overflow-hidden max-w-full">
-                      <p className="font-semibold text-white">{t("contactUs.infoQuickResponseTitle")}</p>
-                      <p className="text-sm text-slate-100/90 leading-snug">
+                    <div className="max-w-full min-w-0 overflow-hidden">
+                      <p className="font-semibold text-white">
+                        {t("contactUs.infoQuickResponseTitle")}
+                      </p>
+                      <p className="text-sm leading-snug text-slate-100/90">
                         {t("contactUs.infoQuickResponseDescription")}
                       </p>
                     </div>
@@ -294,18 +301,18 @@ const ContactUsInner = () => {
 
                   {/* Multiple Channels */}
                   <div
-                    className="flex items-start gap-4 p-4 bg-white/12 rounded-2xl border border-white/15 shadow-lg shadow-slate-950/20 transition duration-300 ease-in-out hover:bg-white/18 sm:items-center"
+                    className="flex items-start gap-4 rounded-2xl border border-white/15 bg-white/12 p-4 shadow-lg shadow-slate-950/20 transition duration-300 ease-in-out hover:bg-white/18 sm:items-center"
                     data-aos="zoom-in"
                     data-aos-delay="400"
                   >
-                    <div className="flex items-center justify-center rounded-full bg-white/20 p-3 shrink-0">
-                      <Star className="w-7 h-7 text-white" />
+                    <div className="flex shrink-0 items-center justify-center rounded-full bg-white/20 p-3">
+                      <Star className="h-7 w-7 text-white" />
                     </div>
-                    <div className="min-w-0 overflow-hidden max-w-full">
+                    <div className="max-w-full min-w-0 overflow-hidden">
                       <p className="font-semibold text-white">
                         {t("contactUs.infoMultipleChannelsTitle")}
                       </p>
-                      <p className="text-sm text-slate-100/90 leading-snug">
+                      <p className="text-sm leading-snug text-slate-100/90">
                         {t("contactUs.infoMultipleChannelsDescription")}
                       </p>
                     </div>
@@ -315,7 +322,7 @@ const ContactUsInner = () => {
             </div>
 
             <div
-              className="md:w-3/5 p-6 sm:p-8 lg:p-10"
+              className="p-6 sm:p-8 md:w-3/5 lg:p-10"
               // AOS Implementation for form
               data-aos="fade-left"
               data-aos-duration="1000"
@@ -336,7 +343,7 @@ const ContactUsInner = () => {
               <form
                 ref={formRef}
                 onSubmit={handleSubmit}
-                className="space-y-5 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-800/25 sm:p-6"
+                className="space-y-5 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 shadow-sm sm:p-6 dark:border-slate-700/70 dark:bg-slate-800/25"
               >
                 <div className="space-y-5">
                   <FloatingField
@@ -389,11 +396,11 @@ const ContactUsInner = () => {
                     whileTap={{ scale: 0.98 }}
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full overflow-hidden rounded-xl border border-slate-300/25 bg-gradient-to-r from-slate-800 via-slate-900 to-indigo-900 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/35 transition-all duration-300 hover:from-slate-700 hover:via-slate-800 hover:to-indigo-800 hover:shadow-slate-900/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-80 dark:border-slate-600/40 dark:focus-visible:ring-offset-gray-900"
+                    className="w-full overflow-hidden rounded-xl border border-slate-300/25 bg-gradient-to-r from-slate-800 via-slate-900 to-indigo-900 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/35 transition-all duration-300 hover:from-slate-700 hover:via-slate-800 hover:to-indigo-800 hover:shadow-slate-900/50 focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-80 dark:border-slate-600/40 dark:focus-visible:ring-offset-gray-900"
                   >
                     {isSubmitting ? (
                       <svg
-                        className="animate-spin h-5 w-5 text-white mx-auto"
+                        className="mx-auto h-5 w-5 animate-spin text-white"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"

@@ -2,7 +2,7 @@
  * @fileoverview useFocusTrap - Accessible focus trap hook for dialogs and drawers
  * @module hooks/useFocusTrap
  */
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from "react";
 
 /**
  * useFocusTrap
@@ -25,22 +25,22 @@ import { useEffect, useRef, useCallback } from 'react';
  * return <div ref={containerRef} role="dialog" aria-modal="true"> … </div>;
  */
 const FOCUSABLE_SELECTORS = [
-  'a[href]',
-  'area[href]',
+  "a[href]",
+  "area[href]",
   'input:not([disabled]):not([type="hidden"])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  'button:not([disabled])',
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "button:not([disabled])",
   '[tabindex]:not([tabindex="-1"])',
-  'details > summary',
-  'audio[controls]',
-  'video[controls]',
-].join(', ');
+  "details > summary",
+  "audio[controls]",
+  "video[controls]",
+].join(", ");
 
 function getFocusableElements(container) {
   if (!container) return [];
   return Array.from(container.querySelectorAll(FOCUSABLE_SELECTORS)).filter(
-    (el) => !el.closest('[inert]') && getComputedStyle(el).display !== 'none'
+    (el) => !el.closest("[inert]") && getComputedStyle(el).display !== "none"
   );
 }
 
@@ -54,15 +54,15 @@ export function useFocusTrap(isActive, onEscape) {
     (event) => {
       if (!isActive || !containerRef.current) return;
 
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         event.preventDefault();
-        if (typeof onEscape === 'function') {
+        if (typeof onEscape === "function") {
           onEscape();
         }
         return;
       }
 
-      if (event.key !== 'Tab') return;
+      if (event.key !== "Tab") return;
 
       const focusableEls = getFocusableElements(containerRef.current);
       if (focusableEls.length === 0) {
@@ -107,15 +107,15 @@ export function useFocusTrap(isActive, onEscape) {
   }, [isActive]);
 
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
   // Restore focus when the trap deactivates (dialog/drawer closes).
   useEffect(() => {
     if (isActive) return;
     const el = previouslyFocusedRef.current;
-    if (el && typeof el.focus === 'function') {
+    if (el && typeof el.focus === "function") {
       // Next tick so the DOM has settled after unmounting overlay elements.
       const id = setTimeout(() => el.focus(), 0);
       return () => clearTimeout(id);

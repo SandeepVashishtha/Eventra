@@ -1,3 +1,7 @@
-import React from 'react';
-const AdminPanel = () => <div className="p-6"><h1 className="text-2xl font-bold">Admin Panel</h1></div>;
+import React from "react";
+const AdminPanel = () => (
+  <div className="p-6">
+    <h1 className="text-2xl font-bold">Admin Panel</h1>
+  </div>
+);
 export default AdminPanel;

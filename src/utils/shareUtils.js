@@ -86,7 +86,9 @@ export const generateSharingUrl = (shareData, platform) => {
       // Messenger sharing requires a Facebook App ID (app_id parameter) which
       // is not available in this client-side configuration.
       // Callers should hide or disable the Messenger share button.
-      console.warn("[shareUtils] Messenger sharing is not supported — no Facebook App ID configured.");
+      console.warn(
+        "[shareUtils] Messenger sharing is not supported — no Facebook App ID configured."
+      );
       return "";
 
     case "linkedin":
@@ -114,7 +116,9 @@ export const generateSharingUrl = (shareData, platform) => {
  */
 export const generateEventSharingData = (event, baseUrl = null) => {
   if (!event?.id) {
-    console.warn("[shareUtils] generateEventSharingData called with missing event.id — share URL cannot be constructed.");
+    console.warn(
+      "[shareUtils] generateEventSharingData called with missing event.id — share URL cannot be constructed."
+    );
     return {
       title: "",
       description: "",
@@ -192,7 +196,6 @@ export const copyToClipboard = async (text) => {
       return successful;
     }
   } catch (err) {
-     
     console.error("Failed to copy text: ", err);
     return false;
   }

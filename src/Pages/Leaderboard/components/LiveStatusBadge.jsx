@@ -28,7 +28,9 @@ export default function LiveStatusBadge({ status }) {
     <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${config.color}`}>
       <span className="relative flex h-2 w-2">
         {status === SSE_STATUS.CONNECTED && (
-          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${config.pingColor} opacity-75`} />
+          <span
+            className={`absolute inline-flex h-full w-full animate-ping rounded-full ${config.pingColor} opacity-75`}
+          />
         )}
         <span className={`relative inline-flex h-2 w-2 rounded-full ${config.dotColor}`} />
       </span>

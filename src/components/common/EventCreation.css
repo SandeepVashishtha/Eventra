@@ -2,7 +2,7 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 .dark .event-creation-container {
   background-color: #0f172a;
@@ -243,7 +243,6 @@
   background-color: #5a4fcf; /* Shade of base color for consistency */
 }
 
-
 .preview-tickets {
   margin-top: 20px;
 }
@@ -274,7 +273,6 @@
   font-size: 12px;
 }
 
-
 .location-address {
   font-size: 0.9em;
   color: #666;
@@ -301,7 +299,6 @@
 .preview-btn:hover {
   background-color: #5a4fcf;
 }
-
 
 .event-preview {
   background-color: #f8f9fa;
@@ -368,7 +365,7 @@
   border-left-color: #818cf8;
 }
 .info-item strong {
-  color: #111; 
+  color: #111;
 }
 
 .preview-tags {
@@ -385,7 +382,7 @@
 .preview-tag {
   background-color: #6c5ce7;
   color: white;
-  padding: 3px 8px; 
+  padding: 3px 8px;
   border-radius: 15px;
   font-size: 12px;
 }
@@ -455,25 +452,25 @@
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .tier-fields {
     grid-template-columns: 1fr;
   }
-  
+
   .preview-info {
     grid-template-columns: 1fr;
   }
-  
+
   .preview-actions {
     flex-direction: column;
   }
-  
+
   .ticket-preview {
     flex-direction: column;
     align-items: flex-start;
     gap: 5px;
   }
-  
+
   .event-creation-container {
     padding: 15px;
   }

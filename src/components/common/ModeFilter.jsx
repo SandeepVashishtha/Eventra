@@ -15,30 +15,26 @@ const ModeFilter = ({ modes, selectedModes, onModeChange }) => {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-        Event Mode
-      </h3>
+      <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Event Mode</h3>
       <div className="grid grid-cols-1 gap-2">
         {modes.map((mode) => (
           <button
             key={mode.id}
             onClick={() => toggleMode(mode.id)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left ${
+            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-all ${
               selectedModes.includes(mode.id)
-                ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
+                ? "border border-green-300 bg-green-100 text-green-700 dark:border-green-600 dark:bg-green-900/40 dark:text-green-300"
+                : "border border-gray-200 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
             }`}
           >
             <div
-              className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+              className={`flex h-4 w-4 items-center justify-center rounded border-2 transition-all ${
                 selectedModes.includes(mode.id)
-                  ? "bg-green-600 dark:bg-green-500 border-green-600 dark:border-green-500"
+                  ? "border-green-600 bg-green-600 dark:border-green-500 dark:bg-green-500"
                   : "border-gray-400 dark:border-gray-500"
               }`}
             >
-              {selectedModes.includes(mode.id) && (
-                <Check size={12} className="text-white" />
-              )}
+              {selectedModes.includes(mode.id) && <Check size={12} className="text-white" />}
             </div>
             <span className="flex-1">{mode.label}</span>
           </button>

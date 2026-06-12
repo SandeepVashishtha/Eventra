@@ -18,7 +18,7 @@ export function useSurveySimulator(questions, feedbackPool) {
     // Safety guard in case undefined is passed
     const safeQuestions = questions || [];
     const safeFeedback = feedbackPool || [];
-    
+
     const initialData = {};
     const textComments = [];
 
@@ -46,7 +46,8 @@ export function useSurveySimulator(questions, feedbackPool) {
           questionText: q.questionText,
           comments: shuffled.slice(0, 3).map((comment, index) => ({
             id: `${q.id}-${index}`,
-            author: ["Aravind S.", "Meera N.", "Zoya A.", "Kabir D.", "Sara K."][index] || "Anonymous",
+            author:
+              ["Aravind S.", "Meera N.", "Zoya A.", "Kabir D.", "Sara K."][index] || "Anonymous",
             text: comment,
             time: `${index * 4 + 2} mins ago`,
           })),
@@ -73,7 +74,7 @@ export function useSurveySimulator(questions, feedbackPool) {
 
     setTotalSubmissions((prev) => prev + 1);
     setCompletionRate((prev) =>
-      parseFloat((Math.min(99.4, prev + (Math.random() * 0.4 - 0.1))).toFixed(1))
+      parseFloat(Math.min(99.4, prev + (Math.random() * 0.4 - 0.1)).toFixed(1))
     );
 
     setSimulatedData((prev) => {
@@ -103,7 +104,13 @@ export function useSurveySimulator(questions, feedbackPool) {
     if (textQuestions.length > 0 && safeFeedback.length > 0) {
       const targetQ = textQuestions[Math.floor(Math.random() * textQuestions.length)];
       const randomAuthor = [
-        "Aarav S.", "Priya M.", "Rohan V.", "Sneha P.", "Karan J.", "Aditya R.", "Ishaan R."
+        "Aarav S.",
+        "Priya M.",
+        "Rohan V.",
+        "Sneha P.",
+        "Karan J.",
+        "Aditya R.",
+        "Ishaan R.",
       ][Math.floor(Math.random() * 7)];
       const randomComment = safeFeedback[Math.floor(Math.random() * safeFeedback.length)];
 

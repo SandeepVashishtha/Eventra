@@ -78,22 +78,28 @@ const NotificationSettings = () => {
     [preferences.categories]
   );
 
-  const setPreference = useCallback((key, value) => {
-    updatePreferences((current) => ({ ...current, [key]: value }));
-  }, [updatePreferences]);
+  const setPreference = useCallback(
+    (key, value) => {
+      updatePreferences((current) => ({ ...current, [key]: value }));
+    },
+    [updatePreferences]
+  );
 
-  const setCategoryPreference = useCallback((category, channel, value) => {
-    updatePreferences((current) => ({
-      ...current,
-      categories: {
-        ...current.categories,
-        [category]: {
-          ...current.categories[category],
-          [channel]: value,
+  const setCategoryPreference = useCallback(
+    (category, channel, value) => {
+      updatePreferences((current) => ({
+        ...current,
+        categories: {
+          ...current.categories,
+          [category]: {
+            ...current.categories[category],
+            [channel]: value,
+          },
         },
-      },
-    }));
-  }, [updatePreferences]);
+      }));
+    },
+    [updatePreferences]
+  );
 
   const showStatusMessage = (message) => {
     setStatusMessage(message);
@@ -143,11 +149,11 @@ const NotificationSettings = () => {
   };
 
   return (
-    <section className="min-h-screen bg-bg py-24 text-text">
+    <section className="bg-bg text-text min-h-screen py-24">
       <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-600 dark:text-cyan-400">
+            <p className="text-sm font-semibold tracking-[0.24em] text-cyan-600 uppercase dark:text-cyan-400">
               Notifications
             </p>
             <h1 className="text-3xl font-semibold tracking-tight">Notification Settings</h1>
@@ -168,7 +174,7 @@ const NotificationSettings = () => {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          <article className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-card-bg/70">
+          <article className="dark:bg-card-bg/70 rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <Monitor className="h-5 w-5 text-cyan-500" />
@@ -187,7 +193,7 @@ const NotificationSettings = () => {
             </div>
           </article>
 
-          <article className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-card-bg/70">
+          <article className="dark:bg-card-bg/70 rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 {preferences.push ? (
@@ -215,7 +221,7 @@ const NotificationSettings = () => {
             ) : null}
           </article>
 
-          <article className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-card-bg/70">
+          <article className="dark:bg-card-bg/70 rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-indigo-500" />
@@ -251,7 +257,7 @@ const NotificationSettings = () => {
           </article>
         </div>
 
-        <section className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-card-bg/70">
+        <section className="dark:bg-card-bg/70 rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-base font-semibold">Categories</h2>
@@ -270,7 +276,7 @@ const NotificationSettings = () => {
           </div>
 
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <div className="grid grid-cols-[minmax(180px,1fr)_repeat(3,72px)] border-b border-slate-200 bg-card-bg/50">
+            <div className="bg-card-bg/50 grid grid-cols-[minmax(180px,1fr)_repeat(3,72px)] border-b border-slate-200">
               <span>Category</span>
               {channelConfig.map(({ key, label }) => (
                 <span key={key} className="text-center">
@@ -301,7 +307,7 @@ const NotificationSettings = () => {
                       className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${
                         preferences.categories[category]?.[key]
                           ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200"
-                          : "border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-bg"
+                          : "dark:bg-bg border-slate-200 bg-white text-slate-400 dark:border-slate-700"
                       }`}
                       aria-label={`Toggle ${label} notifications for ${meta.label}`}
                       title={`${label}: ${meta.label}`}
@@ -319,7 +325,7 @@ const NotificationSettings = () => {
           </div>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-card-bg/70">
+        <section className="dark:bg-card-bg/70 rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <Volume2 className="h-5 w-5 text-cyan-500" />

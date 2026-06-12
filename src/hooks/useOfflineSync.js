@@ -2,13 +2,19 @@
  * @fileoverview useOfflineSync - Offline queue sync hook with cross-tab locking
  * @module hooks/useOfflineSync
  */
-import { useEffect, useRef } from 'react';
-import { toast } from 'react-toastify';
-import { useAuth } from '../context/AuthContext';
-import { API_ENDPOINTS } from '../config/api';
+import { useEffect, useRef } from "react";
+import { toast } from "react-toastify";
+import { useAuth } from "../context/AuthContext";
+import { API_ENDPOINTS } from "../config/api";
 
 import { logger } from "../utils/logger";
-import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership, validateQueueSession } from '../utils/offlineQueue';
+import {
+  getQueueIndexedDB,
+  setQueue,
+  clearQueue,
+  filterQueueByOwnership,
+  validateQueueSession,
+} from "../utils/offlineQueue";
 import { ensureSessionSnapshot } from "../utils/sessionSnapshot";
 // isTokenValid import removed; authentication is now checked via isAuthenticated()
 // from AuthContext, which handles both token-based and cookie-managed sessions.
@@ -63,93 +69,105 @@ const useOfflineSync = () => {
 
   useEffect(() => {
     syncLockAborted.current = false;
-  /**
-   * resolveConflict
-   *
-   * Dispatches a conflict event to the UI (which renders a modal) and
-   * waits for the user to choose how to handle it.
-   *
-   * Problems with the original implementation
-   * ─────────────────────────────────────────
-   * The original code created a bare Promise that only resolved when the
-   * user clicked a button in the conflict modal. This meant:
-   *
-   * 1. If the user never saw or dismissed the modal (tab close, navigation,
-   * render failure), the sync loop would hang indefinitely because the
-   * Promise never resolved.
-   *
-   * 2. isSyncing.current would remain true forever, silently blocking all
-   * future sync attempts for the rest of the session.
-   *
-   * 3. The window event listener was never removed on early exit (component
-   * unmount, abort), creating a memory leak and potentially handling
-   * conflict events intended for a different item.
-   *
-   * Fix
-   * ───
-   * - Added a 60-second auto-dismiss timeout. If the user does not respond
-   * in time, the conflict is resolved in favour of the server version so
-   * the sync loop can continue.
-   * - Added AbortSignal support so the conflict waiter is cancelled cleanly
-   * when the enclosing useEffect is torn down (component unmount).
-   * - The window event listener is always removed before the Promise
-   * resolves, in all code paths (user response, timeout, abort).
-   *
-   * @param {object} item        - The queued offline action that caused the conflict
-   * @param {object} serverState - Current server-side state for the conflicted resource
-   * @param {AbortSignal} signal - Optional signal to cancel waiting on unmount
-   * @returns {Promise<{resolution: string, mergedPayload?: object}>}
-   */
-  const resolveConflict = (item, serverState, signal) => {
-    return new Promise((resolve) => {
-      // Immediately resolve if the signal is already aborted. 
-      // addEventListener won't fire retroactively on an aborted signal, causing a 60s hang.
-      if (signal?.aborted) {
-        return resolve({ resolution: "server" });
-      }
+    /**
+     * resolveConflict
+     *
+     * Dispatches a conflict event to the UI (which renders a modal) and
+     * waits for the user to choose how to handle it.
+     *
+     * Problems with the original implementation
+     * ─────────────────────────────────────────
+     * The original code created a bare Promise that only resolved when the
+     * user clicked a button in the conflict modal. This meant:
+     *
+     * 1. If the user never saw or dismissed the modal (tab close, navigation,
+     * render failure), the sync loop would hang indefinitely because the
+     * Promise never resolved.
+     *
+     * 2. isSyncing.current would remain true forever, silently blocking all
+     * future sync attempts for the rest of the session.
+     *
+     * 3. The window event listener was never removed on early exit (component
+     * unmount, abort), creating a memory leak and potentially handling
+     * conflict events intended for a different item.
+     *
+     * Fix
+     * ───
+     * - Added a 60-second auto-dismiss timeout. If the user does not respond
+     * in time, the conflict is resolved in favour of the server version so
+     * the sync loop can continue.
+     * - Added AbortSignal support so the conflict waiter is cancelled cleanly
+     * when the enclosing useEffect is torn down (component unmount).
+     * - The window event listener is always removed before the Promise
+     * resolves, in all code paths (user response, timeout, abort).
+     *
+     * @param {object} item        - The queued offline action that caused the conflict
+     * @param {object} serverState - Current server-side state for the conflicted resource
+     * @param {AbortSignal} signal - Optional signal to cancel waiting on unmount
+     * @returns {Promise<{resolution: string, mergedPayload?: object}>}
+     */
+    const resolveConflict = (item, serverState, signal) => {
+      return new Promise((resolve) => {
+        // Immediately resolve if the signal is already aborted.
+        // addEventListener won't fire retroactively on an aborted signal, causing a 60s hang.
+        if (signal?.aborted) {
+          return resolve({ resolution: "server" });
+        }
 
-      const AUTO_DISMISS_MS = 60_000; // 60 s — avoid hanging the sync loop forever
+        const AUTO_DISMISS_MS = 60_000; // 60 s — avoid hanging the sync loop forever
 
-      const cleanup = () => {
-        window.removeEventListener("eventra-offline-conflict-resolved", handleResolution);
-        clearTimeout(timerId);
-      };
+        const cleanup = () => {
+          window.removeEventListener("eventra-offline-conflict-resolved", handleResolution);
+          clearTimeout(timerId);
+        };
 
-      const handleResolution = (e) => {
-        // Ignore events intended for a different queued item
-        if (e.detail.itemId !== item.id) return;
-        cleanup();
-        resolve(e.detail);
-      };
+        const handleResolution = (e) => {
+          // Ignore events intended for a different queued item
+          if (e.detail.itemId !== item.id) return;
+          cleanup();
+          resolve(e.detail);
+        };
 
-      // Auto-discard after 60 s: keep the server version so the sync loop
-      // is never permanently frozen by an unanswered modal.
-      const timerId = setTimeout(() => {
-        cleanup();
-        logger.warn(
-          `[useOfflineSync] Conflict modal for item ${item.id} timed out after ${AUTO_DISMISS_MS / 1000}s. Discarding local change.`
+        // Auto-discard after 60 s: keep the server version so the sync loop
+        // is never permanently frozen by an unanswered modal.
+        const timerId = setTimeout(() => {
+          cleanup();
+          logger.warn(
+            `[useOfflineSync] Conflict modal for item ${item.id} timed out after ${AUTO_DISMISS_MS / 1000}s. Discarding local change.`
+          );
+          resolve({ resolution: "server" });
+        }, AUTO_DISMISS_MS);
+
+        // Cancel if the enclosing useEffect is cleaned up (component unmount)
+        signal?.addEventListener(
+          "abort",
+          () => {
+            cleanup();
+            resolve({ resolution: "server" });
+          },
+          { once: true }
         );
-        resolve({ resolution: "server" });
-      }, AUTO_DISMISS_MS);
 
-      // Cancel if the enclosing useEffect is cleaned up (component unmount)
-      signal?.addEventListener("abort", () => {
-        cleanup();
-        resolve({ resolution: "server" });
-      }, { once: true });
+        window.addEventListener("eventra-offline-conflict-resolved", handleResolution);
 
-      window.addEventListener("eventra-offline-conflict-resolved", handleResolution);
+        // Notify the UI to open the conflict resolution modal
+        window.dispatchEvent(
+          new CustomEvent("eventra-offline-conflict", {
+            detail: { item, serverState },
+          })
+        );
+      });
+    };
 
-      // Notify the UI to open the conflict resolution modal
-      window.dispatchEvent(
-        new CustomEvent("eventra-offline-conflict", {
-          detail: { item, serverState },
-        })
-      );
-    });
-  };
-
-    const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false, signal = null, idempotencyKey = null) => {
+    const postWithBackoff = async (
+      url,
+      payload,
+      authToken,
+      attempt = 0,
+      forceOverride = false,
+      signal = null,
+      idempotencyKey = null
+    ) => {
       if (attempt > 0) {
         const baseDelayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
         const jitterMs = Math.random() * 500;
@@ -158,18 +176,18 @@ const useOfflineSync = () => {
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
 
-      const headers = { 'Content-Type': 'application/json' };
+      const headers = { "Content-Type": "application/json" };
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      if (forceOverride) headers['X-Override-Conflict'] = 'true';
-      if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+      if (forceOverride) headers["X-Override-Conflict"] = "true";
+      if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
 
       const { response, data } = await fetchWithTimeout(
         url,
         {
-          method: 'POST',
+          method: "POST",
           headers,
           body: JSON.stringify(payload),
-          signal // 🔥 FIX: Passed signal so network request aborts if component unmounts mid-sync
+          signal, // 🔥 FIX: Passed signal so network request aborts if component unmounts mid-sync
         },
         10000
       );
@@ -185,7 +203,7 @@ const useOfflineSync = () => {
       if (response.status >= 400 && response.status < 500) {
         logger.warn(
           `Offline queue: server rejected item with ${response.status} — dropping.`,
-          await response.text().catch(() => '')
+          await response.text().catch(() => "")
         );
         return { status: "dropped" };
       }
@@ -201,7 +219,12 @@ const useOfflineSync = () => {
     const conflictController = conflictControllerRef.current;
 
     const executeSync = async () => {
-      const { token: currentToken, user: currentUser, isAuthenticated: currentIsAuthenticated, loading: currentLoading } = authRef.current;
+      const {
+        token: currentToken,
+        user: currentUser,
+        isAuthenticated: currentIsAuthenticated,
+        loading: currentLoading,
+      } = authRef.current;
       const queue = await getQueueIndexedDB();
       if (queue.length === 0) {
         return;
@@ -229,11 +252,10 @@ const useOfflineSync = () => {
       // SECURITY: Validate queue ownership to prevent cross-user action replay.
       const currentUserId = currentUser?.id;
       if (!currentUserId) {
-        logger.error('[Security] Cannot sync queue: current user ID is missing');
-        toast.error(
-          "Unable to verify offline actions ownership. Please refresh the page.",
-          { autoClose: 6000 }
-        );
+        logger.error("[Security] Cannot sync queue: current user ID is missing");
+        toast.error("Unable to verify offline actions ownership. Please refresh the page.", {
+          autoClose: 6000,
+        });
         return;
       }
 
@@ -243,14 +265,13 @@ const useOfflineSync = () => {
       // If all actions were filtered out due to ownership mismatch, clear the queue
       if (validatedQueue.length === 0 && queue.length > 0) {
         logger.warn(
-          '[Security] Clearing offline queue: all actions belong to different user(s). ' +
-          'This prevents cross-user action replay.'
+          "[Security] Clearing offline queue: all actions belong to different user(s). " +
+            "This prevents cross-user action replay."
         );
         await clearQueue();
-        toast.warning(
-          "Offline actions from a previous session have been cleared for security.",
-          { autoClose: 5000 }
-        );
+        toast.warning("Offline actions from a previous session have been cleared for security.", {
+          autoClose: 5000,
+        });
         return;
       }
 
@@ -303,8 +324,10 @@ const useOfflineSync = () => {
           // Halt the zombie loop immediately if the session changed or component unmounted.
           // This prevents making requests with stale tokens and protects IndexedDB from being falsely overwritten below.
           if (conflictController.signal.aborted) {
-            logger.warn("[useOfflineSync] Sync aborted due to session change. Halting queue processing.");
-            return; 
+            logger.warn(
+              "[useOfflineSync] Sync aborted due to session change. Halting queue processing."
+            );
+            return;
           }
 
           const retries = item.retryCount ?? 0;
@@ -324,21 +347,41 @@ const useOfflineSync = () => {
               authToken,
               0,
               false,
-              conflictController.signal, 
+              conflictController.signal,
               item.id // Pass idempotency key
             );
 
             // Handle Conflict loop — pass the abort signal so the waiter
             // is cancelled cleanly if the component unmounts mid-sync
             if (res.status === "conflict") {
-              const resolution = await resolveConflict(item, res.serverState, conflictController.signal);
+              const resolution = await resolveConflict(
+                item,
+                res.serverState,
+                conflictController.signal
+              );
 
               if (resolution.resolution === "local") {
                 // Retry with force flag
-                res = await postWithBackoff(url, item.payload, authToken, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff(
+                  url,
+                  item.payload,
+                  authToken,
+                  0,
+                  true,
+                  conflictController.signal,
+                  item.id
+                );
               } else if (resolution.resolution === "merge") {
                 // Post merged content
-                res = await postWithBackoff(url, resolution.mergedPayload, authToken, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff(
+                  url,
+                  resolution.mergedPayload,
+                  authToken,
+                  0,
+                  true,
+                  conflictController.signal,
+                  item.id
+                );
               } else {
                 // Discard local (treated as handled success so we proceed)
                 res = { status: "success" };
@@ -359,7 +402,7 @@ const useOfflineSync = () => {
         if (failedQueue.length > 0) {
           await setQueue(failedQueue);
           toast.warning(
-            `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
+            `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`
           );
         } else {
           await clearQueue();
@@ -370,7 +413,7 @@ const useOfflineSync = () => {
 
         if (droppedCount > 0) {
           toast.error(
-            `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
+            `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`
           );
         }
       } finally {
@@ -414,7 +457,7 @@ const useOfflineSync = () => {
 
       const currentTabId = Math.random().toString(36).slice(2, 9);
       const lockData = JSON.stringify({ timestamp: now, tabId: currentTabId });
-      
+
       try {
         localStorage.setItem(LOCK_KEY, lockData);
       } catch {
@@ -424,9 +467,15 @@ const useOfflineSync = () => {
       }
 
       const heartbeatInterval = setInterval(() => {
-        if (syncLockAborted.current) { clearInterval(heartbeatInterval); return; }
+        if (syncLockAborted.current) {
+          clearInterval(heartbeatInterval);
+          return;
+        }
         try {
-          localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
+          localStorage.setItem(
+            LOCK_KEY,
+            JSON.stringify({ timestamp: Date.now(), tabId: currentTabId })
+          );
         } catch {}
       }, 10_000);
       heartbeatIntervalRef.current = heartbeatInterval;
@@ -458,15 +507,24 @@ const useOfflineSync = () => {
         // Check if navigator.locks is supported natively (modern browsers)
         if (typeof navigator?.locks?.request === "function") {
           try {
-            await navigator.locks.request("eventra_offline_sync_lock", { ifAvailable: true }, async (lock) => {
-              if (!lock) {
-                logger.log("[useOfflineSync] Sync lock is held by another tab via Web Locks. Skipping.");
-                return;
+            await navigator.locks.request(
+              "eventra_offline_sync_lock",
+              { ifAvailable: true },
+              async (lock) => {
+                if (!lock) {
+                  logger.log(
+                    "[useOfflineSync] Sync lock is held by another tab via Web Locks. Skipping."
+                  );
+                  return;
+                }
+                await executeSync();
               }
-              await executeSync();
-            });
+            );
           } catch (err) {
-            logger.warn("[useOfflineSync] Web Locks request failed, falling back to LocalStorage lock:", err);
+            logger.warn(
+              "[useOfflineSync] Web Locks request failed, falling back to LocalStorage lock:",
+              err
+            );
             await executeSyncWithLocalLock();
           }
         } else {
@@ -480,7 +538,7 @@ const useOfflineSync = () => {
     // 🔥 FIX: Safely define the missing functions introduced by the master branch to prevent ReferenceErrors
     const handleSyncRequested = () => void handleOnline();
     const handleServiceWorkerMessage = (event) => {
-      if (event?.data?.type === 'SYNC_REQUESTED') {
+      if (event?.data?.type === "SYNC_REQUESTED") {
         void handleOnline();
       }
     };
@@ -512,11 +570,11 @@ const useOfflineSync = () => {
       window.removeEventListener("eventra-offline-queue-updated", handleSyncRequested);
       window.removeEventListener("eventra-session-restored", handleSyncRequested);
       navigator.serviceWorker?.removeEventListener?.("message", handleServiceWorkerMessage);
-      
+
       // Abort any in-progress conflict resolution waiter so its event
       // listener is removed and the sync loop exits cleanly on unmount.
       conflictController.abort();
-      
+
       // Signal the sync lock heartbeat to stop — it runs outside React's
       // lifecycle and won't be caught by the normal finally block on unmount.
       syncLockAborted.current = true;
@@ -532,7 +590,7 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, user?.id]);
 };
 

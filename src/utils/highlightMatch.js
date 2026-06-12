@@ -1,4 +1,3 @@
-
 /**
  * Escapes all special RegExp metacharacters in a string so it can be used
  * safely inside `new RegExp(...)` without causing a SyntaxError or a
@@ -47,15 +46,7 @@ const highlightMatch = (text, query) => {
     part.toLowerCase() === query.toLowerCase() ? (
       <span
         key={`${part}-${index}`}
-        className="
-          bg-yellow-200
-          dark:bg-yellow-500/30
-          text-black
-          dark:text-yellow-100
-          px-1
-          rounded
-          font-medium
-        "
+        className="rounded bg-yellow-200 px-1 font-medium text-black dark:bg-yellow-500/30 dark:text-yellow-100"
       >
         {part}
       </span>

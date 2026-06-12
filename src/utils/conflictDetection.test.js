@@ -246,15 +246,11 @@ describe("findConflictingEvents — null/undefined entry resilience", () => {
   const newEvent = mkEvent(99, "2026-06-10", "9:30 AM", 60);
 
   test("does not throw when registeredEvents contains null entries", () => {
-    expect(() =>
-      findConflictingEvents(newEvent, [null, validEvent])
-    ).not.toThrow();
+    expect(() => findConflictingEvents(newEvent, [null, validEvent])).not.toThrow();
   });
 
   test("does not throw when registeredEvents contains undefined entries", () => {
-    expect(() =>
-      findConflictingEvents(newEvent, [undefined, validEvent])
-    ).not.toThrow();
+    expect(() => findConflictingEvents(newEvent, [undefined, validEvent])).not.toThrow();
   });
 
   test("does not throw when registeredEvents contains a mix of null, undefined, and valid entries", () => {
@@ -271,9 +267,7 @@ describe("findConflictingEvents — null/undefined entry resilience", () => {
 
   test("does not throw when a registration object has an explicitly null .event property", () => {
     const regWithNullEvent = { event: null, id: 55, date: "2026-06-10", time: "9:00 AM" };
-    expect(() =>
-      findConflictingEvents(newEvent, [regWithNullEvent, validEvent])
-    ).not.toThrow();
+    expect(() => findConflictingEvents(newEvent, [regWithNullEvent, validEvent])).not.toThrow();
   });
 
   test("skips registration objects whose .event property is null", () => {
@@ -303,18 +297,12 @@ describe("suggestAlternativeEvents — null entry resilience", () => {
 
   test("does not throw when registeredEvents contains null entries", () => {
     expect(() =>
-      suggestAlternativeEvents(
-        targetEvent,
-        [altEvent1, altEvent2],
-        [null, undefined]
-      )
+      suggestAlternativeEvents(targetEvent, [altEvent1, altEvent2], [null, undefined])
     ).not.toThrow();
   });
 
   test("does not throw when allEvents contains null entries", () => {
-    expect(() =>
-      suggestAlternativeEvents(targetEvent, [null, altEvent1], [])
-    ).not.toThrow();
+    expect(() => suggestAlternativeEvents(targetEvent, [null, altEvent1], [])).not.toThrow();
   });
 
   test("returns suggestions when registeredEvents has nulls mixed with valid entries", () => {
@@ -401,10 +389,7 @@ describe("doEventsOverlap — null/undefined event arguments", () => {
 // ---------------------------------------------------------------------------
 describe("checkRegistrationConflict — return shape", () => {
   test("always returns an object with hasConflict boolean and conflicts array", () => {
-    const result = checkRegistrationConflict(
-      mkEvent(1, "2026-06-01", "9:00 AM", 60),
-      []
-    );
+    const result = checkRegistrationConflict(mkEvent(1, "2026-06-01", "9:00 AM", 60), []);
     expect(result).toHaveProperty("hasConflict");
     expect(result).toHaveProperty("conflicts");
     expect(typeof result.hasConflict).toBe("boolean");

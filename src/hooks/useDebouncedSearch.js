@@ -2,17 +2,17 @@
  * @fileoverview useDebouncedSearch - Debounced search query hook
  * @module hooks/useDebouncedSearch
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from "react";
 
 /**
  * Custom hook for debounced search/filter queries.
  * Prevents excessive re-renders and API calls by debouncing input changes.
- * 
+ *
  * @param {string} initialValue - Initial search value
  * @param {number} delay - Debounce delay in milliseconds (default: 300ms)
  * @returns {{ searchTerm, debouncedTerm, setSearchTerm, isDebouncing, clear }}
  */
-export function useDebouncedSearch(initialValue = '', delay = 300) {
+export function useDebouncedSearch(initialValue = "", delay = 300) {
   const [searchTerm, setSearchTerm] = useState(initialValue);
   const [debouncedTerm, setDebouncedTerm] = useState(initialValue);
   const [isDebouncing, setIsDebouncing] = useState(false);
@@ -44,8 +44,8 @@ export function useDebouncedSearch(initialValue = '', delay = 300) {
   }, [searchTerm, debouncedTerm, delay]);
 
   const clear = useCallback(() => {
-    setSearchTerm('');
-    setDebouncedTerm('');
+    setSearchTerm("");
+    setDebouncedTerm("");
     setIsDebouncing(false);
     if (timerRef.current) {
       clearTimeout(timerRef.current);

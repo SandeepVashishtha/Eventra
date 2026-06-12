@@ -72,7 +72,11 @@ const getReminderEngagementScore = (reminders = []) => {
 
 const parseRegistrationDate = (event) => {
   if (!event) return null;
-  const dateString = event.registrationDate || event.registrationStart || event.firstRegistrationDate || event.createdAt;
+  const dateString =
+    event.registrationDate ||
+    event.registrationStart ||
+    event.firstRegistrationDate ||
+    event.createdAt;
   if (!dateString) return null;
   const date = new Date(dateString);
   return Number.isNaN(date.getTime()) ? null : date;
@@ -99,7 +103,9 @@ const getRegistrationTimingScore = (event) => {
 };
 
 const getEngagementScore = (event) => {
-  const rawEngagement = Number(event.engagementScore ?? event.engagementRate ?? event.engagement ?? NaN);
+  const rawEngagement = Number(
+    event.engagementScore ?? event.engagementRate ?? event.engagement ?? NaN
+  );
   if (!Number.isNaN(rawEngagement) && rawEngagement >= 0 && rawEngagement <= 1) {
     return clamp01(rawEngagement);
   }
@@ -135,7 +141,7 @@ export const computeAttendancePrediction = (event = {}, options = {}) => {
   const fillRate = getCapacityUtilization(event);
 
   const weights = {
-    fillRate: 0.30,
+    fillRate: 0.3,
     ticket: 0.14,
     eventMode: 0.12,
     proximity: 0.12,
@@ -164,17 +170,18 @@ export const computeAttendancePrediction = (event = {}, options = {}) => {
   const expectedOpenSeats = Math.max(0, capacity - predictedAttendees);
   const expectedNoShowSeats = Math.max(0, attendees - predictedAttendees);
 
-  const recommendedPromotions = waitlistSize > 0
-    ? Math.min(waitlistSize, Math.max(0, Math.round(expectedNoShowSeats * 0.8)))
-    : 0;
+  const recommendedPromotions =
+    waitlistSize > 0
+      ? Math.min(waitlistSize, Math.max(0, Math.round(expectedNoShowSeats * 0.8)))
+      : 0;
 
-  const projectedFillRate = capacity > 0
-    ? Math.round(((attendees + recommendedPromotions) / capacity) * 100)
-    : 0;
+  const projectedFillRate =
+    capacity > 0 ? Math.round(((attendees + recommendedPromotions) / capacity) * 100) : 0;
 
-  const reminderHint = attendanceProbability < 75
-    ? "Send last-minute reminders and confirm key attendees before the event."
-    : "Attendance looks stable; keep reminder cadence normal.";
+  const reminderHint =
+    attendanceProbability < 75
+      ? "Send last-minute reminders and confirm key attendees before the event."
+      : "Attendance looks stable; keep reminder cadence normal.";
 
   return {
     attendanceProbability,
@@ -193,7 +200,7 @@ export const computeAttendancePrediction = (event = {}, options = {}) => {
 
 export const buildWaitlistPromotionSummary = (event = {}, options = {}) => {
   const prediction = computeAttendancePrediction(event, options);
-    const capacity = Number(event.maxAttendees || event.capacity || 0);
+  const capacity = Number(event.maxAttendees || event.capacity || 0);
   const seatsToPromote = prediction.recommendedPromotions;
   const hasWaitlist = prediction.waitlistSize > 0;
 
@@ -205,9 +212,10 @@ export const buildWaitlistPromotionSummary = (event = {}, options = {}) => {
     };
   }
 
-  const summary = seatsToPromote > 0
-    ? `Promote ${seatsToPromote} waitlisted attendee(s) to compensate for expected no-shows and maximize venue utilization.`
-    : "Current attendance confidence is strong. No automatic waitlist promotion is recommended at this time.";
+  const summary =
+    seatsToPromote > 0
+      ? `Promote ${seatsToPromote} waitlisted attendee(s) to compensate for expected no-shows and maximize venue utilization.`
+      : "Current attendance confidence is strong. No automatic waitlist promotion is recommended at this time.";
 
   return {
     summary,

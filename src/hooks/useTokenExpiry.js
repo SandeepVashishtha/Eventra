@@ -8,7 +8,9 @@ export function useTokenExpiry({ token, user, onExpired }) {
 
   const clearExpiredSession = useCallback(() => {
     let hadPreviousSession = false;
-    try { hadPreviousSession = !!syncSecureStorage.getItem("user"); } catch {}
+    try {
+      hadPreviousSession = !!syncSecureStorage.getItem("user");
+    } catch {}
     console.warn("[useTokenExpiry] Session expired. Clearing state.");
     onExpired();
     if (!hadPreviousSession) return;

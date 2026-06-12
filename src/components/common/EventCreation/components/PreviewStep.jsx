@@ -1,10 +1,15 @@
-import { TagIcon, Ticket, CheckCircleIcon, PencilIcon, CalendarIcon, MapPinIcon, UsersIcon } from "lucide-react";
+import {
+  TagIcon,
+  Ticket,
+  CheckCircleIcon,
+  PencilIcon,
+  CalendarIcon,
+  MapPinIcon,
+  UsersIcon,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { LoadingButton } from "../../../ui/LoadingButton";
-import {
-  formatDate,
-  formatTime,
-} from "../../../../utils/eventCreationUtils";
+import { formatDate, formatTime } from "../../../../utils/eventCreationUtils";
 import { CREATION_STEPS } from "../../../../constants/eventDefaults";
 
 const PreviewStep = ({
@@ -22,91 +27,74 @@ const PreviewStep = ({
       transition={{ duration: 0.6 }}
       className="w-full max-w-4xl"
     >
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
+      <div className="mb-8 text-center">
+        <h1 className="mb-4 text-4xl font-extrabold text-indigo-800 dark:text-indigo-300">
           Preview Your Event
         </h1>
 
-        <p className="text-gray-600 dark:text-gray-400">
-          Review all details before publishing
-        </p>
+        <p className="text-gray-600 dark:text-gray-400">Review all details before publishing</p>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden border border-indigo-300 dark:border-gray-700">
+      <div className="overflow-hidden rounded-2xl border border-indigo-300 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
         {formData.bannerPreview && (
-          <div className="w-full h-64 overflow-hidden">
+          <div className="h-64 w-full overflow-hidden">
             <img
               loading="lazy"
               src={formData.bannerPreview}
               alt="Event banner"
-              className="w-full h-full object-cover"
+              className="h-full w-full object-cover"
             />
           </div>
         )}
 
         <div className="p-8">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white">
             {formData.title}
           </h2>
 
-          <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+          <p className="mb-6 leading-relaxed text-gray-600 dark:text-gray-300">
             {formData.description}
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
-              <TagIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
+          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="flex items-start gap-3 rounded-lg bg-indigo-50 p-4 dark:bg-gray-700">
+              <TagIcon className="mt-1 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
 
               <div>
-                <p className="font-semibold text-gray-700 dark:text-gray-300">
-                  Category
-                </p>
+                <p className="font-semibold text-gray-700 dark:text-gray-300">Category</p>
 
                 <p className="text-gray-600 dark:text-gray-400">
-                  {
-                    categories.find(
-                      (cat) => cat.value === formData.category
-                    )?.label
-                  }
+                  {categories.find((cat) => cat.value === formData.category)?.label}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
-              <CalendarIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
+            <div className="flex items-start gap-3 rounded-lg bg-indigo-50 p-4 dark:bg-gray-700">
+              <CalendarIcon className="mt-1 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
 
               <div>
-                <p className="font-semibold text-gray-700 dark:text-gray-300">
-                  Date & Time
-                </p>
+                <p className="font-semibold text-gray-700 dark:text-gray-300">Date & Time</p>
 
                 <p className="text-gray-600 dark:text-gray-400">
                   {formData.isMultiDay
-                    ? `${formatDate(formData.startDate)} - ${formatDate(
-                        formData.endDate
-                      )}`
+                    ? `${formatDate(formData.startDate)} - ${formatDate(formData.endDate)}`
                     : formatDate(formData.date)}
                 </p>
 
                 <p className="text-gray-600 dark:text-gray-400">
-                  {formatTime(formData.startTime)} -{" "}
-                  {formatTime(formData.endTime)}
+                  {formatTime(formData.startTime)} - {formatTime(formData.endTime)}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
-              <MapPinIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
+            <div className="flex items-start gap-3 rounded-lg bg-indigo-50 p-4 dark:bg-gray-700">
+              <MapPinIcon className="mt-1 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
 
               <div>
-                <p className="font-semibold text-gray-700 dark:text-gray-300">
-                  Location
-                </p>
+                <p className="font-semibold text-gray-700 dark:text-gray-300">Location</p>
 
                 <p className="text-gray-600 dark:text-gray-400">
-                  {formData.isVirtual
-                    ? "Virtual Event"
-                    : formData.location.name}
+                  {formData.isVirtual ? "Virtual Event" : formData.location.name}
                 </p>
 
                 {formData.location.address && !formData.isVirtual && (
@@ -117,18 +105,14 @@ const PreviewStep = ({
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
-              <UsersIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
+            <div className="flex items-start gap-3 rounded-lg bg-indigo-50 p-4 dark:bg-gray-700">
+              <UsersIcon className="mt-1 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
 
               <div>
-                <p className="font-semibold text-gray-700 dark:text-gray-300">
-                  Capacity
-                </p>
+                <p className="font-semibold text-gray-700 dark:text-gray-300">Capacity</p>
 
                 <p className="text-gray-600 dark:text-gray-400">
-                  {formData.capacity === ""
-                    ? "Unlimited"
-                    : `${formData.capacity} attendees`}
+                  {formData.capacity === "" ? "Unlimited" : `${formData.capacity} attendees`}
                 </p>
 
                 <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -138,63 +122,58 @@ const PreviewStep = ({
             </div>
           </div>
 
-          {formData.ticketTiers.length > 0 &&
-            formData.ticketTiers[0].name && (
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Ticket className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          {formData.ticketTiers.length > 0 && formData.ticketTiers[0].name && (
+            <div className="mb-6">
+              <div className="mb-3 flex items-center gap-2">
+                <Ticket className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
 
-                  <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-                    Ticket Tiers
-                  </h3>
-                </div>
-
-                <div className="space-y-3">
-                  {formData.ticketTiers.map((tier, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          {tier.name}
-                        </p>
-
-                        {tier.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {tier.description}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                          ₹{Number(tier.price).toFixed(2)}
-                        </p>
-
-                        {tier.capacity && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {tier.capacity} available
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+                  Ticket Tiers
+                </h3>
               </div>
-            )}
+
+              <div className="space-y-3">
+                {formData.ticketTiers.map((tier, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between rounded-lg bg-gray-50 p-4 dark:bg-gray-700"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">{tier.name}</p>
+
+                      {tier.description && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {tier.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                        ₹{Number(tier.price).toFixed(2)}
+                      </p>
+
+                      {tier.capacity && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {tier.capacity} available
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {formData.tags.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                Tags
-              </h3>
+              <h3 className="mb-3 text-lg font-semibold text-gray-700 dark:text-gray-300">Tags</h3>
 
               <div className="flex flex-wrap gap-2">
                 {formData.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-block bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium"
+                    className="inline-block rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300"
                   >
                     #{tag}
                   </span>
@@ -204,8 +183,8 @@ const PreviewStep = ({
           )}
 
           {formData.requiresApproval && (
-            <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-              <p className="text-yellow-800 dark:text-yellow-300 font-medium">
+            <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
+              <p className="font-medium text-yellow-800 dark:text-yellow-300">
                 ⚠️ This event requires approval for registration
               </p>
             </div>
@@ -215,20 +194,20 @@ const PreviewStep = ({
 
       <div className="mt-8 flex flex-col items-center">
         {submitError && (
-          <div className="error-banner w-full mb-4" role="alert">
+          <div className="error-banner mb-4 w-full" role="alert">
             ❌ {submitError}
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
+        <div className="flex w-full flex-col justify-center gap-4 sm:flex-row">
           <motion.button
             onClick={() => setCurrentStep(CREATION_STEPS.FORM)}
             disabled={isSubmitting}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center justify-center gap-2 bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500 font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-indigo-50 dark:hover:bg-gray-600 transition-all duration-300"
+            className="flex items-center justify-center gap-2 rounded-xl border-2 border-indigo-500 bg-white px-8 py-3 font-semibold text-indigo-600 shadow-lg transition-all duration-300 hover:bg-indigo-50 dark:bg-gray-700 dark:text-indigo-400 dark:hover:bg-gray-600"
           >
-            <PencilIcon className="w-5 h-5" />
+            <PencilIcon className="h-5 w-5" />
             Edit Event
           </motion.button>
 
@@ -236,9 +215,9 @@ const PreviewStep = ({
             onClick={createEvent}
             isLoading={isSubmitting}
             loadingText="Creating Event..."
-            className="flex items-center justify-center gap-2 bg-black text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 rounded-xl bg-black px-8 py-3 font-semibold text-white shadow-lg transition-all duration-300 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <CheckCircleIcon className="w-5 h-5" />
+            <CheckCircleIcon className="h-5 w-5" />
             Create Event
           </LoadingButton>
         </div>

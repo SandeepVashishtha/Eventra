@@ -20,7 +20,7 @@ export const LinkedInShareButton = ({ title, url, summary, className = "" }) => 
     <button
       type="button"
       onClick={handleShare}
-      className={`inline-flex items-center gap-2 rounded px-3 py-1.5 bg-[#0A66C2] text-white hover:bg-[#004182] transition ${className}`}
+      className={`inline-flex items-center gap-2 rounded bg-[#0A66C2] px-3 py-1.5 text-white transition hover:bg-[#004182] ${className}`}
       aria-label={title ? `Share ${title} on LinkedIn` : "Share on LinkedIn"}
     >
       <Share2 size={16} aria-hidden="true" />

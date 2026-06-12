@@ -13,7 +13,6 @@ import {
 } from "../../utils/advancedFilterUtils";
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
 
-
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
 const SORT_MAPPING = {
@@ -102,14 +101,7 @@ const useEventListing = () => {
     }
 
     return params.toString();
-  }, [
-    currentPage,
-    eventsPerPage,
-    debouncedSearchQuery,
-    filterType,
-    advancedFilters,
-    sortType,
-  ]);
+  }, [currentPage, eventsPerPage, debouncedSearchQuery, filterType, advancedFilters, sortType]);
 
   const fetchEvents = useCallback(async () => {
     const requestId = ++latestRequestRef.current;
@@ -119,9 +111,7 @@ const useEventListing = () => {
     try {
       const query = buildQueryParams();
 
-      const response = await apiUtils.get(
-        `${API_ENDPOINTS.EVENTS.LIST}?${query}`,
-      );
+      const response = await apiUtils.get(`${API_ENDPOINTS.EVENTS.LIST}?${query}`);
 
       // Discard stale responses from earlier requests
       if (requestId !== latestRequestRef.current) return;
@@ -163,13 +153,9 @@ const useEventListing = () => {
         });
 
         if (error?.response?.status === 403) {
-          setLoadError(
-            "Access to events is currently restricted. Please try again later.",
-          );
+          setLoadError("Access to events is currently restricted. Please try again later.");
         } else {
-          setLoadError(
-            "Failed to load events. Please try again later.",
-          );
+          setLoadError("Failed to load events. Please try again later.");
         }
       }
     } finally {
@@ -203,7 +189,7 @@ const useEventListing = () => {
 
   const setAdvancedFilters = useCallback((filters) => {
     setAdvancedFiltersState(normalizeAdvancedFilters(filters));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const priceStats = useMemo(() => getPriceStats(events), [events]);
@@ -212,18 +198,14 @@ const useEventListing = () => {
   const filteredEvents = useMemo(() => {
     // 1. Fuzzy search first (or all events if no query)
     let filtered = debouncedSearchQuery.trim()
-      ? getRouteSearchResults(
-          events,
-          debouncedSearchQuery,
-          [
-            { name: "title", weight: 0.8 },
-            { name: "category", weight: 0.5 },
-            { name: "tags", weight: 0.4 },
-            { name: "location.name", weight: 0.3 },
-            { name: "location.city", weight: 0.3 },
-            { name: "description", weight: 0.1 },
-          ]
-        )
+      ? getRouteSearchResults(events, debouncedSearchQuery, [
+          { name: "title", weight: 0.8 },
+          { name: "category", weight: 0.5 },
+          { name: "tags", weight: 0.4 },
+          { name: "location.name", weight: 0.3 },
+          { name: "location.city", weight: 0.3 },
+          { name: "description", weight: 0.1 },
+        ])
       : [...events];
 
     // 2. Status timing filter
@@ -236,9 +218,7 @@ const useEventListing = () => {
     });
 
     // 3. Category filter
-    const target = categoryFilter && categoryFilter !== "all"
-      ? categoryFilter.toLowerCase()
-      : null;
+    const target = categoryFilter && categoryFilter !== "all" ? categoryFilter.toLowerCase() : null;
 
     if (target) {
       filtered = filtered.filter((event) => {
@@ -249,17 +229,26 @@ const useEventListing = () => {
           return type === "hackathon" || cat.includes("hackathon");
         } else if (["tech talks", "tech-talks", "conference"].includes(target)) {
           return (
-            type === "conference" || type === "summit" ||
-            cat.includes("tech") || cat.includes("conference") || cat.includes("summit")
+            type === "conference" ||
+            type === "summit" ||
+            cat.includes("tech") ||
+            cat.includes("conference") ||
+            cat.includes("summit")
           );
         } else if (["cultural", "networking", "cultural & networking"].includes(target)) {
-          return cat.includes("networking") || cat.includes("cultural") || cat.includes("community");
+          return (
+            cat.includes("networking") || cat.includes("cultural") || cat.includes("community")
+          );
         } else {
           const norm = (s) => s.replace(/[^a-z0-9]+/g, "");
-          const nTarget = norm(target), nCat = norm(cat), nType = norm(type);
+          const nTarget = norm(target),
+            nCat = norm(cat),
+            nType = norm(type);
           return (
-            nCat.includes(nTarget) || nType.includes(nTarget) ||
-            nTarget.includes(nCat) || nTarget.includes(nType)
+            nCat.includes(nTarget) ||
+            nType.includes(nTarget) ||
+            nTarget.includes(nCat) ||
+            nTarget.includes(nType)
           );
         }
       });
@@ -305,7 +294,10 @@ const useEventListing = () => {
   }, [sortedEvents, currentPage, eventsPerPage]);
 
   const totalElements = pagination.totalPages > 1 ? pagination.totalElements : sortedEvents.length;
-  const totalPages = pagination.totalPages > 1 ? pagination.totalPages : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
+  const totalPages =
+    pagination.totalPages > 1
+      ? pagination.totalPages
+      : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
 
   return {
     currentPage,

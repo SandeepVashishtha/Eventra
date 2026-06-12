@@ -7,13 +7,12 @@ const normalizeText = (value) =>
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 
-const toTokens = (value) =>
-  normalizeText(value).split(/\s+/).filter(Boolean);
+const toTokens = (value) => normalizeText(value).split(/\s+/).filter(Boolean);
 
 const normalizeList = (value) => {
   if (!value) return [];
   return (Array.isArray(value) ? value : [value])
-    .flatMap((item) => toTokens(item).length ? [normalizeText(item)] : [])
+    .flatMap((item) => (toTokens(item).length ? [normalizeText(item)] : []))
     .filter(Boolean);
 };
 
@@ -43,8 +42,7 @@ const getLocationParts = (location) =>
 const createLocationMatcher = (preferredLocation) => {
   const parts = getLocationParts(preferredLocation);
   if (parts.length === 0) return () => false;
-  return (eventLocation) =>
-    eventLocation && parts.some((part) => eventLocation.includes(part));
+  return (eventLocation) => eventLocation && parts.some((part) => eventLocation.includes(part));
 };
 
 const buildLocationIndex = (preferredLocation) => {
@@ -157,9 +155,7 @@ export const buildInteractionProfile = ({
   });
 
   const topLocation =
-    location ||
-    Object.entries(locationCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
-    "";
+    location || Object.entries(locationCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
 
   return {
     categories: categoryWeights,
@@ -172,11 +168,7 @@ export const buildInteractionProfile = ({
   };
 };
 
-export const calculateRecommendationScore = (
-  event,
-  userProfile = {},
-  interactions = {},
-) => {
+export const calculateRecommendationScore = (event, userProfile = {}, interactions = {}) => {
   if (!event || typeof event !== "object") {
     return { score: 0, reasons: [], breakdown: [] };
   }
@@ -218,7 +210,7 @@ export const calculateRecommendationScore = (
   addScore(
     "Tech stack overlap",
     Math.min(techOverlap.length * 5, 12),
-    "Relevant to your tech stack",
+    "Relevant to your tech stack"
   );
 
   if (profileLevel && eventLevel && profileLevel === eventLevel) {
@@ -229,38 +221,42 @@ export const calculateRecommendationScore = (
   addScore(
     "Category affinity",
     Math.min(categoryAffinity * 4, 18),
-    "Similar to categories you engage with",
+    "Similar to categories you engage with"
   );
 
   const typeAffinity = interactionProfile.types?.[type] || 0;
-  addScore(
-    "Format affinity",
-    Math.min(typeAffinity * 2, 8),
-    "Similar to event formats you prefer",
-  );
+  addScore("Format affinity", Math.min(typeAffinity * 2, 8), "Similar to event formats you prefer");
 
   const tagAffinity = eventTags.reduce(
     (sum, tag) => sum + (interactionProfile.tags?.[tag] || 0),
-    0,
+    0
   );
   addScore(
     "Interaction tag overlap",
     Math.min(tagAffinity * 1.5, 12),
-    "Shares topics with your bookmarks and views",
+    "Shares topics with your bookmarks and views"
   );
 
   addScore(
     "Collaborative item similarity",
     getSimilarityScore(event, interactionProfile.interactedEvents || []),
-    "Similar to events in your activity history",
+    "Similar to events in your activity history"
   );
 
   const matchesArea = createLocationMatcher(interactionProfile.location);
   const localTrending = matchesArea(normalizeText(event?.location));
   if (localTrending) {
-    addScore("Trending near you", Math.min(getPopularityScore(event) + 6, 15), "Popular in your area");
+    addScore(
+      "Trending near you",
+      Math.min(getPopularityScore(event) + 6, 15),
+      "Popular in your area"
+    );
   } else if (event.trending || getPopularityScore(event) >= 8) {
-    addScore("Platform trending", Math.min(getPopularityScore(event), 10), "Trending among Eventra users");
+    addScore(
+      "Platform trending",
+      Math.min(getPopularityScore(event), 10),
+      "Trending among Eventra users"
+    );
   }
 
   const cappedScore = Math.min(Math.round(score), MAX_SCORE);

@@ -18,7 +18,7 @@
   border-radius: 20px;
   width: 100%;
   max-width: 640px;
-  box-shadow: 
+  box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.8),
     0 0 30px rgba(99, 102, 241, 0.08);
   overflow: hidden;
@@ -91,7 +91,7 @@
 .ocm-diff-val {
   padding: 8px 12px;
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   word-break: break-all;
 }
 

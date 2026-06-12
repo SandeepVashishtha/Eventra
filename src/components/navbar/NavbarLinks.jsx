@@ -81,8 +81,8 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           active
             ? "text-slate-900 dark:text-white border-primary"
             : isDropdown
-            ? "text-slate-500 dark:text-slate-400 hover:text-text border-transparent hover:border-border"
-            : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border-transparent hover:border-border"
+              ? "text-slate-500 dark:text-slate-400 hover:text-text border-transparent hover:border-border"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border-transparent hover:border-border"
         }`;
   };
 
@@ -91,8 +91,8 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       ref={navRef}
       className={`flex ${
         vertical
-          ? "flex-col items-start w-full gap-2"
-          : "items-center justify-start gap-2 min-w-max flex-nowrap overflow-visible"
+          ? "w-full flex-col items-start gap-2"
+          : "min-w-max flex-nowrap items-center justify-start gap-2 overflow-visible"
       }`}
       aria-label={vertical ? t("nav.mobilePrimaryLinks") : t("nav.primaryLinks")}
     >
@@ -106,11 +106,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           return (
             <div
               key={item.nameKey}
-              className={`relative group/nav flex items-center ${
+              className={`group/nav relative flex items-center ${
                 vertical ? "w-full flex-col items-start" : "flex-none"
               } ${!vertical && secondaryItemKeys.includes(item.nameKey) ? "hidden lg:flex" : ""}`}
             >
-              <div className={`flex w-full items-center gap-0.5 ${vertical ? "" : "justify-center"}`}>
+              <div
+                className={`flex w-full items-center gap-0.5 ${vertical ? "" : "justify-center"}`}
+              >
                 <NavLink
                   to={item.href}
                   onClick={(e) => handleNavbarLinkClick(item.href, e)}
@@ -148,14 +150,14 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                         ? t("nav.collapseSubmenu", { name: itemLabel })
                         : t("nav.expandSubmenu", { name: itemLabel })
                     }
-                    className={`ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md p-1 transition-colors hover:bg-bg-secondary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
+                    className={`hover:bg-bg-secondary focus-visible:ring-primary ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md p-1 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
                       isSubItemActive
                         ? "text-text"
-                        : "text-slate-500 dark:text-slate-400 hover:text-text"
+                        : "hover:text-text text-slate-500 dark:text-slate-400"
                     }`}
                   >
                     <ChevronDown
-                      className={`w-3 h-3 transition-transform duration-200 ${
+                      className={`h-3 w-3 transition-transform duration-200 ${
                         isOpen ? "rotate-180" : "group-hover/nav:rotate-180"
                       }`}
                     />
@@ -167,10 +169,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                 id={menuId}
                 className={
                   vertical
-                    ? "mt-1 block w-full space-y-1 rounded-lg bg-bg p-2"
+                    ? "bg-bg mt-1 block w-full space-y-1 rounded-lg p-2"
                     : `${
                         isOpen ? "block" : "hidden group-hover/nav:block"
-                      } absolute top-full left-0 bg-navbar shadow-premium-md rounded-md p-2 min-w-55 z-50 border border-border mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
+                      } bg-navbar shadow-premium-md border-border animate-in fade-in slide-in-from-top-1 absolute top-full left-0 z-50 mt-1 min-w-55 rounded-md border p-2 duration-200`
                 }
                 role={!vertical ? "menu" : undefined}
                 aria-label={`${itemLabel} submenu`}
@@ -182,14 +184,16 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     onClick={(e) => handleNavbarLinkClick(sub.href, e)}
                     role={!vertical ? "menuitem" : undefined}
                     className={({ isActive }) =>
-                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
+                      `mobile-drawer-link focus-visible:ring-primary focus-visible:ring-offset-bg flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
                         isActive
                           ? "bg-bg-secondary text-text font-semibold"
-                          : "text-slate-600 dark:text-slate-300 hover:text-text hover:bg-bg"
+                          : "hover:text-text hover:bg-bg text-slate-600 dark:text-slate-300"
                       }`
                     }
                   >
-                    <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">{sub.icon}</span>
+                    <span className="flex-none text-current [&>svg]:h-4 [&>svg]:w-4">
+                      {sub.icon}
+                    </span>
                     <span>{t(sub.nameKey)}</span>
                   </NavLink>
                 ))}
@@ -205,10 +209,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             onClick={(e) => handleNavbarLinkClick(item.href, e)}
             onMouseEnter={() => handlePrefetch(item.href)}
             className={({ isActive }) =>
-              `${!vertical ? "flex-none min-w-max" : ""} ${getNavLinkClasses(isActive, secondaryItemKeys.includes(item.nameKey))}`
+              `${!vertical ? "min-w-max flex-none" : ""} ${getNavLinkClasses(isActive, secondaryItemKeys.includes(item.nameKey))}`
             }
           >
-            <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">{item.icon}</span>
+            <span className="flex-none text-current [&>svg]:h-4 [&>svg]:w-4">{item.icon}</span>
             <span>{itemLabel}</span>
           </NavLink>
         );

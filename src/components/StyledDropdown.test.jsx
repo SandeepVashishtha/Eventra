@@ -6,9 +6,7 @@ let container;
 let root;
 let onChange;
 
- 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
- 
 
 const renderDropdown = (props = {}) => {
   container = document.createElement("div");
@@ -16,7 +14,6 @@ const renderDropdown = (props = {}) => {
   root = createRoot(container);
   onChange = jest.fn();
 
-   
   act(() => {
     root.render(
       <Dropdown
@@ -25,7 +22,7 @@ const renderDropdown = (props = {}) => {
         options={["Events", "Hackathons", "Projects"]}
         onChange={onChange}
         {...props}
-      />,
+      />
     );
   });
 
@@ -34,15 +31,12 @@ const renderDropdown = (props = {}) => {
 
 const pressKey = (element, key) => {
   act(() => {
-    element.dispatchEvent(
-      new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }),
-    );
+    element.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
   });
 };
 
 afterEach(() => {
   if (root) {
-     
     act(() => {
       root.unmount();
     });

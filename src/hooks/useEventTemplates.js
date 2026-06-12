@@ -70,29 +70,30 @@ export const useEventTemplates = () => {
    * @param {String} templateId - Template ID to load
    * @returns {Object|null} Template data or null on error
    */
-  const handleLoadTemplate = useCallback((templateId) => {
-    try {
-      const templateData = loadTemplate(templateId);
+  const handleLoadTemplate = useCallback(
+    (templateId) => {
+      try {
+        const templateData = loadTemplate(templateId);
 
-      if (templateData) {
-        const template = templates.find((t) => t.id === templateId);
-        toast.success(
-          `Loaded template "${template?.name || "Template"}"!`
-        );
-        logger.info(`[Templates] Loaded template: ${templateId}`);
-        return templateData;
-      } else {
-        toast.error("Failed to load template. It may have been deleted.");
-        logger.warn("[Templates] Template not found for loading:", templateId);
-        refreshTemplates();
+        if (templateData) {
+          const template = templates.find((t) => t.id === templateId);
+          toast.success(`Loaded template "${template?.name || "Template"}"!`);
+          logger.info(`[Templates] Loaded template: ${templateId}`);
+          return templateData;
+        } else {
+          toast.error("Failed to load template. It may have been deleted.");
+          logger.warn("[Templates] Template not found for loading:", templateId);
+          refreshTemplates();
+          return null;
+        }
+      } catch (error) {
+        logger.error("[Templates] Error loading template:", error);
+        toast.error("An error occurred while loading the template.");
         return null;
       }
-    } catch (error) {
-      logger.error("[Templates] Error loading template:", error);
-      toast.error("An error occurred while loading the template.");
-      return null;
-    }
-  }, [templates, refreshTemplates]);
+    },
+    [templates, refreshTemplates]
+  );
 
   /**
    * Delete a template by ID with confirmation

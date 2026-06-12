@@ -62,8 +62,7 @@ export function useDashboardFilters(data = [], { debounceMs = 300 } = {}) {
         const matchSearch = item.title.toLowerCase().includes(query);
 
         // Type match
-        const matchType =
-          selectedTypes.includes("All") || selectedTypes.includes(item.type);
+        const matchType = selectedTypes.includes("All") || selectedTypes.includes(item.type);
 
         // Status match (check both status and projectStatus)
         const matchStatus =

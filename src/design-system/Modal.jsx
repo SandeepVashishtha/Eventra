@@ -10,9 +10,12 @@ export function Modal({
   size = "md",
   closeOnOverlay = true,
 }) {
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === "Escape") onClose?.();
-  }, [onClose]);
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Escape") onClose?.();
+    },
+    [onClose]
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -35,12 +38,13 @@ export function Modal({
       aria-labelledby={title ? "ds-modal-title" : undefined}
       onClick={closeOnOverlay ? onClose : undefined}
     >
-      <div
-        className={`ds-modal ds-modal-${size}`}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className={`ds-modal ds-modal-${size}`} onClick={(e) => e.stopPropagation()}>
         <div className="ds-modal-header">
-          {title && <h2 id="ds-modal-title" className="ds-modal-title">{title}</h2>}
+          {title && (
+            <h2 id="ds-modal-title" className="ds-modal-title">
+              {title}
+            </h2>
+          )}
           <Button
             variant="ghost"
             size="sm"

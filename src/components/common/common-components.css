@@ -32,8 +32,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* ===== ERROR MESSAGE COMPONENT ===== */
@@ -117,7 +121,6 @@
   color: #f8fafc;
 }
 
-
 .public-layout-content {
   display: flex;
   align-items: center;
@@ -145,15 +148,15 @@
   .public-layout-content {
     padding: 1rem;
   }
-  
+
   .public-layout-card {
     padding: 1.5rem;
   }
-  
+
   .loading {
     padding: 1.5rem;
   }
-  
+
   .loading-spinner {
     width: 32px;
     height: 32px;

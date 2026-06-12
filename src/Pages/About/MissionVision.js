@@ -14,8 +14,8 @@ const iconVariants = {
 export default function MissionVision() {
   return (
     // UPDATED: Section background
-    <section className="relative py-28 bg-gradient-to-br from-indigo-100 to-white dark:from-gray-900 dark:to-black overflow-hidden">
-      <div className="max-w-5xl mx-auto px-6 lg:px-12 relative z-10 space-y-20">
+    <section className="relative overflow-hidden bg-gradient-to-br from-indigo-100 to-white py-28 dark:from-gray-900 dark:to-black">
+      <div className="relative z-10 mx-auto max-w-5xl space-y-20 px-6 lg:px-12">
         {/* Mission */}
         <motion.div
           variants={item}
@@ -26,7 +26,7 @@ export default function MissionVision() {
           data-aos-duration="1000"
           data-aos-offset="200"
           // UPDATED: Card background and border
-          className="group relative rounded-3xl bg-white dark:bg-gray-800 shadow-xl p-12 flex flex-col md:flex-row items-start gap-8 hover:shadow-2xl transition duration-500 border border-transparent dark:border-gray-700"
+          className="group relative flex flex-col items-start gap-8 rounded-3xl border border-transparent bg-white p-12 shadow-xl transition duration-500 hover:shadow-2xl md:flex-row dark:border-gray-700 dark:bg-gray-800"
         >
           {/* Icon Badge */}
           <motion.div
@@ -35,24 +35,23 @@ export default function MissionVision() {
             animate="initial"
             whileHover="hover"
             // UPDATED: Icon wrapper background
-            className="flex-shrink-0 w-20 h-20 rounded-2xl bg-indigo-100 dark:bg-gray-700 flex items-center justify-center shadow-md transition"
+            className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-indigo-100 shadow-md transition dark:bg-gray-700"
           >
             {/* UPDATED: Icon color */}
-            <Target className="text-indigo-600 dark:text-indigo-400 text-3xl" />
+            <Target className="text-3xl text-indigo-600 dark:text-indigo-400" />
           </motion.div>
 
           {/* Text */}
           <div>
             {/* UPDATED: Text colors */}
-            <h3 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h3 className="mb-4 text-3xl font-bold text-gray-900 dark:text-gray-100">
               Our Mission
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-lg">
-              To democratize event management by providing powerful, accessible
-              tools that enable any community to create meaningful connections
-              and memorable experiences. We believe that great events shouldn&apos;t
-              require expensive software or technical expertise – just passion
-              and the right platform.
+            <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-400">
+              To democratize event management by providing powerful, accessible tools that enable
+              any community to create meaningful connections and memorable experiences. We believe
+              that great events shouldn&apos;t require expensive software or technical expertise –
+              just passion and the right platform.
             </p>
           </div>
         </motion.div>
@@ -66,7 +65,7 @@ export default function MissionVision() {
           data-aos="fade-left"
           data-aos-duration="1000"
           data-aos-offset="200"
-          className="group relative rounded-3xl bg-black text-white shadow-xl p-12 flex flex-col md:flex-row items-start gap-8 hover:shadow-2xl transition duration-500"
+          className="group relative flex flex-col items-start gap-8 rounded-3xl bg-black p-12 text-white shadow-xl transition duration-500 hover:shadow-2xl md:flex-row"
         >
           {/* Icon Badge */}
           <motion.div
@@ -74,20 +73,19 @@ export default function MissionVision() {
             initial="initial"
             animate="initial"
             whileHover="hover"
-            className="flex-shrink-0 w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-md transition"
+            className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 shadow-md backdrop-blur-md transition"
           >
-            <Star className="text-white text-3xl" />
+            <Star className="text-3xl text-white" />
           </motion.div>
 
           {/* Text */}
           <div>
-            <h3 className="text-3xl font-bold mb-4">Our Vision</h3>
-            <p className="text-indigo-100 leading-relaxed text-lg">
-              A world where every community, regardless of size or budget, has
-              access to professional-grade event management tools. We envision
-              thriving local ecosystems where organizations can focus on what
-              matters most: bringing people together and creating lasting
-              impact.
+            <h3 className="mb-4 text-3xl font-bold">Our Vision</h3>
+            <p className="text-lg leading-relaxed text-indigo-100">
+              A world where every community, regardless of size or budget, has access to
+              professional-grade event management tools. We envision thriving local ecosystems where
+              organizations can focus on what matters most: bringing people together and creating
+              lasting impact.
             </p>
           </div>
         </motion.div>
@@ -96,12 +94,12 @@ export default function MissionVision() {
       {/* Background Blobs */}
       {/* UPDATED: Blob colors */}
       <motion.div
-        className="absolute top-0 right-0 w-96 h-96 bg-purple-200 dark:bg-purple-900/50 rounded-full filter blur-3xl opacity-30"
+        className="absolute top-0 right-0 h-96 w-96 rounded-full bg-purple-200 opacity-30 blur-3xl filter dark:bg-purple-900/50"
         animate={{ y: [0, 40, 0], x: [0, -30, 0] }}
         transition={{ repeat: Infinity, duration: 16, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-200 dark:bg-indigo-900/50 rounded-full filter blur-3xl opacity-25"
+        className="absolute bottom-0 left-0 h-80 w-80 rounded-full bg-indigo-200 opacity-25 blur-3xl filter dark:bg-indigo-900/50"
         animate={{ y: [0, -40, 0], x: [0, 30, 0] }}
         transition={{ repeat: Infinity, duration: 18, ease: "easeInOut" }}
       />

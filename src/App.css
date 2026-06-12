@@ -1369,6 +1369,16 @@ main {
   color-scheme: dark;
 }
 
-:where(.dark p, .dark span, .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6, .dark label) {
+:where(
+  .dark p,
+  .dark span,
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark h4,
+  .dark h5,
+  .dark h6,
+  .dark label
+) {
   color: inherit;
 }

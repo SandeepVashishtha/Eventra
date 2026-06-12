@@ -49,10 +49,7 @@ export const useRoutePrefetch = (config = {}) => {
     } else if (path === "/explore" || path === "/events") {
       // On explore, prefetch event details and registration
       prefetch(() => import("../Pages/Events/EventDetails"), "details");
-      prefetch(
-        () => import("../Pages/Events/EventRegistration"),
-        "registration"
-      );
+      prefetch(() => import("../Pages/Events/EventRegistration"), "registration");
     }
   }, [location.pathname, prefetch]);
 

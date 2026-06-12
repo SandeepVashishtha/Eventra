@@ -354,26 +354,32 @@ const SpatialSeatSelector = ({
     e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
-  const isSeatSelected = useCallback((elId, idx) => {
-    return selectedSeat && selectedSeat.elementId === elId && selectedSeat.seatIndex === idx;
-  }, [selectedSeat]);
+  const isSeatSelected = useCallback(
+    (elId, idx) => {
+      return selectedSeat && selectedSeat.elementId === elId && selectedSeat.seatIndex === idx;
+    },
+    [selectedSeat]
+  );
 
   // Selection callback
-  const handleSeatClick = useCallback((el, seat, seatIdx) => {
-    if (readOnly) return;
-    const isOccupied = el.assignedAttendees[seatIdx];
-    if (isOccupied) return;
+  const handleSeatClick = useCallback(
+    (el, seat, seatIdx) => {
+      if (readOnly) return;
+      const isOccupied = el.assignedAttendees[seatIdx];
+      if (isOccupied) return;
 
-    const label = (el.seatLabels && el.seatLabels[seatIdx]) || `Seat ${seatIdx + 1}`;
-    const tier = el.tier || "General Seating";
+      const label = (el.seatLabels && el.seatLabels[seatIdx]) || `Seat ${seatIdx + 1}`;
+      const tier = el.tier || "General Seating";
 
-    onSelectSeat({
-      elementId: el.id,
-      seatIndex: seatIdx,
-      seatLabel: `${el.label} - ${label}`,
-      tier: tier,
-    });
-  }, [onSelectSeat, readOnly]);
+      onSelectSeat({
+        elementId: el.id,
+        seatIndex: seatIdx,
+        seatLabel: `${el.label} - ${label}`,
+        tier: tier,
+      });
+    },
+    [onSelectSeat, readOnly]
+  );
 
   return (
     <div className="ssp-container">
@@ -384,7 +390,7 @@ const SpatialSeatSelector = ({
             <Sparkles size={14} className="text-amber-400" />
             <span>Interactive Floor Seating</span>
           </div>
-          <div className="flex gap-4 items-center">
+          <div className="flex items-center gap-4">
             <div className="text-xs text-zinc-400">
               Available: <span className="font-bold text-emerald-400">{seatStats.available}</span> /{" "}
               {seatStats.total}
@@ -611,7 +617,7 @@ const SpatialSeatSelector = ({
               <div className="ssp-pop-row">
                 <span className="ssp-pop-label">Tier:</span>
                 <span
-                  className={`ssp-pop-val ${hoveredSeat.tier.toLowerCase().includes("vip") ? "text-amber-400 font-bold" : "text-indigo-300"}`}
+                  className={`ssp-pop-val ${hoveredSeat.tier.toLowerCase().includes("vip") ? "font-bold text-amber-400" : "text-indigo-300"}`}
                 >
                   {hoveredSeat.tier}
                 </span>
@@ -619,11 +625,11 @@ const SpatialSeatSelector = ({
               <div className="ssp-pop-row">
                 <span className="ssp-pop-label">Status:</span>
                 {hoveredSeat.occupiedBy ? (
-                  <span className="ssp-pop-val text-red-400 flex items-center gap-1">
+                  <span className="ssp-pop-val flex items-center gap-1 text-red-400">
                     <ShieldAlert size={10} /> Occupied
                   </span>
                 ) : (
-                  <span className="ssp-pop-val text-emerald-400 flex items-center gap-1">
+                  <span className="ssp-pop-val flex items-center gap-1 text-emerald-400">
                     <CheckCircle size={10} /> Available
                   </span>
                 )}
@@ -652,7 +658,7 @@ const SpatialSeatSelector = ({
           <span>Selected</span>
         </div>
         {!readOnly && (
-          <div className="ssp-legend-tip ml-auto text-[10px] text-zinc-500 flex items-center gap-1">
+          <div className="ssp-legend-tip ml-auto flex items-center gap-1 text-[10px] text-zinc-500">
             <HelpCircle size={11} /> Scroll wheel to zoom, drag mouse to pan
           </div>
         )}
@@ -718,7 +724,9 @@ const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, con
       });
 
       if (bestSeat) {
-        const nextSeatEl = document.getElementById(`seat-element-${bestSeat.elementId}-${bestSeat.index}`);
+        const nextSeatEl = document.getElementById(
+          `seat-element-${bestSeat.elementId}-${bestSeat.index}`
+        );
         if (nextSeatEl) {
           nextSeatEl.focus();
         }
@@ -745,19 +753,22 @@ const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, con
     onHover(null);
   };
 
-  const handleMouseEnter = useCallback((e) => {
-    const bbox = e.currentTarget.getBoundingClientRect();
-    const vrect = containerRef.current.getBoundingClientRect();
-    onHover({
-      el,
-      seatIdx: seat.index,
-      label: seatLabel,
-      tier: seatTier,
-      occupiedBy: isOccupied || null,
-      x: bbox.left - vrect.left + bbox.width / 2,
-      y: bbox.top - vrect.top - 10,
-    });
-  }, [containerRef, el, onHover, seat.index, seatLabel, seatTier, isOccupied]);
+  const handleMouseEnter = useCallback(
+    (e) => {
+      const bbox = e.currentTarget.getBoundingClientRect();
+      const vrect = containerRef.current.getBoundingClientRect();
+      onHover({
+        el,
+        seatIdx: seat.index,
+        label: seatLabel,
+        tier: seatTier,
+        occupiedBy: isOccupied || null,
+        x: bbox.left - vrect.left + bbox.width / 2,
+        y: bbox.top - vrect.top - 10,
+      });
+    },
+    [containerRef, el, onHover, seat.index, seatLabel, seatTier, isOccupied]
+  );
 
   const handleMouseLeave = useCallback(() => {
     onHover(null);

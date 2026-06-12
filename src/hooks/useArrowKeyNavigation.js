@@ -22,10 +22,7 @@ import { useCallback, useRef } from "react";
  *     <button data-nav-item>Item 2</button>
  *   </div>
  */
-export default function useArrowKeyNavigation({
-  selector = "[data-nav-item]",
-  wrap = true,
-} = {}) {
+export default function useArrowKeyNavigation({ selector = "[data-nav-item]", wrap = true } = {}) {
   const containerRef = useRef(null);
 
   const onKeyDown = useCallback(

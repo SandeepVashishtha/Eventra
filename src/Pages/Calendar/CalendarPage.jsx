@@ -225,9 +225,7 @@ const CalendarPage = () => {
       });
     });
 
-    map.forEach((items) =>
-      items.sort((first, second) => first.start - second.start)
-    );
+    map.forEach((items) => items.sort((first, second) => first.start - second.start));
 
     return map;
   }, [upcomingEventsWithRange]);
@@ -273,13 +271,13 @@ const CalendarPage = () => {
 
   return (
     <div className={`${darkTheme.section} min-h-screen`}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-sky-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
+            <div className="inline-flex items-center gap-2 rounded-full bg-sky-100 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-sky-700 uppercase dark:bg-sky-500/10 dark:text-sky-300">
               Calendar View
             </div>
-            <h1 className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
               Upcoming Events Calendar
             </h1>
             <p className="mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
@@ -295,7 +293,8 @@ const CalendarPage = () => {
               type="button"
               onClick={refresh}
               className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
-             aria-label="button">
+              aria-label="button"
+            >
               <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
             </button>
@@ -310,14 +309,15 @@ const CalendarPage = () => {
                 type="button"
                 onClick={refresh}
                 className="inline-flex items-center gap-2 rounded-full bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
-               aria-label="button">
+                aria-label="button"
+              >
                 Try again
               </button>
             </div>
           </div>
         ) : null}
 
-          <div className="mt-8 grid gap-6 grid-cols-1 lg:grid-cols-2 items-start">
+        <div className="mt-8 grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
           <div className="eventra-calendar rounded-3xl bg-white/80 p-4 shadow-lg backdrop-blur-sm dark:bg-slate-950/80">
             <div className="h-[450px] lg:h-[620px]">
               <Calendar
@@ -337,10 +337,10 @@ const CalendarPage = () => {
             </div>
           </div>
 
-          <aside className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-lg dark:border-slate-800 dark:bg-slate-950 mt-2 lg:mt-0">
+          <aside className="mt-2 rounded-3xl border border-slate-200 bg-white p-5 shadow-lg sm:p-6 lg:mt-0 dark:border-slate-800 dark:bg-slate-950">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                <p className="text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
                   Selected Day
                 </p>
                 <h2 className="mt-2 text-lg font-bold text-slate-900 dark:text-white">
@@ -359,8 +359,11 @@ const CalendarPage = () => {
                   </div>
                   <div className="space-y-4" aria-hidden="true">
                     {[...Array(2)].map((_, i) => (
-                      <div key={i} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 animate-pulse">
-                        <SkeletonBlock className="h-5 w-3/4 mb-3" />
+                      <div
+                        key={i}
+                        className="animate-pulse rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+                      >
+                        <SkeletonBlock className="mb-3 h-5 w-3/4" />
                         <SkeletonBlock className="h-4 w-1/2" />
                       </div>
                     ))}
@@ -382,31 +385,34 @@ const CalendarPage = () => {
                     <Link
                       to={`/events/${event.id}`}
                       key={event.id}
-                      className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:border-sky-400 hover:shadow-md hover:scale-[1.01] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 group"
+                      className="group block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:border-sky-400 hover:shadow-md focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:outline-none dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-500 dark:focus-visible:ring-offset-slate-950"
                     >
                       <div className="flex items-center justify-between">
                         {event.type ? (
-                          <span className="inline-flex rounded-[6px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+                          <span className="inline-flex rounded-[6px] bg-slate-100 px-2 py-0.5 text-[9px] font-semibold tracking-[0.1em] text-slate-500 uppercase dark:bg-slate-800 dark:text-slate-400">
                             {event.type}
                           </span>
                         ) : (
                           <span />
                         )}
-                        <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 transition-transform group-hover:translate-x-0.5" />
+                        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5 dark:text-slate-500" />
                       </div>
 
-                      <h4 className="mt-2 text-[15px] font-bold text-slate-900 dark:text-white line-clamp-2 break-words leading-snug">
+                      <h4 className="mt-2 line-clamp-2 text-[15px] leading-snug font-bold break-words text-slate-900 dark:text-white">
                         {event.title}
                       </h4>
 
                       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 dark:text-slate-400">
-                        <span className="inline-flex items-center gap-1 shrink-0">
+                        <span className="inline-flex shrink-0 items-center gap-1">
                           <Clock className="h-3.5 w-3.5 text-sky-500" />
                           {event.time || event.startTime || (event.allDay ? "All day" : "TBD")}
                         </span>
-                        <span className="inline-flex items-center gap-1 min-w-0">
-                          <MapPin className="h-3.5 w-3.5 text-sky-500 shrink-0" />
-                          <span className="truncate max-w-[200px]" title={event.location || "Location TBD"}>
+                        <span className="inline-flex min-w-0 items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5 shrink-0 text-sky-500" />
+                          <span
+                            className="max-w-[200px] truncate"
+                            title={event.location || "Location TBD"}
+                          >
                             {event.location || "Location TBD"}
                           </span>
                         </span>

@@ -1,4 +1,3 @@
-
 import { motion, useInView } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 
@@ -18,8 +17,6 @@ const container = {
     transition: { staggerChildren: 0.15, duration: 0.6, ease: "easeOut" },
   },
 };
-
-
 
 const cardItem = {
   hidden: { opacity: 0, scale: 0.8 },
@@ -78,41 +75,47 @@ export default function ModernAbout() {
 
   return (
     <>
-      <section className="relative min-h-[82vh] flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 overflow-hidden py-20 px-4">
+      <section className="relative flex min-h-[82vh] items-center justify-center overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 px-4 py-20 dark:from-gray-900 dark:via-black dark:to-gray-900">
         <motion.div
           aria-hidden="true"
-          className="absolute top-0 left-1/4 w-48 sm:w-72 h-48 sm:h-72 bg-indigo-100 dark:bg-indigo-900/50 rounded-full blur-3xl opacity-40 will-change-transform"
+          className="absolute top-0 left-1/4 h-48 w-48 rounded-full bg-indigo-100 opacity-40 blur-3xl will-change-transform sm:h-72 sm:w-72 dark:bg-indigo-900/50"
           animate={prefersReducedMotion ? {} : { scale: [1, 1.3, 1], rotate: [0, 45, 0] }}
           transition={{ repeat: Infinity, duration: 12, ease: "easeInOut" }}
         />
         <motion.div
           aria-hidden="true"
-          className="absolute bottom-0 right-1/3 w-64 sm:w-96 h-64 sm:h-96 bg-pink-100 dark:bg-pink-900/50 rounded-full blur-3xl opacity-30 will-change-transform"
+          className="absolute right-1/3 bottom-0 h-64 w-64 rounded-full bg-pink-100 opacity-30 blur-3xl will-change-transform sm:h-96 sm:w-96 dark:bg-pink-900/50"
           animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1], rotate: [0, -45, 0] }}
           transition={{ repeat: Infinity, duration: 14, ease: "easeInOut" }}
         />
         <motion.div
           aria-hidden="true"
-          className="absolute top-1/3 left-4 sm:left-10 w-28 sm:w-40 h-28 sm:h-40 bg-purple-200 dark:bg-purple-800/40 rounded-full blur-2xl opacity-20 will-change-transform"
+          className="absolute top-1/3 left-4 h-28 w-28 rounded-full bg-purple-200 opacity-20 blur-2xl will-change-transform sm:left-10 sm:h-40 sm:w-40 dark:bg-purple-800/40"
           animate={prefersReducedMotion ? {} : { y: [0, -30, 0], x: [0, 20, 0] }}
           transition={{ repeat: Infinity, duration: 10, ease: "easeInOut" }}
         />
         <motion.div
           aria-hidden="true"
-          className="absolute bottom-20 right-4 sm:right-10 w-24 sm:w-32 h-24 sm:h-32 bg-yellow-200 dark:bg-yellow-800/40 rounded-full blur-2xl opacity-25 will-change-transform"
+          className="absolute right-4 bottom-20 h-24 w-24 rounded-full bg-yellow-200 opacity-25 blur-2xl will-change-transform sm:right-10 sm:h-32 sm:w-32 dark:bg-yellow-800/40"
           animate={prefersReducedMotion ? {} : { y: [0, 25, 0], x: [0, -15, 0] }}
           transition={{ repeat: Infinity, duration: 12, ease: "easeInOut" }}
         />
-        <div aria-hidden="true" className="absolute inset-0 dark:hidden bg-[linear-gradient(to_right,rgba(147,197,253,0.22)_1px,transparent_1px),linear-gradient(to_bottom,rgba(250,204,21,0.2)_1px,transparent_1px),linear-gradient(45deg,rgba(59,130,246,0.1)_1px,transparent_1px),linear-gradient(-45deg,rgba(250,204,21,0.08)_1px,transparent_1px)] bg-[size:40px_40px,40px_40px,80px_80px,80px_80px]" />
-        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/30 to-white dark:from-transparent dark:to-gray-950" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-[linear-gradient(to_right,rgba(147,197,253,0.22)_1px,transparent_1px),linear-gradient(to_bottom,rgba(250,204,21,0.2)_1px,transparent_1px),linear-gradient(45deg,rgba(59,130,246,0.1)_1px,transparent_1px),linear-gradient(-45deg,rgba(250,204,21,0.08)_1px,transparent_1px)] bg-[size:40px_40px,40px_40px,80px_80px,80px_80px] dark:hidden"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/30 to-white dark:from-transparent dark:to-gray-950"
+        />
 
-        <div className="max-w-4xl md:my-24 my-16 w-full text-center z-10">
+        <div className="z-10 my-16 w-full max-w-4xl text-center md:my-24">
           <motion.p
             variants={staggerItem}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4"
+            className="mb-4 text-xs tracking-widest text-gray-400 uppercase dark:text-gray-500"
           >
             Open-source, community-driven, free forever
           </motion.p>
@@ -122,7 +125,7 @@ export default function ModernAbout() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="text-4xl sm:text-6xl md:text-7xl font-extrabold text-black dark:text-white mb-6"
+            className="mb-6 text-4xl font-extrabold text-black sm:text-6xl md:text-7xl dark:text-white"
             style={{ fontFamily: '"Anton", sans-serif' }}
           >
             About Us
@@ -133,12 +136,11 @@ export default function ModernAbout() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="text-base sm:text-lg text-black dark:text-gray-300 mb-16"
+            className="mb-16 text-base text-black sm:text-lg dark:text-gray-300"
           >
-            Eventra is a comprehensive open-source platform that empowers
-            communities, colleges, and organizations worldwide to create, manage,
-            and track events effortlessly. Transform the way you plan, execute,
-            and experience events with ease.
+            Eventra is a comprehensive open-source platform that empowers communities, colleges, and
+            organizations worldwide to create, manage, and track events effortlessly. Transform the
+            way you plan, execute, and experience events with ease.
           </motion.p>
 
           <ErrorBoundary level="section" label="Statistics">
@@ -147,7 +149,7 @@ export default function ModernAbout() {
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-6"
+              className="grid grid-cols-1 gap-6 sm:grid-cols-3"
             >
               {stats.map((s) => (
                 <motion.div
@@ -155,16 +157,23 @@ export default function ModernAbout() {
                   variants={scaleIn}
                   whileHover={prefersReducedMotion ? {} : { scale: 1.05, y: -4 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-4 sm:p-5 cursor-default"
+                  className="cursor-default rounded-2xl bg-white/60 p-4 shadow-lg shadow-blue-100 backdrop-blur-sm sm:p-5 dark:bg-gray-800/60 dark:shadow-indigo-900/50"
                 >
-                  <h3 className="text-black dark:text-white text-xl sm:text-2xl font-bold mb-1">
+                  <h3 className="mb-1 text-xl font-bold text-black sm:text-2xl dark:text-white">
                     {s.value.includes("+") ? (
-                      <CountUp start={0} end={parseInt(s.value, 10)} duration={3} suffix="+" enableScrollSpy scrollSpyOnce />
+                      <CountUp
+                        start={0}
+                        end={parseInt(s.value, 10)}
+                        duration={3}
+                        suffix="+"
+                        enableScrollSpy
+                        scrollSpyOnce
+                      />
                     ) : (
                       s.value
                     )}
                   </h3>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs">{s.label}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{s.label}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -187,28 +196,33 @@ function MissionSection({ anim, prefersReducedMotion }) {
   }, [isContainerInView]);
 
   return (
-    <section className="border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+    <section className="border-t border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-950">
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-12">
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={fadeUp}
           >
-            <p className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Why we exist</p>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-5" style={{ fontFamily: '"Anton", sans-serif' }}>
+            <p className="mb-2 text-xs tracking-widest text-gray-400 uppercase dark:text-gray-500">
+              Why we exist
+            </p>
+            <h2
+              className="mb-5 text-3xl font-extrabold text-black sm:text-4xl dark:text-white"
+              style={{ fontFamily: '"Anton", sans-serif' }}
+            >
               Our Mission & Vision
             </h2>
-            <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base leading-relaxed mb-5">
-              We started Eventra because we were tired of watching college clubs and
-              communities struggle with tools that were either too expensive or too complicated.
-              There had to be something better.
+            <p className="mb-5 text-sm leading-relaxed text-gray-500 sm:text-base dark:text-gray-400">
+              We started Eventra because we were tired of watching college clubs and communities
+              struggle with tools that were either too expensive or too complicated. There had to be
+              something better.
             </p>
-            <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base leading-relaxed">
-              We want a world where any club, any community, any group of people with an
-              idea can run an event without needing a budget or a technical team behind them.
-              That is what we are building toward.
+            <p className="text-sm leading-relaxed text-gray-500 sm:text-base dark:text-gray-400">
+              We want a world where any club, any community, any group of people with an idea can
+              run an event without needing a budget or a technical team behind them. That is what we
+              are building toward.
             </p>
           </motion.div>
 
@@ -217,7 +231,7 @@ function MissionSection({ anim, prefersReducedMotion }) {
             whileInView="visible"
             viewport={{ once: true }}
             variants={staggerContainer}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2"
           >
             {values.map((v) => (
               <motion.div
@@ -225,38 +239,39 @@ function MissionSection({ anim, prefersReducedMotion }) {
                 variants={staggerItem}
                 whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="rounded-2xl border p-5 cursor-default bg-gradient-to-b from-white via-white to-slate-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 border-slate-100 dark:border-gray-700 shadow-xl shadow-slate-100/70 dark:shadow-none transition-transform duration-300"
+                className="cursor-default rounded-2xl border border-slate-100 bg-gradient-to-b from-white via-white to-slate-50 p-5 shadow-xl shadow-slate-100/70 transition-transform duration-300 dark:border-gray-700 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 dark:shadow-none"
               >
-                <h4 className="font-bold text-sm text-black dark:text-white mb-2">{v.title}</h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{v.desc}</p>
+                <h4 className="mb-2 text-sm font-bold text-black dark:text-white">{v.title}</h4>
+                <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400">{v.desc}</p>
               </motion.div>
             ))}
           </motion.div>
         </div>
 
-        <div ref={containerRef} className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-12 w-full">
+        <div ref={containerRef} className="mt-12 grid w-full grid-cols-1 gap-6 sm:grid-cols-2">
           <motion.div
             variants={cardItem}
-            className="bg-gradient-to-b from-white via-white to-slate-50 dark:from-gray-800 dark:to-gray-900 border border-slate-100 dark:border-gray-800 shadow-xl shadow-slate-100/70 dark:shadow-none backdrop-blur-sm rounded-2xl p-6 hover:scale-[1.02] transition-all duration-500"
+            className="rounded-2xl border border-slate-100 bg-gradient-to-b from-white via-white to-slate-50 p-6 shadow-xl shadow-slate-100/70 backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] dark:border-gray-800 dark:from-gray-800 dark:to-gray-900 dark:shadow-none"
             {...anim(scaleIn)}
           >
-            <h3 className="text-black dark:text-white text-2xl sm:text-3xl font-bold mb-2">
+            <h3 className="mb-2 text-2xl font-bold text-black sm:text-3xl dark:text-white">
               {isOpen ? <CountUp start={0} end={500} duration={3} suffix="+" /> : "0+"}
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Active Users</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Active Users</p>
           </motion.div>
 
           <motion.div
             variants={cardItem}
-            className="bg-gradient-to-b from-white via-white to-slate-50 dark:from-gray-800 dark:to-gray-900 border border-slate-100 dark:border-gray-800 shadow-xl shadow-slate-100/70 dark:shadow-none backdrop-blur-sm rounded-2xl p-6 hover:scale-[1.02] transition-all duration-500"
+            className="rounded-2xl border border-slate-100 bg-gradient-to-b from-white via-white to-slate-50 p-6 shadow-xl shadow-slate-100/70 backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] dark:border-gray-800 dark:from-gray-800 dark:to-gray-900 dark:shadow-none"
             {...anim(scaleIn)}
           >
-            <h3 className="text-black dark:text-white text-2xl sm:text-3xl font-bold mb-2">Global</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Community Reach</p>
+            <h3 className="mb-2 text-2xl font-bold text-black sm:text-3xl dark:text-white">
+              Global
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Community Reach</p>
           </motion.div>
         </div>
       </div>
     </section>
   );
 }
-

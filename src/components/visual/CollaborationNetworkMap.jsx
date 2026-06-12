@@ -280,10 +280,10 @@ export default function CollaborationNetworkMap() {
     if (!hub) return {};
     const xPercent = (hub.x / 1000) * 100;
     const yPercent = (hub.y / 500) * 100;
-    return { 
-      left: `${xPercent}%`, 
-      top: `${yPercent - 4}%`, 
-      transform: "translate(-50%, -100%)" 
+    return {
+      left: `${xPercent}%`,
+      top: `${yPercent - 4}%`,
+      transform: "translate(-50%, -100%)",
     };
   }, []);
 
@@ -308,26 +308,26 @@ export default function CollaborationNetworkMap() {
   );
 
   return (
-    <section className="bg-white dark:bg-slate-950 py-16 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <section className="bg-white py-16 text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <div className="relative">
           {/* Header Controls */}
-          <div className="mb-8 flex flex-col gap-4 relative">
+          <div className="relative mb-8 flex flex-col gap-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-violet-600 dark:text-violet-400">
               <Globe className="h-4 w-4" />
               <span>Global Connectivity</span>
             </div>
 
-            <div className="absolute top-0 right-0 flex items-center gap-2 z-20">
+            <div className="absolute top-0 right-0 z-20 flex items-center gap-2">
               <button
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                 onClick={() => setZoom((z) => Math.min(z + 0.2, 2))}
                 aria-label="Zoom in"
               >
                 <ZoomIn size={16} />
               </button>
               <button
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                 onClick={() => setZoom((z) => Math.max(z - 0.2, 0.5))}
                 aria-label="Zoom out"
               >
@@ -335,7 +335,7 @@ export default function CollaborationNetworkMap() {
               </button>
             </div>
 
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
               Global Collaboration Network
             </h2>
             <p className="max-w-2xl text-base text-slate-600 dark:text-slate-400">
@@ -345,26 +345,34 @@ export default function CollaborationNetworkMap() {
 
             {/* Filters Row */}
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <div className="relative flex-1 min-w-[240px] md:flex-none">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <div className="relative min-w-[240px] flex-1 md:flex-none">
+                <Search
+                  size={16}
+                  className="absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-400"
+                />
                 <input
                   type="text"
                   placeholder="Search hubs or technologies..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full md:w-72 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20"
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-4 pl-10 text-sm text-slate-800 placeholder:text-slate-400 focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 focus:outline-none md:w-72 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                 />
               </div>
 
               <div className="relative">
-                <Filter size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Filter
+                  size={16}
+                  className="absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-400"
+                />
                 <select
                   value={selectedActivity}
                   onChange={(e) => setSelectedActivity(e.target.value)}
-                  className="appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-8 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:border-violet-500/60"
+                  className="appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pr-8 pl-10 text-sm text-slate-700 focus:border-violet-500/60 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
                 >
                   {["All", "Critical", "High", "Medium", "Low"].map((a) => (
-                    <option key={a} value={a}>{a} Activity</option>
+                    <option key={a} value={a}>
+                      {a} Activity
+                    </option>
                   ))}
                 </select>
               </div>
@@ -373,7 +381,7 @@ export default function CollaborationNetworkMap() {
                 <select
                   value={selectedRegion}
                   onChange={(e) => setSelectedRegion(e.target.value)}
-                  className="appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 px-4 pr-8 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:border-violet-500/60"
+                  className="appearance-none rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-8 text-sm text-slate-700 focus:border-violet-500/60 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
                 >
                   {REGIONS.map((region) => (
                     <option key={region} value={region}>
@@ -383,24 +391,24 @@ export default function CollaborationNetworkMap() {
                 </select>
               </div>
 
-              <div className="flex items-center gap-4 ml-2 border-l border-slate-200 dark:border-slate-800 pl-4 h-9">
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+              <div className="ml-2 flex h-9 items-center gap-4 border-l border-slate-200 pl-4 dark:border-slate-800">
+                <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-600 select-none dark:text-slate-400">
                   <input
                     type="checkbox"
                     checked={showConnections}
                     onChange={(e) => setShowConnections(e.target.checked)}
-                    className="h-4 w-4 rounded text-violet-600 focus:ring-violet-500/40 border-slate-300 dark:border-slate-700 cursor-pointer"
+                    className="h-4 w-4 cursor-pointer rounded border-slate-300 text-violet-600 focus:ring-violet-500/40 dark:border-slate-700"
                   />
                   <span>Connections</span>
                 </label>
 
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+                <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-600 select-none dark:text-slate-400">
                   <input
                     type="checkbox"
                     checked={particlesEnabled}
                     onChange={(e) => setParticlesEnabled(e.target.checked)}
                     disabled={prefersReducedMotion}
-                    className="h-4 w-4 rounded text-violet-600 focus:ring-violet-500/40 border-slate-300 dark:border-slate-700 disabled:opacity-40 cursor-pointer"
+                    className="h-4 w-4 cursor-pointer rounded border-slate-300 text-violet-600 focus:ring-violet-500/40 disabled:opacity-40 dark:border-slate-700"
                   />
                   <span>Particles</span>
                 </label>
@@ -409,26 +417,48 @@ export default function CollaborationNetworkMap() {
           </div>
 
           {/* Metrics Row Wrapper Panel */}
-          <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4 p-4 rounded-3xl bg-violet-50/50 dark:bg-violet-950/20 border border-violet-100/60 dark:border-violet-900/30">
+          <div className="mb-6 grid grid-cols-2 gap-4 rounded-3xl border border-violet-100/60 bg-violet-50/50 p-4 md:grid-cols-4 dark:border-violet-900/30 dark:bg-violet-950/20">
             {[
-              { label: "Developers", value: stats.totalDevs.toLocaleString(), icon: Users, color: "text-violet-600 dark:text-violet-400" },
-              { label: "Projects", value: stats.totalProjects, icon: Code, color: "text-violet-600 dark:text-violet-400" },
-              { label: "Connections", value: CONNECTIONS.length, icon: GitBranch, color: "text-violet-600 dark:text-violet-400" },
-              { label: "Active Hubs", value: `${stats.activeHubs}/${HUBS.length}`, icon: TrendingUp, color: "text-violet-600 dark:text-violet-400" }
+              {
+                label: "Developers",
+                value: stats.totalDevs.toLocaleString(),
+                icon: Users,
+                color: "text-violet-600 dark:text-violet-400",
+              },
+              {
+                label: "Projects",
+                value: stats.totalProjects,
+                icon: Code,
+                color: "text-violet-600 dark:text-violet-400",
+              },
+              {
+                label: "Connections",
+                value: CONNECTIONS.length,
+                icon: GitBranch,
+                color: "text-violet-600 dark:text-violet-400",
+              },
+              {
+                label: "Active Hubs",
+                value: `${stats.activeHubs}/${HUBS.length}`,
+                icon: TrendingUp,
+                color: "text-violet-600 dark:text-violet-400",
+              },
             ].map((stat, i) => (
               /* MODIFIED: Added premium uniform violet borders and soft shadows to ALL metric cards */
-              <div 
-                key={i} 
-                className="flex items-center gap-4 rounded-2xl p-5 transition-all duration-300 bg-white dark:bg-slate-900 border-2 border-violet-500 shadow-[0_0_15px_rgba(124,58,237,0.12)] dark:shadow-[0_0_20px_rgba(139,92,246,0.12)]"
+              <div
+                key={i}
+                className="flex items-center gap-4 rounded-2xl border-2 border-violet-500 bg-white p-5 shadow-[0_0_15px_rgba(124,58,237,0.12)] transition-all duration-300 dark:bg-slate-900 dark:shadow-[0_0_20px_rgba(139,92,246,0.12)]"
               >
-                <div className="p-2.5 rounded-xl bg-violet-50 dark:bg-violet-950/60 metric-icon text-violet-600 dark:text-violet-400">
+                <div className="metric-icon rounded-xl bg-violet-50 p-2.5 text-violet-600 dark:bg-violet-950/60 dark:text-violet-400">
                   <stat.icon size={20} />
                 </div>
                 <div>
                   <span className="block text-2xl font-black tracking-tight text-violet-600 dark:text-violet-400">
                     {stat.value}
                   </span>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{stat.label}</span>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {stat.label}
+                  </span>
                 </div>
               </div>
             ))}
@@ -436,8 +466,8 @@ export default function CollaborationNetworkMap() {
 
           {/* Interactive Map Canvas Window Frame */}
           {/* MODIFIED: Replaced standard slate border with a gorgeous thick 2px violet border & custom ambient glow to elevate the graph */}
-          <div className="relative rounded-2xl border-2 border-violet-500/80 bg-slate-50 dark:bg-slate-950/40 overflow-hidden shadow-[0_0_25px_rgba(124,58,237,0.08)] backdrop-blur-sm">
-            <div 
+          <div className="relative overflow-hidden rounded-2xl border-2 border-violet-500/80 bg-slate-50 shadow-[0_0_25px_rgba(124,58,237,0.08)] backdrop-blur-sm dark:bg-slate-950/40">
+            <div
               className="transition-transform duration-300 ease-out"
               style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
             >
@@ -503,7 +533,7 @@ export default function CollaborationNetworkMap() {
                   return (
                     <g
                       key={hub.id}
-                      className="cursor-pointer select-none outline-none"
+                      className="cursor-pointer outline-none select-none"
                       onMouseEnter={() => handleHubHover(hub)}
                       onMouseLeave={() => !pinnedHub && setActiveHub(null)}
                       onClick={() => handleHubClick(hub)}
@@ -547,7 +577,7 @@ export default function CollaborationNetworkMap() {
                         x={hub.x}
                         y={hub.y + hubSize + 16}
                         textAnchor="middle"
-                        className="fill-slate-600 dark:fill-slate-400 select-none pointer-events-none tracking-wide"
+                        className="pointer-events-none fill-slate-600 tracking-wide select-none dark:fill-slate-400"
                         fontSize="11"
                         fontWeight={isActive ? "700" : "500"}
                       >
@@ -567,12 +597,12 @@ export default function CollaborationNetworkMap() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -4, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute w-72 z-30 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-xl rounded-2xl"
+                  className="absolute z-30 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-800 dark:bg-slate-900"
                   style={getPopupStyle(activeHub || pinnedHub)}
                 >
                   {pinnedHub && (
                     <button
-                      className="absolute top-3 right-3 p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200"
+                      className="absolute top-3 right-3 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                       onClick={(e) => {
                         e.stopPropagation();
                         setPinnedHub(null);
@@ -587,14 +617,16 @@ export default function CollaborationNetworkMap() {
                   {/* Node Identity Details */}
                   <div className="mb-3">
                     <div className="flex items-center gap-2 pr-6">
-                      <MapPin className="text-violet-500 shrink-0" size={16} />
-                      <h4 className="text-base font-bold text-slate-900 dark:text-white truncate">
+                      <MapPin className="shrink-0 text-violet-500" size={16} />
+                      <h4 className="truncate text-base font-bold text-slate-900 dark:text-white">
                         {(activeHub || pinnedHub).name}
                       </h4>
                     </div>
-                    
+
                     <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
-                      <span>{(activeHub || pinnedHub).lat} • {(activeHub || pinnedHub).lng}</span>
+                      <span>
+                        {(activeHub || pinnedHub).lat} • {(activeHub || pinnedHub).lng}
+                      </span>
                       <span className="flex items-center gap-1">
                         <Clock size={12} className="text-slate-400" />
                         {formatTimeInZone((activeHub || pinnedHub).timezone)}
@@ -603,15 +635,19 @@ export default function CollaborationNetworkMap() {
                   </div>
 
                   {/* Micro Metric Stat Badges */}
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 border border-slate-100 dark:border-transparent">
-                      <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">Developers</span>
+                  <div className="mb-3 grid grid-cols-2 gap-2">
+                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5 dark:border-transparent dark:bg-slate-800/40">
+                      <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        Developers
+                      </span>
                       <span className="text-base font-bold text-slate-900 dark:text-white">
                         {(activeHub || pinnedHub).devs.toLocaleString()}
                       </span>
                     </div>
-                    <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 border border-slate-100 dark:transparent">
-                      <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">Projects</span>
+                    <div className="dark:transparent rounded-xl border border-slate-100 bg-slate-50 p-2.5 dark:bg-slate-800/40">
+                      <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        Projects
+                      </span>
                       <span className="text-base font-bold text-slate-900 dark:text-white">
                         {(activeHub || pinnedHub).projects}
                       </span>
@@ -619,24 +655,33 @@ export default function CollaborationNetworkMap() {
                   </div>
 
                   {/* Core Tags array */}
-                  <div className="flex flex-wrap gap-1.5 mb-3">
+                  <div className="mb-3 flex flex-wrap gap-1.5">
                     {(activeHub || pinnedHub).categories.map((cat) => (
-                      <span key={cat} className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                      <span
+                        key={cat}
+                        className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                      >
                         {cat}
                       </span>
                     ))}
                   </div>
 
                   {/* Bottom Activity Status and View Info Anchor action triggers */}
-                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3 mt-1">
+                  <div className="mt-1 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
                     <div className="flex items-center gap-1.5">
-                      <Activity size={13} style={{ color: ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].color }} />
-                      <span className="text-xs font-bold" style={{ color: ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].color }}>
+                      <Activity
+                        size={13}
+                        style={{ color: ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].color }}
+                      />
+                      <span
+                        className="text-xs font-bold"
+                        style={{ color: ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].color }}
+                      >
                         {ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].label}
                       </span>
                     </div>
 
-                    <button className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 dark:text-violet-400 hover:opacity-80 transition-opacity">
+                    <button className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 transition-opacity hover:opacity-80 dark:text-violet-400">
                       <span>View Details</span>
                       <ExternalLink size={12} />
                     </button>
@@ -647,9 +692,11 @@ export default function CollaborationNetworkMap() {
           </div>
 
           {/* Bottom Interactive Scale Legends Footer metadata block */}
-          <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border border-slate-100 dark:border-slate-900/60 p-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+          <div className="mt-6 flex flex-col gap-4 rounded-xl border border-slate-100 p-4 text-xs font-medium text-slate-500 sm:flex-row sm:items-center sm:justify-between dark:border-slate-900/60 dark:text-slate-400">
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              <span className="text-slate-400 uppercase tracking-wider font-bold text-[10px]">Activity Legend</span>
+              <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                Activity Legend
+              </span>
               {Object.entries(ACTIVITY_LEVELS).map(([key, config]) => (
                 <div key={key} className="flex items-center gap-2">
                   <span
@@ -661,14 +708,15 @@ export default function CollaborationNetworkMap() {
               ))}
             </div>
 
-            <div className="text-slate-400 dark:text-slate-500 shrink-0">
-              Canvas Frame Zoom State: <span className="font-bold text-slate-700 dark:text-slate-300">{Math.round(zoom * 100)}%</span>
+            <div className="shrink-0 text-slate-400 dark:text-slate-500">
+              Canvas Frame Zoom State:{" "}
+              <span className="font-bold text-slate-700 dark:text-slate-300">
+                {Math.round(zoom * 100)}%
+              </span>
             </div>
           </div>
         </div>
-
       </div>
-
     </section>
   );
 }

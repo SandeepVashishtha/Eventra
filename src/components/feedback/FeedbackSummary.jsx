@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Star, Users, BarChart3 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Star, Users, BarChart3 } from "lucide-react";
 import {
   getAverageRating,
   getRecommendationStats,
   getTagStats,
   getRatingBreakdown,
-} from '../../utils/feedbackUtils';
+} from "../../utils/feedbackUtils";
 
 /**
  * FeedbackSummary Component
@@ -35,7 +35,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
     return (
       <div className="flex items-center gap-2 text-sm">
         <div className="flex items-center gap-1">
-          <Star className="w-4 h-4 fill-yellow-400 text-yellow-500" />
+          <Star className="h-4 w-4 fill-yellow-400 text-yellow-500" />
           <span className="font-semibold text-gray-900 dark:text-white">
             {averageRating.average}
           </span>
@@ -47,13 +47,13 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
 
   // Full view (for event details page)
   return (
-    <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-6 space-y-6">
+    <div className="space-y-6 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50 p-6 dark:border-indigo-800 dark:from-indigo-900/20 dark:to-blue-900/20">
       {/* Rating Section */}
-      <div className="border-b border-indigo-200 dark:border-indigo-800 pb-6">
-        <div className="flex items-start justify-between mb-4">
+      <div className="border-b border-indigo-200 pb-6 dark:border-indigo-800">
+        <div className="mb-4 flex items-start justify-between">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-indigo-600" />
+            <h3 className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+              <BarChart3 className="h-5 w-5 text-indigo-600" />
               Event Feedback
             </h3>
           </div>
@@ -64,14 +64,14 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
             <div className="text-4xl font-bold text-gray-900 dark:text-white">
               {averageRating.average}
             </div>
-            <div className="flex gap-1 justify-center mt-2">
+            <div className="mt-2 flex justify-center gap-1">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  className={`w-4 h-4 ${
+                  className={`h-4 w-4 ${
                     i < Math.round(averageRating.average)
-                      ? 'fill-yellow-400 text-yellow-500'
-                      : 'fill-gray-300 text-gray-400'
+                      ? "fill-yellow-400 text-yellow-500"
+                      : "fill-gray-300 text-gray-400"
                   }`}
                 />
               ))}
@@ -79,30 +79,27 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
           </div>
 
           <div className="flex-1">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              Based on {averageRating.count} review{averageRating.count !== 1 ? 's' : ''}
+            <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+              Based on {averageRating.count} review{averageRating.count !== 1 ? "s" : ""}
             </p>
 
             {/* Rating Distribution */}
             <div className="space-y-2">
               {[5, 4, 3, 2, 1].map((stars) => {
                 const count = ratingBreakdown ? ratingBreakdown[stars] : 0;
-                const percentage = averageRating.count > 0
-                  ? Math.round((count / averageRating.count) * 100)
-                  : 0;
+                const percentage =
+                  averageRating.count > 0 ? Math.round((count / averageRating.count) * 100) : 0;
 
                 return (
                   <div key={stars} className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600 dark:text-gray-400 w-8">
-                      {stars}★
-                    </span>
-                    <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <span className="w-8 text-xs text-gray-600 dark:text-gray-400">{stars}★</span>
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                       <div
-                        className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full transition-all"
+                        className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right">
+                    <span className="w-8 text-right text-xs text-gray-500 dark:text-gray-400">
                       {percentage}%
                     </span>
                   </div>
@@ -115,15 +112,15 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
 
       {/* Recommendation Section */}
       {recommendationStats && recommendationStats.total > 0 && (
-        <div className="border-b border-indigo-200 dark:border-indigo-800 pb-6">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-            <Users className="w-4 h-4" />
+        <div className="border-b border-indigo-200 pb-6 dark:border-indigo-800">
+          <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+            <Users className="h-4 w-4" />
             Would Recommend
           </h4>
           <div className="flex items-center gap-4">
-            <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
               <div
-                className="h-full bg-green-500 rounded-full transition-all"
+                className="h-full rounded-full bg-green-500 transition-all"
                 style={{ width: `${recommendationStats.percentage}%` }}
               />
             </div>
@@ -142,7 +139,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
       {/* Tags Section */}
       {tagStats && Object.keys(tagStats).length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+          <h4 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
             Popular Mentions
           </h4>
           <div className="flex flex-wrap gap-2">
@@ -152,7 +149,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
               .map(([tag, count]) => (
                 <div
                   key={tag}
-                  className="px-3 py-1.5 rounded-full bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 text-xs font-medium text-gray-700 dark:text-gray-300"
+                  className="rounded-full border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-indigo-700 dark:bg-gray-800 dark:text-gray-300"
                 >
                   {tag}
                   <span className="ml-1.5 text-indigo-600 dark:text-indigo-400">×{count}</span>

@@ -5,8 +5,13 @@ export default function LeaderboardPodium({ top3, podiumConfig }) {
 
   return (
     <section className="mb-14" aria-labelledby="podium-heading">
-      <h2 id="podium-heading" className="sr-only">Top 3 Contributors</h2>
-      <div className="flex flex-col md:flex-row items-end justify-center gap-6 max-w-4xl mx-auto" role="list">
+      <h2 id="podium-heading" className="sr-only">
+        Top 3 Contributors
+      </h2>
+      <div
+        className="mx-auto flex max-w-4xl flex-col items-end justify-center gap-6 md:flex-row"
+        role="list"
+      >
         {podiumConfig.map((podium) => (
           <PodiumCard
             key={podium.position}

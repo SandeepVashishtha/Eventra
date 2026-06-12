@@ -16,10 +16,10 @@ import {
   getYahooCalendarUrl,
   generateIcsFileBlobUrl,
   extractMeetingLink,
-} from './calendarUrlUtils.js';
+} from "./calendarUrlUtils.js";
 
 // Stub standard Web APIs that are missing or restricted in test runners
-if (typeof global.Blob === 'undefined') {
+if (typeof global.Blob === "undefined") {
   global.Blob = class Blob {
     constructor(content, options) {
       this.content = content;
@@ -27,9 +27,10 @@ if (typeof global.Blob === 'undefined') {
     }
   };
 }
-if (typeof global.URL === 'undefined' || typeof global.URL.createObjectURL === 'undefined') {
+if (typeof global.URL === "undefined" || typeof global.URL.createObjectURL === "undefined") {
   global.URL = global.URL || class URL {};
-  global.URL.createObjectURL = (blob) => `blob:http://localhost/${Math.random().toString(36).substring(2)}`;
+  global.URL.createObjectURL = (blob) =>
+    `blob:http://localhost/${Math.random().toString(36).substring(2)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -44,11 +45,11 @@ if (typeof global.URL === 'undefined' || typeof global.URL.createObjectURL === '
  */
 const mkEvent = (overrides = {}) => ({
   id: 1,
-  title: 'Test Workshop',
-  date: '2026-06-15',
-  time: '10:00 AM',
-  location: 'Online',
-  description: 'A test workshop.',
+  title: "Test Workshop",
+  date: "2026-06-15",
+  time: "10:00 AM",
+  location: "Online",
+  description: "A test workshop.",
   durationMinutes: 60,
   ...overrides,
 });
@@ -56,49 +57,49 @@ const mkEvent = (overrides = {}) => ({
 // ---------------------------------------------------------------------------
 // 1. getGoogleCalendarUrl — basic structure
 // ---------------------------------------------------------------------------
-describe('getGoogleCalendarUrl — structure', () => {
-  test('returns a non-empty string', () => {
+describe("getGoogleCalendarUrl — structure", () => {
+  test("returns a non-empty string", () => {
     const url = getGoogleCalendarUrl(mkEvent());
-    expect(typeof url).toBe('string');
+    expect(typeof url).toBe("string");
     expect(url.length).toBeGreaterThan(0);
   });
 
-  test('returns empty string when event is null', () => {
-    expect(getGoogleCalendarUrl(null)).toBe('');
+  test("returns empty string when event is null", () => {
+    expect(getGoogleCalendarUrl(null)).toBe("");
   });
 
-  test('contains Google Calendar render endpoint', () => {
+  test("contains Google Calendar render endpoint", () => {
     const url = getGoogleCalendarUrl(mkEvent());
-    expect(url).toContain('calendar.google.com/calendar/render');
+    expect(url).toContain("calendar.google.com/calendar/render");
   });
 
-  test('contains encoded event title', () => {
-    const event = mkEvent({ title: 'AI & ML Summit' });
+  test("contains encoded event title", () => {
+    const event = mkEvent({ title: "AI & ML Summit" });
     const url = getGoogleCalendarUrl(event);
-    expect(url).toContain(encodeURIComponent('AI & ML Summit'));
+    expect(url).toContain(encodeURIComponent("AI & ML Summit"));
   });
 
-  test('contains dates parameter', () => {
+  test("contains dates parameter", () => {
     const url = getGoogleCalendarUrl(mkEvent());
-    expect(url).toContain('dates=');
+    expect(url).toContain("dates=");
   });
 
-  test('dates parameter contains start/end separated by slash', () => {
+  test("dates parameter contains start/end separated by slash", () => {
     const url = getGoogleCalendarUrl(mkEvent());
     const match = url.match(/dates=([^&]+)/);
     expect(match).not.toBeNull();
     const dates = decodeURIComponent(match[1]);
-    expect(dates).toContain('/');
-    const [start, end] = dates.split('/');
-    expect(start.endsWith('Z')).toBe(true);
-    expect(end.endsWith('Z')).toBe(true);
+    expect(dates).toContain("/");
+    const [start, end] = dates.split("/");
+    expect(start.endsWith("Z")).toBe(true);
+    expect(end.endsWith("Z")).toBe(true);
   });
 });
 
 // ---------------------------------------------------------------------------
 // 2. Duration — end time respects event.durationMinutes
 // ---------------------------------------------------------------------------
-describe('getGoogleCalendarUrl — duration', () => {
+describe("getGoogleCalendarUrl — duration", () => {
   /**
    * Parse start and end UTC timestamps from the `dates=` query parameter.
    * Returns { startMs, endMs, durationMs } in milliseconds.
@@ -106,57 +107,57 @@ describe('getGoogleCalendarUrl — duration', () => {
   const parseDates = (url) => {
     const match = url.match(/dates=([^&]+)/);
     if (!match) return null;
-    const [startStr, endStr] = decodeURIComponent(match[1]).split('/');
+    const [startStr, endStr] = decodeURIComponent(match[1]).split("/");
     // Compact format: "YYYYMMDDTHHmmssZ"
     const toMs = (s) => {
       const iso = `${s.substring(0, 4)}-${s.substring(4, 6)}-${s.substring(6, 8)}T${s.substring(9, 11)}:${s.substring(11, 13)}:${s.substring(13, 15)}Z`;
       return new Date(iso).getTime();
     };
     const startMs = toMs(startStr);
-    const endMs   = toMs(endStr);
+    const endMs = toMs(endStr);
     return { startMs, endMs, durationMs: endMs - startMs };
   };
 
-  test('1-hour event → end is exactly 60 minutes after start', () => {
-    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: 60 }), 'UTC');
+  test("1-hour event → end is exactly 60 minutes after start", () => {
+    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: 60 }), "UTC");
     const { durationMs } = parseDates(url);
     expect(durationMs).toBe(60 * 60 * 1000);
   });
 
-  test('3-hour workshop → end is exactly 180 minutes after start', () => {
-    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: 180 }), 'UTC');
+  test("3-hour workshop → end is exactly 180 minutes after start", () => {
+    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: 180 }), "UTC");
     const { durationMs } = parseDates(url);
     expect(durationMs).toBe(180 * 60 * 1000);
   });
 
-  test('90-minute event → end is exactly 90 minutes after start', () => {
-    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: 90 }), 'UTC');
+  test("90-minute event → end is exactly 90 minutes after start", () => {
+    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: 90 }), "UTC");
     const { durationMs } = parseDates(url);
     expect(durationMs).toBe(90 * 60 * 1000);
   });
 
-  test('missing durationMinutes falls back to 60 minutes', () => {
+  test("missing durationMinutes falls back to 60 minutes", () => {
     const event = mkEvent();
     delete event.durationMinutes;
-    const url = getGoogleCalendarUrl(event, 'UTC');
+    const url = getGoogleCalendarUrl(event, "UTC");
     const { durationMs } = parseDates(url);
     expect(durationMs).toBe(60 * 60 * 1000);
   });
 
-  test('durationMinutes: 0 falls back to 60 minutes', () => {
-    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: 0 }), 'UTC');
+  test("durationMinutes: 0 falls back to 60 minutes", () => {
+    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: 0 }), "UTC");
     const { durationMs } = parseDates(url);
     expect(durationMs).toBe(60 * 60 * 1000);
   });
 
-  test('negative durationMinutes falls back to 60 minutes', () => {
-    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: -30 }), 'UTC');
+  test("negative durationMinutes falls back to 60 minutes", () => {
+    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: -30 }), "UTC");
     const { durationMs } = parseDates(url);
     expect(durationMs).toBe(60 * 60 * 1000);
   });
 
-  test('string durationMinutes is parsed correctly', () => {
-    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: '120' }), 'UTC');
+  test("string durationMinutes is parsed correctly", () => {
+    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: "120" }), "UTC");
     const { durationMs } = parseDates(url);
     expect(durationMs).toBe(120 * 60 * 1000);
   });
@@ -165,57 +166,57 @@ describe('getGoogleCalendarUrl — duration', () => {
 // ---------------------------------------------------------------------------
 // 3. Timezone correctness
 // ---------------------------------------------------------------------------
-describe('getGoogleCalendarUrl — timezone correctness', () => {
+describe("getGoogleCalendarUrl — timezone correctness", () => {
   /**
    * Extract the start UTC epoch ms from the URL's dates= parameter.
    */
   const parseStartMs = (url) => {
     const match = url.match(/dates=([^&]+)/);
     if (!match) return null;
-    const startStr = decodeURIComponent(match[1]).split('/')[0];
+    const startStr = decodeURIComponent(match[1]).split("/")[0];
     const iso = `${startStr.substring(0, 4)}-${startStr.substring(4, 6)}-${startStr.substring(6, 8)}T${startStr.substring(9, 11)}:${startStr.substring(11, 13)}:${startStr.substring(13, 15)}Z`;
     return new Date(iso).getTime();
   };
 
-  test('10:00 AM UTC event → start at 10:00 AM UTC in the URL', () => {
-    const event = mkEvent({ date: '2026-06-15', time: '10:00 AM' });
-    const url = getGoogleCalendarUrl(event, 'UTC');
+  test("10:00 AM UTC event → start at 10:00 AM UTC in the URL", () => {
+    const event = mkEvent({ date: "2026-06-15", time: "10:00 AM" });
+    const url = getGoogleCalendarUrl(event, "UTC");
     const startMs = parseStartMs(url);
     const startDate = new Date(startMs);
     expect(startDate.getUTCHours()).toBe(10);
     expect(startDate.getUTCMinutes()).toBe(0);
   });
 
-  test('2:30 PM UTC event → start at 14:30 UTC in the URL', () => {
-    const event = mkEvent({ date: '2026-06-15', time: '2:30 PM' });
-    const url = getGoogleCalendarUrl(event, 'UTC');
+  test("2:30 PM UTC event → start at 14:30 UTC in the URL", () => {
+    const event = mkEvent({ date: "2026-06-15", time: "2:30 PM" });
+    const url = getGoogleCalendarUrl(event, "UTC");
     const startMs = parseStartMs(url);
     const startDate = new Date(startMs);
     expect(startDate.getUTCHours()).toBe(14);
     expect(startDate.getUTCMinutes()).toBe(30);
   });
 
-  test('12:00 AM UTC event → start at 00:00 UTC (not 12:00)', () => {
-    const event = mkEvent({ date: '2026-06-15', time: '12:00 AM' });
-    const url = getGoogleCalendarUrl(event, 'UTC');
+  test("12:00 AM UTC event → start at 00:00 UTC (not 12:00)", () => {
+    const event = mkEvent({ date: "2026-06-15", time: "12:00 AM" });
+    const url = getGoogleCalendarUrl(event, "UTC");
     const startMs = parseStartMs(url);
     const startDate = new Date(startMs);
     expect(startDate.getUTCHours()).toBe(0);
     expect(startDate.getUTCMinutes()).toBe(0);
   });
 
-  test('12:00 PM UTC event → start at 12:00 UTC (noon)', () => {
-    const event = mkEvent({ date: '2026-06-15', time: '12:00 PM' });
-    const url = getGoogleCalendarUrl(event, 'UTC');
+  test("12:00 PM UTC event → start at 12:00 UTC (noon)", () => {
+    const event = mkEvent({ date: "2026-06-15", time: "12:00 PM" });
+    const url = getGoogleCalendarUrl(event, "UTC");
     const startMs = parseStartMs(url);
     const startDate = new Date(startMs);
     expect(startDate.getUTCHours()).toBe(12);
     expect(startDate.getUTCMinutes()).toBe(0);
   });
 
-  test('11:00 PM UTC event → start at 23:00 UTC (not 35:00 overflow)', () => {
-    const event = mkEvent({ date: '2026-06-15', time: '11:00 PM' });
-    const url = getGoogleCalendarUrl(event, 'UTC');
+  test("11:00 PM UTC event → start at 23:00 UTC (not 35:00 overflow)", () => {
+    const event = mkEvent({ date: "2026-06-15", time: "11:00 PM" });
+    const url = getGoogleCalendarUrl(event, "UTC");
     const startMs = parseStartMs(url);
     const startDate = new Date(startMs);
     expect(startDate.getUTCHours()).toBe(23);
@@ -226,30 +227,30 @@ describe('getGoogleCalendarUrl — timezone correctness', () => {
 // ---------------------------------------------------------------------------
 // 4. getOutlookCalendarUrl — basic structure and duration
 // ---------------------------------------------------------------------------
-describe('getOutlookCalendarUrl — structure', () => {
-  test('returns a non-empty string', () => {
+describe("getOutlookCalendarUrl — structure", () => {
+  test("returns a non-empty string", () => {
     const url = getOutlookCalendarUrl(mkEvent());
-    expect(typeof url).toBe('string');
+    expect(typeof url).toBe("string");
     expect(url.length).toBeGreaterThan(0);
   });
 
-  test('returns empty string when event is null', () => {
-    expect(getOutlookCalendarUrl(null)).toBe('');
+  test("returns empty string when event is null", () => {
+    expect(getOutlookCalendarUrl(null)).toBe("");
   });
 
-  test('contains Outlook Live endpoint', () => {
+  test("contains Outlook Live endpoint", () => {
     const url = getOutlookCalendarUrl(mkEvent());
-    expect(url).toContain('outlook.live.com');
+    expect(url).toContain("outlook.live.com");
   });
 
-  test('contains startdt and enddt parameters', () => {
+  test("contains startdt and enddt parameters", () => {
     const url = getOutlookCalendarUrl(mkEvent());
-    expect(url).toContain('startdt=');
-    expect(url).toContain('enddt=');
+    expect(url).toContain("startdt=");
+    expect(url).toContain("enddt=");
   });
 
-  test('startdt format is ISO-like (YYYY-MM-DDTHH:mm:ss)', () => {
-    const url = getOutlookCalendarUrl(mkEvent(), 'UTC');
+  test("startdt format is ISO-like (YYYY-MM-DDTHH:mm:ss)", () => {
+    const url = getOutlookCalendarUrl(mkEvent(), "UTC");
     const match = url.match(/startdt=([^&]+)/);
     expect(match).not.toBeNull();
     const startdt = decodeURIComponent(match[1]);
@@ -258,29 +259,29 @@ describe('getOutlookCalendarUrl — structure', () => {
   });
 });
 
-describe('getOutlookCalendarUrl — duration', () => {
+describe("getOutlookCalendarUrl — duration", () => {
   const parseDates = (url) => {
     const startMatch = url.match(/startdt=([^&]+)/);
-    const endMatch   = url.match(/enddt=([^&]+)/);
+    const endMatch = url.match(/enddt=([^&]+)/);
     if (!startMatch || !endMatch) return null;
 
     // ISO format without Z — treat as UTC
-    const toMs = (s) => new Date(decodeURIComponent(s) + 'Z').getTime();
+    const toMs = (s) => new Date(decodeURIComponent(s) + "Z").getTime();
     const startMs = toMs(startMatch[1]);
-    const endMs   = toMs(endMatch[1]);
+    const endMs = toMs(endMatch[1]);
     return { startMs, endMs, durationMs: endMs - startMs };
   };
 
-  test('3-hour event → enddt is 180 minutes after startdt', () => {
-    const url = getOutlookCalendarUrl(mkEvent({ durationMinutes: 180 }), 'UTC');
+  test("3-hour event → enddt is 180 minutes after startdt", () => {
+    const url = getOutlookCalendarUrl(mkEvent({ durationMinutes: 180 }), "UTC");
     const { durationMs } = parseDates(url);
     expect(durationMs).toBe(180 * 60 * 1000);
   });
 
-  test('missing durationMinutes → enddt is 60 minutes after startdt', () => {
+  test("missing durationMinutes → enddt is 60 minutes after startdt", () => {
     const event = mkEvent();
     delete event.durationMinutes;
-    const url = getOutlookCalendarUrl(event, 'UTC');
+    const url = getOutlookCalendarUrl(event, "UTC");
     const { durationMs } = parseDates(url);
     expect(durationMs).toBe(60 * 60 * 1000);
   });
@@ -289,21 +290,21 @@ describe('getOutlookCalendarUrl — duration', () => {
 // ---------------------------------------------------------------------------
 // 5. getYahooCalendarUrl — basic structure and duration
 // ---------------------------------------------------------------------------
-describe('getYahooCalendarUrl', () => {
-  test('returns Yahoo calendar url structure', () => {
+describe("getYahooCalendarUrl", () => {
+  test("returns Yahoo calendar url structure", () => {
     const url = getYahooCalendarUrl(mkEvent());
-    expect(url).toContain('calendar.yahoo.com');
-    expect(url).toContain('TITLE=');
-    expect(url).toContain('ST=');
-    expect(url).toContain('ET=');
+    expect(url).toContain("calendar.yahoo.com");
+    expect(url).toContain("TITLE=");
+    expect(url).toContain("ST=");
+    expect(url).toContain("ET=");
   });
 
-  test('returns empty string on null event', () => {
-    expect(getYahooCalendarUrl(null)).toBe('');
+  test("returns empty string on null event", () => {
+    expect(getYahooCalendarUrl(null)).toBe("");
   });
 
-  test('date parameters are in compact UTC format', () => {
-    const url = getYahooCalendarUrl(mkEvent(), 'UTC');
+  test("date parameters are in compact UTC format", () => {
+    const url = getYahooCalendarUrl(mkEvent(), "UTC");
     const match = url.match(/ST=([^&]+)/);
     expect(match).not.toBeNull();
     expect(decodeURIComponent(match[1])).toMatch(/^\d{8}T\d{6}Z$/);
@@ -313,14 +314,14 @@ describe('getYahooCalendarUrl', () => {
 // ---------------------------------------------------------------------------
 // 6. generateIcsFileBlobUrl — ICS payload content
 // ---------------------------------------------------------------------------
-describe('generateIcsFileBlobUrl', () => {
-  test('returns standard blob URL string', () => {
+describe("generateIcsFileBlobUrl", () => {
+  test("returns standard blob URL string", () => {
     const url = generateIcsFileBlobUrl(mkEvent());
-    expect(url).toBeTypeOf('string');
-    expect(url).toContain('blob:');
+    expect(url).toBeTypeOf("string");
+    expect(url).toContain("blob:");
   });
 
-  test('returns null on null event', () => {
+  test("returns null on null event", () => {
     expect(generateIcsFileBlobUrl(null)).toBeNull();
   });
 });
@@ -328,24 +329,24 @@ describe('generateIcsFileBlobUrl', () => {
 // ---------------------------------------------------------------------------
 // 7. extractMeetingLink — regex matching
 // ---------------------------------------------------------------------------
-describe('extractMeetingLink', () => {
-  test('matches valid zoom links', () => {
-    const desc = 'Please join via Zoom: https://us02web.zoom.us/j/123456789';
-    expect(extractMeetingLink(desc)).toBe('https://us02web.zoom.us/j/123456789');
+describe("extractMeetingLink", () => {
+  test("matches valid zoom links", () => {
+    const desc = "Please join via Zoom: https://us02web.zoom.us/j/123456789";
+    expect(extractMeetingLink(desc)).toBe("https://us02web.zoom.us/j/123456789");
   });
 
-  test('matches valid teams links', () => {
-    const desc = 'Join Teams: https://teams.microsoft.com/l/meetup-join/abc';
-    expect(extractMeetingLink(desc)).toBe('https://teams.microsoft.com/l/meetup-join/abc');
+  test("matches valid teams links", () => {
+    const desc = "Join Teams: https://teams.microsoft.com/l/meetup-join/abc";
+    expect(extractMeetingLink(desc)).toBe("https://teams.microsoft.com/l/meetup-join/abc");
   });
 
-  test('matches valid Google Meet links', () => {
-    const desc = 'Join Google Meet: https://meet.google.com/abc-defg-hij';
-    expect(extractMeetingLink(desc)).toBe('https://meet.google.com/abc-defg-hij');
+  test("matches valid Google Meet links", () => {
+    const desc = "Join Google Meet: https://meet.google.com/abc-defg-hij";
+    expect(extractMeetingLink(desc)).toBe("https://meet.google.com/abc-defg-hij");
   });
 
-  test('returns null for descriptions without matching URLs', () => {
-    expect(extractMeetingLink('Event will happen in room 302')).toBeNull();
+  test("returns null for descriptions without matching URLs", () => {
+    expect(extractMeetingLink("Event will happen in room 302")).toBeNull();
     expect(extractMeetingLink(null)).toBeNull();
     expect(extractMeetingLink(123)).toBeNull();
   });
@@ -354,20 +355,20 @@ describe('extractMeetingLink', () => {
 // ---------------------------------------------------------------------------
 // 8. Edge cases
 // ---------------------------------------------------------------------------
-describe('calendarUrlUtils — edge cases', () => {
-  test('event with missing date returns a fallback URL string (not empty)', () => {
-    const event = mkEvent({ date: undefined, time: '10:00 AM' });
+describe("calendarUrlUtils — edge cases", () => {
+  test("event with missing date returns a fallback URL string (not empty)", () => {
+    const event = mkEvent({ date: undefined, time: "10:00 AM" });
     const url = getGoogleCalendarUrl(event);
-    expect(typeof url).toBe('string');
+    expect(typeof url).toBe("string");
     // Should at least contain the title
     expect(url).toContain(encodeURIComponent(event.title));
   });
 
-  test('special characters in title/location are URL-encoded', () => {
-    const event = mkEvent({ title: 'C++ & Rust: Zero-Cost Abstractions', location: 'Hall A/B' });
-    const gUrl = getGoogleCalendarUrl(event, 'UTC');
-    const oUrl = getOutlookCalendarUrl(event, 'UTC');
-    expect(gUrl).not.toContain('C++ &');
-    expect(oUrl).not.toContain('C++ &');
+  test("special characters in title/location are URL-encoded", () => {
+    const event = mkEvent({ title: "C++ & Rust: Zero-Cost Abstractions", location: "Hall A/B" });
+    const gUrl = getGoogleCalendarUrl(event, "UTC");
+    const oUrl = getOutlookCalendarUrl(event, "UTC");
+    expect(gUrl).not.toContain("C++ &");
+    expect(oUrl).not.toContain("C++ &");
   });
 });

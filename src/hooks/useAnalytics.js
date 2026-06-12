@@ -7,13 +7,15 @@ const useAnalytics = () => {
   const { token } = useAuth();
 
   useEffect(() => {
-    if (!token) { setLoading(false); return; }
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     const fetchAnalytics = async () => {
       try {
-        const res = await fetch(
-          `${process.env.REACT_APP_API_URL}/analytics/summary`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const res = await fetch(`${process.env.REACT_APP_API_URL}/analytics/summary`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (!res.ok) throw new Error("API unavailable");
         const data = await res.json();
         setAnalytics(data);

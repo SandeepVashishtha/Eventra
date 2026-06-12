@@ -30,15 +30,15 @@ export function isTokenExpired(token) {
   const payload = decodeJwtPayload(token);
   if (!payload) return true;
   // If 'exp' is missing, the token does not expire by time per RFC 7519
-  if (typeof payload.exp === 'undefined') return false;
-  
+  if (typeof payload.exp === "undefined") return false;
+
   return payload.exp * 1000 < Date.now() + CLOCK_SKEW_BUFFER * 1000;
 }
 
 export function isTokenValid(token) {
   const payload = decodeJwtPayload(token);
   if (!payload) return false;
-  
+
   return !isTokenExpired(token);
 }
 

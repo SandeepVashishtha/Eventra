@@ -76,25 +76,13 @@ export const getEventIdentity = (event = {}) =>
 
 export const getEventOrganizer = (event = {}) => {
   if (typeof event.organizer === "string") return event.organizer;
-  return (
-    event.organizer?.name ||
-    event.organizerName ||
-    event.hostName ||
-    event.createdBy ||
-    ""
-  );
+  return event.organizer?.name || event.organizerName || event.hostName || event.createdBy || "";
 };
 
 export const getEventVenue = (event = {}) => {
   if (typeof event.venue === "string") return event.venue;
   if (typeof event.location === "string") return event.location;
-  return (
-    event.venue?.name ||
-    event.location?.name ||
-    event.location?.city ||
-    event.room ||
-    ""
-  );
+  return event.venue?.name || event.location?.name || event.location?.city || event.room || "";
 };
 
 export const getEventResources = (event = {}) => {
@@ -330,10 +318,14 @@ export const navigateCalendarDate = (date, view, direction) => {
 
 export const getCategoryColorClass = (category = "") => {
   const key = String(category).toLowerCase();
-  if (key.includes("ai") || key.includes("machine")) return "border-cyan-300 bg-cyan-50 text-cyan-900";
-  if (key.includes("design") || key.includes("ux")) return "border-rose-300 bg-rose-50 text-rose-900";
-  if (key.includes("devops") || key.includes("cloud")) return "border-sky-300 bg-sky-50 text-sky-900";
-  if (key.includes("web3") || key.includes("blockchain")) return "border-violet-300 bg-violet-50 text-violet-900";
+  if (key.includes("ai") || key.includes("machine"))
+    return "border-cyan-300 bg-cyan-50 text-cyan-900";
+  if (key.includes("design") || key.includes("ux"))
+    return "border-rose-300 bg-rose-50 text-rose-900";
+  if (key.includes("devops") || key.includes("cloud"))
+    return "border-sky-300 bg-sky-50 text-sky-900";
+  if (key.includes("web3") || key.includes("blockchain"))
+    return "border-violet-300 bg-violet-50 text-violet-900";
   if (key.includes("security")) return "border-amber-300 bg-amber-50 text-amber-900";
   return "border-emerald-300 bg-emerald-50 text-emerald-900";
 };

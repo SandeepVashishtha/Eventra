@@ -111,7 +111,7 @@ const persistWithRetry = async (notifications, batch, attempt = 0) => {
       const delay = BACKOFF_BASE_MS * Math.pow(2, attempt);
       logger.warn(
         `[NotificationQueue] IndexedDB write failed (attempt ${attempt + 1}/${MAX_RETRIES}). ` +
-        `Retrying in ${delay}ms...`,
+          `Retrying in ${delay}ms...`,
         err
       );
       await new Promise((resolve) => setTimeout(resolve, delay));
@@ -190,7 +190,7 @@ export const startNotificationQueue = () => {
   flushTimerId = setInterval(flushBatch, FLUSH_INTERVAL_MS);
   logger.info(
     `[NotificationQueue] Started. Flush interval: ${FLUSH_INTERVAL_MS}ms, ` +
-    `Max batch: ${MAX_BATCH_SIZE}, Max retries: ${MAX_RETRIES}.`
+      `Max batch: ${MAX_BATCH_SIZE}, Max retries: ${MAX_RETRIES}.`
   );
 };
 

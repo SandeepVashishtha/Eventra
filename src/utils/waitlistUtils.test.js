@@ -127,16 +127,12 @@ describe("joinWaitlist", () => {
   });
 
   it("throws when user has no id or email", async () => {
-    await expect(joinWaitlist(42, {})).rejects.toThrow(
-      "Authentication required"
-    );
+    await expect(joinWaitlist(42, {})).rejects.toThrow("Authentication required");
   });
 
   it("throws when user is already on the waitlist", async () => {
     await joinWaitlist(42, makeUser());
-    await expect(joinWaitlist(42, makeUser())).rejects.toThrow(
-      "already on the waitlist"
-    );
+    await expect(joinWaitlist(42, makeUser())).rejects.toThrow("already on the waitlist");
   });
 
   it("throws TypeError for invalid eventId", async () => {
@@ -156,9 +152,7 @@ describe("leaveWaitlist", () => {
 
   it("throws when no matching record is found", async () => {
     seedWaitlist([]);
-    await expect(leaveWaitlist(42, "u1")).rejects.toThrow(
-      "No active waitlist record"
-    );
+    await expect(leaveWaitlist(42, "u1")).rejects.toThrow("No active waitlist record");
   });
 
   it("throws TypeError for invalid eventId", async () => {
@@ -176,15 +170,11 @@ describe("organizerRemoveUser", () => {
 
   it("throws when user is not in the active waitlist", async () => {
     seedWaitlist([]);
-    await expect(organizerRemoveUser(42, "u1")).rejects.toThrow(
-      "not in the active waitlist"
-    );
+    await expect(organizerRemoveUser(42, "u1")).rejects.toThrow("not in the active waitlist");
   });
 
   it("throws TypeError for invalid eventId", async () => {
-    await expect(organizerRemoveUser(undefined, "u1")).rejects.toThrow(
-      TypeError
-    );
+    await expect(organizerRemoveUser(undefined, "u1")).rejects.toThrow(TypeError);
   });
 });
 

@@ -79,9 +79,7 @@ export const generateSrcSet = (url, format = "webp") => {
   }
 
   const widths = [400, 800, 1200, 1600];
-  return widths
-    .map((w) => `${getOptimizedImageUrl(url, { width: w, format })} ${w}w`)
-    .join(", ");
+  return widths.map((w) => `${getOptimizedImageUrl(url, { width: w, format })} ${w}w`).join(", ");
 };
 
 export function supportsWebp() {

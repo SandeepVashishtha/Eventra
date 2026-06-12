@@ -6,21 +6,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
  *
  * ### Purpose
  * Prevent unnecessary component re-renders and computation cascades when state setters are called
- * with new object or array references containing identical values. 
+ * with new object or array references containing identical values.
  *
  * In complex components like `useEventListing`, invoking `setAdvancedFilters({})` to clear filters
  * creates a new empty object reference (`{}`) on every call. In a standard React `useState`, this
- * triggers a re-render and re-runs heavy computation pipelines (like filtering and sorting thousands 
+ * triggers a re-render and re-runs heavy computation pipelines (like filtering and sorting thousands
  * of events). This hook intercepts semantically identical updates and short-circuits them.
  *
  * ### Filter Stability & Deep Equality Behavior
- * Comparison is performed by serializing the current state and the incoming state using 
+ * Comparison is performed by serializing the current state and the incoming state using
  * `JSON.stringify`. When both serialized strings match exactly:
  * 1. The state setter call is aborted.
  * 2. React is prevented from scheduling a re-render.
  *
  * ### Memoization & Referential Stability
- * - The returned setter function `setStableValue` is wrapped in `useCallback` with an empty 
+ * - The returned setter function `setStableValue` is wrapped in `useCallback` with an empty
  *   dependency array `[]`. It retains referential identity across the lifetime of the component,
  *   making it safe to pass to child components or include in dependency lists without causing re-renders.
  * - To prevent stale closure bugs while maintaining setter stability, the hook utilizes a `useRef`
@@ -31,10 +31,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
  *   For typical filter objects (small key-value pairs, primitive values), this serialization is
  *   extremely fast and negligible compared to DOM re-renders and full filter pipeline computations.
  * - **Caveat**: Key order in `JSON.stringify` is technically not guaranteed in JavaScript for arbitrary
- *   objects. However, for plain filter objects constructed via user interactions, key insertion order 
+ *   objects. However, for plain filter objects constructed via user interactions, key insertion order
  *   remains highly consistent.
- * - **Caveat**: Non-serializable values (e.g., functions, symbols, or circular references) will cause 
- *   `JSON.stringify` to throw. The hook wraps the comparison in a `try...catch` block. If serialization 
+ * - **Caveat**: Non-serializable values (e.g., functions, symbols, or circular references) will cause
+ *   `JSON.stringify` to throw. The hook wraps the comparison in a `try...catch` block. If serialization
  *   fails, it gracefully falls back to React's default referential equality (`Object.is`) checking.
  *
  * @template T

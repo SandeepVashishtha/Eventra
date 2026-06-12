@@ -1,11 +1,11 @@
 import { XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 
 const Unauthorized = () => {
   const prefersReducedMotion = useReducedMotion();
-  
+
   // Predefined bubble positions around the card
   const bubblePositions = [
     { top: "10%", left: "5%" },
@@ -30,7 +30,7 @@ const Unauthorized = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-red-100 to-red-200 dark:from-red-900/40 dark:via-gray-900 dark:to-black overflow-hidden px-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-red-50 via-red-100 to-red-200 px-4 dark:from-red-900/40 dark:via-gray-900 dark:to-black">
       {/* Floating decorative bubbles */}
       {bubblePositions.map((pos, i) => (
         <motion.div
@@ -48,7 +48,7 @@ const Unauthorized = () => {
       ))}
 
       {/* Main Card container */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-10 max-w-md w-full text-center z-10 dark:border dark:border-gray-700">
+      <div className="relative z-10 w-full max-w-md rounded-3xl bg-white p-10 text-center shadow-2xl dark:border dark:border-gray-700 dark:bg-gray-800">
         <div className="flex flex-col items-center space-y-4">
           {/* 🔥 FIX: Replaced infinite pulse with motion-aware entry animation */}
           <motion.div
@@ -58,7 +58,7 @@ const Unauthorized = () => {
           >
             <XCircle className="h-20 w-20 text-red-500" />
           </motion.div>
-          
+
           <h2 className="text-3xl font-extrabold text-gray-800 dark:text-gray-100">
             Access Denied
           </h2>
@@ -68,14 +68,14 @@ const Unauthorized = () => {
         </div>
 
         <div className="mt-6 text-center">
-          <p className="text-gray-500 dark:text-gray-500 mb-4">
-            This page requires special permissions. If you think this is an
-            error, contact an administrator.
+          <p className="mb-4 text-gray-500 dark:text-gray-500">
+            This page requires special permissions. If you think this is an error, contact an
+            administrator.
           </p>
-          
+
           <Link
             to="/"
-            className="inline-block bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition transform hover:-translate-y-1"
+            className="inline-block transform rounded-lg bg-red-500 px-6 py-3 font-semibold text-white shadow-lg transition hover:-translate-y-1 hover:bg-red-600"
           >
             Go to Homepage
           </Link>

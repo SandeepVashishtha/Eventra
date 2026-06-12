@@ -1,18 +1,30 @@
-import { Copy, Check, ChevronDown, ChevronUp, Info, File, Lock, Code2, FileText, Package, CheckCircle, Server, Clipboard, GitBranch, Github, ArrowRightCircle } from "lucide-react";
+import {
+  Copy,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  File,
+  Lock,
+  Code2,
+  FileText,
+  Package,
+  CheckCircle,
+  Server,
+  Clipboard,
+  GitBranch,
+  Github,
+  ArrowRightCircle,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
-import {
-  HelpCircle,
-  GitPullRequest,
-  FileText as LucideFileText, 
-  Users,
-} from "lucide-react";
+import { HelpCircle, GitPullRequest, FileText as LucideFileText, Users } from "lucide-react";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const ContributorGuide = () => {
   const prefersReducedMotion = useReducedMotion();
-  useDocumentTitle("Eventra | Contributor Guide")
+  useDocumentTitle("Eventra | Contributor Guide");
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [copied, setCopied] = useState("");
 
@@ -46,61 +58,61 @@ const ContributorGuide = () => {
 
   const faqs = [
     {
-      icon: <GitBranch className="w-5 h-5 text-sky-300" />,
+      icon: <GitBranch className="h-5 w-5 text-sky-300" />,
       question: "What is a fork?",
       answer:
         "A fork is your personal copy of the repository where you can safely make changes without affecting the original project.",
     },
     {
-      icon: <GitPullRequest className="w-5 h-5 text-emerald-300" />,
+      icon: <GitPullRequest className="h-5 w-5 text-emerald-300" />,
       question: "What is a pull request?",
       answer:
         "A pull request is a way to propose your changes and request that they be reviewed and merged into the main project.",
     },
     {
-      icon: <LucideFileText className="w-5 h-5 text-violet-300" />,
+      icon: <LucideFileText className="h-5 w-5 text-violet-300" />,
       question: "How should I name branches?",
       answer:
         "Use descriptive names like 'feature/login' or 'fix/header-bug' to indicate the purpose of the branch clearly.",
     },
     {
-      icon: <Users className="w-5 h-5 text-rose-300" />,
+      icon: <Users className="h-5 w-5 text-rose-300" />,
       question: "Can I contribute without coding?",
       answer:
         "Yes! Contributions can include improving documentation, design, accessibility, testing, or community support.",
     },
     {
-      icon: <HelpCircle className="w-5 h-5 text-amber-300" />,
+      icon: <HelpCircle className="h-5 w-5 text-amber-300" />,
       question: "Where can I ask for help?",
       answer:
         "You can open a discussion in the repository, raise an issue, or join our community chat to get assistance.",
     },
     {
-      icon: <HelpCircle className="w-5 h-5 text-orange-300" />,
+      icon: <HelpCircle className="h-5 w-5 text-orange-300" />,
       question: "Do I need prior open-source experience?",
       answer:
         "Not at all! Beginners are welcome — open-source is a great way to learn and grow your skills.",
     },
     {
-      icon: <LucideFileText className="w-5 h-5 text-sky-300" />,
+      icon: <LucideFileText className="h-5 w-5 text-sky-300" />,
       question: "How do I report a bug?",
       answer:
         "You can report bugs by creating a new issue in the repository. Be sure to include steps to reproduce the problem and screenshots if possible.",
     },
     {
-      icon: <Users className="w-5 h-5 text-red-300" />,
+      icon: <Users className="h-5 w-5 text-red-300" />,
       question: "How do I find beginner-friendly issues?",
       answer:
         "Look for labels like 'good first issue' or 'beginner-friendly' in the issues tab of the repository.",
     },
     {
-      icon: <GitBranch className="w-5 h-5 text-teal-300" />,
+      icon: <GitBranch className="h-5 w-5 text-teal-300" />,
       question: "Should I work on an issue without assignment?",
       answer:
         "It's best to comment on the issue and ask to be assigned before starting. This avoids duplicate efforts.",
     },
     {
-      icon: <GitPullRequest className="w-5 h-5 text-cyan-300" />,
+      icon: <GitPullRequest className="h-5 w-5 text-cyan-300" />,
       question: "What happens after I open a pull request?",
       answer:
         "Your pull request will be reviewed by maintainers or contributors. They may suggest changes before it gets merged into the main branch.",
@@ -122,8 +134,7 @@ const ContributorGuide = () => {
     },
     {
       title: "Documentation",
-      description:
-        "Improve README, add examples, or clarify instructions for contributors.",
+      description: "Improve README, add examples, or clarify instructions for contributors.",
       example: "Example: Add step-by-step setup instructions with screenshots.",
     },
     {
@@ -136,8 +147,7 @@ const ContributorGuide = () => {
       title: "Design & UI",
       description:
         "Improve the user interface, accessibility, or design consistency across the project.",
-      example:
-        "Example: Update button styles for better contrast and hover effects.",
+      example: "Example: Update button styles for better contrast and hover effects.",
     },
     {
       title: "Code Refactoring",
@@ -170,58 +180,79 @@ const ContributorGuide = () => {
   };
 
   return (
-    <div className="pastel-grid-bg bg-bg min-h-screen pt-20 md:pt-24 px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16 overflow-x-hidden">
+    <div className="pastel-grid-bg bg-bg mx-auto min-h-screen max-w-6xl space-y-16 overflow-x-hidden px-4 py-12 pt-20 sm:px-6 md:pt-24 lg:px-12">
       {/* Page Heading */}
-      <div className="text-center mb-12">
+      <div className="mb-12 text-center">
         <h1
-          className="text-4xl md:text-5xl font-bold text-black dark:text-white mb-4"
+          className="mb-4 text-4xl font-bold text-black md:text-5xl dark:text-white"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Welcome to Eventra Contributions!
         </h1>
-        <p className="text-gray-700 dark:text-gray-300 text-base max-w-3xl mx-auto">
-          We&apos;re excited to have you join the Eventra community! This guide
-          provides detailed, actionable instructions, examples, and interactive
-          tips to help first-time contributors succeed.
+        <p className="mx-auto max-w-3xl text-base text-gray-700 dark:text-gray-300">
+          We&apos;re excited to have you join the Eventra community! This guide provides detailed,
+          actionable instructions, examples, and interactive tips to help first-time contributors
+          succeed.
         </p>
       </div>
 
       {/* GAMIFICATION & SCORING SYSTEM CARD */}
-      <div className="bg-card-bg p-6 md:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-md">
-        <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-gray-100 mb-6 text-center">
+      <div className="bg-card-bg rounded-2xl border border-slate-100 p-6 shadow-md md:p-8 dark:border-slate-800">
+        <h2 className="mb-6 text-center text-2xl font-extrabold text-gray-900 md:text-3xl dark:text-gray-100">
           🎮 Contribution Gamification & Points Arena
         </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-xl mx-auto mb-8">
-          Every contribution you make earns you arena points, rank metrics, and elite profile achievements in our community leaderboard!
+        <p className="mx-auto mb-8 max-w-xl text-center text-sm text-slate-500 dark:text-slate-400">
+          Every contribution you make earns you arena points, rank metrics, and elite profile
+          achievements in our community leaderboard!
         </p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           {/* Point system */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 border-b pb-2 border-slate-100 dark:border-slate-800">
+            <h3 className="border-b border-slate-100 pb-2 text-lg font-bold text-slate-800 dark:border-slate-800 dark:text-slate-200">
               🏷️ Label-Based Scoring Metrics
             </h3>
             <ul className="space-y-3.5">
               <li className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">Level 1 GSSoC Pull Request</span>
-                <span className="px-2.5 py-1 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold">3 Points</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  Level 1 GSSoC Pull Request
+                </span>
+                <span className="rounded bg-indigo-50 px-2.5 py-1 font-bold text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
+                  3 Points
+                </span>
               </li>
               <li className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">Level 2 GSSoC Pull Request</span>
-                <span className="px-2.5 py-1 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold">7 Points</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  Level 2 GSSoC Pull Request
+                </span>
+                <span className="rounded bg-indigo-50 px-2.5 py-1 font-bold text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
+                  7 Points
+                </span>
               </li>
               <li className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">Level 3 GSSoC Pull Request</span>
-                <span className="px-2.5 py-1 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold">10 Points</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  Level 3 GSSoC Pull Request
+                </span>
+                <span className="rounded bg-indigo-50 px-2.5 py-1 font-bold text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
+                  10 Points
+                </span>
               </li>
-              <li className="flex items-center justify-between text-sm border-t pt-3 border-slate-100 dark:border-slate-800">
+              <li className="flex items-center justify-between border-t border-slate-100 pt-3 text-sm dark:border-slate-800">
                 <div>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">🚀 Milestone Boosters</span>
-                  <p className="text-xs text-slate-500 mt-0.5">Reach merged PR milestones for massive score multipliers!</p>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    🚀 Milestone Boosters
+                  </span>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Reach merged PR milestones for massive score multipliers!
+                  </p>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
-                  <span className="px-2.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">+5 Bonus (5+ PRs)</span>
-                  <span className="px-2.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 text-xs font-bold">+10 Bonus (10+ PRs)</span>
+                  <span className="rounded bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
+                    +5 Bonus (5+ PRs)
+                  </span>
+                  <span className="rounded bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:bg-amber-950 dark:text-amber-400">
+                    +10 Bonus (10+ PRs)
+                  </span>
                 </div>
               </li>
             </ul>
@@ -229,24 +260,32 @@ const ContributorGuide = () => {
 
           {/* Achievement Badges */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 border-b pb-2 border-slate-100 dark:border-slate-800">
+            <h3 className="border-b border-slate-100 pb-2 text-lg font-bold text-slate-800 dark:border-slate-800 dark:text-slate-200">
               🏅 Elite Achievement Badges
             </h3>
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 text-center">
-                <span className="block font-bold text-amber-700 dark:text-amber-400 mb-1">👑 Grandmaster</span>
+              <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-center dark:border-amber-900/30 dark:bg-amber-950/20">
+                <span className="mb-1 block font-bold text-amber-700 dark:text-amber-400">
+                  👑 Grandmaster
+                </span>
                 <span className="text-slate-500 dark:text-slate-400">Rank #1 Overall</span>
               </div>
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/50 text-center">
-                <span className="block font-bold text-slate-700 dark:text-slate-300 mb-1">⭐ Champion</span>
+              <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3 text-center dark:border-slate-700/50 dark:bg-slate-800/40">
+                <span className="mb-1 block font-bold text-slate-700 dark:text-slate-300">
+                  ⭐ Champion
+                </span>
                 <span className="text-slate-500 dark:text-slate-400">Rank #2 Overall</span>
               </div>
-              <div className="p-3 rounded-xl bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 text-center">
-                <span className="block font-bold text-orange-700 dark:text-orange-400 mb-1">🏅 Elite</span>
+              <div className="rounded-xl border border-orange-100 bg-orange-50 p-3 text-center dark:border-orange-900/30 dark:bg-orange-950/20">
+                <span className="mb-1 block font-bold text-orange-700 dark:text-orange-400">
+                  🏅 Elite
+                </span>
                 <span className="text-slate-500 dark:text-slate-400">Rank #3 Overall</span>
               </div>
-              <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30 text-center">
-                <span className="block font-bold text-indigo-700 dark:text-indigo-400 mb-1">🔥 PR Machine</span>
+              <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-center dark:border-indigo-900/30 dark:bg-indigo-950/20">
+                <span className="mb-1 block font-bold text-indigo-700 dark:text-indigo-400">
+                  🔥 PR Machine
+                </span>
                 <span className="text-slate-500 dark:text-slate-400">Merged 10+ PRs</span>
               </div>
             </div>
@@ -255,11 +294,11 @@ const ContributorGuide = () => {
       </div>
 
       {/* Step-by-Step Contribution Section */}
-      <div className="bg-card-bg p-6 md:p-8 rounded-xl shadow-md">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 mt-8 text-center">
+      <div className="bg-card-bg rounded-xl p-6 shadow-md md:p-8">
+        <h2 className="mt-8 mb-8 text-center text-2xl font-bold text-gray-900 md:text-3xl dark:text-gray-100">
           Step-by-Step Contribution Journey
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {contributionTypes.map((type, index) => (
             <motion.div
               key={index}
@@ -267,28 +306,24 @@ const ContributorGuide = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: index * 0.1 }}
-              className="border-l-4 border-sky-200 dark:border-sky-300 p-4 bg-card-bg rounded shadow-sm"
+              className="bg-card-bg rounded border-l-4 border-sky-200 p-4 shadow-sm dark:border-sky-300"
             >
-              <div className="flex items-center mb-2">
-                <Info className="text-sky-300 dark:text-sky-200 mr-2 flex-shrink-0" />
+              <div className="mb-2 flex items-center">
+                <Info className="mr-2 flex-shrink-0 text-sky-300 dark:text-sky-200" />
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                   {type.title}
                 </h3>
               </div>
-              <p className="text-gray-700 dark:text-gray-300 mb-2">
-                {type.description}
-              </p>
-              <p className="text-gray-600 dark:text-gray-400 italic">
-                💡 {type.example}
-              </p>
+              <p className="mb-2 text-gray-700 dark:text-gray-300">{type.description}</p>
+              <p className="text-gray-600 italic dark:text-gray-400">💡 {type.example}</p>
             </motion.div>
           ))}
         </div>
       </div>
 
       {/* Important Files Section */}
-      <div className="bg-card-bg p-6 md:p-8 rounded-xl shadow-md">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center flex items-center justify-center gap-3">
+      <div className="bg-card-bg rounded-xl p-6 shadow-md md:p-8">
+        <h2 className="mb-6 flex items-center justify-center gap-3 text-center text-2xl font-bold text-gray-900 md:text-3xl dark:text-gray-100">
           <File className="text-emerald-300 dark:text-emerald-200" size={32} />
           Important Files in This Project
         </h2>
@@ -296,89 +331,84 @@ const ContributorGuide = () => {
           <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
             <thead className="bg-card-bg">
               <tr>
-                <th className="px-4 sm:px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 sm:px-6 dark:text-gray-300">
                   File
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 sm:px-6 dark:text-gray-300">
                   Purpose
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-300 dark:divide-gray-600">
-              <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
+              <tr className="transition-colors hover:bg-indigo-50 dark:hover:bg-gray-700">
+                <td className="flex items-center gap-2 px-4 py-4 font-mono text-black sm:px-6 dark:text-white">
                   <Lock /> .env
                 </td>
-                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
-                  Stores environment variables like API keys. Do not commit this
-                  file.
+                <td className="px-4 py-4 text-gray-700 sm:px-6 dark:text-gray-300">
+                  Stores environment variables like API keys. Do not commit this file.
                 </td>
               </tr>
-              <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
+              <tr className="transition-colors hover:bg-indigo-50 dark:hover:bg-gray-700">
+                <td className="flex items-center gap-2 px-4 py-4 font-mono text-black sm:px-6 dark:text-white">
                   <Lock /> .env.example
                 </td>
-                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
-                  Example environment file. Use it as a template to create your
-                  own .env file.
+                <td className="px-4 py-4 text-gray-700 sm:px-6 dark:text-gray-300">
+                  Example environment file. Use it as a template to create your own .env file.
                 </td>
               </tr>
-              <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
+              <tr className="transition-colors hover:bg-indigo-50 dark:hover:bg-gray-700">
+                <td className="flex items-center gap-2 px-4 py-4 font-mono text-black sm:px-6 dark:text-white">
                   <Code2 /> .gitignore
                 </td>
-                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
-                  Lists files/folders to ignore in Git commits, like
-                  node_modules or .env.
+                <td className="px-4 py-4 text-gray-700 sm:px-6 dark:text-gray-300">
+                  Lists files/folders to ignore in Git commits, like node_modules or .env.
                 </td>
               </tr>
-              <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
+              <tr className="transition-colors hover:bg-indigo-50 dark:hover:bg-gray-700">
+                <td className="flex items-center gap-2 px-4 py-4 font-mono text-black sm:px-6 dark:text-white">
                   <FileText /> LICENSE
                 </td>
-                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 py-4 text-gray-700 sm:px-6 dark:text-gray-300">
                   Contains the license details for the project.
                 </td>
               </tr>
-              <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
+              <tr className="transition-colors hover:bg-indigo-50 dark:hover:bg-gray-700">
+                <td className="flex items-center gap-2 px-4 py-4 font-mono text-black sm:px-6 dark:text-white">
                   <Clipboard /> README.md
                 </td>
-                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
-                  Main documentation for the project. Explains setup, usage, and
-                  contribution guide.
+                <td className="px-4 py-4 text-gray-700 sm:px-6 dark:text-gray-300">
+                  Main documentation for the project. Explains setup, usage, and contribution guide.
                 </td>
               </tr>
-              <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
+              <tr className="transition-colors hover:bg-indigo-50 dark:hover:bg-gray-700">
+                <td className="flex items-center gap-2 px-4 py-4 font-mono text-black sm:px-6 dark:text-white">
                   <Package /> package.json
                 </td>
-                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 py-4 text-gray-700 sm:px-6 dark:text-gray-300">
                   Contains project metadata, scripts, and dependencies.
                 </td>
               </tr>
-              <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
+              <tr className="transition-colors hover:bg-indigo-50 dark:hover:bg-gray-700">
+                <td className="flex items-center gap-2 px-4 py-4 font-mono text-black sm:px-6 dark:text-white">
                   <CheckCircle /> package-lock.json
                 </td>
-                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
-                  Locks dependency versions for consistent installs across
-                  environments.
+                <td className="px-4 py-4 text-gray-700 sm:px-6 dark:text-gray-300">
+                  Locks dependency versions for consistent installs across environments.
                 </td>
               </tr>
-              <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
+              <tr className="transition-colors hover:bg-indigo-50 dark:hover:bg-gray-700">
+                <td className="flex items-center gap-2 px-4 py-4 font-mono text-black sm:px-6 dark:text-white">
                   <Server /> vercel.json
                 </td>
-                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 py-4 text-gray-700 sm:px-6 dark:text-gray-300">
                   Configuration file for deployment on Vercel.
                 </td>
               </tr>
-              <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
+              <tr className="transition-colors hover:bg-indigo-50 dark:hover:bg-gray-700">
+                <td className="flex items-center gap-2 px-4 py-4 font-mono text-black sm:px-6 dark:text-white">
                   <FileText /> CODE_OF_CONDUCT.md
                 </td>
-                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 py-4 text-gray-700 sm:px-6 dark:text-gray-300">
                   Outlines expected behavior and guidelines for contributors.
                 </td>
               </tr>
@@ -388,12 +418,9 @@ const ContributorGuide = () => {
       </div>
 
       {/* Issue & PR Workflow Section */}
-      <div className="bg-card-bg p-6 md:p-8 rounded-xl shadow-md mt-10">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-10 text-center flex items-center justify-center gap-3">
-          <GitBranch
-            className="text-violet-300 dark:text-violet-200"
-            size={32}
-          />
+      <div className="bg-card-bg mt-10 rounded-xl p-6 shadow-md md:p-8">
+        <h2 className="mb-10 flex items-center justify-center gap-3 text-center text-2xl font-bold text-gray-900 md:text-3xl dark:text-gray-100">
+          <GitBranch className="text-violet-300 dark:text-violet-200" size={32} />
           Issue & PR Workflow
         </h2>
         <div className="space-y-8">
@@ -405,11 +432,11 @@ const ContributorGuide = () => {
               description: (
                 <>
                   Browse issues labeled{" "}
-                  <span className="font-mono text-black dark:text-white bg-sky-100 dark:bg-sky-900/50 px-1 rounded break-all">
+                  <span className="rounded bg-sky-100 px-1 font-mono break-all text-black dark:bg-sky-900/50 dark:text-white">
                     good-first-issue
                   </span>{" "}
                   or{" "}
-                  <span className="font-mono text-black dark:text-white bg-amber-100 dark:bg-amber-900/50 px-1 rounded break-all">
+                  <span className="rounded bg-amber-100 px-1 font-mono break-all text-black dark:bg-amber-900/50 dark:text-white">
                     bug
                   </span>
                   . Choose one you can work on.
@@ -423,11 +450,11 @@ const ContributorGuide = () => {
               description: (
                 <>
                   Use descriptive branch names like{" "}
-                  <span className="font-mono text-black dark:text-white bg-sky-100 dark:bg-sky-900/50 px-1 rounded break-all">
+                  <span className="rounded bg-sky-100 px-1 font-mono break-all text-black dark:bg-sky-900/50 dark:text-white">
                     feature/add-login
                   </span>{" "}
                   or{" "}
-                  <span className="font-mono text-black dark:text-white bg-amber-100 dark:bg-amber-900/50 px-1 rounded break-all">
+                  <span className="rounded bg-amber-100 px-1 font-mono break-all text-black dark:bg-amber-900/50 dark:text-white">
                     fix/navbar-bug
                   </span>
                   .
@@ -440,9 +467,8 @@ const ContributorGuide = () => {
               title: "Make Changes & Commit",
               description: (
                 <>
-                  Make your code changes locally. Commit with clear messages
-                  like{" "}
-                  <span className="font-mono text-black dark:text-white bg-sky-100 dark:bg-sky-900/50 px-1 rounded break-all">
+                  Make your code changes locally. Commit with clear messages like{" "}
+                  <span className="rounded bg-sky-100 px-1 font-mono break-all text-black dark:bg-sky-900/50 dark:text-white">
                     Add login form component
                   </span>
                   .
@@ -454,10 +480,7 @@ const ContributorGuide = () => {
               icon: <ArrowRightCircle />,
               title: "Open a Pull Request",
               description: (
-                <>
-                  Push your branch to GitHub and open a PR. Follow the template
-                  below:
-                </>
+                <>Push your branch to GitHub and open a PR. Follow the template below:</>
               ),
               code: `### Description
               Explain what your PR does.
@@ -481,23 +504,23 @@ const ContributorGuide = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1 }}
-              className="flex flex-col md:flex-row items-start gap-4 p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 last:border-b-0 rounded-lg hover:bg-sky-50 dark:hover:bg-gray-700/50 transition-colors"
+              className="flex flex-col items-start gap-4 rounded-lg border-b border-gray-200 p-4 transition-colors last:border-b-0 hover:bg-sky-50 sm:p-6 md:flex-row dark:border-gray-700 dark:hover:bg-gray-700/50"
             >
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-sky-200 dark:bg-sky-300 text-black font-bold text-lg">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sky-200 text-lg font-bold text-black dark:bg-sky-300">
                   {item.step}
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-2 break-words">
+                <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold break-words text-gray-900 dark:text-gray-100">
                   {item.icon} {item.title}
                 </h3>
-                <p className="text-gray-700 dark:text-gray-300 mb-2 break-words">
+                <p className="mb-2 break-words text-gray-700 dark:text-gray-300">
                   {item.description}
                 </p>
                 {item.code && (
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 font-mono text-sm text-gray-800 dark:text-gray-200">
-                    <pre className="whitespace-pre-wrap break-all">{item.code}</pre>
+                  <div className="rounded-lg bg-gray-100 p-4 font-mono text-sm text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                    <pre className="break-all whitespace-pre-wrap">{item.code}</pre>
                   </div>
                 )}
               </div>
@@ -505,58 +528,40 @@ const ContributorGuide = () => {
           ))}
         </div>
 
-        <div className="mt-10 flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6">
+        <div className="mt-10 flex flex-col items-center justify-center gap-4 md:flex-row md:gap-6">
           <div className="flex flex-col items-center gap-2">
-            <FileText
-              className="text-sky-300 dark:text-sky-200"
-              size={36}
-            />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
+            <FileText className="text-sky-300 dark:text-sky-200" size={36} />
+            <span className="text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
               Pick Issue
             </span>
           </div>
 
-          <ChevronDown className="text-slate-300 dark:text-gray-600 text-2xl md:hidden" />
-          <div className="text-slate-300 dark:text-gray-600 text-2xl hidden md:block">
-            →
-          </div>
+          <ChevronDown className="text-2xl text-slate-300 md:hidden dark:text-gray-600" />
+          <div className="hidden text-2xl text-slate-300 md:block dark:text-gray-600">→</div>
 
           <div className="flex flex-col items-center gap-2">
-            <GitBranch
-              className="text-emerald-300 dark:text-emerald-200"
-              size={36}
-            />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
+            <GitBranch className="text-emerald-300 dark:text-emerald-200" size={36} />
+            <span className="text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
               Create Branch
             </span>
           </div>
 
-          <ChevronDown className="text-slate-300 dark:text-gray-600 text-2xl md:hidden" />
-          <div className="text-slate-300 dark:text-gray-600 text-2xl hidden md:block">
-            →
-          </div>
+          <ChevronDown className="text-2xl text-slate-300 md:hidden dark:text-gray-600" />
+          <div className="hidden text-2xl text-slate-300 md:block dark:text-gray-600">→</div>
 
           <div className="flex flex-col items-center gap-2">
-            <CheckCircle
-              className="text-amber-300 dark:text-amber-200"
-              size={36}
-            />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
+            <CheckCircle className="text-amber-300 dark:text-amber-200" size={36} />
+            <span className="text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
               Commit Changes
             </span>
           </div>
 
-          <ChevronDown className="text-slate-300 dark:text-gray-600 text-2xl md:hidden" />
-          <div className="text-slate-300 dark:text-gray-600 text-2xl hidden md:block">
-            →
-          </div>
+          <ChevronDown className="text-2xl text-slate-300 md:hidden dark:text-gray-600" />
+          <div className="hidden text-2xl text-slate-300 md:block dark:text-gray-600">→</div>
 
           <div className="flex flex-col items-center gap-2">
-            <ArrowRightCircle
-              className="text-rose-300 dark:text-rose-200"
-              size={36}
-            />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
+            <ArrowRightCircle className="text-rose-300 dark:text-rose-200" size={36} />
+            <span className="text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
               Open PR
             </span>
           </div>
@@ -564,27 +569,25 @@ const ContributorGuide = () => {
       </div>
 
       {/* Git Commands Section */}
-      <div className="bg-card-bg p-6 md:p-8 rounded-xl shadow-md">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+      <div className="bg-card-bg rounded-xl p-6 shadow-md md:p-8">
+        <h2 className="mb-6 text-2xl font-bold text-gray-900 md:text-3xl dark:text-gray-100">
           Essential Git Commands
         </h2>
         <div className="space-y-4">
           {commands.map((c) => (
             <div
               key={c.id}
-              className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-gray-100 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+              className="flex flex-col justify-between gap-3 rounded-lg border border-gray-200 bg-gray-100 p-4 sm:flex-row sm:items-center dark:border-gray-700 dark:bg-gray-800/50"
             >
               <div className="flex-grow">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  {c.title}
-                </h3>
-                <pre className="inline-block bg-gray-200 dark:bg-gray-900/50 p-2 rounded mt-1 text-sm text-black dark:text-white whitespace-pre-wrap break-all">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{c.title}</h3>
+                <pre className="mt-1 inline-block rounded bg-gray-200 p-2 text-sm break-all whitespace-pre-wrap text-black dark:bg-gray-900/50 dark:text-white">
                   {c.cmd}
                 </pre>
               </div>
               <button
                 onClick={() => copyCommand(c.cmd, c.id)}
-                className="flex items-center justify-center sm:justify-start gap-2 bg-sky-100 dark:bg-sky-900/40 text-black dark:text-white px-3 py-1.5 rounded hover:bg-amber-100 dark:hover:bg-amber-900/40 transition self-start sm:self-center flex-shrink-0"
+                className="flex flex-shrink-0 items-center justify-center gap-2 self-start rounded bg-sky-100 px-3 py-1.5 text-black transition hover:bg-amber-100 sm:justify-start sm:self-center dark:bg-sky-900/40 dark:text-white dark:hover:bg-amber-900/40"
               >
                 {copied === c.id ? <Check /> : <Copy />}
                 <span>{copied === c.id ? "Copied" : "Copy"}</span>
@@ -595,20 +598,20 @@ const ContributorGuide = () => {
       </div>
 
       {/* FAQ Section */}
-      <section className="bg-indigo-50 dark:bg-gray-900 p-6 md:p-8 rounded-2xl shadow-lg">
+      <section className="rounded-2xl bg-indigo-50 p-6 shadow-lg md:p-8 dark:bg-gray-900">
         <motion.h2
           initial={{ opacity: 0, y: -20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
-          style={{fontFamily: '"Big Shoulders Display", sans-serif'}}
-          className="relative text-3xl md:text-4xl font-extrabold tracking-tight text-black dark:text-white mb-10 text-center"
+          style={{ fontFamily: '"Big Shoulders Display", sans-serif' }}
+          className="relative mb-10 text-center text-3xl font-extrabold tracking-tight text-black md:text-4xl dark:text-white"
         >
           Frequently Asked Questions
           <motion.span
             initial={{ width: 0 }}
             animate={{ width: "60%" }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.8, delay: 0.3 }}
-            className="absolute left-1/2 -translate-x-1/2 -bottom-2 h-1 rounded-full bg-black"
+            className="absolute -bottom-2 left-1/2 h-1 -translate-x-1/2 rounded-full bg-black"
           />
         </motion.h2>
 
@@ -619,11 +622,11 @@ const ContributorGuide = () => {
               <div key={index} className="py-3">
                 <button
                   onClick={() => setExpandedFAQ(isOpen ? null : index)}
-                  className="w-full flex justify-between items-center px-2 py-3 text-left group"
+                  className="group flex w-full items-center justify-between px-2 py-3 text-left"
                 >
                   <div className="flex items-center gap-3">
                     {faq.icon}
-                    <span className="text-lg font-medium text-gray-900 dark:text-gray-100 group-hover:text-black transition">
+                    <span className="text-lg font-medium text-gray-900 transition group-hover:text-black dark:text-gray-100">
                       {faq.question}
                     </span>
                   </div>
@@ -639,7 +642,7 @@ const ContributorGuide = () => {
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
-                      className="pl-9 pr-2 pb-3 text-gray-700 dark:text-gray-300 leading-relaxed"
+                      className="pr-2 pb-3 pl-9 leading-relaxed text-gray-700 dark:text-gray-300"
                     >
                       {faq.answer}
                     </motion.div>
@@ -652,22 +655,23 @@ const ContributorGuide = () => {
       </section>
 
       {/* Call to Action */}
-      <div className="relative overflow-hidden rounded-xl p-10 shadow-xl text-center text-white bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950">
-        <Github className="absolute top-5 left-5 text-white/10 text-6xl rotate-12" />
-        <Github className="absolute bottom-5 right-5 text-white/10 text-6xl -rotate-12" />
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 p-10 text-center text-white shadow-xl">
+        <Github className="absolute top-5 left-5 rotate-12 text-6xl text-white/10" />
+        <Github className="absolute right-5 bottom-5 -rotate-12 text-6xl text-white/10" />
 
-        <h2 className="text-2xl md:text-3xl font-bold mb-3 flex items-center justify-center gap-2">
+        <h2 className="mb-3 flex items-center justify-center gap-2 text-2xl font-bold md:text-3xl">
           <ArrowRightCircle /> Ready to Contribute?
         </h2>
-        <p className="mb-6 text-white/90 text-lg">
+        <p className="mb-6 text-lg text-white/90">
           Take the first step and submit your pull request today!
         </p>
         <motion.a
           href="https://github.com/SandeepVashishtha/Eventra"
-          target="_blank" rel="noopener noreferrer"
+          target="_blank"
+          rel="noopener noreferrer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-sky-100 to-amber-100 text-black font-semibold px-8 py-3 rounded-full shadow-lg hover:from-sky-200 hover:to-amber-200 transition-all duration-300"
+          className="inline-flex items-center justify-center gap-3 rounded-full bg-gradient-to-r from-sky-100 to-amber-100 px-8 py-3 font-semibold text-black shadow-lg transition-all duration-300 hover:from-sky-200 hover:to-amber-200"
         >
           <Github className="text-lg" /> Go to GitHub
         </motion.a>
@@ -677,7 +681,6 @@ const ContributorGuide = () => {
 };
 
 export default ContributorGuide;
-
 
 /*
  * ============================================================================

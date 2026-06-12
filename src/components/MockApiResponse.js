@@ -54,10 +54,10 @@ const mockResponses = {
 
 const MockApiResponse = () => {
   const location = useLocation();
-  
+
   // 🔥 FIX: Normalize the path by removing any trailing slashes to prevent 404s on exact matches
   const normalizedPath = location.pathname.replace(/\/$/, "");
-  
+
   const response = mockResponses[normalizedPath] || {
     status: 404,
     source: "mock",
@@ -76,7 +76,7 @@ const MockApiResponse = () => {
       <section className="mx-auto max-w-4xl">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-emerald-300">
+            <p className="text-sm font-semibold tracking-wide text-emerald-300 uppercase">
               Mock API Response
             </p>
             <h1 className="mt-2 text-3xl font-bold">{payload.endpoint}</h1>

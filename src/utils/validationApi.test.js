@@ -13,9 +13,7 @@ const createJsonResponse = (body, ok = true, status = 200) => ({
 
 describe("validationApi", () => {
   it("normalizes email availability responses", async () => {
-    const fetchImpl = jest.fn(async () =>
-      createJsonResponse({ available: true }),
-    );
+    const fetchImpl = jest.fn(async () => createJsonResponse({ available: true }));
 
     const result = await checkEmailAvailability("person@example.com", {
       fetchImpl,
@@ -29,13 +27,13 @@ describe("validationApi", () => {
     });
     expect(fetchImpl).toHaveBeenCalledWith(
       "/api/validate/email/person%40example.com",
-      expect.objectContaining({ method: "GET" }),
+      expect.objectContaining({ method: "GET" })
     );
   });
 
   it("normalizes username unavailable responses", async () => {
     const fetchImpl = jest.fn(async () =>
-      createJsonResponse({ available: false, message: "Taken" }),
+      createJsonResponse({ available: false, message: "Taken" })
     );
 
     const result = await checkUsernameAvailability("admin", { fetchImpl });
@@ -57,13 +55,13 @@ describe("validationApi", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ phone: "+1 555 111 2222" }),
-      }),
+      })
     );
   });
 
   it("returns a standardized error on API failures", async () => {
     const fetchImpl = jest.fn(async () =>
-      createJsonResponse({ message: "Server says no" }, false, 400),
+      createJsonResponse({ message: "Server says no" }, false, 400)
     );
 
     const result = await requestValidation("/api/validate/email/a", {

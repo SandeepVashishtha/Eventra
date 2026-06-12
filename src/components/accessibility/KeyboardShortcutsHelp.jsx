@@ -12,10 +12,10 @@ const KeyboardShortcutsHelp = () => {
   ];
 
   return (
-    <article className="rounded-3xl border border-slate-200/70 dark:border-slate-700/90 bg-card-bg/70 p-6 shadow-sm col-span-1 lg:col-span-3">
-      <div className="flex items-center gap-3 mb-6 text-slate-900 dark:text-slate-100">
-        <div className="p-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
-          <Keyboard className="w-6 h-6" aria-hidden="true" />
+    <article className="bg-card-bg/70 col-span-1 rounded-3xl border border-slate-200/70 p-6 shadow-sm lg:col-span-3 dark:border-slate-700/90">
+      <div className="mb-6 flex items-center gap-3 text-slate-900 dark:text-slate-100">
+        <div className="rounded-2xl bg-indigo-50 p-2 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
+          <Keyboard className="h-6 w-6" aria-hidden="true" />
         </div>
         <div>
           <h2 className="text-lg font-semibold">Keyboard Shortcuts</h2>
@@ -25,29 +25,42 @@ const KeyboardShortcutsHelp = () => {
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="border-b border-slate-150 dark:border-slate-800">
-              <th className="py-3 text-xs font-bold uppercase tracking-wider text-slate-400">Shortcut</th>
-              <th className="py-3 text-xs font-bold uppercase tracking-wider text-slate-400">Action</th>
+            <tr className="border-slate-150 border-b dark:border-slate-800">
+              <th className="py-3 text-xs font-bold tracking-wider text-slate-400 uppercase">
+                Shortcut
+              </th>
+              <th className="py-3 text-xs font-bold tracking-wider text-slate-400 uppercase">
+                Action
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {shortcuts.map((s, idx) => (
-              <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
+              <tr
+                key={idx}
+                className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/10"
+              >
                 <td className="py-3.5 pr-4">
                   <div className="flex items-center gap-1.5">
                     {s.keys.map((k, kIdx) => (
                       <React.Fragment key={kIdx}>
-                        {kIdx > 0 && <span className="text-slate-450 dark:text-slate-500 text-xs font-bold">+</span>}
-                        <kbd className="px-2.5 py-1 bg-slate-100 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 text-xs font-extrabold rounded-lg shadow-sm">
+                        {kIdx > 0 && (
+                          <span className="text-slate-450 text-xs font-bold dark:text-slate-500">
+                            +
+                          </span>
+                        )}
+                        <kbd className="dark:bg-slate-850 rounded-lg border border-slate-200/80 bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-800 shadow-sm dark:border-slate-700/80 dark:text-slate-200">
                           {k}
                         </kbd>
                       </React.Fragment>
                     ))}
                   </div>
                 </td>
-                <td className="py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-300">{s.action}</td>
+                <td className="py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  {s.action}
+                </td>
               </tr>
             ))}
           </tbody>

@@ -23,8 +23,12 @@ const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"
 const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
 const UIInventory = lazy(() => import("../admin/UIInventory"));
 const SponsorDashboard = lazy(() => import("../../Pages/Sponsors/SponsorDashboard"));
-const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard.jsx"));
-const EventSchedulerCalendar = lazy(() => import("../../Pages/Calendar/EventSchedulerCalendar.jsx"));
+const EventAnalyticsDashboard = lazy(
+  () => import("../../Pages/Events/EventAnalyticsDashboard.jsx")
+);
+const EventSchedulerCalendar = lazy(
+  () => import("../../Pages/Calendar/EventSchedulerCalendar.jsx")
+);
 
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
@@ -33,7 +37,13 @@ const withModuleBoundary = (children, boundaryName) => (
     boundaryName={boundaryName}
     title={`${boundaryName} needs a reset`}
   >
-    <Suspense fallback={<div className="flex justify-center items-center min-h-[50vh] text-gray-500 animate-pulse">Loading {boundaryName}...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-[50vh] animate-pulse items-center justify-center text-gray-500">
+          Loading {boundaryName}...
+        </div>
+      }
+    >
       {children}
     </Suspense>
   </ErrorBoundary>
@@ -41,7 +51,13 @@ const withModuleBoundary = (children, boundaryName) => (
 
 // 🔥 FIX: Added helper for naked auth routes
 const withAuthSuspense = (children) => (
-  <Suspense fallback={<div className="flex justify-center items-center min-h-screen text-gray-500 animate-pulse">Loading...</div>}>
+  <Suspense
+    fallback={
+      <div className="flex min-h-screen animate-pulse items-center justify-center text-gray-500">
+        Loading...
+      </div>
+    }
+  >
     {children}
   </Suspense>
 );
@@ -60,10 +76,7 @@ export const getProtectedRoutes = () => [
     key="/admin"
     path="/admin"
     element={
-      <ProtectedRoute
-  requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
-  redirectTo="/login"
->
+      <ProtectedRoute requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]} redirectTo="/login">
         {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
       </ProtectedRoute>
     }
@@ -80,11 +93,7 @@ export const getProtectedRoutes = () => [
   <Route
     key="/dashboard"
     path="/dashboard"
-    element={
-      <ProtectedRoute>
-        {withModuleBoundary(<Dashboard />, "User dashboard")}
-      </ProtectedRoute>
-    }
+    element={<ProtectedRoute>{withModuleBoundary(<Dashboard />, "User dashboard")}</ProtectedRoute>}
   />,
   <Route
     key="/dashboard/profile"
@@ -100,18 +109,14 @@ export const getProtectedRoutes = () => [
     key="/networking"
     path="/networking"
     element={
-      <ProtectedRoute>
-        {withModuleBoundary(<MatchmakingHub />, "Matchmaking Hub")}
-      </ProtectedRoute>
+      <ProtectedRoute>{withModuleBoundary(<MatchmakingHub />, "Matchmaking Hub")}</ProtectedRoute>
     }
   />,
   <Route
     key="/profile/edit"
     path="/profile/edit"
     element={
-      <ProtectedRoute>
-        {withModuleBoundary(<EditProfile />, "Profile editor")}
-      </ProtectedRoute>
+      <ProtectedRoute>{withModuleBoundary(<EditProfile />, "Profile editor")}</ProtectedRoute>
     }
   />,
   <Route
@@ -127,11 +132,7 @@ export const getProtectedRoutes = () => [
   <Route
     key="/settings"
     path="/settings"
-    element={
-      <ProtectedRoute>
-        {withModuleBoundary(<Settings />, "Settings")}
-      </ProtectedRoute>
-    }
+    element={<ProtectedRoute>{withModuleBoundary(<Settings />, "Settings")}</ProtectedRoute>}
   />,
   <Route
     key="/settings/notifications"
@@ -156,12 +157,7 @@ export const getProtectedRoutes = () => [
     key="/feedback/survey-builder"
     path="/feedback/survey-builder"
     element={
-      <ProtectedRoute
-        requiredPermissions={[
-          PERMISSIONS.HOST_HACKATHON,
-          PERMISSIONS.CREATE_EVENT,
-        ]}
-      >
+      <ProtectedRoute requiredPermissions={[PERMISSIONS.HOST_HACKATHON, PERMISSIONS.CREATE_EVENT]}>
         {withModuleBoundary(<SurveyEngine />, "Survey builder")}
       </ProtectedRoute>
     }
@@ -179,12 +175,7 @@ export const getProtectedRoutes = () => [
     key="/events/scheduler"
     path="/events/scheduler"
     element={
-      <ProtectedRoute
-        requiredPermissions={[
-          PERMISSIONS.CREATE_EVENT,
-          PERMISSIONS.HOST_HACKATHON,
-        ]}
-      >
+      <ProtectedRoute requiredPermissions={[PERMISSIONS.CREATE_EVENT, PERMISSIONS.HOST_HACKATHON]}>
         {withModuleBoundary(<EventSchedulerCalendar />, "Event Scheduler")}
       </ProtectedRoute>
     }
@@ -224,5 +215,9 @@ export const getAuthRoutes = () => [
   <Route key="/register" path="/register" element={withAuthSuspense(<AuthPage />)} />,
   <Route key="/signup" path="/signup" element={withAuthSuspense(<AuthPage />)} />,
   <Route key="/unauthorized" path="/unauthorized" element={withAuthSuspense(<Unauthorized />)} />,
-  <Route key="/password-reset" path="/password-reset" element={withAuthSuspense(<PasswordReset />)} />,
+  <Route
+    key="/password-reset"
+    path="/password-reset"
+    element={withAuthSuspense(<PasswordReset />)}
+  />,
 ];

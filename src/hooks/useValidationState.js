@@ -5,18 +5,18 @@
 import { useCallback, useMemo } from "react";
 
 /**
- * Custom React hook to compute visual states, accessibility attributes, and CSS class names 
+ * Custom React hook to compute visual states, accessibility attributes, and CSS class names
  * based on the validation lifecycle of a form field.
  *
  * ### Purpose
- * Standardizes form field validation feedback across the application. It decouples the visual 
+ * Standardizes form field validation feedback across the application. It decouples the visual
  * representation and accessibility characteristics of form inputs from the core validation logic.
  *
  * ### State & Styling Transitions
- * - **Un-touched Field**: If `touched` is false, styling class names returned via `fieldClassName` 
- *   remain unchanged (base classes only). This prevents showing validation states (success/error) 
+ * - **Un-touched Field**: If `touched` is false, styling class names returned via `fieldClassName`
+ *   remain unchanged (base classes only). This prevents showing validation states (success/error)
  *   prematurely to the user before they interact with the field.
- * - **Touched & Success**: Once the field is interacted with and `validationState` becomes `'success'`, 
+ * - **Touched & Success**: Once the field is interacted with and `validationState` becomes `'success'`,
  *   green border classes are appended.
  * - **Touched & Error**: Appends red border classes and signals that error messages (`shouldShowError`)
  *   should be rendered.
@@ -30,8 +30,8 @@ import { useCallback, useMemo } from "react";
  * - `aria-describedby="{fieldName}-success"` is set upon successful validation.
  *
  * ### Performance Optimization
- * Computations are heavily memoized using `useMemo` and `useCallback`. The returned `ariaAttributes` 
- * and boolean flags preserve reference equality across renders, preventing unnecessary re-renders of 
+ * Computations are heavily memoized using `useMemo` and `useCallback`. The returned `ariaAttributes`
+ * and boolean flags preserve reference equality across renders, preventing unnecessary re-renders of
  * consumer input components.
  *
  * @param {string} fieldName - The unique name or identifier of the form field (e.g., 'email', 'password'). Used to generate accessibility labels and ARIA IDs.
@@ -96,7 +96,7 @@ export const useValidationState = (
   fieldName,
   validationState = "idle",
   error = null,
-  touched = false,
+  touched = false
 ) => {
   /**
    * Get visual indicator based on validation state
@@ -175,7 +175,7 @@ export const useValidationState = (
           return classes;
       }
     },
-    [touched, validationState],
+    [touched, validationState]
   );
 
   /**

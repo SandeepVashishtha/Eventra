@@ -86,7 +86,13 @@ const saveToIDB = async (userId, records) => {
   if (!userId) return;
   // Only persist the minimal, PII-free shape — strip formData and full event
   const persisted = records.map((r) =>
-    toPersistedRecord(r.eventId, r.registeredAt, r.event || r.eventSummary, r.registrationId, r.qrToken),
+    toPersistedRecord(
+      r.eventId,
+      r.registeredAt,
+      r.event || r.eventSummary,
+      r.registrationId,
+      r.qrToken
+    )
   );
   await saveToOfflineCache(storageKey(userId), persisted);
 };
@@ -114,9 +120,9 @@ export const MyEventsProvider = ({ children }) => {
       setLoading(false);
       return;
     }
-    
+
     setLoading(true);
-    loadFromIDB(userId).then(data => {
+    loadFromIDB(userId).then((data) => {
       if (mounted) {
         setMyEvents(data);
         setLoading(false);
@@ -127,7 +133,9 @@ export const MyEventsProvider = ({ children }) => {
       }
     });
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [userId]);
 
   // Persist to IndexedDB whenever myEvents changes — PII-free records only
@@ -148,32 +156,35 @@ export const MyEventsProvider = ({ children }) => {
    * @param {string} registrationId — the unique registration identifier
    * @param {string} qrToken — the signed JWT ticket token
    */
-  const addRegistration = useCallback((event, formData = {}, registrationId = null, qrToken = null) => {
-    setMyEvents((prev) => {
-      const alreadyExists = prev.some(
-        (r) =>
-          r.eventId === event.id ||
-        (registrationId && r.registrationId && r.registrationId === registrationId)
-      );
+  const addRegistration = useCallback(
+    (event, formData = {}, registrationId = null, qrToken = null) => {
+      setMyEvents((prev) => {
+        const alreadyExists = prev.some(
+          (r) =>
+            r.eventId === event.id ||
+            (registrationId && r.registrationId && r.registrationId === registrationId)
+        );
 
-      if (alreadyExists) return prev;
-      return [
-        ...prev,
-        {
-          eventId: event.id,
-          registeredAt: new Date().toISOString(),
-          registrationId: registrationId || null,
-          qrToken: qrToken || "",
-          // formData and event are kept in memory for this session so the
-          // success screen can display them, but they are NOT written to
-          // localStorage (saveToStorage strips them via toPersistedRecord).
-          formData,
-          event,
-          eventSummary: toEventSummary(event),
-        },
-      ];
-    });
-  }, []);
+        if (alreadyExists) return prev;
+        return [
+          ...prev,
+          {
+            eventId: event.id,
+            registeredAt: new Date().toISOString(),
+            registrationId: registrationId || null,
+            qrToken: qrToken || "",
+            // formData and event are kept in memory for this session so the
+            // success screen can display them, but they are NOT written to
+            // localStorage (saveToStorage strips them via toPersistedRecord).
+            formData,
+            event,
+            eventSummary: toEventSummary(event),
+          },
+        ];
+      });
+    },
+    []
+  );
 
   /**
    * removeRegistration — remove a registration by eventId.
@@ -187,7 +198,7 @@ export const MyEventsProvider = ({ children }) => {
    */
   const isRegistered = useCallback(
     (eventId) => myEvents.some((r) => r.eventId === eventId),
-    [myEvents],
+    [myEvents]
   );
 
   // Waitlist Operations

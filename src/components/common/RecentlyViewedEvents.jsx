@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import useRecentlyViewed from '../../hooks/useRecentlyViewed';
-import LazyImage from './LazyImage';
-import './RecentlyViewedEvents.css';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";
+import LazyImage from "./LazyImage";
+import "./RecentlyViewedEvents.css";
 
 /**
  * RecentlyViewedEvents
@@ -46,12 +46,12 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return '';
+    if (!dateStr) return "";
     try {
-      return new Date(dateStr).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
+      return new Date(dateStr).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
       });
     } catch {
       return dateStr;
@@ -63,7 +63,9 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
       {/* ── Header ── */}
       <div className="rv-header">
         <div className="rv-title-group">
-          <span className="rv-icon" aria-hidden="true">🕑</span>
+          <span className="rv-icon" aria-hidden="true">
+            🕑
+          </span>
           <h2 className="rv-title">Recently Viewed</h2>
           <span className="rv-count">{recentlyViewed.length}</span>
         </div>
@@ -75,15 +77,16 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
               onClick={() => setShowAll((v) => !v)}
               aria-expanded={showAll}
             >
-              {showAll ? 'Show Less' : `View All (${recentlyViewed.length})`}
+              {showAll ? "Show Less" : `View All (${recentlyViewed.length})`}
             </button>
           )}
           <button
-            className={`rv-btn ${confirmClear ? 'rv-btn--danger' : 'rv-btn--ghost'}`}
+            className={`rv-btn ${confirmClear ? "rv-btn--danger" : "rv-btn--ghost"}`}
             onClick={handleClear}
             title="Clear viewing history"
-           aria-label="button">
-            {confirmClear ? '✕ Confirm Clear' : 'Clear History'}
+            aria-label="button"
+          >
+            {confirmClear ? "✕ Confirm Clear" : "Clear History"}
           </button>
         </div>
       </div>
@@ -96,7 +99,7 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
             className="rv-card"
             role="listitem"
             onClick={() => handleCardClick(event)}
-            onKeyDown={(e) => e.key === 'Enter' && handleCardClick(event)}
+            onKeyDown={(e) => e.key === "Enter" && handleCardClick(event)}
             tabIndex={0}
             aria-label={`View event: ${event.title}`}
           >
@@ -120,22 +123,17 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
                   src={event.image}
                   alt={event.title}
                   aspectRatio="3/2"
-                  className="w-full h-full"
+                  className="h-full w-full"
                   imgClassName="object-cover"
                 />
               ) : (
-                <div
-                  className="rv-card__thumb-fallback"
-                  aria-hidden="true"
-                >
+                <div className="rv-card__thumb-fallback" aria-hidden="true">
                   🎉
                 </div>
               )}
 
               {/* Category badge */}
-              {event.category && (
-                <span className="rv-card__badge">{event.category}</span>
-              )}
+              {event.category && <span className="rv-card__badge">{event.category}</span>}
             </div>
 
             {/* Content */}

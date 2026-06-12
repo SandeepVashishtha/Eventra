@@ -52,49 +52,52 @@ export function useFormSubmit(submitFn, offlineOptions = {}) {
     };
   }, []);
 
-  const handleSubmit = useCallback(async (data) => {
-    if (isInFlight.current) return;
+  const handleSubmit = useCallback(
+    async (data) => {
+      if (isInFlight.current) return;
 
-    isInFlight.current = true;
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
+      isInFlight.current = true;
+      setIsSubmitting(true);
+      setError(null);
+      setSuccess(false);
 
-    try {
-      await submitFn(data);
-      if (isMounted.current) {
-        setSuccess(true);
-      }
-    } catch (err) {
-      if (offlineOptions.queueOffline && isOfflineSubmissionError(err)) {
-        const queueItem =
-          typeof offlineOptions.createQueueItem === "function"
-            ? offlineOptions.createQueueItem(data, err)
-            : {
-              actionType: offlineOptions.actionType || "FORM_SUBMISSION",
-              endpoint: offlineOptions.endpoint,
-              payload: data,
-            };
+      try {
+        await submitFn(data);
+        if (isMounted.current) {
+          setSuccess(true);
+        }
+      } catch (err) {
+        if (offlineOptions.queueOffline && isOfflineSubmissionError(err)) {
+          const queueItem =
+            typeof offlineOptions.createQueueItem === "function"
+              ? offlineOptions.createQueueItem(data, err)
+              : {
+                  actionType: offlineOptions.actionType || "FORM_SUBMISSION",
+                  endpoint: offlineOptions.endpoint,
+                  payload: data,
+                };
 
-        const queued = await pushToQueue(queueItem, offlineOptions.userId || null);
-        if (queued) {
-          if (isMounted.current) {
-            setSuccess(true);
+          const queued = await pushToQueue(queueItem, offlineOptions.userId || null);
+          if (queued) {
+            if (isMounted.current) {
+              setSuccess(true);
+            }
+            return;
           }
-          return;
+        }
+
+        if (isMounted.current) {
+          setError(getPublicErrorMessage(err, FORM_ERRORS.submitFailed));
+        }
+      } finally {
+        isInFlight.current = false;
+        if (isMounted.current) {
+          setIsSubmitting(false);
         }
       }
-
-      if (isMounted.current) {
-        setError(getPublicErrorMessage(err, FORM_ERRORS.submitFailed));
-      }
-    } finally {
-      isInFlight.current = false;
-      if (isMounted.current) {
-        setIsSubmitting(false);
-      }
-    }
-  }, [submitFn, offlineOptions]);
+    },
+    [submitFn, offlineOptions]
+  );
 
   return { handleSubmit, isSubmitting, error, success };
 }

@@ -1,4 +1,12 @@
-import { CalendarIcon, MapPinIcon, ClockIcon, UserGroupIcon, TrophyIcon, BuildingLibraryIcon, ShareIcon } from "@heroicons/react/24/outline";
+import {
+  CalendarIcon,
+  MapPinIcon,
+  ClockIcon,
+  UserGroupIcon,
+  TrophyIcon,
+  BuildingLibraryIcon,
+  ShareIcon,
+} from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -81,7 +89,7 @@ const UrgencyBadge = ({ startDate, endDate, status }) => {
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
         timeLeft.days < 1
           ? "border-red-200 bg-red-50 text-red-600 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-400"
           : "border-orange-200 bg-orange-50 text-orange-600 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-400"
@@ -217,7 +225,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         </div>
 
         {isFeatured && (
-          <span className="w-fit rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-600/20 dark:text-indigo-300">
+          <span className="w-fit rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[10px] font-bold tracking-wider text-indigo-700 uppercase dark:border-indigo-500/40 dark:bg-indigo-600/20 dark:text-indigo-300">
             Featured
           </span>
         )}
@@ -229,7 +237,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         <div className="border-t border-slate-100 dark:border-white/5" />
 
         <div className="min-h-[72px]">
-          <h3 className="mb-1.5 text-base font-bold leading-snug text-slate-900 dark:text-white">
+          <h3 className="mb-1.5 text-base leading-snug font-bold text-slate-900 dark:text-white">
             {normalizedHackathon.title}
           </h3>
           <p className="line-clamp-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
@@ -317,7 +325,8 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
               </button>
               <a
                 href={addHackathonToGoogleCalendar(normalizedHackathon)}
-                target="_blank" rel="noopener noreferrer"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-slate-50 hover:text-indigo-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 Reminder

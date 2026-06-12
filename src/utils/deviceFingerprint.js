@@ -86,7 +86,7 @@ export const getDeviceFingerprint = () => {
     const fallbackSalt =
       typeof window !== "undefined" ? window.location.origin : "eventra-fallback";
     _memoizedFingerprint = CryptoJS.SHA256(
-      `eventra-fingerprint-fallback:${fallbackSalt}`,
+      `eventra-fingerprint-fallback:${fallbackSalt}`
     ).toString();
     return _memoizedFingerprint;
   }
@@ -117,7 +117,9 @@ export const getFastFingerprint = () => {
     _memoizedFastFingerprint = CryptoJS.SHA256(`${screenInfo}_${navInfo}_${salt}`).toString();
     return _memoizedFastFingerprint;
   } catch {
-    _memoizedFastFingerprint = CryptoJS.SHA256("eventra-fast-fingerprint-ultimate-fallback").toString();
+    _memoizedFastFingerprint = CryptoJS.SHA256(
+      "eventra-fast-fingerprint-ultimate-fallback"
+    ).toString();
     return _memoizedFastFingerprint;
   }
 };

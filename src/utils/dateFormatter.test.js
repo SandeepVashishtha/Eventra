@@ -40,18 +40,12 @@ describe("formatEventDate", () => {
 
 describe("formatEventDateRange", () => {
   it("returns a range string with dash separator", () => {
-    const result = formatEventDateRange(
-      "2026-06-15T10:00:00Z",
-      "2026-06-15T12:00:00Z"
-    );
+    const result = formatEventDateRange("2026-06-15T10:00:00Z", "2026-06-15T12:00:00Z");
     expect(result).toContain(" - ");
   });
 
   it("includes start date in result", () => {
-    const result = formatEventDateRange(
-      "2026-06-15T10:00:00Z",
-      "2026-06-15T12:00:00Z"
-    );
+    const result = formatEventDateRange("2026-06-15T10:00:00Z", "2026-06-15T12:00:00Z");
     expect(result).toContain("2026");
   });
 });

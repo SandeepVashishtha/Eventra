@@ -1,7 +1,7 @@
 import { Github, ExternalLink, GitBranch, MapPin, Building, Users, Medal } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { useReducedMotion } from '../hooks/useReducedMotion';
+import { useReducedMotion } from "../hooks/useReducedMotion";
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
 import ErrorBoundary from "./common/ErrorBoundary";
 import SEOHead from "../components/SEOHead";
@@ -19,16 +19,10 @@ const PROFILE_FETCH_DELAY_MS = 100; // Throttle profile API calls to avoid rate 
 
 const fetchJsonWithTimeout = async (url) => {
   const proxyUrl = url.startsWith("https://api.github.com")
-    ? `/api/github-proxy?path=${encodeURIComponent(
-        url.replace("https://api.github.com", "")
-      )}`
+    ? `/api/github-proxy?path=${encodeURIComponent(url.replace("https://api.github.com", ""))}`
     : url;
 
-  const { data } = await fetchWithTimeout(
-    proxyUrl,
-    {},
-    REQUEST_TIMEOUT
-  );
+  const { data } = await fetchWithTimeout(proxyUrl, {}, REQUEST_TIMEOUT);
 
   return data;
 };
@@ -48,28 +42,20 @@ const getRoleByGitHubActivity = (contributor) => {
 // Local storage helpers
 // Centralized storage helpers
 const getCachedContributors = () => {
-  const cachedData = storageManager.get(
-    STORAGE_KEYS.GITHUB_CONTRIBUTORS,
-    validators.isObject,
-  );
+  const cachedData = storageManager.get(STORAGE_KEYS.GITHUB_CONTRIBUTORS, validators.isObject);
 
   if (!cachedData?.data || !cachedData?.timestamp) {
     return null;
   }
 
-  return Date.now() - cachedData.timestamp > CACHE_DURATION
-    ? null
-    : cachedData.data;
+  return Date.now() - cachedData.timestamp > CACHE_DURATION ? null : cachedData.data;
 };
 
 const cacheContributors = (data) => {
-  storageManager.set(
-    STORAGE_KEYS.GITHUB_CONTRIBUTORS,
-    {
-      data,
-      timestamp: Date.now(),
-    },
-  );
+  storageManager.set(STORAGE_KEYS.GITHUB_CONTRIBUTORS, {
+    data,
+    timestamp: Date.now(),
+  });
 };
 
 const ContributorsInner = () => {
@@ -95,9 +81,7 @@ const ContributorsInner = () => {
     }
 
     try {
-      const profile = await fetchJsonWithTimeout(
-        `https://api.github.com/users/${username}`,
-      );
+      const profile = await fetchJsonWithTimeout(`https://api.github.com/users/${username}`);
       return {
         followers: profile.followers || 0,
         public_repos: profile.public_repos || 0,
@@ -145,13 +129,11 @@ const ContributorsInner = () => {
       let hasMore = true;
       while (hasMore && page <= MAX_CONTRIBUTOR_PAGES) {
         const data = await fetchJsonWithTimeout(
-          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`,
+          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`
         );
 
         if (!Array.isArray(data)) {
-          throw new Error(
-            "GitHub returned an unexpected contributors response",
-          );
+          throw new Error("GitHub returned an unexpected contributors response");
         }
 
         // Support anonymous contributors by checking for either login or name
@@ -180,12 +162,10 @@ const ContributorsInner = () => {
             ...profile,
             role: getRoleByGitHubActivity({ ...c, ...profile }),
           };
-        }),
+        })
       );
 
-      const enhanced = results
-        .filter((r) => r.status === "fulfilled")
-        .map((r) => r.value);
+      const enhanced = results.filter((r) => r.status === "fulfilled").map((r) => r.value);
 
       if (results.some((r) => r.status === "rejected")) {
         const failCount = results.filter((r) => r.status === "rejected").length;
@@ -200,7 +180,7 @@ const ContributorsInner = () => {
       setError(
         err?.name === "AbortError"
           ? "GitHub took too long to respond. Please try again."
-          : "Unable to load contributors from GitHub right now. Please try again.",
+          : "Unable to load contributors from GitHub right now. Please try again."
       );
       setContributors([]);
     } finally {
@@ -220,22 +200,22 @@ const ContributorsInner = () => {
       (c.login || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.role || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.location || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.company || "").toLowerCase().includes(searchTerm.toLowerCase()),
+      (c.company || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // UPDATED: Loading skeleton grid
   if (loading) {
     return (
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
-            {[...Array(8)].map((_, i) => (
-              <ContributorCardSkeleton key={i} />
-            ))}
+        <section className="pastel-grid-bg bg-gradient-to-br from-indigo-50 to-white py-20 pt-20 md:pt-24 dark:from-gray-900 dark:to-black">
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="mt-16 grid grid-cols-1 gap-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {[...Array(8)].map((_, i) => (
+                <ContributorCardSkeleton key={i} />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
       </ErrorBoundary>
     );
   }
@@ -243,208 +223,195 @@ const ContributorsInner = () => {
   if (error)
     return (
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
-            Contributors are unavailable
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
-          <button
-            type="button"
-            onClick={fetchContributors}
-            className="inline-flex items-center justify-center bg-black text-white px-6 py-3 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 transition-colors"
-           aria-label="Retry loading contributors">
-            Retry
-          </button>
-        </div>
-      </section>
+        <section className="pastel-grid-bg bg-gradient-to-br from-indigo-50 to-white py-20 pt-20 md:pt-24 dark:from-gray-900 dark:to-black">
+          <div className="mx-auto max-w-3xl px-6 text-center">
+            <h2 className="mb-4 text-3xl font-bold text-gray-800 dark:text-gray-100">
+              Contributors are unavailable
+            </h2>
+            <p className="mb-6 text-gray-600 dark:text-gray-400">{error}</p>
+            <button
+              type="button"
+              onClick={fetchContributors}
+              className="inline-flex items-center justify-center rounded-full bg-black px-6 py-3 text-sm font-semibold text-white shadow transition-colors hover:bg-zinc-800"
+              aria-label="Retry loading contributors"
+            >
+              Retry
+            </button>
+          </div>
+        </section>
       </ErrorBoundary>
     );
   return (
     // UPDATED: Section background
-      <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
-        <div className="max-w-7xl mx-auto px-6">
+    <ErrorBoundary level="feature">
+      <section className="pastel-grid-bg bg-gradient-to-br from-indigo-50 to-white py-20 pt-20 md:pt-24 dark:from-gray-900 dark:to-black">
+        <div className="mx-auto max-w-7xl px-6">
           {/* Added The Search Bar */}
-          <div className="flex justify-center mb-8">
+          <div className="mb-8 flex justify-center">
             <input
               type="text"
-            placeholder="Search contributors by name, username, role, location, or company..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            aria-label="Search contributors"
-            className="px-4 py-2 rounded-lg w-full max-w-2xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-black text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-          />
+              placeholder="Search contributors by name, username, role, location, or company..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search contributors"
+              className="w-full max-w-2xl rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:ring-2 focus:ring-black focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+
+          <motion.h2
+            // UPDATED: Title text
+            className="mb-16 text-center text-5xl font-extrabold tracking-tight text-gray-800 dark:text-gray-100"
+            style={{ fontFamily: '"Anton", sans-serif' }}
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
+          >
+            🌟 Our Amazing {/* UPDATED: Linear text for dark mode */}
+            <span className="text-black dark:text-white">Contributors</span>
+          </motion.h2>
+
+          {filteredContributors.length === 0 ? (
+            <div className="text-center text-lg text-gray-600 dark:text-gray-400">
+              <p>
+                {searchTerm
+                  ? `No contributors found matching "${searchTerm}"`
+                  : "No contributors are available yet."}
+              </p>
+              {!searchTerm && (
+                <button
+                  type="button"
+                  onClick={fetchContributors}
+                  className="mt-5 inline-flex items-center justify-center rounded-full bg-black px-6 py-3 text-sm font-semibold text-white shadow transition-colors hover:bg-zinc-800"
+                  aria-label="Retry loading contributors"
+                >
+                  Retry
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {filteredContributors.map((c, i) => (
+                <motion.div
+                  key={c.id}
+                  className="relative flex flex-col items-center overflow-visible rounded-2xl border border-gray-100 bg-white/95 p-6 text-center shadow-lg backdrop-blur-xl transition-all duration-300 ease-out dark:border-gray-700 dark:bg-gray-800/90"
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  whileHover={{
+                    scale: 1.02,
+                    y: -4,
+                    boxShadow: "0px 8px 25px rgba(99,102,241,0.25)",
+                  }}
+                >
+                  {/* Avatar with Glow */}
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2">
+                    <div className="relative">
+                      <img
+                        loading="lazy"
+                        decoding="async"
+                        width="80"
+                        height="80"
+                        src={
+                          c.avatar_url ||
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || "Anon")}&background=random`
+                        }
+                        alt={`${c.name || c.login || "Contributor"}'s GitHub profile`}
+                        className="h-20 w-20 rounded-full border-4 border-black shadow-xl dark:border-gray-300"
+                      />
+                      <div className="absolute inset-0 animate-pulse rounded-full bg-black/10 blur-md dark:bg-white/10"></div>
+                    </div>
+                  </div>
+
+                  {/* Name + Role + Badge */}
+                  <div className="mt-16">
+                    {/* UPDATED: Name and role text */}
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{c.name}</h3>
+                    <p className="mb-3 flex items-center justify-center gap-1 text-sm font-medium text-black dark:text-white">
+                      <Medal className="text-amber-300" /> {c.role}
+                    </p>
+                    {/* UPDATED: Contribution Badges */}
+                    {i === 0 && (
+                      <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-black dark:bg-yellow-900/50 dark:text-white">
+                        🥇 Top Contributor
+                      </span>
+                    )}
+                    {i === 1 && (
+                      <span className="rounded-full bg-gray-200 px-3 py-1 text-xs font-semibold text-black dark:bg-gray-600 dark:text-white">
+                        🥈 Silver Contributor
+                      </span>
+                    )}
+                    {i === 2 && (
+                      <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-black dark:bg-orange-900/50 dark:text-white">
+                        🥉 Bronze Contributor
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Stats Section (Glass style) */}
+                  <div className="my-5 grid w-full grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300">
+                    <div className="flex flex-col items-center rounded-lg bg-white/60 p-2 shadow-sm backdrop-blur-md dark:bg-gray-600/50">
+                      <GitBranch className="mb-1 text-black dark:text-white" />
+                      <span className="font-semibold">{c.public_repos}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Repos</span>
+                    </div>
+                    <div className="flex flex-col items-center rounded-lg bg-white/60 p-2 shadow-sm backdrop-blur-md dark:bg-gray-600/50">
+                      <Users className="mb-1 text-black dark:text-white" />
+                      <span className="font-semibold">{c.followers}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Followers</span>
+                    </div>
+                    <div className="flex flex-col items-center rounded-lg bg-white/60 p-2 shadow-sm backdrop-blur-md dark:bg-gray-600/50">
+                      <span className="font-bold text-black dark:text-white">🔥</span>
+                      <span className="font-semibold">{c.contributions}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Contribs</span>
+                    </div>
+                  </div>
+
+                  {/* Contribution Progress Bar */}
+                  <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-600">
+                    <div
+                      className="h-2 bg-gray-900 dark:bg-indigo-400"
+                      style={{
+                        width: `${(c.contributions / contributors[0].contributions) * 100}%`,
+                      }}
+                    ></div>
+                  </div>
+
+                  {/* Extra Info */}
+                  <div className="mb-4 flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    {c.company && (
+                      <span className="flex items-center justify-center gap-1">
+                        <Building /> {c.company}
+                      </span>
+                    )}
+                    {c.location && (
+                      <span className="flex items-center justify-center gap-1">
+                        <MapPin /> {c.location}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Profile Button */}
+                  <div className="mt-auto w-full">
+                    <a
+                      href={c.html_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative inline-flex transform items-center justify-center gap-2 overflow-hidden rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white shadow transition-all duration-300 ease-out hover:scale-105 hover:bg-zinc-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
+                    >
+                      {/* GitHub Icon with animation */}
+                      <Github className="text-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12 group-hover:text-blue-200" />
+
+                      <span>Profile</span>
+
+                      <ExternalLink className="text-xs opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
+                    </a>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
-
-        <motion.h2
-          // UPDATED: Title text
-          className="text-5xl font-extrabold text-center mb-16 text-gray-800 dark:text-gray-100 tracking-tight"
-          style={{ fontFamily: '"Anton", sans-serif' }}
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
-        >
-          🌟 Our Amazing {/* UPDATED: Linear text for dark mode */}
-          <span className="text-black dark:text-white">
-            Contributors
-          </span>
-        </motion.h2>
-
-        {filteredContributors.length === 0 ? (
-          <div className="text-center text-gray-600 dark:text-gray-400 text-lg">
-            <p>
-              {searchTerm
-                ? `No contributors found matching "${searchTerm}"`
-                : "No contributors are available yet."}
-            </p>
-            {!searchTerm && (
-              <button
-                type="button"
-                onClick={fetchContributors}
-                className="mt-5 inline-flex items-center justify-center bg-black text-white px-6 py-3 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 transition-colors"
-               aria-label="Retry loading contributors">
-                Retry
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
-            {filteredContributors.map((c, i) => (
-              <motion.div
-                key={c.id}
-                className="relative overflow-visible bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center transition-all duration-300 ease-out"
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                whileHover={{
-                  scale: 1.02,
-                  y: -4,
-                  boxShadow: "0px 8px 25px rgba(99,102,241,0.25)",
-                }}
-              >
-                {/* Avatar with Glow */}
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2">
-                  <div className="relative">
-                    <img
-                      loading="lazy"
-                      decoding="async"
-                      width="80"
-                      height="80"
-                      src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || "Anon")}&background=random`}
-                      alt={`${c.name || c.login || "Contributor"}'s GitHub profile`}
-                      className="w-20 h-20 rounded-full border-4 border-black dark:border-gray-300 shadow-xl"
-                    />
-                    <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 dark:bg-white/10 blur-md"></div>
-                  </div>
-                </div>
-
-                {/* Name + Role + Badge */}
-                <div className="mt-16">
-                  {/* UPDATED: Name and role text */}
-                  <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
-                    {c.name}
-                  </h3>
-                  <p className="text-black dark:text-white text-sm font-medium mb-3 flex items-center justify-center gap-1">
-                    <Medal className="text-amber-300" />{" "}
-                    {c.role}
-                  </p>
-                  {/* UPDATED: Contribution Badges */}
-                  {i === 0 && (
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/50 text-black dark:text-white">
-                      🥇 Top Contributor
-                    </span>
-                  )}
-                  {i === 1 && (
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-600 text-black dark:text-white">
-                      🥈 Silver Contributor
-                    </span>
-                  )}
-                  {i === 2 && (
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/50 text-black dark:text-white">
-                      🥉 Bronze Contributor
-                    </span>
-                  )}
-                </div>
-
-                {/* Stats Section (Glass style) */}
-                <div className="grid grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300 my-5 w-full">
-                  <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <GitBranch className="text-black dark:text-white mb-1" />
-                    <span className="font-semibold">{c.public_repos}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Repos
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <Users className="text-black dark:text-white mb-1" />
-                    <span className="font-semibold">{c.followers}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Followers
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <span className="text-black dark:text-white font-bold">
-                      🔥
-                    </span>
-                    <span className="font-semibold">{c.contributions}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Contribs
-                    </span>
-                  </div>
-                </div>
-
-                {/* Contribution Progress Bar */}
-                <div className="w-full bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden mb-4">
-                  <div
-                    className="h-2 bg-gray-900 dark:bg-indigo-400"
-                    style={{
-                      width: `${
-                        (c.contributions / contributors[0].contributions) * 100
-                      }%`,
-                    }}
-                  ></div>
-                </div>
-
-                {/* Extra Info */}
-                <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
-                  {c.company && (
-                    <span className="flex items-center gap-1 justify-center">
-                      <Building /> {c.company}
-                    </span>
-                  )}
-                  {c.location && (
-                    <span className="flex items-center gap-1 justify-center">
-                      <MapPin /> {c.location}
-                    </span>
-                  )}
-                </div>
-
-                {/* Profile Button */}
-                <div className="mt-auto w-full">
-                  <a
-                    href={c.html_url}
-                    target="_blank" rel="noopener noreferrer"
-                    className="group inline-flex items-center justify-center gap-2
-                    bg-black dark:bg-white text-white dark:text-gray-900
-                    px-5 py-2.5 rounded-full text-sm font-semibold shadow
-                    hover:bg-zinc-800 dark:hover:bg-gray-200
-                    transition-all duration-300 ease-out transform hover:scale-105 relative overflow-hidden"
-                  >
-                    {/* GitHub Icon with animation */}
-                    <Github className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-blue-200" />
-
-                    <span>Profile</span>
-
-                    <ExternalLink className="text-xs opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
-                  </a>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
+      </section>
     </ErrorBoundary>
   );
 };

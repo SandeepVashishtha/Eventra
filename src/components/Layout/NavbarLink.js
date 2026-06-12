@@ -1,16 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
 
-const NavbarLink = ({ navItems = [] }) => { // 🔥 FIX: Default prop to prevent map crash
+const NavbarLink = ({ navItems = [] }) => {
+  // 🔥 FIX: Default prop to prevent map crash
   const location = useLocation(); // get current path
 
   return (
-    <div className="hidden md:flex space-x-3">
+    <div className="hidden space-x-3 md:flex">
       {navItems.map((item) => {
         // 🔥 FIX: Improved active state logic to handle sub-routes (e.g., /events/123)
-        const isActive = 
-          item.href === "/" 
-            ? location.pathname === "/" 
-            : location.pathname.startsWith(item.href);
+        const isActive =
+          item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href);
 
         return (
           <Link
@@ -19,26 +18,23 @@ const NavbarLink = ({ navItems = [] }) => { // 🔥 FIX: Default prop to prevent
             // 🔥 FIX: Added a11y attribute for screen readers
             aria-current={isActive ? "page" : undefined}
             // UPDATED: Text and hover colors
-            className={`relative px-4 py-2.5 text-lg font-medium transition-all duration-300 rounded-lg group
-              ${isActive ? "text-indigo-600 dark:text-indigo-400" : "text-gray-700 dark:text-gray-300"} 
-              hover:text-indigo-600 dark:hover:text-indigo-400`}
+            className={`group relative rounded-lg px-4 py-2.5 text-lg font-medium transition-all duration-300 ${isActive ? "text-indigo-600 dark:text-indigo-400" : "text-gray-700 dark:text-gray-300"} hover:text-indigo-600 dark:hover:text-indigo-400`}
           >
             <span className="relative z-10">{item.name}</span>
 
             {/* Animated underline */}
             <span
               // UPDATED: Underline colors
-              className={`absolute left-0 bottom-0 h-1 rounded-full transition-all duration-300 
-                ${
-                  isActive
-                    ? "w-full bg-indigo-600 dark:bg-indigo-400"
-                    : "w-0 bg-indigo-500 group-hover:w-full"
-                }`}
+              className={`absolute bottom-0 left-0 h-1 rounded-full transition-all duration-300 ${
+                isActive
+                  ? "w-full bg-indigo-600 dark:bg-indigo-400"
+                  : "w-0 bg-indigo-500 group-hover:w-full"
+              }`}
             ></span>
 
             {/* Optional subtle hover background */}
             {/* UPDATED: Hover background color and opacity */}
-            <span className="absolute inset-0 rounded-lg bg-indigo-50 dark:bg-indigo-900/50 opacity-0 transition-opacity duration-300 group-hover:opacity-20 dark:group-hover:opacity-40"></span>
+            <span className="absolute inset-0 rounded-lg bg-indigo-50 opacity-0 transition-opacity duration-300 group-hover:opacity-20 dark:bg-indigo-900/50 dark:group-hover:opacity-40"></span>
           </Link>
         );
       })}

@@ -198,7 +198,10 @@ const SignupForm = () => {
           setErrors((prev) => ({ ...prev, email: "" }));
           setFieldState("email", "success");
         } else {
-          setErrors((prev) => ({ ...prev, email: result?.message || "Email is already registered" }));
+          setErrors((prev) => ({
+            ...prev,
+            email: result?.message || "Email is already registered",
+          }));
           setFieldState("email", "error");
         }
       } catch {
@@ -247,9 +250,13 @@ const SignupForm = () => {
         } else if (status === 429) {
           message = "Too many signup attempts. Please try again later.";
         } else if (status === 400) {
-          message = response.data?.message || response.data?.error || "Please check your input and try again.";
+          message =
+            response.data?.message ||
+            response.data?.error ||
+            "Please check your input and try again.";
         } else {
-          message = response.data?.message || response.data?.error || AUTH_ERRORS.registrationFailed;
+          message =
+            response.data?.message || response.data?.error || AUTH_ERRORS.registrationFailed;
         }
         setSubmitError(message);
         toast.error(message);
@@ -294,11 +301,11 @@ const SignupForm = () => {
 
   return (
     <div className="w-full">
-      <div className="text-center space-y-3 mb-6">
-        <motion.div className="mx-auto w-14 h-14 bg-bg-secondary border border-border rounded-2xl flex items-center justify-center">
-          <Zap className="w-7 h-7 text-primary" />
+      <div className="mb-6 space-y-3 text-center">
+        <motion.div className="bg-bg-secondary border-border mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border">
+          <Zap className="text-primary h-7 w-7" />
         </motion.div>
-        <h1 className="text-2xl font-bold text-text">Create Your Account</h1>
+        <h1 className="text-text text-2xl font-bold">Create Your Account</h1>
       </div>
 
       <form
@@ -307,13 +314,13 @@ const SignupForm = () => {
         noValidate
         aria-describedby="signup-form-error signup-form-success"
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormFieldWrapper
             id="firstName"
             label="First name"
             message={errors.firstName}
             validationState={fieldValidationState.firstName}
-            prefix={<User className="w-4 h-4 text-text-light" />}
+            prefix={<User className="text-text-light h-4 w-4" />}
           >
             <input
               name="firstName"
@@ -321,7 +328,7 @@ const SignupForm = () => {
               value={formData.firstName}
               onChange={handleChange}
               placeholder="Enter your first name"
-              className="w-full pl-9 pr-3 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
+              className="bg-bg border-border text-text placeholder:text-text-light w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm"
               required
               disabled={loading}
             />
@@ -331,7 +338,7 @@ const SignupForm = () => {
             label="Last name"
             message={errors.lastName}
             validationState={fieldValidationState.lastName}
-            prefix={<User className="w-4 h-4 text-text-light" />}
+            prefix={<User className="text-text-light h-4 w-4" />}
           >
             <input
               name="lastName"
@@ -339,7 +346,7 @@ const SignupForm = () => {
               value={formData.lastName}
               onChange={handleChange}
               placeholder="Enter your last name"
-              className="w-full pl-9 pr-3 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
+              className="bg-bg border-border text-text placeholder:text-text-light w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm"
               required
               disabled={loading}
             />
@@ -351,7 +358,7 @@ const SignupForm = () => {
           label="Email"
           message={errors.email}
           validationState={fieldValidationState.email}
-          prefix={<AtSign className="w-4 h-4 text-text-light" />}
+          prefix={<AtSign className="text-text-light h-4 w-4" />}
         >
           <input
             name="email"
@@ -359,7 +366,7 @@ const SignupForm = () => {
             value={formData.email}
             onChange={handleChange}
             placeholder="Enter your email address"
-            className="w-full pl-9 pr-3 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
+            className="bg-bg border-border text-text placeholder:text-text-light w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm"
             required
             disabled={loading}
           />
@@ -370,17 +377,17 @@ const SignupForm = () => {
           label="Password"
           message={errors.password}
           validationState={fieldValidationState.password}
-          prefix={<Lock className="w-4 h-4 text-text-light" />}
+          prefix={<Lock className="text-text-light h-4 w-4" />}
           suffix={
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="flex items-center justify-center text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
+              className="text-text-light hover:text-primary focus-visible:ring-primary/40 flex items-center justify-center rounded p-1 focus:outline-none focus-visible:ring-2"
               aria-label={showPassword ? "Hide password" : "Show password"}
               aria-controls="password"
               aria-pressed={showPassword ? "true" : "false"}
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           }
         >
@@ -390,7 +397,7 @@ const SignupForm = () => {
             value={formData.password}
             onChange={handleChange}
             placeholder="Create a strong password"
-            className="w-full pl-9 pr-9 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
+            className="bg-bg border-border text-text placeholder:text-text-light w-full rounded-lg border py-2.5 pr-9 pl-9 text-sm"
             required
             disabled={loading}
           />
@@ -403,17 +410,17 @@ const SignupForm = () => {
           label="Confirm Password"
           message={errors.confirmPassword || passwordMatchMessage}
           validationState={fieldValidationState.confirmPassword}
-          prefix={<Lock className="w-4 h-4 text-text-light" />}
+          prefix={<Lock className="text-text-light h-4 w-4" />}
           suffix={
             <button
               type="button"
               onClick={() => setShowConfirmPassword((prev) => !prev)}
-              className="flex items-center justify-center text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
+              className="text-text-light hover:text-primary focus-visible:ring-primary/40 flex items-center justify-center rounded p-1 focus:outline-none focus-visible:ring-2"
               aria-label={showConfirmPassword ? "Hide password" : "Show password"}
               aria-controls="confirmPassword"
               aria-pressed={showConfirmPassword ? "true" : "false"}
             >
-              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           }
         >
@@ -423,7 +430,7 @@ const SignupForm = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder="Re-enter your password"
-            className="w-full pl-9 pr-9 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
+            className="bg-bg border-border text-text placeholder:text-text-light w-full rounded-lg border py-2.5 pr-9 pl-9 text-sm"
             required
             disabled={loading}
           />
@@ -433,21 +440,21 @@ const SignupForm = () => {
           id="signup-form-error"
           message={submitError}
           state="error"
-          className="text-xs text-red-700 bg-red-50 border border-red-200 p-2 rounded-lg"
+          className="rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700"
         />
         {success && (
           <ValidationMessage
             id="signup-form-success"
             message={success}
             state="success"
-            className="text-xs text-green-700 bg-green-50 border border-green-200 p-2 rounded-lg"
+            className="rounded-lg border border-green-200 bg-green-50 p-2 text-xs text-green-700"
           />
         )}
 
         <motion.button
           type="submit"
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-hover disabled:opacity-50"
+          className="bg-primary hover:bg-primary-hover flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white disabled:opacity-50"
         >
           {loading ? (
             <>
@@ -460,7 +467,7 @@ const SignupForm = () => {
         </motion.button>
       </form>
 
-      <p className="text-center text-sm text-text-light mt-4">
+      <p className="text-text-light mt-4 text-center text-sm">
         Already have an account?{" "}
         <Link to="/login" className="text-primary hover:text-primary-hover">
           Sign in

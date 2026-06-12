@@ -9,16 +9,7 @@ const meta = {
   argTypes: {
     state: {
       control: "select",
-      options: [
-        "error",
-        "invalid",
-        "success",
-        "valid",
-        "warning",
-        "info",
-        "loading",
-        "validating",
-      ],
+      options: ["error", "invalid", "success", "valid", "warning", "info", "loading", "validating"],
     },
   },
 };

@@ -5,16 +5,13 @@ import FormFieldWrapper from "../FormFieldWrapper";
 let container;
 let root;
 
- 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
- 
 
 const render = (element) => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
-   
   act(() => {
     root.render(element);
   });
@@ -24,7 +21,6 @@ const render = (element) => {
 
 afterEach(() => {
   if (root) {
-     
     act(() => {
       root.unmount();
     });
@@ -37,7 +33,7 @@ describe("FormFieldWrapper", () => {
     render(
       <FormFieldWrapper id="email" label="Email">
         <input />
-      </FormFieldWrapper>,
+      </FormFieldWrapper>
     );
 
     expect(container.querySelector("label").getAttribute("for")).toBe("email");
@@ -48,33 +44,23 @@ describe("FormFieldWrapper", () => {
     render(
       <FormFieldWrapper id="email" label="Email" required>
         <input />
-      </FormFieldWrapper>,
+      </FormFieldWrapper>
     );
 
     expect(container.querySelector("label").textContent).toContain("Email");
     expect(container.querySelector("label").textContent).toContain("*");
-    expect(container.querySelector("input").getAttribute("aria-required")).toBe(
-      "true",
-    );
+    expect(container.querySelector("input").getAttribute("aria-required")).toBe("true");
   });
 
   it("renders helper text and connects it with aria-describedby", () => {
     render(
-      <FormFieldWrapper
-        id="email"
-        label="Email"
-        helperText="Use your work email"
-      >
+      <FormFieldWrapper id="email" label="Email" helperText="Use your work email">
         <input />
-      </FormFieldWrapper>,
+      </FormFieldWrapper>
     );
 
-    expect(container.querySelector("#email-helper").textContent).toBe(
-      "Use your work email",
-    );
-    expect(container.querySelector("input").getAttribute("aria-describedby")).toBe(
-      "email-helper",
-    );
+    expect(container.querySelector("#email-helper").textContent).toBe("Use your work email");
+    expect(container.querySelector("input").getAttribute("aria-describedby")).toBe("email-helper");
   });
 
   it("renders validation messages and connects them with aria-describedby", () => {
@@ -86,32 +72,23 @@ describe("FormFieldWrapper", () => {
         message="Email is already registered"
       >
         <input />
-      </FormFieldWrapper>,
+      </FormFieldWrapper>
     );
 
     expect(container.querySelector("#email-message").textContent).toBe(
-      "Email is already registered",
+      "Email is already registered"
     );
-    expect(container.querySelector("input").getAttribute("aria-describedby")).toBe(
-      "email-message",
-    );
+    expect(container.querySelector("input").getAttribute("aria-describedby")).toBe("email-message");
   });
 
   it("marks the input invalid for error states", () => {
     render(
-      <FormFieldWrapper
-        id="email"
-        label="Email"
-        validationState="error"
-        message="Invalid email"
-      >
+      <FormFieldWrapper id="email" label="Email" validationState="error" message="Invalid email">
         <input />
-      </FormFieldWrapper>,
+      </FormFieldWrapper>
     );
 
-    expect(container.querySelector("input").getAttribute("aria-invalid")).toBe(
-      "true",
-    );
+    expect(container.querySelector("input").getAttribute("aria-invalid")).toBe("true");
   });
 
   it("marks the input busy for loading states", () => {
@@ -123,12 +100,10 @@ describe("FormFieldWrapper", () => {
         message="Checking username..."
       >
         <input />
-      </FormFieldWrapper>,
+      </FormFieldWrapper>
     );
 
-    expect(container.querySelector("input").getAttribute("aria-busy")).toBe(
-      "true",
-    );
+    expect(container.querySelector("input").getAttribute("aria-busy")).toBe("true");
   });
 
   it("preserves existing aria-describedby values", () => {
@@ -141,11 +116,11 @@ describe("FormFieldWrapper", () => {
         validationState="success"
       >
         <input aria-describedby="external-help" />
-      </FormFieldWrapper>,
+      </FormFieldWrapper>
     );
 
     expect(container.querySelector("input").getAttribute("aria-describedby")).toBe(
-      "external-help email-helper email-message",
+      "external-help email-helper email-message"
     );
   });
 
@@ -163,29 +138,19 @@ describe("FormFieldWrapper", () => {
         message="Message"
       >
         <input className="custom-input" />
-      </FormFieldWrapper>,
+      </FormFieldWrapper>
     );
 
-    expect(
-      container
-        .querySelector("[data-state='idle']")
-        .classList.contains("custom-field"),
-    ).toBe(true);
-    expect(container.querySelector("label").classList.contains("custom-label")).toBe(
-      true,
+    expect(container.querySelector("[data-state='idle']").classList.contains("custom-field")).toBe(
+      true
     );
+    expect(container.querySelector("label").classList.contains("custom-label")).toBe(true);
     expect(container.querySelector(".custom-input-wrapper")).not.toBeNull();
-    expect(
-      container.querySelector("#email-helper").classList.contains("custom-helper"),
-    ).toBe(true);
-    expect(
-      container
-        .querySelector("#email-message")
-        .classList.contains("custom-message"),
-    ).toBe(true);
-    expect(container.querySelector("input").classList.contains("custom-input")).toBe(
-      true,
+    expect(container.querySelector("#email-helper").classList.contains("custom-helper")).toBe(true);
+    expect(container.querySelector("#email-message").classList.contains("custom-message")).toBe(
+      true
     );
+    expect(container.querySelector("input").classList.contains("custom-input")).toBe(true);
   });
 
   it("renders optional prefix and suffix content", () => {
@@ -194,10 +159,14 @@ describe("FormFieldWrapper", () => {
         id="email"
         label="Email"
         prefix={<span data-testid="prefix">prefix</span>}
-        suffix={<button type="button" aria-label="button">toggle</button>}
+        suffix={
+          <button type="button" aria-label="button">
+            toggle
+          </button>
+        }
       >
         <input />
-      </FormFieldWrapper>,
+      </FormFieldWrapper>
     );
 
     expect(container.querySelector('[data-testid="prefix"]')).not.toBeNull();

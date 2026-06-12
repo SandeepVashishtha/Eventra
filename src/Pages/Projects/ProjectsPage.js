@@ -11,24 +11,23 @@ import { projectService } from "../../services/projectService";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 import useDebounce from "../../hooks/useDebounce.js";
 
-
 // Modern custom styled search input
 const ModernSearchInput = ({ value, onChange, placeholder }) => (
-  <div className="relative flex items-center w-full">
-    <Search className="absolute left-4 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
+  <div className="relative flex w-full items-center">
+    <Search className="pointer-events-none absolute left-4 h-5 w-5 text-gray-400 dark:text-gray-500" />
     <input
       type="text"
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className="w-full pl-12 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black dark:focus:border-white transition-all shadow-sm"
+      className="w-full rounded-xl border border-gray-300 bg-white py-3 pr-10 pl-12 text-gray-900 placeholder-gray-400 shadow-sm transition-all focus:border-black focus:ring-2 focus:ring-black/20 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-white"
     />
     {value && (
       <button
         onClick={() => onChange({ target: { value: "" } })}
-        className="absolute right-4 text-gray-400 dark:text-gray-500 hover:text-black dark:hover:text-white transition-colors"
+        className="absolute right-4 text-gray-400 transition-colors hover:text-black dark:text-gray-500 dark:hover:text-white"
       >
-        <X className="w-4 h-4" />
+        <X className="h-4 w-4" />
       </button>
     )}
   </div>
@@ -36,35 +35,34 @@ const ModernSearchInput = ({ value, onChange, placeholder }) => (
 
 // Skeleton loader for project cards while data is loading
 const ProjectCardSkeleton = () => (
-  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-pulse">
+  <div className="animate-pulse overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
     <div className="h-40 bg-gray-100 dark:bg-gray-700"></div>
     <div className="p-6">
-      <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
-      <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded mb-4"></div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
-        <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>
+      <div className="mb-4 h-6 w-3/4 rounded bg-gray-200 dark:bg-gray-600"></div>
+      <div className="mb-2 h-4 w-full rounded bg-gray-100 dark:bg-gray-600"></div>
+      <div className="mb-4 h-4 w-5/6 rounded bg-gray-100 dark:bg-gray-600"></div>
+      <div className="mb-4 flex flex-wrap gap-2">
+        <div className="h-6 w-16 rounded-full bg-gray-100 dark:bg-gray-600"></div>
+        <div className="h-6 w-24 rounded-full bg-gray-100 dark:bg-gray-600"></div>
       </div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700"></div>
-        <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-1/3"></div>
+        <div className="h-4 w-1/3 rounded bg-gray-100 dark:bg-gray-600"></div>
       </div>
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="mb-4 flex flex-wrap gap-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
+          <div key={i} className="h-6 w-16 rounded-full bg-gray-100 dark:bg-gray-600"></div>
         ))}
       </div>
-      <div className="flex items-center justify-between mt-4">
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-1/3"></div>
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-1/3"></div>
+      <div className="mt-4 flex items-center justify-between">
+        <div className="h-10 w-1/3 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+        <div className="h-10 w-1/3 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
       </div>
     </div>
   </div>
 );
 
 // import ModernSearchInput from "../../components/common/ModernSearchInput";
-
 
 const ProjectGallery = () => {
   return (
@@ -151,7 +149,7 @@ const InnerGallery = () => {
       const normalizedProjects = projectsList.map((p) => ({
         ...p,
         image: p.thumbnailUrl || p.image || "/Eventra.png",
-        stars: p.upvotes !== undefined ? p.upvotes : (p.stars || 0),
+        stars: p.upvotes !== undefined ? p.upvotes : p.stars || 0,
         techStack: p.techStack || [],
         author: p.author || "Anonymous",
         status: p.status || "Active",
@@ -167,7 +165,9 @@ const InnerGallery = () => {
         setCategories(["all", ...(Array.isArray(categoriesData) ? categoriesData : [])]);
       } catch {
         // derive categories from API project data if categories endpoint throws
-        const uniqueCategories = [...new Set(normalizedProjects.map(p => p?.category).filter(Boolean))];
+        const uniqueCategories = [
+          ...new Set(normalizedProjects.map((p) => p?.category).filter(Boolean)),
+        ];
         setCategories(["all", ...uniqueCategories]);
       }
     } catch (err) {
@@ -183,16 +183,13 @@ const InnerGallery = () => {
     fetchProjects();
   }, [fetchProjects]);
 
- const filteredAndSortedProjects = (Array.isArray(projects) ? projects : [])
+  const filteredAndSortedProjects = (Array.isArray(projects) ? projects : [])
     .filter((project) => {
       if (filterCategory === "bookmarked") {
         if (!bookmarks.includes(project.id)) {
           return false;
         }
-      } else if (
-        filterCategory !== "all" &&
-        project.category !== filterCategory
-      ) {
+      } else if (filterCategory !== "all" && project.category !== filterCategory) {
         return false;
       }
 
@@ -205,9 +202,7 @@ const InnerGallery = () => {
           project?.category?.toLowerCase()?.includes(query) ||
           project?.author?.toLowerCase()?.includes(query) ||
           (Array.isArray(project?.techStack) &&
-            project.techStack.some((tech) =>
-              tech?.toLowerCase()?.includes(query)
-            ))
+            project.techStack.some((tech) => tech?.toLowerCase()?.includes(query)))
         );
       }
 
@@ -239,18 +234,15 @@ const InnerGallery = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-indigo-950 dark:to-black">
+    <div className="flex min-h-screen flex-col bg-gradient-to-l from-sky-50 via-white to-white dark:from-indigo-950 dark:to-black">
       {/* HERO */}
       <ProjectHero scrollToCard={scrollToCard} />
 
       {/* MAIN CONTENT */}
-      <div
-        ref={cardSectionRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
-      >
+      <div ref={cardSectionRef} className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* SEARCH + FILTER */}
         <motion.div
-          className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8"
+          className="mb-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-900"
           style={{
             boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)",
           }}
@@ -260,7 +252,7 @@ const InnerGallery = () => {
           data-aos="fade-up"
           data-aos-duration="800"
         >
-          <div className="flex flex-col md:flex-row gap-4 md:items-center">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
             {/* SEARCH */}
             <div className="flex-1">
               <ModernSearchInput
@@ -271,11 +263,11 @@ const InnerGallery = () => {
             </div>
 
             {/* FILTERS */}
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full md:w-auto">
+            <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto md:gap-4">
               {/* CATEGORY */}
               <div className="relative flex-1 sm:flex-none">
                 <motion.div
-                  className="cursor-pointer relative"
+                  className="relative cursor-pointer"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   data-aos="zoom-in"
@@ -283,10 +275,8 @@ const InnerGallery = () => {
                 >
                   <button
                     type="button"
-                    className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 hover:ring-2 hover:ring-black/20 transition-all min-w-[180px]"
-                    onClick={() =>
-                      setCategoryOpen((prev) => !prev)
-                    }
+                    className="flex min-w-[180px] items-center justify-between rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm transition-all hover:ring-2 hover:ring-black/20 dark:border-gray-600 dark:bg-gray-800"
+                    onClick={() => setCategoryOpen((prev) => !prev)}
                     onKeyDown={(event) => {
                       if (event.key === "Escape") {
                         setCategoryOpen(false);
@@ -300,12 +290,12 @@ const InnerGallery = () => {
                       {filterCategory === "all"
                         ? "All Categories"
                         : filterCategory === "bookmarked"
-                        ? "Saved Projects"
-                        : filterCategory}
+                          ? "Saved Projects"
+                          : filterCategory}
                     </span>
 
                     <ChevronDown
-                      className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform ${
+                      className={`ml-2 text-gray-400 transition-transform dark:text-gray-500 ${
                         categoryOpen ? "rotate-180" : ""
                       }`}
                       aria-hidden="true"
@@ -321,37 +311,37 @@ const InnerGallery = () => {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+                        className="absolute z-10 mt-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
                       >
-                        {["all", "bookmarked", ...categories.filter(c => c !== "all")].map((cat) => {
-                          const selectCategory = () => {
-                            setFilterCategory(cat);
-                            setCategoryOpen(false);
-                          };
-                          return (
-                            <li
-                              key={cat}
-                              role="option"
-                              tabIndex={0}
-                              aria-selected={filterCategory === cat}
-                              onClick={selectCategory}
-                              onKeyDown={(event) =>
-                                handleOptionKeyDown(
-                                  event,
-                                  selectCategory,
-                                  () => setCategoryOpen(false)
-                                )
-                              }
-                              className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none cursor-pointer text-gray-700 dark:text-gray-300"
-                            >
-                              {cat === "all"
-                                ? "All Categories"
-                                : cat === "bookmarked"
-                                ? "★ Saved Projects"
-                                : cat}
-                            </li>
-                          );
-                        })}
+                        {["all", "bookmarked", ...categories.filter((c) => c !== "all")].map(
+                          (cat) => {
+                            const selectCategory = () => {
+                              setFilterCategory(cat);
+                              setCategoryOpen(false);
+                            };
+                            return (
+                              <li
+                                key={cat}
+                                role="option"
+                                tabIndex={0}
+                                aria-selected={filterCategory === cat}
+                                onClick={selectCategory}
+                                onKeyDown={(event) =>
+                                  handleOptionKeyDown(event, selectCategory, () =>
+                                    setCategoryOpen(false)
+                                  )
+                                }
+                                className="cursor-pointer px-4 py-2 text-gray-700 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none dark:text-gray-300 dark:hover:bg-gray-700 dark:focus:bg-gray-700"
+                              >
+                                {cat === "all"
+                                  ? "All Categories"
+                                  : cat === "bookmarked"
+                                    ? "★ Saved Projects"
+                                    : cat}
+                              </li>
+                            );
+                          }
+                        )}
                       </motion.ul>
                     )}
                   </AnimatePresence>
@@ -361,7 +351,7 @@ const InnerGallery = () => {
               {/* SORT */}
               <div className="relative flex-1 sm:flex-none">
                 <motion.div
-                  className="cursor-pointer relative"
+                  className="relative cursor-pointer"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   data-aos="zoom-in"
@@ -369,7 +359,7 @@ const InnerGallery = () => {
                 >
                   <button
                     type="button"
-                    className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 hover:ring-2 hover:ring-black/20 transition-all min-w-[200px]"
+                    className="flex min-w-[200px] items-center justify-between rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm transition-all hover:ring-2 hover:ring-black/20 dark:border-gray-600 dark:bg-gray-700"
                     onClick={() => setSortOpen((prev) => !prev)}
                     onKeyDown={(event) => {
                       if (event.key === "Escape") {
@@ -380,12 +370,10 @@ const InnerGallery = () => {
                     aria-expanded={sortOpen}
                     aria-controls="project-sort-options"
                   >
-                    <span className="text-gray-700 dark:text-gray-300">
-                      {sortByLabels[sortBy]}
-                    </span>
+                    <span className="text-gray-700 dark:text-gray-300">{sortByLabels[sortBy]}</span>
 
                     <ChevronDown
-                      className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform ${
+                      className={`ml-2 text-gray-400 transition-transform dark:text-gray-500 ${
                         sortOpen ? "rotate-180" : ""
                       }`}
                       aria-hidden="true"
@@ -401,35 +389,29 @@ const InnerGallery = () => {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+                        className="absolute z-10 mt-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
                       >
-                        {Object.entries(sortByLabels).map(
-                          ([key, label]) => {
-                            const selectSort = () => {
-                              setSortBy(key);
-                              setSortOpen(false);
-                            };
-                            return (
-                              <li
-                                key={key}
-                                role="option"
-                                tabIndex={0}
-                                aria-selected={sortBy === key}
-                                onClick={selectSort}
-                                onKeyDown={(event) =>
-                                  handleOptionKeyDown(
-                                    event,
-                                    selectSort,
-                                    () => setSortOpen(false)
-                                  )
-                                }
-                                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none cursor-pointer text-gray-700 dark:text-gray-300"
-                              >
-                                {label}
-                              </li>
-                            );
-                          }
-                        )}
+                        {Object.entries(sortByLabels).map(([key, label]) => {
+                          const selectSort = () => {
+                            setSortBy(key);
+                            setSortOpen(false);
+                          };
+                          return (
+                            <li
+                              key={key}
+                              role="option"
+                              tabIndex={0}
+                              aria-selected={sortBy === key}
+                              onClick={selectSort}
+                              onKeyDown={(event) =>
+                                handleOptionKeyDown(event, selectSort, () => setSortOpen(false))
+                              }
+                              className="cursor-pointer px-4 py-2 text-gray-700 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none dark:text-gray-300 dark:hover:bg-gray-700 dark:focus:bg-gray-700"
+                            >
+                              {label}
+                            </li>
+                          );
+                        })}
                       </motion.ul>
                     )}
                   </AnimatePresence>
@@ -439,7 +421,7 @@ const InnerGallery = () => {
               {/* CLEAR FILTERS */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:from-blue-500 hover:to-cyan-500"
                 onClick={() => {
                   setFilterCategory("all");
                   setSearchQuery("");
@@ -448,7 +430,7 @@ const InnerGallery = () => {
                 data-aos="zoom-in"
                 data-aos-delay="400"
               >
-                <X className="w-4 h-4 animate-pulse" />
+                <X className="h-4 w-4 animate-pulse" />
                 Clear Filters
               </motion.button>
             </div>
@@ -458,16 +440,14 @@ const InnerGallery = () => {
         {/* CONTENT */}
         <AnimatePresence mode="wait">
           {isLoading ? (
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <ProjectCardSkeleton
-                  key={`skeleton-${i}`}
-                />
+                <ProjectCardSkeleton key={`skeleton-${i}`} />
               ))}
             </div>
           ) : error ? (
             <motion.div
-              className="bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700 rounded-xl p-8 text-center"
+              className="rounded-xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-700 dark:bg-red-900/40"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
@@ -477,22 +457,21 @@ const InnerGallery = () => {
                 Error loading projects
               </h3>
 
-              <p className="mt-1 text-sm text-red-700 dark:text-red-300">
-                {error}
-              </p>
+              <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</p>
 
               <button
                 type="button"
                 onClick={fetchProjects}
                 disabled={isLoading}
-                className="mt-6 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
-               aria-label="button">
+                className="mt-6 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label="button"
+              >
                 Try Again
               </button>
             </motion.div>
           ) : filteredAndSortedProjects.length > 0 ? (
             <motion.div
-              className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr"
+              className="grid auto-rows-fr grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
               initial="hidden"
               animate="show"
               variants={{
@@ -507,21 +486,19 @@ const InnerGallery = () => {
               data-aos="fade-up"
               data-aos-delay="500"
             >
-              {filteredAndSortedProjects.map(
-                (project, index) => (
-                  <ProjectCard
-                    key={project.id}
-                    project={project}
-                    index={index}
-                    isBookmarked={bookmarks.includes(project.id)}
-                    onBookmarkToggle={handleBookmarkToggle}
-                  />
-                )
-              )}
+              {filteredAndSortedProjects.map((project, index) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  index={index}
+                  isBookmarked={bookmarks.includes(project.id)}
+                  onBookmarkToggle={handleBookmarkToggle}
+                />
+              ))}
             </motion.div>
           ) : (
             <motion.div
-              className="relative overflow-hidden rounded-3xl p-10 text-center shadow-xl border border-gray-100 dark:border-gray-900 bg-white dark:bg-gray-800"
+              className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-10 text-center shadow-xl dark:border-gray-900 dark:bg-gray-800"
               initial={{
                 opacity: 0,
                 y: 30,
@@ -533,8 +510,8 @@ const InnerGallery = () => {
                 scale: 1,
               }}
             >
-              <div className="mx-auto max-w-sm relative z-10">
-                <div className="flex justify-center items-center w-20 h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg mx-auto border border-sky-100 dark:border-gray-600">
+              <div className="relative z-10 mx-auto max-w-sm">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-sky-100 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700">
                   <Search className="h-10 w-10 text-black dark:text-white" />
                 </div>
 
@@ -548,7 +525,7 @@ const InnerGallery = () => {
                     : "No projects available right now. Be the first to share your creation with the community!"}
                 </p>
 
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
                   {searchQuery || filterCategory !== "all" ? (
                     <motion.button
                       whileHover={{ scale: 1.05 }}
@@ -558,7 +535,7 @@ const InnerGallery = () => {
                         setSearchQuery("");
                         setSortBy("recent");
                       }}
-                      className="px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
+                      className="rounded-lg bg-black px-6 py-2.5 text-sm font-medium text-white shadow-lg transition-all hover:bg-zinc-800"
                     >
                       Clear Filters
                     </motion.button>
@@ -567,7 +544,7 @@ const InnerGallery = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       href="/submit-project"
-                      className="px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all inline-flex items-center justify-center"
+                      className="inline-flex items-center justify-center rounded-lg bg-black px-6 py-2.5 text-sm font-medium text-white shadow-lg transition-all hover:bg-zinc-800"
                     >
                       Submit a Project
                     </motion.a>

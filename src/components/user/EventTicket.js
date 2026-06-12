@@ -1,5 +1,20 @@
 import { useRef, useState, useEffect } from "react";
-import { X, Download, ShieldCheck, Calendar, MapPin, Clock, User, Mail, Award, Loader2, RefreshCw, FileText, Sparkles, Map } from "lucide-react";
+import {
+  X,
+  Download,
+  ShieldCheck,
+  Calendar,
+  MapPin,
+  Clock,
+  User,
+  Mail,
+  Award,
+  Loader2,
+  RefreshCw,
+  FileText,
+  Sparkles,
+  Map,
+} from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import QRCode from "react-qr-code";
@@ -48,24 +63,25 @@ const EventTicket = ({ event, user, onClose }) => {
     setLoadingToken(true);
     setTokenError(false);
 
-    apiUtils.post("/api/tickets/token", {
-      registrationId: regId,
-      eventId: event.id
-    })
-    .then((res) => {
-      if (res.data?.token) {
-        setQrToken(res.data.token);
-      } else {
+    apiUtils
+      .post("/api/tickets/token", {
+        registrationId: regId,
+        eventId: event.id,
+      })
+      .then((res) => {
+        if (res.data?.token) {
+          setQrToken(res.data.token);
+        } else {
+          setTokenError(true);
+        }
+      })
+      .catch((err) => {
+        console.error("[EventTicket] Failed to load secure ticket token:", err);
         setTokenError(true);
-      }
-    })
-    .catch((err) => {
-      console.error("[EventTicket] Failed to load secure ticket token:", err);
-      setTokenError(true);
-    })
-    .finally(() => {
-      setLoadingToken(false);
-    });
+      })
+      .finally(() => {
+        setLoadingToken(false);
+      });
   }, [registration, event.id, qrToken, serialNumber, isOffline]);
 
   // Dynamic category themes
@@ -76,7 +92,7 @@ const EventTicket = ({ event, user, onClose }) => {
         badge: "HACKATHON PASS",
         primary: "from-pink-500 via-purple-600 to-indigo-700",
         glow: "rgba(236, 72, 153, 0.25)",
-        accent: "#ec4899"
+        accent: "#ec4899",
       };
     }
     if (type.includes("workshop") || type.includes("meetup") || type.includes("tech")) {
@@ -84,14 +100,14 @@ const EventTicket = ({ event, user, onClose }) => {
         badge: "WORKSHOP PASS",
         primary: "from-emerald-400 via-teal-500 to-cyan-600",
         glow: "rgba(16, 185, 129, 0.25)",
-        accent: "#10b981"
+        accent: "#10b981",
       };
     }
     return {
       badge: "OFFICIAL PASS",
       primary: "from-indigo-500 via-purple-600 to-pink-500",
       glow: "rgba(99, 102, 241, 0.25)",
-      accent: "#6366f1"
+      accent: "#6366f1",
     };
   };
 
@@ -129,7 +145,7 @@ const EventTicket = ({ event, user, onClose }) => {
       const originalFlip = isFlipped;
       setIsFlipped(false);
       setRotate({ x: 0, y: 0 });
-      
+
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       const canvas = await html2canvas(ticketRef.current, {
@@ -145,7 +161,7 @@ const EventTicket = ({ event, user, onClose }) => {
             clonedTicket.style.transform = "none";
             clonedTicket.style.transition = "none";
           }
-        }
+        },
       });
 
       // Restore original state
@@ -158,7 +174,7 @@ const EventTicket = ({ event, user, onClose }) => {
         const pdf = new jsPDF({
           orientation: "portrait",
           unit: "px",
-          format: [380, 580]
+          format: [380, 580],
         });
         pdf.addImage(imgData, "PNG", 0, 0, 380, 580);
         pdf.save(`eventra-ticket-${cleanTitle}.pdf`);
@@ -185,58 +201,61 @@ const EventTicket = ({ event, user, onClose }) => {
       <div className="ud-ticket-modal-container">
         {/* Modal Header Actions */}
         <div className="ud-ticket-modal-actions">
-          <div className="flex gap-2 flex-1">
-            <button 
-              onClick={() => handleDownload("png")} 
+          <div className="flex flex-1 gap-2">
+            <button
+              onClick={() => handleDownload("png")}
               disabled={downloading}
               className="ud-ticket-action-btn download-btn"
               title="Download PNG Ticket"
             >
               {downloading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Download className="w-4 h-4" />
+                <Download className="h-4 w-4" />
               )}
               <span>PNG</span>
             </button>
-            <button 
-              onClick={() => handleDownload("pdf")} 
+            <button
+              onClick={() => handleDownload("pdf")}
               disabled={downloading}
               className="ud-ticket-action-btn pdf-btn"
               title="Download PDF Ticket"
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="h-4 w-4" />
               <span>PDF</span>
             </button>
           </div>
-          
-          <button 
-            onClick={() => setIsFlipped(!isFlipped)} 
+
+          <button
+            onClick={() => setIsFlipped(!isFlipped)}
             className="ud-ticket-action-btn flip-btn"
             title="Flip Ticket"
           >
-            <RefreshCw className={`w-4 h-4 transition-transform duration-500 ${isFlipped ? "rotate-180" : ""}`} />
+            <RefreshCw
+              className={`h-4 w-4 transition-transform duration-500 ${isFlipped ? "rotate-180" : ""}`}
+            />
             <span>Info</span>
           </button>
 
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="ud-ticket-action-btn close-btn"
             title="Close Ticket"
-           aria-label="button">
-            <X className="w-4 h-4" />
+            aria-label="button"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Outer frame containing the interactive 3D card layout */}
         <div className="ud-ticket-capture-frame">
-          <div 
+          <div
             className={`ud-ticket-card-wrapper ${isFlipped ? "flipped" : ""}`}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             style={{
               transform: `perspective(1200px) rotateX(${rotate.x}deg) rotateY(${rotate.y + (isFlipped ? 180 : 0)}deg)`,
-              boxShadow: `0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 50px ${theme.glow}`
+              boxShadow: `0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 50px ${theme.glow}`,
             }}
             ref={ticketRef}
             data-ticket-root
@@ -244,10 +263,10 @@ const EventTicket = ({ event, user, onClose }) => {
             {/* Front of Card */}
             <div className="ud-ticket-card-face ud-ticket-card-front">
               {/* Holographic light sheen overlay */}
-              <div 
-                className="ud-ticket-holo-overlay" 
+              <div
+                className="ud-ticket-holo-overlay"
                 style={{
-                  background: `radial-gradient(circle at ${shine.x}% ${shine.y}%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 60%), linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%)`
+                  background: `radial-gradient(circle at ${shine.x}% ${shine.y}%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 60%), linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%)`,
                 }}
               />
 
@@ -260,7 +279,9 @@ const EventTicket = ({ event, user, onClose }) => {
                     className="ud-ticket-header-img"
                     loading="lazy"
                     crossOrigin="anonymous"
-                    onError={(e) => { e.target.style.display = 'none'; }}
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
                   />
                 )}
                 <div className="ud-ticket-header-gradient" />
@@ -268,7 +289,10 @@ const EventTicket = ({ event, user, onClose }) => {
                   <span className="ud-ticket-logo-dot" />
                   <span className="ud-ticket-logo-text">Eventra</span>
                 </div>
-                <div className="ud-ticket-category" style={{ borderColor: theme.accent, background: `${theme.accent}33` }}>
+                <div
+                  className="ud-ticket-category"
+                  style={{ borderColor: theme.accent, background: `${theme.accent}33` }}
+                >
                   <Award size={12} className="mr-1" style={{ color: theme.accent }} />
                   <span>{theme.badge}</span>
                 </div>
@@ -277,21 +301,23 @@ const EventTicket = ({ event, user, onClose }) => {
               {/* Event Body */}
               <div className="ud-ticket-body">
                 <h2 className="ud-ticket-title">{event.title}</h2>
-                
+
                 <div className="ud-ticket-grid">
                   <div className="ud-ticket-info-item">
                     <span className="ud-ticket-info-label">DATE</span>
                     <span className="ud-ticket-info-value flex items-center gap-1.5">
                       <Calendar size={13} style={{ color: theme.accent }} />
-                      {event.date ? new Date(event.date).toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric"
-                      }) : "TBA"}
+                      {event.date
+                        ? new Date(event.date).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "TBA"}
                     </span>
                   </div>
-                  
+
                   <div className="ud-ticket-info-item">
                     <span className="ud-ticket-info-label">TIME</span>
                     <span className="ud-ticket-info-value flex items-center gap-1.5">
@@ -316,7 +342,10 @@ const EventTicket = ({ event, user, onClose }) => {
                   {selectedSeat && (
                     <div className="ud-ticket-info-item">
                       <span className="ud-ticket-info-label">SEAT</span>
-                      <span className="ud-ticket-info-value flex items-center gap-1" style={{ color: "#fbbf24", fontWeight: "bold" }}>
+                      <span
+                        className="ud-ticket-info-value flex items-center gap-1"
+                        style={{ color: "#fbbf24", fontWeight: "bold" }}
+                      >
                         {selectedSeat.seatLabel.split(" - ").pop()}
                       </span>
                     </div>
@@ -329,10 +358,12 @@ const EventTicket = ({ event, user, onClose }) => {
                     <span className="ud-ticket-info-label">ATTENDEE</span>
                     <span className="ud-ticket-info-value flex items-center gap-1.5 font-semibold text-white">
                       <User size={13} style={{ color: theme.accent }} />
-                      {user?.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Eventra Guest"}
+                      {user?.fullName ||
+                        `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+                        "Eventra Guest"}
                     </span>
                   </div>
-                  
+
                   <div className="ud-ticket-info-item">
                     <span className="ud-ticket-info-label">EMAIL</span>
                     <span className="ud-ticket-info-value flex items-center gap-1.5 text-xs text-zinc-300">
@@ -349,10 +380,10 @@ const EventTicket = ({ event, user, onClose }) => {
                       e.stopPropagation();
                       setShowSeatMap(true);
                     }}
-                    className="mt-4 w-full py-2 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] cursor-pointer"
+                    className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white transition-all hover:scale-[1.02] hover:bg-white/10"
                     style={{ marginTop: "1rem", cursor: "pointer" }}
                   >
-                    <Map size={14} className="text-amber-400 animate-pulse" />
+                    <Map size={14} className="animate-pulse text-amber-400" />
                     <span>View Seat Location</span>
                   </button>
                 )}
@@ -368,11 +399,21 @@ const EventTicket = ({ event, user, onClose }) => {
               {/* QR Stub Footer */}
               <div className="ud-ticket-footer">
                 <div className="ud-ticket-qr-wrap">
-                  <div className="ud-ticket-qr-border flex items-center justify-center bg-zinc-950/20 dark:bg-white/5 rounded-xl border border-white/10" style={{ width: 110, height: 110 }}>
+                  <div
+                    className="ud-ticket-qr-border flex items-center justify-center rounded-xl border border-white/10 bg-zinc-950/20 dark:bg-white/5"
+                    style={{ width: 110, height: 110 }}
+                  >
                     {loadingToken ? (
-                      <Loader2 className="w-6 h-6 animate-spin text-white opacity-70" />
+                      <Loader2 className="h-6 w-6 animate-spin text-white opacity-70" />
                     ) : isOffline && !qrToken ? (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
                         <QRCode
                           value={registration?.registrationId || serialNumber}
                           size={80}
@@ -382,25 +423,37 @@ const EventTicket = ({ event, user, onClose }) => {
                         />
                       </div>
                     ) : tokenError ? (
-                      <div className="text-[10px] text-rose-500 dark:text-rose-400 font-bold text-center px-1">
+                      <div className="px-1 text-center text-[10px] font-bold text-rose-500 dark:text-rose-400">
                         Secure QR Unavailable
                       </div>
                     ) : (
-                      <QRCode 
-                        value={qrToken || registration?.qrToken || registration?.registrationId || serialNumber} 
-                        size={90} 
-                        bgColor="transparent" 
+                      <QRCode
+                        value={
+                          qrToken ||
+                          registration?.qrToken ||
+                          registration?.registrationId ||
+                          serialNumber
+                        }
+                        size={90}
+                        bgColor="transparent"
                         fgColor="#ffffff"
                         className="ud-ticket-qr"
                       />
                     )}
                   </div>
                 </div>
-                
+
                 <div className="ud-ticket-stub-details">
                   <div className="ud-ticket-serial">{serialNumber}</div>
                   <div className="ud-ticket-status">
-                    <ShieldCheck size={14} className={isOffline ? "text-amber-400 animate-pulse" : "text-emerald-400 animate-pulse"} />
+                    <ShieldCheck
+                      size={14}
+                      className={
+                        isOffline
+                          ? "animate-pulse text-amber-400"
+                          : "animate-pulse text-emerald-400"
+                      }
+                    />
                     <span>{isOffline ? "CACHED TICKET" : "SECURE VALID PASS"}</span>
                   </div>
                 </div>
@@ -425,17 +478,17 @@ const EventTicket = ({ event, user, onClose }) => {
                       EVENT AGENDA
                     </span>
                     <ul className="ud-ticket-agenda-list mt-1 space-y-2 text-xs text-zinc-300">
-                      <li className="flex justify-between items-center border-b border-white/5 pb-1">
+                      <li className="flex items-center justify-between border-b border-white/5 pb-1">
                         <span>1. Welcome & Keynote</span>
-                        <span className="text-zinc-400 font-semibold">10:00 AM</span>
+                        <span className="font-semibold text-zinc-400">10:00 AM</span>
                       </li>
-                      <li className="flex justify-between items-center border-b border-white/5 pb-1">
+                      <li className="flex items-center justify-between border-b border-white/5 pb-1">
                         <span>2. Technical Deep-Dive</span>
-                        <span className="text-zinc-400 font-semibold">11:30 AM</span>
+                        <span className="font-semibold text-zinc-400">11:30 AM</span>
                       </li>
-                      <li className="flex justify-between items-center border-b border-white/5 pb-1">
+                      <li className="flex items-center justify-between border-b border-white/5 pb-1">
                         <span>3. Interactive Q&A</span>
-                        <span className="text-zinc-400 font-semibold">02:00 PM</span>
+                        <span className="font-semibold text-zinc-400">02:00 PM</span>
                       </li>
                     </ul>
                   </div>
@@ -445,15 +498,19 @@ const EventTicket = ({ event, user, onClose }) => {
                       <Map size={11} style={{ color: theme.accent }} />
                       DIRECTIONS
                     </span>
-                    <p className="text-xs text-zinc-400 leading-relaxed mt-1">
-                      {event.location ? `Join offline at ${event.location}. Please arrive 15 minutes early for check-in.` : "This is a virtual event. Check-in online using the unique QR code."}
+                    <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                      {event.location
+                        ? `Join offline at ${event.location}. Please arrive 15 minutes early for check-in.`
+                        : "This is a virtual event. Check-in online using the unique QR code."}
                     </p>
                   </div>
                 </div>
 
-                <div className="ud-ticket-back-footer mt-auto pt-4 border-t border-white/5 flex flex-col items-center gap-2">
-                  <div className="ud-ticket-serial text-center text-xs opacity-75">{serialNumber}</div>
-                  <div className="text-[10px] text-zinc-500 uppercase tracking-widest text-center">
+                <div className="ud-ticket-back-footer mt-auto flex flex-col items-center gap-2 border-t border-white/5 pt-4">
+                  <div className="ud-ticket-serial text-center text-xs opacity-75">
+                    {serialNumber}
+                  </div>
+                  <div className="text-center text-[10px] tracking-widest text-zinc-500 uppercase">
                     Powered by Eventra Engine
                   </div>
                 </div>
@@ -466,43 +523,78 @@ const EventTicket = ({ event, user, onClose }) => {
       {/* Seating Map Modal Popup */}
       <AnimatePresence>
         {showSeatMap && selectedSeat && (
-          <div 
+          <div
             className="ud-ticket-modal-overlay"
-            style={{ 
-              zIndex: 1000, 
-              display: "flex", 
-              alignItems: "center", 
-              justifyContent: "center", 
-              position: "fixed", 
-              inset: 0, 
-              background: "rgba(0,0,0,0.85)", 
-              backdropFilter: "blur(8px)" 
+            style={{
+              zIndex: 1000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.85)",
+              backdropFilter: "blur(8px)",
             }}
             onClick={() => setShowSeatMap(false)}
           >
-            <div 
-              className="relative max-w-xl w-full mx-4 bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl"
+            <div
+              className="relative mx-4 w-full max-w-xl overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 shadow-2xl"
               style={{ padding: "1.5rem" }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex justify-between items-center mb-4" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+              <div
+                className="mb-4 flex items-center justify-between"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "1rem",
+                }}
+              >
                 <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2" style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "16px" }}>
+                  <h3
+                    className="flex items-center gap-2 text-sm font-bold text-white"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      fontSize: "16px",
+                    }}
+                  >
                     <MapPin size={18} className="text-amber-400" />
                     Venue Seat Location
                   </h3>
-                  <p className="text-xs text-zinc-400 mt-0.5" style={{ fontSize: "11px", color: "#a1a1aa", marginTop: "2px" }}>Your exact allocated seat is pulsing in a glowing golden radar overlay</p>
+                  <p
+                    className="mt-0.5 text-xs text-zinc-400"
+                    style={{ fontSize: "11px", color: "#a1a1aa", marginTop: "2px" }}
+                  >
+                    Your exact allocated seat is pulsing in a glowing golden radar overlay
+                  </p>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowSeatMap(false)}
-                  className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                  style={{ cursor: "pointer", background: "#18181b", border: "1px solid #27272a", borderRadius: "8px", padding: "6px", color: "#a1a1aa" }}
+                  className="cursor-pointer rounded-lg border border-zinc-800 bg-zinc-900 p-1.5 text-zinc-400 transition-colors hover:text-white"
+                  style={{
+                    cursor: "pointer",
+                    background: "#18181b",
+                    border: "1px solid #27272a",
+                    borderRadius: "8px",
+                    padding: "6px",
+                    color: "#a1a1aa",
+                  }}
                 >
                   <X size={16} />
                 </button>
               </div>
 
-              <div style={{ background: "#05050a", borderRadius: "16px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.05)" }}>
+              <div
+                style={{
+                  background: "#05050a",
+                  borderRadius: "16px",
+                  overflow: "hidden",
+                  border: "1px solid rgba(255,255,255,0.05)",
+                }}
+              >
                 <SpatialSeatSelector
                   eventId={event.id}
                   selectedSeat={selectedSeat}
@@ -510,7 +602,20 @@ const EventTicket = ({ event, user, onClose }) => {
                 />
               </div>
 
-              <div className="mt-4 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 flex items-center gap-3 text-xs text-amber-400" style={{ marginTop: "1rem", padding: "1rem", borderRadius: "12px", background: "rgba(245, 158, 11, 0.05)", border: "1px solid rgba(245, 158, 11, 0.15)", display: "flex", gap: "0.75rem", fontSize: "12px", color: "#fbbf24" }}>
+              <div
+                className="mt-4 flex items-center gap-3 rounded-xl border border-amber-500/10 bg-amber-500/5 p-4 text-xs text-amber-400"
+                style={{
+                  marginTop: "1rem",
+                  padding: "1rem",
+                  borderRadius: "12px",
+                  background: "rgba(245, 158, 11, 0.05)",
+                  border: "1px solid rgba(245, 158, 11, 0.15)",
+                  display: "flex",
+                  gap: "0.75rem",
+                  fontSize: "12px",
+                  color: "#fbbf24",
+                }}
+              >
                 <Sparkles size={16} className="shrink-0" />
                 <div>
                   <span className="font-bold">Allocated Seat: </span>

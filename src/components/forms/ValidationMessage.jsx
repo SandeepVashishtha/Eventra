@@ -1,4 +1,3 @@
-
 const stateClasses = {
   error: "text-red-600 dark:text-red-400",
   invalid: "text-red-600 dark:text-red-400",
@@ -12,8 +11,7 @@ const stateClasses = {
 
 const joinClasses = (...classes) => classes.filter(Boolean).join(" ");
 
-const getRole = (state) =>
-  state === "error" || state === "invalid" ? "alert" : "status";
+const getRole = (state) => (state === "error" || state === "invalid" ? "alert" : "status");
 
 /**
  * Displays accessible validation feedback below a form field.
@@ -32,13 +30,7 @@ const getRole = (state) =>
  * @example
  * <ValidationMessage id="email-message" state="error" message="Email is required" />
  */
-const ValidationMessage = ({
-  message,
-  state = "info",
-  id,
-  className = "",
-  ...props
-}) => {
+const ValidationMessage = ({ message, state = "info", id, className = "", ...props }) => {
   // 🔥 FIX 1: Added check for false to prevent empty tags
   if (!message) {
     return null;
@@ -52,7 +44,7 @@ const ValidationMessage = ({
       className={joinClasses(
         "mt-1 text-sm leading-5",
         stateClasses[state] || stateClasses.info,
-        className,
+        className
       )}
       data-state={state}
       role={role}

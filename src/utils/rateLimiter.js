@@ -19,11 +19,7 @@
  * @returns {Object} Rate limiter instance
  * @throws {RangeError} When maxTokens or refillRate is not a positive finite number
  */
-export function createRateLimiter({
-  maxTokens = 10,
-  refillRate = 2,
-  initialTokens,
-}) {
+export function createRateLimiter({ maxTokens = 10, refillRate = 2, initialTokens }) {
   if (!Number.isFinite(maxTokens) || maxTokens <= 0) {
     throw new RangeError(
       `createRateLimiter: maxTokens must be a positive finite number, got ${maxTokens}`
@@ -57,9 +53,7 @@ export function createRateLimiter({
      */
     tryConsume(cost = 1) {
       if (!Number.isFinite(cost) || cost <= 0) {
-        throw new RangeError(
-          `tryConsume: cost must be a positive finite number, got ${cost}`
-        );
+        throw new RangeError(`tryConsume: cost must be a positive finite number, got ${cost}`);
       }
       refill();
       if (tokens >= cost) {

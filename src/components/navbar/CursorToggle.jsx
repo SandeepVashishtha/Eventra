@@ -12,7 +12,7 @@ const CursorToggle = ({ cursorEnabled, toggleCursor }) => {
         onClick={toggleCursor}
         aria-pressed={cursorEnabled}
         aria-label="Toggle background cursor effects"
-        className={`h-9 w-9 rounded-full border transition-colors flex items-center justify-center shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        className={`focus-visible:ring-primary flex h-9 w-9 items-center justify-center rounded-full border shadow-none transition-colors focus:outline-none focus-visible:ring-2 ${
           cursorEnabled
             ? "border-primary/40 bg-primary/10 text-primary"
             : "border-border bg-card-bg text-text-light hover:bg-bg-secondary"

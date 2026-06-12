@@ -9,12 +9,12 @@ export default function EventDurationSelector({ isMultiDay, onChange }) {
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        <Calendar className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <Calendar className="mr-2 inline-block h-5 w-5 text-indigo-500" />
         Event Duration
       </label>
       <div className="flex gap-6">
-        <label className="flex items-center text-gray-700 dark:text-white gap-2">
+        <label className="flex items-center gap-2 text-gray-700 dark:text-white">
           <input
             type="radio"
             name="eventType"
@@ -23,7 +23,7 @@ export default function EventDurationSelector({ isMultiDay, onChange }) {
           />
           Single-day Event
         </label>
-        <label className="flex items-center text-gray-700 dark:text-white gap-2">
+        <label className="flex items-center gap-2 text-gray-700 dark:text-white">
           <input
             type="radio"
             name="eventType"

@@ -5,7 +5,10 @@ import { useAuth } from "../context/AuthContext";
 export function useAchievements() {
   const { token } = useAuth();
   const [achievements, setAchievements] = useState({
-    totalEvents: 0, gssocEvents: 0, currentStreak: 0, badges: [],
+    totalEvents: 0,
+    gssocEvents: 0,
+    currentStreak: 0,
+    badges: [],
   });
 
   const fetchAchievements = useCallback(async () => {

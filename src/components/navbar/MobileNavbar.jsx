@@ -15,17 +15,14 @@ const MobileNavbar = ({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="mobile-menu-button lg:hidden inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-3 text-text-light transition-colors hover:bg-bg-secondary hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="mobile-menu-button text-text-light hover:bg-bg-secondary hover:text-text focus-visible:ring-primary inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-3 transition-colors focus:outline-none focus-visible:ring-2 lg:hidden"
         aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         aria-controls="mobile-navigation-drawer"
         title={isOpen ? "Close menu" : "Open menu"}
       >
-        <Menu
-          className="h-6 w-6 transition-transform duration-200"
-          aria-hidden="true"
-        />
+        <Menu className="h-6 w-6 transition-transform duration-200" aria-hidden="true" />
       </button>
 
       <MobileDrawer

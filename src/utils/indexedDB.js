@@ -1,4 +1,4 @@
-import { get, set, del, clear } from 'idb-keyval';
+import { get, set, del, clear } from "idb-keyval";
 
 // In-memory cache fallback when IndexedDB is blocked (e.g., in private windows)
 const memoryCache = new Map();
@@ -6,8 +6,8 @@ let isIndexedDbFunctional = true;
 
 /**
  * Saves a serializable payload to IndexedDB securely, falling back to in-memory store if disabled.
- * @param {string} key 
- * @param {any} val 
+ * @param {string} key
+ * @param {any} val
  * @returns {Promise<void>}
  */
 export const saveToOfflineCache = async (key, val) => {
@@ -16,7 +16,10 @@ export const saveToOfflineCache = async (key, val) => {
       await set(key, val);
       return;
     } catch (err) {
-      console.warn(`[IndexedDB] Blocked or failed to save key "${key}". Falling back to memory:`, err);
+      console.warn(
+        `[IndexedDB] Blocked or failed to save key "${key}". Falling back to memory:`,
+        err
+      );
       isIndexedDbFunctional = false;
     }
   }
@@ -25,8 +28,8 @@ export const saveToOfflineCache = async (key, val) => {
 
 /**
  * Retrieves a payload from IndexedDB, falling back to in-memory store if disabled.
- * @param {string} key 
- * @param {any} fallback 
+ * @param {string} key
+ * @param {any} fallback
  * @returns {Promise<any>}
  */
 export const getFromOfflineCache = async (key, fallback = null) => {
@@ -35,7 +38,10 @@ export const getFromOfflineCache = async (key, fallback = null) => {
       const val = await get(key);
       return val !== undefined ? val : fallback;
     } catch (err) {
-      console.warn(`[IndexedDB] Blocked or failed to read key "${key}". Falling back to memory:`, err);
+      console.warn(
+        `[IndexedDB] Blocked or failed to read key "${key}". Falling back to memory:`,
+        err
+      );
       isIndexedDbFunctional = false;
     }
   }
@@ -45,7 +51,7 @@ export const getFromOfflineCache = async (key, fallback = null) => {
 
 /**
  * Deletes a specific key from IndexedDB, falling back to in-memory store if disabled.
- * @param {string} key 
+ * @param {string} key
  * @returns {Promise<void>}
  */
 export const removeFromOfflineCache = async (key) => {
@@ -54,7 +60,10 @@ export const removeFromOfflineCache = async (key) => {
       await del(key);
       return;
     } catch (err) {
-      console.warn(`[IndexedDB] Blocked or failed to delete key "${key}". Falling back to memory:`, err);
+      console.warn(
+        `[IndexedDB] Blocked or failed to delete key "${key}". Falling back to memory:`,
+        err
+      );
       isIndexedDbFunctional = false;
     }
   }

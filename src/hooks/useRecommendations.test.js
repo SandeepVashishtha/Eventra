@@ -28,9 +28,10 @@ beforeEach(() => {
 
   userProfileAnalyzer.getUserProfile.mockReturnValue(mockProfile);
 
-  recommendationEngine.calculateRecommendationScore.mockImplementation(
-    (event) => ({ score: event.id * 10, reasons: [`reason-${event.id}`] })
-  );
+  recommendationEngine.calculateRecommendationScore.mockImplementation((event) => ({
+    score: event.id * 10,
+    reasons: [`reason-${event.id}`],
+  }));
 });
 
 afterEach(() => {
@@ -125,7 +126,12 @@ describe("useRecommendations — useMemo caching", () => {
 
     // Simulate profile change in localStorage
     localStorage.setItem(PROFILE_KEY, JSON.stringify({ interests: ["design"] }));
-    userProfileAnalyzer.getUserProfile.mockReturnValue({ interests: ["design"], techStack: [], eventTypes: [], level: "Beginner" });
+    userProfileAnalyzer.getUserProfile.mockReturnValue({
+      interests: ["design"],
+      techStack: [],
+      eventTypes: [],
+      level: "Beginner",
+    });
 
     rerender({ evts: events });
 

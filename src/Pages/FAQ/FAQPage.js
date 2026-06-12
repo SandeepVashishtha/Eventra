@@ -926,7 +926,7 @@ function FAQSectionInner() {
                 className="search-input"
                 aria-label="Search FAQ"
               />
-              <Search className="search-icon w-5 h-5" aria-hidden="true" />
+              <Search className="search-icon h-5 w-5" aria-hidden="true" />
               {searchTerm && (
                 <button
                   onClick={() => {
@@ -987,7 +987,7 @@ function FAQSectionInner() {
           {filteredFaqs.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon">
-                <HelpCircle className="w-10 h-10" />
+                <HelpCircle className="h-10 w-10" />
               </div>
               <h3>{t("faq.emptyTitle")}</h3>
               <p>{t("faq.emptyDescription", { searchTerm, selectedCategory })}</p>

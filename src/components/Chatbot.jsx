@@ -56,7 +56,11 @@ function renderMarkdownToReact(text) {
       } else if (match[4]) {
         inlineParts.push(<em key={inlineKey++}>{match[4]}</em>);
       } else if (match[6]) {
-        inlineParts.push(<code key={inlineKey++} className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-xs">{match[6]}</code>);
+        inlineParts.push(
+          <code key={inlineKey++} className="rounded bg-slate-200 px-1 text-xs dark:bg-slate-700">
+            {match[6]}
+          </code>
+        );
       } else if (match[9]) {
         const rawUrl = match[9].trim();
         const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(rawUrl);
@@ -64,7 +68,13 @@ function renderMarkdownToReact(text) {
         const isSafeUrl = !hasScheme || isSafeScheme;
         const safeUrl = isSafeUrl ? rawUrl : "#";
         inlineParts.push(
-          <a key={inlineKey++} href={safeUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline">
+          <a
+            key={inlineKey++}
+            href={safeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-indigo-500 underline"
+          >
             {match[8]}
           </a>
         );
@@ -153,8 +163,8 @@ export default function Chatbot() {
     toast(
       ({ closeToast }) => (
         <div>
-          <p className="text-sm font-semibold mb-2">{t("chatbot.clearHistory")}</p>
-          <p className="text-xs text-gray-500 mb-3">{t("chatbot.clearWarning")}</p>
+          <p className="mb-2 text-sm font-semibold">{t("chatbot.clearHistory")}</p>
+          <p className="mb-3 text-xs text-gray-500">{t("chatbot.clearWarning")}</p>
           <div className="flex gap-2">
             <button
               onClick={() => {
@@ -162,13 +172,13 @@ export default function Chatbot() {
                 toast.success(t("chatbot.clearSuccess"));
                 closeToast();
               }}
-              className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-colors"
+              className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-600"
             >
               {t("chatbot.clearConfirm")}
             </button>
             <button
               onClick={closeToast}
-              className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition-colors"
+              className="rounded-lg bg-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-300"
             >
               {t("common.cancel")}
             </button>
@@ -202,10 +212,7 @@ export default function Chatbot() {
   }, [clearReplyTimer]);
 
   // Trap keyboard focus inside the chat panel while it's expanded
-  const { containerRef: chatTrapRef } = useFocusTrap(
-    isOpen && !isMinimized,
-    handleClose
-  );
+  const { containerRef: chatTrapRef } = useFocusTrap(isOpen && !isMinimized, handleClose);
 
   // Listen for Escape key to close the chatbot (accessibility)
   useEffect(() => {
@@ -234,14 +241,17 @@ export default function Chatbot() {
     wasOpenRef.current = isOpen;
     wasMinimizedRef.current = isMinimized;
 
-    const timer = setTimeout(() => {
-      if (chatLogsRef.current) {
-        chatLogsRef.current.scrollTo({
-          top: chatLogsRef.current.scrollHeight,
-          behavior: isOpening ? "auto" : "smooth",
-        });
-      }
-    }, isOpening ? 250 : 50);
+    const timer = setTimeout(
+      () => {
+        if (chatLogsRef.current) {
+          chatLogsRef.current.scrollTo({
+            top: chatLogsRef.current.scrollHeight,
+            behavior: isOpening ? "auto" : "smooth",
+          });
+        }
+      },
+      isOpening ? 250 : 50
+    );
 
     return () => clearTimeout(timer);
   }, [messages, isTyping, isMinimized, isOpen]);
@@ -260,7 +270,9 @@ export default function Chatbot() {
     // Append User Message, pruning the oldest entries when the cap is exceeded.
     setMessages((prev) => {
       const next = [...prev, { role: "user", content: cleanMessage }];
-      return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
+      return next.length > MAX_STORED_MESSAGES
+        ? next.slice(next.length - MAX_STORED_MESSAGES)
+        : next;
     });
     setDraft("");
     setIsTyping(true);
@@ -270,8 +282,13 @@ export default function Chatbot() {
     replyTimerRef.current = setTimeout(() => {
       const reply = getAssistantReply(cleanMessage, t);
       setMessages((prev) => {
-        const next = [...prev, { role: "assistant", content: reply.answer, actions: reply.actions }];
-        return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
+        const next = [
+          ...prev,
+          { role: "assistant", content: reply.answer, actions: reply.actions },
+        ];
+        return next.length > MAX_STORED_MESSAGES
+          ? next.slice(next.length - MAX_STORED_MESSAGES)
+          : next;
       });
       setIsTyping(false);
       replyTimerRef.current = null;
@@ -294,17 +311,7 @@ export default function Chatbot() {
           {/* Minimized strip — only on desktop when minimized */}
           {isOpen && isMinimized && (
             <div
-              className="
-                fixed bottom-6 right-6 z-[100]
-                hidden sm:flex              /* hide strip on mobile, show FAB instead */
-                items-center justify-between gap-3
-                w-72 rounded-2xl
-                border border-slate-700
-                bg-slate-950 px-4 py-3
-                text-white shadow-2xl
-                fixed-floating-widget
-                transition-opacity duration-300
-              "
+              className="/* hide strip on mobile, show FAB instead */ fixed-floating-widget fixed right-6 bottom-6 z-[100] hidden w-72 items-center justify-between gap-3 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white shadow-2xl transition-opacity duration-300 sm:flex"
               aria-label="Eventra assistant minimized"
             >
               <div className="flex items-center gap-2">
@@ -315,7 +322,7 @@ export default function Chatbot() {
                   <button
                     type="button"
                     onClick={handleMinimize}
-                    className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    className="rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     aria-label="Expand assistant"
                   >
                     <ChevronUp className="h-4 w-4" />
@@ -323,7 +330,7 @@ export default function Chatbot() {
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    className="rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     aria-label={t("chatbot.close")}
                   >
                     <X className="h-4 w-4" />
@@ -336,17 +343,7 @@ export default function Chatbot() {
           <motion.button
             onClick={handleOpen}
             whileHover={{ scale: 1.1, rotate: 5 }}
-            className={`
-              fixed bottom-6 right-6 z-[100]
-              flex h-14 w-14 items-center justify-center
-              rounded-full bg-gradient-to-br from-indigo-600 to-pink-600 text-white
-              shadow-[0_8px_30px_rgb(99,102,241,0.4)]
-              hover:shadow-[0_8px_30px_rgb(236,72,153,0.5)]
-              focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2
-              transition-all duration-200 hover:scale-110
-              fixed-floating-widget
-              ${isMinimized ? "sm:hidden" : ""}
-            `}
+            className={`fixed-floating-widget fixed right-6 bottom-6 z-[100] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-pink-600 text-white shadow-[0_8px_30px_rgb(99,102,241,0.4)] transition-all duration-200 hover:scale-110 hover:shadow-[0_8px_30px_rgb(236,72,153,0.5)] focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 focus:outline-none ${isMinimized ? "sm:hidden" : ""} `}
             aria-label={t("chatbot.open")}
           >
             <Bot className="h-6 w-6" />
@@ -366,31 +363,10 @@ export default function Chatbot() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.2 }}
-            className="
-              fixed bottom-6 right-6 z-[100]
-              flex flex-col                        /* KEY FIX: flex column layout */
-              w-[calc(100vw-2rem)] max-w-sm sm:max-w-sm
-              rounded-2xl
-              border border-slate-200 dark:border-slate-700
-              bg-white dark:bg-slate-900
-              shadow-2xl
-              fixed-floating-widget
-              transition-opacity duration-300
-      
-              /* KEY FIX: constrain total height to viewport so it never overflows.
-                 bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
-              max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-5rem)]
-            "
+            className="/* KEY FIX: column layout */ fixed-floating-widget /* KEY FIX: constrain total height to viewport so it never overflows. = 1.5rem offset from bottom, so we subtract that + a little breathing room. */ fixed right-6 bottom-6 z-[100] flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-sm flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl transition-opacity duration-300 sm:max-h-[calc(100vh-5rem)] sm:max-w-sm dark:border-slate-700 dark:bg-slate-900"
           >
             {/* ── Header — always visible, never scrolls away ── */}
-            <header
-              className="
-              flex flex-shrink-0 items-center justify-between gap-3
-              border-b border-slate-200 dark:border-slate-700
-              bg-slate-950 px-4 py-3 text-white
-              rounded-t-2xl
-            "
-            >
+            <header className="flex flex-shrink-0 items-center justify-between gap-3 rounded-t-2xl border-b border-slate-200 bg-slate-950 px-4 py-3 text-white dark:border-slate-700">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500">
                   <Sparkles className="h-4 w-4" />
@@ -405,7 +381,7 @@ export default function Chatbot() {
                   type="button"
                   onClick={handleClearConversation}
                   disabled={messages.length <= 1}
-                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-lg p-2 text-slate-300 transition-colors hover:bg-white/10 hover:text-red-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                   title="Clear conversation"
                   aria-label="Clear conversation"
                 >
@@ -433,7 +409,7 @@ export default function Chatbot() {
             {/* Messages list */}
             <div
               ref={chatLogsRef}
-              className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+              className="flex-1 space-y-4 overflow-y-auto px-4 py-4"
               role="log"
               aria-live="polite"
               aria-label="Chat messages"
@@ -450,8 +426,8 @@ export default function Chatbot() {
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     className={`max-w-[85%] rounded-[1.25rem] px-4 py-3 text-sm leading-relaxed shadow-sm ${
                       message.role === "user"
-                        ? "bg-gradient-to-r from-indigo-600 to-pink-600 text-white rounded-br-sm"
-                        : "bg-slate-100 dark:bg-slate-800/80 backdrop-blur-sm text-slate-800 dark:text-slate-100 rounded-bl-sm border border-slate-200/30 dark:border-slate-700/20"
+                        ? "rounded-br-sm bg-gradient-to-r from-indigo-600 to-pink-600 text-white"
+                        : "rounded-bl-sm border border-slate-200/30 bg-slate-100 text-slate-800 backdrop-blur-sm dark:border-slate-700/20 dark:bg-slate-800/80 dark:text-slate-100"
                     }`}
                   >
                     {message.role === "user" ? (
@@ -470,40 +446,33 @@ export default function Chatbot() {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="bg-slate-100 dark:bg-slate-800/80 backdrop-blur-sm rounded-[1.25rem] rounded-bl-sm px-4 py-3.5 flex items-center gap-1.5 border border-slate-200/30 dark:border-slate-700/20 shadow-sm"
+                    className="flex items-center gap-1.5 rounded-[1.25rem] rounded-bl-sm border border-slate-200/30 bg-slate-100 px-4 py-3.5 shadow-sm backdrop-blur-sm dark:border-slate-700/20 dark:bg-slate-800/80"
                   >
                     <motion.span
                       animate={{ y: [0, -5, 0] }}
                       transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
-                      className="w-2 h-2 rounded-full bg-indigo-500"
+                      className="h-2 w-2 rounded-full bg-indigo-500"
                     />
                     <motion.span
                       animate={{ y: [0, -5, 0] }}
                       transition={{ repeat: Infinity, duration: 0.6, delay: 0.15 }}
-                      className="w-2 h-2 rounded-full bg-pink-500"
+                      className="h-2 w-2 rounded-full bg-pink-500"
                     />
                     <motion.span
                       animate={{ y: [0, -5, 0] }}
                       transition={{ repeat: Infinity, duration: 0.6, delay: 0.3 }}
-                      className="w-2 h-2 rounded-full bg-emerald-500"
+                      className="h-2 w-2 rounded-full bg-emerald-500"
                     />
                   </motion.div>
                 </div>
               )}
-              
+
               {/* 🔥 FIX: Added the missing dummy div to act as the scroll target for messagesEndRef */}
               <div ref={messagesEndRef} />
             </div>
 
             {/* Footer controls */}
-            <div
-              className="
-              flex-shrink-0
-              px-4 py-4
-              bg-white/90 dark:bg-slate-900/90
-              border-t border-slate-200/50 dark:border-slate-800/40
-            "
-            >
+            <div className="flex-shrink-0 border-t border-slate-200/50 bg-white/90 px-4 py-4 dark:border-slate-800/40 dark:bg-slate-900/90">
               {/* Quick prompts */}
               <div className="mb-3.5 flex flex-wrap gap-1.5">
                 {quickPrompts.map((prompt) => (
@@ -511,7 +480,7 @@ export default function Chatbot() {
                     key={prompt}
                     type="button"
                     onClick={() => sendMessage(prompt)}
-                    className="rounded-full border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:scale-[1.03] focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    className="transform rounded-full border border-slate-200/60 bg-slate-50/50 px-3 py-1.5 text-xs font-bold text-slate-600 transition-all duration-300 hover:scale-[1.03] hover:border-transparent hover:bg-gradient-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-800/50 dark:bg-slate-950/40 dark:text-slate-300"
                   >
                     {prompt}
                   </button>
@@ -527,7 +496,7 @@ export default function Chatbot() {
                       <Link
                         key={`${label}-${to}`}
                         to={to}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black border border-white/10 px-3 py-2 text-xs font-bold text-white hover:scale-[1.03] transition-all duration-300 shadow focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs font-bold text-white shadow transition-all duration-300 hover:scale-[1.03] hover:bg-slate-950 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:bg-slate-950 dark:hover:bg-black"
                       >
                         {Icon && <Icon className="h-3.5 w-3.5" />}
                         {label}
@@ -550,14 +519,14 @@ export default function Chatbot() {
                   onChange={(e) => setDraft(e.target.value)}
                   placeholder={t("chatbot.placeholder")}
                   aria-label={t("chatbot.placeholder")}
-                  className="min-w-0 flex-1 rounded-xl border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/30 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
+                  className="min-w-0 flex-1 rounded-xl border border-slate-200/60 bg-slate-50/50 px-3 py-2.5 text-sm text-slate-900 transition-colors outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-800/50 dark:bg-slate-950/30 dark:text-white dark:focus:border-indigo-400"
                 />
                 <button
                   type="submit"
                   disabled={!draft.trim() || isTyping}
                   aria-label={t("chatbot.send")}
                   title={t("chatbot.send")}
-                  className="rounded-xl bg-slate-900 dark:bg-white p-2.5 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 transition-all shadow hover:scale-105 active:scale-95 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  className="rounded-xl bg-slate-900 p-2.5 text-white shadow transition-all hover:scale-105 hover:bg-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
                 >
                   <Send className="h-4 w-4" />
                 </button>

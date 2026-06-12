@@ -30,7 +30,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
     return () => {
       window.removeEventListener("resize", updatePosition);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const handleKeyDown = (event) => {
@@ -56,16 +56,16 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
         aria-haspopup="menu"
         aria-controls={menuId}
         // 🔥 FIX 3: Added focus-visible states for keyboard accessibility
-        className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 ${
+        className={`group relative flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-medium whitespace-nowrap transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 xl:text-[13px] dark:focus-visible:ring-offset-zinc-900 ${
           isActive || isOpen
-            ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+            ? "font-semibold text-indigo-600 dark:text-indigo-400"
+            : "text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100"
         }`}
       >
         <span className="relative z-10 flex items-center gap-1">
           {item.name}
           <ChevronDown
-            className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           />
         </span>
 
@@ -73,12 +73,12 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
           <>
             <motion.span
               layoutId="activeBox"
-              className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+              className="absolute inset-0 -z-0 rounded-lg border border-indigo-200/80 bg-indigo-100/60 dark:border-indigo-500/50 dark:bg-indigo-500/20"
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
             />
             <motion.span
               layoutId="activeBoxGlow"
-              className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+              className="absolute right-3 -bottom-0.5 left-3 -z-0 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 blur-[1.5px] dark:via-indigo-400"
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
             />
           </>
@@ -86,52 +86,53 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
       </button>
 
       <AnimatePresence>
-        {isOpen && createPortal(
-          <motion.div
-            id={menuId}
-            role="menu"
-            aria-label={`${item.name} navigation`}
-            key={`dd-${item.name}`}
-            initial={{ opacity: 0, y: 15, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            style={{
-              // 🔥 FIX 2 cont: Changed 'fixed' to 'absolute'. ScrollY + absolute = correct page placement.
-              position: 'absolute',
-              top: `${dropPos.top}px`,
-              left: `${dropPos.left}px`,
-              transform: 'translateX(-50%)',
-              zIndex: 9999,
-            }}
-            className="w-60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
-          >
-            {item.subItems.map((sub) => (
-              <Link
-                key={sub.name}
-                to={sub.href}
-                onClick={() => setOpenDropdown(null)}
-                role="menuitem"
-                // 🔥 FIX 3: Added focus-visible states for keyboard accessibility
-                className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                  location.pathname.startsWith(sub.href)
-                    ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
-                    : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
-                }`}
-              >
-                {React.cloneElement(sub.icon, {
-                  className: `w-5 h-5 transition-colors ${
+        {isOpen &&
+          createPortal(
+            <motion.div
+              id={menuId}
+              role="menu"
+              aria-label={`${item.name} navigation`}
+              key={`dd-${item.name}`}
+              initial={{ opacity: 0, y: 15, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              style={{
+                // 🔥 FIX 2 cont: Changed 'fixed' to 'absolute'. ScrollY + absolute = correct page placement.
+                position: "absolute",
+                top: `${dropPos.top}px`,
+                left: `${dropPos.left}px`,
+                transform: "translateX(-50%)",
+                zIndex: 9999,
+              }}
+              className="w-60 overflow-hidden rounded-2xl border border-white/40 bg-white/95 p-2 shadow-[0_8px_32px_rgba(0,0,0,0.1)] backdrop-blur-3xl dark:border-zinc-700/40 dark:bg-zinc-900/95 dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)]"
+            >
+              {item.subItems.map((sub) => (
+                <Link
+                  key={sub.name}
+                  to={sub.href}
+                  onClick={() => setOpenDropdown(null)}
+                  role="menuitem"
+                  // 🔥 FIX 3: Added focus-visible states for keyboard accessibility
+                  className={`group flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-[15px] font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                     location.pathname.startsWith(sub.href)
-                      ? "text-indigo-600 dark:text-indigo-400"
-                      : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
-                  }`,
-                })}
-                {sub.name}
-              </Link>
-            ))}
-          </motion.div>,
-          document.body
-        )}
+                      ? "border-indigo-200/80 bg-indigo-100/60 font-semibold text-indigo-600 shadow-sm dark:border-indigo-500/50 dark:bg-indigo-500/20 dark:text-indigo-400"
+                      : "border-transparent text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  {React.cloneElement(sub.icon, {
+                    className: `w-5 h-5 transition-colors ${
+                      location.pathname.startsWith(sub.href)
+                        ? "text-indigo-600 dark:text-indigo-400"
+                        : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+                    }`,
+                  })}
+                  {sub.name}
+                </Link>
+              ))}
+            </motion.div>,
+            document.body
+          )}
       </AnimatePresence>
     </div>
   );

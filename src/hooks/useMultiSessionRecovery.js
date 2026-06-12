@@ -23,13 +23,17 @@ export const useMultiSessionRecovery = ({
   cloudSessions = EMPTY_SESSIONS,
 } = {}) => {
   const [localSessions, setLocalSessions] = useState(() =>
-    normalizeMultiSessions([...readMultiSessions(storage, storageKey), ...initialSessions]),
+    normalizeMultiSessions([...readMultiSessions(storage, storageKey), ...initialSessions])
   );
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setLocalSessions((current) =>
-      normalizeMultiSessions([...current, ...readMultiSessions(storage, storageKey), ...initialSessions]),
+      normalizeMultiSessions([
+        ...current,
+        ...readMultiSessions(storage, storageKey),
+        ...initialSessions,
+      ])
     );
   }, [initialSessions, storage, storageKey]);
 
@@ -39,7 +43,7 @@ export const useMultiSessionRecovery = ({
       setLocalSessions(normalized);
       return normalized;
     },
-    [storage, storageKey],
+    [storage, storageKey]
   );
 
   const createSession = useCallback(
@@ -48,39 +52,35 @@ export const useMultiSessionRecovery = ({
       persist(upsertRecoverySession(localSessions, session));
       return session;
     },
-    [localSessions, persist],
+    [localSessions, persist]
   );
 
   const upsertSession = useCallback(
     (session) => persist(upsertRecoverySession(localSessions, session)),
-    [localSessions, persist],
+    [localSessions, persist]
   );
 
   const updateSession = useCallback(
-    (sessionId, patch) =>
-      persist(updateRecoverySessionEntry(localSessions, sessionId, patch)),
-    [localSessions, persist],
+    (sessionId, patch) => persist(updateRecoverySessionEntry(localSessions, sessionId, patch)),
+    [localSessions, persist]
   );
 
   const renameSession = useCallback(
     (sessionId, name) => persist(renameRecoverySessionEntry(localSessions, sessionId, name)),
-    [localSessions, persist],
+    [localSessions, persist]
   );
 
   const deleteSession = useCallback(
     (sessionId) => persist(deleteRecoverySessionEntry(localSessions, sessionId)),
-    [localSessions, persist],
+    [localSessions, persist]
   );
 
   const cleanupExpired = useCallback(
     () => persist(cleanupExpiredRecoverySessions(localSessions)),
-    [localSessions, persist],
+    [localSessions, persist]
   );
 
-  const replaceSessions = useCallback(
-    (sessions) => persist(sessions),
-    [persist],
-  );
+  const replaceSessions = useCallback((sessions) => persist(sessions), [persist]);
 
   const allSessions = useMemo(
     () =>
@@ -88,17 +88,17 @@ export const useMultiSessionRecovery = ({
         ...localSessions,
         ...normalizeMultiSessions(cloudSessions, { source: "cloud" }),
       ]),
-    [cloudSessions, localSessions],
+    [cloudSessions, localSessions]
   );
 
   const visibleSessions = useMemo(
     () => filterRecoverySessions(allSessions, searchQuery),
-    [allSessions, searchQuery],
+    [allSessions, searchQuery]
   );
 
   const groupedSessions = useMemo(
     () => groupRecoverySessionsByType(visibleSessions),
-    [visibleSessions],
+    [visibleSessions]
   );
 
   return {

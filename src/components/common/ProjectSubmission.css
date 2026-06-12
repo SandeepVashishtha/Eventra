@@ -200,7 +200,9 @@
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 14px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .form-group input:focus,
@@ -383,24 +385,24 @@
   .project-submission-modal {
     padding: 10px;
   }
-  
+
   .project-submission-content {
     max-height: 95vh;
   }
-  
+
   .submission-header {
     padding: 16px 16px 0;
     margin-bottom: 16px;
   }
-  
+
   .submission-form {
     padding: 0 16px 16px;
   }
-  
+
   .form-actions {
     flex-direction: column;
   }
-  
+
   .btn-primary,
   .btn-secondary {
     width: 100%;

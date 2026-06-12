@@ -4,8 +4,7 @@ import ValidationStatusIcon from "./ValidationStatusIcon";
 
 const joinClasses = (...classes) => classes.filter(Boolean).join(" ");
 
-const hasMessage = (message) =>
-  message !== null && message !== undefined && message !== "";
+const hasMessage = (message) => message !== null && message !== undefined && message !== "";
 
 const isErrorState = (state) => state === "error" || state === "invalid";
 const isLoadingState = (state) => state === "loading" || state === "validating";
@@ -32,7 +31,7 @@ const enhanceChildren = (node, propsToInject) => {
 
   const traverse = (childNode) => {
     if (enhanced) return childNode;
-    
+
     if (Array.isArray(childNode)) {
       return React.Children.map(childNode, traverse);
     }
@@ -56,9 +55,7 @@ const enhanceChildren = (node, propsToInject) => {
     });
   };
 
-  return Array.isArray(node)
-    ? React.Children.map(node, traverse)
-    : traverse(node);
+  return Array.isArray(node) ? React.Children.map(node, traverse) : traverse(node);
 };
 
 /**
@@ -123,11 +120,7 @@ const FormFieldWrapper = ({
   const fieldId = id || child?.props?.id || fieldName;
   const helperId = hasMessage(helperText) ? `${fieldId}-helper` : undefined;
   const messageId = hasMessage(message) ? `${fieldId}-message` : undefined;
-  const describedBy = mergeDescribedBy(
-    child?.props?.["aria-describedby"],
-    helperId,
-    messageId,
-  );
+  const describedBy = mergeDescribedBy(child?.props?.["aria-describedby"], helperId, messageId);
   const invalid = isErrorState(validationState) && hasMessage(message);
   const loading = isLoadingState(validationState);
 
@@ -141,16 +134,18 @@ const FormFieldWrapper = ({
         "aria-required": required ? "true" : child.props["aria-required"],
         className: joinClasses(
           "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500",
-          invalid && "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-400",
+          invalid &&
+            "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-400",
           // 🔥 FIX 1: Support both success AND valid states for the styling
-          (validationState === "success" || validationState === "valid") && "border-green-500 focus:border-green-500 focus:ring-green-500/20 dark:border-green-400",
+          (validationState === "success" || validationState === "valid") &&
+            "border-green-500 focus:border-green-500 focus:ring-green-500/20 dark:border-green-400",
           loading && "border-blue-500 dark:border-blue-400",
           prefix && "pl-10",
           // Reserve right padding to match the icons actually rendered: 80px for
           // both the status icon and a suffix, 40px for just one, none otherwise.
           showStatusIcon && suffix && "pr-20",
           (showStatusIcon || suffix) && !(showStatusIcon && suffix) && "pr-10",
-          child.props.className,
+          child.props.className
         ),
       })
     : children;
@@ -161,16 +156,13 @@ const FormFieldWrapper = ({
         <label
           className={joinClasses(
             "mb-1.5 block text-sm font-medium text-gray-800 dark:text-gray-100",
-            labelClassName,
+            labelClassName
           )}
           htmlFor={fieldId}
         >
           {label}
           {required && (
-            <span
-              className="ml-1 text-red-600 dark:text-red-400"
-              aria-hidden="true"
-            >
+            <span className="ml-1 text-red-600 dark:text-red-400" aria-hidden="true">
               *
             </span>
           )}
@@ -186,18 +178,14 @@ const FormFieldWrapper = ({
         )}
         {enhancedChild}
         <div className="absolute inset-y-0 right-3 flex items-center gap-2">
-  {showStatusIcon && (
-    <span className="pointer-events-none">
-      <ValidationStatusIcon state={validationState} />
-    </span>
-  )}
+          {showStatusIcon && (
+            <span className="pointer-events-none">
+              <ValidationStatusIcon state={validationState} />
+            </span>
+          )}
 
-  {suffix && (
-    <span className="flex items-center">
-      {suffix}
-    </span>
-  )}
-</div>
+          {suffix && <span className="flex items-center">{suffix}</span>}
+        </div>
       </div>
 
       {hasMessage(helperText) && (
@@ -205,7 +193,7 @@ const FormFieldWrapper = ({
           id={helperId}
           className={joinClasses(
             "mt-1 text-sm leading-5 text-gray-500 dark:text-gray-400",
-            helperClassName,
+            helperClassName
           )}
         >
           {helperText}

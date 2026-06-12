@@ -128,44 +128,37 @@ const SearchFilter = () => {
       (event.title || "").toLowerCase().includes(safeSearchTerm) ||
       (event.description || "").toLowerCase().includes(safeSearchTerm);
 
-    const matchesCategory =
-      selectedCategory === "all" || event.category === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || event.category === selectedCategory;
 
-    const normalizedLocation = event.location
-      ?.toString()
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-");
+    const normalizedLocation = event.location?.toString().toLowerCase().trim().replace(/\s+/g, "-");
 
-    const matchesLocation =
-      selectedLocation === "all" || normalizedLocation === selectedLocation;
+    const matchesLocation = selectedLocation === "all" || normalizedLocation === selectedLocation;
     const matchesPrice = priceFilter === "all" || event.price === priceFilter;
 
-    const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
-    const matchesPrice = priceFilter === 'all' || event.price === priceFilter;
+    const matchesLocation = selectedLocation === "all" || normalizedLocation === selectedLocation;
+    const matchesPrice = priceFilter === "all" || event.price === priceFilter;
     const today = new Date();
-const eventDate = new Date(event.date);
+    const eventDate = new Date(event.date);
 
-let matchesDate = true;
+    let matchesDate = true;
 
-if (dateFilter === "today") {
-  matchesDate =
-    eventDate.toDateString() === today.toDateString();
-}
+    if (dateFilter === "today") {
+      matchesDate = eventDate.toDateString() === today.toDateString();
+    }
 
-if (dateFilter === "weekend") {
-  const day = eventDate.getDay();
-  matchesDate = day === 0 || day === 6;
-}
+    if (dateFilter === "weekend") {
+      const day = eventDate.getDay();
+      matchesDate = day === 0 || day === 6;
+    }
 
-if (dateFilter === "nextMonth") {
-  const nextMonth = new Date();
-  nextMonth.setMonth(today.getMonth() + 1);
+    if (dateFilter === "nextMonth") {
+      const nextMonth = new Date();
+      nextMonth.setMonth(today.getMonth() + 1);
 
-  matchesDate =
-    eventDate.getMonth() === nextMonth.getMonth() &&
-    eventDate.getFullYear() === nextMonth.getFullYear();
-}
+      matchesDate =
+        eventDate.getMonth() === nextMonth.getMonth() &&
+        eventDate.getFullYear() === nextMonth.getFullYear();
+    }
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
   });
 
@@ -188,9 +181,7 @@ if (dateFilter === "nextMonth") {
         >
           {"Discover Amazing Events 🎯"}
         </motion.h1>
-        <p className="search-subtitle ">
-          Find the perfect event for your interests
-        </p>
+        <p className="search-subtitle">Find the perfect event for your interests</p>
       </div>
 
       {/* Search Bar */}
@@ -282,37 +273,39 @@ if (dateFilter === "nextMonth") {
         <span>{filteredEvents.length} events found</span>
       </div>
       <div className="filter-group">
-  <label htmlFor="filter-date">Date</label>
-  <select
-    id="filter-date"
-    value={dateFilter}
-    onChange={(e) => setDateFilter(e.target.value)}
-    className="filter-select"
-  >
-    <option value="all">All Dates</option>
-    <option value="today">Today</option>
-    <option value="weekend">This Weekend</option>
-    <option value="nextMonth">Next Month</option>
-  </select>
-</div>
-<button
-  className="btn-outline"
-  onClick={() => {
-    setSearchTerm("");
-    setSelectedCategory("all");
-    setSelectedLocation("all");
-    setPriceFilter("all");
-    setDateFilter("all");
-  }}
->
-  Reset Filters
-</button>
+        <label htmlFor="filter-date">Date</label>
+        <select
+          id="filter-date"
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          className="filter-select"
+        >
+          <option value="all">All Dates</option>
+          <option value="today">Today</option>
+          <option value="weekend">This Weekend</option>
+          <option value="nextMonth">Next Month</option>
+        </select>
+      </div>
+      <button
+        className="btn-outline"
+        onClick={() => {
+          setSearchTerm("");
+          setSelectedCategory("all");
+          setSelectedLocation("all");
+          setPriceFilter("all");
+          setDateFilter("all");
+        }}
+      >
+        Reset Filters
+      </button>
 
       {/* FULL CORRECTED EMPTY STATE & GRID LOGIC SWITCH */}
       {filteredEvents.length === 0 ? (
         <EmptyState
           type={searchTerm ? "search" : "filters"}
-          title={searchTerm ? "No events match your search criteria" : "No events match your filters"}
+          title={
+            searchTerm ? "No events match your search criteria" : "No events match your filters"
+          }
           description="Try adjusting your keywords, altering parameters, or clearing active filters entirely to reset your search layout."
           actionLabel="Clear Filters"
           onAction={handleResetFilters}
@@ -365,26 +358,17 @@ if (dateFilter === "nextMonth") {
                     {event.attendees}
                   </span>
                 </div>
-                <div
-                  className="event-rating"
-                  aria-label={`Rating: ${event.rating} out of 5 stars`}
-                >
+                <div className="event-rating" aria-label={`Rating: ${event.rating} out of 5 stars`}>
                   <span className="stars" aria-hidden="true">
                     ⭐⭐⭐⭐⭐
                   </span>
                   <span className="rating-value">{event.rating}</span>
                 </div>
                 <div className="event-actions">
-                  <button
-                    className="btn-primary"
-                    aria-label={`Register for ${event.title}`}
-                  >
+                  <button className="btn-primary" aria-label={`Register for ${event.title}`}>
                     Register Now
                   </button>
-                  <button
-                    className="btn-outline"
-                    aria-label={`Learn more about ${event.title}`}
-                  >
+                  <button className="btn-outline" aria-label={`Learn more about ${event.title}`}>
                     Learn More
                   </button>
                 </div>

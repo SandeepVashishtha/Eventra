@@ -4,13 +4,7 @@ const usedNonces = new Map();
 
 const MAX_REQUEST_AGE_MS = 5 * 60 * 1000;
 
-export function validateSignature(
-  payload,
-  timestamp,
-  nonce,
-  signature,
-  secret
-) {
+export function validateSignature(payload, timestamp, nonce, signature, secret) {
   const now = Date.now();
 
   if (!timestamp || !nonce || !signature) {
@@ -38,11 +32,7 @@ export function validateSignature(
 
   const expectedSignature = crypto
     .createHmac("sha256", secret)
-    .update(
-      JSON.stringify(payload) +
-        timestamp +
-        nonce
-    )
+    .update(JSON.stringify(payload) + timestamp + nonce)
     .digest("hex");
 
   if (expectedSignature !== signature) {
@@ -63,10 +53,7 @@ setInterval(() => {
   const now = Date.now();
 
   for (const [nonce, timestamp] of usedNonces) {
-    if (
-      now - timestamp >
-      MAX_REQUEST_AGE_MS
-    ) {
+    if (now - timestamp > MAX_REQUEST_AGE_MS) {
       usedNonces.delete(nonce);
     }
   }

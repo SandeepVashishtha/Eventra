@@ -36,7 +36,7 @@ export const handlers = [
   }),
 
   http.post(`${API_URL}/api/auth/login`, async ({ request }) => {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       const body = await request.json();
       if (body.email === "test@eventra.com" && body.password === "password123") {
         return HttpResponse.json({
@@ -69,10 +69,7 @@ export const handlers = [
 
   http.post(`${API_URL}/api/events`, async ({ request }) => {
     const body = await request.json();
-    return HttpResponse.json(
-      { id: "3", ...body },
-      { status: 201 }
-    );
+    return HttpResponse.json({ id: "3", ...body }, { status: 201 });
   }),
 
   http.get(`${API_URL}/api/github/contributors`, () => {

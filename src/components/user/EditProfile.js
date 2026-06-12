@@ -98,11 +98,11 @@ const EditProfile = () => {
   const fileInputRef = useRef(null);
 
   const handleApplyAiProfile = (parsedData) => {
-    setForm(prev => {
+    setForm((prev) => {
       const nextSkills = [...prev.skills];
       if (parsedData.skills && parsedData.skills.length > 0) {
-        parsedData.skills.forEach(skill => {
-          if (!nextSkills.some(s => s.toLowerCase() === skill.toLowerCase())) {
+        parsedData.skills.forEach((skill) => {
+          if (!nextSkills.some((s) => s.toLowerCase() === skill.toLowerCase())) {
             nextSkills.push(skill);
           }
         });
@@ -228,7 +228,9 @@ const EditProfile = () => {
     // Enforce a strict 1MB limit. Base64 inflates sizes by ~33%, meaning
     // anything over 1MB risks exceeding the total ~5MB localStorage boundary.
     if (file.size > 1048576) {
-      alert("Image is too large. Please select an image under 1MB to prevent browser storage errors.");
+      alert(
+        "Image is too large. Please select an image under 1MB to prevent browser storage errors."
+      );
       if (fileInputRef.current) {
         fileInputRef.current.value = null;
       }
@@ -270,11 +272,11 @@ const EditProfile = () => {
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(resolvedForm);
-      
+
       // 🔥 FIX 2: Strip massive Base64 strings before saving to storage to prevent QuotaExceededError crashes
       const safeStorageUser = { ...resolvedForm };
       delete safeStorageUser.avatarBase64;
-      
+
       try {
         await syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
       } catch {
@@ -309,29 +311,29 @@ const EditProfile = () => {
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 py-10 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-white px-4 py-10 dark:bg-gray-900">
+      <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center justify-between">
+          <h1 className="flex items-center justify-between text-3xl font-bold text-gray-900 dark:text-gray-100">
             <span className="text-black dark:text-white">Edit Profile</span>
             <button
               type="button"
               onClick={() => setAiModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl shadow-md transition-all active:scale-[0.98]"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 text-sm font-bold text-white shadow-md transition-all hover:from-indigo-700 hover:to-purple-700 active:scale-[0.98]"
             >
               <Sparkles size={16} />
               Auto-fill with AI
             </button>
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="mt-1 text-gray-600 dark:text-gray-400">
             Manage your personal information and how others see you on Eventra.
           </p>
         </div>
 
         {/* Profile Completion Progress Bar */}
-        <div className="mb-8 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex justify-between items-center mb-3">
+        <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-3 flex items-center justify-between">
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Profile Completion
             </span>
@@ -339,19 +341,19 @@ const EditProfile = () => {
               {completionPercentage}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
             <div
-              className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-out"
+              className="h-2.5 rounded-full bg-indigo-600 transition-all duration-500 ease-out"
               style={{ width: `${completionPercentage}%` }}
             ></div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
           {/* Top Bar with Avatar */}
-          <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex items-center gap-4">
+          <div className="flex items-center gap-4 border-b border-gray-200 px-6 py-5 dark:border-gray-700">
             <div className="relative">
-              <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center ring-2 ring-indigo-200/60 dark:ring-indigo-900/40">
+              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gray-100 ring-2 ring-indigo-200/60 dark:bg-gray-700 dark:ring-indigo-900/40">
                 {form.avatarBase64 ? (
                   <img
                     loading="lazy"
@@ -368,13 +370,13 @@ const EditProfile = () => {
                 <button
                   type="button"
                   onClick={handleRemoveImage}
-                  className="absolute bottom-0 right-0 inline-flex items-center justify-center h-8 w-8 rounded-full bg-red-600 hover:bg-red-700 text-white shadow cursor-pointer"
+                  className="absolute right-0 bottom-0 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-red-600 text-white shadow hover:bg-red-700"
                   aria-label="Remove profile photo"
                 >
                   <XIcon className="h-4 w-4" />
                 </button>
               ) : (
-                <label className="absolute bottom-0 right-0 inline-flex items-center justify-center h-8 w-8 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow cursor-pointer">
+                <label className="absolute right-0 bottom-0 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-indigo-600 text-white shadow hover:bg-indigo-700">
                   <ImageIcon className="h-4 w-4" />
                   <input
                     ref={fileInputRef}
@@ -387,7 +389,7 @@ const EditProfile = () => {
               )}
             </div>
             <div className="flex-1">
-              <div className="text-gray-900 dark:text-gray-100 font-semibold">
+              <div className="font-semibold text-gray-900 dark:text-gray-100">
                 {form.fullName || form.username || form.email}
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -396,18 +398,18 @@ const EditProfile = () => {
             </div>
           </div>
 
-          <form onSubmit={(e) => e.preventDefault()} className="px-6 py-6 space-y-8">
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-8 px-6 py-6">
             {/* Personal Info */}
             <section>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
                 Personal Information
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Full Name
                   </label>
-                  <div className="mt-1 relative">
+                  <div className="relative mt-1">
                     <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
                       <UserIcon className="h-4 w-4" />
                     </span>
@@ -419,7 +421,7 @@ const EditProfile = () => {
                       }
                       readOnly
                       placeholder="Jane Doe"
-                      className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 pl-9 pr-3 py-2 text-gray-500 cursor-not-allowed"
+                      className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 py-2 pr-3 pl-9 text-gray-500 dark:border-gray-700 dark:bg-gray-800"
                     />
                   </div>
                 </div>
@@ -427,7 +429,7 @@ const EditProfile = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Username
                   </label>
-                  <div className="mt-1 relative">
+                  <div className="relative mt-1">
                     <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
                       <AtSign className="h-4 w-4" />
                     </span>
@@ -437,7 +439,7 @@ const EditProfile = () => {
                       value={form.username || ""}
                       onChange={handleChange}
                       placeholder="janedoe"
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 pl-9 pr-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-9 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     />
                   </div>
                   {errors.username && (
@@ -449,15 +451,15 @@ const EditProfile = () => {
 
             {/* Contact */}
             <section>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
                 Contact
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Email
                   </label>
-                  <div className="mt-1 relative">
+                  <div className="relative mt-1">
                     <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
                       <FileText className="h-4 w-4" />
                     </span>
@@ -466,7 +468,7 @@ const EditProfile = () => {
                       name="email"
                       value={form.email || ""}
                       readOnly
-                      className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 pl-9 pr-3 py-2 text-gray-500 cursor-not-allowed"
+                      className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 py-2 pr-3 pl-9 text-gray-500 dark:border-gray-700 dark:bg-gray-800"
                     />
                   </div>
                 </div>
@@ -474,7 +476,7 @@ const EditProfile = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Phone
                   </label>
-                  <div className="mt-1 relative">
+                  <div className="relative mt-1">
                     <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
                       <PhoneIcon className="h-4 w-4" />
                     </span>
@@ -484,7 +486,7 @@ const EditProfile = () => {
                       value={form.phone || ""}
                       onChange={handleChange}
                       placeholder="+1234567890"
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 pl-9 pr-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-9 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     />
                   </div>
                   {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
@@ -494,7 +496,7 @@ const EditProfile = () => {
 
             {/* About */}
             <section>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">About</h3>
+              <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">About</h3>
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -506,7 +508,7 @@ const EditProfile = () => {
                     onChange={handleChange}
                     rows={4}
                     placeholder="Tell us about yourself..."
-                    className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                   />
                 </div>
                 <div>
@@ -520,20 +522,20 @@ const EditProfile = () => {
                     onChange={(e) => setCurrentSkillInput(e.target.value)}
                     onKeyDown={handleSkillsKeyDown}
                     placeholder="Type a skill and press Enter or comma"
-                    className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                   />
                   <p className="mt-1 text-xs text-gray-500">
                     Press Enter or comma to add a skill. Click a suggestion to add it.
                   </p>
 
                   {filteredSuggestions.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2 border-t border-gray-200 dark:border-gray-700 pt-2">
+                    <div className="mt-2 flex flex-wrap gap-2 border-t border-gray-200 pt-2 dark:border-gray-700">
                       {filteredSuggestions.map((suggestion) => (
                         <button
                           key={suggestion}
                           type="button"
                           onClick={() => addSkill(suggestion)}
-                          className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-indigo-100 hover:text-indigo-800 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-indigo-900/40 dark:hover:text-indigo-300"
+                          className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-800 hover:bg-indigo-100 hover:text-indigo-800 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-indigo-900/40 dark:hover:text-indigo-300"
                         >
                           + {suggestion}
                         </button>
@@ -546,7 +548,7 @@ const EditProfile = () => {
                       {form.skills.map((skill, idx) => (
                         <span
                           key={`${skill}-${idx}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60"
+                          className="inline-flex items-center gap-1 rounded-full border border-indigo-200/60 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 dark:border-indigo-800/60 dark:bg-indigo-900/40 dark:text-indigo-300"
                         >
                           {skill}
                           <button
@@ -571,15 +573,15 @@ const EditProfile = () => {
 
             {/* Socials */}
             <section>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
                 Social Links
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     GitHub
                   </label>
-                  <div className="mt-1 relative">
+                  <div className="relative mt-1">
                     <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
                       <Github className="h-4 w-4" />
                     </span>
@@ -589,7 +591,7 @@ const EditProfile = () => {
                       value={form.github || ""}
                       onChange={handleChange}
                       placeholder="https://github.com/username"
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 pl-9 pr-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-9 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     />
                   </div>
                   {errors.github && <p className="mt-1 text-sm text-red-600">{errors.github}</p>}
@@ -598,7 +600,7 @@ const EditProfile = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     LinkedIn
                   </label>
-                  <div className="mt-1 relative">
+                  <div className="relative mt-1">
                     <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
                       <Linkedin className="h-4 w-4" />
                     </span>
@@ -608,7 +610,7 @@ const EditProfile = () => {
                       value={form.linkedin || ""}
                       onChange={handleChange}
                       placeholder="https://www.linkedin.com/in/username"
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 pl-9 pr-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-9 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     />
                   </div>
                   {errors.linkedin && (
@@ -619,7 +621,7 @@ const EditProfile = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Portfolio
                   </label>
-                  <div className="mt-1 relative">
+                  <div className="relative mt-1">
                     <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
                       <LinkIcon className="h-4 w-4" />
                     </span>
@@ -629,7 +631,7 @@ const EditProfile = () => {
                       value={form.portfolio || ""}
                       onChange={handleChange}
                       placeholder="https://your-portfolio.com"
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 pl-9 pr-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-9 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                     />
                   </div>
                   {errors.portfolio && (
@@ -641,7 +643,7 @@ const EditProfile = () => {
 
             {/* Feedback messages */}
             {successMessage && (
-              <div className="rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 px-4 py-3 text-green-800 dark:text-green-200">
+              <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800 dark:border-green-800 dark:bg-green-900/30 dark:text-green-200">
                 {successMessage}
               </div>
             )}
@@ -651,7 +653,7 @@ const EditProfile = () => {
               <button
                 type="button"
                 onClick={() => window.history.back()}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 Cancel
               </button>
@@ -659,7 +661,7 @@ const EditProfile = () => {
                 type="button"
                 disabled={loading}
                 onClick={() => setConfirmOpen(true)}
-                className="px-4 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-60"
               >
                 {loading ? "Saving..." : "Save Changes"}
               </button>
@@ -688,7 +690,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
-      <div className="relative w-full max-w-md mx-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-6 z-10">
+      <div className="relative z-10 mx-auto w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
         <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Save changes?</h4>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Do you want to save your profile updates?
@@ -697,16 +699,18 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-           aria-label="button">
+            className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            aria-label="button"
+          >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="px-4 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
-           aria-label="button">
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-60"
+            aria-label="button"
+          >
             {loading ? "Saving..." : "Save"}
           </button>
         </div>

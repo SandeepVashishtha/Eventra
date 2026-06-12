@@ -1,8 +1,8 @@
-import './AuroraBackground.css';
+import "./AuroraBackground.css";
 
 /**
  * AuroraBackground renders three overlapping gradient layers that animate
- * gently to create an aurora‑like effect. The component is 
+ * gently to create an aurora‑like effect. The component is
  * GPU‑friendly – it only uses CSS transforms and opacity changes.
  * It respects prefers‑reduced‑motion and switches to a static gradient.
  */

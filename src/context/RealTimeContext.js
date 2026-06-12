@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useReducer,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useReducer } from "react";
 import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnection";
 
 export { SSE_STATUS };
@@ -100,11 +94,7 @@ function LeaderboardProvider({ children }) {
     dispatch({ type: "STATUS", payload: status });
   }, [status]);
 
-  return (
-    <LeaderboardContext.Provider value={state}>
-      {children}
-    </LeaderboardContext.Provider>
-  );
+  return <LeaderboardContext.Provider value={state}>{children}</LeaderboardContext.Provider>;
 }
 
 function AnalyticsProvider({ children }) {
@@ -128,11 +118,7 @@ function AnalyticsProvider({ children }) {
     dispatch({ type: "STATUS", payload: status });
   }, [status]);
 
-  return (
-    <AnalyticsContext.Provider value={state}>
-      {children}
-    </AnalyticsContext.Provider>
-  );
+  return <AnalyticsContext.Provider value={state}>{children}</AnalyticsContext.Provider>;
 }
 
 // --- 5. Main Provider Composition ---
@@ -140,9 +126,7 @@ function AnalyticsProvider({ children }) {
 export function RealTimeProvider({ children }) {
   return (
     <LeaderboardProvider>
-      <AnalyticsProvider>
-        {children}
-      </AnalyticsProvider>
+      <AnalyticsProvider>{children}</AnalyticsProvider>
     </LeaderboardProvider>
   );
 }

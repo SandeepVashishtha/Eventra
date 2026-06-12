@@ -128,7 +128,8 @@ export const API_ENDPOINTS = {
   SESSION_RECOVERY: {
     BASE: buildApiUrl("/api/session-recovery"),
     SESSION: (sessionId) => buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}`),
-    RESTORE: (sessionId) => buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}/restore`),
+    RESTORE: (sessionId) =>
+      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}/restore`),
     CLEANUP_EXPIRED: buildApiUrl("/api/session-recovery/expired"),
   },
   TICKETS: {
@@ -183,8 +184,7 @@ const wrapAxiosResponse = (response) => {
 };
 
 export const apiUtils = {
-  get: (url, config = {}) =>
-    API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  get: (url, config = {}) => API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
   post: (url, data = {}, config = {}) =>
     API.post(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
   put: (url, data = {}, config = {}) =>

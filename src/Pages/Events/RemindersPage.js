@@ -59,14 +59,17 @@ const RemindersPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white pt-12 pb-16 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100" style={{
-    backgroundImage: "url('/assets/bookmarkbg.png')",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
-    minHeight: "100vh",
-    width:"100vw"
-  }}>
+    <div
+      className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white pt-12 pb-16 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100"
+      style={{
+        backgroundImage: "url('/assets/bookmarkbg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        minHeight: "100vh",
+        width: "100vw",
+      }}
+    >
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -74,10 +77,10 @@ const RemindersPage = () => {
               <Bell size={16} />
               {reminders.length} active
             </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-950 dark:text-slate-100 sm:text-4xl">
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl dark:text-slate-100">
               Event Reminders
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-slate-400 sm:text-base">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 sm:text-base dark:text-slate-400">
               Manage upcoming reminder alerts for events you have bookmarked or registered for.
             </p>
           </div>
@@ -92,15 +95,16 @@ const RemindersPage = () => {
         </div>
 
         {reminders.length === 0 ? (
-          <div className="rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:border-gray-800 dark:bg-gray-900 dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] sm:p-12">
+          <div className="rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-[0_10px_25px_rgba(0,0,0,0.05)] sm:p-12 dark:border-gray-800 dark:bg-gray-900 dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
               <Bell size={30} />
             </div>
             <h2 className="text-2xl font-bold text-gray-950 dark:text-white">
               No active reminders
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-gray-600 dark:text-gray-400 sm:text-base">
-              Bookmark or register for an upcoming event, then choose a reminder time from its event card or details page.
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-gray-600 sm:text-base dark:text-gray-400">
+              Bookmark or register for an upcoming event, then choose a reminder time from its event
+              card or details page.
             </p>
             <Link
               to="/events"
@@ -123,12 +127,17 @@ const RemindersPage = () => {
                     <img
                       src={event.image}
                       alt={event.title}
-                      className="h-44 w-full object-cover sm:h-full" loading="lazy"/>
+                      className="h-44 w-full object-cover sm:h-full"
+                      loading="lazy"
+                    />
 
                     <div className="p-5">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <h2 title={event.title} className="text-xl font-bold text-gray-950 dark:text-white line-clamp-2 break-words min-w-0">
+                          <h2
+                            title={event.title}
+                            className="line-clamp-2 min-w-0 text-xl font-bold break-words text-gray-950 dark:text-white"
+                          >
                             {event.title}
                           </h2>
                           <div className="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">
@@ -155,7 +164,7 @@ const RemindersPage = () => {
                         {eventReminders.map((reminder) => (
                           <div
                             key={reminder.id}
-                            className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-slate-50 p-3 dark:border-gray-700 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between"
+                            className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-gray-700 dark:bg-gray-800"
                           >
                             <div>
                               <p className="text-sm font-semibold text-gray-900 dark:text-white">

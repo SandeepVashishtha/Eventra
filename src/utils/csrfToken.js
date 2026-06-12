@@ -109,9 +109,7 @@ export function csrfFetch(url, options = {}) {
 
     if (!token) {
       if (enforcementMode === "strict") {
-        return Promise.reject(
-          new Error(`CSRF token required for ${method} request to ${url}`),
-        );
+        return Promise.reject(new Error(`CSRF token required for ${method} request to ${url}`));
       }
     }
 

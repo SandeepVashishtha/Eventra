@@ -28,9 +28,9 @@ const ThemeCustomizer = () => {
   if (!isCustomizerOpen) return null;
 
   const baseThemeOptions = [
-    { id: "light", label: "Light", icon: <Sun className="w-5 h-5" /> },
-    { id: "dark", label: "Dark", icon: <Moon className="w-5 h-5" /> },
-    { id: "system", label: "System", icon: <Monitor className="w-5 h-5" /> },
+    { id: "light", label: "Light", icon: <Sun className="h-5 w-5" /> },
+    { id: "dark", label: "Dark", icon: <Moon className="h-5 w-5" /> },
+    { id: "system", label: "System", icon: <Monitor className="h-5 w-5" /> },
   ];
 
   return (
@@ -50,24 +50,24 @@ const ThemeCustomizer = () => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]"
+          className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800">
+          <div className="flex items-center justify-between border-b border-gray-100 p-6 dark:border-slate-800">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Theme Customizer</h2>
             <button
               onClick={() => setIsCustomizerOpen(false)}
-              className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 dark:text-gray-400 transition-colors"
+              className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800"
               aria-label="Close customizer"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="p-6 overflow-y-auto space-y-8">
+          <div className="space-y-8 overflow-y-auto p-6">
             {/* Base Theme Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <h3 className="text-sm font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Base Mode
               </h3>
               <div className="grid grid-cols-3 gap-3">
@@ -77,10 +77,10 @@ const ThemeCustomizer = () => {
                     <button
                       key={option.id}
                       onClick={() => setTheme(option.id)}
-                      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                      className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-4 transition-all ${
                         isActive
-                          ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-                          : "border-gray-200 dark:border-slate-700 bg-transparent text-gray-600 dark:text-gray-300 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-gray-50 dark:hover:bg-slate-800"
+                          ? "border-indigo-500 bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"
+                          : "border-gray-200 bg-transparent text-gray-600 hover:border-indigo-300 hover:bg-gray-50 dark:border-slate-700 dark:text-gray-300 dark:hover:border-indigo-700 dark:hover:bg-slate-800"
                       }`}
                     >
                       {option.icon}
@@ -93,29 +93,29 @@ const ThemeCustomizer = () => {
 
             {/* Skins / Color Themes Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <h3 className="text-sm font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Color Themes
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {Object.values(THEMES).map((themeOption) => {
                   const isActive = activeThemeId === themeOption.id;
                   return (
                     <button
                       key={themeOption.id}
                       onClick={() => setActiveThemeId(themeOption.id)}
-                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+                      className={`flex items-center gap-3 rounded-xl border-2 p-4 text-left transition-all ${
                         isActive
                           ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10"
-                          : "border-gray-200 dark:border-slate-700 bg-transparent hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-gray-50 dark:hover:bg-slate-800"
+                          : "border-gray-200 bg-transparent hover:border-indigo-300 hover:bg-gray-50 dark:border-slate-700 dark:hover:border-indigo-700 dark:hover:bg-slate-800"
                       }`}
                     >
                       <div
-                        className={`w-8 h-8 rounded-full bg-gradient-to-br ${themeOption.accent} flex items-center justify-center shadow-sm shrink-0`}
+                        className={`h-8 w-8 rounded-full bg-gradient-to-br ${themeOption.accent} flex shrink-0 items-center justify-center shadow-sm`}
                       >
-                        {isActive && <Check className="w-4 h-4 text-white" />}
+                        {isActive && <Check className="h-4 w-4 text-white" />}
                       </div>
                       <span
-                        className={`text-sm font-medium flex-1 truncate ${
+                        className={`flex-1 truncate text-sm font-medium ${
                           isActive
                             ? "text-indigo-700 dark:text-indigo-300"
                             : "text-gray-700 dark:text-gray-200"

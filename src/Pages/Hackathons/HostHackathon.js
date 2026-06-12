@@ -1,4 +1,18 @@
-import { ArrowRightIcon, ChartBarIcon, UserGroupIcon, StarIcon, ClipboardDocumentListIcon, BuildingOffice2Icon, EnvelopeIcon, MapPinIcon, TrophyIcon, LinkIcon, CalendarDaysIcon, DocumentTextIcon, ComputerDesktopIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowRightIcon,
+  ChartBarIcon,
+  UserGroupIcon,
+  StarIcon,
+  ClipboardDocumentListIcon,
+  BuildingOffice2Icon,
+  EnvelopeIcon,
+  MapPinIcon,
+  TrophyIcon,
+  LinkIcon,
+  CalendarDaysIcon,
+  DocumentTextIcon,
+  ComputerDesktopIcon,
+} from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -88,12 +102,18 @@ const HostHackathon = () => {
     }
 
     // Hackathon Name validation
-    if (data.hackathonName && (data.hackathonName.trim().length < 3 || data.hackathonName.trim().length > 100)) {
+    if (
+      data.hackathonName &&
+      (data.hackathonName.trim().length < 3 || data.hackathonName.trim().length > 100)
+    ) {
       newErrors.hackathonName = "Hackathon Name must be between 3 and 100 characters long!";
     }
 
     // Organizer validation
-    if (data.organizerName && (data.organizerName.trim().length < 3 || data.organizerName.trim().length > 100)) {
+    if (
+      data.organizerName &&
+      (data.organizerName.trim().length < 3 || data.organizerName.trim().length > 100)
+    ) {
       newErrors.organizerName = "Organizer Name must be between 3 and 100 characters long!";
     }
 
@@ -127,9 +147,11 @@ const HostHackathon = () => {
     }
 
     // Description validation
-    if (data.description && (data.description.trim().length < 20 || data.description.trim().length > 2000)) {
-      newErrors.description =
-        "Description must be between 20 and 2000 characters long!";
+    if (
+      data.description &&
+      (data.description.trim().length < 20 || data.description.trim().length > 2000)
+    ) {
+      newErrors.description = "Description must be between 20 and 2000 characters long!";
     }
 
     // Participant Limit validation
@@ -156,8 +178,7 @@ const HostHackathon = () => {
       toast.error("Please fix the errors before submitting.");
 
       const firstErrorField =
-        requiredFields.find((field) => validationErrors[field]) ||
-        Object.keys(validationErrors)[0];
+        requiredFields.find((field) => validationErrors[field]) || Object.keys(validationErrors)[0];
 
       if (inputRefs[firstErrorField]?.current) {
         inputRefs[firstErrorField].current.scrollIntoView({
@@ -185,8 +206,8 @@ const HostHackathon = () => {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -267,22 +288,22 @@ const HostHackathon = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="bg-bg text-text flex min-h-screen flex-col items-center justify-center px-4 py-12 pt-20 sm:px-6 lg:px-8">
       {/* Heading Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
-        className="text-center mb-10"
+        className="mb-10 text-center"
         data-aos="fade-down"
         data-aos-once="true"
       >
         {/* UPDATED: Text colors */}
-        <h1 className="text-4xl sm:text-5xl font-extrabold text-black dark:text-white mb-4">
+        <h1 className="mb-4 text-4xl font-extrabold text-black sm:text-5xl dark:text-white">
           Host Your Hackathon
         </h1>
-        <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
-         &quot;Fill in the details below and let&apos;s get your hackathon live!&quot;
+        <p className="text-xs text-gray-600 sm:text-base dark:text-gray-400">
+          &quot;Fill in the details below and let&apos;s get your hackathon live!&quot;
         </p>
       </motion.div>
 
@@ -292,66 +313,46 @@ const HostHackathon = () => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
-        className="w-full max-w-4xl bg-card-bg border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
+        className="bg-card-bg mb-10 w-full max-w-4xl rounded-2xl border border-gray-200 p-6 shadow-lg dark:border-gray-700"
         data-aos="fade-up"
         data-aos-delay="200"
       >
-        <div className="flex items-center gap-2 mb-3">
-          <ClipboardDocumentListIcon className="w-6 h-6 text-primary" />
-          <h2 className="text-xl font-semibold text-primary">
-            Guidelines
-          </h2>
+        <div className="mb-3 flex items-center gap-2">
+          <ClipboardDocumentListIcon className="text-primary h-6 w-6" />
+          <h2 className="text-primary text-xl font-semibold">Guidelines</h2>
         </div>
-        <ul className="list-disc pl-6 space-y-3 text-gray-700 dark:text-gray-300 text-sm sm:text-base">
+        <ul className="list-disc space-y-3 pl-6 text-sm text-gray-700 sm:text-base dark:text-gray-300">
           <li>
-            Clearly define the{" "}
-            <span className="font-medium">objectives, theme, and rules</span> of
+            Clearly define the <span className="font-medium">objectives, theme, and rules</span> of
             your hackathon so participants know the purpose and scope.
           </li>
           <li>
-            Mention <span className="font-medium">eligibility criteria</span>{" "}
-            such as student status, professional background, or region to avoid
-            confusion later.
+            Mention <span className="font-medium">eligibility criteria</span> such as student
+            status, professional background, or region to avoid confusion later.
           </li>
           <li>
-            Ensure the{" "}
-            <span className="font-medium">timeline (start and end dates)</span>{" "}
-            is accurate and realistic, giving teams enough time to brainstorm
-            and build.
+            Ensure the <span className="font-medium">timeline (start and end dates)</span> is
+            accurate and realistic, giving teams enough time to brainstorm and build.
           </li>
           <li>
-            Highlight{" "}
-            <span className="font-medium">
-              prize distribution and judging criteria
-            </span>{" "}
+            Highlight <span className="font-medium">prize distribution and judging criteria</span>{" "}
             to motivate participants and maintain transparency in evaluation.
           </li>
           <li>
-            Provide clear{" "}
-            <span className="font-medium">
-              contact details or a support channel
-            </span>{" "}
+            Provide clear <span className="font-medium">contact details or a support channel</span>{" "}
             so participants can ask questions during the event.
           </li>
           <li>
-            Promote{" "}
-            <span className="font-medium">inclusivity and diversity</span> by
-            encouraging people from different backgrounds, genders, and skill
-            levels to participate.
+            Promote <span className="font-medium">inclusivity and diversity</span> by encouraging
+            people from different backgrounds, genders, and skill levels to participate.
           </li>
           <li>
-            Set{" "}
-            <span className="font-medium">
-              submission guidelines and deadlines
-            </span>{" "}
-            (format, platform, file types) to ensure smooth evaluation of
-            projects.
+            Set <span className="font-medium">submission guidelines and deadlines</span> (format,
+            platform, file types) to ensure smooth evaluation of projects.
           </li>
           <li>
-            Encourage{" "}
-            <span className="font-medium">collaboration and team spirit</span>{" "}
-            by promoting teamwork, idea-sharing, and peer learning during the
-            event.
+            Encourage <span className="font-medium">collaboration and team spirit</span> by
+            promoting teamwork, idea-sharing, and peer learning during the event.
           </li>
         </ul>
       </motion.div>
@@ -361,7 +362,7 @@ const HostHackathon = () => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
-        className="w-full max-w-4xl bg-card-bg shadow-xl rounded-2xl p-8 border border-border"
+        className="bg-card-bg border-border w-full max-w-4xl rounded-2xl border p-8 shadow-xl"
         data-aos="fade-up"
         data-aos-delay="400"
       >
@@ -376,11 +377,11 @@ const HostHackathon = () => {
               data-aos="fade-right"
               data-aos-delay={index * 50 + 500}
             >
-              <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <field.icon className="w-5 h-5 mr-2 text-primary" />
+              <label className="mb-1 flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                <field.icon className="text-primary mr-2 h-5 w-5" />
                 {field.label}{" "}
                 {requiredFields.includes(field.name) && (
-                  <span className="text-red-500 ml-1">*</span>
+                  <span className="ml-1 text-red-500">*</span>
                 )}
               </label>
               <input
@@ -390,28 +391,26 @@ const HostHackathon = () => {
                 onChange={handleChange}
                 placeholder={field.placeholder}
                 ref={inputRefs[field.name]}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-bg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
+                className="bg-bg focus:ring-primary focus:border-primary w-full rounded-lg border border-gray-300 p-3 text-gray-900 transition-all duration-300 focus:ring-1 focus:outline-none dark:border-gray-600 dark:text-gray-100"
               />
               {errors[field.name] && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors[field.name]}
-                </p>
+                <p className="mt-1 text-xs text-red-500">{errors[field.name]}</p>
               )}
             </motion.div>
           ))}
 
           {/* Date Fields */}
           <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2"
             data-aos="fade-up"
             data-aos-delay="900"
           >
             {["startDate", "endDate"].map((name) => (
               <div key={name}>
-                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <CalendarDaysIcon className="w-5 h-5 mr-2 text-primary" />
+                <label className="mb-1 flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <CalendarDaysIcon className="text-primary mr-2 h-5 w-5" />
                   {name === "startDate" ? "Start Date" : "End Date"}{" "}
-                  <span className="text-red-500 ml-1">*</span>
+                  <span className="ml-1 text-red-500">*</span>
                 </label>
                 <input
                   ref={inputRefs[name]}
@@ -420,17 +419,9 @@ const HostHackathon = () => {
                   value={formData[name]}
                   onChange={handleChange}
                   min={today}
-                  className="w-full text-gray-700 dark:text-gray-300 
-        bg-bg 
-        rounded-lg p-3 
-        border border-gray-300 dark:border-gray-600
-        focus:outline-none 
-        focus:ring-2 focus:ring-primary focus:border-primary
-        transition duration-150 ease-in-out"
+                  className="bg-bg focus:ring-primary focus:border-primary w-full rounded-lg border border-gray-300 p-3 text-gray-700 transition duration-150 ease-in-out focus:ring-2 focus:outline-none dark:border-gray-600 dark:text-gray-300"
                 />
-                {errors[name] && (
-                  <p className="text-red-500 text-xs mt-1">{errors[name]}</p>
-                )}
+                {errors[name] && <p className="mt-1 text-xs text-red-500">{errors[name]}</p>}
               </div>
             ))}
           </motion.div>
@@ -444,9 +435,9 @@ const HostHackathon = () => {
             data-aos="fade-up"
             data-aos-delay="1000"
           >
-            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              <DocumentTextIcon className="w-5 h-5 mr-2 text-primary" />
-              Description <span className="text-red-500 ml-1">*</span>
+            <label className="mb-1 flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+              <DocumentTextIcon className="text-primary mr-2 h-5 w-5" />
+              Description <span className="ml-1 text-red-500">*</span>
             </label>
             <textarea
               name="description"
@@ -455,10 +446,10 @@ const HostHackathon = () => {
               ref={inputRefs.description}
               rows="4"
               placeholder="Briefly describe your hackathon"
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-bg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
+              className="bg-bg focus:ring-primary focus:border-primary w-full rounded-lg border border-gray-300 p-3 text-gray-900 transition-all duration-300 focus:ring-1 focus:outline-none dark:border-gray-600 dark:text-gray-100"
             />
             {errors.description && (
-              <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+              <p className="mt-1 text-xs text-red-500">{errors.description}</p>
             )}
           </motion.div>
 
@@ -466,11 +457,11 @@ const HostHackathon = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-2 bg-primary text-white font-semibold p-3 rounded-xl shadow-lg hover:opacity-90 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="bg-primary flex w-full items-center justify-center gap-2 rounded-xl p-3 font-semibold text-white shadow-lg transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             aria-label={isSubmitting ? "Submitting hackathon" : "Submit hackathon"}
           >
             {isSubmitting ? "Submitting..." : "Submit Hackathon"}
-            {!isSubmitting && <ArrowRightIcon className="w-5 h-5" />}
+            {!isSubmitting && <ArrowRightIcon className="h-5 w-5" />}
           </button>
         </form>
       </motion.div>
@@ -481,7 +472,7 @@ const HostHackathon = () => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
-        className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl mb-8 mt-12"
+        className="mt-12 mb-8 grid w-full max-w-4xl grid-cols-1 gap-6 sm:grid-cols-3"
         data-aos="fade-up"
         data-aos-delay="1200"
       >
@@ -497,18 +488,14 @@ const HostHackathon = () => {
           <motion.div
             key={index}
             whileHover={{ scale: 1.08, rotate: 1 }}
-            className="bg-card-bg border border-border rounded-2xl shadow-md p-6 text-center flex flex-col items-center"
+            className="bg-card-bg border-border flex flex-col items-center rounded-2xl border p-6 text-center shadow-md"
             data-aos="zoom-in"
             data-aos-delay={1200 + index * 100}
           >
             {/* UPDATED: Icon and text colors */}
-            <stat.icon className="w-10 h-10 text-primary mb-3 animate-bounce" />
-            <h3 className="text-3xl font-bold text-primary">
-              {stat.number}
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              {stat.label}
-            </p>
+            <stat.icon className="text-primary mb-3 h-10 w-10 animate-bounce" />
+            <h3 className="text-primary text-3xl font-bold">{stat.number}</h3>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">{stat.label}</p>
           </motion.div>
         ))}
       </motion.div>
@@ -519,27 +506,26 @@ const HostHackathon = () => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
-        className="w-full max-w-4xl mt-10 text-center bg-card-bg border border-border rounded-2xl p-10 shadow-2xl"
+        className="bg-card-bg border-border mt-10 w-full max-w-4xl rounded-2xl border p-10 text-center shadow-2xl"
         data-aos="fade-up"
         data-aos-delay="1600"
       >
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <TrophyIcon className="w-8 h-8 text-primary" />
+        <div className="mb-4 flex items-center justify-center gap-2">
+          <TrophyIcon className="text-primary h-8 w-8" />
           <h2 className="text-3xl font-bold text-white">
             Ready to Inspire the Next Big Innovation?
           </h2>
         </div>
-        <p className="text-gray-300 mb-6 text-lg">
-          Hosting a hackathon is your chance to bring creative minds together,
-          solve real-world problems, and build impactful projects. Take the lead
-          today!
+        <p className="mb-6 text-lg text-gray-300">
+          Hosting a hackathon is your chance to bring creative minds together, solve real-world
+          problems, and build impactful projects. Take the lead today!
         </p>
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
+        <div className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <motion.button
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-block bg-primary text-white px-8 py-3 rounded-xl shadow-lg hover:opacity-90 transition-all duration-300"
+            className="bg-primary inline-block rounded-xl px-8 py-3 text-white shadow-lg transition-all duration-300 hover:opacity-90"
           >
             Explore Hosting Options
           </motion.button>
@@ -548,7 +534,7 @@ const HostHackathon = () => {
             href="/hackathons"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-block bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
+            className="bg-bg text-text border-border hover:bg-card-bg inline-block rounded-xl border px-8 py-3 shadow-lg transition-all duration-300"
           >
             Explore Hackathons
           </motion.a>

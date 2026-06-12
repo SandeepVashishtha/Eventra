@@ -21,7 +21,6 @@
 /* 13. Responsive Breakpoints */
 /* ───────────────────────────────────────────────────────────────────────── */
 
-
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* 1. CSS RESET & BASE STYLES */
 /* ═══════════════════════════════════════════════════════════════════════ */
@@ -39,7 +38,11 @@ html {
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
   line-height: 1.6;
   color: #1f2937; /* gray-800 */
   background-color: #ffffff;
@@ -93,12 +96,9 @@ body {
   color: inherit;
 } */
 
-
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* 3. SEARCH & FILTER COMPONENTS */
 /* ═══════════════════════════════════════════════════════════════════════ */
-
-
 
 /* --- Header --- */
 .search-title {
@@ -137,7 +137,7 @@ body {
 
 .search-bar:focus-within {
   border-color: var(--color-accent);
-  box-shadow: 
+  box-shadow:
     0 0 0 4px rgba(99, 102, 241, 0.15),
     var(--shadow-lg);
 }
@@ -154,7 +154,7 @@ body {
 
 .dark .search-bar:focus-within {
   border-color: var(--color-accent);
-  box-shadow: 
+  box-shadow:
     0 0 0 4px rgba(129, 140, 248, 0.2),
     var(--shadow-lg);
 }
@@ -173,7 +173,7 @@ body {
 
 .search-input-wrapper:focus-within {
   border-color: var(--color-accent);
-  box-shadow: 
+  box-shadow:
     0 20px 25px -5px rgba(79, 70, 229, 0.15),
     0 10px 10px -5px rgba(79, 70, 229, 0.1);
   transform: translateY(-5px) scale(1.02);
@@ -191,7 +191,9 @@ body {
   left: 1.5rem;
   font-size: 1.2rem;
   pointer-events: none;
-  transition: transform 0.3s ease, color 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    color 0.3s ease;
   color: #9ca3af;
 }
 
@@ -292,7 +294,9 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 1.5rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .event-card-search:hover {
@@ -414,7 +418,6 @@ body {
 .dark .no-results p {
   color: #9ca3af;
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* 4. COLLABORATION HUB */
@@ -543,7 +546,9 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 1.5rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .opportunity-card:hover {
@@ -716,7 +721,7 @@ body {
 }
 
 .progress-bar::after {
-  content: '';
+  content: "";
   display: block;
   height: 100%;
   background: linear-gradient(to right, #4f46e5, #a855f7);
@@ -804,7 +809,6 @@ body {
   border-color: #4b5563;
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* 5. FORM ELEMENTS */
 /* ═══════════════════════════════════════════════════════════════════════ */
@@ -814,7 +818,7 @@ body {
   border: 1px solid rgba(229, 231, 235, 0.5);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: 
+  box-shadow:
     0 10px 30px rgba(0, 0, 0, 0.05),
     0 0 20px rgba(99, 102, 241, 0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -827,7 +831,7 @@ body {
 .dark .request-form {
   background: rgba(17, 24, 39, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 
+  box-shadow:
     0 10px 30px rgba(0, 0, 0, 0.5),
     0 0 20px rgba(99, 102, 241, 0.1);
 }
@@ -922,7 +926,6 @@ body {
   gap: 1.5rem;
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* 6. HERO SECTION */
 /* ═══════════════════════════════════════════════════════════════════════ */
@@ -945,16 +948,12 @@ body {
 .hero-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(102, 126, 234, 0.05) 0%,
-    rgba(118, 75, 162, 0.05) 100%
-  );
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
 }
 
 .hero-background::before,
 .hero-background::after {
-  content: '';
+  content: "";
   position: absolute;
   border-radius: 50%;
   animation: float 6s ease-in-out infinite;
@@ -965,11 +964,7 @@ body {
   right: -20%;
   width: 800px;
   height: 800px;
-  background: radial-gradient(
-    circle,
-    rgba(102, 126, 234, 0.1) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
 }
 
 .hero-background::after {
@@ -977,11 +972,7 @@ body {
   left: -20%;
   width: 600px;
   height: 600px;
-  background: radial-gradient(
-    circle,
-    rgba(118, 75, 162, 0.1) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(118, 75, 162, 0.1) 0%, transparent 70%);
   animation-delay: -3s;
   animation-direction: reverse;
 }
@@ -1041,19 +1032,29 @@ body {
   overflow: hidden;
   white-space: nowrap;
   border-right: 2px solid #1a1a1a;
-  animation: typing 4s steps(24) infinite, blink 0.75s step-end infinite;
+  animation:
+    typing 4s steps(24) infinite,
+    blink 0.75s step-end infinite;
   width: 0;
   display: inline-block;
 }
 
 @keyframes typing {
-  from { width: 0; }
-  to { width: 24ch; }
+  from {
+    width: 0;
+  }
+  to {
+    width: 24ch;
+  }
 }
 
 @keyframes blink {
-  50% { border-color: transparent; }
-  100% { border-color: #1a1a1a; }
+  50% {
+    border-color: transparent;
+  }
+  100% {
+    border-color: #1a1a1a;
+  }
 }
 
 @keyframes fadeInUp {
@@ -1149,14 +1150,14 @@ body {
 
 /* Floating Animation */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0) rotate(0deg);
   }
   50% {
     transform: translateY(-20px) rotate(5deg);
   }
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* 7. FEATURES & MARQUEE */
@@ -1187,8 +1188,12 @@ body {
 }
 
 @keyframes scrollMarquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 /* Marquee Card */
@@ -1202,7 +1207,9 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #111827;
@@ -1286,7 +1293,7 @@ body {
   color: #111827;
   margin-bottom: 1.5rem;
   line-height: 1.1;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   text-align: center;
   letter-spacing: -0.02em;
 }
@@ -1306,8 +1313,13 @@ body {
 }
 
 @keyframes gradientShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .features-subtitle {
@@ -1349,7 +1361,7 @@ body {
 }
 
 .feature-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -1381,7 +1393,6 @@ body {
   color: #ffffff;
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* 8. WHAT'S HAPPENING (EVENTS) */
 /* ═══════════════════════════════════════════════════════════════════════ */
@@ -1393,10 +1404,10 @@ body {
 }
 
 .whats-happening::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: 
+  background:
     radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
   pointer-events: none;
@@ -1419,7 +1430,7 @@ body {
   text-align: center;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   letter-spacing: 0.03em;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   user-select: none;
   transition: color 0.3s ease;
 }
@@ -1600,7 +1611,6 @@ body {
   flex-wrap: wrap;
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* 9. TESTIMONIALS */
 /* ═══════════════════════════════════════════════════════════════════════ */
@@ -1612,10 +1622,10 @@ body {
 }
 
 .testimonials::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: 
+  background:
     radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 80% 50%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
   pointer-events: none;
@@ -1745,7 +1755,6 @@ body {
   font-size: 0.9rem;
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* 10. COMMUNITY SECTION */
 /* ═══════════════════════════════════════════════════════════════════════ */
@@ -1830,13 +1839,38 @@ body {
   color: #ffffff;
 }
 
-.badge:nth-child(1) { top: 0%; left: 50%; transform: translateX(-50%); animation-delay: 0s; }
-.badge:nth-child(2) { top: 25%; right: 0%; animation-delay: 0.5s; }
-.badge:nth-child(3) { bottom: 25%; right: 0%; animation-delay: 1s; }
-.badge:nth-child(4) { bottom: 0%; left: 50%; transform: translateX(-50%); animation-delay: 1.5s; }
-.badge:nth-child(5) { bottom: 25%; left: 0%; animation-delay: 2s; }
-.badge:nth-child(6) { top: 25%; left: 0%; animation-delay: 2.5s; }
-
+.badge:nth-child(1) {
+  top: 0%;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 0s;
+}
+.badge:nth-child(2) {
+  top: 25%;
+  right: 0%;
+  animation-delay: 0.5s;
+}
+.badge:nth-child(3) {
+  bottom: 25%;
+  right: 0%;
+  animation-delay: 1s;
+}
+.badge:nth-child(4) {
+  bottom: 0%;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 1.5s;
+}
+.badge:nth-child(5) {
+  bottom: 25%;
+  left: 0%;
+  animation-delay: 2s;
+}
+.badge:nth-child(6) {
+  top: 25%;
+  left: 0%;
+  animation-delay: 2.5s;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* 11. CTA SECTION */
@@ -1895,7 +1929,6 @@ body {
   box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* 12. UTILITY CLASSES */
 /* ═══════════════════════════════════════════════════════════════════════ */
@@ -1939,7 +1972,6 @@ textarea:focus-visible {
   background: rgba(129, 140, 248, 0.3);
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════ */
 /* 13. RESPONSIVE BREAKPOINTS */
 /* ═══════════════════════════════════════════════════════════════════════ */
@@ -1951,7 +1983,7 @@ textarea:focus-visible {
     gap: 3rem;
     text-align: center;
   }
-  
+
   .community-actions {
     justify-content: center;
   }
@@ -1962,61 +1994,61 @@ textarea:focus-visible {
   .hero-title {
     font-size: 3rem;
   }
-  
+
   .hero-subtitle {
     font-size: 1.1rem;
   }
-  
+
   .hero-actions {
     flex-direction: column;
     align-items: center;
     gap: 1rem;
   }
-  
+
   .features-title,
   .section-title,
   .testimonials-title,
   .community-title {
     font-size: 2.5rem;
   }
-  
+
   .events-grid,
   .testimonials-grid,
   .features-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .event-card,
   .testimonial-card,
   .feature-card {
     padding: 1.5rem;
   }
-  
+
   .community-highlight,
   .cta-section {
     padding: 2rem;
   }
-  
+
   .highlight-content h3 {
     font-size: 1.5rem;
   }
-  
+
   .highlight-actions {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .community-badges {
     width: 250px;
     height: 250px;
   }
-  
+
   .badge {
     width: 50px;
     height: 50px;
     font-size: 1.2rem;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -2028,31 +2060,31 @@ textarea:focus-visible {
   .hero-title {
     font-size: 2.5rem;
   }
-  
+
   .section-title,
   .features-title,
   .testimonials-title {
     font-size: 2rem;
   }
-  
+
   .feature-card,
   .event-card,
   .testimonial-card,
   .opportunity-card {
     padding: 1.25rem;
   }
-  
+
   .community-highlight,
   .cta-section,
   .request-form {
     padding: 1.5rem;
   }
-  
+
   .marquee-card {
     flex: 0 0 280px;
     height: 360px;
   }
-  
+
   .hero-btn,
   .btn-primary,
   .btn-secondary,
@@ -2071,7 +2103,7 @@ textarea:focus-visible {
   .badge {
     display: none !important;
   }
-  
+
   .hero-title,
   .section-title {
     color: #000 !important;

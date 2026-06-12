@@ -48,12 +48,7 @@ export default function LanguageSelector({ className = "", compact = false }) {
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={t("language.switch")}
-        className={`
-          flex items-center gap-1.5 rounded-lg border border-border bg-navbar
-          text-text-light hover:text-text hover:bg-bg-secondary
-          transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
-          ${compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"}
-        `}
+        className={`border-border bg-navbar text-text-light hover:text-text hover:bg-bg-secondary focus-visible:ring-primary flex items-center gap-1.5 rounded-lg border transition-all duration-200 focus-visible:ring-2 focus-visible:outline-none ${compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} `}
       >
         <Globe className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden="true" />
         <span className="font-medium">{currentLang.nativeLabel}</span>
@@ -72,7 +67,7 @@ export default function LanguageSelector({ className = "", compact = false }) {
             transition={{ duration: 0.15, ease: "easeOut" }}
             role="listbox"
             aria-label={t("language.switch")}
-            className="absolute right-0 mt-2 min-w-[10rem] origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-1.5 z-[300]"
+            className="border-border bg-navbar absolute right-0 z-[300] mt-2 min-w-[10rem] origin-top-right rounded-xl border p-1.5 shadow-lg"
           >
             {supportedLanguages.map((lang) => {
               const isActive = lang.code === language;
@@ -83,14 +78,11 @@ export default function LanguageSelector({ className = "", compact = false }) {
                   role="option"
                   aria-selected={isActive}
                   onClick={() => handleSelect(lang.code)}
-                  className={`
-                    flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm
-                    transition-colors duration-150
-                    ${isActive
+                  className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-150 ${
+                    isActive
                       ? "bg-primary/10 text-primary font-semibold"
                       : "text-text-light hover:bg-bg-secondary hover:text-text"
-                    }
-                  `}
+                  } `}
                 >
                   <span>{lang.nativeLabel}</span>
                   {isActive && <Check className="h-4 w-4 shrink-0" aria-hidden="true" />}

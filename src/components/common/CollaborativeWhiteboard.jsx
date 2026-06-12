@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Pencil, 
-  Minus, 
-  Square, 
-  Circle as CircleIcon, 
-  Type, 
-  Trash2, 
-  Download, 
-  Users, 
-  Sparkles
+import {
+  Pencil,
+  Minus,
+  Square,
+  Circle as CircleIcon,
+  Type,
+  Trash2,
+  Download,
+  Users,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -24,7 +24,7 @@ const COLORS = [
   { value: "#f43f5e", label: "Rose" },
   { value: "#f59e0b", label: "Amber" },
   { value: "#8b5cf6", label: "Violet" },
-  { value: "#f8fafc", label: "White/Slate" }
+  { value: "#f8fafc", label: "White/Slate" },
 ];
 
 export default function CollaborativeWhiteboard() {
@@ -179,11 +179,13 @@ export default function CollaborativeWhiteboard() {
   // Handle initialization, BroadcastChannel connection, and events setup
   useEffect(() => {
     // 1. Open Database & Load history
-    initDB().then((db) => {
-      loadHistory(db);
-    }).catch(() => {
-      console.warn("[Whiteboard] IndexedDB unavailable, starting with empty history");
-    });
+    initDB()
+      .then((db) => {
+        loadHistory(db);
+      })
+      .catch(() => {
+        console.warn("[Whiteboard] IndexedDB unavailable, starting with empty history");
+      });
 
     // 2. Connect BroadcastChannel for real-time signaling P2P
     bcRef.current = new BroadcastChannel("eventra_p2p_mesh");
@@ -206,7 +208,7 @@ export default function CollaborativeWhiteboard() {
 
         case "WHITEBOARD_PONG":
           // Simple heuristic for counting active tabs
-          setPeersCount(p => Math.min(6, p + 1));
+          setPeersCount((p) => Math.min(6, p + 1));
           break;
 
         case "WHITEBOARD_STROKE_START":
@@ -320,7 +322,7 @@ export default function CollaborativeWhiteboard() {
 
     isDrawingRef.current = true;
     currentStrokeIdRef.current = `${peerId.current}_${Date.now()}`;
-    
+
     if (tool === "pencil") {
       currentPointsRef.current = [[coords.x, coords.y]];
       const newStroke = {
@@ -337,9 +339,9 @@ export default function CollaborativeWhiteboard() {
         from: peerId.current,
       });
 
-      setRemoteActiveStrokes(prev => ({
+      setRemoteActiveStrokes((prev) => ({
         ...prev,
-        [currentStrokeIdRef.current]: newStroke
+        [currentStrokeIdRef.current]: newStroke,
       }));
     } else {
       // Shape tools (line, rect, circle)
@@ -380,28 +382,28 @@ export default function CollaborativeWhiteboard() {
         from: peerId.current,
       });
 
-      setRemoteActiveStrokes(prev => {
+      setRemoteActiveStrokes((prev) => {
         const active = prev[currentStrokeIdRef.current];
         if (!active) return prev;
         return {
           ...prev,
           [currentStrokeIdRef.current]: {
             ...active,
-            points: [...active.points, [coords.x, coords.y]]
-          }
+            points: [...active.points, [coords.x, coords.y]],
+          },
         };
       });
     } else {
       // Shape drawing preview rendering
       const startX = currentPointsRef.current[0];
       const startY = currentPointsRef.current[1];
-      
+
       const previewStroke = {
         tool,
         color,
         lineWidth,
         start: [startX, startY],
-        end: [coords.x, coords.y]
+        end: [coords.x, coords.y],
       };
 
       bcRef.current.postMessage({
@@ -411,9 +413,9 @@ export default function CollaborativeWhiteboard() {
         from: peerId.current,
       });
 
-      setRemoteActiveStrokes(prev => ({
+      setRemoteActiveStrokes((prev) => ({
         ...prev,
-        [currentStrokeIdRef.current]: previewStroke
+        [currentStrokeIdRef.current]: previewStroke,
       }));
     }
   };
@@ -429,10 +431,10 @@ export default function CollaborativeWhiteboard() {
         from: peerId.current,
       });
 
-      setRemoteActiveStrokes(prev => {
+      setRemoteActiveStrokes((prev) => {
         const finished = prev[currentStrokeIdRef.current];
         if (finished) {
-          setLocalStrokes(l => {
+          setLocalStrokes((l) => {
             const updated = [...l, finished];
             saveHistory(updated);
             return updated;
@@ -444,17 +446,17 @@ export default function CollaborativeWhiteboard() {
       });
     } else {
       // Shape drawing finished
-      setRemoteActiveStrokes(prev => {
+      setRemoteActiveStrokes((prev) => {
         const finished = prev[currentStrokeIdRef.current];
         if (finished) {
           bcRef.current.postMessage({
             type: "WHITEBOARD_COMPLETE_STROKE",
             id: currentStrokeIdRef.current,
             stroke: finished,
-            from: peerId.current
+            from: peerId.current,
           });
 
-          setLocalStrokes(l => {
+          setLocalStrokes((l) => {
             const updated = [...l, finished];
             saveHistory(updated);
             return updated;
@@ -478,16 +480,16 @@ export default function CollaborativeWhiteboard() {
       lineWidth, // scales text size
       text: textInput,
       x: textPos.x,
-      y: textPos.y
+      y: textPos.y,
     };
 
     bcRef.current.postMessage({
       type: "WHITEBOARD_COMPLETE_STROKE",
       stroke: newTextStroke,
-      from: peerId.current
+      from: peerId.current,
     });
 
-    setLocalStrokes(l => {
+    setLocalStrokes((l) => {
       const updated = [...l, newTextStroke];
       saveHistory(updated);
       return updated;
@@ -521,15 +523,15 @@ export default function CollaborativeWhiteboard() {
   return (
     <div className="flex flex-col gap-6" ref={containerRef}>
       {/* HUD Whiteboard Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-900 border border-slate-800 rounded-3xl shadow-lg">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-800 bg-slate-900 p-4 shadow-lg">
         {/* Tools Select Group */}
-        <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shadow-inner">
+        <div className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950 p-1.5 shadow-inner">
           {[
             { id: "pencil", icon: Pencil, label: "Sketcher" },
             { id: "line", icon: Minus, label: "Straight Line" },
             { id: "rect", icon: Square, label: "Rectangle" },
             { id: "circle", icon: CircleIcon, label: "Circle" },
-            { id: "text", icon: Type, label: "Text Stamp" }
+            { id: "text", icon: Type, label: "Text Stamp" },
           ].map((item) => {
             const Icon = item.icon;
             const active = tool === item.id;
@@ -537,11 +539,14 @@ export default function CollaborativeWhiteboard() {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => { setTool(item.id); setTextPos(null); }}
+                onClick={() => {
+                  setTool(item.id);
+                  setTextPos(null);
+                }}
                 title={item.label}
-                className={`p-2 rounded-xl transition cursor-pointer flex items-center justify-center ${
-                  active 
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/25" 
+                className={`flex cursor-pointer items-center justify-center rounded-xl p-2 transition ${
+                  active
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/25"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
@@ -559,9 +564,9 @@ export default function CollaborativeWhiteboard() {
               type="button"
               onClick={() => setColor(item.value)}
               title={item.label}
-              className={`w-6 h-6 rounded-full border transition hover:scale-110 cursor-pointer ${
-                color === item.value 
-                  ? "border-white ring-2 ring-indigo-500/50 scale-105" 
+              className={`h-6 w-6 cursor-pointer rounded-full border transition hover:scale-110 ${
+                color === item.value
+                  ? "scale-105 border-white ring-2 ring-indigo-500/50"
                   : "border-slate-800"
               }`}
               style={{ backgroundColor: item.value }}
@@ -571,40 +576,47 @@ export default function CollaborativeWhiteboard() {
 
         {/* Width Adjustment Slider */}
         <div className="flex items-center gap-3">
-          <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Line Thickness</span>
+          <span className="text-[10px] font-black tracking-wider text-slate-500 uppercase">
+            Line Thickness
+          </span>
           <input
             type="range"
             min="2"
             max="12"
             value={lineWidth}
             onChange={(e) => setLineWidth(parseInt(e.target.value, 10))}
-            className="w-24 accent-indigo-500 h-1 bg-slate-950 rounded-full appearance-none cursor-pointer"
+            className="h-1 w-24 cursor-pointer appearance-none rounded-full bg-slate-950 accent-indigo-500"
           />
-          <span className="text-xs font-black text-slate-300 min-w-4 text-center">{lineWidth}px</span>
+          <span className="min-w-4 text-center text-xs font-black text-slate-300">
+            {lineWidth}px
+          </span>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 border-l border-slate-800 pl-4">
           {/* Active Mesh Indicator */}
-          <div className="flex items-center gap-2 text-xs font-black text-slate-400 dark:text-slate-400 mr-2 bg-slate-950/60 p-2 rounded-2xl border border-slate-800/80">
-            <Users className="w-3.5 h-3.5 text-indigo-500 animate-pulse" />
-            <span>P2P Peer Mesh Count: <span className="font-extrabold text-indigo-400">{peersCount}</span></span>
+          <div className="mr-2 flex items-center gap-2 rounded-2xl border border-slate-800/80 bg-slate-950/60 p-2 text-xs font-black text-slate-400 dark:text-slate-400">
+            <Users className="h-3.5 w-3.5 animate-pulse text-indigo-500" />
+            <span>
+              P2P Peer Mesh Count:{" "}
+              <span className="font-extrabold text-indigo-400">{peersCount}</span>
+            </span>
           </div>
 
           <button
             type="button"
             onClick={exportBoard}
             title="Download PNG snapshot"
-            className="p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-950 text-slate-300 hover:text-white transition cursor-pointer flex items-center justify-center"
+            className="flex cursor-pointer items-center justify-center rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-slate-300 transition hover:border-slate-700 hover:text-white"
           >
             <Download size={14} />
           </button>
-          
+
           <button
             type="button"
             onClick={clearBoard}
             title="Clear whiteboard board"
-            className="p-2.5 rounded-xl border border-rose-500/20 hover:border-rose-500/40 bg-rose-500/5 text-rose-500 hover:bg-rose-500/10 transition cursor-pointer flex items-center justify-center"
+            className="flex cursor-pointer items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/5 p-2.5 text-rose-500 transition hover:border-rose-500/40 hover:bg-rose-500/10"
           >
             <Trash2 size={14} />
           </button>
@@ -612,8 +624,8 @@ export default function CollaborativeWhiteboard() {
       </div>
 
       {/* Main Interactive Drawing Board Viewport */}
-      <div 
-        className="relative border border-slate-800 rounded-3xl overflow-hidden bg-slate-950 shadow-inner flex items-center justify-center w-full aspect-[5/3]" 
+      <div
+        className="relative flex aspect-[5/3] w-full items-center justify-center overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 shadow-inner"
         style={{ minHeight: "360px" }}
       >
         <canvas
@@ -631,7 +643,7 @@ export default function CollaborativeWhiteboard() {
             if (e.touches.length === 1) draw(e.touches[0].clientX, e.touches[0].clientY);
           }}
           onTouchEnd={stopDrawing}
-          className="w-full h-full block cursor-crosshair"
+          className="block h-full w-full cursor-crosshair"
           style={{ backgroundColor: "#020617" }}
         />
 
@@ -642,15 +654,15 @@ export default function CollaborativeWhiteboard() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute p-4 rounded-2xl bg-slate-900 border border-indigo-500/50 shadow-2xl z-30 flex flex-col gap-2.5 max-w-xs"
+              className="absolute z-30 flex max-w-xs flex-col gap-2.5 rounded-2xl border border-indigo-500/50 bg-slate-900 p-4 shadow-2xl"
               style={{
                 left: `${(textPos.x / 1000) * 100}%`,
                 top: `${(textPos.y / 600) * 100}%`,
-                transform: "translate(-50%, -100%)"
+                transform: "translate(-50%, -100%)",
               }}
             >
               <form onSubmit={handleTextSubmit} className="flex flex-col gap-2">
-                <span className="text-[9px] font-black uppercase text-indigo-400 flex items-center gap-1">
+                <span className="flex items-center gap-1 text-[9px] font-black text-indigo-400 uppercase">
                   <Sparkles size={10} /> Text Stamp input
                 </span>
                 <input
@@ -659,20 +671,23 @@ export default function CollaborativeWhiteboard() {
                   placeholder="Type a word..."
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-white outline-none focus:border-indigo-500 text-xs"
+                  className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-white outline-none focus:border-indigo-500"
                   required
                 />
-                <div className="flex gap-1.5 justify-end">
+                <div className="flex justify-end gap-1.5">
                   <button
                     type="button"
-                    onClick={() => { setTextPos(null); setTextInput(""); }}
-                    className="px-2.5 py-1.5 rounded-lg border border-slate-800 text-[10px] font-bold text-slate-400 hover:text-white"
+                    onClick={() => {
+                      setTextPos(null);
+                      setTextInput("");
+                    }}
+                    className="rounded-lg border border-slate-800 px-2.5 py-1.5 text-[10px] font-bold text-slate-400 hover:text-white"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-[10px] font-bold text-white shadow-sm"
+                    className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[10px] font-bold text-white shadow-sm hover:bg-indigo-700"
                   >
                     Place
                   </button>

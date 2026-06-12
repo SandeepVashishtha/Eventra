@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  useState,
+} from "react";
 import { setOnUnauthorizedHandler, setAuthToken } from "../config/api.js";
 import { authService } from "../services/authService.js";
 import { userService } from "../services/userService.js";
@@ -15,7 +23,7 @@ const AuthContext = createContext();
 /**
  * Custom hook to consume the AuthContext.
  * Ensures that it is only used within a valid AuthProvider.
- * 
+ *
  * @returns {Object} Authentication context state and helper functions.
  */
 export const useAuth = () => {
@@ -29,7 +37,7 @@ export const useAuth = () => {
 /**
  * Helper function to extract user details and session state from raw response data.
  * Merges roles and parses associated permissions and scopes for user authorization checks.
- * 
+ *
  * @param {Object} data - Raw response data from the API (auth/profile response).
  * @param {string|null} fallbackEmail - Fallback identifier/email when not present in response.
  * @returns {Object} Extracted session user details.
@@ -38,10 +46,10 @@ const extractSession = (data, fallbackEmail) => {
   // Extract user details from raw API response payload structure
   const rawUser = data?.user ?? data?.data ?? data ?? null;
   const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
-  
+
   // Normalize roles to ensure consistent uppercase format and organization names
   const resolvedRoles = normalizeRoles(rawRoles);
-  
+
   // Build user permissions by combining token-based and role-based permissions
   const tokenPermissions = Array.isArray(rawUser?.permissions)
     ? rawUser.permissions.map((p) => String(p))
@@ -84,10 +92,10 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authRequest, setAuthRequest] = useState({ loading: false, error: null });
-  
+
   // Ref to track mounting status and prevent setting state on unmounted components
   const isMountedRef = useRef(true);
-  
+
   // Ref to track whether session expired toast has already been displayed to prevent spamming
   const expiryToastShownRef = useRef(false);
 
@@ -102,7 +110,7 @@ export const AuthProvider = ({ children }) => {
   /**
    * Helper function to clear all active session state.
    * Wipes cookie, local storage, API auth headers, and React local state.
-   * 
+   *
    * @returns {boolean} True if state cleared, false if unmounted.
    */
   const clearSession = useCallback(() => {
@@ -110,10 +118,11 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     setAuthToken(null);
-    
+
     // Invalidate token cookie
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
-    
+    document.cookie =
+      "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
+
     // Clear user metadata from secure/local storage manager
     syncSecureStorage.removeItem("user");
     return true;
@@ -123,7 +132,7 @@ export const AuthProvider = ({ children }) => {
   const { clearExpiredSession: handleExpiredSession } = useTokenExpiry({
     token,
     user,
-    onExpired: clearSession
+    onExpired: clearSession,
   });
 
   /**
@@ -137,17 +146,17 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.warn("[AuthContext] Failed to read from secure storage during expiry check", e);
     }
-    
+
     clearSession();
-    
+
     if (!hadPreviousSession || expiryToastShownRef.current) return;
     expiryToastShownRef.current = true;
-    
+
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",
       autoClose: 4000,
     });
-    
+
     setTimeout(() => {
       window.location.replace("/login");
     }, 1500);
@@ -162,7 +171,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const res = await userService.getProfile();
         if (!isMountedRef.current) return;
-        
+
         if (res.ok && res.data) {
           const { sessionUser } = extractSession(res.data, null);
           if (!isMountedRef.current) return;
@@ -173,7 +182,7 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (err) {
         if (!isMountedRef.current) return;
-        
+
         // If server returns unauthorized or forbidden, clear cached state
         if (err?.status === 401 || err?.status === 403) {
           clearSession();
@@ -196,7 +205,7 @@ export const AuthProvider = ({ children }) => {
         if (isMountedRef.current) setLoading(false);
       }
     };
-    
+
     validate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -220,21 +229,24 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (!token || token === "cookie-managed") return;
     expiryToastShownRef.current = false;
-    
+
     const expSeconds = user?.exp;
     let timerId;
-    
+
     if (typeof expSeconds === "number") {
       const msUntilExpiry = expSeconds * 1000 - Date.now() + 1000;
-      timerId = setTimeout(() => {
-        clearExpiredSession();
-      }, Math.max(msUntilExpiry, 0));
+      timerId = setTimeout(
+        () => {
+          clearExpiredSession();
+        },
+        Math.max(msUntilExpiry, 0)
+      );
     } else {
       timerId = setInterval(() => {
         if (!isTokenValid(token)) clearExpiredSession();
       }, 60000);
     }
-    
+
     return () => {
       if (typeof expSeconds === "number") {
         clearTimeout(timerId);
@@ -247,7 +259,7 @@ export const AuthProvider = ({ children }) => {
   /**
    * Persists the active session state to local variables and secure cache.
    * Strips administrative permissions/roles from plain storage to mitigate local XSS exploits.
-   * 
+   *
    * @param {string} sessionToken - The active JWT token identifier or cookie placeholder.
    * @param {Object} sessionUser - The complete user profile object containing credentials.
    * @returns {boolean} Successful persistence state.
@@ -256,7 +268,7 @@ export const AuthProvider = ({ children }) => {
     setToken(sessionToken);
     setUser(sessionUser);
     setAuthToken(sessionToken);
-    
+
     try {
       // Security Contract: Strip authorization keys from display profile object stored in localStorage
       const { roles, permissions, scopes, ...displayProfile } = sessionUser;
@@ -283,38 +295,41 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Initiates authentication login sequence.
-   * 
+   *
    * @param {string} usernameOrEmail - Input credential.
    * @param {string} password - User password.
    * @returns {boolean} True if login resolves, false otherwise.
    */
-  const login = useCallback(async (usernameOrEmail, password) => {
-    if (!isMountedRef.current) return false;
-    setAuthRequest({ loading: true, error: null });
-    
-    try {
-      const res = await authService.login({ usernameOrEmail, password });
-      const data = res.data;
-      
-      if (res.status !== 200) {
-        throw new Error(data?.message || data?.error || "Invalid credentials");
-      }
-      
-      const { sessionUser } = extractSession(data, usernameOrEmail);
-      const persisted = await persistSession("cookie-managed", sessionUser);
-      if (!persisted) return false;
-      
-      setAuthRequest({ loading: false, error: null });
-      return true;
-    } catch (error) {
+  const login = useCallback(
+    async (usernameOrEmail, password) => {
       if (!isMountedRef.current) return false;
-      setAuthRequest({
-        loading: false,
-        error: getAuthErrorMessage(error, "Login failed. Please try again.")
-      });
-      return false;
-    }
-  }, [persistSession]);
+      setAuthRequest({ loading: true, error: null });
+
+      try {
+        const res = await authService.login({ usernameOrEmail, password });
+        const data = res.data;
+
+        if (res.status !== 200) {
+          throw new Error(data?.message || data?.error || "Invalid credentials");
+        }
+
+        const { sessionUser } = extractSession(data, usernameOrEmail);
+        const persisted = await persistSession("cookie-managed", sessionUser);
+        if (!persisted) return false;
+
+        setAuthRequest({ loading: false, error: null });
+        return true;
+      } catch (error) {
+        if (!isMountedRef.current) return false;
+        setAuthRequest({
+          loading: false,
+          error: getAuthErrorMessage(error, "Login failed. Please try again."),
+        });
+        return false;
+      }
+    },
+    [persistSession]
+  );
 
   /**
    * Logs out the user.
@@ -350,29 +365,32 @@ export const AuthProvider = ({ children }) => {
   const permissions = usePermissions(user);
 
   // Memoize context provider values to prevent redundant subscriber re-renders
-  const value = useMemo(() => ({
-    user,
-    token,
-    loading,
-    authRequest,
-    login,
-    logout,
-    setAuthSession,
-    setUser,
-    isAuthenticated,
-    ...permissions,
-  }), [
-    user,
-    token,
-    loading,
-    authRequest,
-    login,
-    logout,
-    setAuthSession,
-    setUser,
-    isAuthenticated,
-    permissions
-  ]);
+  const value = useMemo(
+    () => ({
+      user,
+      token,
+      loading,
+      authRequest,
+      login,
+      logout,
+      setAuthSession,
+      setUser,
+      isAuthenticated,
+      ...permissions,
+    }),
+    [
+      user,
+      token,
+      loading,
+      authRequest,
+      login,
+      logout,
+      setAuthSession,
+      setUser,
+      isAuthenticated,
+      permissions,
+    ]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

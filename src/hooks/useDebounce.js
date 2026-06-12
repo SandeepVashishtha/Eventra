@@ -2,7 +2,7 @@
  * @fileoverview useDebounce - Generic value debouncing hook
  * @module hooks/useDebounce
  */
- /* Custom hook to debounce a value by the specified delay.
+/* Custom hook to debounce a value by the specified delay.
  *
  * Returns the latest value that has been stable for at least `delay` ms.
  * Each time `value` changes the timer resets; the debounced value only
@@ -29,7 +29,7 @@ import { useState, useEffect } from "react";
  * @returns {any} The debounced value.
  */
 export default function useDebounce(value, delay = 300) {
-  const safeDelay = typeof delay === 'number' && isFinite(delay) && delay > 0 ? delay : 300;
+  const safeDelay = typeof delay === "number" && isFinite(delay) && delay > 0 ? delay : 300;
   const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {

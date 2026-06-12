@@ -38,20 +38,22 @@ export async function parseGithubProfile(githubUrl) {
     const userData = await userRes.json();
 
     // Fetch repositories to infer skills based on languages/topics
-    const reposRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=30&sort=updated`);
+    const reposRes = await fetch(
+      `https://api.github.com/users/${username}/repos?per_page=30&sort=updated`
+    );
     let skills = [];
     if (reposRes.ok) {
       const reposData = await reposRes.json();
       const techCounts = {};
-      
-      reposData.forEach(repo => {
+
+      reposData.forEach((repo) => {
         // Track primary languages
         if (repo.language) {
           techCounts[repo.language] = (techCounts[repo.language] || 0) + 2; // Weight language higher
         }
         // Track topics
         if (repo.topics && Array.isArray(repo.topics)) {
-          repo.topics.forEach(topic => {
+          repo.topics.forEach((topic) => {
             // Capitalize topic for nicer display
             const niceTopic = topic.charAt(0).toUpperCase() + topic.slice(1);
             techCounts[niceTopic] = (techCounts[niceTopic] || 0) + 1;
@@ -71,7 +73,11 @@ export async function parseGithubProfile(githubUrl) {
       username: username,
       bio: userData.bio || "Passionate developer building open-source projects.",
       github: userData.html_url || githubUrl,
-      portfolio: userData.blog ? (userData.blog.startsWith("http") ? userData.blog : `https://${userData.blog}`) : "",
+      portfolio: userData.blog
+        ? userData.blog.startsWith("http")
+          ? userData.blog
+          : `https://${userData.blog}`
+        : "",
       skills: skills,
       avatarBase64: userData.avatar_url, // We'll pass the URL, the UI can handle image fetch
     };
@@ -97,19 +103,24 @@ export async function parseResumePDF(file) {
       // Create deterministic mock data based on the file name length
       // to give the illusion of processing different files differently.
       const nameLen = file.name.length;
-      
+
       let mockSkills = ["JavaScript", "React", "Node.js", "Git", "HTML5", "CSS3"];
       if (nameLen % 2 === 0) {
         mockSkills = ["Python", "Django", "PostgreSQL", "Docker", "AWS", "Machine Learning"];
       }
-      
-      let mockBio = "Results-driven software engineer with experience building scalable web applications and RESTful APIs.";
+
+      let mockBio =
+        "Results-driven software engineer with experience building scalable web applications and RESTful APIs.";
       if (nameLen % 3 === 0) {
-        mockBio = "Creative frontend developer passionate about UI/UX design, accessibility, and modern JavaScript frameworks.";
+        mockBio =
+          "Creative frontend developer passionate about UI/UX design, accessibility, and modern JavaScript frameworks.";
       }
 
       resolve({
-        fullName: file.name.replace(".pdf", "").replace(/[-_]/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
+        fullName: file.name
+          .replace(".pdf", "")
+          .replace(/[-_]/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase()),
         bio: mockBio,
         skills: mockSkills,
         linkedin: "https://linkedin.com/in/extracted-profile",

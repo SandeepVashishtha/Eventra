@@ -19,8 +19,7 @@ const buildExpiry = (updatedAt, retentionDays = DEFAULT_RECOVERY_RETENTION_DAYS)
 const createId = (type = "generic", now = Date.now()) =>
   `${type}-${now}-${Math.random().toString(36).slice(2, 8)}`.replace(/[^a-zA-Z0-9_-]/g, "-");
 
-const normalizeId = (session = {}) =>
-  String(session.id || session.sessionId || "").trim();
+const normalizeId = (session = {}) => String(session.id || session.sessionId || "").trim();
 
 export const normalizeMultiSession = (
   session = {},
@@ -28,14 +27,19 @@ export const normalizeMultiSession = (
     now = new Date(),
     source = session.source || "local",
     retentionDays = DEFAULT_RECOVERY_RETENTION_DAYS,
-  } = {},
+  } = {}
 ) => {
   const normalized = normalizeRecoverySession(session, { now, retentionDays });
   if (!normalized) return null;
 
-  const updatedAt = getTimestamp(session.updatedAt || normalized.updatedAt || normalized.lastUpdated);
+  const updatedAt = getTimestamp(
+    session.updatedAt || normalized.updatedAt || normalized.lastUpdated
+  );
   const createdAt = getTimestamp(session.createdAt || normalized.createdAt || updatedAt);
-  const id = normalizeId(session) || normalized.sessionId || createId(normalized.type, new Date(updatedAt).getTime());
+  const id =
+    normalizeId(session) ||
+    normalized.sessionId ||
+    createId(normalized.type, new Date(updatedAt).getTime());
 
   return {
     id,
@@ -58,7 +62,9 @@ export const isMultiSessionExpired = (session, now = Date.now()) =>
 
 export const sortRecoverySessions = (sessions = []) =>
   [...sessions].sort(
-    (a, b) => new Date(b.updatedAt || b.lastUpdated).getTime() - new Date(a.updatedAt || a.lastUpdated).getTime(),
+    (a, b) =>
+      new Date(b.updatedAt || b.lastUpdated).getTime() -
+      new Date(a.updatedAt || a.lastUpdated).getTime()
   );
 
 export const normalizeMultiSessions = (sessions = [], options = {}) => {
@@ -132,7 +138,7 @@ export const createRecoverySession = ({
       lastUpdated: updatedAt,
       expiresAt: buildExpiry(updatedAt, retentionDays),
     },
-    { now: new Date(updatedAt), source, retentionDays },
+    { now: new Date(updatedAt), source, retentionDays }
   );
 };
 
@@ -141,7 +147,7 @@ export const upsertRecoverySession = (sessions = [], session = {}, options = {})
   if (!normalized) return normalizeMultiSessions(sessions, options);
 
   const withoutExisting = normalizeMultiSessions(sessions, options).filter(
-    (item) => item.id !== normalized.id,
+    (item) => item.id !== normalized.id
   );
   return normalizeMultiSessions([...withoutExisting, normalized], options);
 };
@@ -150,7 +156,7 @@ export const updateRecoverySessionEntry = (
   sessions = [],
   sessionId,
   patch = {},
-  { now = new Date(), retentionDays = DEFAULT_RECOVERY_RETENTION_DAYS } = {},
+  { now = new Date(), retentionDays = DEFAULT_RECOVERY_RETENTION_DAYS } = {}
 ) => {
   const updatedAt = getTimestamp(now);
   return normalizeMultiSessions(
@@ -165,34 +171,38 @@ export const updateRecoverySessionEntry = (
             expiresAt: patch.expiresAt || buildExpiry(updatedAt, retentionDays),
             version: (session.version || 1) + 1,
           }
-        : session,
+        : session
     ),
-    { now: new Date(updatedAt), retentionDays },
+    { now: new Date(updatedAt), retentionDays }
   );
 };
 
 export const renameRecoverySessionEntry = (sessions = [], sessionId, name) => {
-  const cleanName = String(name || "").replace(/\s+/g, " ").trim();
+  const cleanName = String(name || "")
+    .replace(/\s+/g, " ")
+    .trim();
   if (!cleanName) return normalizeMultiSessions(sessions);
   return updateRecoverySessionEntry(sessions, sessionId, { name: cleanName });
 };
 
 export const deleteRecoverySessionEntry = (sessions = [], sessionId) =>
   normalizeMultiSessions(sessions).filter(
-    (session) => session.id !== sessionId && session.sessionId !== sessionId,
+    (session) => session.id !== sessionId && session.sessionId !== sessionId
   );
 
 export const cleanupExpiredRecoverySessions = (sessions = [], now = Date.now()) =>
   normalizeMultiSessions(sessions).filter((session) => !isMultiSessionExpired(session, now));
 
 export const filterRecoverySessions = (sessions = [], query = "") => {
-  const normalizedQuery = String(query || "").trim().toLowerCase();
+  const normalizedQuery = String(query || "")
+    .trim()
+    .toLowerCase();
   if (!normalizedQuery) return normalizeMultiSessions(sessions);
 
   return normalizeMultiSessions(sessions).filter((session) =>
     [session.name, session.type, session.source]
       .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(normalizedQuery)),
+      .some((value) => String(value).toLowerCase().includes(normalizedQuery))
   );
 };
 
@@ -206,7 +216,7 @@ export const groupRecoverySessionsByType = (sessions = []) =>
 
 export const readMultiSessions = (
   storage = globalThis.localStorage,
-  key = MULTI_SESSION_RECOVERY_KEY,
+  key = MULTI_SESSION_RECOVERY_KEY
 ) => {
   if (!storage?.getItem) return [];
   try {
@@ -222,7 +232,7 @@ export const readMultiSessions = (
 export const writeMultiSessions = (
   sessions = [],
   storage = globalThis.localStorage,
-  key = MULTI_SESSION_RECOVERY_KEY,
+  key = MULTI_SESSION_RECOVERY_KEY
 ) => {
   const normalized = normalizeMultiSessions(sessions);
   storage?.setItem?.(key, JSON.stringify(normalized));

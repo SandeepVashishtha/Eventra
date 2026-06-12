@@ -18,13 +18,13 @@ const DashboardEmptyState = () => {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: "easeOut" }}
-      className="relative overflow-hidden rounded-3xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-[0_20px_50px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] mx-auto max-w-2xl my-10"
+      className="relative mx-auto my-10 max-w-2xl overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.06)] dark:border-gray-800 dark:bg-gray-900 dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)]"
     >
       {/* ── Decorative background blobs ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 opacity-60 blur-3xl dark:from-indigo-900/20 dark:to-purple-900/20" />
         <div className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-gradient-to-tr from-blue-100 to-cyan-100 opacity-60 blur-3xl dark:from-blue-900/20 dark:to-cyan-900/20" />
-        <div className="absolute left-1/2 top-0 h-px w-3/4 -translate-x-1/2 bg-gradient-to-r from-transparent via-indigo-300/40 to-transparent dark:via-indigo-500/20" />
+        <div className="absolute top-0 left-1/2 h-px w-3/4 -translate-x-1/2 bg-gradient-to-r from-transparent via-indigo-300/40 to-transparent dark:via-indigo-500/20" />
       </div>
 
       <div className="relative z-10 flex flex-col items-center px-8 py-14 text-center sm:px-14">
@@ -38,7 +38,7 @@ const DashboardEmptyState = () => {
               strokeWidth={1.5}
             />
             {/* Sparkle accent top-right */}
-            <span className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-md dark:bg-gray-800">
+            <span className="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-md dark:bg-gray-800">
               <Sparkles size={14} className="text-amber-400" />
             </span>
             {/* Search accent bottom-left */}
@@ -49,7 +49,7 @@ const DashboardEmptyState = () => {
         </div>
 
         {/* ── Headline ── */}
-        <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+        <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl dark:text-white">
           Your dashboard is ready for action
         </h2>
 
@@ -82,7 +82,7 @@ const DashboardEmptyState = () => {
           <button
             type="button"
             onClick={() => navigate("/events")}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl hover:shadow-indigo-500/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl hover:shadow-indigo-500/30 focus:ring-2 focus:ring-indigo-500/40 focus:outline-none active:scale-[0.98]"
             aria-label="Browse all events"
           >
             <Search size={16} />
@@ -94,7 +94,7 @@ const DashboardEmptyState = () => {
           <button
             type="button"
             onClick={() => navigate("/create-event")}
-            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-6 py-3 text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 active:scale-[0.98] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-indigo-600 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300"
+            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-6 py-3 text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 focus:ring-2 focus:ring-indigo-500/30 focus:outline-none active:scale-[0.98] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-indigo-600 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300"
             aria-label="Create a new event"
           >
             <Plus size={16} />

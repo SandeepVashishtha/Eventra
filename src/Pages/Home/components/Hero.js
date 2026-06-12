@@ -5,7 +5,7 @@ import {
   AnimatePresence,
   MotionConfig,
   useScroll,
-  useTransform
+  useTransform,
 } from "framer-motion";
 
 import { Link } from "react-router-dom";
@@ -56,7 +56,6 @@ const HEADLINE_PHRASES = [
 const TAGLINE_TEXTS = ["Discover & Join"];
 const SEARCH_RESULT_LIMIT = 5;
 
-
 const SEARCH_ROUTES = {
   event: "/events",
   hackathon: "/hackathons",
@@ -70,7 +69,17 @@ const SEARCH_ICONS = {
 };
 
 const searchIndex = new Fuse(allSearchItems, {
-  keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
+  keys: [
+    "title",
+    "description",
+    "location",
+    "tags",
+    "techStack",
+    "category",
+    "author",
+    "organizer",
+    "type",
+  ],
   threshold: 0.3,
   includeScore: true,
 });
@@ -82,13 +91,16 @@ const getResultHref = (item, fallbackTerm) => {
 
 const getResultIcon = (type) => {
   const Icon = SEARCH_ICONS[type] || Search;
-  return <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />;
+  return <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />;
 };
 
-const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+};
 const Hero = () => {
   const { t, i18n } = useTranslation();
-  const controls = useAnimation(); 
+  const controls = useAnimation();
   const prefersReducedMotion = useReducedMotion();
 
   useDocumentTitle("Eventra | Home");
@@ -100,8 +112,13 @@ const Hero = () => {
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
-  
-  const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
+
+  const {
+    searchTerm,
+    debouncedTerm,
+    setSearchTerm,
+    clear: clearSearchTerm,
+  } = useDebouncedSearch("", 300);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -111,7 +128,6 @@ const Hero = () => {
   const yText = useTransform(scrollYProgress, [0, 1], [0, 180]);
   const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-
 
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
@@ -152,8 +168,6 @@ const Hero = () => {
     clearSearchTerm();
   }, [clearSearchTerm]);
 
-
-
   const HERO_STATS = useMemo(
     () => [
       {
@@ -182,9 +196,12 @@ const Hero = () => {
     <section
       ref={containerRef}
       aria-label="Hero section"
-      className="relative overflow-hidden border-b border-gray-100 dark:border-slate-800 pb-16 text-slate-900 dark:text-white sm:pb-20 md:pb-24"
+      className="relative overflow-hidden border-b border-gray-100 pb-16 text-slate-900 sm:pb-20 md:pb-24 dark:border-slate-800 dark:text-white"
       /* MODIFIED: Implemented premium brand-violet background gradient tokens */
-      style={{ background: "linear-gradient(180deg, rgba(109, 40, 217, 0.06) 0%, rgba(109, 40, 217, 0.02) 20%, var(--bg-color) 100%)" }}
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(109, 40, 217, 0.06) 0%, rgba(109, 40, 217, 0.02) 20%, var(--bg-color) 100%)",
+      }}
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div
@@ -232,8 +249,8 @@ const Hero = () => {
         <motion.div className="mx-auto max-w-5xl text-center">
           <MotionConfig reducedMotion="never">
             <motion.h1
-              className="flex flex-col items-center gap-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-4xl lg:text-5xl"
-              style={{ fontFamily: "\"Inter\", system-ui, sans-serif" }}
+              className="flex flex-col items-center gap-3 text-3xl leading-tight font-semibold tracking-tight sm:text-4xl md:text-4xl lg:text-5xl"
+              style={{ fontFamily: '"Inter", system-ui, sans-serif' }}
             >
               <motion.span className="block text-sm font-medium text-gray-500 dark:text-gray-400">
                 <RespawningText texts={TAGLINE_TEXTS} />
@@ -243,7 +260,7 @@ const Hero = () => {
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={phraseIndex}
-                    className="block text-2xl font-extrabold text-gray-900 dark:text-white sm:text-3xl md:text-4xl lg:text-5xl"
+                    className="block text-2xl font-extrabold text-gray-900 sm:text-3xl md:text-4xl lg:text-5xl dark:text-white"
                     exit={{
                       opacity: 0,
                       y: -16,
@@ -260,22 +277,22 @@ const Hero = () => {
 
           <motion.p
             variants={fadeUp}
-            className="mx-auto mb-8 mt-4 max-w-3xl text-base leading-relaxed text-gray-600 dark:text-gray-300 sm:mb-10 sm:mt-6 sm:text-lg md:text-lg"
+            className="mx-auto mt-4 mb-8 max-w-3xl text-base leading-relaxed text-gray-600 sm:mt-6 sm:mb-10 sm:text-lg md:text-lg dark:text-gray-300"
           >
-            Connect with developers, learn new skills, and grow your network at curated tech events, hackathons, and
-            workshops.
+            Connect with developers, learn new skills, and grow your network at curated tech events,
+            hackathons, and workshops.
           </motion.p>
 
           <motion.div variants={fadeUp} className="mx-auto mb-10 w-full max-w-2xl">
             <div className="relative">
-             <div className="relative rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm focus-within:border-brand-violet/50 transition-colors">
+              <div className="focus-within:border-brand-violet/50 relative rounded-lg border border-gray-200 bg-white shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-900">
                 <ModernSearchInput
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search events, hackathons, projects..."
                   onFocus={() => searchTerm && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
-                  className="border-0 bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0"
+                  className="border-0 bg-transparent text-gray-700 placeholder-gray-400 focus:ring-0 dark:text-gray-200 dark:placeholder-gray-500"
                 >
                   <AnimatePresence>
                     {showResults && (
@@ -284,14 +301,14 @@ const Hero = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.98 }}
                         transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
-                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg"
+                        className="absolute top-full right-0 left-0 z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900"
                         role="listbox"
                         aria-label="Search results"
                       >
                         <div className="p-3">
                           {searchResults.length > 0 ? (
                             <>
-                              <div className="px-2 py-1.5 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                              <div className="px-2 py-1.5 text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
                                 Results ({searchResults.length})
                               </div>
                               <div className="space-y-1">
@@ -307,12 +324,12 @@ const Hero = () => {
                                     role="option"
                                     aria-label={`Open ${result.item.title}`}
                                   >
-                                    <div className="shrink-0 rounded-lg bg-gray-100 dark:bg-slate-800 p-2 text-gray-700 dark:text-gray-300 transition-transform group-hover:scale-105 group-hover:bg-brand-violet/10 group-hover:text-brand-violet">
+                                    <div className="group-hover:bg-brand-violet/10 group-hover:text-brand-violet shrink-0 rounded-lg bg-gray-100 p-2 text-gray-700 transition-transform group-hover:scale-105 dark:bg-slate-800 dark:text-gray-300">
                                       {getResultIcon(result.item.type)}
                                     </div>
                                     <div className="min-w-0 flex-1">
                                       <div className="mb-0.5 flex items-center gap-2">
-                                        <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white group-hover:text-brand-violet transition-colors">
+                                        <h4 className="group-hover:text-brand-violet truncate text-sm font-semibold text-gray-900 transition-colors dark:text-white">
                                           {result.item.title}
                                         </h4>
                                         <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-slate-800 dark:text-gray-300">
@@ -326,7 +343,7 @@ const Hero = () => {
                                       </p>
                                     </div>
                                     <ExternalLink
-                                      className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-brand-violet"
+                                      className="group-hover:text-brand-violet h-4 w-4 shrink-0 text-gray-400 transition-colors"
                                       aria-hidden="true"
                                     />
                                   </MotionLink>
@@ -341,7 +358,9 @@ const Hero = () => {
                               className="py-8 text-center text-sm text-gray-500 dark:text-gray-400"
                             >
                               No results for{" "}
-                              <span className="font-medium text-gray-700 dark:text-gray-200">&quot;{searchTerm}&quot;</span>
+                              <span className="font-medium text-gray-700 dark:text-gray-200">
+                                &quot;{searchTerm}&quot;
+                              </span>
                             </motion.div>
                           )}
                         </div>
@@ -368,19 +387,15 @@ const Hero = () => {
                     variants={fadeUp}
                     whileHover={{ y: -4, transition: { duration: 0.2 } }}
                     /* MODIFIED: Added premium hover state with brand-violet border, deep shadows, and theme colors */
-                    className="flex flex-col items-center justify-center rounded-xl border border-brand-violet/50 bg-white dark:bg-slate-900 p-5 shadow-sm hover:shadow-xl hover:border-brand-violet transition-all duration-300"
+                    className="border-brand-violet/50 hover:border-brand-violet flex flex-col items-center justify-center rounded-xl border bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-xl dark:bg-slate-900"
                   >
                     {/* MODIFIED: Icon wraps now subtly highlight into your brand colors on card hover */}
-                    <div className="mb-2 rounded-full bg-gray-100 dark:bg-slate-800 p-2 text-gray-700 dark:text-gray-300 border border-transparent transition-colors">
+                    <div className="mb-2 rounded-full border border-transparent bg-gray-100 p-2 text-gray-700 transition-colors dark:bg-slate-800 dark:text-gray-300">
                       <stat.icon className="h-5 w-5" aria-hidden="true" />
                     </div>
-                    <p className="mb-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-white sm:text-3xl"> 
+                    <p className="mb-1 text-2xl font-bold text-gray-900 tabular-nums sm:text-3xl dark:text-white">
                       {statsReady ? (
-                        <CountUp
-                          end={stat.value}
-                          duration={2.2}
-                          suffix={stat.suffix || ""}
-                        />
+                        <CountUp end={stat.value} duration={2.2} suffix={stat.suffix || ""} />
                       ) : (
                         <>
                           {stat.value}
@@ -388,7 +403,7 @@ const Hero = () => {
                         </>
                       )}
                     </p>
-                    <p className="text-center text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 sm:text-sm">
+                    <p className="text-center text-xs font-semibold tracking-wider text-gray-500 uppercase sm:text-sm dark:text-gray-400">
                       {stat.label}
                     </p>
                   </motion.div>
@@ -403,7 +418,7 @@ const Hero = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2 }}
-        className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-gray-400 dark:text-gray-500 md:flex"
+        className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-gray-400 md:flex dark:text-gray-500"
         aria-hidden="true"
       >
         <span className="text-xs font-medium">Scroll to explore</span>

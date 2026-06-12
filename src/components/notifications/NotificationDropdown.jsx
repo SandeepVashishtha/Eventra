@@ -49,12 +49,8 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
       >
         <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/80 px-4 py-3 dark:border-gray-800 dark:bg-gray-800/50">
           <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              Notifications
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {unreadCount} unread
-            </p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notifications</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{unreadCount} unread</p>
           </div>
           <div className="flex items-center gap-1">
             {unreadCount > 0 && (

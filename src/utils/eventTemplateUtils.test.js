@@ -14,9 +14,9 @@ const sampleFormData = {
   description: "Annual tech event",
   date: "2026-09-01",
   location: "Remote",
-  banner: "upload.png",       // excluded field
-  eventId: "evt-123",          // excluded field
-  createdBy: "admin",          // excluded field
+  banner: "upload.png", // excluded field
+  eventId: "evt-123", // excluded field
+  createdBy: "admin", // excluded field
 };
 
 beforeEach(() => {
@@ -77,9 +77,7 @@ describe("saveTemplate — duplicate name guard", () => {
     saveTemplate("My Template", sampleFormData);
     const result = saveTemplate("My Template", { title: "Different" });
     expect(result).toBeNull();
-    expect(console.warn).toHaveBeenCalledWith(
-      expect.stringContaining("already exists")
-    );
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("already exists"));
   });
 
   it("prevents saving with a duplicate name regardless of leading/trailing spaces", () => {

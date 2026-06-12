@@ -9,7 +9,7 @@ const SocialShareButtons = ({ event, layout = "grid" }) => {
 
     const shareUrl = `${window.location.origin}/events/${event.id}`;
     if (!isValidShareUrl(shareUrl)) return null;
-    
+
     const shareText = `Check out this event: ${event.title}`;
 
     return {
@@ -43,21 +43,46 @@ const SocialShareButtons = ({ event, layout = "grid" }) => {
 
   if (!shareData) return null;
 
-  const buttonClasses = "flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-all hover:scale-[1.02] shadow-sm";
+  const buttonClasses =
+    "flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-all hover:scale-[1.02] shadow-sm";
 
   if (layout === "inline") {
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <a href={shareData.links.twitter} target="_blank" rel="noopener noreferrer" className="p-2 bg-black text-white rounded-full hover:bg-slate-800 transition-colors" title="Share on Twitter/X">
+        <a
+          href={shareData.links.twitter}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full bg-black p-2 text-white transition-colors hover:bg-slate-800"
+          title="Share on Twitter/X"
+        >
           <Twitter size={14} />
         </a>
-        <a href={shareData.links.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 bg-blue-700 text-white rounded-full hover:bg-blue-800 transition-colors" title="Share on LinkedIn">
+        <a
+          href={shareData.links.linkedin}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full bg-blue-700 p-2 text-white transition-colors hover:bg-blue-800"
+          title="Share on LinkedIn"
+        >
           <Linkedin size={14} />
         </a>
-        <a href={shareData.links.whatsapp} target="_blank" rel="noopener noreferrer" className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors" title="Share on WhatsApp">
+        <a
+          href={shareData.links.whatsapp}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full bg-green-600 p-2 text-white transition-colors hover:bg-green-700"
+          title="Share on WhatsApp"
+        >
           <MessageCircle size={14} />
         </a>
-        <a href={shareData.links.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors" title="Share on Facebook">
+        <a
+          href={shareData.links.facebook}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full bg-blue-600 p-2 text-white transition-colors hover:bg-blue-700"
+          title="Share on Facebook"
+        >
           <Facebook size={14} />
         </a>
       </div>
@@ -66,25 +91,57 @@ const SocialShareButtons = ({ event, layout = "grid" }) => {
 
   return (
     <div className={`grid ${layout === "grid" ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
-      <a href={shareData.links.twitter} target="_blank" rel="noopener noreferrer" className={`${buttonClasses} bg-black text-white hover:bg-slate-800`}>
+      <a
+        href={shareData.links.twitter}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${buttonClasses} bg-black text-white hover:bg-slate-800`}
+      >
         <Twitter size={16} /> Twitter/X
       </a>
-      <a href={shareData.links.linkedin} target="_blank" rel="noopener noreferrer" className={`${buttonClasses} bg-blue-700 text-white hover:bg-blue-800`}>
+      <a
+        href={shareData.links.linkedin}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${buttonClasses} bg-blue-700 text-white hover:bg-blue-800`}
+      >
         <Linkedin size={16} /> LinkedIn
       </a>
-      <a href={shareData.links.whatsapp} target="_blank" rel="noopener noreferrer" className={`${buttonClasses} bg-green-600 text-white hover:bg-green-700`}>
+      <a
+        href={shareData.links.whatsapp}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${buttonClasses} bg-green-600 text-white hover:bg-green-700`}
+      >
         <MessageCircle size={16} /> WhatsApp
       </a>
-      <a href={shareData.links.facebook} target="_blank" rel="noopener noreferrer" className={`${buttonClasses} bg-blue-600 text-white hover:bg-blue-700`}>
+      <a
+        href={shareData.links.facebook}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${buttonClasses} bg-blue-600 text-white hover:bg-blue-700`}
+      >
         <Facebook size={16} /> Facebook
       </a>
-      <a href={shareData.links.telegram} target="_blank" rel="noopener noreferrer" className={`${buttonClasses} ${layout === "grid" ? "col-span-2" : ""} bg-sky-500 text-white hover:bg-sky-600`}>
+      <a
+        href={shareData.links.telegram}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${buttonClasses} ${layout === "grid" ? "col-span-2" : ""} bg-sky-500 text-white hover:bg-sky-600`}
+      >
         <Send size={16} /> Telegram
       </a>
-      <a href={shareData.links.email} className={`${buttonClasses} ${layout === "grid" ? "col-span-2" : ""} bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700`}>
+      <a
+        href={shareData.links.email}
+        className={`${buttonClasses} ${layout === "grid" ? "col-span-2" : ""} bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700`}
+      >
         <Mail size={16} /> Email
       </a>
-      <button type="button" onClick={copyLink} className={`${buttonClasses} ${layout === "grid" ? "col-span-2" : ""} bg-violet-600 text-white hover:bg-violet-700`}>
+      <button
+        type="button"
+        onClick={copyLink}
+        className={`${buttonClasses} ${layout === "grid" ? "col-span-2" : ""} bg-violet-600 text-white hover:bg-violet-700`}
+      >
         <Copy size={16} /> Copy Link
       </button>
     </div>

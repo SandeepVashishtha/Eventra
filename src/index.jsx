@@ -17,7 +17,6 @@ import { HelmetProvider } from "react-helmet-async";
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
 
-
 // Attach CSP violation listener — surfaces policy breaches in dev console
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
 initCspReporting();
@@ -31,8 +30,8 @@ if (import.meta.env.PROD) {
 const router = createBrowserRouter([
   {
     path: "*",
-    element: <App />
-  }
+    element: <App />,
+  },
 ]);
 
 // Mount the React application to the DOM
@@ -42,16 +41,15 @@ root.render(
   <React.StrictMode>
     {/* Global Application Error Boundary (Fixes #5060) */}
     <GlobalErrorBoundary>
-  <HelmetProvider>
-    <TranslationProvider>
-      <ThemeProvider>
-        <RealTimeProvider>
-          <RouterProvider router={router} />
-        </RealTimeProvider>
-      </ThemeProvider>
-    </TranslationProvider>
-  </HelmetProvider>
-</GlobalErrorBoundary>
+      <HelmetProvider>
+        <TranslationProvider>
+          <ThemeProvider>
+            <RealTimeProvider>
+              <RouterProvider router={router} />
+            </RealTimeProvider>
+          </ThemeProvider>
+        </TranslationProvider>
+      </HelmetProvider>
+    </GlobalErrorBoundary>
   </React.StrictMode>
 );
-

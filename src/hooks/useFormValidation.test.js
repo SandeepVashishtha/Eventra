@@ -20,12 +20,9 @@ describe("useFormValidation - Enhanced with Async Support", () => {
   };
 
   const syncValidators = {
-    email: (val) =>
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || "Invalid email format",
-    password: (val) =>
-      val.length >= 8 || "Password must be at least 8 characters",
-    username: (val) =>
-      val.length >= 3 || "Username must be at least 3 characters",
+    email: (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || "Invalid email format",
+    password: (val) => val.length >= 8 || "Password must be at least 8 characters",
+    username: (val) => val.length >= 3 || "Username must be at least 3 characters",
   };
 
   // Test 1: Basic form initialization
@@ -79,9 +76,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       username: [syncValidators.username, asyncValidators.usernameAvailable],
     };
 
-    const { result } = renderHook(() =>
-      useFormValidation(initialState, rules, { debounceMs: 50 }),
-    );
+    const { result } = renderHook(() => useFormValidation(initialState, rules, { debounceMs: 50 }));
 
     // Test taken username (async validation)
     act(() => {
@@ -95,7 +90,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       () => {
         expect(result.current.validationState.username).toBe("validating");
       },
-      { timeout: 200 },
+      { timeout: 200 }
     );
 
     // Should show error after async validation completes
@@ -103,13 +98,13 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       () => {
         expect(result.current.errors.username).toBe("Username already taken");
       },
-      { timeout: 500 },
+      { timeout: 500 }
     );
     await waitFor(
       () => {
         expect(result.current.validationState.username).toBe("error");
       },
-      { timeout: 500 },
+      { timeout: 500 }
     );
 
     // Test available username
@@ -123,13 +118,13 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       () => {
         expect(result.current.errors.username).toBeNull();
       },
-      { timeout: 500 },
+      { timeout: 500 }
     );
     await waitFor(
       () => {
         expect(result.current.validationState.username).toBe("success");
       },
-      { timeout: 500 },
+      { timeout: 500 }
     );
   });
 
@@ -141,7 +136,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     };
 
     const { result } = renderHook(() =>
-      useFormValidation(initialState, rules, { debounceMs: 100 }),
+      useFormValidation(initialState, rules, { debounceMs: 100 })
     );
 
     // Multiple rapid changes
@@ -166,11 +161,9 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     await waitFor(
       () => {
         // Should only be called once, not 3 times
-        expect(
-          asyncValidators.usernameAvailable.mock.calls.length,
-        ).toBeLessThanOrEqual(2);
+        expect(asyncValidators.usernameAvailable.mock.calls.length).toBeLessThanOrEqual(2);
       },
-      { timeout: 500 },
+      { timeout: 500 }
     );
   });
 
@@ -181,9 +174,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       username: asyncValidators.usernameAvailable,
     };
 
-    const { result } = renderHook(() =>
-      useFormValidation(initialState, rules, { debounceMs: 50 }),
-    );
+    const { result } = renderHook(() => useFormValidation(initialState, rules, { debounceMs: 50 }));
 
     expect(result.current.validationState.username).toBeUndefined();
 
@@ -198,7 +189,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       () => {
         expect(result.current.validationState.username).toBe("validating");
       },
-      { timeout: 200 },
+      { timeout: 200 }
     );
 
     // Should show success
@@ -206,7 +197,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       () => {
         expect(result.current.validationState.username).toBe("success");
       },
-      { timeout: 500 },
+      { timeout: 500 }
     );
   });
 
@@ -217,9 +208,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       email: [syncValidators.email, asyncValidators.emailAvailable],
     };
 
-    const { result } = renderHook(() =>
-      useFormValidation(initialState, rules, { debounceMs: 50 }),
-    );
+    const { result } = renderHook(() => useFormValidation(initialState, rules, { debounceMs: 50 }));
 
     // Invalid format - should stop at sync validator
     act(() => {
@@ -232,13 +221,13 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       () => {
         expect(result.current.errors.email).toBe("Invalid email format");
       },
-      { timeout: 300 },
+      { timeout: 300 }
     );
     await waitFor(
       () => {
         expect(asyncValidators.emailAvailable).not.toHaveBeenCalled();
       },
-      { timeout: 300 },
+      { timeout: 300 }
     );
 
     // Valid format but taken - should run async validator
@@ -252,13 +241,13 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       () => {
         expect(result.current.errors.email).toBe("Email already registered");
       },
-      { timeout: 300 },
+      { timeout: 300 }
     );
     await waitFor(
       () => {
         expect(asyncValidators.emailAvailable).toHaveBeenCalled();
       },
-      { timeout: 300 },
+      { timeout: 300 }
     );
   });
 
@@ -271,9 +260,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       username: [syncValidators.username, asyncValidators.usernameAvailable],
     };
 
-    const { result } = renderHook(() =>
-      useFormValidation(initialState, rules, { debounceMs: 50 }),
-    );
+    const { result } = renderHook(() => useFormValidation(initialState, rules, { debounceMs: 50 }));
 
     // All empty - should be invalid
     let isValid = false;
@@ -299,13 +286,13 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       () => {
         expect(isValid).toBe(true);
       },
-      { timeout: 500 },
+      { timeout: 500 }
     );
     await waitFor(
       () => {
         expect(result.current.isFormValid).toBe(true);
       },
-      { timeout: 500 },
+      { timeout: 500 }
     );
   });
 
@@ -387,7 +374,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       useFormValidation(initialState, rules, {
         debounceMs: 50,
         cacheResults: true,
-      }),
+      })
     );
 
     // First validation
@@ -401,7 +388,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       () => {
         expect(asyncValidators.usernameAvailable).toHaveBeenCalledTimes(1);
       },
-      { timeout: 300 },
+      { timeout: 300 }
     );
 
     // Reset and validate same value again
@@ -418,11 +405,9 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     await waitFor(
       () => {
         // Should still be 1 because result is cached
-        expect(
-          asyncValidators.usernameAvailable.mock.calls.length,
-        ).toBeLessThanOrEqual(2);
+        expect(asyncValidators.usernameAvailable.mock.calls.length).toBeLessThanOrEqual(2);
       },
-      { timeout: 300 },
+      { timeout: 300 }
     );
   });
 
@@ -467,7 +452,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
           password: "password123",
         });
       },
-      { timeout: 500 },
+      { timeout: 500 }
     );
   });
 
@@ -479,7 +464,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     };
 
     const { result, unmount } = renderHook(() =>
-      useFormValidation(initialState, rules, { debounceMs: 50 }),
+      useFormValidation(initialState, rules, { debounceMs: 50 })
     );
 
     // Trigger async validation
@@ -494,7 +479,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       () => {
         expect(result.current.validationState.username).toBe("validating");
       },
-      { timeout: 200 },
+      { timeout: 200 }
     );
 
     // UNMOUNT the component WHILE the async promise is still pending

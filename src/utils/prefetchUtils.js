@@ -1,6 +1,6 @@
 /**
  * Route Prefetching Utilities
- * 
+ *
  * Provides functions to pre-load lazy-loaded route components.
  */
 

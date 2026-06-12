@@ -7,8 +7,4 @@
  * avoid duplicate implementations.
  */
 
-export {
-  decodeJwtPayload as decodeTokenPayload,
-  isTokenExpired,
-  isTokenValid,
-} from './auth.js';
+export { decodeJwtPayload as decodeTokenPayload, isTokenExpired, isTokenValid } from "./auth.js";

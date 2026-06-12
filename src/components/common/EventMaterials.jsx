@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Loader2, CheckCircle, Server, Zap, Sparkles, HelpCircle } from "lucide-react";
-import { isFileCached, getCachedFile, simulateServerDownload, P2PFileTransferCoordinator } from "../../utils/p2pFileTransfer";
+import {
+  isFileCached,
+  getCachedFile,
+  simulateServerDownload,
+  P2PFileTransferCoordinator,
+} from "../../utils/p2pFileTransfer";
 
 const EventMaterials = ({ materials }) => {
   const [cachedStatus, setCachedStatus] = useState({});
@@ -55,23 +60,19 @@ const EventMaterials = ({ materials }) => {
     }
 
     // 2. Start P2P Mesh Coordinator
-    const coordinator = new P2PFileTransferCoordinator(
-      fileId,
-      fileName,
-      (update) => {
-        // onStateChange callback
-        setActiveTransfer((prev) => ({
-          ...prev,
-          [fileId]: {
-            state: update.state,
-            progress: update.progress,
-            speed: update.speed,
-            peerCount: update.count || 0,
-            type: "p2p"
-          }
-        }));
-      }
-    );
+    const coordinator = new P2PFileTransferCoordinator(fileId, fileName, (update) => {
+      // onStateChange callback
+      setActiveTransfer((prev) => ({
+        ...prev,
+        [fileId]: {
+          state: update.state,
+          progress: update.progress,
+          speed: update.speed,
+          peerCount: update.count || 0,
+          type: "p2p",
+        },
+      }));
+    });
 
     // 3. Search for nearby active peers
     const foundPeer = await coordinator.startP2PSearch();
@@ -104,8 +105,8 @@ const EventMaterials = ({ materials }) => {
           progress: 0,
           speed: "2.4 MB/s",
           peerCount: 0,
-          type: "server"
-        }
+          type: "server",
+        },
       }));
 
       await simulateServerDownload(fileId, fileName, (progress) => {
@@ -116,15 +117,15 @@ const EventMaterials = ({ materials }) => {
             progress,
             speed: "2.8 MB/s",
             peerCount: 0,
-            type: "server"
-          }
+            type: "server",
+          },
         }));
       });
 
       // Write complete and trigger download
       triggerLocalDownload(fileId, fileName);
       setCachedStatus((prev) => ({ ...prev, [fileId]: true }));
-      
+
       setTimeout(() => {
         setActiveTransfer((prev) => {
           const copy = { ...prev };
@@ -150,18 +151,22 @@ const EventMaterials = ({ materials }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8 dark:border-zinc-800 dark:bg-zinc-900">
       {/* Header Info */}
-      <div className="flex items-center gap-3.5 mb-8">
-        <div className="p-3 bg-indigo-600/10 rounded-2xl text-2xl flex items-center justify-center">
+      <div className="mb-8 flex items-center gap-3.5">
+        <div className="flex items-center justify-center rounded-2xl bg-indigo-600/10 p-3 text-2xl">
           📚
         </div>
         <div>
-          <h3 className="text-xl font-bold text-gray-950 dark:text-white flex items-center gap-2">
+          <h3 className="flex items-center gap-2 text-xl font-bold text-gray-950 dark:text-white">
             Shared Material Resources
-            <span className="text-[10px] uppercase bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 font-bold px-2 py-0.5 rounded-md">P2P Mesh</span>
+            <span className="rounded-md bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold text-indigo-500 uppercase dark:bg-indigo-900/20 dark:text-indigo-400">
+              P2P Mesh
+            </span>
           </h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Download materials peer-to-peer to conserve bandwidth and bypass latency</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Download materials peer-to-peer to conserve bandwidth and bypass latency
+          </p>
         </div>
       </div>
 
@@ -171,19 +176,32 @@ const EventMaterials = ({ materials }) => {
           const isCached = cachedStatus[material.id];
 
           return (
-            <div key={material.id} className="p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950/20 flex flex-col gap-4">
+            <div
+              key={material.id}
+              className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-zinc-800 dark:bg-zinc-950/20"
+            >
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl text-xl flex items-center justify-center font-bold ${getColor(material.type)}`}>
+                  <div
+                    className={`flex h-12 w-12 items-center justify-center rounded-xl text-xl font-bold ${getColor(material.type)}`}
+                  >
                     {getIcon(material.type)}
                   </div>
                   <div>
-                    <p className="font-bold text-gray-950 dark:text-white text-sm">{material.title}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${getColor(material.type)}`}>{material.type}</span>
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold">{material.size}</span>
+                    <p className="text-sm font-bold text-gray-950 dark:text-white">
+                      {material.title}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span
+                        className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${getColor(material.type)}`}
+                      >
+                        {material.type}
+                      </span>
+                      <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                        {material.size}
+                      </span>
                       {isCached && (
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 flex items-center gap-1">
+                        <span className="flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-500 uppercase">
                           <CheckCircle size={10} /> Local Cache
                         </span>
                       )}
@@ -195,19 +213,21 @@ const EventMaterials = ({ materials }) => {
                 <button
                   type="button"
                   onClick={() => handleDownloadClick(material)}
-                  disabled={transfer && transfer.state !== "completed" && transfer.state !== "failed"}
-                  className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-[0.98] flex items-center gap-2 cursor-pointer ${
-                    isCached 
-                      ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
-                      : transfer 
-                        ? "bg-zinc-800 text-zinc-400 cursor-not-allowed" 
-                        : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  disabled={
+                    transfer && transfer.state !== "completed" && transfer.state !== "failed"
+                  }
+                  className={`flex cursor-pointer items-center gap-2 rounded-xl px-4.5 py-2 text-xs font-bold transition-all active:scale-[0.98] ${
+                    isCached
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                      : transfer
+                        ? "cursor-not-allowed bg-zinc-800 text-zinc-400"
+                        : "bg-indigo-600 text-white hover:bg-indigo-700"
                   }`}
                   style={{ cursor: transfer ? "not-allowed" : "pointer" }}
                 >
                   {transfer && transfer.state !== "completed" ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       <span>Transferring...</span>
                     </>
                   ) : isCached ? (
@@ -231,39 +251,37 @@ const EventMaterials = ({ materials }) => {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="p-4 rounded-xl bg-zinc-950/45 border border-zinc-800/80 mt-2"
+                    className="mt-2 rounded-xl border border-zinc-800/80 bg-zinc-950/45 p-4"
                   >
                     {/* Header: Mode styling (Green P2P vs Purple Server) */}
-                    <div className="flex justify-between items-center mb-3">
+                    <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {transfer.type === "p2p" ? (
-                          <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 animate-pulse">
+                          <div className="flex animate-pulse items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 uppercase">
                             <Zap size={11} /> P2P Mesh Download (Faster)
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-indigo-400 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20">
+                          <div className="flex items-center gap-1 rounded border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold text-indigo-400 uppercase">
                             <Server size={11} /> Server Download (Slower)
                           </div>
                         )}
 
                         {transfer.peerCount > 0 && (
-                          <span className="text-[10px] text-zinc-500 font-bold">
+                          <span className="text-[10px] font-bold text-zinc-500">
                             {transfer.peerCount} active peer seeds
                           </span>
                         )}
                       </div>
-                      
-                      <div className="text-xs font-bold text-zinc-400">
-                        {transfer.speed}
-                      </div>
+
+                      <div className="text-xs font-bold text-zinc-400">{transfer.speed}</div>
                     </div>
 
                     {/* Progress Bar with mode color indicators */}
-                    <div className="w-full h-2.5 bg-zinc-900 border border-zinc-850 rounded-full overflow-hidden flex">
+                    <div className="border-zinc-850 flex h-2.5 w-full overflow-hidden rounded-full border bg-zinc-900">
                       <motion.div
                         className={`h-full rounded-full ${
-                          transfer.type === "p2p" 
-                            ? "bg-gradient-to-r from-emerald-500 to-teal-500" 
+                          transfer.type === "p2p"
+                            ? "bg-gradient-to-r from-emerald-500 to-teal-500"
                             : "bg-gradient-to-r from-indigo-500 to-purple-500"
                         }`}
                         initial={{ width: 0 }}
@@ -273,8 +291,10 @@ const EventMaterials = ({ materials }) => {
                     </div>
 
                     {/* Footer Progress metadata logs */}
-                    <div className="flex justify-between items-center mt-2.5 text-[10px] font-bold tracking-wide uppercase text-zinc-500">
-                      <span>Status: <span className="text-zinc-350">{transfer.state}</span></span>
+                    <div className="mt-2.5 flex items-center justify-between text-[10px] font-bold tracking-wide text-zinc-500 uppercase">
+                      <span>
+                        Status: <span className="text-zinc-350">{transfer.state}</span>
+                      </span>
                       <span>{transfer.progress}%</span>
                     </div>
                   </motion.div>
@@ -285,12 +305,12 @@ const EventMaterials = ({ materials }) => {
         })}
       </div>
 
-      <div className="mt-8 border-t border-slate-100 dark:border-zinc-850 pt-5 flex items-center justify-between text-xs text-zinc-400">
+      <div className="dark:border-zinc-850 mt-8 flex items-center justify-between border-t border-slate-100 pt-5 text-xs text-zinc-400">
         <div className="flex items-center gap-1">
           <Sparkles size={13} className="text-amber-400" />
           <span>Local peer-mesh network actively listening.</span>
         </div>
-        <div className="text-[10px] text-zinc-500 flex items-center gap-1">
+        <div className="flex items-center gap-1 text-[10px] text-zinc-500">
           <HelpCircle size={11} /> Open another tab to test real WebRTC cross-tab file streaming!
         </div>
       </div>

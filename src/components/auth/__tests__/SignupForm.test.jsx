@@ -3,10 +3,7 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import SignupForm, { normalizeSignupRoles } from "../SignupForm";
 import { apiUtils } from "../../../config/api";
-import {
-  validateEmailAvailability,
-  validatePasswordStrength,
-} from "../../../validation";
+import { validateEmailAvailability, validatePasswordStrength } from "../../../validation";
 
 vi.mock("../../../config/api", () => ({
   API_ENDPOINTS: {
@@ -27,8 +24,7 @@ vi.mock("../../../context/AuthContext", () => ({
 
 vi.mock("../../../validation", () => ({
   validate: {
-    email: (value) =>
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || "Invalid email format",
+    email: (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || "Invalid email format",
     firstName: (value) => {
       if (!value || !value.trim()) return "First name is required";
       if (value.length < 2) return "At least 2 characters";
@@ -54,21 +50,18 @@ vi.mock("../../../validation", () => ({
 let container;
 let root;
 
- 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
- 
 
 const renderSignup = () => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
-   
   act(() => {
     root.render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <SignupForm />
-      </MemoryRouter>,
+      </MemoryRouter>
     );
   });
 
@@ -82,7 +75,7 @@ const changeInput = (name, value) => {
     const element = input(name);
     const valueSetter = Object.getOwnPropertyDescriptor(
       window.HTMLInputElement.prototype,
-      "value",
+      "value"
     ).set;
     valueSetter.call(element, value);
     element.dispatchEvent(new Event("input", { bubbles: true }));
@@ -91,9 +84,9 @@ const changeInput = (name, value) => {
 
 const submitForm = async () => {
   await act(async () => {
-    container.querySelector("form").dispatchEvent(
-      new Event("submit", { bubbles: true, cancelable: true }),
-    );
+    container
+      .querySelector("form")
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   });
 };
 
@@ -124,7 +117,6 @@ beforeEach(() => {
 
 afterEach(() => {
   if (root) {
-     
     act(() => {
       root.unmount();
     });
@@ -140,7 +132,7 @@ describe("SignupForm integration", () => {
       normalizeSignupRoles({
         role: "ATTENDEE",
         roles: ["ORGANIZER"],
-      }),
+      })
     ).toEqual(["ORGANIZER"]);
   });
 
@@ -224,9 +216,7 @@ describe("SignupForm integration", () => {
 
     await submitForm();
 
-    expect(container.textContent).toContain(
-      "Password doesn't meet the security criteria",
-    );
+    expect(container.textContent).toContain("Password doesn't meet the security criteria");
     expect(input("password").getAttribute("aria-invalid")).toBe("true");
     expect(apiUtils.post).not.toHaveBeenCalled();
   });
@@ -252,18 +242,14 @@ describe("SignupForm integration", () => {
 
     await submitForm();
 
-    expect(input("email").getAttribute("aria-describedby")).toContain(
-      "email-message",
-    );
+    expect(input("email").getAttribute("aria-describedby")).toContain("email-message");
   });
 
   it("exposes form-level live regions and password toggle states", () => {
     renderSignup();
 
     const form = container.querySelector("form");
-    const showPasswordButton = container.querySelector(
-      'button[aria-label="Show password"]',
-    );
+    const showPasswordButton = container.querySelector('button[aria-label="Show password"]');
 
     expect(form.getAttribute("aria-describedby")).toContain("signup-form-error");
     expect(form.getAttribute("aria-describedby")).toContain("signup-form-success");
@@ -272,14 +258,12 @@ describe("SignupForm integration", () => {
 
     act(() => {
       showPasswordButton.dispatchEvent(
-        new MouseEvent("click", { bubbles: true, cancelable: true }),
+        new MouseEvent("click", { bubbles: true, cancelable: true })
       );
     });
 
     expect(
-      container.querySelector('button[aria-label="Hide password"]').getAttribute(
-        "aria-pressed",
-      ),
+      container.querySelector('button[aria-label="Hide password"]').getAttribute("aria-pressed")
     ).toBe("true");
   });
 });

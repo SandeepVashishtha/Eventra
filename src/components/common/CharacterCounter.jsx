@@ -1,17 +1,8 @@
-
-
-const CharacterCounter = ({
-  id,
-  current,
-  max,
-  value,
-  maxLength,
-  warningThreshold = 0.9,
-}) => {
+const CharacterCounter = ({ id, current, max, value, maxLength, warningThreshold = 0.9 }) => {
   // Support both old API (current/max) and new API (value/maxLength)
-  const textValue = value !== undefined ? (value || "") : "";
-  const currentLength = value !== undefined ? textValue.length : (current || 0);
-  const maxLimit = maxLength !== undefined ? maxLength : (max || 0);
+  const textValue = value !== undefined ? value || "" : "";
+  const currentLength = value !== undefined ? textValue.length : current || 0;
+  const maxLimit = maxLength !== undefined ? maxLength : max || 0;
   const ratio = maxLimit > 0 ? currentLength / maxLimit : 0;
 
   const getCounterColor = () => {
@@ -31,11 +22,7 @@ const CharacterCounter = ({
   };
 
   return (
-    <div
-      id={id}
-      className={`text-xs ${getCounterColor()} select-none`}
-      aria-live="polite"
-    >
+    <div id={id} className={`text-xs ${getCounterColor()} select-none`} aria-live="polite">
       <span>
         {currentLength} / {maxLimit} characters
       </span>

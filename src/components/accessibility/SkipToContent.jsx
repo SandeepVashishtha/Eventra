@@ -33,11 +33,7 @@ export default function SkipToContent({ targetId = "main-content" }) {
   };
 
   return (
-    <a
-      href={`#${targetId}`}
-      className="skip-to-content"
-      onClick={handleClick}
-    >
+    <a href={`#${targetId}`} className="skip-to-content" onClick={handleClick}>
       Skip to main content
     </a>
   );

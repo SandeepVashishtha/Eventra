@@ -48,7 +48,7 @@ const inMemoryTokenStore = {
    * @param {string} token
    */
   setToken(token) {
-    if (typeof token !== 'string' || !token) return;
+    if (typeof token !== "string" || !token) return;
     _token = token;
   },
 

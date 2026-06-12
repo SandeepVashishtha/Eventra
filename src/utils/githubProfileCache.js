@@ -78,7 +78,10 @@ export function fetchProfileWithCache(username, fetcher) {
 
   let timeoutId;
   const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(`Fetch timeout for profile: ${username}`)), FETCH_TIMEOUT_MS);
+    timeoutId = setTimeout(
+      () => reject(new Error(`Fetch timeout for profile: ${username}`)),
+      FETCH_TIMEOUT_MS
+    );
   });
 
   const request = Promise.race([
@@ -86,7 +89,7 @@ export function fetchProfileWithCache(username, fetcher) {
       clearTimeout(timeoutId);
       return data;
     }),
-    timeoutPromise
+    timeoutPromise,
   ]).then(
     (data) => {
       setCachedProfile(username, data);

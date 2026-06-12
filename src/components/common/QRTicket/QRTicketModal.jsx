@@ -58,13 +58,13 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
   // Deep Fix 2: Safe Body Scroll Lock (Prevents layout destruction on unmount)
   useEffect(() => {
     if (!isOpen) return;
-    
+
     // Cache the original style before mutating so we don't destroy parent layout rules
     const originalStyle = window.getComputedStyle(document.body).overflow;
     document.body.style.overflow = "hidden";
-    
-    return () => { 
-      document.body.style.overflow = originalStyle; 
+
+    return () => {
+      document.body.style.overflow = originalStyle;
     };
   }, [isOpen]);
 
@@ -75,7 +75,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
     const focusableElements = modalRef.current.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
-    
+
     if (focusableElements.length === 0) return;
 
     const firstElement = focusableElements[0];
@@ -126,7 +126,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
         }
       }
     }
-    
+
     // Fallback to Clipboard API
     if (navigator.clipboard && window.isSecureContext) {
       try {
@@ -174,16 +174,22 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
       aria-modal="true"
       aria-label="Ticket Preview"
     >
-      <div className="flex flex-col items-center gap-5 w-full max-w-sm">
-
+      <div className="flex w-full max-w-sm flex-col items-center gap-5">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="self-end text-white/60 hover:text-white transition-colors text-sm flex items-center gap-1"
+          className="flex items-center gap-1 self-end text-sm text-white/60 transition-colors hover:text-white"
           aria-label="Close ticket"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 6 6 18M6 6l12 12"/>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M18 6 6 18M6 6l12 12" />
           </svg>
           Close
         </button>
@@ -194,14 +200,15 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-3 w-full max-w-[340px]">
+        <div className="flex w-full max-w-[340px] gap-3">
           {/* Download PNG */}
           <button
             onClick={downloadPNG}
             disabled={downloading}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
             style={{ background: "#7c3aed" }}
-           aria-label="Save ticket as PNG">
+            aria-label="Save ticket as PNG"
+          >
             <DownloadIcon />
             {downloading ? "Saving…" : "Save PNG"}
           </button>
@@ -210,13 +217,14 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
           <button
             onClick={downloadPDF}
             disabled={downloading}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all disabled:opacity-50"
             style={{
               background: "rgba(255,255,255,0.08)",
               color: "white",
               border: "1px solid rgba(255,255,255,0.12)",
             }}
-           aria-label="Download ticket as PDF">
+            aria-label="Download ticket as PDF"
+          >
             <FileIcon />
             {downloading ? "…" : "PDF"}
           </button>
@@ -224,19 +232,20 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
           {/* Share */}
           <button
             onClick={handleShare}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all"
             style={{
               background: "rgba(255,255,255,0.08)",
               color: "white",
               border: "1px solid rgba(255,255,255,0.12)",
             }}
-           aria-label="Share ticket">
+            aria-label="Share ticket"
+          >
             <ShareIcon />
             Share
           </button>
         </div>
 
-        <p className="text-white/30 text-xs text-center">
+        <p className="text-center text-xs text-white/30">
           Scan QR at the venue entrance for check-in
         </p>
       </div>
@@ -248,25 +257,51 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
 
 function DownloadIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-      <path d="M12 3v13M7 11l5 5 5-5"/><path d="M3 20h18"/>
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+    >
+      <path d="M12 3v13M7 11l5 5 5-5" />
+      <path d="M3 20h18" />
     </svg>
   );
 }
 
 function FileIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/>
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14,2 14,8 20,8" />
     </svg>
   );
 }
 
 function ShareIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+    >
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
     </svg>
   );
 }

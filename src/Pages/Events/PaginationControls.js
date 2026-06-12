@@ -1,8 +1,5 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
-import {
-  EVENTS_PER_PAGE_OPTIONS,
-  getVisiblePaginationPages,
-} from "./eventPaginationUtils.mjs";
+import { EVENTS_PER_PAGE_OPTIONS, getVisiblePaginationPages } from "./eventPaginationUtils.mjs";
 
 const PageButton = ({ children, isActive = false, onClick, ariaLabel }) => {
   return (
@@ -11,8 +8,8 @@ const PageButton = ({ children, isActive = false, onClick, ariaLabel }) => {
       onClick={onClick}
       className={`h-10 min-w-10 rounded-lg px-3 text-sm font-medium transition ${
         isActive
-          ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/30 scale-105"
-          : "border border-gray-200 bg-white text-gray-700 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+          ? "scale-105 bg-indigo-600 text-white shadow-md shadow-indigo-500/30"
+          : "border border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
       }`}
       aria-current={isActive ? "page" : undefined}
       aria-label={ariaLabel}
@@ -23,9 +20,7 @@ const PageButton = ({ children, isActive = false, onClick, ariaLabel }) => {
 };
 
 const PageGap = () => {
-  return (
-    <span className="px-1 text-sm text-gray-500 dark:text-gray-400">...</span>
-  );
+  return <span className="px-1 text-sm text-gray-500 dark:text-gray-400">...</span>;
 };
 
 const ArrowButton = ({ direction, disabled, onClick }) => {
@@ -36,7 +31,7 @@ const ArrowButton = ({ direction, disabled, onClick }) => {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500"
       aria-label={`${direction === "previous" ? "Previous" : "Next"} page`}
     >
       <Icon size={18} />
@@ -55,7 +50,7 @@ const PageSizeSelector = ({ eventsPerPage, onPageSizeChange }) => {
         id="events-per-page"
         value={eventsPerPage}
         onChange={(event) => onPageSizeChange(Number(event.target.value))}
-        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
       >
         {EVENTS_PER_PAGE_OPTIONS.map((option) => (
           <option key={option} value={option}>
@@ -68,8 +63,10 @@ const PageSizeSelector = ({ eventsPerPage, onPageSizeChange }) => {
 };
 
 const PageNumberControls = ({ currentPage, totalPages, onPageChange }) => {
-  const { firstVisiblePage, lastVisiblePage, pages } =
-    getVisiblePaginationPages(currentPage, totalPages);
+  const { firstVisiblePage, lastVisiblePage, pages } = getVisiblePaginationPages(
+    currentPage,
+    totalPages
+  );
 
   return (
     <>
@@ -124,23 +121,20 @@ const PaginationControls = ({
   const endEvent = Math.min(currentPage * eventsPerPage, totalEvents);
 
   return (
-    <div className="mt-10 flex flex-col gap-4 border-t border-gray-200 pt-6 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mt-10 flex flex-col gap-4 border-t border-gray-200 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-gray-700">
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Showing {startEvent}–{endEvent} of {totalEvents} events
       </p>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <PageSizeSelector
-          eventsPerPage={eventsPerPage}
-          onPageSizeChange={onPageSizeChange}
-        />
+        <PageSizeSelector eventsPerPage={eventsPerPage} onPageSizeChange={onPageSizeChange} />
 
         <nav className="flex items-center gap-2" aria-label="Event pagination">
           <button
             type="button"
             onClick={() => onPageChange(1)}
             disabled={currentPage === 1}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500"
             aria-label="First page"
           >
             <ChevronsLeft size={18} />
@@ -168,7 +162,7 @@ const PaginationControls = ({
             type="button"
             onClick={() => onPageChange(totalPages)}
             disabled={currentPage === totalPages}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500"
             aria-label="Last page"
           >
             <ChevronsRight size={18} />

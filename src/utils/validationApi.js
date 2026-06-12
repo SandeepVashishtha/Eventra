@@ -14,11 +14,7 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * @param {Object} [extra={}] - Extra metadata such as API data, status, or error details.
  * @returns {{isValid: boolean, message: string, isLoading: boolean}} Normalized response.
  */
-export const createValidationResponse = (
-  isValid,
-  message = "",
-  extra = {},
-) => ({
+export const createValidationResponse = (isValid, message = "", extra = {}) => ({
   isValid: Boolean(isValid),
   message: isValid ? "" : message,
   isLoading: false,
@@ -52,11 +48,7 @@ export const validationLoadingResponse = (message = "Validating...") => ({
  */
 export const normalizeValidationApiResponse = (
   data,
-  {
-    validMessage = "",
-    invalidMessage = "Validation failed",
-    availabilityField = "available",
-  } = {},
+  { validMessage = "", invalidMessage = "Validation failed", availabilityField = "available" } = {}
 ) => {
   if (typeof data === "boolean") {
     return createValidationResponse(data, data ? validMessage : invalidMessage, {
@@ -78,7 +70,7 @@ export const normalizeValidationApiResponse = (
   return createValidationResponse(
     isValid,
     data?.message || (isValid ? validMessage : invalidMessage),
-    { data },
+    { data }
   );
 };
 
@@ -127,7 +119,7 @@ export const requestValidation = async (endpoint, options = {}) => {
       const config = { headers, signal: controller.signal };
       let response;
       const uppercaseMethod = method.toUpperCase();
-      
+
       if (uppercaseMethod === "GET") {
         response = await apiUtils.get(endpoint, config);
       } else if (uppercaseMethod === "POST") {
@@ -165,11 +157,7 @@ export const requestValidation = async (endpoint, options = {}) => {
 
       // If the API explicitly returned a validation failure (like 400, 409)
       if (status === 401 || status === 403) {
-        return createValidationResponse(
-          false,
-          networkMessage,
-          { status, data }
-        );
+        return createValidationResponse(false, networkMessage, { status, data });
       }
 
       // Retry on network errors, timeouts, or 5xx server errors
@@ -188,7 +176,7 @@ export const requestValidation = async (endpoint, options = {}) => {
       error: lastError,
       isTimeout: timedOut,
       isNetworkError: !timedOut,
-    },
+    }
   );
 };
 
@@ -200,14 +188,11 @@ export const requestValidation = async (endpoint, options = {}) => {
  * @returns {Promise<{isValid: boolean, message: string, isLoading: boolean}>}
  */
 export const checkEmailAvailability = (email, options = {}) =>
-  requestValidation(
-    options.endpoint || `/api/validate/email/${encodeURIComponent(email)}`,
-    {
-      invalidMessage: "Email is already registered",
-      validMessage: "",
-      ...options,
-    },
-  );
+  requestValidation(options.endpoint || `/api/validate/email/${encodeURIComponent(email)}`, {
+    invalidMessage: "Email is already registered",
+    validMessage: "",
+    ...options,
+  });
 
 /**
  * Checks whether a username is available using the configured API endpoint.
@@ -217,15 +202,11 @@ export const checkEmailAvailability = (email, options = {}) =>
  * @returns {Promise<{isValid: boolean, message: string, isLoading: boolean}>}
  */
 export const checkUsernameAvailability = (username, options = {}) =>
-  requestValidation(
-    options.endpoint ||
-      `/api/validate/username/${encodeURIComponent(username)}`,
-    {
-      invalidMessage: "Username is already taken",
-      validMessage: "",
-      ...options,
-    },
-  );
+  requestValidation(options.endpoint || `/api/validate/username/${encodeURIComponent(username)}`, {
+    invalidMessage: "Username is already taken",
+    validMessage: "",
+    ...options,
+  });
 
 /**
  * Validates a phone number through the configured API endpoint.

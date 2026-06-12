@@ -1,4 +1,3 @@
-
 import { render, act } from "@testing-library/react";
 import TicketScanner from "./TicketScanner";
 
@@ -29,9 +28,7 @@ jest.mock("html5-qrcode", () => {
     start = jest.fn().mockResolvedValue();
     stop = mockStop;
 
-    static getCameras = jest.fn().mockResolvedValue([
-      { id: "cam1", label: "Back Camera" },
-    ]);
+    static getCameras = jest.fn().mockResolvedValue([{ id: "cam1", label: "Back Camera" }]);
   }
   return { Html5Qrcode: MockHtml5Qrcode };
 });
@@ -72,11 +69,11 @@ describe("TicketScanner Component", () => {
     // If the fix is successful, we won't see the "Can't perform a React state update on an unmounted component"
     // warning in the console because isMountedRef prevents setScannerStatus from being called.
     // We expect the console.error NOT to have been called with the React state update warning.
-    const consoleCalls = console.error.mock.calls.map(call => call[0]);
-    const hasUnmountedWarning = consoleCalls.some(msg => 
-      typeof msg === "string" && msg.includes("unmounted component")
+    const consoleCalls = console.error.mock.calls.map((call) => call[0]);
+    const hasUnmountedWarning = consoleCalls.some(
+      (msg) => typeof msg === "string" && msg.includes("unmounted component")
     );
-    
+
     expect(hasUnmountedWarning).toBe(false);
   });
 });

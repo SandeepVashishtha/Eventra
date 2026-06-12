@@ -26,7 +26,11 @@ import { marked } from "marked";
 import ShareModal from "../../components/common/ShareModal";
 import SocialShareButtons from "../../components/common/SocialShareButtons";
 import { generateEventSharingData } from "../../utils/shareUtils";
-import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
+import {
+  downloadICSFile,
+  generateGoogleCalendarLink,
+  generateOutlookLink,
+} from "../../utils/calendarExporter";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
@@ -166,13 +170,9 @@ const EventDetails = () => {
         address: typeof locationData === "string" ? "" : locationData.address || "",
         coordinates: {
           latitude:
-            typeof locationData === "string"
-              ? ""
-              : locationData.coordinates?.latitude ?? "",
+            typeof locationData === "string" ? "" : (locationData.coordinates?.latitude ?? ""),
           longitude:
-            typeof locationData === "string"
-              ? ""
-              : locationData.coordinates?.longitude ?? "",
+            typeof locationData === "string" ? "" : (locationData.coordinates?.longitude ?? ""),
         },
       },
       isVirtual: Boolean(sourceEvent.virtualLink),
@@ -183,25 +183,23 @@ const EventDetails = () => {
       registrationStart: sourceEvent.registrationStart
         ? parseISODate(sourceEvent.registrationStart)
         : "",
-      registrationEnd: sourceEvent.registrationEnd
-        ? parseISODate(sourceEvent.registrationEnd)
-        : "",
+      registrationEnd: sourceEvent.registrationEnd ? parseISODate(sourceEvent.registrationEnd) : "",
       tags: Array.isArray(sourceEvent.tags) ? sourceEvent.tags : [],
       ticketTiers: Array.isArray(sourceEvent.ticketTiers)
         ? sourceEvent.ticketTiers.map((tier) => ({
-          name: tier.name || "",
-          price: tier.price ?? 0,
-          capacity: tier.capacity ?? "",
-          description: tier.description || "",
-        }))
+            name: tier.name || "",
+            price: tier.price ?? 0,
+            capacity: tier.capacity ?? "",
+            description: tier.description || "",
+          }))
         : [
-          {
-            name: "General Admission",
-            price: 0,
-            capacity: "",
-            description: "Standard event access",
-          },
-        ],
+            {
+              name: "General Admission",
+              price: 0,
+              capacity: "",
+              description: "Standard event access",
+            },
+          ],
       banner: null,
       bannerPreview: sourceEvent.image || sourceEvent.banner || "",
     };
@@ -242,11 +240,11 @@ const EventDetails = () => {
           textArea.remove();
         }
       }
-           toast.success("Event link copied to clipboard!");   
-           setLinkCopied(true);                                
-           setTimeout(() => setLinkCopied(false), 2000);
+      toast.success("Event link copied to clipboard!");
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
     } catch (err) {
-       toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
+      toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
 
@@ -255,7 +253,9 @@ const EventDetails = () => {
 
   // Keyboard shortcuts for Event Detail page
   useKeyboardShortcuts({
-    r: () => { if (event && !isEventRegistrationClosed(event)) navigate(`/events/${event.id}/register`); },
+    r: () => {
+      if (event && !isEventRegistrationClosed(event)) navigate(`/events/${event.id}/register`);
+    },
     c: handleCopy,
     s: () => setShowShareModal(true),
     p: handlePrint,
@@ -264,7 +264,7 @@ const EventDetails = () => {
 
   if (fetchError || !event) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100">
+      <div className="flex min-h-screen items-center justify-center bg-white text-gray-900 dark:bg-slate-950 dark:text-gray-100">
         <div className="text-center">
           <h1 className="text-4xl font-bold">Event Not Found</h1>
           <p className="mt-4 text-gray-600 dark:text-gray-300">
@@ -273,11 +273,14 @@ const EventDetails = () => {
           <div className="mt-6 flex items-center justify-center gap-3">
             <button
               onClick={loadEvent}
-              className="inline-flex rounded-full bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-700 transition"
+              className="inline-flex rounded-full bg-indigo-600 px-6 py-3 font-semibold text-white transition hover:bg-indigo-700"
             >
               Try Again
             </button>
-            <Link to="/events" className="inline-flex rounded-full border border-gray-300 px-6 py-3 font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 transition">
+            <Link
+              to="/events"
+              className="inline-flex rounded-full border border-gray-300 px-6 py-3 font-semibold transition hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+            >
               Browse Events
             </Link>
           </div>
@@ -300,54 +303,68 @@ const EventDetails = () => {
         <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 
-      <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-white px-4 py-16 text-gray-900 sm:px-6 lg:px-8 dark:bg-slate-950 dark:text-gray-100">
         <div className="mx-auto max-w-6xl space-y-8">
-
           {/* Header */}
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="inline-flex rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-200 px-4 py-1 text-sm font-semibold uppercase tracking-[0.2em]">
+              <p className="inline-flex rounded-full bg-indigo-100 px-4 py-1 text-sm font-semibold tracking-[0.2em] text-indigo-700 uppercase dark:bg-indigo-900/30 dark:text-indigo-200">
                 {event.type}
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight break-words" title={event.title}>{event.title}</h1>
+                <h1
+                  className="text-4xl font-extrabold tracking-tight break-words sm:text-5xl"
+                  title={event.title}
+                >
+                  {event.title}
+                </h1>
                 <button
                   onClick={handleCopy}
-                  className={`p-2 rounded-full transition-colors ${linkCopied 
-                    ? "text-green-600 bg-green-50 dark:bg-green-900/30" 
-                    : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                  className={`rounded-full p-2 transition-colors ${
+                    linkCopied
+                      ? "bg-green-50 text-green-600 dark:bg-green-900/30"
+                      : "text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30"
                   }`}
-               aria-label={linkCopied ? "Link copied!" : "Copy event link"}
-              title={linkCopied ? "Copied!" : "Copy link"}
-             >
-                {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
+                  aria-label={linkCopied ? "Link copied!" : "Copy event link"}
+                  title={linkCopied ? "Copied!" : "Copy link"}
+                >
+                  {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
                 </button>
               </div>
               <div
-                className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
+                className="prose prose-indigo dark:prose-invert mt-4 max-w-2xl text-gray-600 dark:text-gray-300"
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeMarkdown(event.description, marked.parse),
+                }}
               />
             </div>
 
             <div className="flex flex-wrap gap-3">
               {isRegistrationClosed ? (
                 <>
-                  <span className="inline-flex items-center justify-center rounded-full bg-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 shadow-sm cursor-not-allowed dark:bg-gray-800 dark:text-gray-300">
+                  <span className="inline-flex cursor-not-allowed items-center justify-center rounded-full bg-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 shadow-sm dark:bg-gray-800 dark:text-gray-300">
                     Event Ended
                   </span>
                   {event.status === "past" && (
-                    <CertificateDownload eventName={event.title} eventDate={event.date} eventType={event.type} />
+                    <CertificateDownload
+                      eventName={event.title}
+                      eventDate={event.date}
+                      eventType={event.type}
+                    />
                   )}
                 </>
               ) : (
-                <Link to={`/events/${event.id}/register`} className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition">
+                <Link
+                  to={`/events/${event.id}/register`}
+                  className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow transition hover:bg-slate-800"
+                >
                   Register Now
                 </Link>
               )}
 
               <button
                 onClick={() => setShowShareModal(true)}
-                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition"
+                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow transition hover:bg-indigo-700"
               >
                 Share Event
               </button>
@@ -355,7 +372,7 @@ const EventDetails = () => {
               {(isAdmin() || isOrganizer()) && event.status !== "cancelled" && (
                 <button
                   onClick={() => setShowCancelModal(true)}
-                  className="inline-flex items-center justify-center rounded-full border border-red-500 px-6 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                  className="inline-flex items-center justify-center rounded-full border border-red-500 px-6 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
                   Cancel Event
                 </button>
@@ -371,33 +388,36 @@ const EventDetails = () => {
               <button
                 onClick={handlePrint}
                 disabled={isPrinting}
-                className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                 aria-label="Print or save as PDF"
               >
                 {isPrinting ? "Preparing..." : "≡ƒû¿∩╕Å Print / Save as PDF"}
               </button>
 
               {isOrganizer && (
-                <div className="flex flex-wrap gap-3 items-center">
+                <div className="flex flex-wrap items-center gap-3">
                   <button
                     onClick={handleDuplicateEvent}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                     aria-label="Duplicate event"
                   >
                     <CalendarPlus size={18} /> Duplicate Event
                   </button>
-                  <div className="relative print-hide">
+                  <div className="print-hide relative">
                     <button
                       onClick={() => setShowExportDropdown(!showExportDropdown)}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                       aria-label="Export registrant data"
                     >
                       ≡ƒôÑ Export Registrants
                     </button>
                     {showExportDropdown && (
                       <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
-                        <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg py-1.5 z-20 animate-fadeIn text-left">
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setShowExportDropdown(false)}
+                        />
+                        <div className="animate-fadeIn absolute right-0 z-20 mt-2 w-40 rounded-2xl border border-gray-200 bg-white py-1.5 text-left shadow-lg dark:border-gray-800 dark:bg-gray-900">
                           <button
                             onClick={async () => {
                               try {
@@ -432,7 +452,7 @@ const EventDetails = () => {
                               }
                             }}
                             disabled={exportingRegistrants}
-                            className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50"
+                            className="w-full px-4 py-2 text-left text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-800"
                           >
                             Export as CSV
                           </button>
@@ -470,7 +490,7 @@ const EventDetails = () => {
                               }
                             }}
                             disabled={exportingRegistrants}
-                            className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50"
+                            className="w-full px-4 py-2 text-left text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-800"
                           >
                             Export as JSON
                           </button>
@@ -481,7 +501,10 @@ const EventDetails = () => {
                 </div>
               )}
 
-              <Link to="/events" className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800">
+              <Link
+                to="/events"
+                className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+              >
                 Back to Events
               </Link>
             </div>
@@ -492,7 +515,7 @@ const EventDetails = () => {
           </section>
 
           {/* Main Grid */}
-          <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] items-start">
+          <div className="grid items-start gap-8 lg:grid-cols-[1.25fr_0.75fr]">
             {/* Left Column */}
             <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
               <LazyImage
@@ -502,7 +525,7 @@ const EventDetails = () => {
                 height={384}
                 loading="eager"
                 useWebP
-                className="w-full rounded-3xl object-cover shadow-lg h-96"
+                className="h-96 w-full rounded-3xl object-cover shadow-lg"
               />
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -547,65 +570,99 @@ const EventDetails = () => {
 
                 {/* Event Countdown */}
                 <div className="sm:col-span-2">
-                  <CountdownTimer
-                    date={event.date}
-                    time={event.time}
-                  />
+                  <CountdownTimer date={event.date} time={event.time} />
                 </div>
               </div>
 
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Event Details</h2>
-                <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p><span className="font-semibold">Attendees:</span> {event.attendees}/{event.maxAttendees}</p>
+                    <p>
+                      <span className="font-semibold">Attendees:</span> {event.attendees}/
+                      {event.maxAttendees}
+                    </p>
                     {/* "Almost Full!" urgency badge — shown when ≥ 80% capacity and not yet sold out (#7665) */}
                     {event.maxAttendees > 0 &&
                       event.attendees / event.maxAttendees >= 0.8 &&
                       event.attendees < event.maxAttendees && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/40 dark:text-red-300 dark:ring-red-500/30">
-                        🔥 Almost Full!
-                      </span>
-                    )}
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 ring-1 ring-red-600/20 ring-inset dark:bg-red-900/40 dark:text-red-300 dark:ring-red-500/30">
+                          🔥 Almost Full!
+                        </span>
+                      )}
                   </div>
-                  <p><span className="font-semibold">Type:</span> {event.type}</p>
-                  <p><span className="font-semibold">Tags:</span> {(event.tags ?? []).join(", ")}</p>
+                  <p>
+                    <span className="font-semibold">Type:</span> {event.type}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Tags:</span> {(event.tags ?? []).join(", ")}
+                  </p>
                 </div>
               </div>
 
               {/* Share & Add to Calendar */}
-              <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800 space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Share & Add to Calendar</h3>
+              <div className="space-y-4 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
+                <h3 className="text-sm font-semibold tracking-[0.16em] text-gray-500 uppercase dark:text-gray-400">
+                  Share & Add to Calendar
+                </h3>
                 <SocialShareButtons event={event} layout="grid" />
 
                 <div className="flex flex-col gap-2">
-                  <button onClick={() => { downloadICSFile(event); toast.success("Calendar invite downloaded!"); }} className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200" aria-label="Download .ics calendar invite">
+                  <button
+                    onClick={() => {
+                      downloadICSFile(event);
+                      toast.success("Calendar invite downloaded!");
+                    }}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 shadow-sm transition-all duration-200 hover:border-green-300 hover:bg-green-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-green-700 dark:hover:bg-green-900/20"
+                    aria-label="Download .ics calendar invite"
+                  >
                     <CalendarPlus size={15} className="text-green-500" /> Download .ics Invite
                   </button>
                   {generateGoogleCalendarLink(event) && (
-                    <a href={generateGoogleCalendarLink(event)} target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200" aria-label="Add to Google Calendar">
+                    <a
+                      href={generateGoogleCalendarLink(event)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 shadow-sm transition-all duration-200 hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-blue-700 dark:hover:bg-blue-900/20"
+                      aria-label="Add to Google Calendar"
+                    >
                       <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                        <path fill="#4285F4" d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10z" />
+                        <path
+                          fill="#4285F4"
+                          d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10z"
+                        />
                         <path fill="#fff" d="M13 7h-2v6l5.25 3.15.75-1.23-4-2.37z" />
-                      </svg> Add to Google Calendar
+                      </svg>{" "}
+                      Add to Google Calendar
                     </a>
                   )}
                   {generateOutlookLink(event) && (
-                    <a href={generateOutlookLink(event)} target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200" aria-label="Add to Outlook Calendar">
+                    <a
+                      href={generateOutlookLink(event)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 shadow-sm transition-all duration-200 hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-blue-700 dark:hover:bg-blue-900/20"
+                      aria-label="Add to Outlook Calendar"
+                    >
                       <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
                         <path fill="#0078D4" d="M2 6l10-4 10 4v12l-10 4L2 18z" />
                         <path fill="#fff" d="M12 4L4 7v10l8 3 8-3V7z" />
-                      </svg> Add to Outlook
+                      </svg>{" "}
+                      Add to Outlook
                     </a>
                   )}
                 </div>
               </div>
 
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
+                <h3 className="text-sm font-semibold tracking-[0.16em] text-gray-500 uppercase dark:text-gray-400">
+                  Summary
+                </h3>
                 <div
-                  className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
+                  className="prose prose-indigo dark:prose-invert mt-3 text-sm leading-6 text-gray-700 dark:text-gray-300"
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeMarkdown(event.description, marked.parse),
+                  }}
                 />
               </div>
             </div>
@@ -623,9 +680,7 @@ const EventDetails = () => {
           </div>
         </div>
 
-        {showShareModal && (
-          <ShareModal event={event} onClose={() => setShowShareModal(false)} />
-        )}
+        {showShareModal && <ShareModal event={event} onClose={() => setShowShareModal(false)} />}
       </div>
     </>
   );

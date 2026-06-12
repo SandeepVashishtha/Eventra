@@ -3,19 +3,24 @@
  * Validates file type, size, and extension before upload.
  */
 
-const ALLOWED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-];
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 const ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
 const DANGEROUS_EXTENSIONS = [
-  ".exe", ".bat", ".cmd", ".sh", ".ps1",
-  ".html", ".htm", ".svg", ".xml",
-  ".js", ".vbs", ".wsf", ".php",
+  ".exe",
+  ".bat",
+  ".cmd",
+  ".sh",
+  ".ps1",
+  ".html",
+  ".htm",
+  ".svg",
+  ".xml",
+  ".js",
+  ".vbs",
+  ".wsf",
+  ".php",
 ];
 
 const DEFAULT_MAX_SIZE_MB = 5;

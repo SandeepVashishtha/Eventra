@@ -25,10 +25,10 @@ const requestBrowserNotificationPermission = async () => {
 const ReminderControls = ({ event, canSetReminder, compact = false }) => {
   const [eventReminders, setEventReminders] = useState(() => getEventReminders(event.id));
   const eventHasPassed = useMemo(() => isPastEvent(event), [event]);
-  
+
   // 🔥 FIX: Track processing state to prevent spam-clicks during async browser prompts
   const [processingTiming, setProcessingTiming] = useState(null);
-  
+
   // 🔥 FIX: Track mounted state to prevent unmount memory leaks
   const isMounted = useRef(true);
 
@@ -148,7 +148,7 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
 
   return (
     <div className={compact ? "space-y-2" : "space-y-3"}>
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.14em] text-gray-500 uppercase dark:text-gray-400">
         {eventReminders.length ? (
           <Bell className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />
         ) : (

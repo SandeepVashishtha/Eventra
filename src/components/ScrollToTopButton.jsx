@@ -8,7 +8,7 @@ export default function ScrollToTopButton() {
   useEffect(() => {
     // Listen for chatbot state changes
     const handleChatbotState = () => {
-      setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
+      setIsChatbotOpen(document.querySelector("[data-chatbot-open]") !== null);
     };
 
     // Check initially and set up observer

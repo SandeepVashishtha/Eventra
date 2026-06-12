@@ -202,7 +202,9 @@ export const validateInvitationCode = async (code) => {
   if (!code) return true;
 
   try {
-    const response = await apiUtils.get(`/api/validate/invitation-code/${encodeURIComponent(code)}`);
+    const response = await apiUtils.get(
+      `/api/validate/invitation-code/${encodeURIComponent(code)}`
+    );
 
     if (!response.ok) {
       throw new Error("Failed to validate invitation code");

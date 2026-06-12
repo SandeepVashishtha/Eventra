@@ -108,7 +108,9 @@ const useEventRegistration = (eventIdParam) => {
 
   // React Compiler automatically memoizes these, no need for useMemo
   const isEventFull = event ? event.attendees >= event.maxAttendees : false;
-  const isPastEvent = event ? (getEventStatus(event) === "past" || getEventStatus(event) === "ended") : false;
+  const isPastEvent = event
+    ? getEventStatus(event) === "past" || getEventStatus(event) === "ended"
+    : false;
 
   const validationRules = {
     fullName: validate.fullName,
@@ -139,20 +141,23 @@ const useEventRegistration = (eventIdParam) => {
     { debounceMs: 300 }
   );
 
-  const handleRegistrationChange = useCallback((event) => {
-    if (event.target.name !== "additionalInfo") {
-      handleFormChange(event);
-      return;
-    }
+  const handleRegistrationChange = useCallback(
+    (event) => {
+      if (event.target.name !== "additionalInfo") {
+        handleFormChange(event);
+        return;
+      }
 
-    handleFormChange({
-      ...event,
-      target: {
-        ...event.target,
-        value: event.target.value.slice(0, MAX_NOTES_CHARS),
-      },
-    });
-  }, [handleFormChange]);
+      handleFormChange({
+        ...event,
+        target: {
+          ...event.target,
+          value: event.target.value.slice(0, MAX_NOTES_CHARS),
+        },
+      });
+    },
+    [handleFormChange]
+  );
 
   // Load event data from backend API
   useEffect(() => {
@@ -404,45 +409,71 @@ const useEventRegistration = (eventIdParam) => {
       setSubmitting(false);
     }
     // Fixed: Added isEventFull to dependency array
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, event, formData, isAuthenticated, user, token, navigate, registrationPath, addRegistration, clearSession, isEventFull]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    eventId,
+    event,
+    formData,
+    isAuthenticated,
+    user,
+    token,
+    navigate,
+    registrationPath,
+    addRegistration,
+    clearSession,
+    isEventFull,
+  ]);
 
   // Handle form submission
-  const handleSubmit = useCallback(async (e) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
 
-    if (!isAuthenticated() || !user?.id) {
-      toast.error("Please log in to register for events.");
-      navigate("/login", {
-        state: { from: registrationPath },
-      });
-      return;
-    }
+      if (!isAuthenticated() || !user?.id) {
+        toast.error("Please log in to register for events.");
+        navigate("/login", {
+          state: { from: registrationPath },
+        });
+        return;
+      }
 
-    if (!validateAll()) {
-      toast.error("Please fill in all required fields correctly");
-      return;
-    }
+      if (!validateAll()) {
+        toast.error("Please fill in all required fields correctly");
+        return;
+      }
 
-    if (isSubmittingRef.current) {
-      toast.error("Registration already in progress. Please wait.");
-      return;
-    }
+      if (isSubmittingRef.current) {
+        toast.error("Registration already in progress. Please wait.");
+        return;
+      }
 
-    if (registrationLocks.has(eventId)) {
-      toast.error("Another registration is in progress for this event. Please wait.");
-      return;
-    }
+      if (registrationLocks.has(eventId)) {
+        toast.error("Another registration is in progress for this event. Please wait.");
+        return;
+      }
 
-    const isFull = await checkEventCapacity(eventId, event);
-    if (isFull) {
-      toast.info("This event is full. You will be added to the waitlist.");
-    }
+      const isFull = await checkEventCapacity(eventId, event);
+      if (isFull) {
+        toast.info("This event is full. You will be added to the waitlist.");
+      }
 
       if (await checkAndHandleConflicts()) return;
 
-    await proceedWithRegistration();
-  }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
+      await proceedWithRegistration();
+    },
+    [
+      isAuthenticated,
+      user,
+      navigate,
+      registrationPath,
+      validateAll,
+      eventId,
+      event,
+      checkEventCapacity,
+      checkAndHandleConflicts,
+      proceedWithRegistration,
+    ]
+  );
 
   // Handle conflict modal actions
   const handleConflictCancel = useCallback(() => {
@@ -454,11 +485,14 @@ const useEventRegistration = (eventIdParam) => {
     proceedWithRegistration();
   }, [proceedWithRegistration]);
 
-  const handleSelectAlternative = useCallback((alternativeEvent) => {
-    setShowConflictModal(false);
-    navigate(`/events/${alternativeEvent.id}/register`);
-    toast.info(`Redirecting to ${alternativeEvent.title}`);
-  }, [navigate]);
+  const handleSelectAlternative = useCallback(
+    (alternativeEvent) => {
+      setShowConflictModal(false);
+      navigate(`/events/${alternativeEvent.id}/register`);
+      toast.info(`Redirecting to ${alternativeEvent.title}`);
+    },
+    [navigate]
+  );
 
   return {
     event,

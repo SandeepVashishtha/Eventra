@@ -1,4 +1,3 @@
- 
 /**
  * src/utils/p2pFileTransfer.js
  *
@@ -73,10 +72,10 @@ export async function isFileCached(fileId) {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
       const index = store.index("fileId");
-      
+
       const countRequest = index.count(IDBKeyRange.only(fileId));
       const getRequest = index.get(IDBKeyRange.only(fileId));
-      
+
       let count = 0;
       let firstChunk = null;
       let completedCount = 0;
@@ -135,7 +134,7 @@ export async function getCachedFile(fileId) {
       const index = store.index("fileId");
 
       const request = index.getAll(IDBKeyRange.only(fileId));
-      
+
       transaction.onerror = (err) => {
         logger.error("getCachedFile transaction error:", err);
         resolve(null);
@@ -174,7 +173,7 @@ export async function saveChunkToCache(fileId, fileName, chunkIndex, totalChunks
       const transaction = db.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
       const chunkId = `${fileId}_${chunkIndex}`;
-      
+
       const record = {
         chunkId,
         fileId,
@@ -182,9 +181,9 @@ export async function saveChunkToCache(fileId, fileName, chunkIndex, totalChunks
         chunkIndex,
         totalChunks,
         data: dataStr,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
-      
+
       const request = store.put(record);
       request.onsuccess = () => resolve(true);
       request.onerror = (e) => reject(e);
@@ -201,9 +200,9 @@ export async function simulateServerDownload(fileId, fileName, onProgress) {
   const steps = 10;
   const totalChunks = 5;
   const dummyChunkData = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  
+
   for (let i = 1; i <= steps; i++) {
-    await new Promise(r => setTimeout(r, 250)); // Simulating transfer speed
+    await new Promise((r) => setTimeout(r, 250)); // Simulating transfer speed
     if (onProgress) onProgress(Math.round((i / steps) * 100));
   }
 
@@ -212,7 +211,7 @@ export async function simulateServerDownload(fileId, fileName, onProgress) {
     const chunkStr = Array(1000).fill(dummyChunkData).join("") + `[CHUNK_${c}]`;
     await saveChunkToCache(fileId, fileName, c, totalChunks, chunkStr);
   }
-  
+
   return true;
 }
 
@@ -221,7 +220,8 @@ const peerId = `peer_${Math.random().toString(36).substring(2, 7)}`;
 let signalingChannel = null;
 
 const isBrowser = typeof window !== "undefined";
-const webrtcAvailable = isBrowser &&
+const webrtcAvailable =
+  isBrowser &&
   typeof RTCPeerConnection !== "undefined" &&
   typeof RTCSessionDescription !== "undefined" &&
   typeof RTCIceCandidate !== "undefined";
@@ -262,7 +262,7 @@ export class P2PFileTransferCoordinator {
         progress,
         speed,
         peer,
-        count
+        count,
       });
     }
   }
@@ -285,7 +285,7 @@ export class P2PFileTransferCoordinator {
               type: "P2P_AVAILABLE",
               fileId: this.fileId,
               from: peerId,
-              to: msg.from
+              to: msg.from,
             });
           }
           break;
@@ -321,7 +321,7 @@ export class P2PFileTransferCoordinator {
             }
           }
           break;
-        
+
         default:
           break;
       }
@@ -346,7 +346,7 @@ export class P2PFileTransferCoordinator {
     this.bc.postMessage({
       type: "P2P_QUERY",
       fileId: this.fileId,
-      from: peerId
+      from: peerId,
     });
 
     // We wait 2.5 seconds to discover nearby peers. If none answer, we fail and trigger fallback.
@@ -397,10 +397,10 @@ export class P2PFileTransferCoordinator {
     }
     this.isInitiator = true;
     this.updateState("connecting", 0, "-", targetPeerId, 1);
-    
+
     this.pc = new RTCPeerConnection();
     this.queuedRemoteCandidates = [];
-    
+
     // Create data channel
     this.channel = this.pc.createDataChannel("file-transfer");
     this.setupDataChannel();
@@ -412,7 +412,7 @@ export class P2PFileTransferCoordinator {
           fileId: this.fileId,
           from: peerId,
           to: targetPeerId,
-          candidate: e.candidate
+          candidate: e.candidate,
         });
       }
     };
@@ -425,7 +425,7 @@ export class P2PFileTransferCoordinator {
       fileId: this.fileId,
       from: peerId,
       to: targetPeerId,
-      offer: offer
+      offer: offer,
     });
   }
 
@@ -453,7 +453,7 @@ export class P2PFileTransferCoordinator {
           fileId: this.fileId,
           from: peerId,
           to: senderId,
-          candidate: e.candidate
+          candidate: e.candidate,
         });
       }
     };
@@ -468,7 +468,7 @@ export class P2PFileTransferCoordinator {
       fileId: this.fileId,
       from: peerId,
       to: senderId,
-      answer: answer
+      answer: answer,
     });
   }
 
@@ -522,11 +522,13 @@ export class P2PFileTransferCoordinator {
       }
 
       const chunk = fileChunks[index];
-      channel.send(JSON.stringify({
-        chunkIndex: chunk.chunkIndex,
-        totalChunks: total,
-        data: chunk.data
-      }));
+      channel.send(
+        JSON.stringify({
+          chunkIndex: chunk.chunkIndex,
+          totalChunks: total,
+          data: chunk.data,
+        })
+      );
     }
   }
 
@@ -536,7 +538,7 @@ export class P2PFileTransferCoordinator {
 
     this.channel.onopen = async () => {
       this.updateState("transferring", 0, "15.4 MB/s");
-      
+
       // If we already have the file cached, we act as the sender!
       if (!this.isInitiator) {
         const fileChunks = await getCachedFile(this.fileId);
@@ -545,79 +547,71 @@ export class P2PFileTransferCoordinator {
         }
       }
     };
-this.channel.onmessage = async (e) => {
-  let chunkMsg;
-  try {
-    chunkMsg = JSON.parse(e.data);
-  } catch (err) {
-    logger.error("Failed to parse incoming P2P message:", err);
-    return;
-  }
+    this.channel.onmessage = async (e) => {
+      let chunkMsg;
+      try {
+        chunkMsg = JSON.parse(e.data);
+      } catch (err) {
+        logger.error("Failed to parse incoming P2P message:", err);
+        return;
+      }
 
-  // ── SECURITY FIX: Validate totalChunks against trusted server value ──
-  // If expectedTotalChunks was set from a trusted source, reject any
-  // peer message that claims a different totalChunks value.
-  if (this.expectedTotalChunks !== null) {
-    if (
-      typeof chunkMsg.totalChunks !== "number" ||
-      chunkMsg.totalChunks !== this.expectedTotalChunks
-    ) {
-      logger.error(
-        `[P2P Security] Chunk count mismatch! Expected ${this.expectedTotalChunks}, ` +
-        `peer claims ${chunkMsg.totalChunks}. Dropping chunk and aborting transfer.`
-      );
-      this.updateState("failed");
-      this.cleanup();
-      return;
-    }
-  }
+      // ── SECURITY FIX: Validate totalChunks against trusted server value ──
+      // If expectedTotalChunks was set from a trusted source, reject any
+      // peer message that claims a different totalChunks value.
+      if (this.expectedTotalChunks !== null) {
+        if (
+          typeof chunkMsg.totalChunks !== "number" ||
+          chunkMsg.totalChunks !== this.expectedTotalChunks
+        ) {
+          logger.error(
+            `[P2P Security] Chunk count mismatch! Expected ${this.expectedTotalChunks}, ` +
+              `peer claims ${chunkMsg.totalChunks}. Dropping chunk and aborting transfer.`
+          );
+          this.updateState("failed");
+          this.cleanup();
+          return;
+        }
+      }
 
-  // Validate chunkIndex is within expected bounds
-  const maxChunks = this.expectedTotalChunks ?? chunkMsg.totalChunks;
-  if (
-    typeof chunkMsg.chunkIndex !== "number" ||
-    chunkMsg.chunkIndex < 0 ||
-    chunkMsg.chunkIndex >= maxChunks
-  ) {
-    logger.error(
-      `[P2P Security] Invalid chunkIndex ${chunkMsg.chunkIndex} for totalChunks ${maxChunks}. Dropping.`
-    );
-    return;
-  }
+      // Validate chunkIndex is within expected bounds
+      const maxChunks = this.expectedTotalChunks ?? chunkMsg.totalChunks;
+      if (
+        typeof chunkMsg.chunkIndex !== "number" ||
+        chunkMsg.chunkIndex < 0 ||
+        chunkMsg.chunkIndex >= maxChunks
+      ) {
+        logger.error(
+          `[P2P Security] Invalid chunkIndex ${chunkMsg.chunkIndex} for totalChunks ${maxChunks}. Dropping.`
+        );
+        return;
+      }
 
-  // Reject duplicate chunk indices
-  const alreadyReceived = this.receivedChunks.some(
-    (c) => c.chunkIndex === chunkMsg.chunkIndex
-  );
-  if (alreadyReceived) {
-    logger.warn(`[P2P Security] Duplicate chunk ${chunkMsg.chunkIndex} received. Dropping.`);
-    return;
-  }
+      // Reject duplicate chunk indices
+      const alreadyReceived = this.receivedChunks.some((c) => c.chunkIndex === chunkMsg.chunkIndex);
+      if (alreadyReceived) {
+        logger.warn(`[P2P Security] Duplicate chunk ${chunkMsg.chunkIndex} received. Dropping.`);
+        return;
+      }
 
-  this.receivedChunks.push(chunkMsg);
+      this.receivedChunks.push(chunkMsg);
 
-  const progress = Math.round((this.receivedChunks.length / maxChunks) * 100);
-  this.updateState("transferring", progress, "18.2 MB/s");
+      const progress = Math.round((this.receivedChunks.length / maxChunks) * 100);
+      this.updateState("transferring", progress, "18.2 MB/s");
 
-  // Once all chunks are transferred successfully
-  if (this.receivedChunks.length === maxChunks) {
-    this.receivedChunks.sort((a, b) => a.chunkIndex - b.chunkIndex);
+      // Once all chunks are transferred successfully
+      if (this.receivedChunks.length === maxChunks) {
+        this.receivedChunks.sort((a, b) => a.chunkIndex - b.chunkIndex);
 
-    // Cache chunks to IndexedDB so this tab can now seed the file
-    for (const c of this.receivedChunks) {
-      await saveChunkToCache(
-        this.fileId,
-        this.fileName,
-        c.chunkIndex,
-        maxChunks,
-        c.data
-      );
-    }
+        // Cache chunks to IndexedDB so this tab can now seed the file
+        for (const c of this.receivedChunks) {
+          await saveChunkToCache(this.fileId, this.fileName, c.chunkIndex, maxChunks, c.data);
+        }
 
-    this.updateState("completed", 100, "Finished");
-    this.cleanup();
-  }
-};
+        this.updateState("completed", 100, "Finished");
+        this.cleanup();
+      }
+    };
 
     this.channel.onerror = (err) => {
       logger.error("DataChannel error:", err);

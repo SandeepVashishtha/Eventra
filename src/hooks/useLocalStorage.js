@@ -46,18 +46,17 @@ const useLocalStorage = (key, initialValue) => {
   }, [key]);
 
   const [storedValue, setStoredValue] = useState(() => {
-  if (typeof window === "undefined") return initialValue;
+    if (typeof window === "undefined") return initialValue;
 
-  try {
-    const item = window.localStorage.getItem(key);
-    return safeJsonParse(item, initialValue);
-  } catch (error) {
-    console.warn(`useLocalStorage: error reading key "${key}":`, error);
-    return initialValue;
-  }
+    try {
+      const item = window.localStorage.getItem(key);
+      return safeJsonParse(item, initialValue);
+    } catch (error) {
+      console.warn(`useLocalStorage: error reading key "${key}":`, error);
+      return initialValue;
+    }
   });
 
-  
   const setValue = useCallback(
     (value) => {
       try {

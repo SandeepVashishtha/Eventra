@@ -7,7 +7,7 @@
   min-height: 600px;
   background: linear-gradient(135deg, #09090e 0%, #11111d 100%);
   color: #f3f4f6;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   overflow: hidden;
   border-radius: 16px;
   border: 1px solid rgba(99, 102, 241, 0.15);
@@ -262,7 +262,9 @@
 /* Interactive SVG Elements */
 .fp-svg-element {
   cursor: move;
-  transition: stroke 0.2s ease, filter 0.2s ease;
+  transition:
+    stroke 0.2s ease,
+    filter 0.2s ease;
 }
 
 .fp-svg-element:hover {
@@ -549,7 +551,7 @@
   right: 0;
   bottom: 0;
   background-color: rgba(255, 255, 255, 0.1);
-  transition: .3s;
+  transition: 0.3s;
   border-radius: 34px;
 }
 
@@ -566,7 +568,7 @@
   left: 3px;
   bottom: 3px;
   background-color: white;
-  transition: .3s;
+  transition: 0.3s;
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
@@ -781,7 +783,10 @@
   }
 
   .fp-tool-grid {
-    grid-template-columns: repeat(3, 1fr); /* Fit 3 items per row on mobile to save vertical space */
+    grid-template-columns: repeat(
+      3,
+      1fr
+    ); /* Fit 3 items per row on mobile to save vertical space */
     gap: 8px;
   }
 
@@ -903,7 +908,6 @@
 
 /* Improved mobile responsiveness */
 @media (max-width: 768px) {
-
   .fp-topbar {
     flex-direction: column;
     gap: 12px;

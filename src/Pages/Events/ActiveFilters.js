@@ -13,7 +13,6 @@ const FILTER_LABELS = {
   workshop: "Workshops",
 };
 
-
 const ActiveFilters = ({
   searchQuery,
   setSearchQuery,
@@ -35,8 +34,7 @@ const ActiveFilters = ({
   const hasView = viewMode && viewMode !== "grid";
   const hasAdvancedFilters = hasActiveFilters(advancedFilters);
 
-  const anyActive =
-    hasSearch || hasType || hasCategory || hasSort || hasView || hasAdvancedFilters;
+  const anyActive = hasSearch || hasType || hasCategory || hasSort || hasView || hasAdvancedFilters;
 
   const clearAll = () => {
     if (typeof setSearchQuery === "function") setSearchQuery("");
@@ -48,9 +46,7 @@ const ActiveFilters = ({
   };
 
   const removeCategory = (category) => {
-    const updatedCategories = advancedFilters.categories.filter(
-      (c) => c !== category,
-    );
+    const updatedCategories = advancedFilters.categories.filter((c) => c !== category);
     onAdvancedFiltersChange({
       ...advancedFilters,
       categories: updatedCategories,
@@ -66,9 +62,7 @@ const ActiveFilters = ({
   };
 
   const removeStatus = (status) => {
-    const updatedStatuses = advancedFilters.statuses.filter(
-      (s) => s !== status,
-    );
+    const updatedStatuses = advancedFilters.statuses.filter((s) => s !== status);
     onAdvancedFiltersChange({
       ...advancedFilters,
       statuses: updatedStatuses,
@@ -100,7 +94,7 @@ const ActiveFilters = ({
 
   return (
     <div className="mb-6 flex flex-col gap-4">
-      <div className="flex flex-wrap gap-2 items-start">
+      <div className="flex flex-wrap items-start gap-2">
         {hasSearch && (
           <FilterBadge
             label={`Search: "${searchQuery}"`}
@@ -119,7 +113,10 @@ const ActiveFilters = ({
 
         {hasCategory && (
           <FilterBadge
-            label={`Category: ${categoryFilter.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}`}
+            label={`Category: ${categoryFilter
+              .split("-")
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(" ")}`}
             onRemove={() => setCategoryFilter("all")}
             variant="success"
           />
@@ -188,20 +185,15 @@ const ActiveFilters = ({
         )}
 
         {advancedFilters.dateRange &&
-          (advancedFilters.dateRange.startDate ||
-            advancedFilters.dateRange.endDate) && (
+          (advancedFilters.dateRange.startDate || advancedFilters.dateRange.endDate) && (
             <FilterBadge
               label={`Date: ${
                 advancedFilters.dateRange.startDate
-                  ? new Date(
-                      advancedFilters.dateRange.startDate,
-                    ).toLocaleDateString()
+                  ? new Date(advancedFilters.dateRange.startDate).toLocaleDateString()
                   : "Start"
               } - ${
                 advancedFilters.dateRange.endDate
-                  ? new Date(
-                      advancedFilters.dateRange.endDate,
-                    ).toLocaleDateString()
+                  ? new Date(advancedFilters.dateRange.endDate).toLocaleDateString()
                   : "End"
               }`}
               onRemove={clearDateRange}

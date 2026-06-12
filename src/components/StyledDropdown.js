@@ -3,13 +3,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import useReducedMotion from "../hooks/useReducedMotion";
 
-const Dropdown = ({
-  label,
-  value,
-  options,
-  onChange,
-  placeholder = "Select",
-}) => {
+const Dropdown = ({ label, value, options, onChange, placeholder = "Select" }) => {
   const prefersReducedMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -102,7 +96,7 @@ const Dropdown = ({
       setActiveIndex((prev) =>
         event.key === "ArrowDown"
           ? Math.min(prev + 1, allOptions.length - 1)
-          : Math.max(prev - 1, 0),
+          : Math.max(prev - 1, 0)
       );
       return;
     }
@@ -128,7 +122,7 @@ const Dropdown = ({
       {label && (
         <span
           id={labelId}
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           {label}
         </span>
@@ -137,7 +131,7 @@ const Dropdown = ({
       <button
         ref={buttonRef}
         type="button"
-        className="flex w-full items-center justify-between px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all text-left"
+        className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-gray-300 bg-white px-4 py-2 text-left shadow-sm transition-all hover:ring-2 hover:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800"
         onClick={toggleDropdown}
         onKeyDown={handleButtonKeyDown}
         aria-haspopup="listbox"
@@ -149,15 +143,13 @@ const Dropdown = ({
         <span
           id={`${listboxId}-value`}
           className={`text-sm ${
-            !value
-              ? "text-gray-400 dark:text-gray-300"
-              : "text-gray-700 dark:text-gray-100"
+            !value ? "text-gray-400 dark:text-gray-300" : "text-gray-700 dark:text-gray-100"
           }`}
         >
           {value || placeholder}
         </span>
         <ChevronDown
-          className={`text-gray-400 dark:text-gray-500 transition-transform ${
+          className={`text-gray-400 transition-transform dark:text-gray-500 ${
             open ? "rotate-180" : ""
           }`}
           aria-hidden="true"
@@ -170,7 +162,7 @@ const Dropdown = ({
             id={listboxId}
             role="listbox"
             aria-label={label || placeholder}
-            className="absolute mt-2 w-full z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
+            className="absolute z-50 mt-2 w-full rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
@@ -188,11 +180,11 @@ const Dropdown = ({
                 aria-selected={value === opt || (!value && opt === placeholder)}
                 onClick={() => handleSelect(opt)}
                 onMouseEnter={() => setActiveIndex(index)}
-                className={`px-4 py-2 text-sm cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100 ${
+                className={`cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 dark:text-gray-100 dark:hover:bg-gray-700 ${
                   index === currentActiveIndex ? "bg-indigo-50 dark:bg-gray-700" : ""
                 } ${
                   value === opt || (!value && opt === placeholder)
-                    ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
+                    ? "bg-indigo-100 font-semibold dark:bg-indigo-900"
                     : ""
                 }`}
               >

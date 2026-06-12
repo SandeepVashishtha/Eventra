@@ -62,7 +62,9 @@
   .registration-card,
   .event-detail-section,
   .event-info-block,
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     page-break-inside: avoid;
     break-inside: avoid;
   }

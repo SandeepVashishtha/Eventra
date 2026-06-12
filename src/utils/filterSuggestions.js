@@ -55,8 +55,7 @@ export const normalizeSuggestionText = (value) =>
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 
-const toSlug = (value) =>
-  normalizeSuggestionText(value).replace(/\s+/g, "-");
+const toSlug = (value) => normalizeSuggestionText(value).replace(/\s+/g, "-");
 
 const getNowMs = (now = Date.now()) =>
   now instanceof Date ? now.getTime() : Number(now) || Date.now();
@@ -128,7 +127,7 @@ export const normalizeSuggestionHistory = (history = {}) => {
 
 export const readSuggestionHistory = (
   storage = globalThis.localStorage,
-  key = FILTER_SUGGESTIONS_STORAGE_KEY,
+  key = FILTER_SUGGESTIONS_STORAGE_KEY
 ) => {
   if (!storage?.getItem) return createEmptyHistory();
 
@@ -145,7 +144,7 @@ export const readSuggestionHistory = (
 export const writeSuggestionHistory = (
   history,
   storage = globalThis.localStorage,
-  key = FILTER_SUGGESTIONS_STORAGE_KEY,
+  key = FILTER_SUGGESTIONS_STORAGE_KEY
 ) => {
   const normalized = normalizeSuggestionHistory(history);
   storage?.setItem?.(key, JSON.stringify(normalized));
@@ -180,7 +179,7 @@ export const recordFilterActivity = (history = {}, filters = {}, now = Date.now(
       next.searches,
       normalizeSuggestionText(search),
       { label: search, filters: { ...normalizedFilters, searchQuery: search } },
-      now,
+      now
     );
   }
 
@@ -193,7 +192,7 @@ export const recordFilterActivity = (history = {}, filters = {}, now = Date.now(
         label: CATEGORY_LABELS[categoryKey] || categoryKey,
         filters: { ...normalizeEventFilterConfig(), categoryFilter: categoryKey },
       },
-      now,
+      now
     );
   }
 
@@ -206,7 +205,7 @@ export const recordFilterActivity = (history = {}, filters = {}, now = Date.now(
         label: CATEGORY_LABELS[categoryKey] || category,
         filters: { ...normalizeEventFilterConfig(), categoryFilter: categoryKey },
       },
-      now,
+      now
     );
   });
 
@@ -221,7 +220,7 @@ export const recordFilterActivity = (history = {}, filters = {}, now = Date.now(
           advancedFilters: { location: advanced.location },
         },
       },
-      now,
+      now
     );
   }
 
@@ -237,7 +236,7 @@ export const recordFilterActivity = (history = {}, filters = {}, now = Date.now(
           advancedFilters: { modes: [modeKey] },
         },
       },
-      now,
+      now
     );
   });
 
@@ -252,7 +251,7 @@ export const recordFilterActivity = (history = {}, filters = {}, now = Date.now(
           advancedFilters: { priceRange: { min: 0, max: 0 } },
         },
       },
-      now,
+      now
     );
   }
 
@@ -265,7 +264,7 @@ export const recordFilterActivity = (history = {}, filters = {}, now = Date.now(
         label: TYPE_LABELS[statusKey] || statusKey,
         filters: { ...normalizeEventFilterConfig(), filterType: statusKey },
       },
-      now,
+      now
     );
   }
 
@@ -287,7 +286,7 @@ export const recordFilterActivity = (history = {}, filters = {}, now = Date.now(
         label: buildCombinationLabel(normalizedFilters),
         filters: normalizedFilters,
       },
-      now,
+      now
     );
   }
 
@@ -298,10 +297,11 @@ export const recordEventInteraction = (
   history = {},
   event = {},
   action = "view",
-  now = Date.now(),
+  now = Date.now()
 ) => {
   const next = normalizeSuggestionHistory(history);
-  const weight = action === "registration" ? 4 : action === "bookmark" ? 3 : action === "click" ? 2 : 1;
+  const weight =
+    action === "registration" ? 4 : action === "bookmark" ? 3 : action === "click" ? 2 : 1;
   const categoryKey = getCategoryKey(event?.category || event?.type);
   const location = getLocationLabel(event);
   const mode = getEventMode(event);
@@ -315,7 +315,7 @@ export const recordEventInteraction = (
         filters: { ...normalizeEventFilterConfig(), categoryFilter: categoryKey },
       },
       now,
-      weight,
+      weight
     );
   }
 
@@ -331,7 +331,7 @@ export const recordEventInteraction = (
         },
       },
       now,
-      weight,
+      weight
     );
   }
 
@@ -347,7 +347,7 @@ export const recordEventInteraction = (
         },
       },
       now,
-      weight,
+      weight
     );
   }
 
@@ -356,7 +356,7 @@ export const recordEventInteraction = (
     `${action}:${event?.id || event?.title || categoryKey || location}`,
     { action, label: event?.title || event?.name || categoryKey || location },
     now,
-    weight,
+    weight
   );
 
   return next;
@@ -366,11 +366,11 @@ export const recordVisibleEventSignals = (
   history = {},
   events = [],
   now = Date.now(),
-  limit = 12,
+  limit = 12
 ) => {
   return (Array.isArray(events) ? events.slice(0, limit) : []).reduce(
     (next, event) => recordEventInteraction(next, event, "view", now),
-    normalizeSuggestionHistory(history),
+    normalizeSuggestionHistory(history)
   );
 };
 
@@ -381,7 +381,9 @@ const getRecencyScore = (lastUsed, now = Date.now()) => {
 };
 
 const scoreHistoryItem = (item, now = Date.now(), base = 10) =>
-  Math.round(base + Math.log2((item.count || 0) + 1) * 10 + getRecencyScore(item.lastUsed, now) * 18);
+  Math.round(
+    base + Math.log2((item.count || 0) + 1) * 10 + getRecencyScore(item.lastUsed, now) * 18
+  );
 
 const buildSuggestion = (item, kind, now = Date.now(), base = 10) => ({
   id: `${kind}:${item.key}`,
@@ -389,10 +391,7 @@ const buildSuggestion = (item, kind, now = Date.now(), base = 10) => ({
   label: item.label || item.key,
   filters: normalizeEventFilterConfig(item.filters),
   score: scoreHistoryItem(item, now, base),
-  reason:
-    item.count > 1
-      ? `Used ${item.count} times recently`
-      : "Based on your recent activity",
+  reason: item.count > 1 ? `Used ${item.count} times recently` : "Based on your recent activity",
 });
 
 const addUniqueSuggestion = (suggestions, suggestion) => {
@@ -436,7 +435,7 @@ export const getFallbackSuggestions = (events = []) => {
     events,
     (event) => event?.category || event?.type,
     "category",
-    (item) => ({ categoryFilter: item.key }),
+    (item) => ({ categoryFilter: item.key })
   ).forEach((suggestion) => addUniqueSuggestion(suggestions, suggestion));
 
   getPopularFromEvents(
@@ -444,7 +443,7 @@ export const getFallbackSuggestions = (events = []) => {
     getLocationLabel,
     "location",
     (item) => ({ advancedFilters: { location: item.label } }),
-    3,
+    3
   ).forEach((suggestion) => addUniqueSuggestion(suggestions, suggestion));
 
   ["upcoming", "online", "free"].forEach((key) => {
@@ -479,9 +478,11 @@ export const buildCombinationLabel = (filters = {}) => {
   if (normalized.categoryFilter !== "all") {
     labels.push(CATEGORY_LABELS[normalized.categoryFilter] || normalized.categoryFilter);
   }
-  if (normalized.filterType !== "all") labels.push(TYPE_LABELS[normalized.filterType] || normalized.filterType);
+  if (normalized.filterType !== "all")
+    labels.push(TYPE_LABELS[normalized.filterType] || normalized.filterType);
   if (advanced.location) labels.push(advanced.location);
-  if ((advanced.modes || []).length) labels.push(advanced.modes.map((mode) => TYPE_LABELS[mode] || mode).join(" + "));
+  if ((advanced.modes || []).length)
+    labels.push(advanced.modes.map((mode) => TYPE_LABELS[mode] || mode).join(" + "));
   if (advanced.priceRange?.min === 0 && advanced.priceRange?.max === 0) labels.push("Free");
   if (normalized.searchQuery) labels.push(`Search: ${normalized.searchQuery}`);
 
@@ -507,7 +508,9 @@ export const generateFilterSuggestions = ({
     .forEach((suggestion) => addUniqueSuggestion(suggestions, suggestion));
 
   normalizedHistory.eventTypes
-    .map((item) => buildSuggestion(item, item.key === "upcoming" ? "dateRange" : "eventType", now, 14))
+    .map((item) =>
+      buildSuggestion(item, item.key === "upcoming" ? "dateRange" : "eventType", now, 14)
+    )
     .forEach((suggestion) => addUniqueSuggestion(suggestions, suggestion));
 
   normalizedHistory.combinations
@@ -527,7 +530,7 @@ export const generateFilterSuggestions = ({
 
   if (suggestions.length < limit) {
     getFallbackSuggestions(events).forEach((suggestion) =>
-      addUniqueSuggestion(suggestions, suggestion),
+      addUniqueSuggestion(suggestions, suggestion)
     );
   }
 

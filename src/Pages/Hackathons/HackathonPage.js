@@ -25,7 +25,7 @@ const Tag = ({ tag, onRemove }) => (
     initial={{ scale: 0.8, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
     exit={{ scale: 0.8, opacity: 0 }}
-    className="flex items-center gap-1.5 bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-semibold border border-primary/30 backdrop-blur-sm"
+    className="bg-primary/20 text-primary border-primary/30 flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold backdrop-blur-sm"
   >
     <span>{tag}</span>
     <button
@@ -34,7 +34,7 @@ const Tag = ({ tag, onRemove }) => (
       className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
       aria-label={`Remove tag ${tag}`}
     >
-      <X className="w-3 h-3" />
+      <X className="h-3 w-3" />
     </button>
   </motion.div>
 );
@@ -43,7 +43,7 @@ const Tag = ({ tag, onRemove }) => (
 const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select" }) => {
   const [open, setOpen] = useState(false);
   const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0, showAbove: false });
-  
+
   const buttonRef = useRef(null);
   const dropdownRef = useRef(null);
   // Safe ID generation compatible with all React versions
@@ -58,10 +58,10 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
       const rect = buttonRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      
+
       // Smart positioning: Open above if not enough space below
       const showAbove = spaceBelow < 250 && spaceAbove > spaceBelow;
-      
+
       setMenuCoords({
         top: showAbove ? rect.top - 8 : rect.bottom + 8,
         left: rect.left,
@@ -118,7 +118,7 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
   return (
     <div className="relative">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
           {label}
         </label>
       )}
@@ -126,18 +126,20 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
       <button
         type="button"
         ref={buttonRef}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 border border-border rounded-xl bg-white dark:bg-white/5 cursor-pointer hover:ring-2 hover:ring-primary/30 dark:hover:ring-primary/50 hover:border-primary/55 dark:hover:border-primary/30 transition-all text-text-light"
+        className="border-border hover:ring-primary/30 dark:hover:ring-primary/50 hover:border-primary/55 dark:hover:border-primary/30 text-text-light flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border bg-white px-4 py-3 transition-all hover:ring-2 dark:bg-white/5"
         onClick={toggleOpen}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? dropdownId : undefined}
       >
         <span
-          className={`flex-1 text-left text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis ${!value ? "text-slate-400 dark:text-slate-500" : "text-text"}`}
+          className={`flex-1 overflow-hidden text-left text-sm leading-tight text-ellipsis whitespace-nowrap ${!value ? "text-slate-400 dark:text-slate-500" : "text-text"}`}
         >
           {displayText}
         </span>
-        <ChevronDown className={`text-slate-400 dark:text-slate-500 flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        <ChevronDown
+          className={`flex-shrink-0 text-slate-400 transition-transform duration-200 dark:text-slate-500 ${open ? "rotate-180" : ""}`}
+        />
       </button>
 
       {open &&
@@ -147,15 +149,7 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
             id={dropdownId}
             role="listbox"
             aria-label={label}
-            className="
-              bg-card-bg
-              border border-border
-              rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]
-              overflow-hidden
-              min-w-[180px]
-              max-h-60
-              overflow-y-auto
-            "
+            className="bg-card-bg border-border max-h-60 min-w-[180px] overflow-hidden overflow-y-auto rounded-xl border shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]"
             style={{
               position: "fixed",
               top: menuCoords.showAbove ? "auto" : `${menuCoords.top}px`,
@@ -172,7 +166,7 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
                 onChange("");
                 setOpen(false);
               }}
-              className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-primary/10 text-text-light text-sm transition-colors"
+              className="dark:hover:bg-primary/10 text-text-light cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-slate-50"
             >
               {placeholder}
             </li>
@@ -185,8 +179,8 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
                   key={optValue}
                   role="option"
                   aria-selected={optValue === value}
-                  className={`px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-primary/10 text-text-light text-sm transition-colors ${
-                    optValue === value ? "font-semibold bg-primary/10 text-primary" : ""
+                  className={`dark:hover:bg-primary/10 text-text-light cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-slate-50 ${
+                    optValue === value ? "bg-primary/10 text-primary font-semibold" : ""
                   }`}
                   onClick={() => {
                     onChange(optValue);
@@ -224,14 +218,14 @@ const HackathonHub = () => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
-  
+
   // NEW: Sort state
   const [sortBy, setSortBy] = useState("default");
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [filtersHydrated, setFiltersHydrated] = useState(false);
   const hasHydratedFilters = useRef(false);
-  
+
   // FIX: Prevent state updates on unmounted component
   const isMountedRef = useRef(true);
   useEffect(() => {
@@ -303,7 +297,15 @@ const HackathonHub = () => {
     } catch {
       // Ignored
     }
-  }, [activeTab, debouncedSearchQuery, filters, selectedTags, sortBy, filtersHydrated, setSearchParams]);
+  }, [
+    activeTab,
+    debouncedSearchQuery,
+    filters,
+    selectedTags,
+    sortBy,
+    filtersHydrated,
+    setSearchParams,
+  ]);
 
   const cardsSectionRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -433,22 +435,39 @@ const HackathonHub = () => {
   const sortedHackathons = useMemo(() => {
     const sorted = [...filteredHackathons];
     if (sortBy === "newest") {
-      sorted.sort((a, b) => new Date(b.startDate || b.date || b.createdAt || 0) - new Date(a.startDate || a.date || a.createdAt || 0));
+      sorted.sort(
+        (a, b) =>
+          new Date(b.startDate || b.date || b.createdAt || 0) -
+          new Date(a.startDate || a.date || a.createdAt || 0)
+      );
     } else if (sortBy === "oldest") {
-      sorted.sort((a, b) => new Date(a.startDate || a.date || a.createdAt || 0) - new Date(b.startDate || b.date || b.createdAt || 0));
+      sorted.sort(
+        (a, b) =>
+          new Date(a.startDate || a.date || a.createdAt || 0) -
+          new Date(b.startDate || b.date || b.createdAt || 0)
+      );
     } else if (sortBy === "prize_desc") {
       sorted.sort((a, b) => {
-        const prizeA = typeof a.prizePool === 'number' ? a.prizePool : (a.prize || 0);
-        const prizeB = typeof b.prizePool === 'number' ? b.prizePool : (b.prize || 0);
+        const prizeA = typeof a.prizePool === "number" ? a.prizePool : a.prize || 0;
+        const prizeB = typeof b.prizePool === "number" ? b.prizePool : b.prize || 0;
         return prizeB - prizeA;
       });
     }
     return sorted;
   }, [filteredHackathons, sortBy]);
 
-  const featuredHackathons = useMemo(() => [...hackathons].filter((h) => h.featured).slice(0, 3), [hackathons]);
-  const difficulties = useMemo(() => [...new Set(hackathons.map((h) => h.difficulty).filter(Boolean))], [hackathons]);
-  const locations = useMemo(() => [...new Set(hackathons.map((h) => h.location).filter(Boolean))], [hackathons]);
+  const featuredHackathons = useMemo(
+    () => [...hackathons].filter((h) => h.featured).slice(0, 3),
+    [hackathons]
+  );
+  const difficulties = useMemo(
+    () => [...new Set(hackathons.map((h) => h.difficulty).filter(Boolean))],
+    [hackathons]
+  );
+  const locations = useMemo(
+    () => [...new Set(hackathons.map((h) => h.location).filter(Boolean))],
+    [hackathons]
+  );
 
   const resetFilters = () => {
     setFilters({ difficulty: "", prize: "", location: "" });
@@ -462,7 +481,7 @@ const HackathonHub = () => {
   }, []);
 
   return (
-    <div className="overflow-x-hidden bg-bg text-text py-6 transition-colors duration-300">
+    <div className="bg-bg text-text overflow-x-hidden py-6 transition-colors duration-300">
       {/* Floating Action Button */}
       <motion.div
         className={`fixed z-50 ${positionClass}`}
@@ -472,12 +491,17 @@ const HackathonHub = () => {
       >
         <Link
           to="/host-hackathon"
-          className="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-primary to-secondary text-white rounded-xl shadow-glow-md hover:shadow-glow-lg border border-primary/30 transition-all"
+          className="from-primary to-secondary shadow-glow-md hover:shadow-glow-lg border-primary/30 flex h-14 w-14 items-center justify-center rounded-xl border bg-gradient-to-br text-white transition-all"
           title="Host a Hackathon"
           aria-label="Host a Hackathon"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
           </svg>
         </Link>
       </motion.div>
@@ -501,28 +525,28 @@ const HackathonHub = () => {
 
       {/* Featured Hackathons */}
       {!isLoading && featuredHackathons.length > 0 && (
-        <div className="py-10 border-b border-border" data-aos="fade-up" data-aos-duration="1000">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center mb-8">
+        <div className="border-border border-b py-10" data-aos="fade-up" data-aos-duration="1000">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-8 flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">
+                <p className="text-primary mb-1 text-xs font-semibold tracking-widest uppercase">
                   Handpicked for you
                 </p>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                   Featured{" "}
-                  <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  <span className="from-primary to-secondary bg-gradient-to-r bg-clip-text text-transparent">
                     Hackathons
                   </span>
                 </h2>
               </div>
               <Link
                 to="/hackathons?filter=featured"
-                className="text-primary hover:opacity-80 text-sm font-medium transition-colors"
+                className="text-primary text-sm font-medium transition-colors hover:opacity-80"
               >
                 View all →
               </Link>
             </div>
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {featuredHackathons.map((hackathon, index) => (
                 <HackathonCard
                   key={hackathon.id || index}
@@ -538,22 +562,22 @@ const HackathonHub = () => {
       )}
 
       {/* Hackathons Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Section header + Filters toggle */}
         <div className="mb-8" data-aos="fade-up" data-aos-delay="200">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">
+              <p className="text-primary mb-1 text-xs font-semibold tracking-widest uppercase">
                 Browse all
               </p>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                 All{" "}
-                <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <span className="from-primary to-secondary bg-gradient-to-r bg-clip-text text-transparent">
                   Hackathons
                 </span>
               </h2>
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-3">
               {/* NEW: Sort Dropdown */}
               <div className="w-36">
@@ -574,24 +598,33 @@ const HackathonHub = () => {
               <button
                 type="button"
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
+                className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all ${
                   showFilters
-                    ? "bg-primary text-white border-primary shadow-glow-sm"
-                    : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 shadow-sm dark:shadow-none"
+                    ? "bg-primary border-primary shadow-glow-sm text-white"
+                    : "text-text-light border-border hover:border-primary/50 bg-white shadow-sm hover:bg-slate-50 dark:bg-white/5 dark:shadow-none dark:hover:bg-white/10"
                 }`}
                 aria-expanded={showFilters}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                  />
                 </svg>
                 {showFilters ? "Hide Filters" : "Filters"}
               </button>
 
-              {(filters.difficulty || filters.prize || filters.location || selectedTags.length > 0 || sortBy !== "default") && (
+              {(filters.difficulty ||
+                filters.prize ||
+                filters.location ||
+                selectedTags.length > 0 ||
+                sortBy !== "default") && (
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="text-xs text-primary hover:opacity-90 font-semibold border border-primary/20 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all"
+                  className="text-primary border-primary/20 bg-primary/10 hover:bg-primary/20 rounded-xl border px-3 py-2 text-xs font-semibold transition-all hover:opacity-90"
                   aria-label="Clear hackathon filters"
                 >
                   Clear All
@@ -607,7 +640,7 @@ const HackathonHub = () => {
               animate={{ opacity: 1, y: 0 }}
               className="mb-4 flex flex-wrap items-center gap-2"
             >
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 mr-1">
+              <span className="mr-1 text-xs font-semibold tracking-wider text-slate-500 uppercase">
                 Active tags:
               </span>
               <AnimatePresence>
@@ -626,9 +659,9 @@ const HackathonHub = () => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -12, scale: 0.98 }}
                 transition={{ duration: prefersReducedMotion ? 0 : 0.35, ease: "easeOut" }}
-                className="relative overflow-hidden mb-6 rounded-2xl border border-border bg-card-bg/90 backdrop-blur-xl shadow-lg dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)] p-6 md:p-8"
+                className="border-border bg-card-bg/90 relative mb-6 overflow-hidden rounded-2xl border p-6 shadow-lg backdrop-blur-xl md:p-8 dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)]"
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                   <CustomDropdown
                     label="Difficulty"
                     value={filters.difficulty}
@@ -653,8 +686,8 @@ const HackathonHub = () => {
                 </div>
 
                 {availableTags.length > 0 && (
-                  <div className="mt-8 pt-6 border-t border-border">
-                    <label className="block text-xs font-semibold uppercase tracking-widest text-text-light mb-4">
+                  <div className="border-border mt-8 border-t pt-6">
+                    <label className="text-text-light mb-4 block text-xs font-semibold tracking-widest uppercase">
                       Filter by Technology
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -663,10 +696,11 @@ const HackathonHub = () => {
                           key={tag}
                           type="button"
                           onClick={() => handleTagSelect(tag)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${selectedTags.includes(tag)
-                            ? "bg-primary text-white border-primary shadow-glow-sm"
-                            : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 hover:text-primary shadow-sm dark:shadow-none"
-                            }`}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                            selectedTags.includes(tag)
+                              ? "bg-primary border-primary shadow-glow-sm text-white"
+                              : "text-text-light border-border hover:border-primary/50 hover:text-primary bg-white shadow-sm hover:bg-slate-50 dark:bg-white/5 dark:shadow-none dark:hover:bg-white/10"
+                          }`}
                         >
                           {tag}
                         </button>
@@ -681,7 +715,7 @@ const HackathonHub = () => {
 
         {/* Tabs */}
         <motion.div
-          className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0"
+          className="mb-8 flex flex-col items-start justify-between space-y-4 sm:flex-row sm:items-center sm:space-y-0"
           variants={item}
           data-aos="fade-up"
           data-aos-delay="300"
@@ -697,10 +731,11 @@ const HackathonHub = () => {
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${activeTab === tab.key
-                  ? "bg-gradient-to-r from-primary via-primary to-secondary text-white border-primary/50 shadow-glow-sm scale-105"
-                  : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/30 hover:text-primary shadow-sm dark:shadow-none"
-                  }`}
+                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition-all duration-300 ${
+                  activeTab === tab.key
+                    ? "from-primary via-primary to-secondary border-primary/50 shadow-glow-sm scale-105 bg-gradient-to-r text-white"
+                    : "text-text-light border-border hover:border-primary/30 hover:text-primary bg-white shadow-sm hover:bg-slate-50 dark:bg-white/5 dark:shadow-none dark:hover:bg-white/10"
+                }`}
               >
                 {tab.label}
               </button>
@@ -712,22 +747,22 @@ const HackathonHub = () => {
         <ErrorBoundary level="section" label="Hackathons">
           <AnimatePresence mode="wait">
             {error ? (
-              <div className="col-span-full text-center py-16">
-                <p className="text-red-500 text-lg font-semibold mb-2">Failed to load hackathons</p>
-                <p className="text-gray-400 text-sm mb-4">{error}</p>
+              <div className="col-span-full py-16 text-center">
+                <p className="mb-2 text-lg font-semibold text-red-500">Failed to load hackathons</p>
+                <p className="mb-4 text-sm text-gray-400">{error}</p>
                 <button
                   type="button"
                   onClick={() => {
                     setError(null);
                     loadHackathons();
                   }}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+                  className="bg-primary hover:bg-primary-dark rounded-lg px-4 py-2 text-white transition"
                 >
                   Retry
                 </button>
               </div>
             ) : isLoading ? (
-              <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
                 {[...Array(6)].map((_, i) => (
                   <HackathonCardSkeleton key={`skeleton-${i}`} />
                 ))}
@@ -736,7 +771,7 @@ const HackathonHub = () => {
               <motion.div
                 ref={cardsSectionRef} // FIX: Moved ref to the actual grid
                 key={activeTab + sortBy} // Re-animate on sort change
-                className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
                 variants={containerVariants}
                 initial="hidden"
                 animate="show"
@@ -753,13 +788,13 @@ const HackathonHub = () => {
               </motion.div>
             ) : (
               <motion.div
-                className="relative overflow-hidden rounded-3xl p-10 text-center shadow-md dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-border bg-card-bg"
+                className="border-border bg-card-bg relative overflow-hidden rounded-3xl border p-10 text-center shadow-md dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]"
                 initial={{ opacity: 0, y: 30, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
               >
                 <motion.div
-                  className="absolute inset-0 -z-10 bg-primary/10 dark:bg-primary/5 blur-3xl"
+                  className="bg-primary/10 dark:bg-primary/5 absolute inset-0 -z-10 blur-3xl"
                   animate={{
                     opacity: [0.3, 0.6, 0.3],
                     scale: [1, 1.1, 1],
@@ -775,51 +810,73 @@ const HackathonHub = () => {
                 <div className="absolute inset-0 z-0 overflow-hidden">
                   {[...Array(6)].map((_, i) => {
                     const positions = [
-                      { left: "10%", top: "20%" }, { left: "70%", top: "15%" },
-                      { left: "30%", top: "70%" }, { left: "80%", top: "60%" },
-                      { left: "50%", top: "40%" }, { left: "20%", top: "50%" },
+                      { left: "10%", top: "20%" },
+                      { left: "70%", top: "15%" },
+                      { left: "30%", top: "70%" },
+                      { left: "80%", top: "60%" },
+                      { left: "50%", top: "40%" },
+                      { left: "20%", top: "50%" },
                     ];
                     const size = 30 + Math.random() * 40;
                     return (
                       <motion.div
                         key={i}
-                        className="absolute rounded-full bg-primary/20 dark:bg-primary/20"
-                        style={{ width: size, height: size, left: positions[i].left, top: positions[i].top, opacity: 0.3 }}
+                        className="bg-primary/20 dark:bg-primary/20 absolute rounded-full"
+                        style={{
+                          width: size,
+                          height: size,
+                          left: positions[i].left,
+                          top: positions[i].top,
+                          opacity: 0.3,
+                        }}
                         animate={{ y: [0, -30, 0], x: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
-                        transition={{ duration: prefersReducedMotion ? 0 : 6 + i, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}
+                        transition={{
+                          duration: prefersReducedMotion ? 0 : 6 + i,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: i * 0.5,
+                        }}
                       />
                     );
                   })}
                 </div>
 
-                <div className="mx-auto max-w-md relative z-10">
+                <div className="relative z-10 mx-auto max-w-md">
                   <motion.div
                     animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: prefersReducedMotion ? 0 : 3, repeat: Infinity, ease: "easeInOut" }}
-                    className="flex justify-center items-center w-20 h-20 rounded-full bg-bg dark:bg-bg shadow-sm mx-auto border border-border"
+                    transition={{
+                      duration: prefersReducedMotion ? 0 : 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="bg-bg dark:bg-bg border-border mx-auto flex h-20 w-20 items-center justify-center rounded-full border shadow-sm"
                   >
-                    <Code2 className="h-10 w-10 text-primary" />
+                    <Code2 className="text-primary h-10 w-10" />
                   </motion.div>
 
                   <h3 className="mt-6 text-2xl font-bold text-slate-900 dark:text-gray-100">
                     No Hackathons Found
                   </h3>
 
-                  <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                    {debouncedSearchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                    {debouncedSearchQuery ||
+                    filters.difficulty ||
+                    filters.prize ||
+                    filters.location ||
+                    selectedTags.length > 0
                       ? "No hackathons match your current filters. Try adjusting your search or filters."
                       : "Check back later for exciting new hackathons!"}
                   </p>
 
-                  <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                  <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
                     <motion.button
                       type="button"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={resetFilters}
-                      className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-primary hover:opacity-90 shadow-lg transition-all"
+                      className="bg-primary flex items-center justify-center gap-2 rounded-lg px-6 py-2.5 text-sm font-medium text-white shadow-lg transition-all hover:opacity-90"
                     >
-                      <RefreshCw className="w-4 h-4" />
+                      <RefreshCw className="h-4 w-4" />
                       Reset Filters
                     </motion.button>
 
@@ -828,10 +885,10 @@ const HackathonHub = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={scrollToCards}
-                      className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-bg hover:bg-card-bg shadow-md transition-all"
+                      className="bg-bg hover:bg-card-bg flex items-center justify-center gap-2 rounded-lg border border-black/15 px-6 py-2.5 text-sm font-medium text-black shadow-md transition-all dark:border-gray-600 dark:text-white"
                     >
                       Explore Hackathons
-                      <Compass className="w-4 h-4" />
+                      <Compass className="h-4 w-4" />
                     </motion.button>
                   </div>
                 </div>
@@ -840,7 +897,7 @@ const HackathonHub = () => {
           </AnimatePresence>
         </ErrorBoundary>
       </div>
-      
+
       <HackathonCTA />
       <BackToTopButton positionClass={positionClass} />
     </div>

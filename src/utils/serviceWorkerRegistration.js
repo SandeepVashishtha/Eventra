@@ -1,28 +1,28 @@
 import { logger } from "./logger";
 
 export const registerServiceWorker = () => {
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
       navigator.serviceWorker
-        .register('/service-worker.js')
+        .register("/service-worker.js")
         .then((registration) => {
-          logger.info('[Service Worker] Registered:', registration.scope);
+          logger.info("[Service Worker] Registered:", registration.scope);
         })
         .catch((error) => {
-          logger.error('[Service Worker] Registration failed:', error);
+          logger.error("[Service Worker] Registration failed:", error);
         });
     });
   }
 };
 
 export const unregisterServiceWorker = () => {
-  if ('serviceWorker' in navigator) {
+  if ("serviceWorker" in navigator) {
     navigator.serviceWorker.ready
       .then((registration) => {
         registration.unregister();
       })
       .catch((error) => {
-        logger.error('[Service Worker] Unregister failed:', error);
+        logger.error("[Service Worker] Unregister failed:", error);
       });
   }
 };

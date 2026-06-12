@@ -117,9 +117,7 @@ class SseMultiplexer {
     };
 
     const hasActiveExternalLeader = (heartbeat, now) =>
-      heartbeat &&
-      heartbeat.tabId !== this.tabId &&
-      now - heartbeat.timestamp < HEARTBEAT_TIMEOUT;
+      heartbeat && heartbeat.tabId !== this.tabId && now - heartbeat.timestamp < HEARTBEAT_TIMEOUT;
 
     const checkLeader = () => {
       if (this.isLeader) return;

@@ -52,8 +52,9 @@ const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
-const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
-
+const ComparativeAnalytics = lazy(
+  () => import("./components/Analytics/ComparativeAnalyticsDashboard")
+);
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -63,10 +64,9 @@ const OfflineSyncManager = () => {
 function App() {
   const { t } = useTranslation();
   const location = useLocation();
-  const isDashboardOrAdmin =
-    location?.pathname === "/dashboard" || location?.pathname === "/admin";
+  const isDashboardOrAdmin = location?.pathname === "/dashboard" || location?.pathname === "/admin";
   const pageLoader = (
-    <div className="flex items-center justify-center min-h-screen text-gray-500">
+    <div className="flex min-h-screen items-center justify-center text-gray-500">
       {t("app.loading")}
     </div>
   );
@@ -195,7 +195,7 @@ function App() {
 
                 <main
                   id="main-content"
-                  className="relative z-10 min-h-[85vh] bg-bg text-text transition-colors duration-300"
+                  className="bg-bg text-text relative z-10 min-h-[85vh] transition-colors duration-300"
                 >
                   <PageTransition>
                     <ErrorBoundary>
@@ -236,17 +236,27 @@ function App() {
                         */}
                         <Route
                           path="/event-recommendation"
-                          element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
+                          element={
+                            <Suspense fallback={null}>
+                              <EventRecommendation />
+                            </Suspense>
+                          }
                         />
                         <Route
                           path="/saved-events"
-                          element={<Suspense fallback={null}><SavedEventsPage /></Suspense>}
+                          element={
+                            <Suspense fallback={null}>
+                              <SavedEventsPage />
+                            </Suspense>
+                          }
                         />
                         <Route
                           path="/matchmaking"
                           element={
                             <ProtectedRoute>
-                              <Suspense fallback={null}><MatchmakingHub /></Suspense>
+                              <Suspense fallback={null}>
+                                <MatchmakingHub />
+                              </Suspense>
                             </ProtectedRoute>
                           }
                         />
@@ -258,7 +268,6 @@ function App() {
                             </Suspense>
                           }
                         />
-
                       </Routes>
                     </ErrorBoundary>
                   </PageTransition>
@@ -274,9 +283,7 @@ function App() {
                 )}
 
                 <ErrorBoundary level="section" label="Footer">
-                  <Suspense fallback={null}>
-                    {!isDashboardOrAdmin && <Footer />}
-                  </Suspense>
+                  <Suspense fallback={null}>{!isDashboardOrAdmin && <Footer />}</Suspense>
                 </ErrorBoundary>
 
                 <Suspense fallback={null}>
@@ -298,7 +305,7 @@ function App() {
                     <Suspense fallback={null}>
                       <FluidCursor enabled={cursorEnabled} />
                     </Suspense>
-                </ErrorBoundary>
+                  </ErrorBoundary>
                 )}
               </div>
             </SessionRecoveryProvider>

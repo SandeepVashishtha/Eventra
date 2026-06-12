@@ -1,4 +1,14 @@
-import { Star, Github, ExternalLink, AlertCircle, GitPullRequest, Cpu, Code2, Layers, Bookmark } from "lucide-react";
+import {
+  Star,
+  Github,
+  ExternalLink,
+  AlertCircle,
+  GitPullRequest,
+  Cpu,
+  Code2,
+  Layers,
+  Bookmark,
+} from "lucide-react";
 import { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
@@ -29,19 +39,20 @@ const getStatusColor = (status) => {
 
 // Difficulty Styling Helper
 const getDifficultyColor = (difficulty) => {
-  if (!difficulty) return "bg-slate-50 text-white dark:bg-slate-900 dark:text-white border-slate-200/50";
+  if (!difficulty)
+    return "bg-slate-50 text-white dark:bg-slate-900 dark:text-white border-slate-200/50";
   switch (difficulty.toLowerCase()) {
     case "beginner":
-  return "bg-sky-900/40 text-white border-sky-500/30";
+      return "bg-sky-900/40 text-white border-sky-500/30";
 
-case "intermediate":
-  return "bg-pink-900/40 text-white border-pink-500/30";
+    case "intermediate":
+      return "bg-pink-900/40 text-white border-pink-500/30";
 
-case "advanced":
-  return "bg-rose-900/40 text-white border-rose-500/30";
+    case "advanced":
+      return "bg-rose-900/40 text-white border-rose-500/30";
 
-default:
-  return "bg-slate-800 text-white border-slate-600";
+    default:
+      return "bg-slate-800 text-white border-slate-600";
   }
 };
 
@@ -53,8 +64,8 @@ const ConcentricTechRings = ({ techStack }) => {
   // Custom visual colors mapped to standard technology types
   const techGradients = [
     { from: "#ec4899", to: "#8b5cf6", name: "PinkViolet" }, // Outer
-    { from: "#0ea5e9", to: "#10b981", name: "SkyTeal" },    // Middle
-    { from: "#f59e0b", to: "#ef4444", name: "AmberRose" },  // Inner
+    { from: "#0ea5e9", to: "#10b981", name: "SkyTeal" }, // Middle
+    { from: "#f59e0b", to: "#ef4444", name: "AmberRose" }, // Inner
   ];
 
   // Preset Sweeps (percentages)
@@ -66,10 +77,10 @@ const ConcentricTechRings = ({ techStack }) => {
   ];
 
   return (
-    <div className="flex items-center gap-5 p-4 rounded-2xl bg-slate-50/40 dark:bg-slate-950/35 border border-slate-100/50 dark:border-slate-800/20 backdrop-blur-xs">
+    <div className="flex items-center gap-5 rounded-2xl border border-slate-100/50 bg-slate-50/40 p-4 backdrop-blur-xs dark:border-slate-800/20 dark:bg-slate-950/35">
       {/* SVG Container */}
-      <div className="relative w-[92px] h-[92px] shrink-0">
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88">
+      <div className="relative h-[92px] w-[92px] shrink-0">
+        <svg className="h-full w-full -rotate-90" viewBox="0 0 88 88">
           <defs>
             {techGradients.map((grad, i) => (
               <linearGradient key={i} id={`grad-${grad.name}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -111,18 +122,22 @@ const ConcentricTechRings = ({ techStack }) => {
                 strokeDasharray={cfg.circ}
                 initial={{ strokeDashoffset: cfg.circ }}
                 animate={{ strokeDashoffset }}
-                transition={{ duration: prefersReducedMotion ? 0 : 1.2, delay: 0.15 * i, ease: "easeOut" }}
+                transition={{
+                  duration: prefersReducedMotion ? 0 : 1.2,
+                  delay: 0.15 * i,
+                  ease: "easeOut",
+                }}
               />
             );
           })}
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <Layers className="w-4 h-4 text-indigo-500/70 animate-pulse" />
+          <Layers className="h-4 w-4 animate-pulse text-indigo-500/70" />
         </div>
       </div>
 
       {/* Legend & Breakdown bars */}
-      <div className="flex-1 space-y-2.5 min-w-0">
+      <div className="min-w-0 flex-1 space-y-2.5">
         {list.map((tech, i) => {
           const pct = sweeps[i];
           const grad = techGradients[i];
@@ -130,15 +145,10 @@ const ConcentricTechRings = ({ techStack }) => {
           return (
             <div key={tech} className="space-y-1">
               <div className="flex items-center justify-between text-[11px] font-black tracking-tight">
-                <span className="text-white dark:text-white truncate pr-1">
-                  {tech}
-                </span>
-                <span className="text-white dark:text-white">
-                  {pct}%
-                </span>
+                <span className="truncate pr-1 text-white dark:text-white">{tech}</span>
+                <span className="text-white dark:text-white">{pct}%</span>
               </div>
-              <div className="w-full h-1.5 rounded-full bg-slate-200/40 dark:bg-slate-800/40 overflow-hidden">
-              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200/40 dark:bg-slate-800/40"></div>
             </div>
           );
         })}
@@ -157,7 +167,6 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   // Mouse Tracking state for dynamic light glow bubble
   const cardRef = useRef(null);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
-  
 
   const handleMouseMove = (e) => {
     if (!cardRef.current) return;
@@ -171,7 +180,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   const handleIncrementStar = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!isAuthenticated()) {
       toast.error("You must be logged in to upvote a project.");
       return;
@@ -180,14 +189,14 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     try {
       await projectService.upvoteProject(project.id, {
         headers: {
-          Authorization: token
-        }
+          Authorization: token,
+        },
       });
-      
+
       const repoDetails = getGitHubRepoDetails(project.githubUrl);
       const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
-      
-      setMetrics(prev => {
+
+      setMetrics((prev) => {
         const updated = { ...prev, stars: (prev?.stars || 0) + 1 };
         try {
           let cache = {};
@@ -208,11 +217,11 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   const handleIncrementFork = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const repoDetails = getGitHubRepoDetails(project.githubUrl);
     const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
-    
-    setMetrics(prev => {
+
+    setMetrics((prev) => {
       const updated = { ...prev, forks: (prev?.forks || 0) + 1 };
       try {
         let cache = {};
@@ -307,7 +316,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   const hasValidLiveDemo = project.liveDemo && isValidUrl(project.liveDemo);
 
   // Header decorative random codes
- const csIcons = [Code2, Cpu, GitPullRequest];
+  const csIcons = [Code2, Cpu, GitPullRequest];
   const RandomIcon = csIcons[(index || 0) % csIcons.length];
 
   return (
@@ -318,19 +327,21 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       whileHover={{ y: -4 }}
       transition={{ type: "spring", stiffness: 200, damping: 22 }}
-      className="group relative bg-slate-800 text-white backdrop-blur-xl rounded-2xl border border-slate-200/50 dark:border-slate-800/40 shadow-md hover:shadow-[0_20px_40px_rgba(99,102,241,0.12)] overflow-hidden flex flex-col h-full transition-shadow duration-300"
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/50 bg-slate-800 text-white shadow-md backdrop-blur-xl transition-shadow duration-300 hover:shadow-[0_20px_40px_rgba(99,102,241,0.12)] dark:border-slate-800/40"
     >
       {/* Reactive Pointer Glow Overlay */}
 
       {/* Header */}
-      <div className="relative z-10 flex items-center gap-3 px-4 py-3 border-b border-slate-700 dark:border-slate-800/45 bg-slate-900 dark:from-slate-900/30 dark:to-slate-950/40">
-        <div className="w-10 h-10 rounded-xl border border-indigo-200/60 dark:border-indigo-800/30 flex items-center justify-center bg-white dark:bg-slate-900 text-indigo-500 shadow-sm shrink-0">
+      <div className="relative z-10 flex items-center gap-3 border-b border-slate-700 bg-slate-900 px-4 py-3 dark:border-slate-800/45 dark:from-slate-900/30 dark:to-slate-950/40">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-indigo-200/60 bg-white text-indigo-500 shadow-sm dark:border-indigo-800/30 dark:bg-slate-900">
           <RandomIcon size={18} />
         </div>
-        <h3 className="flex-1 min-w-0 text-base font-extrabold text-white tracking-tight line-clamp-1">
+        <h3 className="line-clamp-1 min-w-0 flex-1 text-base font-extrabold tracking-tight text-white">
           {project.title || "Untitled Project"}
         </h3>
-        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap shadow-xs ${getStatusColor(project.status)}`}>
+        <span
+          className={`rounded-full px-2.5 py-1 text-[10px] font-black tracking-wider whitespace-nowrap uppercase shadow-xs ${getStatusColor(project.status)}`}
+        >
           {project.status || "Unknown"}
         </span>
         <button
@@ -339,10 +350,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
             e.stopPropagation();
             onBookmarkToggle(project.id);
           }}
-          className={`p-2 rounded-xl border transition-colors shrink-0 cursor-pointer ${
+          className={`shrink-0 cursor-pointer rounded-xl border p-2 transition-colors ${
             isBookmarked
-              ? "bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/40 dark:border-indigo-900/60 dark:text-indigo-400"
-              : "bg-white border-slate-200 text-white hover:text-slate-600 dark:bg-slate-900 dark:border-slate-800 dark:hover:text-slate-200"
+              ? "border-indigo-200 bg-indigo-50 text-indigo-600 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-400"
+              : "border-slate-200 bg-white text-white hover:text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:hover:text-slate-200"
           }`}
           title={isBookmarked ? "Remove Bookmark" : "Bookmark Project"}
         >
@@ -351,59 +362,60 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       </div>
 
       {/* Hero Image */}
-      <div className="relative h-44 overflow-hidden border-b border-slate-700 bg-slate-900 z-10">
-
+      <div className="relative z-10 h-44 overflow-hidden border-b border-slate-700 bg-slate-900">
         <img
           src={project.image}
           alt={project.title || "Project preview"}
           loading="lazy"
           decoding="async"
           onLoad={() => setIsLoaded(true)}
-          className="relative w-full h-full object-cover hover:scale-102 transition-transform duration-500 z-10"
+          className="relative z-10 h-full w-full object-cover transition-transform duration-500 hover:scale-102"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none z-20" />
+        <div className="pointer-events-none absolute inset-0 z-20 bg-gradient-to-t from-black/60 to-transparent" />
       </div>
 
       {/* Main Content Layout */}
-      <div className="relative z-10 flex flex-col flex-1 p-4 space-y-4 bg-slate-800">
+      <div className="relative z-10 flex flex-1 flex-col space-y-4 bg-slate-800 p-4">
         {/* Description */}
-        <p className="text-xs sm:text-sm text-white leading-relaxed line-clamp-3">
-  {project.description}
-</p>
+        <p className="line-clamp-3 text-xs leading-relaxed text-white sm:text-sm">
+          {project.description}
+        </p>
 
         {/* Categories & Level badge pills */}
         <div className="flex flex-wrap gap-2 pt-1">
-          <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-indigo-600/20 text-white rounded-lg border border-indigo-500/30">
+          <span className="rounded-lg border border-indigo-500/30 bg-indigo-600/20 px-2.5 py-1 text-[10px] font-black tracking-wider text-white uppercase">
             {project.category || "Uncategorized"}
           </span>
-          <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider border rounded-lg ${getDifficultyColor(project.difficulty)}`}>
+          <span
+            className={`rounded-lg border px-2.5 py-1 text-[10px] font-black tracking-wider uppercase ${getDifficultyColor(project.difficulty)}`}
+          >
             {project.difficulty || "Unknown"}
           </span>
         </div>
 
         {/* Animated Radial Rings Section */}
         <div className="flex flex-wrap gap-2">
-  {project.techStack?.slice(0, 5).map((tech) => (
-    <span
-      key={tech}
-      className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-900/40 text-white border border-indigo-500/20"
-    >
-      {tech}
-    </span>
-  ))}
-</div>
+          {project.techStack?.slice(0, 5).map((tech) => (
+            <span
+              key={tech}
+              className="rounded-full border border-indigo-500/20 bg-indigo-900/40 px-3 py-1 text-xs font-medium text-white"
+            >
+              {tech}
+            </span>
+          ))}
+        </div>
 
         {/* Author / Committer Header */}
-        <div className="flex items-center justify-between pt-1 border-t border-slate-100/80 dark:border-slate-800/30">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-pink-500 text-white flex items-center justify-center text-xs font-black uppercase shrink-0 shadow-sm">
+        <div className="flex items-center justify-between border-t border-slate-100/80 pt-1 dark:border-slate-800/30">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-pink-500 text-xs font-black text-white uppercase shadow-sm">
               {project.author?.charAt(0) || "U"}
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-bold text-white uppercase tracking-widest leading-none">
+            <div className="flex min-w-0 flex-col">
+              <span className="text-[10px] leading-none font-bold tracking-widest text-white uppercase">
                 Creator
               </span>
-              <span className="text-sm font-semibold text-white truncate mt-1">
+              <span className="mt-1 truncate text-sm font-semibold text-white">
                 {project.author || "Unknown"}
               </span>
             </div>
@@ -416,7 +428,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
             {metricsLoading ? (
               <div className="grid grid-cols-4 gap-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-7 bg-slate-100 dark:bg-slate-900/60 rounded-lg animate-pulse" />
+                  <div
+                    key={i}
+                    className="h-7 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-900/60"
+                  />
                 ))}
               </div>
             ) : (
@@ -428,24 +443,26 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
               >
                 <button
                   onClick={handleIncrementStar}
-                  className="flex flex-col items-center justify-center bg-amber-50/50 hover:bg-amber-100/80 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border border-amber-100/20 dark:border-amber-900/10 rounded-xl py-1 text-amber-600 dark:text-amber-400 font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-amber-100/20 bg-amber-50/50 py-1 font-extrabold text-amber-600 transition-all hover:scale-105 hover:bg-amber-100/80 active:scale-95 dark:border-amber-900/10 dark:bg-amber-950/20 dark:text-amber-400 dark:hover:bg-amber-950/40"
                   title="Click to Star repository!"
-                 aria-label="Star repository">
+                  aria-label="Star repository"
+                >
                   <Star className="mb-0.5" />
                   <span>{metrics?.stars || 0}</span>
                 </button>
 
                 <button
                   onClick={handleIncrementFork}
-                  className="flex flex-col items-center justify-center bg-teal-50/50 hover:bg-teal-100/80 dark:bg-teal-950/20 dark:hover:bg-teal-950/40 border border-teal-100/20 dark:border-teal-900/10 rounded-xl py-1 text-teal-600 dark:text-teal-400 font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-teal-100/20 bg-teal-50/50 py-1 font-extrabold text-teal-600 transition-all hover:scale-105 hover:bg-teal-100/80 active:scale-95 dark:border-teal-900/10 dark:bg-teal-950/20 dark:text-teal-400 dark:hover:bg-teal-950/40"
                   title="Click to Fork repository!"
-                 aria-label="Fork repository">
+                  aria-label="Fork repository"
+                >
                   <Github className="mb-0.5" />
                   <span>{metrics?.forks || 0}</span>
                 </button>
 
                 <div
-                  className="flex flex-col items-center justify-center bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/20 dark:border-rose-900/10 rounded-xl py-1 text-rose-600 dark:text-rose-400 font-extrabold cursor-help"
+                  className="flex cursor-help flex-col items-center justify-center rounded-xl border border-rose-100/20 bg-rose-50/50 py-1 font-extrabold text-rose-600 dark:border-rose-900/10 dark:bg-rose-950/20 dark:text-rose-400"
                   title="Open Issues"
                 >
                   <AlertCircle className="mb-0.5" />
@@ -453,7 +470,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
                 </div>
 
                 <div
-                  className="flex flex-col items-center justify-center bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/20 dark:border-indigo-900/10 rounded-xl py-1 text-indigo-600 dark:text-indigo-400 font-extrabold cursor-help"
+                  className="flex cursor-help flex-col items-center justify-center rounded-xl border border-indigo-100/20 bg-indigo-50/50 py-1 font-extrabold text-indigo-600 dark:border-indigo-900/10 dark:bg-indigo-950/20 dark:text-indigo-400"
                   title="Pull Requests"
                 >
                   <GitPullRequest className="mb-0.5" />
@@ -466,20 +483,21 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       </div>
 
       {/* Custom Action buttons panel */}
-      <div className="relative z-10 px-5 pb-5 pt-1 flex flex-col sm:flex-row gap-3 mt-auto">
+      <div className="relative z-10 mt-auto flex flex-col gap-3 px-5 pt-1 pb-5 sm:flex-row">
         {hasValidRepo ? (
           <motion.a
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             href={project.githubUrl}
-            target="_blank" rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80 text-white text-xs font-black shadow-md hover:shadow-lg transition-all duration-300 border-none cursor-pointer"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-slate-900 px-4 py-2 text-xs font-black text-white shadow-md transition-all duration-300 hover:bg-slate-800 hover:shadow-lg dark:bg-slate-900 dark:hover:bg-slate-800/80"
           >
             <Github className="text-sm" />
             Repository
           </motion.a>
         ) : (
-          <div className="flex-1 flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black cursor-not-allowed border border-slate-700 dark:border-slate-800/20">
+          <div className="flex flex-1 cursor-not-allowed items-center justify-center rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-xs font-black text-white dark:border-slate-800/20">
             No Repository
           </div>
         )}
@@ -489,14 +507,15 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             href={project.liveDemo}
-            target="_blank" rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-indigo-200 hover:border-indigo-300 dark:border-indigo-800/50 dark:hover:border-indigo-700 bg-white/40 dark:bg-slate-900/20 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 text-xs font-black shadow-xs hover:shadow-sm transition-all duration-300 cursor-pointer"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white/40 px-4 py-2 text-xs font-black text-indigo-600 shadow-xs transition-all duration-300 hover:border-indigo-300 hover:bg-indigo-50/50 hover:shadow-sm dark:border-indigo-800/50 dark:bg-slate-900/20 dark:text-indigo-400 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/20"
           >
             <ExternalLink className="text-sm" />
             Live Demo
           </motion.a>
         ) : (
-          <div className="flex-1 flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black cursor-not-allowed border border-slate-700 dark:border-slate-800/20">
+          <div className="flex flex-1 cursor-not-allowed items-center justify-center rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-xs font-black text-white dark:border-slate-800/20">
             No Live Demo
           </div>
         )}
@@ -504,6 +523,5 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     </motion.div>
   );
 };
-
 
 export default memo(ProjectCard);

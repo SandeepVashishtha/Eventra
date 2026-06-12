@@ -1,32 +1,32 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { authService } from '../../services/authService';
-import './Auth.css'; // Keeps their existing styling intact
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { authService } from "../../services/authService";
+import "./Auth.css"; // Keeps their existing styling intact
 
 export default function LoginForm() {
-  const [emailOrUsername, setEmailOrUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [emailOrUsername, setEmailOrUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     const credentials = {
       usernameOrEmail: emailOrUsername,
-      password: password
+      password: password,
     };
 
     try {
       // Calls the service utility we verified in authService.js
       await authService.login(credentials);
-      
+
       // Redirects user to dashboard on successful authentication
-      window.location.href = '/dashboard';
+      window.location.href = "/dashboard";
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      setError(err.response?.data?.message || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -36,41 +36,45 @@ export default function LoginForm() {
     <div className="login-form-container">
       <form onSubmit={handleSubmit} className="auth-form">
         <h2>Login to Eventra</h2>
-        
-        {error && <div className="error-banner" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
-        
+
+        {error && (
+          <div className="error-banner" style={{ color: "red", marginBottom: "10px" }}>
+            {error}
+          </div>
+        )}
+
         <div className="form-group">
           <label>Username or Email</label>
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={emailOrUsername}
             onChange={(e) => setEmailOrUsername(e.target.value)}
             disabled={loading}
-            required 
+            required
             placeholder="Enter your username or email"
           />
         </div>
 
         <div className="form-group">
           <label>Password</label>
-          <input 
-            type="password" 
+          <input
+            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
-            required 
+            required
             placeholder="Enter your password"
           />
         </div>
 
-        <div style={{ textAlign: 'right', marginTop: '-12px' }}>
-          <Link to="/password-reset" className="auth-link" style={{ fontSize: '0.9rem' }}>
+        <div style={{ textAlign: "right", marginTop: "-12px" }}>
+          <Link to="/password-reset" className="auth-link" style={{ fontSize: "0.9rem" }}>
             Forgot Password?
           </Link>
         </div>
 
         <button type="submit" disabled={loading} className="btn-submit">
-          {loading ? 'Authenticating...' : 'Login'}
+          {loading ? "Authenticating..." : "Login"}
         </button>
       </form>
     </div>

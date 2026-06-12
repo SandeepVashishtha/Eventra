@@ -13,7 +13,7 @@ const RankMovementIndicator = memo(({ liveDifference }) => {
         className="inline-flex items-center gap-0.5 text-[10px] font-black text-emerald-500"
         aria-label={`Rank improved by ${diff} position${diff > 1 ? "s" : ""}`}
       >
-        <ArrowUp className="w-2.5 h-2.5 animate-bounce" />
+        <ArrowUp className="h-2.5 w-2.5 animate-bounce" />
         <span className="sr-only">Up</span>
         {diff}
       </motion.span>
@@ -28,15 +28,18 @@ const RankMovementIndicator = memo(({ liveDifference }) => {
         className="inline-flex items-center gap-0.5 text-[10px] font-black text-rose-500"
         aria-label={`Rank dropped by ${absDiff} position${absDiff > 1 ? "s" : ""}`}
       >
-        <ArrowDown className="w-2.5 h-2.5" />
+        <ArrowDown className="h-2.5 w-2.5" />
         <span className="sr-only">Down</span>
         {absDiff}
       </motion.span>
     );
   }
   return (
-    <span className="inline-flex items-center text-[10px] font-bold text-slate-400" aria-label="No rank change">
-      <Minus className="w-2 h-2" aria-hidden="true" />
+    <span
+      className="inline-flex items-center text-[10px] font-bold text-slate-400"
+      aria-label="No rank change"
+    >
+      <Minus className="h-2 w-2" aria-hidden="true" />
     </span>
   );
 });

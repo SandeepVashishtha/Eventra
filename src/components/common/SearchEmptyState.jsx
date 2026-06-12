@@ -2,11 +2,7 @@ import { Link } from "react-router-dom";
 import { Search, X } from "lucide-react";
 import EmptyState from "./EmptyState";
 
-const DEFAULT_SUGGESTIONS = [
-  "Check your spelling",
-  "Use fewer keywords",
-  "Try a broader topic",
-];
+const DEFAULT_SUGGESTIONS = ["Check your spelling", "Use fewer keywords", "Try a broader topic"];
 
 const SEARCH_LINKS = [
   { label: "Events", to: "/events" },
@@ -28,23 +24,13 @@ const SearchEmptyState = ({
   const description = "Try one of these suggestions or explore other sections on Eventra.";
 
   return (
-    <EmptyState
-      title={title}
-      description={description}
-      icon={Search}
-    >
+    <EmptyState title={title} description={description} icon={Search}>
       {/* Suggestions */}
-      <ul className="mt-6 grid gap-3 text-left text-sm text-slate-700 dark:text-slate-300 sm:grid-cols-3">
+      <ul className="mt-6 grid gap-3 text-left text-sm text-slate-700 sm:grid-cols-3 dark:text-slate-300">
         {suggestions.map((suggestion) => (
           <li
             key={suggestion}
-            className="
-              rounded-xl
-              border border-slate-200 dark:border-slate-700
-              bg-white dark:bg-slate-900
-              px-4 py-3
-              shadow-sm
-            "
+            className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900"
           >
             {suggestion}
           </li>
@@ -57,14 +43,7 @@ const SearchEmptyState = ({
           {popularTags.slice(0, 6).map((tag) => (
             <span
               key={tag}
-              className="
-                rounded-full
-                border border-slate-200 dark:border-slate-700
-                bg-slate-100 dark:bg-slate-800
-                px-3 py-1
-                text-xs font-medium
-                text-slate-700 dark:text-slate-200
-              "
+              className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
             >
               {tag}
             </span>
@@ -77,18 +56,7 @@ const SearchEmptyState = ({
         <button
           type="button"
           onClick={onClear}
-          className="
-            inline-flex items-center justify-center gap-2
-            rounded-xl
-            bg-blue-600
-            px-5 py-3
-            text-sm font-semibold
-            text-white
-            transition-all duration-200
-            hover:bg-blue-700
-            shadow-sm
-          "
-
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700"
         >
           <X size={16} aria-hidden="true" />
           Clear Search
@@ -97,17 +65,7 @@ const SearchEmptyState = ({
         <Link
           to={browsePath}
           onClick={onClear}
-          className="
-            inline-flex items-center justify-center
-            rounded-xl
-            border border-slate-200 dark:border-slate-700
-            bg-white dark:bg-slate-900
-            px-5 py-3
-            text-sm font-semibold
-            text-slate-800 dark:text-white
-            transition-all duration-200
-            hover:bg-slate-50 dark:hover:bg-slate-800
-          "
+          className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition-all duration-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
         >
           {browseLabel}
         </Link>
@@ -119,18 +77,8 @@ const SearchEmptyState = ({
         {SEARCH_LINKS.map((link) => (
           <Link
             key={link.to}
-            to={
-              hasQuery
-                ? `${link.to}?search=${encodeURIComponent(query)}`
-                : link.to
-            }
-            className="
-              font-medium
-              text-blue-600
-              hover:text-blue-700
-              dark:text-blue-400
-              dark:hover:text-blue-300
-            "
+            to={hasQuery ? `${link.to}?search=${encodeURIComponent(query)}` : link.to}
+            className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
           >
             {link.label}
           </Link>

@@ -42,10 +42,7 @@ const pad = (n) => String(n).padStart(2, "0");
 
 // Compact version for EventCard
 export const CountdownBadge = ({ date, time, timezone }) => {
-  const deadline = useMemo(
-    () => resolveDeadline(date, time, timezone),
-    [date, time, timezone]
-  );
+  const deadline = useMemo(() => resolveDeadline(date, time, timezone), [date, time, timezone]);
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
@@ -64,14 +61,14 @@ export const CountdownBadge = ({ date, time, timezone }) => {
 
   if (!timeLeft) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-600 dark:bg-red-900/40 dark:text-red-400">
         Registration Closed
       </span>
     );
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
       <Clock size={11} />
       {timeLeft.days}d {pad(timeLeft.hours)}h {pad(timeLeft.minutes)}m {pad(timeLeft.seconds)}s
     </span>
@@ -80,10 +77,7 @@ export const CountdownBadge = ({ date, time, timezone }) => {
 
 // Large version for EventDetails
 const CountdownTimer = ({ date, time, timezone }) => {
-  const deadline = useMemo(
-    () => resolveDeadline(date, time, timezone),
-    [date, time, timezone]
-  );
+  const deadline = useMemo(() => resolveDeadline(date, time, timezone), [date, time, timezone]);
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
@@ -102,8 +96,8 @@ const CountdownTimer = ({ date, time, timezone }) => {
 
   if (!timeLeft) {
     return (
-      <div className="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-        <span className="text-red-600 dark:text-red-400 font-bold text-lg">
+      <div className="flex items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-6 py-4 dark:border-red-800 dark:bg-red-900/20">
+        <span className="text-lg font-bold text-red-600 dark:text-red-400">
           Registration Closed
         </span>
       </div>
@@ -118,10 +112,10 @@ const CountdownTimer = ({ date, time, timezone }) => {
   ];
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-gray-800 border border-indigo-200 dark:border-indigo-700 p-5">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 dark:border-indigo-700 dark:from-indigo-950/40 dark:to-gray-800">
+      <div className="mb-4 flex items-center gap-2">
         <Clock size={16} className="text-indigo-500" />
-        <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
+        <span className="text-sm font-semibold tracking-wide text-indigo-600 uppercase dark:text-indigo-400">
           Registration Closes In
         </span>
       </div>
@@ -129,12 +123,12 @@ const CountdownTimer = ({ date, time, timezone }) => {
         {units.map(({ label, value }) => (
           <div
             key={label}
-            className="flex flex-col items-center bg-white dark:bg-gray-900 rounded-xl py-3 px-1 shadow-sm border border-indigo-100 dark:border-indigo-800"
+            className="flex flex-col items-center rounded-xl border border-indigo-100 bg-white px-1 py-3 shadow-sm dark:border-indigo-800 dark:bg-gray-900"
           >
-            <span className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 tabular-nums">
+            <span className="text-2xl font-bold text-indigo-700 tabular-nums dark:text-indigo-300">
               {pad(value)}
             </span>
-            <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
+            <span className="mt-1 text-[10px] tracking-widest text-gray-500 uppercase dark:text-gray-400">
               {label}
             </span>
           </div>

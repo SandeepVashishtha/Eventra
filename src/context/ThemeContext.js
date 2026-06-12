@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, createContext, useContext, useEffect, useMemo, useState } from "react";
 import { MotionConfig } from "framer-motion";
 import { THEMES } from "../components/styles/theme";
 import { useReducedMotion } from "../hooks/useReducedMotion";
@@ -40,8 +33,7 @@ const safeStorage = {
 };
 
 const getSystemTheme = () =>
-  typeof window !== "undefined" &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
+  typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 
@@ -67,15 +59,12 @@ export const ThemeProvider = ({ children }) => {
   const [customHsl, setCustomHsl] = useState(() => {
     const saved = safeStorage.getItem("customHsl");
 
-    return safeJsonParse(
-      saved,
-      {
-        h: 220,
-        s: 90,
-        l: 56,
-        active: false,
-      },
-    );
+    return safeJsonParse(saved, {
+      h: 220,
+      s: 90,
+      l: 56,
+      active: false,
+    });
   });
 
   // Reduced motion state
@@ -116,8 +105,8 @@ export const ThemeProvider = ({ children }) => {
     const activeTheme = THEMES[activeThemeId] || THEMES.default;
     const themeColors =
       resolvedTheme === "dark"
-        ? (activeTheme.colors.dark || activeTheme.colors.light)
-        : (activeTheme.colors.light || activeTheme.colors.dark);
+        ? activeTheme.colors.dark || activeTheme.colors.light
+        : activeTheme.colors.light || activeTheme.colors.dark;
     if (themeColors) {
       Object.entries(themeColors).forEach(([variable, val]) => {
         root.style.setProperty(variable, val);
@@ -128,7 +117,10 @@ export const ThemeProvider = ({ children }) => {
     if (customHsl && customHsl.active) {
       const pColor = `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l}%)`;
       root.style.setProperty("--primary-color", pColor);
-      root.style.setProperty("--primary-hover", `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l - 8}%)`);
+      root.style.setProperty(
+        "--primary-hover",
+        `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l - 8}%)`
+      );
     } else {
       root.style.removeProperty("--primary-color");
       root.style.removeProperty("--primary-hover");
@@ -143,8 +135,9 @@ export const ThemeProvider = ({ children }) => {
       if (customHsl && customHsl.active) {
         themeColor = `hsl(${customHsl.h}, ${customHsl.s}%, ${customHsl.l}%)`;
       } else {
-        const isDark = document.documentElement.classList.contains("dark") || 
-                       window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const isDark =
+          document.documentElement.classList.contains("dark") ||
+          window.matchMedia("(prefers-color-scheme: dark)").matches;
         themeColor = isDark ? "#090e1a" : "#ffffff";
       }
       metaTheme.setAttribute("content", themeColor);
@@ -177,9 +170,7 @@ export const ThemeProvider = ({ children }) => {
     const existingStyle = document.getElementById(styleId);
     if (existingStyle) existingStyle.remove();
     if (typeof CSSStyleSheet !== "undefined") {
-      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
-        (s) => !s._rm
-      );
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter((s) => !s._rm);
     }
 
     if (reducedMotion) {
@@ -252,9 +243,7 @@ export const ThemeProvider = ({ children }) => {
 
   return (
     <ThemeContext.Provider value={value}>
-      <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>
-        {children}
-      </MotionConfig>
+      <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>{children}</MotionConfig>
     </ThemeContext.Provider>
   );
 };

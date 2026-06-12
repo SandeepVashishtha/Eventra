@@ -16,26 +16,18 @@ export const formatDate = (dateString) => {
 };
 
 export const formatTime = (timeString) => {
-  return new Date(`2000-01-01T${timeString}`).toLocaleTimeString(
-    "en-US",
-    {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    }
-  );
+  return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 };
 
 export const validateCoordinates = (latitude, longitude) => {
   const lat = parseFloat(latitude);
   const lng = parseFloat(longitude);
 
-  if (
-    lat >= -90 &&
-    lat <= 90 &&
-    lng >= -180 &&
-    lng <= 180
-  ) {
+  if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
     return {
       latitude: lat,
       longitude: lng,

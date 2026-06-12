@@ -78,14 +78,10 @@ const NotificationCenter = () => {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900 sm:text-3xl dark:text-white">
               <Bell className="h-7 w-7 text-indigo-600" aria-hidden="true" />
               Notification Center
             </h1>
@@ -135,7 +131,7 @@ const NotificationCenter = () => {
       <div className="mb-6 space-y-4">
         <div className="relative">
           <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400"
             aria-hidden="true"
           />
           <input
@@ -143,7 +139,7 @@ const NotificationCenter = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search notifications..."
-            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pr-4 pl-10 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             aria-label="Search notifications"
           />
         </div>
@@ -170,10 +166,7 @@ const NotificationCenter = () => {
       {loading && notifications.length === 0 ? (
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="h-20 animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800"
-            />
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800" />
           ))}
         </div>
       ) : filteredNotifications.length === 0 ? (
@@ -190,7 +183,7 @@ const NotificationCenter = () => {
         <div className="space-y-8">
           {groupedByDate.map(([label, items]) => (
             <section key={label}>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+              <h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-400 uppercase">
                 {label}
               </h2>
               <AnimatePresence mode="popLayout">

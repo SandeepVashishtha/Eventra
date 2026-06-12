@@ -4,17 +4,66 @@
  */
 
 const POSITIVE_KEYWORDS = new Set([
-  "love", "like", "perfect", "amazing", "great", "excellent", "awesome",
-  "fantastic", "beautiful", "helpful", "easy", "fast", "smooth", "happy",
-  "nice", "resolved", "satisfied", "solved", "best", "cool", "wonderful",
-  "superb", "outstanding", "impressive", "brilliant", "glad", "enjoyed"
+  "love",
+  "like",
+  "perfect",
+  "amazing",
+  "great",
+  "excellent",
+  "awesome",
+  "fantastic",
+  "beautiful",
+  "helpful",
+  "easy",
+  "fast",
+  "smooth",
+  "happy",
+  "nice",
+  "resolved",
+  "satisfied",
+  "solved",
+  "best",
+  "cool",
+  "wonderful",
+  "superb",
+  "outstanding",
+  "impressive",
+  "brilliant",
+  "glad",
+  "enjoyed",
 ]);
 
 const NEGATIVE_KEYWORDS = new Set([
-  "hate", "dislike", "terrible", "bad", "awful", "broke", "crash", "bug",
-  "error", "slow", "lag", "poor", "hard", "difficult", "complex", "frustrated",
-  "fail", "worst", "issues", "broken", "complain", "annoyed", "useless",
-  "crashed", "slowly", "laggy", "painful", "horrible", "defect", "failure"
+  "hate",
+  "dislike",
+  "terrible",
+  "bad",
+  "awful",
+  "broke",
+  "crash",
+  "bug",
+  "error",
+  "slow",
+  "lag",
+  "poor",
+  "hard",
+  "difficult",
+  "complex",
+  "frustrated",
+  "fail",
+  "worst",
+  "issues",
+  "broken",
+  "complain",
+  "annoyed",
+  "useless",
+  "crashed",
+  "slowly",
+  "laggy",
+  "painful",
+  "horrible",
+  "defect",
+  "failure",
 ]);
 
 export const analyzeSentiment = (text) => {
@@ -23,13 +72,13 @@ export const analyzeSentiment = (text) => {
   }
 
   const normalized = text.toLowerCase();
-  
+
   // Simple word tokenization matching alphabetic sequences
   const words = normalized.match(/[a-z]+/g) || [];
-  
+
   let score = 0;
-  
-  words.forEach(word => {
+
+  words.forEach((word) => {
     if (POSITIVE_KEYWORDS.has(word)) {
       score += 1.5;
     } else if (NEGATIVE_KEYWORDS.has(word)) {
@@ -49,33 +98,33 @@ export const getSentimentDisplay = (score) => {
     return {
       emoji: "🌟",
       label: "Excited / Highly Positive",
-      color: "text-green-500 dark:text-green-400 animate-bounce"
+      color: "text-green-500 dark:text-green-400 animate-bounce",
     };
   }
   if (score >= 0.2) {
     return {
       emoji: "🙂",
       label: "Happy / Positive",
-      color: "text-emerald-500 dark:text-emerald-400"
+      color: "text-emerald-500 dark:text-emerald-400",
     };
   }
   if (score < -1.5) {
     return {
       emoji: "😢",
       label: "Frustrated / Highly Negative",
-      color: "text-red-500 dark:text-red-400 animate-pulse"
+      color: "text-red-500 dark:text-red-400 animate-pulse",
     };
   }
   if (score <= -0.2) {
     return {
       emoji: "🙁",
       label: "Muted / Negative",
-      color: "text-amber-500 dark:text-amber-400"
+      color: "text-amber-500 dark:text-amber-400",
     };
   }
   return {
     emoji: "😐",
     label: "Neutral",
-    color: "text-gray-500 dark:text-gray-400"
+    color: "text-gray-500 dark:text-gray-400",
   };
 };

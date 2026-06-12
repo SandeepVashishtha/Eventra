@@ -8,8 +8,7 @@ export const getUserDisplayNames = (user) => {
     user.email ||
     "User";
 
-  const secondary =
-    user.email && user.email !== primary ? user.email : null;
+  const secondary = user.email && user.email !== primary ? user.email : null;
 
   return { primary, secondary };
 };

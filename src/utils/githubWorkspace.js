@@ -279,14 +279,7 @@ export const addCollaborator = async (token, owner, repo, username) => {
  * }>}
  */
 export const bootstrapWorkspace = async (token, config, onProgress = () => {}) => {
-  const {
-    repoName,
-    description,
-    isPrivate,
-    hackathonName,
-    projectIdea,
-    teammates,
-  } = config;
+  const { repoName, description, isPrivate, hackathonName, projectIdea, teammates } = config;
 
   // Step 1: Validate token & get owner login
   onProgress("validating");
@@ -294,12 +287,15 @@ export const bootstrapWorkspace = async (token, config, onProgress = () => {}) =
 
   // Step 2: Create repository
   onProgress("creating_repo");
-  const { html_url: repoUrl, full_name: fullName, clone_url: cloneUrl } =
-    await createHackathonRepo(token, {
-      name: repoName,
-      description,
-      isPrivate,
-    });
+  const {
+    html_url: repoUrl,
+    full_name: fullName,
+    clone_url: cloneUrl,
+  } = await createHackathonRepo(token, {
+    name: repoName,
+    description,
+    isPrivate,
+  });
 
   // Step 3: Push README
   onProgress("pushing_readme");

@@ -1,7 +1,7 @@
 export class ApiError extends Error {
   constructor(
     message,
-    { status = null, data = null, isTimeout = false, isNetworkError = false } = {},
+    { status = null, data = null, isTimeout = false, isNetworkError = false } = {}
   ) {
     super(message);
     this.name = "ApiError";
@@ -55,9 +55,7 @@ export const normalizeApiError = (error) => {
   }
 
   return new ApiError(
-    error.response?.data?.message ||
-      error.message ||
-      `Request failed with status ${status}`,
+    error.response?.data?.message || error.message || `Request failed with status ${status}`,
     { status, data: error.response?.data || null }
   );
 };

@@ -59,10 +59,7 @@ const processInterestQueue = () => {
     }
 
     if (modified) {
-      localStorage.setItem(
-        "eventra_user_profile",
-        JSON.stringify({ ...existing, interests })
-      );
+      localStorage.setItem("eventra_user_profile", JSON.stringify({ ...existing, interests }));
     }
   } catch (error) {
     console.error("Failed to update user interests:", error);

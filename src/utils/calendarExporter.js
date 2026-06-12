@@ -39,14 +39,16 @@ const escapeICSText = (text = "") => {
  */
 export const downloadICSFile = (event) => {
   const { title, description, date, endDate, location, id } = event;
-  
+
   const formattedStart = formatToICSDate(date);
   if (!formattedStart) {
     console.error("Invalid event date provided for ICS export.");
     return;
   }
-  
-  const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
+
+  const formattedEnd = endDate
+    ? formatToICSDate(endDate)
+    : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
   const createdDate = formatToICSDate(new Date());
 
   const icsLines = [
@@ -77,17 +79,20 @@ export const downloadICSFile = (event) => {
     "DESCRIPTION:Reminder: Your event starts tomorrow",
     "END:VALARM",
     "END:VEVENT",
-    "END:VCALENDAR"
+    "END:VCALENDAR",
   ];
 
   const icsString = icsLines.join("\r\n");
   const blob = new Blob([icsString], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
-  
+
   const link = document.createElement("a");
   link.href = url;
-  link.setAttribute("download", `${(title || "event").toLowerCase().replace(/[^a-z0-9]/g, "-")}.ics`);
-  
+  link.setAttribute(
+    "download",
+    `${(title || "event").toLowerCase().replace(/[^a-z0-9]/g, "-")}.ics`
+  );
+
   try {
     document.body.appendChild(link);
     link.click();
@@ -110,9 +115,11 @@ export const generateGoogleCalendarLink = (event) => {
   const { title, description, date, endDate, location } = event;
   const start = formatToICSDate(date);
   if (!start) return null;
-  
-  const end = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
-  
+
+  const end = endDate
+    ? formatToICSDate(endDate)
+    : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
+
   const baseUrl = "https://calendar.google.com/calendar/render";
   const params = new URLSearchParams({
     action: "TEMPLATE",
@@ -121,7 +128,7 @@ export const generateGoogleCalendarLink = (event) => {
     details: description || "Event organized through the Eventra Platform.",
     location: location || "Virtual / Online Event",
     sf: "true",
-    output: "xml"
+    output: "xml",
   });
 
   return `${baseUrl}?${params.toString()}`;
@@ -136,9 +143,11 @@ export const generateOutlookLink = (event) => {
   const { title, description, date, endDate, location } = event;
   const startDate = new Date(date);
   if (isNaN(startDate.getTime())) return null;
-  
+
   const start = startDate.toISOString();
-  const end = endDate ? new Date(endDate).toISOString() : new Date(startDate.getTime() + 2 * 60 * 60 * 1000).toISOString();
+  const end = endDate
+    ? new Date(endDate).toISOString()
+    : new Date(startDate.getTime() + 2 * 60 * 60 * 1000).toISOString();
 
   const baseUrl = "https://outlook.live.com/calendar/0/deeplink/compose";
   const params = new URLSearchParams({
@@ -147,7 +156,7 @@ export const generateOutlookLink = (event) => {
     startdt: start,
     enddt: end,
     body: description || "Event organized through the Eventra Platform.",
-    location: location || "Virtual / Online Event"
+    location: location || "Virtual / Online Event",
   });
 
   return `${baseUrl}?${params.toString()}`;
@@ -168,12 +177,12 @@ export const generateYahooCalendarLink = (event) => {
     : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
 
   const params = new URLSearchParams({
-    v: '60',
-    title: title || 'Eventra Event',
+    v: "60",
+    title: title || "Eventra Event",
     st: start,
     et: end,
-    desc: description || 'Event organized through the Eventra Platform.',
-    in_loc: location || 'Virtual / Online Event',
+    desc: description || "Event organized through the Eventra Platform.",
+    in_loc: location || "Virtual / Online Event",
   });
 
   return `https://calendar.yahoo.com/?${params.toString()}`;
@@ -188,23 +197,25 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
   if (!Array.isArray(events) || events.length === 0) return;
 
   const createdDate = formatToICSDate(new Date());
-  
+
   const icsLines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Eventra//Event Organizer Platform//EN",
     "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH"
+    "METHOD:PUBLISH",
   ];
 
   events.forEach((item) => {
     const eventObj = item.event ? item.event : item;
     const { title, description, date, endDate, location, id } = eventObj;
-    
+
     const formattedStart = formatToICSDate(date);
     if (!formattedStart) return;
-    
-    const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
+
+    const formattedEnd = endDate
+      ? formatToICSDate(endDate)
+      : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
 
     icsLines.push(
       "BEGIN:VEVENT",
@@ -231,11 +242,11 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
   const icsString = icsLines.join("\r\n");
   const blob = new Blob([icsString], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
-  
+
   const link = document.createElement("a");
   link.href = url;
   link.setAttribute("download", `${filename.toLowerCase().replace(/[^a-z0-9]/g, "-")}.ics`);
-  
+
   try {
     document.body.appendChild(link);
     link.click();

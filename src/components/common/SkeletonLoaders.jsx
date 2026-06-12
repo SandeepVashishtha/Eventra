@@ -6,30 +6,33 @@ export const SkeletonBlock = ({ className = "", ...props }) => (
 );
 
 export const SkeletonEventCard = () => (
-  <div aria-hidden="true" className="group relative bg-white dark:bg-gray-900 rounded-3xl shadow-xl flex flex-col overflow-hidden border border-gray-100 dark:border-gray-800">
-    <div className="flex items-center px-5 py-4 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800">
-      <SkeletonBlock className="w-10 h-10 rounded-xl" />
+  <div
+    aria-hidden="true"
+    className="group relative flex flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900"
+  >
+    <div className="flex items-center gap-4 border-b border-gray-100 bg-gradient-to-r from-white/80 to-indigo-50/60 px-5 py-4 dark:border-gray-800 dark:from-gray-900/80 dark:to-indigo-950/60">
+      <SkeletonBlock className="h-10 w-10 rounded-xl" />
       <SkeletonBlock className="h-6 flex-1" />
       <SkeletonBlock className="h-6 w-16 rounded-full" />
     </div>
 
     <SkeletonBlock className="h-40 w-full" />
 
-    <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-      <SkeletonBlock className="h-4 w-full mb-2" />
+    <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+      <SkeletonBlock className="mb-2 h-4 w-full" />
       <SkeletonBlock className="h-4 w-5/6" />
     </div>
 
-    <div className="px-5 py-4 grid grid-cols-2 gap-x-4 gap-y-3 bg-gray-50/50 dark:bg-gray-800/30">
+    <div className="grid grid-cols-2 gap-x-4 gap-y-3 bg-gray-50/50 px-5 py-4 dark:bg-gray-800/30">
       {[...Array(4)].map((_, i) => (
         <div key={i} className="flex items-center gap-2">
-          <SkeletonBlock className="w-4 h-4 rounded" />
+          <SkeletonBlock className="h-4 w-4 rounded" />
           <SkeletonBlock className="h-4 flex-1" />
         </div>
       ))}
     </div>
 
-    <div className="px-5 py-4 flex gap-3 mt-auto">
+    <div className="mt-auto flex gap-3 px-5 py-4">
       <SkeletonBlock className="h-12 flex-1 rounded-2xl" />
       <SkeletonBlock className="h-12 flex-1 rounded-2xl" />
     </div>
@@ -39,74 +42,84 @@ export const SkeletonEventCard = () => (
 export const EventCardSkeleton = SkeletonEventCard;
 
 export const HomeCardSkeleton = () => (
-  <div aria-hidden="true" className="flex flex-col rounded-xl overflow-hidden shadow-md bg-white dark:bg-black/60 min-h-[300px] sm:min-h-[360px] ring-2 ring-sky-200 dark:ring-sky-700/60 animate-pulse">
-    <div className="p-4 sm:p-6 flex-1 flex flex-col">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+  <div
+    aria-hidden="true"
+    className="flex min-h-[300px] animate-pulse flex-col overflow-hidden rounded-xl bg-white shadow-md ring-2 ring-sky-200 sm:min-h-[360px] dark:bg-black/60 dark:ring-sky-700/60"
+  >
+    <div className="flex flex-1 flex-col p-4 sm:p-6">
+      <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
         <SkeletonBlock className="h-6 w-24 rounded-full" />
         <SkeletonBlock className="h-5 w-16 rounded" />
       </div>
 
-      <SkeletonBlock className="h-7 w-3/4 mb-4" />
-      <SkeletonBlock className="h-4 w-full mb-2" />
-      <SkeletonBlock className="h-4 w-full mb-2" />
-      <SkeletonBlock className="h-4 w-2/3 mb-4" />
+      <SkeletonBlock className="mb-4 h-7 w-3/4" />
+      <SkeletonBlock className="mb-2 h-4 w-full" />
+      <SkeletonBlock className="mb-2 h-4 w-full" />
+      <SkeletonBlock className="mb-4 h-4 w-2/3" />
 
-      <div className="flex items-center mb-2">
-        <SkeletonBlock className="w-4 h-4 mr-2 rounded" />
+      <div className="mb-2 flex items-center">
+        <SkeletonBlock className="mr-2 h-4 w-4 rounded" />
         <SkeletonBlock className="h-4 w-32" />
       </div>
 
-      <div className="flex items-center mt-4">
-        <SkeletonBlock className="w-5 h-5 mr-2 rounded" />
+      <div className="mt-4 flex items-center">
+        <SkeletonBlock className="mr-2 h-5 w-5 rounded" />
         <SkeletonBlock className="h-4 w-40" />
       </div>
     </div>
 
-    <div className="bg-gray-50 dark:bg-gray-700/50 px-4 sm:px-6 py-3 sm:py-4">
+    <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:py-4 dark:bg-gray-700/50">
       <SkeletonBlock className="h-10 w-full rounded-md" />
     </div>
   </div>
 );
 
 export const ContributorCardSkeleton = ({ className = "", style = {} }) => (
-  <div style={style} aria-hidden="true" className={`relative bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center animate-pulse ${className}`}>
+  <div
+    style={style}
+    aria-hidden="true"
+    className={`relative flex animate-pulse flex-col items-center rounded-2xl border border-gray-100 bg-white/95 p-6 text-center shadow-lg backdrop-blur-xl dark:border-gray-700 dark:bg-gray-800/90 ${className}`}
+  >
     <div className="absolute -top-8 left-1/2 -translate-x-1/2">
-      <SkeletonBlock className="w-20 h-20 rounded-full border-4 border-white dark:border-gray-800 shadow-xl" />
+      <SkeletonBlock className="h-20 w-20 rounded-full border-4 border-white shadow-xl dark:border-gray-800" />
     </div>
 
-    <div className="mt-16 w-full flex flex-col items-center">
-      <SkeletonBlock className="h-6 w-32 mb-2" />
-      <SkeletonBlock className="h-4 w-24 mb-4" />
+    <div className="mt-16 flex w-full flex-col items-center">
+      <SkeletonBlock className="mb-2 h-6 w-32" />
+      <SkeletonBlock className="mb-4 h-4 w-24" />
     </div>
 
-    <div className="grid grid-cols-3 gap-3 my-5 w-full">
+    <div className="my-5 grid w-full grid-cols-3 gap-3">
       {[...Array(3)].map((_, i) => (
         <div
           key={i}
-          className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 p-2 rounded-lg"
+          className="flex flex-col items-center rounded-lg bg-white/60 p-2 dark:bg-gray-600/50"
         >
-          <SkeletonBlock className="w-4 h-4 mb-2" />
-          <SkeletonBlock className="h-4 w-8 mb-1" />
+          <SkeletonBlock className="mb-2 h-4 w-4" />
+          <SkeletonBlock className="mb-1 h-4 w-8" />
           <SkeletonBlock className="h-3 w-10" />
         </div>
       ))}
     </div>
 
-    <SkeletonBlock className="w-full h-2 rounded-full mb-4" />
+    <SkeletonBlock className="mb-4 h-2 w-full rounded-full" />
 
-    <div className="flex flex-col gap-1 w-full items-center mb-4">
+    <div className="mb-4 flex w-full flex-col items-center gap-1">
       <SkeletonBlock className="h-3 w-20" />
       <SkeletonBlock className="h-3 w-24" />
     </div>
 
-    <SkeletonBlock className="h-10 w-32 rounded-full mt-auto" />
+    <SkeletonBlock className="mt-auto h-10 w-32 rounded-full" />
   </div>
 );
 
 export const GitHubStatCardSkeleton = () => (
-  <div aria-hidden="true" className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg border border-gray-100 dark:border-gray-700 relative overflow-hidden animate-pulse">
-    <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3 w-full">
-      <SkeletonBlock className="p-2 sm:p-3 md:p-4 h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full" />
+  <div
+    aria-hidden="true"
+    className="group relative flex animate-pulse flex-col items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-white px-3 py-4 shadow-lg sm:px-6 sm:py-6 md:px-8 dark:border-gray-700 dark:bg-gray-800"
+  >
+    <div className="z-10 flex w-full flex-col items-center space-y-2 sm:space-y-3">
+      <SkeletonBlock className="h-12 w-12 rounded-full p-2 sm:h-16 sm:w-16 sm:p-3 md:h-20 md:w-20 md:p-4" />
       <SkeletonBlock className="h-6 w-16" />
       <SkeletonBlock className="h-4 w-20" />
     </div>
@@ -114,11 +127,14 @@ export const GitHubStatCardSkeleton = () => (
 );
 
 export const LeaderboardStatCardSkeleton = () => (
-  <div aria-hidden="true" className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:from-gray-800 dark:to-gray-900">
+  <div
+    aria-hidden="true"
+    className="rounded-2xl border border-gray-200 bg-gradient-to-br from-indigo-50 to-gray-50 p-6 shadow-sm dark:border-gray-700 dark:from-gray-800 dark:to-gray-900"
+  >
     <div className="flex items-center">
-      <SkeletonBlock className="h-12 w-12 rounded-xl mr-4" />
+      <SkeletonBlock className="mr-4 h-12 w-12 rounded-xl" />
       <div className="flex-1">
-        <SkeletonBlock className="h-4 w-28 mb-3" />
+        <SkeletonBlock className="mb-3 h-4 w-28" />
         <SkeletonBlock className="h-8 w-16" />
       </div>
     </div>
@@ -133,37 +149,37 @@ export const SkeletonLeaderboard = ({ rows = 10 }) => (
           {["Rank", "Contributor", "Points", "PRs"].map((col) => (
             <th
               key={col}
-              className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              className="bg-gray-50 px-6 py-4 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:bg-gray-800 dark:text-gray-400"
             >
               {col}
             </th>
           ))}
         </tr>
       </thead>
-      <tbody className="bg-gradient-to-b from-indigo-50 to-white dark:from-gray-900 dark:to-black divide-y divide-gray-400 dark:divide-gray-500">
+      <tbody className="divide-y divide-gray-400 bg-gradient-to-b from-indigo-50 to-white dark:divide-gray-500 dark:from-gray-900 dark:to-black">
         {[...Array(rows)].map((_, i) => (
           <tr key={i} className="animate-pulse">
             <td className="px-6 py-4 whitespace-nowrap">
-              <SkeletonBlock className="h-8 w-8 rounded-full mx-auto" />
+              <SkeletonBlock className="mx-auto h-8 w-8 rounded-full" />
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
               <div className="flex items-center">
                 <SkeletonBlock className="h-10 w-10 rounded-full" />
                 <div className="ml-4">
-                  <SkeletonBlock className="h-4 w-24 mb-2" />
+                  <SkeletonBlock className="mb-2 h-4 w-24" />
                   <SkeletonBlock className="h-3 w-16" />
                 </div>
               </div>
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
               <div className="flex items-center">
-                <SkeletonBlock className="h-4 w-4 mr-1" />
+                <SkeletonBlock className="mr-1 h-4 w-4" />
                 <SkeletonBlock className="h-4 w-12" />
               </div>
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
               <div className="flex items-center">
-                <SkeletonBlock className="h-4 w-4 mr-1" />
+                <SkeletonBlock className="mr-1 h-4 w-4" />
                 <SkeletonBlock className="h-4 w-12" />
               </div>
             </td>
@@ -177,8 +193,8 @@ export const SkeletonLeaderboard = ({ rows = 10 }) => (
 export const LeaderboardTableSkeleton = SkeletonLeaderboard;
 
 export const SkeletonCalendar = ({ listItems = 3 }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8" aria-hidden="true">
-    <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-3xl p-4 sm:p-6 shadow-md space-y-6">
+  <div className="grid grid-cols-1 gap-8 lg:grid-cols-3" aria-hidden="true">
+    <div className="space-y-6 rounded-3xl border border-slate-200/60 bg-white p-4 shadow-md sm:p-6 lg:col-span-2 dark:border-slate-800/80 dark:bg-slate-900">
       <div className="flex items-center justify-between">
         <SkeletonBlock className="h-7 w-44" />
         <div className="flex gap-2">
@@ -195,27 +211,24 @@ export const SkeletonCalendar = ({ listItems = 3 }) => (
         </div>
         <div className="grid grid-cols-7 gap-2">
           {[...Array(35)].map((_, i) => (
-            <SkeletonBlock
-              key={i}
-              className="aspect-square rounded-xl sm:rounded-2xl"
-            />
+            <SkeletonBlock key={i} className="aspect-square rounded-xl sm:rounded-2xl" />
           ))}
         </div>
       </div>
     </div>
 
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-3xl p-4 sm:p-6 shadow-md">
-      <SkeletonBlock className="h-6 w-48 mb-4" />
-      <SkeletonBlock className="h-4 w-56 mb-6" />
+    <div className="rounded-3xl border border-slate-200/60 bg-white p-4 shadow-md sm:p-6 dark:border-slate-800/80 dark:bg-slate-900">
+      <SkeletonBlock className="mb-4 h-6 w-48" />
+      <SkeletonBlock className="mb-6 h-4 w-56" />
       <div className="space-y-4">
         {[...Array(listItems)].map((_, i) => (
           <div
             key={i}
-            className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800/60"
+            className="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800/60 dark:bg-slate-800/30"
           >
-            <SkeletonBlock className="h-5 w-20 rounded-md mb-3" />
-            <SkeletonBlock className="h-5 w-4/5 mb-3" />
-            <SkeletonBlock className="h-4 w-2/3 mb-2" />
+            <SkeletonBlock className="mb-3 h-5 w-20 rounded-md" />
+            <SkeletonBlock className="mb-3 h-5 w-4/5" />
+            <SkeletonBlock className="mb-2 h-4 w-2/3" />
             <SkeletonBlock className="h-4 w-1/2" />
           </div>
         ))}
@@ -225,19 +238,22 @@ export const SkeletonCalendar = ({ listItems = 3 }) => (
 );
 
 export const SkeletonProfileCard = () => (
-  <div aria-hidden="true" className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
+  <div
+    aria-hidden="true"
+    className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+  >
     <div className="flex items-center gap-4">
       <SkeletonBlock className="h-16 w-16 rounded-full" />
       <div className="flex-1">
-        <SkeletonBlock className="h-6 w-40 mb-3" />
+        <SkeletonBlock className="mb-3 h-6 w-40" />
         <SkeletonBlock className="h-4 w-28" />
       </div>
     </div>
-    <div className="grid grid-cols-3 gap-3 mt-6">
+    <div className="mt-6 grid grid-cols-3 gap-3">
       {[...Array(3)].map((_, i) => (
-        <div key={i} className="rounded-xl bg-gray-50 dark:bg-gray-800/60 p-3">
-          <SkeletonBlock className="h-5 w-10 mb-2 mx-auto" />
-          <SkeletonBlock className="h-3 w-14 mx-auto" />
+        <div key={i} className="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
+          <SkeletonBlock className="mx-auto mb-2 h-5 w-10" />
+          <SkeletonBlock className="mx-auto h-3 w-14" />
         </div>
       ))}
     </div>
@@ -259,9 +275,12 @@ export const SkeletonTableRows = ({ rows = 5, columns = 4 }) => (
 );
 
 export const HackathonCardSkeleton = () => (
-  <div aria-hidden="true" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-blue-200 dark:border-gray-700 overflow-hidden">
-    <div className="p-6 flex flex-col gap-5">
-      <div className="flex justify-between items-center">
+  <div
+    aria-hidden="true"
+    className="overflow-hidden rounded-xl border border-blue-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+  >
+    <div className="flex flex-col gap-5 p-6">
+      <div className="flex items-center justify-between">
         <div className="flex gap-2">
           <SkeletonBlock className="h-6 w-20 rounded-full" />
           <SkeletonBlock className="h-6 w-24 rounded-full" />
@@ -272,15 +291,15 @@ export const HackathonCardSkeleton = () => (
       <SkeletonBlock className="h-px w-full" />
 
       <div>
-        <SkeletonBlock className="h-6 w-3/4 mb-2" />
-        <SkeletonBlock className="h-4 w-full mb-1" />
+        <SkeletonBlock className="mb-2 h-6 w-3/4" />
+        <SkeletonBlock className="mb-1 h-4 w-full" />
         <SkeletonBlock className="h-4 w-5/6" />
       </div>
 
       <SkeletonBlock className="h-px w-full" />
 
       <div className="flex items-center gap-2">
-        <SkeletonBlock className="w-4 h-4 rounded" />
+        <SkeletonBlock className="h-4 w-4 rounded" />
         <SkeletonBlock className="h-4 w-32" />
       </div>
 
@@ -289,7 +308,7 @@ export const HackathonCardSkeleton = () => (
       <div className="flex flex-col gap-3">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="flex items-center gap-2">
-            <SkeletonBlock className="w-4 h-4 rounded" />
+            <SkeletonBlock className="h-4 w-4 rounded" />
             <SkeletonBlock className="h-4 w-40" />
           </div>
         ))}
@@ -298,7 +317,7 @@ export const HackathonCardSkeleton = () => (
       <SkeletonBlock className="h-px w-full" />
 
       <div>
-        <SkeletonBlock className="h-4 w-24 mb-2" />
+        <SkeletonBlock className="mb-2 h-4 w-24" />
         <div className="flex flex-wrap gap-2">
           {[...Array(4)].map((_, i) => (
             <SkeletonBlock key={i} className="h-6 w-16 rounded-full" />
@@ -311,17 +330,17 @@ export const HackathonCardSkeleton = () => (
       <div className="grid grid-cols-3 gap-4">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="text-center">
-            <SkeletonBlock className="w-5 h-5 rounded mx-auto mb-1" />
-            <SkeletonBlock className="h-5 w-8 mx-auto mb-1" />
-            <SkeletonBlock className="h-3 w-16 mx-auto" />
+            <SkeletonBlock className="mx-auto mb-1 h-5 w-5 rounded" />
+            <SkeletonBlock className="mx-auto mb-1 h-5 w-8" />
+            <SkeletonBlock className="mx-auto h-3 w-16" />
           </div>
         ))}
       </div>
 
       <SkeletonBlock className="h-px w-full" />
 
-      <div className="flex items-center gap-2 p-3 rounded-lg">
-        <SkeletonBlock className="w-5 h-5 rounded" />
+      <div className="flex items-center gap-2 rounded-lg p-3">
+        <SkeletonBlock className="h-5 w-5 rounded" />
         <SkeletonBlock className="h-4 w-20" />
         <SkeletonBlock className="h-4 w-24" />
       </div>
@@ -337,29 +356,32 @@ export const HackathonCardSkeleton = () => (
 );
 
 export const ProjectCardSkeleton = () => (
-  <div aria-hidden="true" className="bg-white dark:bg-indigo-950 rounded-xl shadow-md border border-blue-200 dark:border-gray-700 overflow-hidden flex flex-col">
-    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-300 dark:border-gray-700">
-      <SkeletonBlock className="w-10 h-10 rounded-full" />
-      <SkeletonBlock className="h-5 flex-1 mx-3" />
+  <div
+    aria-hidden="true"
+    className="flex flex-col overflow-hidden rounded-xl border border-blue-200 bg-white shadow-md dark:border-gray-700 dark:bg-indigo-950"
+  >
+    <div className="flex items-center justify-between border-b border-gray-300 px-5 py-4 dark:border-gray-700">
+      <SkeletonBlock className="h-10 w-10 rounded-full" />
+      <SkeletonBlock className="mx-3 h-5 flex-1" />
       <SkeletonBlock className="h-5 w-16 rounded-full" />
     </div>
 
-    <SkeletonBlock className="w-full aspect-[16/9]" />
+    <SkeletonBlock className="aspect-[16/9] w-full" />
 
-    <div className="px-5 pt-4 pb-6 border-b border-gray-300 dark:border-gray-700">
-      <SkeletonBlock className="h-4 w-full mb-2" />
-      <SkeletonBlock className="h-4 w-5/6 mb-2" />
+    <div className="border-b border-gray-300 px-5 pt-4 pb-6 dark:border-gray-700">
+      <SkeletonBlock className="mb-2 h-4 w-full" />
+      <SkeletonBlock className="mb-2 h-4 w-5/6" />
       <SkeletonBlock className="h-4 w-3/4" />
     </div>
 
-    <div className="px-5 py-3 flex gap-2 border-b border-gray-300 dark:border-gray-700">
+    <div className="flex gap-2 border-b border-gray-300 px-5 py-3 dark:border-gray-700">
       <SkeletonBlock className="h-6 w-20 rounded-full" />
       <SkeletonBlock className="h-6 w-24 rounded-full" />
     </div>
 
-    <div className="px-5 py-4 flex justify-between items-center border-b border-gray-300 dark:border-gray-700">
+    <div className="flex items-center justify-between border-b border-gray-300 px-5 py-4 dark:border-gray-700">
       <div className="flex items-center gap-3">
-        <SkeletonBlock className="w-8 h-8 rounded-full" />
+        <SkeletonBlock className="h-8 w-8 rounded-full" />
         <SkeletonBlock className="h-4 w-20" />
       </div>
       <div className="flex gap-2">
@@ -369,13 +391,13 @@ export const ProjectCardSkeleton = () => (
       </div>
     </div>
 
-    <div className="px-5 py-4 flex flex-wrap gap-2 border-b border-gray-300 dark:border-gray-700">
+    <div className="flex flex-wrap gap-2 border-b border-gray-300 px-5 py-4 dark:border-gray-700">
       {[...Array(4)].map((_, i) => (
         <SkeletonBlock key={i} className="h-6 w-16 rounded-full" />
       ))}
     </div>
 
-    <div className="px-5 py-4 flex gap-3 mt-auto">
+    <div className="mt-auto flex gap-3 px-5 py-4">
       <SkeletonBlock className="h-10 flex-1 rounded-lg" />
       <SkeletonBlock className="h-10 flex-1 rounded-lg" />
     </div>
@@ -383,11 +405,14 @@ export const ProjectCardSkeleton = () => (
 );
 
 export const DashboardStatCardSkeleton = () => (
-  <div aria-hidden="true" className="flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-pulse">
-    <SkeletonBlock className="h-14 w-14 rounded-xl flex-shrink-0" />
-    <div className="flex-1 ml-4">
-      <SkeletonBlock className="h-3 w-20 mb-2" />
-      <SkeletonBlock className="h-8 w-14 mb-2" />
+  <div
+    aria-hidden="true"
+    className="flex animate-pulse items-center rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+  >
+    <SkeletonBlock className="h-14 w-14 flex-shrink-0 rounded-xl" />
+    <div className="ml-4 flex-1">
+      <SkeletonBlock className="mb-2 h-3 w-20" />
+      <SkeletonBlock className="mb-2 h-8 w-14" />
       <SkeletonBlock className="h-3 w-32" />
     </div>
   </div>
@@ -409,7 +434,7 @@ export const DashboardListCardSkeleton = () => (
     {[...Array(3)].map((_, i) => (
       <div key={i} className="ud-list-item">
         <div className="flex-1">
-          <SkeletonBlock className="h-4 w-3/4 mb-2" />
+          <SkeletonBlock className="mb-2 h-4 w-3/4" />
           <SkeletonBlock className="h-3 w-1/2" />
         </div>
         <SkeletonBlock className="h-6 w-16 rounded-full" />
@@ -424,30 +449,28 @@ export const DashboardItemCardSkeleton = () => (
       <SkeletonBlock className="h-6 w-20 rounded-full" />
       <SkeletonBlock className="h-6 w-16 rounded-full" />
     </div>
-    <SkeletonBlock className="h-5 w-4/5 mb-3" />
-    <SkeletonBlock className="h-4 w-full mb-2" />
-    <SkeletonBlock className="h-4 w-2/3 mb-4" />
+    <SkeletonBlock className="mb-3 h-5 w-4/5" />
+    <SkeletonBlock className="mb-2 h-4 w-full" />
+    <SkeletonBlock className="mb-4 h-4 w-2/3" />
     <SkeletonBlock className="h-6 w-24 rounded-full" />
   </div>
 );
 
 export const DashboardProfileSkeleton = () => (
   <div aria-hidden="true">
-    <SkeletonBlock className="h-4 w-28 mb-2" />
+    <SkeletonBlock className="mb-2 h-4 w-28" />
     <SkeletonBlock className="h-8 w-40" />
   </div>
 );
 
-export const DashboardSectionTitleSkeleton = () => (
-  <SkeletonBlock className="h-6 w-40 mb-4" />
-);
+export const DashboardSectionTitleSkeleton = () => <SkeletonBlock className="mb-4 h-6 w-40" />;
 
 export const AdminStatCardSkeleton = () => (
   <div aria-hidden="true" className="ad-stat-card">
     <SkeletonBlock className="ad-stat-icon h-10 w-10 rounded-xl" />
     <div className="flex-1">
-      <SkeletonBlock className="h-3 w-20 mb-2" />
-      <SkeletonBlock className="h-7 w-12 mb-1" />
+      <SkeletonBlock className="mb-2 h-3 w-20" />
+      <SkeletonBlock className="mb-1 h-7 w-12" />
       <SkeletonBlock className="h-3 w-24" />
     </div>
   </div>
@@ -478,7 +501,7 @@ export const AdminListCardSkeleton = () => (
       <div key={i} className="ad-list-item">
         <SkeletonBlock className="ad-list-avatar h-8 w-8 rounded-full" />
         <div className="flex-1">
-          <SkeletonBlock className="h-4 w-3/4 mb-2" />
+          <SkeletonBlock className="mb-2 h-4 w-3/4" />
           <SkeletonBlock className="h-3 w-1/2" />
         </div>
         <SkeletonBlock className="h-6 w-16 rounded-full" />
@@ -492,11 +515,9 @@ export const DashboardTableSkeleton = ({ rows = 5 }) => (
     <table className="ud-table">
       <thead>
         <tr>
-          {["Type", "Title", "Date", "Location", "Status", "Participation"].map(
-            (col) => (
-              <th key={col}>{col}</th>
-            ),
-          )}
+          {["Type", "Title", "Date", "Location", "Status", "Participation"].map((col) => (
+            <th key={col}>{col}</th>
+          ))}
         </tr>
       </thead>
       <tbody>
@@ -516,14 +537,14 @@ export const DashboardTableSkeleton = ({ rows = 5 }) => (
 
 export const EventDetailSkeleton = () => (
   <div aria-hidden="true" className="min-h-screen bg-white dark:bg-slate-950">
-    <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
+    <div className="mx-auto max-w-5xl space-y-8 px-4 py-10">
       {/* Header */}
       <div className="space-y-3">
         <SkeletonBlock className="h-9 w-3/4" />
         <SkeletonBlock className="h-5 w-1/2" />
       </div>
       {/* Action buttons */}
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex flex-wrap gap-3">
         {[...Array(4)].map((_, i) => (
           <SkeletonBlock key={i} className="h-10 w-32 rounded-full" />
         ))}
@@ -550,11 +571,11 @@ export const EventDetailSkeleton = () => (
   </div>
 );
 export const SearchResultsSkeleton = ({ rows = 5 }) => (
-  <div aria-hidden="true" className="p-4 flex flex-col gap-2">
-    <SkeletonBlock className="h-3 w-24 mb-2" />
+  <div aria-hidden="true" className="flex flex-col gap-2 p-4">
+    <SkeletonBlock className="mb-2 h-3 w-24" />
     {[...Array(rows)].map((_, i) => (
-      <div key={i} className="flex items-center gap-3 px-2 py-1.5 rounded-xl">
-        <SkeletonBlock className="h-4 w-4 rounded flex-shrink-0" />
+      <div key={i} className="flex items-center gap-3 rounded-xl px-2 py-1.5">
+        <SkeletonBlock className="h-4 w-4 flex-shrink-0 rounded" />
         <SkeletonBlock className={`h-4 rounded ${i % 2 === 0 ? "w-3/4" : "w-1/2"}`} />
       </div>
     ))}
@@ -562,10 +583,10 @@ export const SearchResultsSkeleton = ({ rows = 5 }) => (
 );
 
 export const AuthFormSkeleton = () => (
-  <div className="w-full max-w-md mx-auto space-y-8 p-8 bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800">
-    <div className="text-center space-y-3">
-      <SkeletonBlock className="h-9 w-2/3 mx-auto" />
-      <SkeletonBlock className="h-4 w-5/6 mx-auto" />
+  <div className="mx-auto w-full max-w-md space-y-8 rounded-3xl border border-gray-100 bg-white p-8 shadow-xl dark:border-gray-800 dark:bg-gray-900">
+    <div className="space-y-3 text-center">
+      <SkeletonBlock className="mx-auto h-9 w-2/3" />
+      <SkeletonBlock className="mx-auto h-4 w-5/6" />
     </div>
     <div className="space-y-6">
       {[...Array(3)].map((_, i) => (
@@ -574,18 +595,18 @@ export const AuthFormSkeleton = () => (
           <SkeletonBlock className="h-12 w-full rounded-xl" />
         </div>
       ))}
-      <SkeletonBlock className="h-12 w-full rounded-xl mt-8" />
+      <SkeletonBlock className="mt-8 h-12 w-full rounded-xl" />
     </div>
-    <div className="pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
-      <SkeletonBlock className="h-4 w-3/4 mx-auto" />
+    <div className="border-t border-gray-100 pt-6 text-center dark:border-gray-800">
+      <SkeletonBlock className="mx-auto h-4 w-3/4" />
     </div>
   </div>
 );
 
 export const ExploreEventsSkeleton = () => (
-  <div className="max-w-7xl mx-auto px-4 py-12 space-y-12">
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-      <div className="space-y-4 flex-1">
+  <div className="mx-auto max-w-7xl space-y-12 px-4 py-12">
+    <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+      <div className="flex-1 space-y-4">
         <SkeletonBlock className="h-10 w-2/3" />
         <SkeletonBlock className="h-5 w-1/2" />
       </div>
@@ -601,7 +622,7 @@ export const ExploreEventsSkeleton = () => (
       ))}
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
       {[...Array(6)].map((_, i) => (
         <SkeletonEventCard key={i} />
       ))}
@@ -619,11 +640,11 @@ export const WaitlistSkeleton = () => (
     role="status"
     aria-live="polite"
     aria-label="Loading waitlist information…"
-    className="animate-pulse rounded-2xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/20 p-6 space-y-4 w-full max-w-md"
+    className="w-full max-w-md animate-pulse space-y-4 rounded-2xl border border-amber-100 bg-amber-50/60 p-6 dark:border-amber-900/40 dark:bg-amber-950/20"
   >
     {/* Header row — icon + title */}
     <div className="flex items-center gap-3">
-      <SkeletonBlock className="h-10 w-10 rounded-xl flex-shrink-0 bg-amber-200/70 dark:bg-amber-800/40" />
+      <SkeletonBlock className="h-10 w-10 flex-shrink-0 rounded-xl bg-amber-200/70 dark:bg-amber-800/40" />
       <div className="flex-1 space-y-2">
         <SkeletonBlock className="h-5 w-40 bg-amber-200/70 dark:bg-amber-800/40" />
         <SkeletonBlock className="h-3 w-28 bg-amber-200/50 dark:bg-amber-800/30" />
@@ -640,8 +661,8 @@ export const WaitlistSkeleton = () => (
     </div>
 
     {/* Queue position badge */}
-    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-100/60 dark:bg-amber-900/20">
-      <SkeletonBlock className="h-6 w-6 rounded-full bg-amber-300/50 dark:bg-amber-700/40 flex-shrink-0" />
+    <div className="flex items-center gap-2 rounded-xl bg-amber-100/60 px-3 py-2 dark:bg-amber-900/20">
+      <SkeletonBlock className="h-6 w-6 flex-shrink-0 rounded-full bg-amber-300/50 dark:bg-amber-700/40" />
       <SkeletonBlock className="h-4 w-48 bg-amber-200/60 dark:bg-amber-800/30" />
     </div>
 
@@ -649,7 +670,7 @@ export const WaitlistSkeleton = () => (
     <SkeletonBlock className="h-12 w-full rounded-xl bg-amber-300/40 dark:bg-amber-700/30" />
 
     {/* Fine-print note */}
-    <SkeletonBlock className="h-3 w-3/4 mx-auto bg-amber-200/50 dark:bg-amber-800/20" />
+    <SkeletonBlock className="mx-auto h-3 w-3/4 bg-amber-200/50 dark:bg-amber-800/20" />
   </div>
 );
 
@@ -662,7 +683,7 @@ export const WaitlistSkeleton = () => (
 export const WaitlistPositionSkeleton = () => (
   <div
     aria-hidden="true"
-    className="animate-pulse inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30"
+    className="inline-flex animate-pulse items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 dark:border-amber-800 dark:bg-amber-950/30"
   >
     <SkeletonBlock className="h-4 w-4 rounded-full bg-amber-300/60 dark:bg-amber-700/40" />
     <SkeletonBlock className="h-4 w-36 bg-amber-200/70 dark:bg-amber-800/40" />
@@ -670,23 +691,23 @@ export const WaitlistPositionSkeleton = () => (
 );
 
 export const DashboardHomeSkeleton = () => (
-  <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-    <div className="flex justify-between items-center">
+  <div className="mx-auto max-w-7xl space-y-8 px-4 py-8">
+    <div className="flex items-center justify-between">
       <div className="space-y-2">
         <SkeletonBlock className="h-8 w-48" />
         <SkeletonBlock className="h-4 w-64" />
       </div>
       <SkeletonBlock className="h-10 w-32 rounded-lg" />
     </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
       {[...Array(4)].map((_, i) => (
         <DashboardStatCardSkeleton key={i} />
       ))}
     </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2 space-y-6">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <div className="space-y-6 lg:col-span-2">
         <SkeletonBlock className="h-64 w-full rounded-2xl" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {[...Array(4)].map((_, i) => (
             <DashboardItemCardSkeleton key={i} />
           ))}
