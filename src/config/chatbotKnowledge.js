@@ -1,47 +1,33 @@
-export const quickPrompts = [
-  "How do I register for an event?",
-  "Suggest an event for beginners",
-  "How can I host a workshop?",
-  "Where can I get platform help?",
-];
-
-export const knowledgeBase = [
+export const knowledgeBaseConfig = [
   {
     keywords: ["register", "join", "ticket", "attend", "participate"],
-    answer:
-      "To register, open the Events or Hackathons page, choose a card, and use the registration action. If the event requires an account, sign in first so Eventra can save your registration and check-in details.",
-    actions: [{ label: "Browse events", to: "/events", icon: "CalendarDays" }],
+    answerKey: "chatbot.knowledge.register.answer",
+    actions: [{ labelKey: "chatbot.knowledge.register.browseEvents", to: "/events", icon: "CalendarDays" }],
   },
   {
     keywords: ["suggest", "recommend", "beginner", "interest", "location"],
-    answer:
-      "A good starting point is a workshop or beginner-friendly hackathon. Search by topic on the Events page, then compare format, date, tags, and location before registering.",
+    answerKey: "chatbot.knowledge.suggest.answer",
     actions: [
-      { label: "Events", to: "/events", icon: "CalendarDays" },
-      { label: "Hackathons", to: "/hackathons", icon: "Ticket" },
+      { labelKey: "chatbot.actions.events", to: "/events", icon: "CalendarDays" },
+      { labelKey: "chatbot.actions.hackathons", to: "/hackathons", icon: "Ticket" },
     ],
   },
   {
     keywords: ["host", "create", "organize", "workshop", "event"],
-    answer:
-      "Organizers can create events from the dashboard after signing in. Add the event title, format, schedule, capacity, location or meeting details, then publish when the listing is ready.",
-    actions: [{ label: "Dashboard", to: "/dashboard", icon: "Navigation" }],
+    answerKey: "chatbot.knowledge.host.answer",
+    actions: [{ labelKey: "chatbot.actions.dashboard", to: "/dashboard", icon: "Navigation" }],
   },
   {
     keywords: ["help", "support", "faq", "issue", "problem", "contact"],
-    answer:
-      "For platform questions, start with the FAQ. For account, registration, or technical problems, use Contact so the team has enough context to help.",
+    answerKey: "chatbot.knowledge.help.answer",
     actions: [
-      { label: "FAQ", to: "/faq", icon: "HelpCircle" },
-      { label: "Contact", to: "/contact", icon: "MessageCircle" },
+      { labelKey: "chatbot.actions.faq", to: "/faq", icon: "HelpCircle" },
+      { labelKey: "chatbot.actions.contact", to: "/contact", icon: "MessageCircle" },
     ],
   },
 ];
 
-export const defaultAnswer =
-  "I can help with event registration, recommendations, hosting guidance, and platform support. Try asking about the event you want to attend or what kind of workshop you are looking for.";
-
-const keywordIndex = knowledgeBase.reduce((acc, item) => {
+const keywordIndex = knowledgeBaseConfig.reduce((acc, item) => {
   item.keywords.forEach((kw) => {
     if (!acc.has(kw)) acc.set(kw, item);
   });
@@ -50,26 +36,63 @@ const keywordIndex = knowledgeBase.reduce((acc, item) => {
 
 const sortedKeywords = [...keywordIndex.keys()].sort((a, b) => b.length - a.length);
 
-export function getAssistantReply(input) {
-  const normalizedInput = input.toLowerCase();
-  const match = sortedKeywords.find((keyword) => normalizedInput.includes(keyword));
-  const matchedItem = match ? keywordIndex.get(match) : null;
-  return (
-    matchedItem || {
-      answer: defaultAnswer,
-      actions: [{ label: "Explore events", to: "/events", icon: "CalendarDays" }],
-    }
-  );
+const keywordPattern = new RegExp(
+  sortedKeywords.map((kw) => kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
+  "i"
+);
+
+export function getQuickPromptKeys() {
+  return [
+    "chatbot.prompts.register",
+    "chatbot.prompts.suggest",
+    "chatbot.prompts.host",
+    "chatbot.prompts.help",
+  ];
 }
 
-export const INITIAL_MESSAGES = [
-  {
-    role: "assistant",
-    content:
-      "Hi, I am Eventra Assist. Ask me about events, workshops, registration, hosting, or platform help.",
+export function getQuickPrompts(t) {
+  return getQuickPromptKeys().map((key) => t(key));
+}
+
+export function getInitialMessages(t) {
+  return [
+    {
+      role: "assistant",
+      content: t("chatbot.welcome"),
+      actions: [
+        { label: t("chatbot.actions.events"), to: "/events", icon: "CalendarDays" },
+        { label: t("chatbot.actions.faq"), to: "/faq", icon: "HelpCircle" },
+      ],
+    },
+  ];
+}
+
+export function getAssistantReply(input, t) {
+  const match = input.match(keywordPattern);
+  const matchedKeyword = match ? match[0].toLowerCase() : null;
+  const matchedItem = matchedKeyword ? keywordIndex.get(matchedKeyword) : null;
+
+  if (matchedItem) {
+    return {
+      answer: t(matchedItem.answerKey),
+      actions: matchedItem.actions.map((action) => ({
+        label: t(action.labelKey),
+        to: action.to,
+        icon: action.icon,
+      })),
+    };
+  }
+
+  return {
+    answer: t("chatbot.knowledge.default"),
     actions: [
-      { label: "Events", to: "/events", icon: "CalendarDays" },
-      { label: "FAQ", to: "/faq", icon: "HelpCircle" },
+      { label: t("chatbot.knowledge.exploreEvents"), to: "/events", icon: "CalendarDays" },
     ],
-  },
-];
+  };
+}
+
+// Backward-compatible exports for tests or legacy imports
+export const quickPrompts = getQuickPromptKeys();
+export const knowledgeBase = knowledgeBaseConfig;
+export const defaultAnswer = "chatbot.knowledge.default";
+export const INITIAL_MESSAGES = [];
