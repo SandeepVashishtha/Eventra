@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -88,7 +88,7 @@ const EmptyState = () => {
   );
 };
 
-const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
+const EventCard = memo(({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const isOffline = useOfflineStatus();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
@@ -224,9 +224,9 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
       </div>
     </motion.div>
   );
-};
+});
 
-const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
+const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const { user } = useAuth();
@@ -281,7 +281,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
       </div>
     </motion.div>
   );
-};
+}));
 
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -360,14 +360,20 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     return types.map((type) => type.charAt(0).toUpperCase() + type.slice(1));
   }, [registeredEvents, hostedEvents]);
 
+
+  const normalizedSearch = useMemo(
+  () => debouncedTerm.trim().toLowerCase(),
+  [debouncedTerm]
+);
   const filteredEvents = useMemo(() => {
     const pool = [...registeredEvents, ...hostedEvents];
     const result = pool.filter((event) => {
       const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
-      const matchSearch = !debouncedTerm || searchTarget.includes(debouncedTerm.toLowerCase());
-      const status = getEventStatus(event);
-      const matchStatus = filterStatus === "All" || status === filterStatus;
-      const typeLabel = event?.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : "";
+const matchSearch = !debouncedTerm || searchTarget.includes(normalizedSearch);
+
+const status = getEventStatus(event);
+
+const matchStatus = filterStatus === "All" || status === filterStatus;      const typeLabel = event?.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : "";
       const matchType = filterType === "All" || typeLabel === filterType;
       return matchSearch && matchStatus && matchType;
     });
@@ -400,13 +406,18 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
 
-  const handleCancelClick = (id, title) => setCancelTarget({ id, title });
-  const handleCancelDismiss = () => setCancelTarget(null);
-  const handleCancelConfirm = () => {
+  const handleCancelClick = useCallback(
+  (id, title) => setCancelTarget({ id, title }),
+  []
+);
+  const handleCancelDismiss = useCallback(() => {
+  setCancelTarget(null);
+}, []);
+  const handleCancelConfirm = useCallback(() => {
     if (!cancelTarget) return;
     removeRegistration(cancelTarget.id);
     setCancelTarget(null);
-  };
+   }, [cancelTarget, removeRegistration]);
 
   return (
     <motion.div
