@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { ChevronUp } from "lucide-react";
 
 const SCROLL_THRESHOLD = 400; // px — button appears after scrolling this far
@@ -12,21 +13,25 @@ const BackToTop = ({
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const location = useLocation();
 
   const prefersReducedMotion =
     typeof window !== "undefined"
       ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
       : false;
 
+  const canScroll = () => document.documentElement.scrollHeight > window.innerHeight;
+
   const handleScroll = useCallback(() => {
     const scrollY = window.scrollY;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    setVisible(scrollY > threshold);
+    setVisible(scrollY > threshold && canScroll());
     setProgress(docHeight > 0 ? Math.min(100, (scrollY / docHeight) * 100) : 0);
   }, [threshold]);
 
   useEffect(() => {
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
     // Run once on mount to set correct initial state
     handleScroll();
     // Detect chatbot presence so we can avoid overlapping the FAB on mobile
@@ -42,9 +47,14 @@ const BackToTop = ({
     }
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
       observer.disconnect();
     };
   }, [handleScroll]);
+
+  useEffect(() => {
+    handleScroll();
+  }, [location.pathname, handleScroll]);
 
   const scrollToTop = () => {
     if (window.lenis) {
