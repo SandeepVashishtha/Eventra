@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '../constants/appConstants';
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import useDebounce from "../hooks/useDebounce";
@@ -12,7 +13,7 @@ const SearchFilter = () => {
   const [priceFilter, setPriceFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [favorites, setFavorites] = useState(() => {
-    const saved = localStorage.getItem("favoriteEvents");
+    const saved = localStorage.getItem(STORAGE_KEYS.FAVORITE_EVENTS);
     return saved ? JSON.parse(saved) : [];
   });
 

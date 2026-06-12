@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from './constants/appConstants';
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -72,7 +73,7 @@ function App() {
   );
   const [cursorEnabled, setCursorEnabled] = useState(() => {
     try {
-      return localStorage.getItem("cursor") !== "off";
+      return localStorage.getItem(STORAGE_KEYS.CURSOR) !== "off";
     } catch {
       return true; // fallback safe default
     }

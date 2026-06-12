@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '../constants/appConstants';
 import { useCallback, useEffect, useRef, useMemo, useState, Fragment } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
@@ -133,7 +134,7 @@ export default function Chatbot() {
   // Expiration check on mount (2 hours threshold)
   useEffect(() => {
     try {
-      const lastActive = localStorage.getItem("eventra_chatbot_last_active");
+      const lastActive = localStorage.getItem(STORAGE_KEYS.CHATBOT_ACTIVE);
       const twoHours = 2 * 60 * 60 * 1000;
       if (lastActive && Date.now() - parseInt(lastActive, 10) > twoHours) {
         setMessages(getInitialMessages(t));
