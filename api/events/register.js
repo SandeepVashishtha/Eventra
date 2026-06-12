@@ -17,6 +17,9 @@
 
 import { checkCapacity } from "../lib/capacityValidator.js";
 
+// Concurrency lock for RSVP
+const rsvpLocks = new Map();
+
 /**
  * Registration handler.
  *
@@ -68,6 +71,18 @@ export default async function registerForEvent(req, res, deps = {}) {
     res.status(503).json({ error: "Registration service unavailable" });
     return;
   }
+  
+  if (!rsvpLocks.has(eventId)) {
+    rsvpLocks.set(eventId, Promise.resolve());
+  }
+  
+  const release = await new Promise(resolve => {
+    const previous = rsvpLocks.get(eventId);
+    let releaseFn;
+    const next = previous.then(() => new Promise(r => { releaseFn = r; }));
+    rsvpLocks.set(eventId, next);
+    previous.then(() => resolve(releaseFn));
+  });
 
   try {
     // ── Event existence ───────────────────────────────────────────────────
@@ -107,21 +122,6 @@ export default async function registerForEvent(req, res, deps = {}) {
     // throw { code: "CAPACITY_FULL" } if the seat was taken by a concurrent
     // request between the count read above and this insert.
     //
-    // Example implementations:
-    //
-    // Option A — SQL atomic decrement (recommended):
-    //   UPDATE events SET tickets_left = tickets_left - 1
-    //   WHERE id = eventId AND tickets_left > 0
-    //   → if 0 rows affected, throw { code: "CAPACITY_FULL" }
-    //   → then INSERT into registrations
-    //
-    // Option B — transaction with SELECT FOR UPDATE (pessimistic lock):
-    //   BEGIN
-    //     SELECT tickets_left FROM events WHERE id = eventId FOR UPDATE
-    //     if tickets_left < 1 → throw { code: "CAPACITY_FULL" }
-    //     UPDATE events SET tickets_left = tickets_left - 1 WHERE id = eventId
-    //     INSERT into registrations
-    //   COMMIT
     const registration = await registerAttendee(eventId, user.id);
 
     res.status(201).json({
@@ -147,5 +147,7 @@ export default async function registerForEvent(req, res, deps = {}) {
     }
 
     res.status(500).json({ error: "Internal server error" });
+  } finally {
+    release();
   }
 }
