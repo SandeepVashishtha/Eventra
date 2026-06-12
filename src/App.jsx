@@ -38,6 +38,7 @@ const AppRoutes = lazy(() => import("./components/AppRoutes"));
 const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
+const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
 const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
 const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
@@ -240,6 +241,14 @@ function App() {
                         <Route
                           path="/saved-events"
                           element={<Suspense fallback={null}><SavedEventsPage /></Suspense>}
+                        />
+                        <Route
+                          path="/matchmaking"
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={null}><MatchmakingHub /></Suspense>
+                            </ProtectedRoute>
+                          }
                         />
                         <Route
                           path="*"
