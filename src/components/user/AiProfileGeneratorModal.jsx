@@ -84,13 +84,12 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
   };
 
   const handleCopyBio = async () => {
-    console.log("BIO VALUE:", parsedData.bio);
-  try {
-    await navigator.clipboard.writeText(parsedData.bio || "");
-    toast.success("Bio copied to clipboard!");
-  } catch (err) {
-    toast.error("Failed to copy bio");
-  }
+    try {
+      await navigator.clipboard.writeText(parsedData.bio || "");
+      toast.success("Bio copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy bio");
+    }
 };
 
   return ReactDOM.createPortal(

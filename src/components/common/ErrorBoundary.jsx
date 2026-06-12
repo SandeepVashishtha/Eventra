@@ -1,6 +1,7 @@
 import React from "react";
 import "./ErrorBoundary.css";
 import { logError, persistErrors } from "../../utils/errorLogger";
+import { logSecurityEvent } from "../../utils/securityLogger";
 
 function generateErrorId() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -179,6 +180,7 @@ class ErrorBoundary extends React.Component {
 
     logError(error, errorInfo, { level, label: errorLabel });
 
+    logSecurityEvent("SYSTEM_CRASH", { message: error?.toString() || "Unknown error", level });
     persistErrors("error_log", {
       errorId,
       level,

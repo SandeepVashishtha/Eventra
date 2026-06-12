@@ -8,6 +8,7 @@ import { useTokenExpiry } from "../hooks/useTokenExpiry.js";
 import { isTokenValid } from "../utils/tokenUtils.js";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles.js";
+import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED } from "../utils/sessionBroadcast.js";
 
 // Create context for Authentication
 const AuthContext = createContext();
@@ -117,6 +118,32 @@ export const AuthProvider = ({ children }) => {
     // Clear user metadata from secure/local storage manager
     syncSecureStorage.removeItem("user");
     return true;
+  }, []);
+
+  // Ref so the broadcast handler can call clearSession without stale closure
+  const clearSessionRef = useRef(null);
+  useEffect(() => {
+    clearSessionRef.current = clearSession;
+  }, [clearSession]);
+
+  // Cross-tab session logout synchronizer
+  useEffect(() => {
+    const channel = getSessionChannel();
+    if (!channel) return;
+
+    const handleMessage = (event) => {
+      if (event.data?.type === SESSION_TERMINATED) {
+        clearSessionRef.current?.();
+        window.location.replace("/login");
+      }
+    };
+
+    channel.addEventListener("message", handleMessage);
+
+    return () => {
+      channel.removeEventListener("message", handleMessage);
+      closeSessionChannel();
+    };
   }, []);
 
   // Hook to handle periodic token validation and auto-logout on expiration

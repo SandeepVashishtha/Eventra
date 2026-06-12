@@ -24,11 +24,8 @@ const BATCH_DELAY_MS = 200;
 // keeping per-batch concurrency well within rate-limit budgets.
 const PROFILE_BATCH_SIZE = 10;
 
-// Inserts a small delay before each individual profile request to avoid
-// hammering GitHub's unauthenticated API (60 req/hr). Works in tandem with
-// fetchInBatches which adds BATCH_DELAY_MS between batches.
-const throttleProfileFetch = () =>
-  new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS / PROFILE_BATCH_SIZE));
+
+
 
 /**
  * Fetches items in parallel batches, inserting a short delay between batches
@@ -138,7 +135,6 @@ const Contributors = () => {
 
   // Fetches a single GitHub user profile via the backend proxy.
   const fetchGitHubProfile = useCallback(async (username) => {
-    await throttleProfileFetch();
     try {
       const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
         `/users/${username}`
@@ -211,7 +207,8 @@ const Contributors = () => {
       // load fall back to the default values from fetchGitHubProfile's catch.
       const settledProfiles = await fetchInBatches(
         allContributors,
-        async (c) => {
+        async (c, idx) => {
+          await new Promise((resolve) => setTimeout(resolve, idx * (BATCH_DELAY_MS / PROFILE_BATCH_SIZE)));
           const profile = await fetchGitHubProfile(c.login);
           return {
             ...c,
