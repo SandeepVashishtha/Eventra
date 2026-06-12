@@ -3,53 +3,118 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 import { logger } from "../utils/logger";
 import { sanitizeSessionState } from "../utils/sessionSanitization";
 import { getDeviceFingerprint } from "../utils/deviceFingerprint";
-import { useAuth } from "./AuthContext";
-import useCloudSessionRecovery from "../hooks/useCloudSessionRecovery";
-import useMultiSessionRecovery from "../hooks/useMultiSessionRecovery";
-import { deriveKey, encryptWithKey, decryptWithKey } from "../utils/secureStorage.js";
 
 // ---------------------------------------------------------------------------
-// Encryption: delegates to src/utils/secureStorage.js — the single
-// PBKDF2 + AES-256-GCM implementation used by all client-side storage.
+// CryptoJS has been removed from this module.
 //
-// SessionRecoveryContext (unlike syncSecureStorage) uses a session-scoped
-// password stored in sessionStorage so that encrypted blobs are bound to
-// the browser tab and cannot be decrypted after the tab is closed.
+// The previous implementation used CryptoJS.AES.encrypt with a plain string
+// password, which internally applies OpenSSL EVP_BytesToKey (MD5, 1 iteration)
+// to derive the AES key. That is a legacy, cryptographically weak scheme:
+// MD5 is broken for security-sensitive use, and a single iteration provides
+// almost no resistance to offline brute-force attacks.
+//
+// This module now uses the same PBKDF2 (SHA-256, 100 000 iterations) +
+// AES-256-GCM encryption path as src/utils/secureStorage.js so both
+// localStorage encryption layers in the application use an equivalent
+// security level.
+//
+// The key material still comes from sessionStorage (cleared on tab close)
+// so the threat model is unchanged — the improvement is in how the key
+// is derived from that material.
 // ---------------------------------------------------------------------------
 
 const SessionRecoveryContext = createContext();
 
 const SESSION_KEY = "eventra_session_state";
 const SESSION_TIMEOUT = 30 * 60 * 1000;
+const RECOVERY_KEY_NAME = "eventra_session_recovery_key";
+
+// ---------------------------------------------------------------------------
+// Web Crypto helpers — PBKDF2 + AES-256-GCM
+// ---------------------------------------------------------------------------
+
+const CRYPTO_ALGORITHM = "AES-GCM";
+const KEY_LENGTH = 256;
+const IV_LENGTH = 12;
+const PBKDF2_ITERATIONS = 100_000;
 const PBKDF2_SALT_LENGTH = 32;
 const SESSION_SALT_KEY = "eventra_session_recovery_salt";
 
+/** Retrieve or generate the per-browser PBKDF2 salt for session recovery. */
 const getOrCreateRecoverySalt = () => {
   try {
     const stored = localStorage.getItem(SESSION_SALT_KEY);
-    if (stored) return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
-  } catch {}
+    if (stored) {
+      return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
+    }
+  } catch {
+    // localStorage unavailable — fall through
+  }
   const salt = crypto.getRandomValues(new Uint8Array(PBKDF2_SALT_LENGTH));
   try {
     localStorage.setItem(SESSION_SALT_KEY, btoa(String.fromCharCode(...salt)));
-  } catch {}
+  } catch {
+    // Non-fatal; salt will be regenerated next load
+  }
   return salt;
 };
 
 const RECOVERY_SALT = getOrCreateRecoverySalt();
 
-const getSessionKey = (password) => deriveKey(password, RECOVERY_SALT);
+/**
+ * Derive an AES-256-GCM key from the session-bound hex password stored in
+ * sessionStorage. Uses PBKDF2 with SHA-256 and 100 000 iterations.
+ */
+const deriveKey = async (password) => {
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveKey"],
+  );
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: RECOVERY_SALT,
+      iterations: PBKDF2_ITERATIONS,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: CRYPTO_ALGORITHM, length: KEY_LENGTH },
+    false,
+    ["encrypt", "decrypt"],
+  );
+};
 
+/** Encrypt plaintext with PBKDF2-derived AES-256-GCM key. Returns base64 string. */
 const encryptSession = async (plaintext, password) => {
-  const key = await getSessionKey(password);
-  return encryptWithKey(key, plaintext);
+  const key = await deriveKey(password);
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+  const encoder = new TextEncoder();
+  const encrypted = await crypto.subtle.encrypt(
+    { name: CRYPTO_ALGORITHM, iv },
+    key,
+    encoder.encode(plaintext),
+  );
+  const ivB64 = btoa(String.fromCharCode(...iv));
+  const ctB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+  return `${ivB64}:${ctB64}`;
 };
 
+/** Decrypt a base64 ciphertext produced by encryptSession. Returns plaintext string. */
 const decryptSession = async (stored, password) => {
-  const key = await getSessionKey(password);
-  return decryptWithKey(key, stored);
+  const colonIdx = stored.indexOf(":");
+  if (colonIdx === -1) throw new Error("Invalid session ciphertext format");
+  const iv = Uint8Array.from(atob(stored.slice(0, colonIdx)), (c) => c.charCodeAt(0));
+  const ciphertext = Uint8Array.from(atob(stored.slice(colonIdx + 1)), (c) => c.charCodeAt(0));
+  const key = await deriveKey(password);
+  const decrypted = await crypto.subtle.decrypt({ name: CRYPTO_ALGORITHM, iv }, key, ciphertext);
+  return new TextDecoder().decode(decrypted);
 };
 
+/** Returns true when the Web Crypto API is available in the current context. */
 const isCryptoAvailable = () =>
   typeof window !== "undefined" &&
   typeof crypto !== "undefined" &&
@@ -61,27 +126,23 @@ const isCryptoAvailable = () =>
 // Session key management — unchanged from the original implementation
 // ---------------------------------------------------------------------------
 
-// In-memory only — never written to sessionStorage or localStorage
-let _inMemorySessionKey = null;
-
 const getOrCreateSessionKey = () => {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined" || !window.sessionStorage) {
+    return null;
+  }
   try {
-    if (!_inMemorySessionKey) {
-      const stored = sessionStorage.getItem("eventra_session_key");
-      if (stored) {
-        _inMemorySessionKey = stored;
-      } else {
-        const raw = crypto.getRandomValues(new Uint8Array(32));
-        _inMemorySessionKey = Array.from(raw)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("");
-        sessionStorage.setItem("eventra_session_key", _inMemorySessionKey);
-      }
+    let key = sessionStorage.getItem(RECOVERY_KEY_NAME);
+    if (!key) {
+      // Generate 32 random bytes and encode as hex for use as the PBKDF2 password
+      const raw = crypto.getRandomValues(new Uint8Array(32));
+      key = Array.from(raw)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+      sessionStorage.setItem(RECOVERY_KEY_NAME, key);
     }
-    return _inMemorySessionKey;
+    return key;
   } catch (e) {
-    logger.error("Failed to generate in-memory session key:", e);
+    logger.error("Failed to manage session-bound recovery key:", e);
     return null;
   }
 };
@@ -99,7 +160,6 @@ export const useSessionRecovery = () => {
 };
 
 export const SessionRecoveryProvider = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
   const [hasSession, setHasSession] = useState(false);
   const [sessionData, setSessionData] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
@@ -110,13 +170,6 @@ export const SessionRecoveryProvider = ({ children }) => {
   const lastActivityRef = useRef(Date.now());
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
-  const cloudRecovery = useCloudSessionRecovery({
-    user,
-    isAuthenticated: isAuthenticated?.() || false,
-  });
-  const multiRecovery = useMultiSessionRecovery({
-    cloudSessions: cloudRecovery.cloudSessions,
-  });
 
   const updateActivity = useCallback(() => {
     const now = Date.now();
@@ -237,18 +290,9 @@ export const SessionRecoveryProvider = ({ children }) => {
           }
 
           const sanitizedState = sanitizeSessionState(state);
-          const recoveryType = sanitizedState.recoveryType || sanitizedState.page || "session";
-          const workflowId = sanitizedState.eventId || sanitizedState.id || "active";
-          const sessionId =
-            sanitizedState.sessionId ||
-            sanitizedState.recoverySessionId ||
-            `${recoveryType}-${workflowId}`;
 
           const currentSession = {
             ...sanitizedState,
-            sessionId,
-            sessionName: sanitizedState.sessionName || sanitizedState.name,
-            recoveryType,
             timestamp: Date.now(),
             lastActivity: lastActivityRef.current,
             deviceFingerprint: getDeviceFingerprint(),
@@ -258,26 +302,12 @@ export const SessionRecoveryProvider = ({ children }) => {
           localStorage.setItem(SESSION_KEY, ciphertext);
           setSessionData(currentSession);
           setHasSession(true);
-          multiRecovery.upsertSession({
-            sessionId,
-            name: currentSession.sessionName,
-            type: recoveryType,
-            draftData: currentSession,
-            source: "local",
-            updatedAt: new Date(currentSession.timestamp).toISOString(),
-            lastUpdated: new Date(currentSession.timestamp).toISOString(),
-          });
-          cloudRecovery.saveCloudSession(currentSession, {
-            sessionId,
-            name: currentSession.sessionName,
-            type: recoveryType,
-          });
         } catch (e) {
           logger.error("Failed to save session:", e);
         }
       }, 1000);
     },
-    [cloudRecovery, multiRecovery],
+    [],
   );
 
   const clearSession = useCallback(() => {
@@ -299,43 +329,6 @@ export const SessionRecoveryProvider = ({ children }) => {
     return sessionData;
   }, [sessionData]);
 
-  const restoreRecoverySessionById = useCallback(
-    async (sessionId) => {
-      const session = multiRecovery.sessions.find(
-        (item) => item.id === sessionId || item.sessionId === sessionId,
-      );
-      if (!session) return null;
-
-      if (session.source === "cloud" || session.source === "cloud-newer") {
-        const restored = await cloudRecovery.restoreCloudSession(session.sessionId);
-        return restored?.draftData || restored || session.draftData;
-      }
-
-      return session.draftData;
-    },
-    [cloudRecovery, multiRecovery.sessions],
-  );
-
-  const deleteRecoverySessionById = useCallback(
-    async (sessionId) => {
-      const session = multiRecovery.sessions.find(
-        (item) => item.id === sessionId || item.sessionId === sessionId,
-      );
-      multiRecovery.deleteSession(sessionId);
-      if (session?.source === "cloud" || session?.source === "cloud-newer") {
-        await cloudRecovery.dismissCloudSession(session.sessionId);
-      }
-    },
-    [cloudRecovery, multiRecovery],
-  );
-
-  const renameRecoverySessionById = useCallback(
-    (sessionId, name) => {
-      multiRecovery.renameSession(sessionId, name);
-    },
-    [multiRecovery],
-  );
-
   const dismissRecoveryPrompt = useCallback(() => {
     setShowRecoveryPrompt(false);
   }, []);
@@ -352,17 +345,9 @@ export const SessionRecoveryProvider = ({ children }) => {
   }, [hasSession, clearSession]);
 
   useEffect(() => {
-    if ((multiRecovery.hasSessions || cloudRecovery.hasCloudSessions) && !sessionData) {
-      setShowRecoveryPrompt(true);
-    }
-  }, [cloudRecovery.hasCloudSessions, multiRecovery.hasSessions, sessionData]);
-
-  useEffect(() => {
-    const saveTimeout = saveTimeoutRef.current;
-    const activityTimeout = activityTimeoutRef.current;
     return () => {
-      if (saveTimeout) clearTimeout(saveTimeout);
-      if (activityTimeout) clearTimeout(activityTimeout);
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      if (activityTimeoutRef.current) clearTimeout(activityTimeoutRef.current);
     };
   }, []);
 
@@ -372,26 +357,9 @@ export const SessionRecoveryProvider = ({ children }) => {
     isOnline,
     isReconnecting,
     showRecoveryPrompt,
-    recoverySessions: multiRecovery.sessions,
-    visibleRecoverySessions: multiRecovery.visibleSessions,
-    groupedRecoverySessions: multiRecovery.groupedSessions,
-    recoverySessionSearchQuery: multiRecovery.searchQuery,
-    setRecoverySessionSearchQuery: multiRecovery.setSearchQuery,
-    hasRecoverySessions: multiRecovery.hasSessions,
-    cloudSessions: cloudRecovery.cloudSessions,
-    hasCloudSessions: cloudRecovery.hasCloudSessions,
-    isCloudSyncing: cloudRecovery.isCloudSyncing,
-    cloudSyncError: cloudRecovery.cloudSyncError,
     saveSession,
     clearSession,
     restoreSession,
-    restoreRecoverySessionById,
-    restoreCloudSession: cloudRecovery.restoreCloudSession,
-    deleteRecoverySessionById,
-    renameRecoverySessionById,
-    importRecoverySessions: multiRecovery.replaceSessions,
-    dismissCloudSession: cloudRecovery.dismissCloudSession,
-    refreshCloudSessions: cloudRecovery.refreshCloudSessions,
     dismissRecoveryPrompt,
     lastActivity,
   };

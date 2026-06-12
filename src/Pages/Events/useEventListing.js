@@ -3,7 +3,6 @@ import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
-import { useStableFilters } from "../../hooks/useStableFilters";
 import {
   applyAdvancedFilters,
   getDateRange,
@@ -12,7 +11,7 @@ import {
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
-
+import { logger } from "../../utils/logger";
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
@@ -45,7 +44,7 @@ const useEventListing = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
 
-  const [advancedFilters, setAdvancedFiltersState] = useStableFilters({});
+  const [advancedFilters, setAdvancedFiltersState] = useState(getDefaultFilters);
 
   const [pagination, setPagination] = useState({
     totalPages: 1,
@@ -56,7 +55,6 @@ const useEventListing = () => {
 
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const isInitialMount = useRef(true);
-  const latestRequestRef = useRef(0);
 
   const buildQueryParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -84,18 +82,6 @@ const useEventListing = () => {
       });
     }
 
-    if (advancedFilters?.skillLevels?.length) {
-      advancedFilters.skillLevels.forEach((level) => {
-        params.append("skillLevel", level.toLowerCase());
-      });
-    }
-
-    if (advancedFilters?.tags?.length) {
-      advancedFilters.tags.forEach((tag) => {
-        params.append("tag", tag);
-      });
-    }
-
     const sortValue = SORT_MAPPING[sortType];
     if (sortValue) {
       params.append("sort", sortValue);
@@ -112,7 +98,6 @@ const useEventListing = () => {
   ]);
 
   const fetchEvents = useCallback(async () => {
-    const requestId = ++latestRequestRef.current;
     setIsLoading(true);
     setLoadError("");
 
@@ -122,9 +107,6 @@ const useEventListing = () => {
       const response = await apiUtils.get(
         `${API_ENDPOINTS.EVENTS.LIST}?${query}`,
       );
-
-      // Discard stale responses from earlier requests
-      if (requestId !== latestRequestRef.current) return;
 
       const responseData = response?.data || {};
 
@@ -177,6 +159,9 @@ const useEventListing = () => {
     }
   }, [buildQueryParams]);
 
+  // RACE CONDITION FIX: Call fetchEvents immediately on mount, without scheduling
+  // mock data concurrently. This prevents race conditions where mock data could
+  // overwrite real API responses based on timing.
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
@@ -203,14 +188,13 @@ const useEventListing = () => {
 
   const setAdvancedFilters = useCallback((filters) => {
     setAdvancedFiltersState(normalizeAdvancedFilters(filters));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const priceStats = useMemo(() => getPriceStats(events), [events]);
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
   const filteredEvents = useMemo(() => {
-    // 1. Fuzzy search first (or all events if no query)
+    // 1. Search (typo-tolerant fuzzy search with ranking from PR #5461)
     let filtered = debouncedSearchQuery.trim()
       ? getRouteSearchResults(
           events,
@@ -226,75 +210,75 @@ const useEventListing = () => {
         )
       : [...events];
 
-    // 2. Status timing filter
+    // 2. Status Timing Filter ('Live Now', 'Upcoming', 'Past Events') based on current system date
     filtered = filtered.filter((event) => {
       const status = getEventStatus(event);
-      if (filterType === "live" && status !== "live") return false;
-      if (filterType === "upcoming" && status !== "upcoming") return false;
-      if (filterType === "past" && status !== "past" && status !== "ended") return false;
-      return true;
+      if (filterType === "live") {
+        return status === "live";
+      }
+      if (filterType === "upcoming") {
+        return status === "upcoming";
+      }
+      if (filterType === "past") {
+        return status === "past" || status === "ended";
+      }
+      return true; // "all"
     });
 
-    // 3. Category filter
-    const target = categoryFilter && categoryFilter !== "all"
-      ? categoryFilter.toLowerCase()
-      : null;
-
-    if (target) {
+    // 3. Category Filter matching domain categories (Hackathons, Tech Talks, Cultural, Web Dev, etc.)
+    if (categoryFilter && categoryFilter !== "all") {
+      const target = categoryFilter.toLowerCase();
       filtered = filtered.filter((event) => {
         const cat = event.category?.toLowerCase() || "";
         const type = event.type?.toLowerCase() || "";
-
+        
         if (target === "hackathon" || target === "hackathons") {
           return type === "hackathon" || cat.includes("hackathon");
-        } else if (["tech talks", "tech-talks", "conference"].includes(target)) {
+        }
+        if (target === "tech talks" || target === "tech-talks" || target === "conference") {
           return (
-            type === "conference" || type === "summit" ||
-            cat.includes("tech") || cat.includes("conference") || cat.includes("summit")
-          );
-        } else if (["cultural", "networking", "cultural & networking"].includes(target)) {
-          return cat.includes("networking") || cat.includes("cultural") || cat.includes("community");
-        } else {
-          const norm = (s) => s.replace(/[^a-z0-9]+/g, "");
-          const nTarget = norm(target), nCat = norm(cat), nType = norm(type);
-          return (
-            nCat.includes(nTarget) || nType.includes(nTarget) ||
-            nTarget.includes(nCat) || nTarget.includes(nType)
+            type === "conference" ||
+            type === "summit" ||
+            cat.includes("tech") ||
+            cat.includes("conference") ||
+            cat.includes("summit")
           );
         }
+        if (target === "cultural" || target === "networking" || target === "cultural & networking") {
+          return (
+            cat.includes("networking") ||
+            cat.includes("cultural") ||
+            cat.includes("community")
+          );
+        }
+        
+        // General domain category matching (e.g. web development -> web-development / web)
+        const normalizedTarget = target.replace(/[^a-z0-9]+/g, "");
+        const normalizedCat = cat.replace(/[^a-z0-9]+/g, "");
+        const normalizedType = type.replace(/[^a-z0-9]+/g, "");
+        
+        return (
+          normalizedCat.includes(normalizedTarget) ||
+          normalizedType.includes(normalizedTarget) ||
+          normalizedTarget.includes(normalizedCat) ||
+          normalizedTarget.includes(normalizedType)
+        );
       });
     }
 
-    // 4. Advanced filters
+    // 4. Advanced Filters fallback
     return applyAdvancedFilters(filtered, advancedFilters);
   }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
 
   const sortedEvents = useMemo(() => {
     return [...filteredEvents].sort((a, b) => {
-      if (sortType === "Title A-Z") {
-        return (a.title || "").localeCompare(b.title || "");
-      }
-      if (sortType === "Title Z-A") {
-        return (b.title || "").localeCompare(a.title || "");
-      }
-      if (sortType === "Price Low to High") {
-        const priceA = a.price === "Free" || !a.price ? 0 : parseFloat(a.price);
-        const priceB = b.price === "Free" || !b.price ? 0 : parseFloat(b.price);
-        return priceA - priceB;
-      }
-      if (sortType === "Price High to Low") {
-        const priceA = a.price === "Free" || !a.price ? 0 : parseFloat(a.price);
-        const priceB = b.price === "Free" || !b.price ? 0 : parseFloat(b.price);
-        return priceB - priceA;
-      }
-
       const dateA = new Date(a.date || a.startDate);
       const dateB = new Date(b.date || b.startDate);
 
-      if (sortType === "Upcoming" || sortType === "Oldest") {
-        return dateA - dateB;
+      if (sortType === "Upcoming") {
+        return dateA - dateB; // Earliest first
       }
-      // Default / Newest
+      // Default: Newest (Latest first)
       return dateB - dateA;
     });
   }, [filteredEvents, sortType]);
@@ -304,6 +288,7 @@ const useEventListing = () => {
     return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
   }, [sortedEvents, currentPage, eventsPerPage]);
 
+  // Derive pagination totals based on the filtered dataset
   const totalElements = pagination.totalPages > 1 ? pagination.totalElements : sortedEvents.length;
   const totalPages = pagination.totalPages > 1 ? pagination.totalPages : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
 

@@ -1,5 +1,4 @@
 export const DRAFT_KEY = "eventra_create_event_draft";
-export const DUPLICATED_DRAFT_KEY = "eventra_duplicate_event_draft";
 export const CREATION_STEPS = { FORM: "form", PREVIEW: "preview" };
 
 export const categories = [

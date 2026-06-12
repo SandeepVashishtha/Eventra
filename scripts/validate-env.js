@@ -44,18 +44,17 @@ const SENSITIVE_KEY_PATTERNS = [
 ];
 
 const SENSITIVE_VALUE_PATTERNS = [
-  { pattern: /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, label: 'PEM private key' },
-  { pattern: /AIza[0-9A-Za-z\-_]{35}/, label: 'Google API key' },
-  { pattern: /sk-[A-Za-z0-9_-]{32,}/, label: 'OpenAI secret key' },
-  { pattern: /rk_live_[0-9a-zA-Z]{24}/, label: 'Stripe restricted key' },
-  { pattern: /SK[0-9a-f]{32}/, label: 'Twilio auth token' },
-  { pattern: /xox[baprs]-[0-9a-zA-Z]{10,}/, label: 'Slack API token' },
-  { pattern: /mongodb(\+srv)?:\/\/[^:\s]+:[^@\s]+@/, label: 'MongoDB URI with credentials' },
-  { pattern: /postgres(ql)?:\/\/[^:\s]+:[^@\s]+@/, label: 'PostgreSQL URI with credentials' },
-  { pattern: /mysql:\/\/[^:\s]+:[^@\s]+@/, label: 'MySQL URI with credentials' },
-  { pattern: /gh[pousr]_[A-Za-z0-9_]{20,}/, label: 'GitHub personal access token' },
-  { pattern: /github_pat_[A-Za-z0-9_]{22,}/, label: 'GitHub fine-grained personal access token' },
-  { pattern: /eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\./, label: 'JWT token (hardcoded)' },
+  { pattern: /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, label: "PEM private key" },
+  { pattern: /AIza[0-9A-Za-z\-_]{35}/, label: "Google API key" },
+  { pattern: /sk-[a-zA-Z0-9]{48}/, label: "OpenAI secret key" },
+  { pattern: /rk_live_[0-9a-zA-Z]{24}/, label: "Stripe restricted key" },
+  { pattern: /SK[0-9a-f]{32}/, label: "Twilio auth token" },
+  { pattern: /xox[baprs]-[0-9a-zA-Z]{10,}/, label: "Slack API token" },
+  { pattern: /mongodb\+srv:\/\/[^:]+:[^@]+@/, label: "MongoDB Atlas URI with credentials" },
+  { pattern: /postgres:\/\/[^:]+:[^@]+@/, label: "PostgreSQL URI with credentials" },
+  { pattern: /mysql:\/\/[^:]+:[^@]+@/, label: "MySQL URI with credentials" },
+  { pattern: /ghp_[a-zA-Z0-9]{36}/, label: "GitHub personal access token" },
+  { pattern: /eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\./, label: "JWT token (hardcoded)" },
 ];
 
 const ALLOWED_EXCEPTIONS = new Set([
@@ -66,21 +65,12 @@ const ALLOWED_EXCEPTIONS = new Set([
   "REACT_APP_CSP_REPORT_URI",
 ]);
 
-const BACKEND_URL_VARS = ["BACKEND_URL", "VITE_API_URL", "REACT_APP_API_URL"];
-const REQUIRED_VARS = ["JWT_SECRET"];
+const REQUIRED_VARS = ["VITE_API_URL"];
 
 const FORMAT_VALIDATED_VARS = {
-  BACKEND_URL: {
-    pattern: /^https?:\/\/.+/,
-    message: "BACKEND_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
-  },
   VITE_API_URL: {
     pattern: /^https?:\/\/.+/,
     message: "VITE_API_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
-  },
-  REACT_APP_API_URL: {
-    pattern: /^https?:\/\/.+/,
-    message: "REACT_APP_API_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
   },
 };
 
@@ -92,40 +82,13 @@ const warnings = [];
 
 console.log("\n[validate-env] Scanning environment variables for security issues...\n");
 
-console.log("Required backend configuration:");
-const configuredBackendVars = BACKEND_URL_VARS.filter(
-  (varName) => process.env[varName] && process.env[varName].trim()
-);
-if (configuredBackendVars.length === 0) {
-  const msg =
-    "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application.";
-  errors.push(`[CONFIG ERROR] ${msg}`);
-  hasErrors = true;
-} else {
-  console.log(`  OK: ${configuredBackendVars.join(" or ")} = [set]`);
-}
-
-console.log("\nRequired server variables:");
+console.log("Required variables:");
 for (const varName of REQUIRED_VARS) {
   if (!process.env[varName]) {
-    const isJwtSecret = varName === "JWT_SECRET";
-    const errorMsg = isJwtSecret
-      ? `[CRITICAL SECURITY ERROR] ${varName} is missing. This is a critical security vulnerability that allows unauthorized access. Generate a secure secret using: openssl rand -base64 32`
-      : `Required variable ${varName} is not set`;
-    
-    console.error(`  ERROR: ${errorMsg}`);
-    errors.push(errorMsg);
-    hasErrors = true;
+    console.warn(`  WARNING: missing ${varName} (app may fail to connect to backend)`);
+    warnings.push(`Required variable ${varName} is not set`);
   } else {
-    // Additional validation for JWT_SECRET to ensure it's not empty or whitespace
-    if (varName === "JWT_SECRET" && !process.env[varName].trim()) {
-      const errorMsg = `[CRITICAL SECURITY ERROR] JWT_SECRET is empty or whitespace-only. This is a critical security vulnerability. Generate a secure secret using: openssl rand -base64 32`;
-      console.error(`  ERROR: ${errorMsg}`);
-      errors.push(errorMsg);
-      hasErrors = true;
-    } else {
-      console.log(`  OK: ${varName} = [set]`);
-    }
+    console.log(`  OK: ${varName} = [set]`);
   }
 }
 
@@ -150,12 +113,6 @@ if (OPTIONAL_VARS.length === 0) {
 }
 
 console.log("\nValidating variable formats...");
-  if (process.env.NODE_ENV === "production" && process.env.VITE_API_URL && !process.env.VITE_API_URL.startsWith("https://")) {
-    const msg = "[CRITICAL SECURITY WARNING] VITE_API_URL must use HTTPS in production";
-    errors.push(msg);
-    hasErrors = true;
-    console.error(`  ERROR: ${msg}`);
-  }
 for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   const value = process.env[varName];
   if (!value) continue;
@@ -170,13 +127,10 @@ for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   }
 }
 
-console.log("\nScanning client variables for credential leaks...");
-// Security Fix: Scan BOTH Vite and React App prefixes to prevent bypass leaks
-const clientVars = Object.keys(process.env).filter(
-  (k) => k.startsWith("VITE_") || k.startsWith("REACT_APP_")
-);
+console.log("\nScanning VITE_* variables for credential leaks...");
+const viteVars = Object.keys(process.env).filter((k) => k.startsWith("VITE_"));
 
-for (const key of clientVars) {
+for (const key of viteVars) {
   if (ALLOWED_EXCEPTIONS.has(key)) continue;
 
   const value = process.env[key] || "";
@@ -215,11 +169,7 @@ if (errors.length > 0) {
 }
 
 const criticalErrors = errors.filter(
-  (e) =>
-    e.includes("[SECURITY LEAK]") ||
-    e.includes("[FORMAT ERROR]") ||
-    e.includes("[CRITICAL ERROR]") ||
-    e.includes("[CONFIG ERROR]")
+  (e) => e.includes("[SECURITY LEAK]") || e.includes("[FORMAT ERROR]")
 );
 if (criticalErrors.length > 0 || hasErrors) {
   console.error(
@@ -229,6 +179,6 @@ if (criticalErrors.length > 0 || hasErrors) {
 }
 
 console.log(
-  `\n[validate-env] Environment check passed. Scanned ${clientVars.length} client variable(s).\n`
+  `\n[validate-env] Environment check passed. Scanned ${viteVars.length} VITE_* variable(s).\n`
 );
 process.exit(0);

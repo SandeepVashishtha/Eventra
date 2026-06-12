@@ -1,27 +1,6 @@
-/**
- * @fileoverview useModalStack - Modal stacking order manager hook
- * @module hooks/useModalStack
- */
 import { useCallback, useEffect, useId } from "react";
 
 const modalStack = [];
-
-/**
- * A custom React hook that manages a global modal stack to track
- * which modal is currently topmost.
- *
- * Each modal instance registers itself in a shared stack when open
- * and removes itself on close. Use isTopmost() to determine if a
- * modal should respond to keyboard events like Escape.
- *
- * @param {boolean} isOpen - Whether this modal is currently open
- * @returns {{ isTopmost: Function }} Object with isTopmost checker
- *
- * @example
- * const { isTopmost } = useModalStack(isOpen);
- * // Only handle Escape if this modal is on top
- * if (isTopmost()) closeModal();
- */
 
 export const useModalStack = (isOpen) => {
   const generatedId = useId();

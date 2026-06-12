@@ -1,4 +1,3 @@
-import { safeJsonParse } from "../utils/safeJsonParse";
 const isBrowserStorageAvailable = (storage) => {
   if (!storage) return false;
 
@@ -7,7 +6,7 @@ const isBrowserStorageAvailable = (storage) => {
     storage.setItem(testKey, testKey);
     storage.removeItem(testKey);
     return true;
-  } catch {
+  } catch (_) {
     return false;
   }
 };
@@ -16,7 +15,7 @@ const createSafeStorage = (getStorage) => {
   const getStorageOrNull = () => {
     try {
       return getStorage();
-    } catch {
+    } catch (_) {
       return null;
     }
   };
@@ -25,7 +24,7 @@ const createSafeStorage = (getStorage) => {
     get length() {
       try {
         return getStorageOrNull()?.length ?? 0;
-      } catch {
+      } catch (_) {
         return 0;
       }
     },
@@ -37,7 +36,7 @@ const createSafeStorage = (getStorage) => {
     getItem(key, fallback = null) {
       try {
         return getStorageOrNull()?.getItem(key) ?? fallback;
-      } catch {
+      } catch (_) {
         return fallback;
       }
     },
@@ -46,7 +45,7 @@ const createSafeStorage = (getStorage) => {
       try {
         getStorageOrNull()?.setItem(key, value);
         return true;
-      } catch {
+      } catch (_) {
         return false;
       }
     },
@@ -55,7 +54,7 @@ const createSafeStorage = (getStorage) => {
       try {
         getStorageOrNull()?.removeItem(key);
         return true;
-      } catch {
+      } catch (_) {
         return false;
       }
     },
@@ -64,7 +63,7 @@ const createSafeStorage = (getStorage) => {
       try {
         getStorageOrNull()?.clear();
         return true;
-      } catch {
+      } catch (_) {
         return false;
       }
     },
@@ -72,7 +71,7 @@ const createSafeStorage = (getStorage) => {
     key(index) {
       try {
         return getStorageOrNull()?.key(index) ?? null;
-      } catch {
+      } catch (_) {
         return null;
       }
     },
@@ -82,7 +81,7 @@ const createSafeStorage = (getStorage) => {
       if (raw == null) return fallback;
 
       try {
-        return safeJsonParse(raw, {});
+        return JSON.parse(raw);
       } catch (_) {
         // Stored values can be user-edited or corrupted; callers should keep running.
         return fallback;
@@ -92,7 +91,7 @@ const createSafeStorage = (getStorage) => {
     setJson(key, value) {
       try {
         return this.setItem(key, JSON.stringify(value));
-      } catch {
+      } catch (_) {
         return false;
       }
     },

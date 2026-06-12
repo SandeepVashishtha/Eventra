@@ -1,8 +1,5 @@
-import { useNavigate } from "react-router-dom";
 
 export const ErrorFallback = ({ error, resetErrorBoundary }) => {
-  const navigate = useNavigate();
-
   return (
     <div
       role="alert"
@@ -35,30 +32,14 @@ export const ErrorFallback = ({ error, resetErrorBoundary }) => {
         </p>
       )}
 
-      <div className="flex gap-3 flex-wrap justify-center">
-        {resetErrorBoundary && (
-          <button
-            onClick={resetErrorBoundary}
-            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-          >
-            Try Again
-          </button>
-        )}
-
+      {resetErrorBoundary && (
         <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-gray-700 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
-        >
-          Reload Page
+          onClick={resetErrorBoundary}
+          className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+         aria-label="button">
+          Try again
         </button>
-
-        <button
-          onClick={() => navigate("/")}
-          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          Go Home
-        </button>
-      </div>
+      )}
     </div>
   );
 };

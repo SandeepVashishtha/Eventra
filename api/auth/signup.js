@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
-import { createRateLimiter } from "../lib/rateLimiter.js";
+import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { createRateLimiter } from "../lib/rateLimit.js";
 
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 
@@ -197,7 +197,9 @@ async function handler(req, res) {
       || req.socket?.remoteAddress
       || "unknown";
 
-    if (!signupRateLimiter.check(clientIp).allowed) {
+    signupRateLimiter.evictStale();
+
+    if (!signupRateLimiter.check(clientIp)) {
       return corsResponse(req, res, 429, {
         error: "Too many signup attempts. Please try again later.",
         retryAfter: 60,
@@ -268,7 +270,7 @@ async function handler(req, res) {
     };
 
     const isProd = process.env.NODE_ENV === "production";
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
+    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`;
     // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
     try {
       if (typeof res.setHeader === 'function') {
@@ -284,6 +286,8 @@ async function handler(req, res) {
 
     return corsResponse(req, res, 201, {
       message: "Account created successfully",
+      token,
+      tokenType: "Bearer",
       ...userResponse,
     });
 
@@ -299,5 +303,8 @@ async function handler(req, res) {
 // ---------------------------------------------------------------------------
 
 export default handler;
+
+export { users };
+
 export { users, usersById, usersByUsername };
 

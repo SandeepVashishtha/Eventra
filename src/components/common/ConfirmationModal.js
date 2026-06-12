@@ -43,8 +43,8 @@ const ConfirmationModal = ({
       if (event.key !== "Tab") return;
 
       const focusableElements = Array.from(
-        modalRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) || []
-      ).filter((element) => !element.hasAttribute("disabled"));
+        modalRef.current.querySelectorAll(FOCUSABLE_SELECTOR)
+      ).filter((el) => !el.hasAttribute("disabled"));
 
       if (focusableElements.length === 0) {
         event.preventDefault();

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
-import ErrorBoundary from "./common/ErrorBoundary";
+import FeatureErrorBoundary from "./common/FeatureErrorBoundary";
 import SEOHead from "../components/SEOHead";
 import { storageManager } from "../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../utils/storage/storageKeys";
@@ -16,6 +16,14 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 10;
 const PROFILE_FETCH_DELAY_MS = 100; // Throttle profile API calls to avoid rate limiting
+
+let profileFetchCounter = 0;
+export const throttleProfileFetch = async () => {
+  profileFetchCounter++;
+  if (profileFetchCounter % 5 === 0) {
+    await new Promise(resolve => setTimeout(resolve, PROFILE_FETCH_DELAY_MS));
+  }
+};
 
 const fetchJsonWithTimeout = async (url) => {
   const proxyUrl = url.startsWith("https://api.github.com")
@@ -83,6 +91,7 @@ const ContributorsInner = () => {
 
   // Fetch GitHub profile details
   const fetchGitHubProfile = useCallback(async (username) => {
+    await throttleProfileFetch();
     if (!username) {
       return {
         followers: 0,
@@ -171,9 +180,8 @@ const ContributorsInner = () => {
         return;
       }
 
-      const results = await Promise.allSettled(
-        allContributors.map(async (c, idx) => {
-          await new Promise((resolve) => setTimeout(resolve, idx * PROFILE_FETCH_DELAY_MS));
+      const enhanced = await Promise.all(
+        allContributors.map(async (c) => {
           const profile = await fetchGitHubProfile(c.login);
           return {
             ...c,
@@ -182,15 +190,6 @@ const ContributorsInner = () => {
           };
         }),
       );
-
-      const enhanced = results
-        .filter((r) => r.status === "fulfilled")
-        .map((r) => r.value);
-
-      if (results.some((r) => r.status === "rejected")) {
-        const failCount = results.filter((r) => r.status === "rejected").length;
-        console.warn(`[Contributors] ${failCount} profile(s) failed to load, using partial data`);
-      }
 
       enhanced.sort((a, b) => b.contributions - a.contributions);
       setContributors(enhanced);
@@ -226,8 +225,8 @@ const ContributorsInner = () => {
   // UPDATED: Loading skeleton grid
   if (loading) {
     return (
-      <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+      <FeatureErrorBoundary>
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
             {[...Array(8)].map((_, i) => (
@@ -236,14 +235,14 @@ const ContributorsInner = () => {
           </div>
         </div>
       </section>
-      </ErrorBoundary>
+      </FeatureErrorBoundary>
     );
   }
 
   if (error)
     return (
-      <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+      <FeatureErrorBoundary>
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
             Contributors are unavailable
@@ -258,12 +257,12 @@ const ContributorsInner = () => {
           </button>
         </div>
       </section>
-      </ErrorBoundary>
+      </FeatureErrorBoundary>
     );
   return (
     // UPDATED: Section background
-      <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+    <FeatureErrorBoundary>
+      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           {/* Added The Search Bar */}
           <div className="flex justify-center mb-8">
@@ -445,7 +444,7 @@ const ContributorsInner = () => {
         )}
       </div>
     </section>
-    </ErrorBoundary>
+    </FeatureErrorBoundary>
   );
 };
 

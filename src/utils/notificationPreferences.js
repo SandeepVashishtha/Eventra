@@ -1,4 +1,3 @@
-import { safeJsonParse } from "../utils/safeJsonParse";
 export const NOTIFICATION_CATEGORIES = {
   registrations: {
     label: "Registrations",
@@ -89,7 +88,7 @@ export const readNotificationPreferences = () => {
 
   try {
     const stored = window.localStorage.getItem(NOTIFICATION_PREFERENCES_KEY);
-    return normalizeNotificationPreferences(stored ? safeJsonParse(stored, {}) : {});
+    return normalizeNotificationPreferences(stored ? JSON.parse(stored) : {});
   } catch {
     return DEFAULT_NOTIFICATION_PREFERENCES;
   }

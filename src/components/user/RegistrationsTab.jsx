@@ -6,7 +6,6 @@ import StyledDropdown from "../StyledDropdown";
 import { DashboardTableSkeleton } from "../common/SkeletonLoaders";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import { downloadBulkICSFile } from "../../utils/calendarExporter";
-import CertificateDownload from "../CertificateDownload";
 
 const TYPE_ICON = {
   Event: <Calendar className="ud-type-icon" style={{ color: "#6366f1" }} />,
@@ -249,15 +248,6 @@ const RegistrationsTab = ({
                           >
                             View Ticket
                           </button>
-                        )}
-                      {(item.type === 'Event' || item.type === 'Hackathon') &&
-                        item.status === 'Completed' && (
-                          <CertificateDownload
-                            eventName={item.title}
-                            eventDate={item.date}
-                            eventType={item.type}
-                            organizerName={item.organizerName}
-                          />
                         )}
                     </div>
                   </td>

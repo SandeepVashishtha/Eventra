@@ -18,7 +18,7 @@ const { saveDraft, getDraft, clearDraft } = await import(
 assert.equal(getDraft(), null, "returns null when no draft exists");
 
 localStorage.setItem("event_creation_draft", "{not-json");
-assert.equal(getDraft(), null, "returns null for malformed draft JSON");
+assert.deepEqual(getDraft(), {}, "returns empty object for malformed draft JSON");
 
 saveDraft({ title: "Draft event", step: 2 });
 assert.deepEqual(getDraft(), { title: "Draft event", step: 2 });

@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useCallback } from "react";
+import React, { useState, useEffect, memo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Sparkles,
@@ -11,9 +11,6 @@ import {
   Clock,
 } from "lucide-react";
 import mockEvents from "../../Pages/Events/eventsMockData.json";
-import { syncSecureStorage } from "../../utils/secureStorage";
-import { safeJsonParse } from "../../utils/safeJsonParse";
-import { getRecommendedEvents } from "../../utils/eventRecommendationUtils";
 
 // =========================================================================
 // INLINE VECTOR GRAPHIC CONSTANTS (FALLBACK PLACEHOLDER IMAGES)
@@ -32,15 +29,9 @@ const INLINE_SVG_PLACEHOLDER =
  * 💀 SHIMMER SKELETON CARD MODULE
  * Matches the newly padded structural card dimensions precisely to eliminate layout shifting.
  */
-const RecommendationSkeleton = memo(({ visibleCount = 3 }) => {
+const RecommendationSkeleton = memo(() => {
   return (
-    <div
-      className="bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between animate-pulse select-none"
-      style={{
-        width: `calc(${100 / visibleCount}% - ${((visibleCount - 1) * 16) / visibleCount}px)`,
-        flexShrink: 0,
-      }}
-    >
+    <div className="bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm w-[calc(33.333%-12px)] flex flex-col justify-between animate-pulse select-none">
       <div>
         {/* Shimmer Image Wrapper Layout */}
         <div className="w-full h-32 bg-slate-200 dark:bg-slate-800 rounded-xl mb-4" />
@@ -88,14 +79,14 @@ RecommendationSkeleton.displayName = "RecommendationSkeleton";
  * 🖼️ SAFE FALLBACK IMAGE LAYOUT MODULE
  * Intercepts broken external URLs natively and updates sources to a fallback vector.
  */
-const handleImageLoadingError = (e) => {
-  e.target.onerror = null;
-  e.target.src = INLINE_SVG_PLACEHOLDER;
-  e.target.className =
-    "h-full w-full object-cover opacity-60 filter grayscale dark:brightness-75";
-};
-
 const CardBannerImage = memo(({ src, alt }) => {
+  const handleImageLoadingError = (e) => {
+    e.target.onerror = null; // Prevent infinite fallback trigger loops
+    e.target.src = INLINE_SVG_PLACEHOLDER;
+    e.target.className =
+      "h-full w-full object-cover opacity-60 filter grayscale dark:brightness-75";
+  };
+
   return (
     <div className="relative w-full h-32 rounded-xl overflow-hidden mb-3.5 bg-slate-100 dark:bg-slate-900 border border-slate-200/20 shadow-inner group">
       <img
@@ -121,97 +112,79 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
   const [recommendedEvents, setRecommendedEvents] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(3);
-
-  // Dynamic visible count calculation based on viewport width
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const handleResize = () => {
-      const width = window.innerWidth;
-      if (width < 640) {
-        setVisibleCount(1);
-      } else if (width < 1024) {
-        setVisibleCount(2);
-      } else {
-        setVisibleCount(3);
-      }
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Clamp currentIndex when visibleCount or recommendedEvents changes
-  useEffect(() => {
-    setCurrentIndex((prev) => {
-      const maxIndex = Math.max(0, recommendedEvents.length - visibleCount);
-      return Math.min(prev, maxIndex);
-    });
-  }, [visibleCount, recommendedEvents.length]);
 
   // Core processing effect tracing profile parameters
   useEffect(() => {
     setLoading(true);
-    let active = true;
 
-    const loadRecommendations = async () => {
+    const computationalTimer = setTimeout(() => {
       let userInterests = ["Coding", "Tech", "AI", "Development"];
 
       // Sync and extract client custom telemetry interests log from localStorage safely
       try {
-        const storedUser = await syncSecureStorage.getItemAsync("user");
-        if (storedUser) {
-          const parsed = safeJsonParse(storedUser, null);
-          if (parsed && Array.isArray(parsed.skills) && parsed.skills.length > 0) {
-            userInterests = parsed.skills;
-          }
+        const storedInterests = localStorage.getItem("user_interests");
+        if (storedInterests) {
+          userInterests = JSON.parse(storedInterests);
         }
       } catch (error) {
-        console.error("Failsafe tracking intercept: secureStorage parsing collapsed safely.", error);
+        console.error("Failsafe tracking intercept: localStorage parsing collapsed safely.", error);
       }
 
-      if (!active) return;
-
+      // Ensure mock data arrays pass standard validation checks
       const validMockEvents = Array.isArray(mockEvents) ? mockEvents : [];
-      const recommendations = getRecommendedEvents({
-        events: validMockEvents,
-        currentEventId,
-        currentCategory,
-        userInterests,
+
+      // 1. Filter out the currently selected active item profile
+      const filteringPool = validMockEvents.filter((e) => e && e.id !== currentEventId);
+
+      // 2. Map structural values and evaluate preference matching scores
+      const scoredPool = filteringPool.map((event) => {
+        if (!event) return { recommendationScore: 0 };
+        let score = 0;
+
+        // Exact category alignment check vector (+10 points)
+        if (currentCategory && event.category?.toLowerCase() === currentCategory.toLowerCase()) {
+          score += 10;
+        }
+
+        // Match user's array metrics elements (+5 points per intersection matching)
+        const parsedCategoryTerms = (event.category || "").split(/[\s/&-]+/);
+        parsedCategoryTerms.forEach((term) => {
+          if (!term) return;
+          if (
+            Array.isArray(userInterests) &&
+            userInterests.some(
+              (interest) =>
+                typeof interest === "string" && interest.toLowerCase().includes(term.toLowerCase())
+            )
+          ) {
+            score += 5;
+          }
+        });
+
+        return { ...event, recommendationScore: score };
       });
 
-      if (active) {
-        setRecommendedEvents(recommendations);
-        setCurrentIndex(0);
-        setLoading(false);
-      }
-    };
+      // 3. Sort pool in descending structural order based on priority scores
+      const sortedResultMatrix = scoredPool.sort(
+        (a, b) => b.recommendationScore - a.recommendationScore
+      );
 
-    const computationalTimer = setTimeout(() => {
-      loadRecommendations();
+      // Select topmost 6 scoring matches for the carousel limits
+      setRecommendedEvents(sortedResultMatrix.slice(0, 6));
+      setLoading(false);
     }, 800);
 
-    return () => {
-      active = false;
-      clearTimeout(computationalTimer);
-    };
+    return () => clearTimeout(computationalTimer);
   }, [currentEventId, currentCategory]);
 
   // Carousel slider boundary movement methods
   const nextSlide = useCallback(() => {
-    setCurrentIndex((prev) =>
-      prev + 1 >= recommendedEvents.length - (visibleCount - 1) ? 0 : prev + 1
-    );
-  }, [recommendedEvents.length, visibleCount]);
+    setCurrentIndex((prev) => (prev + 1 >= recommendedEvents.length - 2 ? 0 : prev + 1));
+  }, [recommendedEvents.length]);
 
-  // Prevent sliding back if recommendedEvents is smaller than visibleCount
   const prevSlide = useCallback(() => {
-    setCurrentIndex((prev) =>
-      prev === 0 ? Math.max(0, recommendedEvents.length - visibleCount) : prev - 1
-    );
-  }, [recommendedEvents.length, visibleCount]);
+    setCurrentIndex((prev) => (prev === 0 ? Math.max(0, recommendedEvents.length - 3) : prev - 1));
+  }, [recommendedEvents.length]);
 
   // Handle loading interface states
   if (loading) {
@@ -238,9 +211,9 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
         {/* LOADING SHIMMER MAPPING CONTAINER */}
         <div className="relative overflow-hidden w-full">
           <div className="flex gap-4 w-full">
-            {Array.from({ length: visibleCount }).map((_, idx) => (
-              <RecommendationSkeleton key={idx} visibleCount={visibleCount} />
-            ))}
+            <RecommendationSkeleton />
+            <RecommendationSkeleton />
+            <RecommendationSkeleton />
           </div>
         </div>
       </div>
@@ -268,7 +241,7 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
         </div>
 
         {/* Action navigation toggle links */}
-        {recommendedEvents.length > visibleCount && (
+        {recommendedEvents.length > 3 && (
           <div className="flex items-center gap-1.5 navigation-buttons-row">
             <button
               onClick={prevSlide}
@@ -291,9 +264,10 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
       {/* HORIZONTAL CAROUSEL CARDS WRAPPER GRID */}
       <div className="relative overflow-hidden w-full content-slider-envelope-view">
         <div
-          className="flex flex-nowrap transition-transform duration-500 ease-out gap-4 slider-film-strip-axis"
+          className="flex transition-transform duration-500 ease-out gap-4 slider-film-strip-axis"
           style={{
-            transform: `translateX(calc(-${currentIndex} * (100% + 16px) / ${visibleCount}))`,
+            transform: `translateX(-${currentIndex * (100 / 3)}%)`,
+            width: `${Math.max(100, (recommendedEvents.length / 3) * 100)}%`,
           }}
         >
           {recommendedEvents.map((event) => {
@@ -306,11 +280,7 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
             return (
               <div
                 key={event.id}
-                className="bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-slate-300/40 dark:hover:border-slate-700/50 transition-all duration-300 flex flex-col justify-between transform hover:-translate-y-0.5"
-                style={{
-                  width: `calc(${100 / visibleCount}% - ${((visibleCount - 1) * 16) / visibleCount}px)`,
-                  flexShrink: 0,
-                }}
+                className="bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-slate-300/40 dark:hover:border-slate-700/50 transition-all duration-300 w-[calc(33.333%-12px)] flex flex-col justify-between transform hover:-translate-y-0.5"
               >
                 <div>
                   {/* INJECTED CARD BANNER: Implements robust a11y image onError error fallbacks */}
@@ -329,7 +299,7 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
                     )}
                   </div>
 
-                  <h4 title={event.title} className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100 mt-3 line-clamp-2 break-words min-w-0">
+                  <h4 className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100 mt-3 line-clamp-1">
                     {event.title}
                   </h4>
 

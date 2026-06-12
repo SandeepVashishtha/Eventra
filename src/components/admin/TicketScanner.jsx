@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   Camera,
   CameraOff,
@@ -19,8 +18,9 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { pushToQueue } from "../../utils/offlineQueue";
-import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "../../services/ticketService";
+import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents } from "../../services/ticketService";
 import "./TicketScanner.css";
+
 const HISTORY_CACHE_KEY = "eventra_checkins_cache";
 
 export default function TicketScanner() {
@@ -32,31 +32,15 @@ export default function TicketScanner() {
   const [checkinHistory, setCheckinHistory] = useState([]);
   const [events, setEvents] = useState([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+
   const [manualTicketId, setManualTicketId] = useState("");
   const [manualAttendeeName, setManualAttendeeName] = useState("");
   const [manualEventId, setManualEventId] = useState("");
   const [manualEventName, setManualEventName] = useState("");
 
-  const [selectedEventId, setSelectedEventId] = useState("");
-  const [stats, setStats] = useState(null);
-  const [statsLoading, setStatsLoading] = useState(false);
-
   const qrCodeInstanceRef = useRef(null);
   const isMountedRef = useRef(true);
   const readerId = "html5-qr-reader";
-
-  const fetchStats = useCallback(async (eventId) => {
-    if (!eventId) return;
-    setStatsLoading(true);
-    try {
-      const data = await fetchTicketStats(eventId);
-      setStats(data);
-    } catch (error) {
-      console.error("Failed to fetch event check-in stats:", error);
-    } finally {
-      setStatsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -103,7 +87,6 @@ export default function TicketScanner() {
         if (data.length > 0) {
           setManualEventId(data[0].id);
           setManualEventName(data[0].title);
-          setSelectedEventId(data[0].id);
         }
       })
       .catch(() => {
@@ -112,19 +95,21 @@ export default function TicketScanner() {
   }, []);
 
   useEffect(() => {
-    if (selectedEventId) {
-      fetchStats(selectedEventId);
-      fetchCheckInHistory(selectedEventId)
-        .then((data) => {
-          const items = Array.isArray(data) ? data : data.content || data.checkins || [];
-          setCheckinHistory(items);
-        })
-        .catch((err) => {
-          console.error("Failed to load check-in history:", err);
-          toast.error("Failed to load check-in history. The data shown may be stale.");
-        });
+    const cached = localStorage.getItem(HISTORY_CACHE_KEY);
+    if (cached) {
+      try { setCheckinHistory(JSON.parse(cached)); } catch { /* ignore */ }
     }
-  }, [selectedEventId, fetchStats]);
+
+    fetchCheckInHistory()
+      .then((data) => {
+        const items = Array.isArray(data) ? data : data.content || data.checkins || [];
+        setCheckinHistory(items);
+        localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(items));
+      })
+      .catch(() => {
+        // Keep cached history if API unavailable
+      });
+  }, []);
 
   const stopScanner = async () => {
     if (qrCodeInstanceRef.current && qrCodeInstanceRef.current.isScanning) {
@@ -182,7 +167,7 @@ export default function TicketScanner() {
   const addToHistory = useCallback((entry) => {
     setCheckinHistory((prev) => [entry, ...prev].slice(0, 50));
     try {
-      const updated = [entry, ...safeJsonParse(localStorage.getItem(HISTORY_CACHE_KEY), [])].slice(0, 50);
+      const updated = [entry, ...JSON.parse(localStorage.getItem(HISTORY_CACHE_KEY) || "[]")].slice(0, 50);
       localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updated));
     } catch { /* ignore */ }
   }, []);
@@ -194,34 +179,24 @@ export default function TicketScanner() {
     try {
       ticketData = JSON.parse(decodedText);
     } catch {
-      if (decodedText.startsWith("eyJ") && decodedText.split(".").length === 3) {
-        const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
-        ticketData = {
-          ticketId: decodedText,
-          eventId: selectedEventId,
-          userName: "Attendee",
-          eventName: activeEvent ? activeEvent.title : "Active Event"
-        };
-      } else {
-        setScanResult({
-          status: "flagged",
-          message: "Invalid QR Code format. Only secure Eventra ticket QR codes are accepted.",
-          raw: decodedText,
-        });
-        toast.error("Security Alert: Invalid Ticket QR Code scanned!");
-        addToHistory({
-          id: `flagged-${Date.now()}`,
-          ticketId: "N/A",
-          name: "Unknown",
-          event: "Unknown",
-          status: "Flagged",
-          time: new Date().toISOString(),
-        });
-        return;
-      }
+      setScanResult({
+        status: "flagged",
+        message: "Invalid QR Code format. Only secure Eventra ticket QR codes are accepted.",
+        raw: decodedText,
+      });
+      toast.error("Security Alert: Invalid Ticket QR Code scanned!");
+      addToHistory({
+        id: `flagged-${Date.now()}`,
+        ticketId: "N/A",
+        name: "Unknown",
+        event: "Unknown",
+        status: "Flagged",
+        time: new Date().toISOString(),
+      });
+      return;
     }
 
-    if (!ticketData || typeof ticketData !== 'object' || !ticketData.ticketId) {
+    if (!ticketData || !ticketData.ticketId) {
       setScanResult({
         status: "flagged",
         message: "Invalid QR Code format. Ticket is secure and cannot be verified.",
@@ -237,10 +212,6 @@ export default function TicketScanner() {
         time: new Date().toISOString(),
       });
       return;
-    }
-
-    if (!ticketData.eventId) {
-      ticketData.eventId = selectedEventId;
     }
 
     await processTicket(ticketData);
@@ -276,28 +247,21 @@ export default function TicketScanner() {
     try {
       const result = await validateTicket(ticketId, eventId);
 
-      // On successful validation or duplicate check, update names/ids retrieved from backend
-      if (result && result.valid) {
-        ticketData.userName = result.userName || userName;
-        ticketData.ticketId = result.registrationId || ticketId;
-      }
-
       if (result.alreadyCheckedIn) {
         setScanResult({
           status: "duplicate",
           data: ticketData,
           message: "This ticket has already been checked in!",
         });
-        toast.warning(`Duplicate Attempt: ${ticketData.userName} is already checked in.`);
+        toast.warning(`Duplicate Attempt: ${userName} is already checked in.`);
         addToHistory({
           id: `dup-${Date.now()}`,
-          ticketId: ticketData.ticketId,
-          name: ticketData.userName,
+          ticketId,
+          name: userName,
           event: eventName,
           status: "Flagged",
           time: new Date().toISOString(),
         });
-        if (selectedEventId) fetchStats(selectedEventId);
         return;
       }
 
@@ -307,11 +271,11 @@ export default function TicketScanner() {
           data: ticketData,
           message: result.message || "This ticket is not valid for entry.",
         });
-        toast.error(`Invalid Ticket: ${ticketData.userName}`);
+        toast.error(`Invalid Ticket: ${userName}`);
         addToHistory({
           id: `invalid-${Date.now()}`,
-          ticketId: ticketData.ticketId,
-          name: ticketData.userName,
+          ticketId,
+          name: userName,
           event: eventName,
           status: "Flagged",
           time: new Date().toISOString(),
@@ -326,16 +290,15 @@ export default function TicketScanner() {
         data: ticketData,
         message: "Attendee check-in verified successfully!",
       });
-      toast.success(`Check-In Verified: Welcome, ${ticketData.userName}!`);
+      toast.success(`Check-In Verified: Welcome, ${userName}!`);
       addToHistory({
         id: `verified-${Date.now()}`,
-        ticketId: ticketData.ticketId,
-        name: ticketData.userName,
+        ticketId,
+        name: userName,
         event: eventName,
         status: "Verified",
         time: new Date().toISOString(),
       });
-      if (selectedEventId) fetchStats(selectedEventId);
     } catch (error) {
       setScanResult({
         status: "flagged",
@@ -345,7 +308,7 @@ export default function TicketScanner() {
       toast.error(`Validation Error: ${error.message}`);
       addToHistory({
         id: `error-${Date.now()}`,
-        ticketId: ticketId,
+        ticketId,
         name: userName,
         event: eventName,
         status: "Flagged",
@@ -437,96 +400,6 @@ export default function TicketScanner() {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Event Selection and Statistics Dashboard */}
-      <div className="mb-6 bg-slate-50 dark:bg-slate-950/20 border border-slate-150 dark:border-slate-850/60 rounded-2xl p-5">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-          <div className="flex-1 max-w-md">
-            <label htmlFor="active-event-select" className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5">
-              Select Active Event for Checking In
-            </label>
-            <select
-              id="active-event-select"
-              value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-none focus:border-indigo-500"
-            >
-              {events.length === 0 ? (
-                <option value="">No events available</option>
-              ) : (
-                events.map((ev) => (
-                  <option key={ev.id} value={ev.id}>
-                    {ev.title}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-          {selectedEventId && (
-            <button
-              onClick={() => fetchStats(selectedEventId)}
-              disabled={statsLoading}
-              className="self-end md:self-auto px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-xs font-bold text-slate-650 dark:text-slate-400 transition flex items-center gap-1.5 disabled:opacity-50"
-            >
-              <RefreshCw size={12} className={statsLoading ? "animate-spin" : ""} />
-              Refresh Stats
-            </button>
-          )}
-        </div>
-
-        {selectedEventId && stats ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-850 p-4 rounded-xl shadow-sm">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Total Registrations</span>
-                <span className="text-xl font-black text-slate-800 dark:text-white mt-1 block">
-                  {statsLoading ? "..." : stats.totalRegistrations}
-                </span>
-              </div>
-              <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-850 p-4 rounded-xl shadow-sm">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Checked In</span>
-                <span className="text-xl font-black text-emerald-600 dark:text-emerald-450 mt-1 block">
-                  {statsLoading ? "..." : stats.checkedInAttendees}
-                </span>
-              </div>
-              <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-850 p-4 rounded-xl shadow-sm">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Remaining</span>
-                <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-1 block">
-                  {statsLoading ? "..." : stats.remainingAttendees}
-                </span>
-              </div>
-              <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-850 p-4 rounded-xl shadow-sm">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Attendance Rate</span>
-                <span className="text-xl font-black text-slate-800 dark:text-white mt-1 block">
-                  {statsLoading ? "..." : `${stats.attendancePercentage}%`}
-                </span>
-              </div>
-            </div>
-            {/* Visual Progress Bar */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
-                <span>Check-in Progress</span>
-                <span>{stats.checkedInAttendees} of {stats.totalRegistrations} Checked In</span>
-              </div>
-              <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-                  style={{ width: `${stats.attendancePercentage}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        ) : selectedEventId ? (
-          <div className="text-center py-6 text-slate-400 dark:text-slate-500">
-            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 opacity-50" />
-            <p className="text-xs font-semibold">Loading real-time event stats...</p>
-          </div>
-        ) : (
-          <div className="text-center py-6 text-slate-400 dark:text-slate-500">
-            <p className="text-xs font-semibold">Please select an event to view statistics</p>
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">

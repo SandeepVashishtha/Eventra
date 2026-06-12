@@ -2,67 +2,8 @@ import { useEffect } from "react";
 import Lenis from "@studio-freight/lenis";
 
 /**
- * Custom React hook to initialize, configure, and manage a Lenis smooth scrolling instance.
- *
- * ### Purpose
- * Enables premium, performance-optimized smooth scrolling capabilities across the application.
- * It sets up the Lenis requestAnimationFrame loop and registers the global window handler.
- *
- * ### Behavior & Touch Device Safeguard
- * To preserve native OS-level scrolling feel, the hook checks if the primary pointer is coarse
- * (e.g., touch-based screens like mobile devices or tablets). If detected, it bypasses Lenis 
- * initialization completely to avoid interfering with native kinetic scrolling behavior.
- *
- * ### Lifecycle & Cleanup
- * - On mount (or when initialized): Registers a `requestAnimationFrame` animation loop and attaches
- *   the instance to `window.lenis` so other utilities can easily reference it.
- * - On unmount: Automatically cancels the running animation frame loop, invokes `lenis.destroy()`
- *   to clean up event listeners, and resets `window.lenis` to `null` to prevent memory leaks.
- *
- * ### Dependency Caveat
- * The hook's dependency array is empty `[]`, meaning it initializes once on mount. The `options`
- * parameter is intentionally excluded from the dependencies. If options change dynamically,
- * you should pass a stable, memoized object from the calling component.
- *
- * @param {Object} [options={}] - Custom configuration parameters to override or extend the Lenis default settings.
- * @param {number} [options.duration=1.2] - Duration of the scroll animation in seconds.
- * @param {function} [options.easing] - Timing function determining the scroll velocity curve. Defaults to a custom exponential ease-out curve.
- * @param {string} [options.direction='vertical'] - Main scroll orientation ('vertical' or 'horizontal').
- * @param {string} [options.gestureDirection='vertical'] - Orientation of gestures to recognize ('vertical', 'horizontal', or 'both').
- * @param {boolean} [options.smooth=true] - Whether smooth scrolling is enabled.
- * @param {number} [options.mouseMultiplier=1] - Sensitivity factor for mouse wheel scrolling events.
- * @param {boolean} [options.smoothTouch=false] - Whether smooth scrolling is enabled for touch inputs.
- * @param {number} [options.touchMultiplier=2] - Sensitivity factor for touch swipe events.
- * @param {boolean} [options.infinite=false] - Enables infinite scroll looping behavior.
- * @returns {void} This hook does not return any value.
- *
- * @example
- * import React from 'react';
- * import useLenis from './hooks/useLenis';
- *
- * const AppLayout = ({ children }) => {
- *   // Initialize smooth scrolling with default settings
- *   useLenis();
- *
- *   return <div className="layout">{children}</div>;
- * };
- *
- * @example
- * import React, { useMemo } from 'react';
- * import useLenis from './hooks/useLenis';
- *
- * const CustomPage = () => {
- *   // Stable options object to pass into the hook
- *   const lenisOptions = useMemo(() => ({
- *     duration: 1.2,
- *     mouseMultiplier: 1.2,
- *     smoothTouch: false
- *   }), []);
- *
- *   useLenis(lenisOptions);
- *
- *   return <div>My Content</div>;
- * };
+ * Custom hook to initialize and manage Lenis smooth scrolling.
+ * @param {Object} options - Lenis configuration options
  */
 const useLenis = (options = {}) => {
   useEffect(() => {

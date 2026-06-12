@@ -439,7 +439,7 @@ export const Terms = () => {
               </h3>
               <nav className="space-y-1">
                 {SECTIONS.map((s) => {
-
+                  const c = COLOR[s.color];
                   const isActive = openSection === s.id;
                   return (
                     <button

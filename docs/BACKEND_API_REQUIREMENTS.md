@@ -1,5 +1,4 @@
 # Eventra — Backend API Requirements
->
 > **For the Spring Boot Backend Team**
 > Derived from full analysis of the React frontend source code.
 > Last Updated: 2026-05-25
@@ -39,8 +38,7 @@
 **API Style:** RESTful JSON  
 
 The frontend calls all APIs via an Axios instance configured with:
-
-- Base URL: an explicitly configured backend URL (`BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL`)
+- Base URL: `process.env.REACT_APP_API_URL` (defaults to `http://localhost:8080`)
 - `Content-Type: application/json`
 - `withCredentials: true`
 - Request timeout: 15 seconds
@@ -51,8 +49,7 @@ The frontend calls all APIs via an Axios instance configured with:
 ## 2. Base URL & Environment
 
 📖 **See [Environment Setup Guide](ENV_SETUP_GUIDE.md)** for:
-
-- How to configure `BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL` in frontend
+- How to configure `REACT_APP_API_URL` in frontend
 - Running the backend locally
 - Troubleshooting backend connection issues
 - Development vs production API endpoints
@@ -71,26 +68,21 @@ All API routes are prefixed with `/api`.
 ## 3. Authentication & Security
 
 ### JWT Token
-
 - Tokens are issued on login/signup.
 - The frontend stores tokens in `localStorage` under the key `token`.
 - All protected endpoints require the header:
-
   ```
   Authorization: Bearer <JWT_TOKEN>
   ```
-
 - On a `401` response, the frontend automatically clears the session and redirects to `/login`.
 - The frontend decodes the JWT `exp` claim to detect expiry client-side.
 
 ### Google OAuth
-
 - The frontend uses `@react-oauth/google` to get a Google credential (ID token).
 - This credential is sent to the backend for verification and session creation.
 - Endpoint: `POST /api/auth/google`
 
 ### Session Behavior
-
 - Backend must return the JWT token in the **response body** (under `token` or `accessToken`), OR in the `Authorization` response header as `Bearer <token>`.
 - On signup, the backend must return the user object **and** token.
 
@@ -101,7 +93,6 @@ All API routes are prefixed with `/api`.
 > **📖 For comprehensive details on RBAC, role hierarchy, permission scopes, and access control patterns, see the [Architecture & Roles Guide](ARCHITECTURE_AND_ROLES.md#-role-based-access-control-rbac).**
 
 ### Roles (from `src/config/roles.js`)
-
 | Role | Description |
 |------|-------------|
 | `SUPER_ADMIN` | Full system access |
@@ -113,7 +104,6 @@ All API routes are prefixed with `/api`.
 > **Note:** The backend may return `EVENT_MANAGER` as a role — the frontend normalizes this to `ORGANIZER` automatically.
 
 ### Permissions
-
 | Permission | Granted To |
 |------------|-----------|
 | `CREATE_EVENT` | SUPER_ADMIN, ADMIN, ORGANIZER |
@@ -133,20 +123,16 @@ The backend should enforce these permissions via Spring Security and return them
 ## 5. Standard Response & Error Format
 
 ### Success Response
-
 ```json
 {
   "data": { ... },
   "message": "Success"
 }
 ```
-
 > Simple responses may return the object directly without a wrapper.
 
 ### Error Response (Standardized)
-
 The frontend reads `error.response.data.message` or `error.response.data.error`.
-
 ```json
 {
   "status": 400,
@@ -158,7 +144,6 @@ The frontend reads `error.response.data.message` or `error.response.data.error`.
 ```
 
 ### HTTP Status Code Guide
-
 | Status | Meaning |
 |--------|---------|
 | `200` | OK — request successful |
@@ -188,6 +173,7 @@ The frontend reads `error.response.data.message` or `error.response.data.error`.
 >
 > Developers can use the Swagger "Authorize" button to test secured APIs directly from the browser.
 
+
 ## 6. Auth APIs
 
 ### 6.1 Register / Signup
@@ -198,7 +184,6 @@ POST /api/auth/signup
 
 **Auth Required:** No  
 **Request Body:**
-
 ```json
 {
   "firstName": "John",
@@ -210,7 +195,6 @@ POST /api/auth/signup
 ```
 
 **Frontend Validation Rules (backend must also enforce):**
-
 - `firstName`: required, 2–50 characters
 - `lastName`: required, 2–50 characters
 - `email`: required, valid email format
@@ -218,7 +202,6 @@ POST /api/auth/signup
 - `confirmPassword`: must match `password`
 
 **Success Response `201`:**
-
 ```json
 {
   "token": "eyJhbGci...",
@@ -234,7 +217,6 @@ POST /api/auth/signup
 ```
 
 **Error Responses:**
-
 - `400` — Validation failure (missing fields, password mismatch)
 - `409` — Email already registered
 
@@ -248,18 +230,15 @@ POST /api/auth/login
 
 **Auth Required:** No  
 **Request Body:**
-
 ```json
 {
   "usernameOrEmail": "john@example.com",
   "password": "SecurePass@123"
 }
 ```
-
 > `usernameOrEmail` accepts both a username and an email address.
 
 **Success Response `200`:**
-
 ```json
 {
   "token": "eyJhbGci...",
@@ -276,7 +255,6 @@ POST /api/auth/login
 ```
 
 **Error Responses:**
-
 - `400` — Missing fields
 - `401` — Invalid credentials
 
@@ -290,7 +268,6 @@ POST /api/auth/google
 
 **Auth Required:** No  
 **Request Body:**
-
 ```json
 {
   "credential": "<Google ID Token JWT>"
@@ -311,13 +288,11 @@ POST /api/auth/logout
 **Auth Required:** Yes (Bearer Token)  
 **Request Body:** None  
 **Success Response `200`:**
-
 ```json
 {
   "message": "Logged out successfully"
 }
 ```
-
 > The frontend also clears localStorage on logout regardless of backend response.
 
 ---
@@ -330,7 +305,6 @@ POST /api/auth/reset-password
 
 **Auth Required:** No  
 **Request Body:**
-
 ```json
 {
   "email": "john@example.com"
@@ -338,7 +312,6 @@ POST /api/auth/reset-password
 ```
 
 **Success Response `200`:**
-
 ```json
 {
   "message": "Password reset email sent successfully"
@@ -368,7 +341,6 @@ GET /api/events
 | `type` | string | `Event` or `Hackathon`                     |
 
 **Success Response `200`:**
-
 ```json
 [
   {
@@ -414,7 +386,6 @@ POST /api/events/create
 
 **Auth Required:** Yes — Roles: `ADMIN`, `ORGANIZER`, `SUPER_ADMIN`  
 **Request Body:**
-
 ```json
 {
   "title": "Tech Conference 2026",
@@ -434,7 +405,6 @@ POST /api/events/create
 
 **Success Response `201`:** Created event object  
 **Error Responses:**
-
 - `400` — Validation error
 - `401` — Unauthorized
 - `403` — Insufficient permissions
@@ -450,7 +420,6 @@ PUT /api/events/{id}
 **Auth Required:** Yes — Roles: `ADMIN`, `ORGANIZER`
 **Description:** Updates an existing event. Companion update for issue #2099.
 **Request Body:**
-
 ```json
 {
   "title": "Updated Event",
@@ -463,14 +432,12 @@ PUT /api/events/{id}
 ```
 
 **Field Constraints:**
-
 - `registeredCount` is preserved and cannot be directly edited.
 - `capacity` cannot be reduced below current `registeredCount`.
 - Owner-only authorization is not enforced as the Event model currently lacks ownership tracking.
 
 **Success Response `200`:** Updated event object
 **Error Responses:**
-
 - `400` — Invalid payload
 - `403` — Forbidden (e.g., CLIENT role)
 - `404` — Event not found
@@ -498,7 +465,6 @@ GET /api/events/{id}/availability
 
 **Auth Required:** No  
 **Success Response `200`:**
-
 ```json
 {
   "eventId": 1,
@@ -508,32 +474,29 @@ GET /api/events/{id}/availability
   "spotsLeft": 55
 }
 ```
-
 The availability response schema is fully documented in Swagger/OpenAPI and includes:
 
-- Event capacity
-
+* Event capacity
 ### Capacity Validation
 
 The backend enforces a minimum event capacity of `1`.
 
 Valid values:
-
 - 1
 - 10
 - 100
 
 Invalid values:
-
 - 0
 - Negative numbers
 
 Requests with capacity less than `1` will fail validation and return a `400 Bad Request` response.
-- Current registered count
-- Remaining spots
-- Full/available status
+* Current registered count
+* Remaining spots
+* Full/available status
 
 This allows frontend developers to understand response fields directly from Swagger UI without inspecting backend source code.
+
 
 ---
 
@@ -547,7 +510,6 @@ POST /api/events/{id}/register
 
 **Auth Required:** Yes (Bearer Token) — Roles: any authenticated user  
 **Request Body:**
-
 ```json
 {
   "fullName": "John Doe",
@@ -562,7 +524,6 @@ POST /api/events/{id}/register
 ```
 
 **Field Requirements:**
-
 | Field | Required | Validation |
 |-------|----------|-----------|
 | `fullName` | Yes | Min 3 characters |
@@ -575,7 +536,6 @@ POST /api/events/{id}/register
 | `userId` | No | ID of authenticated user |
 
 **Success Response `200`:**
-
 ```json
 {
   "message": "Successfully registered for event",
@@ -586,11 +546,9 @@ POST /api/events/{id}/register
 ```
 
 **Error Responses:**
-
 - `401` — Unauthorized
 - `404` — Event not found
 - `409 (Conflict - Event Full)`:
-
 ```json
 {
   "status": 409,
@@ -600,9 +558,7 @@ POST /api/events/{id}/register
   "timestamp": "2026-05-25T12:00:00"
 }
 ```
-
 - `409 (Conflict - Duplicate Registration)`:
-
 ```json
 {
   "status": 409,
@@ -612,9 +568,7 @@ POST /api/events/{id}/register
   "timestamp": "2026-05-25T12:00:00"
 }
 ```
-
 - `409 (Conflict - Concurrent)`:
-
 ```json
 {
   "status": 409,
@@ -637,7 +591,6 @@ GET /api/users/my-events
 
 **Auth Required:** Yes  
 **Success Response `200`:**
-
 ```json
 [
   {
@@ -687,7 +640,6 @@ POST /api/hackathons
 
 **Auth Required:** Yes — Roles: `ADMIN`, `ORGANIZER`, `SUPER_ADMIN`  
 **Request Body:**
-
 ```json
 {
   "hackathonName": "Global AI Hackathon 2026",
@@ -704,7 +656,6 @@ POST /api/hackathons
 ```
 
 **Field Requirements:**
-
 | Field | Required | Validation |
 |-------|----------|-----------|
 | `hackathonName` | Yes | Min 3 characters |
@@ -720,7 +671,6 @@ POST /api/hackathons
 
 **Success Response `201`:** Created hackathon object  
 **Error Responses:**
-
 - `400` — Validation errors
 - `401` — Unauthorized
 - `403` — Insufficient permissions
@@ -772,7 +722,6 @@ GET /api/projects
 
 **Auth Required:** No (public)  
 **Query Parameters:**
-
 | Param | Type | Description |
 |-------|------|-------------|
 | `category` | string | Filter by category |
@@ -781,7 +730,6 @@ GET /api/projects
 | `size` | int | Items per page |
 
 **Success Response `200`:**
-
 ```json
 [
   {
@@ -822,7 +770,6 @@ POST /api/projects
 
 **Auth Required:** Yes  
 **Request Body:**
-
 ```json
 {
   "title": "Eventra Mobile App",
@@ -848,7 +795,6 @@ GET /api/projects/categories
 
 **Auth Required:** No  
 **Success Response `200`:**
-
 ```json
 [
   "Mobile Development",
@@ -872,7 +818,6 @@ POST /api/projects/{id}/upvote
 
 **Auth Required:** Yes  
 **Success Response `200`:**
-
 ```json
 {
   "projectId": 1,
@@ -893,7 +838,6 @@ GET /api/users/profile
 
 **Auth Required:** Yes  
 **Success Response `200`:**
-
 ```json
 {
   "id": 42,
@@ -921,7 +865,6 @@ PUT /api/users/profile
 
 **Auth Required:** Yes  
 **Request Body:**
-
 ```json
 {
   "firstName": "John",
@@ -967,7 +910,6 @@ GET /api/users/achievements
 
 **Auth Required:** Yes  
 **Success Response `200`:**
-
 ```json
 {
   "totalEvents": 12,
@@ -997,7 +939,6 @@ GET /api/admin/users
 **Auth Required:** Yes — Roles: `ADMIN`, `SUPER_ADMIN`  
 **Query Parameters:** `page`, `size`, `search`, `status`, `role`  
 **Success Response `200`:**
-
 ```json
 [
   {
@@ -1022,14 +963,12 @@ PUT /api/admin/users/{id}
 
 **Auth Required:** Yes — Roles: `SUPER_ADMIN`  
 **Request Body:**
-
 ```json
 {
   "roles": ["ORGANIZER"],
   "status": "Active"
 }
 ```
-
 **Success Response `200`:** Updated user object
 
 ---
@@ -1057,7 +996,6 @@ GET /api/notifications
 
 **Auth Required:** Yes  
 **Success Response `200`:**
-
 ```json
 [
   {
@@ -1094,7 +1032,6 @@ PUT /api/notifications/{id}/read
 **Auth Required:** Yes  
 **Request Body:** `{}` (empty)  
 **Success Response `200`:**
-
 ```json
 {
   "message": "Notification marked as read",
@@ -1113,7 +1050,6 @@ PUT /api/notifications/read-all
 **Auth Required:** Yes  
 **Request Body:** None  
 **Success Response `200`:**
-
 ```json
 {
   "message": "All notifications marked as read"
@@ -1132,7 +1068,6 @@ GET /api/admin/stats
 
 **Auth Required:** Yes — Roles: `ADMIN`, `SUPER_ADMIN`  
 **Success Response `200`:**
-
 ```json
 {
   "totalUsers": 1500,
@@ -1170,7 +1105,6 @@ GET /api/admin/analytics
 
 **Auth Required:** Yes — Roles: `ADMIN`, `ORGANIZER`, `SUPER_ADMIN`  
 **Success Response `200`:**
-
 ```json
 {
   "monthlyRegistrations": [
@@ -1201,7 +1135,6 @@ GET /api/leaderboard
 **Auth Required:** No (public)  
 **Query Parameters:** `page`, `size`, `period` (`all-time`, `monthly`, `weekly`)  
 **Success Response `200`:**
-
 ```json
 [
   {
@@ -1229,7 +1162,6 @@ GET /api/leaderboard/me
 
 **Auth Required:** Yes  
 **Success Response `200`:**
-
 ```json
 {
   "rank": 12,
@@ -1250,7 +1182,6 @@ POST /api/feedback
 
 **Auth Required:** Yes  
 **Request Body:**
-
 ```json
 {
   "eventId": 1,
@@ -1265,7 +1196,6 @@ POST /api/feedback
 ```
 
 **Success Response `201`:**
-
 ```json
 {
   "id": 1,
@@ -1303,7 +1233,6 @@ GET /api/events/stream
 **Auth Required:** Yes (token in query param or header)  
 **Content-Type:** `text/event-stream`  
 **Events pushed from server:**
-
 ```
 event: notification
 data: {"type": "new_registration", "eventId": 1, "count": 146}
@@ -1320,12 +1249,10 @@ data: {"message": "New event added!", "eventId": 5}
 ## 17. CORS & Headers Configuration
 
 The frontend runs on:
-
 - Local: `http://localhost:3000`
 - Production: `https://eventra.sandeepvashishtha.in`
 
 The Spring Boot backend must configure CORS to allow:
-
 ```
 Access-Control-Allow-Origin: http://localhost:3000, https://eventra.sandeepvashishtha.in
 Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
@@ -1340,10 +1267,8 @@ Access-Control-Allow-Credentials: true
 ## 18. Pagination Convention
 
 The frontend expects either:
-
 1. A plain array (no pagination wrapper), **OR**
 2. A paginated object:
-
 ```json
 {
   "content": [ ... ],
@@ -1361,7 +1286,6 @@ Please agree on and document which format you will use before implementation.
 ## 19. Data Model Reference
 
 ### User Object
-
 | Field | Type | Notes |
 |-------|------|-------|
 | `id` | Long | Unique user ID |
@@ -1378,7 +1302,6 @@ Please agree on and document which format you will use before implementation.
 | `createdAt` | ISO DateTime | Account creation time |
 
 ### Event Object
-
 | Field | Type | Notes |
 |-------|------|-------|
 | `id` | Long | Unique event ID |
@@ -1399,7 +1322,6 @@ Please agree on and document which format you will use before implementation.
 | `tags` | String[] | Optional tags |
 
 ### Notification Object
-
 | Field | Type | Notes |
 |-------|------|-------|
 | `id` | Long | Unique notification ID |
@@ -1411,7 +1333,6 @@ Please agree on and document which format you will use before implementation.
 | `eventId` | Long | Related event (optional) |
 
 ### Hackathon Object
-
 | Field | Type | Notes |
 |-------|------|-------|
 | `id` | Long | Unique ID |
@@ -1477,7 +1398,6 @@ Please agree on and document which format you will use before implementation.
 ---
 
 > **Notes for the Backend Team:**
->
 > 1. All date-times should be in **ISO 8601** format: `2026-08-15T10:00:00`
 > 2. The frontend expects the JWT token under the `token` **or** `accessToken` key in the login/signup response body.
 > 3. The `roles` field must be an **array** of strings (not a single string).
@@ -1486,12 +1406,13 @@ Please agree on and document which format you will use before implementation.
 > 6. The frontend gracefully queues failed registration requests (offline queue) — the backend doesn't need to handle this, but should be idempotent for registration retries.
 > 7. Swagger/OpenAPI documentation should include:
 
-- Response schemas
-- Error response documentation
-- Authentication requirements for protected endpoints
-- Parameter descriptions
-- Example response values where applicable
+   * Response schemas
+   * Error response documentation
+   * Authentication requirements for protected endpoints
+   * Parameter descriptions
+   * Example response values where applicable
+
+
 
 ### Event Registration Constraint
-
 - **Duplicate Prevention**: Implemented a check to prevent users from registering multiple times for the same event, throwing an HTTP 409 Conflict exception if a duplicate registration is attempted.

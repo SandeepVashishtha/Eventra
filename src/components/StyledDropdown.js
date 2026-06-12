@@ -75,18 +75,6 @@ const Dropdown = ({
       event.preventDefault();
       setOpen(false);
     }
-
-    if (event.key === "Home") {
-      event.preventDefault();
-      setOpen(true);
-      setActiveIndex(0);
-    }
-
-    if (event.key === "End") {
-      event.preventDefault();
-      setOpen(true);
-      setActiveIndex(allOptions.length - 1);
-    }
   };
 
   const handleListboxKeyDown = (event) => {
@@ -110,16 +98,6 @@ const Dropdown = ({
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       handleSelect(allOptions[currentActiveIndex]);
-    }
-
-    if (event.key === "Home") {
-      event.preventDefault();
-      setActiveIndex(0);
-    }
-
-    if (event.key === "End") {
-      event.preventDefault();
-      setActiveIndex(allOptions.length - 1);
     }
   };
 

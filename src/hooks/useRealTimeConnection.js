@@ -9,67 +9,15 @@ export const SSE_STATUS = {
 };
 
 /**
- * A custom React hook that establishes, tracks, and manages a Server-Sent Events (SSE) connection.
+ * Manages an SSE (Server-Sent Events) connection by delegating to a
+ * thread-safe, cross-tab multiplexer. This prevents browser connection pool
+ * exhaustion (exceeding the HTTP/1.1 6-connection domain limit) by sharing a
+ * single physical EventSource connection across all open tabs.
  *
- * ### Purpose
- * Rather than spawning independent `EventSource` connections for every component or browser tab, this
- * hook delegates to a centralized `sseMultiplexer`. This prevents browser connection pool exhaustion
- * (where HTTP/1.1 restricts browsers to a maximum of 6 concurrent connections per domain), enabling
- * multi-tab synchronization with minimal resource overhead.
- *
- * ### Connection Lifecycle
- * - **Establishment**: Runs automatically when the hook mounts, or when `path` or `enabled` transitions.
- *   If `enabled` is set to `false`, the connection remains in `idle` state.
- * - **Cleanup**: On component unmount or when `enabled` changes to `false`, the hook automatically calls 
- *   the returned `unsubscribe` callback from the multiplexer. This cleans up event listeners and safely
- *   closes the underlying EventSource connection if no other tabs or components are listening to that path.
- *
- * ### Callback Stability Guard
- * To prevent connection teardown/restart loops when the user passes anonymous or unstable callback functions 
- * as the `onMessage` handler, the hook stores `onMessage` in a mutable `useRef` object (`onMessageRef`). 
- * The subscription only depends on the stable `path` and `enabled` parameters.
- *
- * ### Error Handling & Reconnection
- * - The connection status (`idle`, `connecting`, `connected`, `reconnecting`) is updated automatically
- *   via status change callbacks dispatched from the `sseMultiplexer`.
- * - The hook exposes a memoized `reconnect` function, which allows consumers to manually trigger a fresh
- *   connection attempt for the current path in case of network drops or timeout errors.
- *
- * @param {string} path - The endpoint URL path to stream events from (e.g., `"/stream/leaderboard"`).
- * @param {Object} [options={}] - Optional configuration parameters.
- * @param {function(*, string): void} [options.onMessage] - Callback triggered when a new message is received. Receives `(parsedData, eventType)` as arguments.
- * @param {boolean} [options.enabled=true] - Toggles the active state of the SSE stream. Bypasses connection when set to `false`.
- *
- * @returns {Object} Connection state and controls.
- * @returns {string} Object.status - The current SSE connection state, matching one of the values in {@link SSE_STATUS} (`'idle'`, `'connecting'`, `'connected'`, or `'reconnecting'`).
- * @returns {function(): void} Object.reconnect - A referentially stable callback function to manually trigger a reconnection sequence for the specified path.
- *
- * @example
- * import React, { useState } from 'react';
- * import useRealTimeConnection, { SSE_STATUS } from './hooks/useRealTimeConnection';
- *
- * const LiveAnalytics = () => {
- *   const [metrics, setMetrics] = useState(null);
- *
- *   const { status, reconnect } = useRealTimeConnection('/stream/analytics', {
- *     onMessage: (data) => setMetrics(data),
- *     enabled: true
- *   });
- *
- *   const isOffline = status === SSE_STATUS.IDLE || status === SSE_STATUS.RECONNECTING;
- *
- *   return (
- *     <div className="analytics-card">
- *       <h3>Live Visitors: {metrics ? metrics.visitors : 'Loading...'}</h3>
- *       <div className="status-badge">Connection: {status}</div>
- *       {isOffline && (
- *         <button onClick={reconnect} className="btn-retry">
- *           Reconnect Now
- *         </button>
- *       )}
- *     </div>
- *   );
- * };
+ * @param {string} path - Endpoint path, e.g. "/stream/leaderboard" or "/stream/analytics"
+ * @param {object} [options]
+ * @param {function} [options.onMessage] - Called with (parsedData, eventType) on each event
+ * @param {boolean} [options.enabled=true]  - Set false to disable the connection
  */
 export default function useRealTimeConnection(path, { onMessage, enabled = true } = {}) {
   const [status, setStatus] = useState(SSE_STATUS.IDLE);

@@ -109,34 +109,6 @@ const shortcutData = [
     keys: ["g", "s"],
     category: "Navigation",
     workflow: "Auth"
-  },
-  {
-    action: "Register for Event",
-    shortcut: "R",
-    keys: ["r"],
-    category: "Event Detail",
-    workflow: "Registration"
-  },
-  {
-    action: "Copy Event Link",
-    shortcut: "C",
-    keys: ["c"],
-    category: "Event Detail",
-    workflow: "Sharing"
-  },
-  {
-    action: "Open Share Modal",
-    shortcut: "S",
-    keys: ["s"],
-    category: "Event Detail",
-    workflow: "Sharing"
-  },
-  {
-    action: "Print / Save as PDF",
-    shortcut: "P",
-    keys: ["p"],
-    category: "Event Detail",
-    workflow: "Export"
   }
 ];
 
@@ -203,7 +175,7 @@ const ShortcutRow = ({ action, keys, isPressed }) => (
 );
 
 const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
-  const { containerRef: trapRef } = useFocusTrap(isOpen, onClose);
+  const trapRef = useFocusTrap(isOpen);
   const { isTopmost } = useModalStack(isOpen);
   const [pressedKeys, setPressedKeys] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");

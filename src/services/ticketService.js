@@ -49,12 +49,3 @@ export const fetchScannerEvents = async () => {
     handleError(error, "Failed to fetch events");
   }
 };
-
-export const fetchTicketStats = async (eventId) => {
-  try {
-    const response = await apiUtils.get(`/api/tickets/stats?eventId=${eventId}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Failed to fetch ticket stats");
-  }
-};
