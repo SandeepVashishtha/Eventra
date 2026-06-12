@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { useAuth } from "../context/AuthContext";
 
 // Simple synchronous hash to avoid exposing raw userId (email) in localStorage keys.
 const hashUserId = (userId) => {
@@ -54,13 +55,33 @@ const toBookmarkEntry = (event) => ({
 });
 
 const useBookmarks = (userId = "guest") => {
-  const storageKey = `bookmarks_${hashUserId(userId)}`;
+  let auth = null;
+  try {
+    auth = useAuth();
+  } catch {
+    // context not present, e.g. in standalone hook unit tests
+  }
+
+  const resolvedUserId = useMemo(() => {
+    if (auth) {
+      if (auth.isAuthenticated && auth.user) {
+        return auth.user.id || auth.user.email || "guest";
+      }
+      return "guest";
+    }
+    return userId;
+  }, [auth, userId]);
+
+  const isAuthLoading = auth ? auth.loading : false;
+  const storageKey = `bookmarks_${hashUserId(resolvedUserId)}`;
 
   const [bookmarks, setBookmarks] = useState(() => {
+    if (isAuthLoading) {
+      return [];
+    }
     try {
       const stored = localStorage.getItem(storageKey);
       if (!stored) return [];
-//       return JSON.parse(stored) || [];
       const parsed = safeJsonParse(stored, {});
       return Array.isArray(parsed) ? parsed : [];
     } catch {
@@ -68,38 +89,87 @@ const useBookmarks = (userId = "guest") => {
     }
   });
 
-  const storageKeyRef = useRef(storageKey);
-  storageKeyRef.current = storageKey;
-
-  const isInitialSave = useRef(true);
-  const isInitialLoad = useRef(true);
+  const [loadedKey, setLoadedKey] = useState(() => {
+    return isAuthLoading ? null : storageKey;
+  });
 
   useEffect(() => {
-    if (isInitialSave.current) {
-      isInitialSave.current = false;
+    if (isAuthLoading) {
+      return;
+    }
+
+    try {
+      // Check if we need to load/migrate or if we already initialized matching key
+      const guestKey = `bookmarks_${hashUserId("guest")}`;
+      const guestStored = localStorage.getItem(guestKey);
+      const hasGuestData = guestStored && (safeJsonParse(guestStored, [])).length > 0;
+
+      if (loadedKey === storageKey && (resolvedUserId === "guest" || !hasGuestData)) {
+        return;
+      }
+
+      const stored = localStorage.getItem(storageKey);
+      let loaded = [];
+      if (stored) {
+        const parsed = safeJsonParse(stored, {});
+        loaded = Array.isArray(parsed) ? parsed : [];
+      }
+
+      // If we just resolved a logged-in user, check if we need to migrate guest bookmarks
+      if (resolvedUserId !== "guest" && hasGuestData) {
+        const guestParsed = safeJsonParse(guestStored, {});
+        const guestBookmarks = Array.isArray(guestParsed) ? guestParsed : [];
+        if (guestBookmarks.length > 0) {
+          // Merge guest bookmarks into loaded bookmarks
+          const merged = [...loaded];
+          guestBookmarks.forEach((gb) => {
+            const existsIndex = merged.findIndex((ub) => String(ub.id) === String(gb.id));
+            if (existsIndex === -1) {
+              merged.push(gb);
+            } else {
+              const uSaved = merged[existsIndex].savedAt ?? 0;
+              const gSaved = gb.savedAt ?? 0;
+              if (gSaved > uSaved) {
+                merged[existsIndex] = gb;
+              }
+            }
+          });
+
+          // Enforce MAX_BOOKMARKS on merged result
+          let finalMerged = merged;
+          if (finalMerged.length > MAX_BOOKMARKS) {
+            finalMerged = [...finalMerged].sort((a, b) => (a.savedAt ?? 0) - (b.savedAt ?? 0));
+            while (finalMerged.length > MAX_BOOKMARKS) {
+              finalMerged.shift();
+            }
+          }
+
+          loaded = finalMerged;
+          // Save to user storage
+          localStorage.setItem(storageKey, JSON.stringify(loaded));
+          // Delete guest storage ONLY after successful merge
+          localStorage.removeItem(guestKey);
+        }
+      }
+
+      setBookmarks(loaded);
+      setLoadedKey(storageKey);
+    } catch {
+      setBookmarks([]);
+      setLoadedKey(storageKey);
+    }
+  }, [storageKey, isAuthLoading, resolvedUserId, loadedKey]);
+
+  useEffect(() => {
+    if (isAuthLoading || loadedKey !== storageKey) {
       return;
     }
     try {
-      localStorage.setItem(storageKeyRef.current, JSON.stringify(bookmarks));
+      localStorage.setItem(storageKey, JSON.stringify(bookmarks));
     } catch {
       // localStorage full — fail silently; in-memory state remains correct
     }
-  }, [bookmarks]);
-
-  useEffect(() => {
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false;
-      return;
-    }
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (!stored) { setBookmarks([]); return; }
-      const parsed = safeJsonParse(stored, {});
-      setBookmarks(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setBookmarks([]);
-    }
-  }, [storageKey]);
+  }, [bookmarks, storageKey, isAuthLoading, loadedKey]);
 
   // Cache bookmarks in a Set for O(1) lookups
   const bookmarksSet = useMemo(() => {
@@ -159,6 +229,7 @@ const useBookmarks = (userId = "guest") => {
     toggleBookmark,
     isBookmarked,
     clearBookmarks,
+    loading: isAuthLoading || loadedKey !== storageKey,
   };
 };
 

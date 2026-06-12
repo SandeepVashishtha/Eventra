@@ -4,6 +4,17 @@ import { safeJsonParse } from "../utils/safeJsonParse";
 
 const makeEvent = (id, title = `Event ${id}`) => ({ id, title, date: "2025-10-01" });
 
+const hashUserId = (userId) => {
+  if (!userId || userId === "guest") return "guest";
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    const chr = userId.charCodeAt(i);
+    hash = (hash << 5) - hash + chr;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+};
+
 describe("useBookmarks", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -18,7 +29,7 @@ describe("useBookmarks", () => {
 
   it("loads pre-existing bookmarks from localStorage on mount", () => {
     const existing = [makeEvent(10)];
-    localStorage.setItem("bookmarks_user-2", JSON.stringify(existing));
+    localStorage.setItem(`bookmarks_${hashUserId("user-2")}`, JSON.stringify(existing));
 
     const { result } = renderHook(() => useBookmarks("user-2"));
     expect(result.current.bookmarks).toHaveLength(1);
@@ -131,7 +142,7 @@ describe("useBookmarks", () => {
       result.current.toggleBookmark(makeEvent(55));
     });
 
-    const stored = safeJsonParse(localStorage.getItem("bookmarks_user-10"), []);
+    const stored = safeJsonParse(localStorage.getItem(`bookmarks_${hashUserId("user-10")}`), []);
     expect(stored).toHaveLength(1);
     expect(stored[0].id).toBe(55);
   });
