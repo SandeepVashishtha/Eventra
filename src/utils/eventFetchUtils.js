@@ -4,7 +4,7 @@
  * The backend accepts optional `page` (0-indexed) and `size` query params.
  * When the backend returns a Spring-style Page envelope the response looks like:
  *
- * { content: [...], totalElements: N, totalPages: P, number: 0, size: 20 }
+ *   { content: [...], totalElements: N, totalPages: P, number: 0, size: 20 }
  *
  * When it returns a plain array (no pagination metadata), all results arrived
  * in one shot — totalElements is inferred from the array length and only one
@@ -54,21 +54,8 @@ export const SERVER_PAGE_SIZE = 20;
 export function buildPaginatedUrl(baseUrl, page, size) {
   if (!baseUrl) return baseUrl;
 
-  // 🔥 FIX: Prevent URL Parameter Pollution and Pagination Freezing.
-  // The old logic used string concatenation which blindly appended duplicate 'page' parameters
-  // (e.g., ?category=tech&page=0&page=1). Backend frameworks (like Spring) often extract the
-  // *first* instance of a parameter, permanently freezing the UI on page 0.
-  const [urlWithoutHash, hash] = baseUrl.split("#");
-  const [path, queryString] = urlWithoutHash.split("?");
-
-  const params = new URLSearchParams(queryString || "");
-  
-  // .set() explicitly overwrites existing keys, eliminating duplicate parameter pollution
-  params.set("page", page);
-  params.set("size", size);
-
-  const newUrl = `${path}?${params.toString()}`;
-  return hash ? `${newUrl}#${hash}` : newUrl;
+  const separator = baseUrl.includes("?") ? "&" : "?";
+  return `${baseUrl}${separator}page=${page}&size=${size}`;
 }
 
 /**

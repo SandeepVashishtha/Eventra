@@ -1,15 +1,14 @@
-import { logger } from "./logger";
-
+/* eslint-disable no-console */
 export const registerServiceWorker = () => {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
         .register('/service-worker.js')
         .then((registration) => {
-          logger.info('[Service Worker] Registered:', registration.scope);
+          console.log('[Service Worker] Registered:', registration.scope);
         })
         .catch((error) => {
-          logger.error('[Service Worker] Registration failed:', error);
+          console.log('[Service Worker] Registration failed:', error);
         });
     });
   }
@@ -22,7 +21,7 @@ export const unregisterServiceWorker = () => {
         registration.unregister();
       })
       .catch((error) => {
-        logger.error('[Service Worker] Unregister failed:', error);
+        console.log('[Service Worker] Unregister failed:', error);
       });
   }
 };

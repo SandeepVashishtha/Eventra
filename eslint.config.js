@@ -4,8 +4,6 @@ import reactHooks from "eslint-plugin-react-hooks";
 import storybook from "eslint-plugin-storybook";
 import testingLibrary from "eslint-plugin-testing-library";
 
-// Note: With ESLint v9 Flat Config format (eslint.config.js), the --ext CLI option is deprecated
-// and unsupported. File patterns to lint are now defined in this configuration file (via 'files' pattern).
 export default [
   {
     ignores: ["build/**", "coverage/**", "dist/**", "node_modules/**"],

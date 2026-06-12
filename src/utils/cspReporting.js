@@ -20,15 +20,8 @@
  * silently breaking the UI.
  */
 
-const runtimeEnv =
-  typeof import.meta !== "undefined" && import.meta.env
-    ? import.meta.env
-    : typeof process !== "undefined" && process.env
-      ? process.env
-      : {};
-
-const isDev = runtimeEnv.DEV ?? runtimeEnv.NODE_ENV === "development";
-const reportUri = runtimeEnv.VITE_CSP_REPORT_URI || runtimeEnv.REACT_APP_CSP_REPORT_URI || null;
+const isDev = process.env.NODE_ENV === 'development';
+const reportUri = process.env.REACT_APP_CSP_REPORT_URI || null;
 
 /**
  * Formats a SecurityPolicyViolationEvent into a structured report object

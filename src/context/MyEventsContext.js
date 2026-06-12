@@ -37,8 +37,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
-
-import { saveToOfflineCache, getFromOfflineCache } from "../utils/indexedDB";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const MyEventsContext = createContext(null);
 
@@ -64,31 +63,38 @@ const toEventSummary = (event) => ({
 // Persisted record shape — strips all PII before writing to localStorage.
 // formData and the full event object are intentionally excluded.
 // ---------------------------------------------------------------------------
-const toPersistedRecord = (eventId, registeredAt, event, registrationId, qrToken) => ({
+const toPersistedRecord = (eventId, registeredAt, event) => ({
   eventId,
   registeredAt,
-  registrationId,
-  qrToken,
   eventSummary: toEventSummary(event),
 });
 
 // ---------------------------------------------------------------------------
-// IndexedDB helpers
+// localStorage helpers
 // ---------------------------------------------------------------------------
 
-const loadFromIDB = async (userId) => {
+const loadFromStorage = (userId) => {
   if (!userId) return [];
-  const data = await getFromOfflineCache(storageKey(userId), []);
-  return Array.isArray(data) ? data : [];
+  try {
+    const raw = localStorage.getItem(storageKey(userId));
+    const parsed = safeJsonParse(raw, []);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 };
 
-const saveToIDB = async (userId, records) => {
+const saveToStorage = (userId, records) => {
   if (!userId) return;
   // Only persist the minimal, PII-free shape — strip formData and full event
   const persisted = records.map((r) =>
-    toPersistedRecord(r.eventId, r.registeredAt, r.event || r.eventSummary, r.registrationId, r.qrToken),
+    toPersistedRecord(r.eventId, r.registeredAt, r.event || r.eventSummary),
   );
-  await saveToOfflineCache(storageKey(userId), persisted);
+  try {
+    localStorage.setItem(storageKey(userId), JSON.stringify(persisted));
+  } catch {
+    // localStorage might be full — fail silently
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -99,71 +105,46 @@ export const MyEventsProvider = ({ children }) => {
   const { user } = useAuth();
   const userId = user?.id || user?.email || null;
 
-  // Async init — loads persisted records from IndexedDB
-  const [myEvents, setMyEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Lazy init — loads persisted (PII-free) records immediately from localStorage.
+  // formData is absent from persisted records; it is available only for
+  // registrations added during the current session.
+  const [myEvents, setMyEvents] = useState(() => loadFromStorage(userId));
+  const [loading] = useState(false);
 
   // Guard ref — skips the first save on load to prevent overwriting valid data
   const isInitialLoad = useRef(true);
 
-  // Reload from IndexedDB whenever the logged-in user changes
+  // Reload from localStorage whenever the logged-in user changes
   useEffect(() => {
-    let mounted = true;
-    if (!userId) {
-      setMyEvents([]);
-      setLoading(false);
-      return;
-    }
-    
-    setLoading(true);
-    loadFromIDB(userId).then(data => {
-      if (mounted) {
-        setMyEvents(data);
-        setLoading(false);
-        // Important: allow saves *after* initial load resolves
-        setTimeout(() => {
-          isInitialLoad.current = false;
-        }, 50);
-      }
-    });
-
-    return () => { mounted = false; };
+    isInitialLoad.current = true;
+    setMyEvents(loadFromStorage(userId));
   }, [userId]);
 
-  // Persist to IndexedDB whenever myEvents changes — PII-free records only
+  // Persist to localStorage whenever myEvents changes — PII-free records only
   useEffect(() => {
     if (isInitialLoad.current) {
+      isInitialLoad.current = false;
       return;
     }
-    if (userId !== null && !loading) {
-      saveToIDB(userId, myEvents);
+    if (userId !== null) {
+      saveToStorage(userId, myEvents);
     }
-  }, [myEvents, userId, loading]);
+  }, [myEvents, userId]);
 
   /**
    * addRegistration — call this after a successful event registration.
    *
    * @param {object} event    — the full event object (kept in session state only)
    * @param {object} formData — the registration form data (kept in session state only)
-   * @param {string} registrationId — the unique registration identifier
-   * @param {string} qrToken — the signed JWT ticket token
    */
-  const addRegistration = useCallback((event, formData = {}, registrationId = null, qrToken = null) => {
+  const addRegistration = useCallback((event, formData = {}) => {
     setMyEvents((prev) => {
-      const alreadyExists = prev.some(
-        (r) =>
-          r.eventId === event.id ||
-        (registrationId && r.registrationId && r.registrationId === registrationId)
-      );
-
-      if (alreadyExists) return prev;
+      if (prev.some((r) => r.eventId === event.id)) return prev;
       return [
         ...prev,
         {
           eventId: event.id,
           registeredAt: new Date().toISOString(),
-          registrationId: registrationId || null,
-          qrToken: qrToken || "",
           // formData and event are kept in memory for this session so the
           // success screen can display them, but they are NOT written to
           // localStorage (saveToStorage strips them via toPersistedRecord).
@@ -190,12 +171,6 @@ export const MyEventsProvider = ({ children }) => {
     [myEvents],
   );
 
-  // Waitlist Operations
-  const [waitlistUpdated, setWaitlistUpdated] = useState(0);
-  const triggerWaitlistUpdate = useCallback(() => {
-    setWaitlistUpdated((prev) => prev + 1);
-  }, []);
-
   return (
     <MyEventsContext.Provider
       value={{
@@ -204,8 +179,6 @@ export const MyEventsProvider = ({ children }) => {
         removeRegistration,
         isRegistered,
         loading,
-        waitlistUpdated,
-        triggerWaitlistUpdate,
       }}
     >
       {children}

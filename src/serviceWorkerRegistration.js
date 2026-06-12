@@ -1,8 +1,6 @@
 // serviceWorkerRegistration.js
 // Registers the PWA service worker with dynamic lifecycle hooks to improve offline access.
 
-import { logger } from "./utils/logger";
-
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost' ||
     // [::1] is the IPv6 localhost address.
@@ -11,20 +9,11 @@ const isLocalhost = Boolean(
     window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
 );
 
-const runtimeEnv =
-  typeof import.meta !== "undefined" && import.meta.env
-    ? import.meta.env
-    : typeof process !== "undefined" && process.env
-      ? process.env
-      : {};
-
-const isDev = runtimeEnv.DEV ?? runtimeEnv.NODE_ENV === 'development';
-const publicBaseUrl = runtimeEnv.BASE_URL || "/";
-const isProd = runtimeEnv.PROD ?? runtimeEnv.NODE_ENV === "production";
+const isDev = process.env.NODE_ENV === 'development';
 
 const log = (...args) => {
   if (isDev) {
-    logger.info(...args);
+    console.log(...args);
   }
 };
 
@@ -51,16 +40,16 @@ const retryServiceWorkerOperation = async (
 };
 
 export function register(config) {
-  if (isProd && 'serviceWorker' in navigator) {
+  if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
     // The URL constructor is available in all browsers that support SW.
-    const publicUrl = new URL(publicBaseUrl, window.location.href);
+    const publicUrl = new URL(process.env.PUBLIC_URL, window.location.href);
     if (publicUrl.origin !== window.location.origin) {
       // Service worker won't work if PUBLIC_URL is on a different origin
       return;
     }
 
     window.addEventListener('load', () => {
-      const swUrl = `${publicUrl.pathname.replace(/\/$/, "")}/service-worker.js`;
+      const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
 
       if (isLocalhost) {
         // This is running on localhost. Let's check if a service worker still exists or not.
@@ -91,13 +80,6 @@ function registerValidSW(swUrl, config) {
           window.dispatchEvent(new CustomEvent('sw-cache-updated', { detail: event.data }));
         }
       });
-
-      if ('periodicSync' in registration && registration.periodicSync) {
-        registration.periodicSync.register('eventra-data-sync', {
-          minInterval: 24 * 60 * 60 * 1000,
-        }).catch(() => {});
-      }
-
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
         if (installingWorker == null) {
@@ -106,8 +88,14 @@ function registerValidSW(swUrl, config) {
         installingWorker.onstatechange = () => {
           if (installingWorker.state === 'installed') {
             if (navigator.serviceWorker.controller) {
-              window.dispatchEvent(new CustomEvent('sw-update-available', { detail: { registration } }));
+              // At this point, the updated precached content has been fetched,
+              // but the previous service worker will still serve the older
+              // content until all client tabs are closed.
+              log(
+                'New content is available and will be used when all tabs for this page are closed. See https://cra.link/pwa.'
+              );
 
+              // Execute callback
               if (config && config.onUpdate) {
                 config.onUpdate(registration);
               }
@@ -127,7 +115,7 @@ function registerValidSW(swUrl, config) {
     })
     .catch((error) => {
       if (isDev) {
-        logger.error(
+        console.error(
           'Error during service worker registration:',
           error
         );
@@ -171,7 +159,7 @@ export function unregister() {
       })
       .catch((error) => {
         if (isDev) {
-          logger.error(error.message);
+          console.error(error.message);
         }
       });
   }

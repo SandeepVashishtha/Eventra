@@ -98,7 +98,7 @@ export default function PropertiesPanel({
           <div className="fp-slider-group">
             <input type="range" min="0" max="360" step="15" className="fp-slider"
               value={activeElement.rotation}
-              onChange={(e) => onUpdateSelected("rotation", parseInt(e.target.value, 10))} />
+              onChange={(e) => onUpdateSelected("rotation", parseInt(e.target.value))} />
             <span className="fp-slider-value">{activeElement.rotation}°</span>
           </div>
         </div>
@@ -110,9 +110,9 @@ export default function PropertiesPanel({
               max={activeElement.type === "stage" ? 600 : 300} className="fp-slider"
               value={activeElement.width}
               onChange={(e) => {
-                onUpdateSelected("width", parseInt(e.target.value, 10));
+                onUpdateSelected("width", parseInt(e.target.value));
                 if (activeElement.type === "round-table") {
-                  onUpdateSelected("height", parseInt(e.target.value, 10));
+                  onUpdateSelected("height", parseInt(e.target.value));
                 }
               }} />
             <span className="fp-slider-value">{activeElement.width}px</span>
@@ -125,7 +125,7 @@ export default function PropertiesPanel({
             <div className="fp-slider-group">
               <input type="range" min="20" max={activeElement.type === "stage" ? 400 : 200} className="fp-slider"
                 value={activeElement.height}
-                onChange={(e) => onUpdateSelected("height", parseInt(e.target.value, 10))} />
+                onChange={(e) => onUpdateSelected("height", parseInt(e.target.value))} />
               <span className="fp-slider-value">{activeElement.height}px</span>
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function PropertiesPanel({
             <div className="fp-slider-group">
               <input type="range" min="2" max="12" className="fp-slider"
                 value={activeElement.seatsCount}
-                onChange={(e) => onUpdateSelected("seatsCount", parseInt(e.target.value, 10))} />
+                onChange={(e) => onUpdateSelected("seatsCount", parseInt(e.target.value))} />
               <span className="fp-slider-value">{activeElement.seatsCount}</span>
             </div>
           </div>

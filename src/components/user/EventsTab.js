@@ -11,30 +11,14 @@ import {
   X,
   Ticket,
   Trash2,
-  Activity,
-  Copy,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
-import { useAuth } from "../../context/AuthContext";
-import { toast } from "react-toastify";
 import StatusBadge from "../common/StatusBadge";
 import { safeParseJson } from "../../utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
-import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
-import { useOfflineStatus } from "../../hooks/useOfflineStatus";
-import LazyImage from "../common/LazyImage";
-import { SEARCH_ROUTES } from "../../constants/routes";
-import { SEARCH_ROUTES } from "../Hero";
-
-const SEARCH_ROUTES = {
-  events: "/events",
-  hackathons: "/hackathons",
-  projects: "/projects",
-  networking: "/networking"
-};
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -61,24 +45,60 @@ const getEventStatus = (event) => {
   return "Upcoming";
 };
 
-
-
-const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket, onViewRecent }) => {
+const EmptyState = () => {
   const prefersReducedMotion = useReducedMotion();
-  const isOffline = useOfflineStatus();
+  return (
+    <motion.div
+      className="my-events-empty"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
+    >
+      <div className="my-events-empty-icon">
+        <Ticket size={40} />
+      </div>
+      <h3 className="my-events-empty-title">No events yet</h3>
+      <p className="my-events-empty-sub">
+        You have not registered for or hosted any events yet. Explore upcoming events to get started.
+      </p>
+      <Link
+        to="/events"
+        className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800 my-events-empty-cta"
+      >
+        <span className="relative z-10 flex items-center">
+          Explore Events
+          <svg
+            className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </span>
+      </Link>
+    </motion.div>
+  );
+};
+
+const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
+  const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const status = getEventStatus(event);
   const shortDate = event?.date
     ? new Date(event.date).toLocaleDateString("en-US", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-      })
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    })
     : "—";
 
   return (
     <motion.div
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl hover:shadow-2xl hover:-translate-y-2 backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] flex flex-col z-10 hover:z-50 overflow-hidden"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 flex flex-col z-10 hover:z-50 overflow-hidden"
       custom={index}
       variants={fadeUpVariants}
       initial="hidden"
@@ -93,14 +113,12 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
 
       {event?.image && (
         <div className="relative h-48 overflow-hidden">
-          <LazyImage
+          <img
             src={event.image}
             alt={event.title}
-            aspectRatio="16/9"
-            className="w-full h-full"
-            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
-          <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50transition-all duration-500 hover:scale-[1.02]" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500" />
         </div>
       )}
 
@@ -159,126 +177,36 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
         </div>
       )}
 
-      <div className="px-6 py-4 flex flex-col sm:flex-row gap-3 bg-linear-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
+      <div className="px-6 py-4 flex gap-3 bg-linear-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
         {showCancel ? (
           <>
             <button
-             className="group/btn w-full sm:flex-1"
+              className="group/btn flex-1"
               onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
-              disabled={isOffline}
-              title={isOffline ? "Action unavailable offline" : "Cancel registration"}
-              aria-disabled={isOffline}
-              style={isOffline ? { opacity: 0.5, cursor: "not-allowed" } : {}}
             >
-              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Trash2 size={13} className="relative" />
                 <span className="relative">Cancel</span>
               </div>
             </button>
             <button
-             className="group/btn w-full sm:flex-1"
+              className="group/btn flex-1"
               onClick={() => onViewTicket?.(event)}
             >
-              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Ticket size={13} className="relative" />
                 <span className="relative">Ticket</span>
               </div>
             </button>
           </>
         ) : (
-          <Link 
-            to={`/events/${event?.id}`}
-            onClick={() => onViewRecent?.(event)}
-          >
-            <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
-              <Activity size={13} className="relative" />
-              <span className="relative">Analytics</span>
-            </div>
-          </Link>
+          <div className="flex-1" />
         )}
-        <Link 
-          to={`/events/${event?.id}`}
-          onClick={() => onViewRecent?.(event)}
-        >
+        <Link to={`/events/${event?.id}`} className="group/btn flex-1">
           <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
             <span>{showCancel ? "View Details" : "Open Event"}</span>
           </div>
         </Link>
-      </div>
-
-  </Link>
-
-  <span className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 text-white text-xs px-3 py-1 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-lg">
-    View Event Details
-  </span>
-</div>
-
-    </motion.div>
-  );
-};
-
-const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
-  const prefersReducedMotion = useReducedMotion();
-  const fadeUpVariants = fadeUp(prefersReducedMotion);
-  const { user } = useAuth();
-  const [queuePos, setQueuePos] = useState(-1);
-
-  useEffect(() => {
-    if (user) {
-      import("../../utils/waitlistUtils").then(({ getQueuePosition }) => {
-        setQueuePos(getQueuePosition(event.id, user.id || user.email));
-      }).catch(() => setQueuePos(-1));
-    }
-  }, [event.id, user]);
-
-
-  return (
-    <motion.div
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] flex flex-col z-10 overflow-hidden"
-      custom={index}
-      variants={fadeUpVariants}
-      initial="hidden"
-      animate="visible"
-      layout
-    >
-      {event?.image && (
-        <div className="relative h-48 overflow-hidden">
-          <LazyImage
-            src={event.image}
-            alt={event.title}
-            aspectRatio="16/9"
-            className="w-full h-full"
-            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
-          />
-          <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
-        </div>
-      )}
-<div className="px-6 py-4 flex-1">
-  <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 line-clamp-2 min-h-[56px] leading-snug mb-1">
-    {event.title}
-  </h4>
-
-  <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
-    <div className="flex items-center gap-1.5">
-      <Calendar size={12} /> {event.date}
-    </div>
-
-    <div className="flex items-center gap-1.5">
-      <MapPin size={12} /> {event.location}
-    </div>
-  </div>
-</div>
-
-      <div className="px-6 py-3 bg-amber-50/50 dark:bg-amber-950/10 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-          Waitlist Position #{queuePos > 0 ? queuePos : "..."}
-        </span>
-        <button
-          onClick={() => onLeaveWaitlist(event.id)}
-          className="text-xs font-bold text-red-650 hover:text-red-750 dark:text-red-400 dark:hover:text-red-300 transition-colors cursor-pointer"
-        >
-          Leave Waitlist
-        </button>
       </div>
     </motion.div>
   );
@@ -288,44 +216,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const staggerVariants = stagger(prefersReducedMotion);
-  const { myEvents, removeRegistration, waitlistUpdated, triggerWaitlistUpdate } = useMyEvents();
-  const { user } = useAuth();
-  const [waitlistEvents, setWaitlistEvents] = useState([]);
-  const [recentEvents, setRecentEvents] = useState([]);
-  useEffect(() => {
-    if (user) {
-      import("../../utils/waitlistUtils.js").then(({ getGlobalWaitlist }) => {
-        const records = getGlobalWaitlist();
-        const userId = user.id || user.email;
-        const userWaitlists = records.filter(r => r.userId === userId && r.status === 'waiting');
-        
-        import("../../Pages/Events/eventsMockData.json").then(({ default: mockEvents }) => {
-          const resolved = userWaitlists.map(w => {
-            const foundEvent = mockEvents.find(e => e.id === w.eventId);
-            if (foundEvent) {
-              return {
-                ...foundEvent,
-                waitlistJoinedAt: w.joinedAt,
-                isWaitlist: true,
-              };
-            }
-            return {
-              id: w.eventId,
-              title: `Event #${w.eventId}`,
-              date: "",
-              time: "",
-              location: "Details unavailable",
-              type: "event",
-              isWaitlist: true,
-            };
-          });
-          setWaitlistEvents(resolved);
-        }).catch(() => setWaitlistEvents([]));
-      }).catch(() => setWaitlistEvents([]));
-    } else {
-      setWaitlistEvents([]);
-    }
-  }, [user, waitlistUpdated]);
+  const { myEvents, removeRegistration } = useMyEvents();
 
   const {
     searchTerm: searchQuery,
@@ -337,11 +228,10 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterType, setFilterType] = useState("All");
   const [sortBy, setSortBy] = useState("soonest");
-  const [loading, setLoading] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
 
-  const [recentSearches, setRecentSearches] = useState([]);
-
+  const [recentSearches,
+    setRecentSearches] = useState([]);
   const registeredEvents = useMemo(
     () =>
       myEvents.map((registration) => ({
@@ -351,43 +241,22 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
       })),
     [myEvents]
   );
-
   useEffect(() => {
     const saved = safeParseJson(localStorage.getItem("recentSearches"), []);
+
     setRecentSearches(saved);
   }, []);
-useEffect(() => {
-  const timer = setTimeout(() => {
-    setLoading(false);
-  }, 1500);
-
-  return () => clearTimeout(timer);
-}, []);
-
-
-useEffect(() => {
-  const storedRecent = JSON.parse(
-    localStorage.getItem("recentEvents") || "[]"
-  );
-
-  setRecentEvents(storedRecent);
-}, []);
-
-
 
   const availableTypes = useMemo(() => {
     const types = [...new Set([...registeredEvents, ...hostedEvents].map((event) => event?.type).filter(Boolean))];
     return types.map((type) => type.charAt(0).toUpperCase() + type.slice(1));
   }, [registeredEvents, hostedEvents]);
 
-const normalizedSearch = debouncedTerm.trim().toLowerCase();
-
-
   const filteredEvents = useMemo(() => {
     const pool = [...registeredEvents, ...hostedEvents];
     const result = pool.filter((event) => {
       const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
-      const matchSearch = !debouncedTerm || searchTarget.includes(normalizedSearch);
+      const matchSearch = !debouncedTerm || searchTarget.includes(debouncedTerm.toLowerCase());
       const status = getEventStatus(event);
       const matchStatus = filterStatus === "All" || status === filterStatus;
       const typeLabel = event?.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : "";
@@ -415,27 +284,6 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
     return result;
   }, [registeredEvents, hostedEvents, debouncedTerm, filterStatus, filterType, sortBy]);
 
-  useEffect(() => {
-    if (debouncedTerm && debouncedTerm.trim().length > 1) {
-      let saved = [];
-      try {
-        const raw = localStorage.getItem("recentSearches");
-        saved = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(saved)) saved = [];
-      } catch (e) {
-        saved = [];
-      }
-      
-      const updatedHistory = [
-        debouncedTerm.trim(),
-        ...saved.filter((term) => term.toLowerCase() !== debouncedTerm.trim().toLowerCase())
-      ].slice(0, 5);
-
-      localStorage.setItem("recentSearches", JSON.stringify(updatedHistory));
-      setRecentSearches(updatedHistory);
-    }
-  }, [debouncedTerm]);
-
   const filteredRegisteredEvents = filteredEvents.filter((event) => event.registeredAt);
   const filteredHostedEvents = filteredEvents.filter((event) => !event.registeredAt);
 
@@ -443,21 +291,6 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
   const hostedCount = hostedEvents.length;
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
-
-const addToRecentEvents = (event) => {
-  const existing =
-    JSON.parse(localStorage.getItem("recentEvents")) || [];
-
-  const filtered = existing.filter((e) => e.id !== event.id);
-
-  const updated = [event, ...filtered].slice(0, 6);
-
-  localStorage.setItem("recentEvents", JSON.stringify(updated));
-
-  setRecentEvents(updated);
-};
-
-
 
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
@@ -481,7 +314,7 @@ const addToRecentEvents = (event) => {
         </h2>
         <Link
           to="/events"
-          className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:-translate-y-1 hover:bg-blue-200 dark:hover:bg-blue-800"
+          className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800"
         >
           <span className="relative z-10 flex items-center">
             Explore Events
@@ -526,13 +359,10 @@ const addToRecentEvents = (event) => {
           <div className="ud-search-wrap my-events-search">
             <Search size={14} className="ud-search-icon" />
             <input
-            className="ud-search focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
+              className="ud-search"
               placeholder="Search your events…"
               value={searchQuery}
-           onChange={(e) => {
-  const value = e.target.value;
-  setSearchQuery(value);
-}}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
               <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query">
@@ -559,10 +389,14 @@ const addToRecentEvents = (event) => {
             )}
           </div>
           
+          {/* 🔥 FIX 2: Relocated Rogue "Clear History" button to its proper logical location */}
           {recentSearches.length > 0 && (
             <button
               onClick={() => {
-                localStorage.removeItem("recentSearches");
+                localStorage.removeItem(
+                  "recentSearches"
+                );
+
                 setRecentSearches([]);
               }}
               className="text-sm text-red-500 hover:underline mt-2"
@@ -609,68 +443,8 @@ const addToRecentEvents = (event) => {
         </div>
       )}
 
-
-
-      {recentEvents.length > 0 && (
-  <section className="mb-10">
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
-        Recently Viewed
-      </h2>
-    </div>
-
-    <div className="flex gap-4 overflow-x-auto pb-2">
-      {recentEvents.map((item) => (
-        <div
-          key={item.id}
-          className="min-w-[260px] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-4"
-        >
-          <h3 className="font-semibold text-slate-800 dark:text-white mb-2">
-            {item.title || item.name}
-          </h3>
-
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            {item.date || "Upcoming Event"}
-          </p>
-
-          <Link
-            to={`/events/${item.id}`}
-            className="inline-flex items-center rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-medium transition"
-          >
-            View Event
-          </Link>
-        </div>
-      ))}
-    </div>
-  </section>
-)}
-
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div
-              key={index}
-              className="animate-pulse rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm"
-            >
-              <div className="h-40 rounded-xl bg-slate-200 dark:bg-slate-700 mb-4" />
-              <div className="h-5 w-3/4 rounded bg-slate-200 dark:bg-slate-700 mb-3" />
-              <div className="h-4 w-1/2 rounded bg-slate-200 dark:bg-slate-700 mb-2" />
-              <div className="h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-700 mb-6" />
-              <div className="flex gap-3">
-                <div className="h-10 flex-1 rounded-xl bg-slate-200 dark:bg-slate-700" />
-                <div className="h-10 flex-1 rounded-xl bg-slate-200 dark:bg-slate-700" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : registeredCount + hostedCount === 0 ? (
-        <EmptyState
-          title="No events yet"
-          description="You have not registered for or hosted any events yet. Explore upcoming events to get started."
-          icon={Ticket}
-          actionLabel="Explore Events"
-          actionPath="/events"
-        />
+      {registeredCount + hostedCount === 0 ? (
+        <EmptyState />
       ) : filteredEvents.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }}
@@ -695,7 +469,7 @@ const addToRecentEvents = (event) => {
           {filteredRegisteredEvents.length > 0 && (
             <section className="space-y-4">
               <div className="ud-tab-header">
-              <h3 className="ud-page-title bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent font-extrabold">
+                <h3 className="ud-page-title">
                   <Ticket size={18} /> Registered Events
                 </h3>
                 <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
@@ -711,7 +485,6 @@ const addToRecentEvents = (event) => {
                     onRemoveRegistration={handleCancelClick}
                     showCancel
                     onViewTicket={onViewTicket}
-                    onViewRecent={addToRecentEvents}
                   />
                 ))}
               </motion.div>
@@ -735,41 +508,6 @@ const addToRecentEvents = (event) => {
                     event={event}
                     index={index}
                     showCancel={false}
-                    onViewRecent={addToRecentEvents}
-                  />
-                ))}
-              </motion.div>
-            </section>
-          )}
-
-          {waitlistEvents.length > 0 && (
-            <section className="space-y-4 mt-6">
-              <div className="ud-tab-header">
-                <h3 className="ud-page-title flex items-center gap-2">
-                  <Clock size={18} className="text-amber-500" /> Waitlisted Events
-                </h3>
-                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                  {waitlistEvents.length} event{waitlistEvents.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {waitlistEvents.map((event, index) => (
-                  <WaitlistCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    onLeaveWaitlist={async (id) => {
-                      if (window.confirm(`Are you sure you want to leave the waitlist for "${event.title}"?`)) {
-                        try {
-                          const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
-                          await leaveWaitlist(id, user.id || user.email);
-                          toast.success("Left the waitlist successfully.");
-                          triggerWaitlistUpdate();
-                        } catch (err) {
-                          toast.error(err.message || "Failed to leave waitlist.");
-                        }
-                      }
-                    }}
                   />
                 ))}
               </motion.div>
@@ -777,6 +515,7 @@ const addToRecentEvents = (event) => {
           )}
         </>
       )}
+
       {/* 🔥 FIX 1: Portaled the modal out of the Framer Motion stacking context trap */}
       <AnimatePresence>
         {cancelTarget && ReactDOM.createPortal(
@@ -805,15 +544,6 @@ const addToRecentEvents = (event) => {
                 <button className="my-events-dialog-confirm" onClick={handleCancelConfirm}>
                   Yes, remove
                 </button>
-<button
-  onClick={() => handleCopyEventLink(event?.id)}
-  aria-label="Copy event link"
-  className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300 hover:scale-105"
->
-  <Copy size={16} />
-  Copy Link
-</button>
-
               </div>
             </motion.div>
           </motion.div>,

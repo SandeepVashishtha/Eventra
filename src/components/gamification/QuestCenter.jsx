@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
-import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   Zap, CheckCircle, Gift, Target,
   Flame, Star, Trophy, Sparkles, Timer,
@@ -14,7 +13,7 @@ function loadQuestState() {
   try {
     const raw = localStorage.getItem(QUEST_STORAGE_KEY);
     if (!raw) return null;
-    return safeJsonParse(raw, {});
+    return JSON.parse(raw);
   } catch { return null; }
 }
 
@@ -145,9 +144,8 @@ const playClaimSound = () => {
 };
 
 // ─── Main QuestCenter component ────────────────────────────────────────────────
-export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocEvents = 0 }) {
+export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
   const confettiRef = useRef(null);
-  const claimedGuardRef = useRef({});
   const [activeTab, setActiveTab] = useState('daily');
 
   // Initialise quest progress from localStorage or fresh defaults
@@ -202,12 +200,12 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
       if (totalEvents >= 1) dp['dq-1'] = Math.min(1, totalEvents);
       dp['dq-2'] = 1; // visiting profile = auto-complete demo
       dp['dq-3'] = 1; // exploring events = auto-complete demo
-      wp['wq-1'] = Math.min(2, gssocEvents);
+      wp['wq-1'] = Math.min(2, totalEvents);
       wp['wq-2'] = Math.min(3, currentStreak);
       wp['wq-4'] = Math.min(5, totalEvents);
       return { ...prev, dailyProgress: dp, weeklyProgress: wp };
     });
-  }, [totalEvents, currentStreak, gssocEvents, state.dailyResetAt, state.weeklyResetAt]);
+  }, [totalEvents, currentStreak, state.dailyResetAt, state.weeklyResetAt]);
 
   // Countdown timer
   useEffect(() => {
@@ -229,15 +227,12 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
   // ─── Claim handler ───────────────────────────────────────────────────────────
   const claimXP = (questId, xp, isWeekly) => {
     const claimedKey = isWeekly ? 'weeklyClaimed' : 'dailyClaimed';
-    const guardKey = `${claimedKey}:${questId}`;
-
-    // Synchronous guard — blocks side effects on rapid double-click
-    // before React has had a chance to re-render with updated claimed state
-    if (claimedGuardRef.current[guardKey]) return;
-    claimedGuardRef.current[guardKey] = true;
-
+    
+    // 🔥 FIX 1: Moved the check INSIDE the functional setState.
+    // Checking the closure 'state' allows spam-click double-claiming exploits.
+    // Checking 'prev' guarantees atomic verification.
     setState(prev => {
-      if (prev[claimedKey][questId]) return prev;
+      if (prev[claimedKey][questId]) return prev; // Already claimed, block exploit
 
       return {
         ...prev,

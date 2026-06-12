@@ -38,20 +38,17 @@ class MockBlob {
 global.Blob = MockBlob;
 
 // Mock navigator.sendBeacon
-const originalNavigator = global.navigator;
 let beaconSent = null;
-const mockNavigator = {
-  sendBeacon(url, blob) {
-    beaconSent = { url, blob };
-    return true;
-  }
-};
-Object.defineProperty(global, "navigator", {
-  value: mockNavigator,
+Object.defineProperty(globalThis, "navigator", {
   configurable: true,
-  writable: true
+  writable: true,
+  value: {
+    sendBeacon(url, blob) {
+      beaconSent = { url, blob };
+      return true;
+    }
+  }
 });
-
 
 // Import functions dynamically so NODE_ENV changes are active during evaluation
 const { initCspReporting, teardownCspReporting } = await import("../src/utils/cspReporting.js");
@@ -115,15 +112,7 @@ if (originalReportUri === undefined) {
 }
 console.warn = originalConsoleWarn;
 delete global.document;
-if (originalNavigator === undefined) {
-  delete global.navigator;
-} else {
-  Object.defineProperty(global, "navigator", {
-    value: originalNavigator,
-    configurable: true,
-    writable: true
-  });
-}
+delete globalThis.navigator;
 delete global.Blob;
 
 console.log("cspReporting tests passed ✓");

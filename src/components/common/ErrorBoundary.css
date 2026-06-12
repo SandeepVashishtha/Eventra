@@ -877,64 +877,6 @@
   }
 }
 
-/* ── Feature-level fallback (cards, panels, widgets) ──────────── */
-.eb-feature-fallback {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-radius: 16px;
-  border: 1px solid rgba(239,68,68,0.2);
-  background: rgba(239,68,68,0.04);
-  padding: 24px;
-  text-align: center;
-}
-.dark .eb-feature-fallback {
-  background: rgba(239,68,68,0.08);
-  border-color: rgba(239,68,68,0.15);
-}
-.eb-feature-icon {
-  color: #f87171;
-  margin-bottom: 12px;
-}
-.eb-feature-title {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: #ef4444;
-  margin-bottom: 4px;
-}
-.eb-feature-message {
-  font-size: 0.8125rem;
-  color: #94a3b8;
-  margin-bottom: 16px;
-  max-width: 260px;
-  line-height: 1.5;
-}
-.eb-feature-retry-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-.eb-feature-retry-btn:hover {
-  opacity: 0.88;
-}
-.eb-feature-retry-badge {
-  font-size: 0.65rem;
-  background: rgba(255,255,255,0.2);
-  border-radius: 20px;
-  padding: 1px 6px;
-  font-weight: 700;
-}
-
 /* ── Reduced motion ─────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .eb-card,

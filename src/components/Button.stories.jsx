@@ -5,8 +5,7 @@ export default {
   component: Button,
   tags: ["autodocs"],
   argTypes: {
-    // 🔥 FIX: Added the missing "outline" variant to the Storybook controls
-    variant: { control: "select", options: ["primary", "secondary", "danger", "outline"] },
+    variant: { control: "select", options: ["primary", "secondary", "danger"] },
     size: { control: "select", options: ["small", "medium", "large"] },
   },
 };
@@ -31,15 +30,6 @@ export const Danger = {
   args: {
     children: "Delete Event",
     variant: "danger",
-    size: "medium",
-  },
-};
-
-// 🔥 FIX: Added the missing Outline story so developers can actually see it in the docs
-export const Outline = {
-  args: {
-    children: "Outline Button",
-    variant: "outline",
     size: "medium",
   },
 };

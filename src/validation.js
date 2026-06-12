@@ -1,4 +1,4 @@
-import { createDebouncedValidator } from "./utils/debounceUtils.js";
+import { createDebouncedValidator } from "./utils/debounceUtils";
 import {
   checkEmailAvailability,
   checkPhoneValidation,
@@ -6,23 +6,20 @@ import {
   createValidationResponse,
   normalizeValidationApiResponse,
   requestValidation,
-} from "./utils/validationApi.js";
-import i18n from "./i18n/i18n.js";
-
-const t = (key) => i18n.t(key);
+} from "./utils/validationApi";
 
 /**
  * Shared validation copy used by sync and async validators.
  * Keep these messages short because they are shown inline under form fields.
  */
 export const VALIDATION_MESSAGES = {
-  required: t("validation.required"),
-  invalidEmail: t("validation.invalidEmail"),
-  emailTaken: t("validation.emailTaken"),
-  usernameTaken: t("validation.usernameTaken"),
-  weakPassword: t("validation.weakPassword"),
-  invalidPhone: t("validation.invalidPhone"),
-  validationUnavailable: t("validation.validationUnavailable"),
+  required: "This field is required",
+  invalidEmail: "Invalid email format",
+  emailTaken: "Email is already registered",
+  usernameTaken: "Username is already taken",
+  weakPassword: "Password does not meet strength requirements",
+  invalidPhone: "Phone number is invalid",
+  validationUnavailable: "Unable to validate right now. Please try again.",
 };
 
 // Single source of truth regular expressions (Anchored, non-backtracking)
@@ -47,17 +44,7 @@ export const validate = {
     return EMAIL_REGEX.test(val) || "Invalid email format";
   },
 
-  password: (val) => {
-    if (!val || val.length < 8) return "Password must be at least 8 characters";
-    const hasUpper = /[A-Z]/.test(val);
-    const hasLower = /[a-z]/.test(val);
-    const hasNumber = /\d/.test(val);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(val);
-    if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
-      return "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character";
-    }
-    return true;
-  },
+  password: (val) => val.length >= 8 || "Password must be at least 8 characters",
 
   required: (val) => (val && val.trim() !== "") || "This field is required",
 
@@ -344,7 +331,7 @@ export const validatePasswordStrength = async (password, options = {}) => {
     [!requireUppercase || /[A-Z]/.test(password), messages.uppercase || "Password must include an uppercase letter"],
     [!requireLowercase || /[a-z]/.test(password), messages.lowercase || "Password must include a lowercase letter"],
     [!requireNumber || /\d/.test(password), messages.number || "Password must include a number"],
-    [!requireSpecial || /[!@#$%^&*(),.?":{}|<>]/.test(password), messages.special || "Password must include a special character"],
+    [!requireSpecial || /[^A-Za-z0-9]/.test(password), messages.special || "Password must include a special character"],
   ];
 
   const failedCheck = checks.find(([passed]) => !passed);

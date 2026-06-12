@@ -1,8 +1,6 @@
- 
+/* eslint-disable no-console */
 import { STORAGE_KEYS } from "./storageKeys";
 import { validators } from "./storageValidators";
-import { safeJsonParse } from "../../utils/safeJsonParse";
-import { logger } from "../logger";
 
 const DEFAULT_EXPIRY = 1000 * 60 * 60; // 1 hour
 
@@ -17,7 +15,7 @@ export const storageManager = {
 
       localStorage.setItem(key, JSON.stringify(payload));
     } catch (error) {
-      logger.error(`Storage set error for ${key}:`, error);
+      console.error(`Storage set error for ${key}:`, error);
     }
   },
 
@@ -26,11 +24,11 @@ export const storageManager = {
       const raw = localStorage.getItem(key);
       if (!raw) return null;
 
-      const parsed = safeJsonParse(raw, {});
+      const parsed = JSON.parse(raw);
 
       // 1. Check for expected structure
       if (!parsed || typeof parsed !== 'object' || !('value' in parsed)) {
-        logger.warn(`[Storage] Invalid structure for key: ${key}`);
+        console.warn(`[Storage] Invalid structure for key: ${key}`);
         localStorage.removeItem(key);
         return null;
       }
@@ -43,7 +41,7 @@ export const storageManager = {
 
       // 3. Optional validation
       if (validator && !validator(parsed.value)) {
-        logger.warn(`[Storage] Validation failed for key: ${key}`);
+        console.warn(`[Storage] Validation failed for key: ${key}`);
         localStorage.removeItem(key);
         return null;
       }
@@ -51,11 +49,11 @@ export const storageManager = {
       return parsed.value;
     } catch (error) {
       // 4. Detailed logging instead of silent deletion
-      logger.error(`[Storage] Corruption error for key "${key}":`, error);
+      console.error(`[Storage] Corruption error for key "${key}":`, error);
       
       // Only remove if it's a parse error (definitely corrupted)
       if (error instanceof SyntaxError) {
-        logger.warn(`[Storage] Removing corrupted key: ${key}`);
+        console.warn(`[Storage] Removing corrupted key: ${key}`);
         localStorage.removeItem(key);
       }
       return null;
@@ -66,7 +64,7 @@ export const storageManager = {
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      logger.error(`Storage remove error for ${key}:`, error);
+      console.error(`Storage remove error for ${key}:`, error);
     }
   },
 
@@ -74,7 +72,7 @@ export const storageManager = {
     try {
       localStorage.clear();
     } catch (error) {
-      logger.error("Storage clear error:", error);
+      console.error("Storage clear error:", error);
     }
   },
 };

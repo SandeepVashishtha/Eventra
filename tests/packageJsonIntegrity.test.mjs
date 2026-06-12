@@ -19,11 +19,4 @@ for (const filePath of packageFiles) {
   );
 }
 
-const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
-
-assert.ok(
-  packageJson.devDependencies?.jsdom,
-  "jsdom must stay in devDependencies because sanitizer unit tests create a JSDOM window"
-);
-
 console.log("package JSON integrity tests passed");

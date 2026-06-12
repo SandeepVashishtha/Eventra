@@ -24,16 +24,16 @@ let container;
 let root;
 let loginMock;
 
- 
+/* eslint-disable no-undef */
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
- 
+/* eslint-enable no-undef */
 
 const renderLogin = () => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
-   
+  // eslint-disable-next-line testing-library/no-unnecessary-act
   act(() => {
     root.render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -75,7 +75,7 @@ beforeEach(() => {
 
 afterEach(() => {
   if (root) {
-     
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     act(() => {
       root.unmount();
     });

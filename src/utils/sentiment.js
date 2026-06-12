@@ -45,14 +45,14 @@ export const analyzeSentiment = (text) => {
  * Gets a descriptive label and an emoji representation based on the sentiment score
  */
 export const getSentimentDisplay = (score) => {
-  if (score > 1.5) {
+  if (score >= 1.5) {
     return {
       emoji: "🌟",
       label: "Excited / Highly Positive",
       color: "text-green-500 dark:text-green-400 animate-bounce"
     };
   }
-  if (score >= 0.2) {
+  if (score > 0.2) {
     return {
       emoji: "🙂",
       label: "Happy / Positive",
@@ -66,7 +66,7 @@ export const getSentimentDisplay = (score) => {
       color: "text-red-500 dark:text-red-400 animate-pulse"
     };
   }
-  if (score <= -0.2) {
+  if (score < -0.2) {
     return {
       emoji: "🙁",
       label: "Muted / Negative",

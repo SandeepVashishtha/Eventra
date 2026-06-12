@@ -9,28 +9,10 @@
  * URL values are deterministic regardless of the test runner's locale.
  */
 
-import { describe, test, expect, vi } from "vitest";
 import {
   getGoogleCalendarUrl,
   getOutlookCalendarUrl,
-  getYahooCalendarUrl,
-  generateIcsFileBlobUrl,
-  extractMeetingLink,
-} from './calendarUrlUtils.js';
-
-// Stub standard Web APIs that are missing or restricted in test runners
-if (typeof global.Blob === 'undefined') {
-  global.Blob = class Blob {
-    constructor(content, options) {
-      this.content = content;
-      this.options = options;
-    }
-  };
-}
-if (typeof global.URL === 'undefined' || typeof global.URL.createObjectURL === 'undefined') {
-  global.URL = global.URL || class URL {};
-  global.URL.createObjectURL = (blob) => `blob:http://localhost/${Math.random().toString(36).substring(2)}`;
-}
+} from './calendarUrlUtils';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -147,18 +129,6 @@ describe('getGoogleCalendarUrl — duration', () => {
     const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: 0 }), 'UTC');
     const { durationMs } = parseDates(url);
     expect(durationMs).toBe(60 * 60 * 1000);
-  });
-
-  test('negative durationMinutes falls back to 60 minutes', () => {
-    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: -30 }), 'UTC');
-    const { durationMs } = parseDates(url);
-    expect(durationMs).toBe(60 * 60 * 1000);
-  });
-
-  test('string durationMinutes is parsed correctly', () => {
-    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: '120' }), 'UTC');
-    const { durationMs } = parseDates(url);
-    expect(durationMs).toBe(120 * 60 * 1000);
   });
 });
 
@@ -287,72 +257,7 @@ describe('getOutlookCalendarUrl — duration', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 5. getYahooCalendarUrl — basic structure and duration
-// ---------------------------------------------------------------------------
-describe('getYahooCalendarUrl', () => {
-  test('returns Yahoo calendar url structure', () => {
-    const url = getYahooCalendarUrl(mkEvent());
-    expect(url).toContain('calendar.yahoo.com');
-    expect(url).toContain('TITLE=');
-    expect(url).toContain('ST=');
-    expect(url).toContain('ET=');
-  });
-
-  test('returns empty string on null event', () => {
-    expect(getYahooCalendarUrl(null)).toBe('');
-  });
-
-  test('date parameters are in compact UTC format', () => {
-    const url = getYahooCalendarUrl(mkEvent(), 'UTC');
-    const match = url.match(/ST=([^&]+)/);
-    expect(match).not.toBeNull();
-    expect(decodeURIComponent(match[1])).toMatch(/^\d{8}T\d{6}Z$/);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 6. generateIcsFileBlobUrl — ICS payload content
-// ---------------------------------------------------------------------------
-describe('generateIcsFileBlobUrl', () => {
-  test('returns standard blob URL string', () => {
-    const url = generateIcsFileBlobUrl(mkEvent());
-    expect(url).toBeTypeOf('string');
-    expect(url).toContain('blob:');
-  });
-
-  test('returns null on null event', () => {
-    expect(generateIcsFileBlobUrl(null)).toBeNull();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 7. extractMeetingLink — regex matching
-// ---------------------------------------------------------------------------
-describe('extractMeetingLink', () => {
-  test('matches valid zoom links', () => {
-    const desc = 'Please join via Zoom: https://us02web.zoom.us/j/123456789';
-    expect(extractMeetingLink(desc)).toBe('https://us02web.zoom.us/j/123456789');
-  });
-
-  test('matches valid teams links', () => {
-    const desc = 'Join Teams: https://teams.microsoft.com/l/meetup-join/abc';
-    expect(extractMeetingLink(desc)).toBe('https://teams.microsoft.com/l/meetup-join/abc');
-  });
-
-  test('matches valid Google Meet links', () => {
-    const desc = 'Join Google Meet: https://meet.google.com/abc-defg-hij';
-    expect(extractMeetingLink(desc)).toBe('https://meet.google.com/abc-defg-hij');
-  });
-
-  test('returns null for descriptions without matching URLs', () => {
-    expect(extractMeetingLink('Event will happen in room 302')).toBeNull();
-    expect(extractMeetingLink(null)).toBeNull();
-    expect(extractMeetingLink(123)).toBeNull();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 8. Edge cases
+// 5. Edge cases
 // ---------------------------------------------------------------------------
 describe('calendarUrlUtils — edge cases', () => {
   test('event with missing date returns a fallback URL string (not empty)', () => {

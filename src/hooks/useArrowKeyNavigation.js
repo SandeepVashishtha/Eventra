@@ -1,7 +1,3 @@
-/**
- * @fileoverview useArrowKeyNavigation - Arrow key grid navigation hook
- * @module hooks/useArrowKeyNavigation
- */
 import { useCallback, useRef } from "react";
 
 /**

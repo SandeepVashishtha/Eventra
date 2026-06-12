@@ -1,17 +1,7 @@
 /**
- * @typedef {Object} CalendarEvent
- * @property {string} title - The title of the event.
- * @property {string} [description] - A short description of the event.
- * @property {string|Date} date - The start date/time of the event.
- * @property {string|Date} [endDate] - The end date/time of the event.
- * @property {string} [location] - The location or URL of the event.
- * @property {string|number} [id] - A unique identifier for the event.
- * @property {string} [joiningLink] - A URL to join the event.
- */
-
-/**
  * Calendar Exporter Utility (RFC 5545 Compliant)
- * * Provides robust mechanisms to generate downloadable standard .ics files
+ * 
+ * Provides robust mechanisms to generate downloadable standard .ics files
  * and external calendar subscription URLs (Google Calendar, Outlook Web).
  */
 
@@ -24,6 +14,8 @@ const formatToICSDate = (dateStr) => {
 };
 
 // Helper to safely escape special characters in ICS strings (RFC 5545 compliant).
+// Carriage returns (\r) are stripped before newlines are escaped so that
+// user-supplied text cannot inject extra ICS content lines via CRLF sequences.
 const escapeICSText = (text = "") => {
   return text
     .replace(/\\/g, "\\\\")
@@ -35,7 +27,6 @@ const escapeICSText = (text = "") => {
 
 /**
  * Downloads a standard .ics iCalendar file for the given event.
- * @param {CalendarEvent} event - The event object to export.
  */
 export const downloadICSFile = (event) => {
   const { title, description, date, endDate, location, id } = event;
@@ -63,19 +54,8 @@ export const downloadICSFile = (event) => {
     `SUMMARY:${escapeICSText(title || "Eventra Scheduled Event")}`,
     `DESCRIPTION:${escapeICSText(description || "Event organized through the Eventra Platform.")}`,
     `LOCATION:${escapeICSText(location || "Virtual / Online Event")}`,
-    ...(event.joiningLink ? [`URL:${event.joiningLink}`] : []),
     "STATUS:CONFIRMED",
     "SEQUENCE:0",
-    "BEGIN:VALARM",
-    "TRIGGER:-PT1H",
-    "ACTION:DISPLAY",
-    "DESCRIPTION:Reminder: Your event starts in 1 hour",
-    "END:VALARM",
-    "BEGIN:VALARM",
-    "TRIGGER:-PT1D",
-    "ACTION:DISPLAY",
-    "DESCRIPTION:Reminder: Your event starts tomorrow",
-    "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR"
   ];
@@ -95,16 +75,12 @@ export const downloadICSFile = (event) => {
     if (document.body.contains(link)) {
       document.body.removeChild(link);
     }
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 200);
+    URL.revokeObjectURL(url);
   }
 };
 
 /**
  * Generates an external Google Calendar addition link.
- * @param {CalendarEvent} event
- * @returns {string|null} The Google Calendar URL.
  */
 export const generateGoogleCalendarLink = (event) => {
   const { title, description, date, endDate, location } = event;
@@ -129,8 +105,6 @@ export const generateGoogleCalendarLink = (event) => {
 
 /**
  * Generates an external Outlook Web addition link.
- * @param {CalendarEvent} event
- * @returns {string|null} The Outlook Calendar URL.
  */
 export const generateOutlookLink = (event) => {
   const { title, description, date, endDate, location } = event;
@@ -154,35 +128,10 @@ export const generateOutlookLink = (event) => {
 };
 
 /**
- * Generates an external Yahoo Calendar addition link.
- * @param {CalendarEvent} event
- * @returns {string|null} Yahoo Calendar URL or null if the event date is invalid.
- */
-export const generateYahooCalendarLink = (event) => {
-  const { title, description, date, endDate, location } = event;
-  const start = formatToICSDate(date);
-  if (!start) return null;
-
-  const end = endDate
-    ? formatToICSDate(endDate)
-    : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
-
-  const params = new URLSearchParams({
-    v: '60',
-    title: title || 'Eventra Event',
-    st: start,
-    et: end,
-    desc: description || 'Event organized through the Eventra Platform.',
-    in_loc: location || 'Virtual / Online Event',
-  });
-
-  return `https://calendar.yahoo.com/?${params.toString()}`;
-};
-
-/**
  * Downloads a single .ics file containing multiple events.
- * @param {Array<CalendarEvent>} events - List of event objects to export.
- * @param {string} [filename="registered-events"] - Custom filename for the downloaded file.
+ * Supports both flat event objects and nested registration objects.
+ * @param {Array} events - List of event/registration objects to export
+ * @param {string} filename - Custom filename for the downloaded file
  */
 export const downloadBulkICSFile = (events, filename = "registered-events") => {
   if (!Array.isArray(events) || events.length === 0) return;
@@ -202,7 +151,7 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     const { title, description, date, endDate, location, id } = eventObj;
     
     const formattedStart = formatToICSDate(date);
-    if (!formattedStart) return;
+    if (!formattedStart) return; // Skip invalid event
     
     const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
 
@@ -217,11 +166,6 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
       `LOCATION:${escapeICSText(location || "Virtual / Online Event")}`,
       "STATUS:CONFIRMED",
       "SEQUENCE:0",
-      "BEGIN:VALARM",
-      "TRIGGER:-PT1H",
-      "ACTION:DISPLAY",
-      "DESCRIPTION:Reminder: Your event starts in 1 hour",
-      "END:VALARM",
       "END:VEVENT"
     );
   });
@@ -243,8 +187,7 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     if (document.body.contains(link)) {
       document.body.removeChild(link);
     }
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 200);
+    URL.revokeObjectURL(url);
   }
 };
+
