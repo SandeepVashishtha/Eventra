@@ -92,6 +92,7 @@ const socialLinks = [
 
 /* ================================
    Secure External Link Handling
+================================ */
 
 const externalLinkProps = {
   target: "_blank",
