@@ -29,7 +29,7 @@ export const createRequestInterceptor = (isDev) => (config) => {
     if (csrf) {
       config.headers["X-CSRF-Token"] = csrf;
     } else if (process.env.NODE_ENV !== "production") {
-      console.warn("[CSRF] Token missing for mutating request:", method, config.url);
+      logger.warn("[CSRF] Token missing for mutating request:", method, config.url);
     }
 
     if (!config.headers["Idempotency-Key"]) {
