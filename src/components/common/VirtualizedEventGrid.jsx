@@ -19,6 +19,7 @@ const Cell = memo(({ columnIndex, rowIndex, style, data }) => {
     </div>
   );
 });
+Cell.displayName = "Cell";
 
 const VirtualizedEventGrid = ({ events }) => {
   const rowCount = Math.ceil(events.length / COLUMN_COUNT);
