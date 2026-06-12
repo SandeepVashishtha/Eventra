@@ -171,6 +171,65 @@ describe("useOfflineSync", () => {
     expect(clearQueue).toHaveBeenCalled();
   });
 
+  it("dispatches eventra-offline-queue-processed event after sync completes", async () => {
+    const queue = [
+      { id: "1", userId: "mock-user-id", retryCount: 0, payload: { name: "test-1" } }
+    ];
+    getQueueIndexedDB.mockResolvedValue(queue);
+
+    const TestComponent = () => {
+      useOfflineSync();
+      return null;
+    };
+
+    await act(async () => {
+      root = createRoot(container);
+      root.render(<TestComponent />);
+    });
+
+    const mockListener = jest.fn();
+    window.addEventListener("eventra-offline-queue-processed", mockListener);
+
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+
+    expect(mockListener).toHaveBeenCalled();
+    window.removeEventListener("eventra-offline-queue-processed", mockListener);
+  });
+
+  it("performs self-healing by resetting retryCount of skipped/failed items if at least one item succeeds", async () => {
+    const queue = [
+      { id: "zombie", userId: "mock-user-id", retryCount: 3, payload: { name: "zombie" } },
+      { id: "fresh", userId: "mock-user-id", retryCount: 0, payload: { name: "fresh" } }
+    ];
+    getQueueIndexedDB.mockResolvedValue(queue);
+
+    const TestComponent = () => {
+      useOfflineSync();
+      return null;
+    };
+
+    await act(async () => {
+      root = createRoot(container);
+      root.render(<TestComponent />);
+    });
+
+    await act(async () => {
+      window.dispatchEvent(new Event("eventra-offline-queue-updated"));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+
+    // Verify fetch was only called once (for the fresh item, zombie was skipped)
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    // Verify setQueue was called to update retryCount of zombie to 0
+    expect(setQueue).toHaveBeenCalledWith([
+      { id: "zombie", userId: "mock-user-id", retryCount: 0, payload: { name: "zombie" } }
+    ]);
+  });
+
   // ── Security: Issue #5727 — cross-user action replay prevention ───────────
 
   it("[Security] does not replay queued actions that belong to a different user", async () => {
