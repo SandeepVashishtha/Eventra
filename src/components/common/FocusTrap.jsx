@@ -32,4 +32,3 @@ const FocusTrap = ({ isActive, onEscape, children, className = '' }) => {
 };
 
 export default FocusTrap;
-// Optimized for lazy loading

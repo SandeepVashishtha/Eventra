@@ -148,11 +148,25 @@ const ContributorGuide = () => {
     },
   ];
 
-  const copyCommand = (cmd, id) => {
-    navigator.clipboard.writeText(cmd).then(() => {
+  const copyCommand = async (cmd, id) => {
+    try {
+      if (navigator?.clipboard) {
+        await navigator.clipboard.writeText(cmd);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = cmd;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
       setCopied(id);
       setTimeout(() => setCopied(""), 2000);
-    }).catch(() => {});
+    } catch (err) {
+      console.warn("Failed to copy command:", err);
+    }
   };
 
   return (
