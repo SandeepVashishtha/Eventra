@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -215,9 +215,9 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
 
     </motion.div>
   );
-};
+});
 
-const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
+const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const { user } = useAuth();
@@ -282,7 +282,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
       </div>
     </motion.div>
   );
-};
+}));
 
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -465,7 +465,7 @@ const addToRecentEvents = (event) => {
     if (!cancelTarget) return;
     removeRegistration(cancelTarget.id);
     setCancelTarget(null);
-  };
+   }, [cancelTarget, removeRegistration]);
 
   return (
     <motion.div
