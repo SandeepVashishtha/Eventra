@@ -7,17 +7,13 @@ import {
   LogOut, User, Plus, Search, X
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
-import ErrorBoundary from "../common/ErrorBoundary";
+import { useState, useEffect, useMemo, Component } from "react";
 import { useAuth } from "../../context/AuthContext";
 import StatusBadge from "../common/StatusBadge";
-import { requestNotificationPermission, disableNotifications } from "../../utils/NotificationManager";
-import { readNotificationPreferences } from "../../utils/notificationPreferences";
 import EventsTab from "./EventsTab";
 import HackathonsTab from "./HackathonsTab";
 import ProjectsTab from "./ProjectsTab";
 import RegistrationsTab from "./RegistrationsTab";
-import AnalyticsTab from "./AnalyticsTab";
 import {
   DashboardListCardSkeleton,
   DashboardProfileSkeleton,
@@ -28,8 +24,36 @@ import {
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
-import DashboardEmptyState from "./DashboardEmptyState";
-import OfflineIndicator from "../common/OfflineIndicator";
+
+// ✅ FIX 1: Define FeatureErrorBoundary — was used but never defined/imported
+class FeatureErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, info) {
+    console.error("FeatureErrorBoundary caught:", error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="ud-error-state">
+          <p>Something went wrong loading this section.</p>
+          <button onClick={() => this.setState({ hasError: false, error: null })}>
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 24 },
@@ -77,17 +101,6 @@ export default function UserDashboard() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [pushEnabled, setPushEnabled] = useState(() => readNotificationPreferences().push);
-
-  const togglePushNotifications = async () => {
-    if (pushEnabled) {
-      disableNotifications();
-      setPushEnabled(false);
-    } else {
-      const granted = await requestNotificationPermission();
-      setPushEnabled(granted);
-    }
-  };
 
   const firstName = user?.firstName || user?.username || "there";
 
@@ -103,55 +116,31 @@ export default function UserDashboard() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const derivedData = useMemo(() => {
-    let eventsTotal = 0;
-    let eventsCreated = 0;
-    let eventsJoined = 0;
-    let hackathonsTotal = 0;
-    let hackathonsHosted = 0;
-    let hackathonsJoined = 0;
-    let projectsTotal = 0;
-    let projectsDone = 0;
-    let projectsActive = 0;
-    const upcomingEvents = [];
-    const upcomingHackathons = [];
-    const activeProjects = [];
+  const safeData = Array.isArray(MOCK_DATA) ? MOCK_DATA : [];
 
-    for (const d of MOCK_DATA) {
-      if (d && d.type === "Event") {
-        eventsTotal++;
-        if (d.participationType === "Hosted") eventsCreated++;
-        if (d.participationType === "Registered") eventsJoined++;
-        if (d.status === "Upcoming") upcomingEvents.push(d);
-      } else if (d && d.type === "Hackathon") {
-        hackathonsTotal++;
-        if (d.participationType === "Hosted") hackathonsHosted++;
-        if (d.participationType === "Registered") hackathonsJoined++;
-        if (d.status === "Upcoming") upcomingHackathons.push(d);
-      } else if (d && d.type === "Project") {
-        projectsTotal++;
-        if (d.projectStatus !== "Done") {
-          projectsActive++;
-          activeProjects.push(d);
-        } else {
-          projectsDone++;
-        }
-      }
-    }
+  const stats = useMemo(() => ({
+    eventsTotal: MOCK_DATA.filter(d => d.type === "Event").length,
+    eventsCreated: MOCK_DATA.filter(d => d.type === "Event" && d.participationType === "Hosted").length,
+    eventsJoined: MOCK_DATA.filter(d => d.type === "Event" && d.participationType === "Registered").length,
+    hackathonsTotal: MOCK_DATA.filter(d => d.type === "Hackathon").length,
+    hackathonsHosted: MOCK_DATA.filter(d => d.type === "Hackathon" && d.participationType === "Hosted").length,
+    hackathonsJoined: MOCK_DATA.filter(d => d.type === "Hackathon" && d.participationType === "Registered").length,
+    projectsTotal: MOCK_DATA.filter(d => d.type === "Project").length,
+    projectsDone: MOCK_DATA.filter(d => d.type === "Project" && d.projectStatus === "Done").length,
+    projectsActive: MOCK_DATA.filter(d => d.type === "Project" && d.projectStatus !== "Done").length,
+  }), [MOCK_DATA]);
 
-    return {
-      stats: {
-        eventsTotal, eventsCreated, eventsJoined,
-        hackathonsTotal, hackathonsHosted, hackathonsJoined,
-        projectsTotal, projectsDone, projectsActive,
-      },
-      upcomingEvents,
-      upcomingHackathons,
-      activeProjects,
-    };
-  }, []);
+  const upcomingEvents = useMemo(() =>
+    safeData.filter(d => d && d.type === "Event" && d.status === "Upcoming"),
+  [MOCK_DATA]);
 
-  const { stats, upcomingEvents, upcomingHackathons, activeProjects } = derivedData;
+  const upcomingHackathons = useMemo(() =>
+    safeData.filter(d => d && d.type === "Hackathon" && d.status === "Upcoming"),
+  [MOCK_DATA]);
+
+  const activeProjects = useMemo(() =>
+    safeData.filter(d => d && d.type === "Project" && d.projectStatus !== "Done"),
+  [MOCK_DATA]);
 
   const filteredData = useMemo(() =>
     MOCK_DATA.filter(item => {
@@ -167,7 +156,7 @@ export default function UserDashboard() {
       if (!b.date) return -1;
       return new Date(b.date) - new Date(a.date);
     }),
-  [searchQuery, filterType, filterStatus]);
+  [MOCK_DATA, searchQuery, filterType, filterStatus]);
 
   const notifications = [
     { id: 1, text: "React Conference 2025 registration opens soon", time: "2h ago", unread: true },
@@ -178,7 +167,6 @@ export default function UserDashboard() {
 
   return (
     <div className="ud-root">
-      <OfflineIndicator />
       {/* Sidebar */}
       <aside className="ud-sidebar">
         <div className="ud-sidebar-brand">
@@ -193,7 +181,6 @@ export default function UserDashboard() {
             { id: "hackathons", icon: <Trophy size={18} />, label: "Hackathons" },
             { id: "projects", icon: <FolderOpen size={18} />, label: "Projects" },
             { id: "registrations", icon: <Users size={18} />, label: "Registrations" },
-            { id: "analytics", icon: <Activity size={18} />, label: "Analytics" },
           ].map(item => (
             <button
               key={item.id}
@@ -263,20 +250,9 @@ export default function UserDashboard() {
                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
                     transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
                   >
-                    <div className="ud-notif-header flex items-center justify-between">
+                    <div className="ud-notif-header">
                       <span>Notifications</span>
-                      <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2 text-xs cursor-pointer">
-                          <span className="text-gray-500">Push</span>
-                          <input 
-                            type="checkbox" 
-                            checked={pushEnabled} 
-                            onChange={togglePushNotifications}
-                            className="w-3 h-3 rounded text-indigo-600 focus:ring-indigo-500" 
-                          />
-                        </label>
-                        <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
-                      </div>
+                      <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
                     </div>
                     {notifications.map(n => (
                       <div key={n.id} className={`ud-notif-item ${n.unread ? "ud-notif-unread" : ""}`}>
@@ -320,15 +296,6 @@ export default function UserDashboard() {
                 </>
               ) : (
                 <>
-                  {/* Full-page premium empty state (#7453):
-                      shown when the user has no events, hackathons, or projects at all.
-                      Provides a direct CTA to browse events or create one. */}
-                  {stats.eventsTotal === 0 &&
-                    stats.hackathonsTotal === 0 &&
-                    stats.projectsTotal === 0 ? (
-                    <DashboardEmptyState />
-                  ) : (
-                  <>
                   <motion.div variants={stagger(prefersReducedMotion)} className="ud-stats-grid">
                     {[
                       { label: "Events", value: stats.eventsTotal, sub: `${stats.eventsCreated} hosted · ${stats.eventsJoined} joined`, icon: <Calendar size={20} />, accent: "#6366f1" },
@@ -375,17 +342,14 @@ export default function UserDashboard() {
                       </div>
                       {upcomingEvents.length === 0 ? (
                         <EmptyState
-                          compact={true}
-                          icon={<Calendar size={32} className="text-indigo-500" />}
                           title="No Upcoming Events"
                           message="You haven't registered or joined any events yet. Check out the Events tab to find one!"
-                          onBrowseAll={() => navigate("/events")}
                         />
                       ) : (
                         upcomingEvents.map(ev => (
                           <div key={ev.id} className="ud-list-item">
-                            <div className="min-w-0 flex-1">
-                              <p className="ud-list-title" title={ev.title}>{ev.title}</p>
+                            <div>
+                              <p className="ud-list-title">{ev.title}</p>
                               <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(ev.date)}</p>
                             </div>
                             <StatusBadge status={ev.participationType} />
@@ -393,7 +357,7 @@ export default function UserDashboard() {
                         ))
                       )}
                     </motion.section>
- 
+
                     {/* Upcoming Hackathons */}
                     <motion.section custom={3} variants={fadeUp(prefersReducedMotion)} className="ud-card">
                       <div className="ud-card-head">
@@ -403,17 +367,14 @@ export default function UserDashboard() {
                       </div>
                       {upcomingHackathons.length === 0 ? (
                         <EmptyState
-                          compact={true}
-                          icon={<Trophy size={32} className="text-pink-500" />}
                           title="No Active Hackathons"
                           message="There are currently no upcoming hackathons in your schedule."
-                          onBrowseAll={() => navigate("/hackathons")}
                         />
                       ) : (
                         upcomingHackathons.map(h => (
                           <div key={h.id} className="ud-list-item">
-                            <div className="min-w-0 flex-1">
-                              <p className="ud-list-title" title={h.title}>{h.title}</p>
+                            <div>
+                              <p className="ud-list-title">{h.title}</p>
                               <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(h.date)}</p>
                             </div>
                             <StatusBadge status={h.participationType} />
@@ -421,7 +382,7 @@ export default function UserDashboard() {
                         ))
                       )}
                     </motion.section>
- 
+
                     {/* Active Projects */}
                     <motion.section custom={4} variants={fadeUp(prefersReducedMotion)} className="ud-card">
                       <div className="ud-card-head">
@@ -431,17 +392,14 @@ export default function UserDashboard() {
                       </div>
                       {activeProjects.length === 0 ? (
                         <EmptyState
-                          compact={true}
-                          icon={<FolderOpen size={32} className="text-purple-500" />}
                           title="No Active Projects"
                           message="All your tracked development projects are currently completed or inactive."
-                          onBrowseAll={() => navigate("/projects")}
                         />
                       ) : (
                         activeProjects.map(p => (
                           <div key={p.id} className="ud-list-item">
-                            <div className="min-w-0 flex-1">
-                              <p className="ud-list-title" title={p.title}>{p.title}</p>
+                            <div>
+                              <p className="ud-list-title">{p.title}</p>
                               <p className="ud-list-meta">Updated: {p.lastUpdate}</p>
                             </div>
                             <StatusBadge status={p.projectStatus} />
@@ -450,8 +408,6 @@ export default function UserDashboard() {
                       )}
                     </motion.section>
                   </div>
-                  </>
-                  )} {/* end hasData ternary */}
                 </>
               )}
             </motion.div>
@@ -460,45 +416,45 @@ export default function UserDashboard() {
           {/* Events tab */}
           {activeTab === "events" && (
             <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <ErrorBoundary level="feature">
+              <FeatureErrorBoundary>
                 <EventsTab
                   hostedEvents={MOCK_DATA.filter(d => d.type === "Event" && d.participationType)}
                   onViewTicket={setSelectedTicketEvent}
                 />
-              </ErrorBoundary>
+              </FeatureErrorBoundary>
             </motion.div>
           )}
 
           {/* Hackathons tab */}
           {activeTab === "hackathons" && (
             <motion.div key="hackathons" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <ErrorBoundary level="feature">
+              <FeatureErrorBoundary>
                 <HackathonsTab
                   hackathons={MOCK_DATA.filter(d => d.type === "Hackathon")}
                   loading={loading}
                   fadeUp={fadeUp(prefersReducedMotion)}
                 />
-              </ErrorBoundary>
+              </FeatureErrorBoundary>
             </motion.div>
           )}
 
           {/* Projects tab */}
           {activeTab === "projects" && (
             <motion.div key="projects" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <ErrorBoundary level="feature">
+              <FeatureErrorBoundary>
                 <ProjectsTab
                   projects={MOCK_DATA.filter(d => d.type === "Project")}
                   loading={loading}
                   fadeUp={fadeUp(prefersReducedMotion)}
                 />
-              </ErrorBoundary>
+              </FeatureErrorBoundary>
             </motion.div>
           )}
 
           {/* Registrations tab */}
           {activeTab === "registrations" && (
             <motion.div key="registrations" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <ErrorBoundary level="feature">
+              <FeatureErrorBoundary>
                 <RegistrationsTab
                   filteredData={filteredData}
                   loading={loading}
@@ -508,16 +464,7 @@ export default function UserDashboard() {
                   setFilterStatus={setFilterStatus}
                   setSelectedTicketEvent={setSelectedTicketEvent}
                 />
-              </ErrorBoundary>
-            </motion.div>
-          )}
-
-          {/* Analytics tab */}
-          {activeTab === "analytics" && (
-            <motion.div key="analytics" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <ErrorBoundary level="feature">
-                <AnalyticsTab loading={loading} />
-              </ErrorBoundary>
+              </FeatureErrorBoundary>
             </motion.div>
           )}
         </AnimatePresence>

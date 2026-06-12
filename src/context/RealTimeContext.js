@@ -20,18 +20,11 @@ const initialLeaderboardState = {
   status: SSE_STATUS.IDLE,
 };
 
-// Maximum number of event IDs retained for deduplication.
-// Old entries are evicted once this limit is reached.
-const SEEN_EVENTS_MAX = 200;
-
 const initialAnalyticsState = {
   recentCheckins: [],
   liveCount: 0,
   scanVelocity: 0,
   status: SSE_STATUS.IDLE,
-  // Bounded cache of processed event IDs — prevents duplicate CHECKIN
-  // events (e.g. from SSE reconnect replay) from inflating counts.
-  seenEventIds: [],
 };
 
 // --- 3. Split the Reducers ---
@@ -52,25 +45,12 @@ function leaderboardReducer(state, action) {
 
 function analyticsReducer(state, action) {
   switch (action.type) {
-    case "CHECKIN": {
-      const eventId = action.payload?.id;
-      // Ignore events whose ID was already processed in this session.
-      // This prevents SSE reconnect replay from inflating liveCount and
-      // recentCheckins when the server re-delivers historical events.
-      if (eventId && state.seenEventIds.includes(eventId)) {
-        return state;
-      }
-      // Record the new ID, evicting the oldest entry if the cache is full.
-      const updatedSeenIds = eventId
-        ? [...state.seenEventIds, eventId].slice(-SEEN_EVENTS_MAX)
-        : state.seenEventIds;
+    case "CHECKIN":
       return {
         ...state,
-        seenEventIds: updatedSeenIds,
         recentCheckins: [action.payload, ...state.recentCheckins.slice(0, 49)],
         liveCount: state.liveCount + 1,
       };
-    }
     case "UPDATE":
       return { ...state, ...action.payload };
     case "STATUS":

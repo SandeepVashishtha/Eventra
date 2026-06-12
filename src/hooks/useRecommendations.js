@@ -1,66 +1,25 @@
-/**
- * @fileoverview useRecommendations - Event recommendation scoring hook
- * @module hooks/useRecommendations
- */
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { calculateRecommendationScore } from "../utils/recommendationEngine";
-
-const USER_PROFILE_KEY = "eventra_user_profile";
-const PROFILE_UPDATED_EVENT = "userProfileUpdated";
-
-const parseProfile = (raw) => {
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-};
+import { getUserProfile } from "../utils/userProfileAnalyzer";
 
 const useRecommendations = (events = []) => {
-  const [profileKey, setProfileKey] = useState(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      return localStorage.getItem(USER_PROFILE_KEY);
-    } catch {
-      return null;
-    }
-  });
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const syncFromStorage = () => {
-      try {
-        setProfileKey(localStorage.getItem(USER_PROFILE_KEY));
-      } catch {
-        setProfileKey(null);
-      }
-    };
-
-    window.addEventListener("storage", syncFromStorage);
-    window.addEventListener(PROFILE_UPDATED_EVENT, syncFromStorage);
-
-    return () => {
-      window.removeEventListener("storage", syncFromStorage);
-      window.removeEventListener(PROFILE_UPDATED_EVENT, syncFromStorage);
-    };
-  }, []);
-
-  const userProfile = useMemo(() => parseProfile(profileKey), [profileKey]);
+  // 🔥 FIX 1: Call getUserProfile outside useMemo so it becomes
+  // a proper dependency — prevents stale recommendation results
+  // when the user profile changes
+  const userProfile = getUserProfile();
 
   const recommendations = useMemo(() => {
-    if (!Array.isArray(events)) return [];
-
     return events
       .map((event) => {
+        // 🔥 FIX 2: Wrap in try/catch so a single malformed event
+        // cannot crash the entire recommendations list
         try {
           const result = calculateRecommendationScore(event, userProfile);
           return {
             ...event,
-            recommendationScore: Number.isFinite(result?.score) ? result.score : 0,
-            recommendationReasons: Array.isArray(result?.reasons) ? result.reasons : [],
+            recommendationScore: result.score,
+            recommendationReasons: result.reasons,
           };
         } catch {
           return {
@@ -70,7 +29,7 @@ const useRecommendations = (events = []) => {
           };
         }
       })
-      .sort((a, b) => (b.recommendationScore ?? 0) - (a.recommendationScore ?? 0));
+      .sort((a, b) => b.recommendationScore - a.recommendationScore);
   }, [events, userProfile]);
 
   return recommendations;

@@ -1,6 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
 import useRecentlyViewed from "./useRecentlyViewed";
-import { safeJsonParse } from "../utils/safeJsonParse";
 
 const STORAGE_KEY = "eventra_recently_viewed";
 
@@ -135,7 +134,7 @@ describe("useRecentlyViewed", () => {
       result.current.addRecentlyViewed(mockEvent(5));
     });
 
-    const stored = safeJsonParse(localStorage.getItem(STORAGE_KEY), []);
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored).toHaveLength(1);
     expect(stored[0].id).toBe(5);
   });

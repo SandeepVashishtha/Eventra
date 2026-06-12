@@ -3,25 +3,13 @@
  * Hook to download a ticket element as PNG or PDF.
  *
  * Usage:
- * const { downloading, downloadPNG, downloadPDF } = useTicketDownload(ticketRef, ticketId);
+ *   const { downloading, downloadPNG, downloadPDF } = useTicketDownload(ticketRef, ticketId);
  */
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import { toast } from "react-toastify";
+import { useState, useCallback } from "react";
 
 export function useTicketDownload(ticketRef, ticketId = "ticket") {
   const [downloading, setDownloading] = useState(false);
-  
-  // Deep Fix 1 & 2: Refs for unmounted leak protection and synchronous concurrency locking
-  const isMounted = useRef(true);
-  const isProcessingLock = useRef(false);
-
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
 
   /** Captures the DOM node to a canvas via html2canvas */
   const captureCanvas = useCallback(async () => {
@@ -39,45 +27,32 @@ export function useTicketDownload(ticketRef, ticketId = "ticket") {
 
   /** Download ticket as PNG */
   const downloadPNG = useCallback(async () => {
-    // Deep Fix 2: Synchronous lock prevents double-click OOM crashes on mobile
-    if (isProcessingLock.current) return;
-    
-    isProcessingLock.current = true;
-    if (isMounted.current) setDownloading(true);
-    
+    if (downloading) return;
+    setDownloading(true);
     try {
       const canvas = await captureCanvas();
       
       // Use toBlob instead of toDataURL to prevent massive base64 memory allocation
       canvas.toBlob((blob) => {
-        if (!blob) throw new Error("Canvas rendering failed");
-        
+        if (!blob) return;
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.download = `eventra-ticket-${ticketId}.png`;
         link.href = url;
         link.click();
-        
-        // Deep Fix 3: Defer revocation to prevent WebKit/Safari silent download failures
-        setTimeout(() => URL.revokeObjectURL(url), 150);
+        URL.revokeObjectURL(url);
       }, "image/png");
     } catch (err) {
       console.error("[QRTicket] PNG download failed:", err);
-      toast.error("Failed to generate PNG. Please try again.");
     } finally {
-      isProcessingLock.current = false;
-      // Deep Fix 1: Prevent memory leak if modal was closed during async generation
-      if (isMounted.current) setDownloading(false);
+      setDownloading(false);
     }
-  }, [captureCanvas, ticketId]);
+  }, [captureCanvas, downloading, ticketId]);
 
   /** Download ticket as PDF */
   const downloadPDF = useCallback(async () => {
-    if (isProcessingLock.current) return;
-    
-    isProcessingLock.current = true;
-    if (isMounted.current) setDownloading(true);
-    
+    if (downloading) return;
+    setDownloading(true);
     try {
       const canvas = await captureCanvas();
       const { jsPDF } = await import("jspdf");
@@ -98,12 +73,10 @@ export function useTicketDownload(ticketRef, ticketId = "ticket") {
       pdf.save(`eventra-ticket-${ticketId}.pdf`);
     } catch (err) {
       console.error("[QRTicket] PDF download failed:", err);
-      toast.error("Failed to generate PDF. Please try again.");
     } finally {
-      isProcessingLock.current = false;
-      if (isMounted.current) setDownloading(false);
+      setDownloading(false);
     }
-  }, [captureCanvas, ticketId]);
+  }, [captureCanvas, downloading, ticketId]);
 
   return { downloading, downloadPNG, downloadPDF };
 }

@@ -14,16 +14,10 @@ const mapStatusKey = (status = "") => {
     ended: "ended",
     "event ended": "ended",
     "event ended ": "ended",
-    cancelled: "cancelled",
-    canceled: "cancelled",
-    "event cancelled": "cancelled",
-    "event canceled": "cancelled",
   };
 
   return explicitStatusMap[normalized] ?? normalized;
 };
-
-import { getServerTime } from "./timeSync";
 
 const parseEventDate = (dateValue) => {
   if (!dateValue) return null;
@@ -41,7 +35,7 @@ const asEndOfDay = (date) => {
 export const computeDateStatus = (event) => {
   const startDate = parseEventDate(event.startDate || event.date);
   const endDate = asEndOfDay(parseEventDate(event.endDate || event.date));
-  const now = getServerTime();
+  const now = new Date();
 
   if (!startDate) return "upcoming";
   if (now < startDate) return "upcoming";
@@ -57,14 +51,6 @@ export const getEventStatus = (event) => {
   if (explicitStatus === "ended") {
     return "ended";
   }
-
-  // A cancelled event must not be overridden by a future date status.
-  // Return the explicit cancellation status directly so downstream consumers
-  // can block registration regardless of when the event was scheduled.
-  if (explicitStatus === "cancelled") {
-    return "cancelled";
-  }
-
   if (explicitStatus && explicitStatus !== dateStatus) {
     return explicitStatus;
   }
@@ -77,7 +63,7 @@ export const isEventRegistrationClosed = (eventOrStatus) => {
       ? mapStatusKey(eventOrStatus)
       : getEventStatus(eventOrStatus);
 
-  return status === "past" || status === "ended" || status === "cancelled";
+  return status === "past" || status === "ended";
 };
 
 export const normalizeEvent = (event) => ({

@@ -5,8 +5,7 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-
-import { projectService } from "../../services/projectService";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { sanitizeInputText } from "../../utils/inputSanitization";
 
 const SubmitProject = () => {
@@ -205,24 +204,24 @@ const handleSubmit = async (e) => {
 
     setIsSubmitting(true);
     try {
-      // Sanitize and map text fields before sending
+      // Sanitize text fields before sending
       const sanitizedData = {
         ...formData,
-        title: sanitizeInputText(formData.projectName),
-        category: formData.projectCategory || formData.projectType || "Other",
-        thumbnailUrl: formData.projectImage || "",
-        githubUrl: formData.githubLink || "",
         projectName: sanitizeInputText(formData.projectName),
         teamName: sanitizeInputText(formData.teamName),
         description: sanitizeInputText(formData.description),
         additionalNotes: sanitizeInputText(formData.additionalNotes),
         submittedBy: user?.id,
       };
-      await projectService.submitProject(sanitizedData, {
-        headers: {
-          Authorization: token
+      await apiUtils.post(
+        API_ENDPOINTS.PROJECTS.SUBMIT,
+        sanitizedData,
+        {
+          headers: {
+            Authorization: token
+          }
         }
-      });
+      );
 
       toast.success("Project submitted successfully!");
       setFormData({

@@ -21,14 +21,12 @@ The Session Recovery & Reconnect System allows users to seamlessly resume their 
 #### 1. SessionRecoveryContext (`src/context/SessionRecoveryContext.js`)
 
 Core context provider that manages:
-
 - Session state persistence to localStorage
 - Network connectivity monitoring
 - Session timeout handling
 - Activity tracking
 
 **Key Functions:**
-
 - `saveSession(state)`: Saves session state with 1-second debounce
 - `clearSession()`: Clears saved session data
 - `restoreSession()`: Returns saved session data
@@ -37,7 +35,6 @@ Core context provider that manages:
 #### 2. SessionRecovery Component (`src/components/SessionRecovery.js`)
 
 UI component that displays:
-
 - Offline status indicator (red)
 - Reconnecting status indicator (yellow)
 - Back online notification (green)
@@ -46,7 +43,6 @@ UI component that displays:
 #### 3. Integration in App.js
 
 The system is integrated at the app level:
-
 ```jsx
 <SessionRecoveryProvider>
   {/* App content */}
@@ -104,7 +100,6 @@ useEffect(() => {
 ## Example Implementation
 
 See `src/Pages/Events/EventRegistration.js` for a complete example of:
-
 - Saving form data as user types
 - Restoring form data on session recovery
 - Clearing session after successful submission
@@ -145,7 +140,6 @@ Session data is stored in localStorage under the key `eventra_session_state`. Th
 ## Network Status
 
 The system automatically detects network changes:
-
 - **Offline**: Shows red indicator with "You're offline" message
 - **Reconnecting**: Shows yellow indicator with spinning refresh icon
 - **Online**: Shows green indicator with "You're back online" message
@@ -181,7 +175,6 @@ The system automatically detects network changes:
 ## Future Enhancements
 
 Potential improvements:
-
 - Backend session persistence for cross-device sync
 - Multiple session support (e.g., multiple forms)
 - Session export/import functionality

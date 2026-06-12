@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Modal Portal
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -15,10 +15,7 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   X as XIcon,
-  Sparkles,
 } from "lucide-react";
-
-import AiProfileGeneratorModal from "./AiProfileGeneratorModal";
 
 const initialFormState = {
   fullName: "",
@@ -87,36 +84,21 @@ const EditProfile = () => {
   const { user, setUser } = useAuth();
 
   // Initialize with fallback progression to prevent undefined fields
-  const [form, setForm] = useState(user ? { ...initialFormState, ...user } : initialFormState);
+  const [form, setForm] = useState(() => {
+    const saved = syncSecureStorage.getItem("user");
+    const parsed = safeJsonParse(saved, null);
+    if (parsed) {
+      return parsed;
+    }
+    return user ? { ...initialFormState, ...user } : initialFormState;
+  });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [currentSkillInput, setCurrentSkillInput] = useState("");
-  const [aiModalOpen, setAiModalOpen] = useState(false);
   const fileInputRef = useRef(null);
-
-  const handleApplyAiProfile = (parsedData) => {
-    setForm(prev => {
-      const nextSkills = [...prev.skills];
-      if (parsedData.skills && parsedData.skills.length > 0) {
-        parsedData.skills.forEach(skill => {
-          if (!nextSkills.some(s => s.toLowerCase() === skill.toLowerCase())) {
-            nextSkills.push(skill);
-          }
-        });
-      }
-
-      return {
-        ...prev,
-        bio: parsedData.bio || prev.bio,
-        github: parsedData.github || prev.github,
-        portfolio: parsedData.portfolio || prev.portfolio,
-        skills: nextSkills,
-      };
-    });
-  };
 
   // 🔥 FIX 1: Track mount state to prevent ghost navigations
   const isMounted = useRef(true);
@@ -126,32 +108,12 @@ const EditProfile = () => {
     };
   }, []);
 
-  // Load saved profile or sync with context user
+  // Keep state synchronized if the auth context updates lazily
   useEffect(() => {
-    let active = true;
-    const loadProfileData = async () => {
-      try {
-        const saved = await syncSecureStorage.getItemAsync("user");
-        if (active) {
-          if (saved) {
-            const parsed = safeJsonParse(saved, null);
-            if (parsed) {
-              setForm(parsed);
-              return;
-            }
-          }
-          if (user) {
-            setForm((prev) => ({ ...prev, ...user }));
-          }
-        }
-      } catch (error) {
-        console.error("Error loading secure user profile:", error);
-      }
-    };
-    loadProfileData();
-    return () => {
-      active = false;
-    };
+    const saved = syncSecureStorage.getItem("user");
+    if (!saved && user) {
+      setForm((prev) => ({ ...prev, ...user }));
+    }
   }, [user]);
 
   const validate = (nextForm) => {
@@ -203,7 +165,7 @@ const EditProfile = () => {
     return Math.round((filled / 10) * 100);
   };
 
-  const completionPercentage = useMemo(() => calculateCompletion(), [form, user]);
+  const completionPercentage = calculateCompletion();
 
   const addSkill = (skill) => {
     const trimmedSkill = skill.trim();
@@ -262,7 +224,7 @@ const EditProfile = () => {
 
     setLoading(true);
 
-    setTimeout(async () => {
+    setTimeout(() => {
       // 🔥 FIX 1: If user navigated away, stop executing!
       if (!isMounted.current) return;
 
@@ -276,8 +238,8 @@ const EditProfile = () => {
       delete safeStorageUser.avatarBase64;
       
       try {
-        await syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
-      } catch {
+        syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
+      } catch (e) {
         console.warn("Could not save to secure storage, quota exceeded.");
       }
 
@@ -295,34 +257,22 @@ const EditProfile = () => {
     }
   };
 
-  const filteredSuggestions = useMemo(
-    () =>
-      allSkillSuggestions
-        .filter(
-          (suggestion) =>
-            currentSkillInput &&
-            suggestion.toLowerCase().includes(currentSkillInput.toLowerCase()) &&
-            !form.skills.some((s) => s.toLowerCase() === suggestion.toLowerCase())
-        )
-        .slice(0, 7),
-    [currentSkillInput, form.skills]
-  );
+  const filteredSuggestions = allSkillSuggestions
+    .filter(
+      (suggestion) =>
+        currentSkillInput &&
+        suggestion.toLowerCase().includes(currentSkillInput.toLowerCase()) &&
+        !form.skills.some((s) => s.toLowerCase() === suggestion.toLowerCase())
+    )
+    .slice(0, 7);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 py-10 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
             <span className="text-black dark:text-white">Edit Profile</span>
-            <button
-              type="button"
-              onClick={() => setAiModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl shadow-md transition-all active:scale-[0.98]"
-            >
-              <Sparkles size={16} />
-              Auto-fill with AI
-            </button>
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage your personal information and how others see you on Eventra.
@@ -672,11 +622,6 @@ const EditProfile = () => {
         onCancel={() => setConfirmOpen(false)}
         onConfirm={performSave}
         loading={loading}
-      />
-      <AiProfileGeneratorModal
-        isOpen={aiModalOpen}
-        onClose={() => setAiModalOpen(false)}
-        onApplyProfile={handleApplyAiProfile}
       />
     </div>
   );

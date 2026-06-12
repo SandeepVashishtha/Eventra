@@ -39,7 +39,6 @@ const CopyLinkButton = () => {
 
   return (
     <button
-      type="button"
       onClick={handleCopy}
       className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-300 shadow-md hover:shadow-lg ${
         copied

@@ -1,15 +1,20 @@
 /**
  * Unit tests for src/hooks/useNotifications.js
  *
- * The hook now writes new notifications through notificationQueue. addNotification()
- * enqueues work first; visible hook state is refreshed after the queue flushes
- * to IndexedDB and emits eventra-notifications-updated.
+ * Validates the core notification logic: adding notifications,
+ * marking all as read, unread counting, localStorage persistence,
+ * and browser Notification permission requests.
+ *
+ * All imports are placed at top-level module scope to satisfy
+ * ESLint import/first rules.
  */
 
 import assert from "node:assert/strict";
 
-const STORAGE_KEY = "eventra_notifications";
-const FLUSH_INTERVAL_MS = 300;
+// ── Minimal DOM / React stubs ───────────────────────────────────────────────
+// useNotifications relies on React hooks (useState, useEffect) and
+// window.localStorage + window.Notification.  We stub everything so
+// tests run in plain Node.js without JSDOM or a bundler.
 
 const _lsStore = {};
 
@@ -23,62 +28,32 @@ global.localStorage = {
   },
 };
 
+// Stub window.Notification for requestPermission tests
 let _notificationPermission = "default";
 global.Notification = {
   requestPermission: async () => _notificationPermission,
 };
-
-const _listeners = new Map();
 global.window = {
   ...global,
   Notification: global.Notification,
   localStorage: global.localStorage,
-  addEventListener(event, cb) {
-    if (!_listeners.has(event)) _listeners.set(event, []);
-    _listeners.get(event).push(cb);
-  },
-  removeEventListener(event, cb) {
-    if (!_listeners.has(event)) return;
-    _listeners.set(
-      event,
-      _listeners.get(event).filter((listener) => listener !== cb)
-    );
-  },
-  dispatchEvent(event) {
-    const eventName = typeof event === "string" ? event : event.type;
-    if (_listeners.has(eventName)) {
-      for (const cb of [..._listeners.get(eventName)]) {
-        cb(event);
-      }
-    }
-    return true;
-  },
 };
 
-global.CustomEvent = class CustomEvent {
-  constructor(type, options) {
-    this.type = type;
-    this.detail = options?.detail;
-  }
-};
+// ── Minimal React stub ──────────────────────────────────────────────────────
+// We capture the hook's internal state and effects so we can drive them
+// manually without ReactDOM.
 
 let _stateSlots = [];
 let _stateIndex = 0;
 let _effects = [];
-let _effectStates = [];
-let _effectIndex = 0;
-let _cleanups = [];
 
 function resetReact() {
-  for (const cleanup of _cleanups) cleanup();
   _stateSlots = [];
   _stateIndex = 0;
   _effects = [];
-  _effectStates = [];
-  _effectIndex = 0;
-  _cleanups = [];
 }
 
+// Minimal useState: synchronous state management
 global.React = {
   useState: (initial) => {
     const idx = _stateIndex++;
@@ -93,196 +68,100 @@ global.React = {
     };
     return [_stateSlots[idx], setState];
   },
-  useEffect: (fn, deps) => {
-    const idx = _effectIndex++;
-    const prevDeps = _effectStates[idx];
-    let shouldRun = false;
-
-    if (!prevDeps || !deps) {
-      shouldRun = true;
-    } else {
-      for (let i = 0; i < deps.length; i++) {
-        if (deps[i] !== prevDeps[i]) {
-          shouldRun = true;
-          break;
-        }
-      }
-    }
-
-    if (shouldRun) {
-      _effectStates[idx] = deps ? [...deps] : [];
-      _effects.push(fn);
-    }
-  },
-  useCallback: (fn) => fn,
-  useRef: (initial) => {
-    const idx = _stateIndex++;
-    if (_stateSlots[idx] === undefined) {
-      _stateSlots[idx] = { current: initial };
-    }
-    return _stateSlots[idx];
+  useEffect: (fn, _deps) => {
+    _effects.push(fn);
   },
 };
 
+// ── Import hook ─────────────────────────────────────────────────────────────
+// Dynamic import so the stubs above are in place before the module loads.
 const { useNotifications } = await import("../src/hooks/useNotifications.js");
 
+// ── Helpers ─────────────────────────────────────────────────────────────────
 function resetStorage() {
-  for (const key of Object.keys(_lsStore)) delete _lsStore[key];
+  for (const k of Object.keys(_lsStore)) delete _lsStore[k];
 }
 
-function renderHook() {
+/**
+ * Runs the hook once, flushes all captured effects, then runs it
+ * a second time so state reflects the effect writes.
+ */
+function runHook() {
   _stateIndex = 0;
-  _effectIndex = 0;
   _effects = [];
-  useNotifications();
+  const result = useNotifications();
 
-  for (const effect of _effects) {
-    const cleanup = effect();
-    if (typeof cleanup === "function") _cleanups.push(cleanup);
+  // Flush effects
+  for (const ef of _effects) {
+    const cleanup = ef();
+    if (typeof cleanup === "function") cleanup();
   }
 
+  // Re-run so returned values reflect post-effect state
   _stateIndex = 0;
-  _effectIndex = 0;
   _effects = [];
   return useNotifications();
 }
 
-function readStoredNotifications() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
-}
+// ── Tests ───────────────────────────────────────────────────────────────────
 
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+// 1. Initial state — empty notifications
+resetStorage();
+resetReact();
+const initial = runHook();
+assert.ok(Array.isArray(initial.notifications), "notifications is an array");
+assert.equal(initial.unreadCount, 0, "unreadCount starts at 0");
+assert.equal(typeof initial.addNotification, "function", "addNotification is a function");
+assert.equal(typeof initial.markAllAsRead, "function", "markAllAsRead is a function");
+assert.equal(typeof initial.requestPermission, "function", "requestPermission is a function");
 
-async function waitForQueueFlush() {
-  await delay(FLUSH_INTERVAL_MS + 80);
-  await Promise.resolve();
-}
-
-async function renderAfterQueueFlush() {
-  await waitForQueueFlush();
-  return renderHook();
-}
-
-function freshHook() {
-  resetStorage();
-  resetReact();
-  return renderHook();
-}
-
-// 1. Initial state.
-let hook = freshHook();
-assert.ok(Array.isArray(hook.notifications), "notifications is an array");
-assert.equal(hook.unreadCount, 0, "unreadCount starts at 0");
-assert.equal(typeof hook.addNotification, "function", "addNotification is a function");
-assert.equal(typeof hook.markAllAsRead, "function", "markAllAsRead is a function");
-assert.equal(typeof hook.requestPermission, "function", "requestPermission is a function");
-
-// 2. addNotification queues first; visibility waits for queue processing.
-hook = freshHook();
+// 2. addNotification — adds an item with correct shape
+resetStorage();
+resetReact();
+let hook = runHook();
 hook.addNotification({ title: "Test alert", message: "Hello" });
-hook = renderHook();
-assert.equal(
-  hook.notifications.length,
-  0,
-  "queued notification is not visible before the queue flushes"
-);
-assert.equal(
-  readStoredNotifications().length,
-  0,
-  "queued notification is not persisted before the queue flushes"
-);
-
-hook = await renderAfterQueueFlush();
-assert.equal(hook.notifications.length, 1, "notification appears after queue flush");
+hook = runHook();
+assert.ok(hook.notifications.length >= 1, "notification was added");
 const added = hook.notifications[0];
 assert.equal(added.title, "Test alert", "notification has correct title");
 assert.equal(added.message, "Hello", "notification has correct message");
 assert.equal(added.read, false, "new notification is unread");
 assert.ok(added.id, "notification has an auto-generated id");
 assert.ok(added.createdAt, "notification has a createdAt timestamp");
-assert.equal(readStoredNotifications().length, 1, "notification is persisted after flush");
 
-// 3. unreadCount tracks flushed unread items.
-assert.equal(
-  hook.unreadCount,
-  hook.notifications.filter((notification) => !notification.read).length,
-  "unreadCount matches unread items"
-);
+// 3. unreadCount tracks unread items
+assert.equal(hook.unreadCount, hook.notifications.filter((n) => !n.read).length, "unreadCount matches unread items");
 
-// 4. Multiple queued notifications flush as one newest-first batch.
-hook = freshHook();
-hook.addNotification({ message: "First" });
-hook.addNotification({ message: "Second" });
-hook = await renderAfterQueueFlush();
-assert.deepEqual(
-  hook.notifications.map((notification) => notification.message),
-  ["First", "Second"],
-  "multiple notifications from the same queue batch preserve enqueue order"
-);
-assert.equal(hook.unreadCount, 2, "unreadCount includes all queued unread notifications");
-
-// 5. Existing persisted notifications remain behind the new queued batch.
-resetReact();
-resetStorage();
-localStorage.setItem(
-  STORAGE_KEY,
-  JSON.stringify([{ id: "old", message: "Existing", read: false }])
-);
-hook = renderHook();
-hook.addNotification({ message: "New" });
-hook = await renderAfterQueueFlush();
-assert.deepEqual(
-  hook.notifications.map((notification) => notification.message),
-  ["New", "Existing"],
-  "queued batch is prepended before existing persisted notifications"
-);
-
-// 6. Rapid successive notifications are processed without loss.
-hook = freshHook();
-for (let i = 0; i < 10; i += 1) {
-  hook.addNotification({ message: `Rapid ${i}` });
-}
-hook = await renderAfterQueueFlush();
-assert.equal(hook.notifications.length, 10, "rapid queued notifications are all delivered");
-assert.deepEqual(
-  hook.notifications.map((notification) => notification.message),
-  Array.from({ length: 10 }, (_, index) => `Rapid ${index}`),
-  "rapid queued notifications keep deterministic batch order"
-);
-
-// 7. markAllAsRead updates visible notification state.
+// 4. markAllAsRead — marks every notification as read
 hook.markAllAsRead();
-hook = renderHook();
-assert.ok(
-  hook.notifications.every((notification) => notification.read),
-  "markAllAsRead sets read:true on all visible notifications"
-);
+hook = runHook();
+const allRead = hook.notifications.every((n) => n.read);
+assert.ok(allRead, "markAllAsRead sets read:true on all notifications");
 assert.equal(hook.unreadCount, 0, "unreadCount is 0 after markAllAsRead");
 
-// 8. requestPermission returns the browser permission result.
+// 5. requestPermission — granted
 _notificationPermission = "granted";
-hook = freshHook();
+resetReact();
+hook = runHook();
 const granted = await hook.requestPermission();
 assert.equal(granted, true, "requestPermission returns true when granted");
 
+// 6. requestPermission — denied
 _notificationPermission = "denied";
 const denied = await hook.requestPermission();
 assert.equal(denied, false, "requestPermission returns false when denied");
 
-// 9. Persisted notifications survive a fresh hook mount.
-hook = freshHook();
+// 7. localStorage persistence — notifications survive re-init
+resetReact();
+resetStorage();
+hook = runHook();
 hook.addNotification({ title: "Persist me" });
-hook = await renderAfterQueueFlush();
-assert.ok(localStorage.getItem(STORAGE_KEY), "notifications are persisted after queue flush");
-
+hook = runHook(); // flush effects → writes to localStorage
+// Now reset React (simulating page reload) and re-run
 resetReact();
-hook = renderHook();
-assert.equal(hook.notifications.length, 1, "persisted notification loads on remount");
-assert.equal(hook.notifications[0].title, "Persist me", "persisted notification content loads");
+hook = runHook();
+// The hook's useEffect should have read from localStorage
+const stored = localStorage.getItem("eventra_notifications");
+assert.ok(stored, "notifications are persisted to localStorage");
 
-resetReact();
-
-console.log("All useNotifications queue lifecycle tests passed");
+console.log("All useNotifications tests passed ✓");

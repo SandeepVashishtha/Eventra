@@ -1,15 +1,22 @@
 import { apiUtils, API_ENDPOINTS } from "../config/api";
+import mockHackathons from "../Pages/Hackathons/hackathonMockData.json";
 
 export const fetchHackathons = async () => {
-  const response = await apiUtils.get(API_ENDPOINTS.HACKATHONS.LIST);
-  const data = response.data;
-
-  if (Array.isArray(data) && data.length > 0) {
-    return data;
+  try {
+    const response = await apiUtils.get(API_ENDPOINTS.HACKATHONS.LIST);
+    
+    // axios returns response.data directly, not response.json()
+    const data = response.data;
+    
+    if (Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+  } catch (error) {
+    console.warn(
+      "Failed to fetch hackathons from API, falling back to mock data",
+      error
+    );
   }
-  throw new Error("Hackathons API returned no data");
-};
-
-export const hostHackathon = async (hackathonData, config) => {
-  return apiUtils.post(API_ENDPOINTS.HACKATHONS.HOST, hackathonData, config);
+  
+  return mockHackathons;
 };

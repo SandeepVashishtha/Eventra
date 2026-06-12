@@ -1,5 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import QuestCenter from '../components/gamification/QuestCenter';
@@ -24,8 +23,7 @@ import {
 } from 'lucide-react';
 
 export default function UserAchievements() {
-  const { t } = useTranslation();
-  useDocumentTitle(t("userAchievements.pageTitle"));
+  useDocumentTitle("Eventra | Achievements");
   const { achievements, fetchAchievements } = useNotification();
   const [expandedBadgeId, setExpandedBadgeId] = useState(null);
   const [activeShareBadge, setActiveShareBadge] = useState(null);
@@ -46,7 +44,7 @@ export default function UserAchievements() {
   }, [activeShareBadge]);
 
   // Fallback / Normalized list of milestone achievements with progress metrics
-  const fallbackBadges = useMemo(() => [
+  const fallbackBadges = [
     {
       id: 'first-step',
       name: 'First Step',
@@ -88,9 +86,9 @@ export default function UserAchievements() {
       name: 'GSSoC Contributor',
       description: 'Register for GSSoC specialized repository hackathons.',
       icon: '💻',
-      currentProgress: Math.min(achievements.gssocEvents || 0, 2),
+      currentProgress: Math.min(achievements.totalEvents || 0, 2),
       targetProgress: 2,
-      earned: (achievements.gssocEvents || 0) >= 2,
+      earned: (achievements.totalEvents || 0) >= 2,
       rewardXP: 200,
       details: 'Collaborate with global open-source developers and sync your GSSoC progress boards.',
       log: ['+200 XP awarded', 'GSSoC Specialist badge enabled'],
@@ -107,7 +105,7 @@ export default function UserAchievements() {
       details: 'Dive deep into AI integrations, blockchain, and next-generation Web3 protocols.',
       log: ['+400 XP awarded', 'AI Specialist badge enabled'],
     },
-  ], [achievements.totalEvents, achievements.currentStreak, achievements.gssocEvents]);
+  ];
 
   const operationalBadges = achievements.badges && achievements.badges.length > 0
     ? achievements.badges.map((b, idx) => ({
@@ -150,13 +148,13 @@ export default function UserAchievements() {
   const handleShareTwitter = () => {
     const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareStory)}`;
     window.open(shareUrl, "_blank", "noopener,noreferrer");
-    toast.success(t("userAchievements.toastTwitterShare"));
+    toast.success("Opening Twitter/X share dialog!");
   };
 
   const handleShareLinkedIn = () => {
     const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://eventra.dev")}&summary=${encodeURIComponent(shareStory)}`;
     window.open(shareUrl, "_blank", "noopener,noreferrer");
-    toast.success(t("userAchievements.toastLinkedinShare"));
+    toast.success("Opening LinkedIn share dialog!");
   };
 
   
@@ -178,9 +176,7 @@ export default function UserAchievements() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    // Free browser memory immediately to prevent SPA memory leaks
-    URL.revokeObjectURL(url);
-    toast.success(t("userAchievements.toastCertificateDownloaded"));
+    toast.success("Certificate Badge graphic downloaded!");
   };
 
   // Onboarding Checklist configuration
@@ -199,13 +195,13 @@ export default function UserAchievements() {
           <div>
             <div className="flex items-center gap-2 text-primary font-black text-xs tracking-wider uppercase">
               <Trophy className="w-4.5 h-4.5 animate-pulse" />
-              {t("userAchievements.progressionStudio")}
+              Progression Studio
             </div>
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1.5 bg-clip-text text-transparent bg-gradient-to-r from-text to-primary">
-              {t("userAchievements.heading")}
+              Developer Achievements
             </h1>
             <p className="text-text-light mt-2 text-xs sm:text-sm max-w-2xl leading-relaxed">
-              {t("userAchievements.description")}
+              Track your open-source growth milestones, streak multipliers, and XP progression. Claim developer tokens as you host, contribute, and engage in events.
             </p>
           </div>
           <div className="shrink-0">
@@ -214,7 +210,7 @@ export default function UserAchievements() {
               className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary via-primary/80 to-secondary hover:opacity-90 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-premium-md hover:shadow-glow-sm active:scale-[0.98] cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-amber-300 animate-spin-slow" />
-              <span>{t("userAchievements.attendeeBadgeCenter")}</span>
+              <span>Attendee Badge Center</span>
             </button>
           </div>
         </div>
@@ -234,7 +230,7 @@ export default function UserAchievements() {
 
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-text-light">
               <Sparkles className="w-3.5 h-3.5 text-yellow-500" />
-              {t("userAchievements.rankProgression")}
+              Rank Progression
             </div>
 
             {/* Radial SVG Circle Wheel */}
@@ -276,7 +272,7 @@ export default function UserAchievements() {
 
               {/* Center Glassmorphic Display */}
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-text-light">{t("userAchievements.level")}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-text-light">Level</span>
                 <span className="text-3xl font-black text-text leading-none mt-1 tracking-tighter">
                   {currentLevel}
                 </span>
@@ -289,15 +285,15 @@ export default function UserAchievements() {
             {/* Stats Summary Panel */}
             <div className="w-full pt-3 border-t border-border space-y-1">
               <div className="flex justify-between text-xs font-bold text-text-light">
-                <span>{t("userAchievements.xpInLevel")}</span>
+                <span>XP in Level</span>
                 <span className="text-text font-black">{xpInCurrentLevel} / 500</span>
               </div>
               <div className="flex justify-between text-xs font-bold text-text-light">
-                <span>{t("userAchievements.nextLevelIn")}</span>
+                <span>Next Level In</span>
                 <span className="text-primary font-black">{xpNeededForNext} XP</span>
               </div>
               <div className="flex justify-between text-[11px] font-bold text-text-light/80 uppercase tracking-wider pt-2">
-                <span>{t("userAchievements.totalAccumulated")}</span>
+                <span>Total Accumulated</span>
                 <span className="text-text font-extrabold">{derivedXP} XP</span>
               </div>
             </div>
@@ -321,7 +317,7 @@ export default function UserAchievements() {
               </div>
               <div>
                 <p className="text-[10px] font-black text-text-light uppercase tracking-widest leading-none">
-                  {t("userAchievements.metricsRegistrations")}
+                  Registrations
                 </p>
                 <p className="text-3xl font-black text-text mt-2.5 tracking-tight">
                   {totalEvents}
@@ -341,15 +337,15 @@ export default function UserAchievements() {
                   <Zap className="w-5 h-5" />
                 </div>
                 <span className="text-[10px] font-black text-secondary animate-pulse">
-                  {t("userAchievements.metricsActive")}
+                  ACTIVE
                 </span>
               </div>
               <div>
                 <p className="text-[10px] font-black text-text-light uppercase tracking-widest leading-none">
-                  {t("userAchievements.metricsStreakRange")}
+                  Streak Range
                 </p>
                 <p className="text-3xl font-black text-text mt-2.5 tracking-tight">
-                  {currentStreak} <span className="text-xs text-text-light font-bold uppercase tracking-widest">{t("userAchievements.metricsEventsUnit")}</span>
+                  {currentStreak} <span className="text-xs text-text-light font-bold uppercase tracking-widest">Events</span>
                 </p>
               </div>
             </motion.div>
@@ -369,7 +365,7 @@ export default function UserAchievements() {
               </div>
               <div>
                 <p className="text-[10px] font-black text-text-light uppercase tracking-widest leading-none">
-                  {t("userAchievements.metricsTokensClaimed")}
+                  Tokens Claimed
                 </p>
                 <p className="text-3xl font-black text-text mt-2.5 tracking-tight">
                   {unlockedCount} <span className="text-xs text-text-light font-bold tracking-tight">/ {operationalBadges.length}</span>
@@ -390,11 +386,11 @@ export default function UserAchievements() {
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-yellow-450 animate-bounce" />
               <h2 className="text-md font-black tracking-tight text-white uppercase">
-                {t("userAchievements.checklistHeading")}
+                Gamified Onboarding Checklist
               </h2>
             </div>
             <p className="text-xs text-text-light max-w-xl leading-relaxed">
-              {t("userAchievements.checklistDescription")}
+              You haven&apos;t unlocked any milestone tokens yet. Complete the steps below to claim your first developer badge:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
               {onboardingQuests.map((quest) => (
@@ -407,11 +403,11 @@ export default function UserAchievements() {
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-text-light">{t("userAchievements.checklistQuest")}</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-text-light">Quest</span>
                     {quest.done ? (
-                      <span className="bg-emerald-500/20 text-emerald-450 px-2 py-0.5 rounded text-[8px] font-black uppercase">{t("userAchievements.checklistCompleted")}</span>
+                      <span className="bg-emerald-500/20 text-emerald-450 px-2 py-0.5 rounded text-[8px] font-black uppercase">COMPLETED</span>
                     ) : (
-                      <span className="bg-bg/80 text-text-light/60 px-2 py-0.5 rounded text-[8px] font-black uppercase">{t("userAchievements.checklistPending")}</span>
+                      <span className="bg-bg/80 text-text-light/60 px-2 py-0.5 rounded text-[8px] font-black uppercase">PENDING</span>
                     )}
                   </div>
                   <h4 className="text-xs font-extrabold text-white">{quest.title}</h4>
@@ -426,7 +422,7 @@ export default function UserAchievements() {
         <section className="space-y-4">
           <div className="flex items-center gap-2 border-b border-border pb-3">
             <h2 className="text-lg font-black tracking-tight text-text">
-              {t("userAchievements.badgesSectionHeading")}
+              Milestone Badges & Trophy Cases
             </h2>
           </div>
 
@@ -453,12 +449,12 @@ export default function UserAchievements() {
                     </span>
                     {badge.earned ? (
                       <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-350 px-2.5 py-0.5 rounded-full shadow-premium-sm border border-emerald-100/35">
-                        {t("userAchievements.badgesSectionUnlocked")}
+                        Unlocked
                       </span>
                     ) : (
                       <span className="text-[9px] font-black uppercase tracking-wider bg-bg text-text-light px-2.5 py-0.5 rounded-full flex items-center gap-1">
                         <Lock className="w-2.5 h-2.5" />
-                        {t("userAchievements.badgesSectionLocked")}
+                        Locked
                       </span>
                     )}
                   </div>
@@ -472,7 +468,7 @@ export default function UserAchievements() {
 
                   {/* Accordion expand indicator */}
                   <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-primary mt-4 pt-3 border-t border-border">
-                    <span>{t("userAchievements.badgesSectionInspectDetails")}</span>
+                    <span>Inspect Details</span>
                     <motion.div
                       animate={{ rotate: isOpen ? 180 : 0 }}
                       transition={{ duration: 0.2 }}
@@ -494,7 +490,7 @@ export default function UserAchievements() {
                         {/* Requirement details */}
                         <div className="space-y-1">
                           <span className="block text-[9px] font-black uppercase tracking-widest text-text-light leading-none">
-                            {t("userAchievements.badgesSectionRequirement")}
+                            Milestone Requirement
                           </span>
                           <span className="block text-xs font-semibold text-text-light leading-relaxed mt-1">
                             {badge.details}
@@ -504,7 +500,7 @@ export default function UserAchievements() {
                         {/* Progress Bar indicator */}
                         <div className="space-y-1.5">
                           <div className="flex justify-between text-[10px] font-black uppercase tracking-wide text-text-light">
-                            <span>{t("userAchievements.badgesSectionProgress")}</span>
+                            <span>Progress status</span>
                             <span>{badge.currentProgress} / {badge.targetProgress}</span>
                           </div>
                           <div className="w-full h-2 rounded-full bg-bg overflow-hidden">
@@ -519,7 +515,7 @@ export default function UserAchievements() {
                         {/* Log logs */}
                         <div className="space-y-2">
                           <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none">
-                            {t("userAchievements.badgesSectionCompletionLog")}
+                            Completion Log & Credits
                           </span>
                           <div className="space-y-1">
                             {(badge.log || []).map((logItem, idx) => (
@@ -535,7 +531,7 @@ export default function UserAchievements() {
                         {badge.earned && (
                           <div className="pt-4 border-t border-dashed border-border space-y-2.5" onClick={(e) => e.stopPropagation()}>
                             <span className="block text-[9px] font-black uppercase tracking-widest text-text-light leading-none">
-                              {t("userAchievements.badgesSectionShare")}
+                              Share Achievement
                             </span>
                             <div className="flex flex-wrap gap-2 pt-0.5">
                               <button
@@ -543,7 +539,7 @@ export default function UserAchievements() {
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white transition-all cursor-pointer shadow-premium-sm hover:shadow-glow-sm hover:scale-[1.03]"
                               >
                                 <Share2 className="w-3.5 h-3.5" />
-                                <span>{t("userAchievements.badgesSectionShareCertificate")}</span>
+                                <span>Share Certificate</span>
                               </button>
                             </div>
                           </div>
@@ -553,7 +549,7 @@ export default function UserAchievements() {
                         {!badge.earned && (
                           <div className="flex items-center gap-1.5 p-2 px-3 rounded-xl bg-rose-50/50 dark:bg-rose-950/15 border border-rose-100/20 dark:border-rose-900/10 text-[9px] font-bold text-rose-600 dark:text-rose-400 leading-tight">
                             <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-                            <span>{t("userAchievements.badgesSectionLockedWarning")}</span>
+                            <span>Keep attending meetups and contributing to unlock this badge.</span>
                           </div>
                         )}
                       </motion.div>
@@ -569,7 +565,6 @@ export default function UserAchievements() {
         <QuestCenter
           totalEvents={achievements.totalEvents}
           currentStreak={achievements.currentStreak}
-          gssocEvents={achievements.gssocEvents}
         />
 
       </div>
@@ -594,9 +589,9 @@ export default function UserAchievements() {
 
               <div className="space-y-1">
                 <h3 className="text-md font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                  <Share2 className="w-4 h-4 animate-pulse" /> {t("userAchievements.modalHeading")}
+                  <Share2 className="w-4 h-4 animate-pulse" /> Social Achievement Builder
                 </h3>
-                <p className="text-xs text-text-light">{t("userAchievements.modalDescription")}</p>
+                <p className="text-xs text-text-light">Customize your milestone story and preview how it appears on social feeds before posting.</p>
               </div>
 
               {/* Dual-Pane Grid Layout */}
@@ -606,17 +601,17 @@ export default function UserAchievements() {
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-text-light">
-                      {t("userAchievements.modalCustomizeStory")}
+                      Customize Your Story
                     </label>
                     <textarea
                       value={shareStory}
                       onChange={(e) => setShareStory(e.target.value)}
                       rows={4}
                       className="w-full p-3.5 rounded-2xl bg-bg border border-border focus:border-primary focus:ring-1 focus:ring-primary text-xs text-text resize-none outline-none transition-all leading-relaxed"
-                      placeholder={t("userAchievements.modalStoryPlaceholder")}
+                      placeholder="Share your open-source journey..."
                     />
                     <div className="flex justify-between text-[9px] font-bold text-slate-500">
-                      <span>{t("userAchievements.modalInteractiveComposer")}</span>
+                      <span>Interactive Composer</span>
                       <span className={shareStory.length > 280 ? "text-rose-500 font-extrabold" : ""}>
                         {shareStory.length} characters
                       </span>
@@ -625,7 +620,7 @@ export default function UserAchievements() {
 
                   {/* Quick Emojis & Hashtags Helpers */}
                   <div className="space-y-1.5">
-                    <span className="block text-[9px] font-black uppercase tracking-widest text-text-light">{t("userAchievements.modalQuickTags")}</span>
+                    <span className="block text-[9px] font-black uppercase tracking-widest text-text-light">Quick Tags</span>
                     <div className="flex flex-wrap gap-1.5">
                       {["#GSSoC2026", "#OpenSource", "#DevLife", "#LearnToCode"].map(tag => (
                         <button
@@ -651,14 +646,14 @@ export default function UserAchievements() {
                         className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-bg hover:bg-card-bg text-xs font-bold text-text transition cursor-pointer"
                       >
                         <Twitter size={13} className="text-sky-400" />
-                        <span>{t("userAchievements.modalPostOnX")}</span>
+                        <span>Post on X</span>
                       </button>
                       <button
                         onClick={handleShareLinkedIn}
                         className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-bg hover:bg-card-bg text-xs font-bold text-text transition cursor-pointer"
                       >
                         <Linkedin size={13} className="text-blue-500" />
-                        <span>{t("userAchievements.modalShareLinkedIn")}</span>
+                        <span>Share LinkedIn</span>
                       </button>
                     </div>
 
@@ -666,15 +661,15 @@ export default function UserAchievements() {
                       onClick={async () => {
                         try {
                           await navigator.clipboard.writeText(shareStory);
-                          toast.success(t("userAchievements.toastStoryCopied"));
+                          toast.success("Social story copied to clipboard! 📋");
                         } catch {
-                          toast.error(t("userAchievements.toastCopyFailed"));
+                          toast.error("Failed to copy story.");
                         }
                       }}
                       className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-bg hover:bg-card-bg border border-border text-xs font-bold text-text transition cursor-pointer"
                     >
                       <CheckCircle size={13} className="text-emerald-500" />
-                      <span>{t("userAchievements.modalCopyStory")}</span>
+                      <span>Copy Story to Clipboard</span>
                     </button>
 
                     <button
@@ -682,7 +677,7 @@ export default function UserAchievements() {
                       className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-xs font-black uppercase tracking-wider text-white transition cursor-pointer shadow-premium-md hover:shadow-glow-sm"
                     >
                       <Award size={13} className="text-yellow-350" />
-                      <span>{t("userAchievements.modalDownloadCertificate")}</span>
+                      <span>Download Certificate</span>
                     </button>
                   </div>
                 </div>
@@ -691,7 +686,7 @@ export default function UserAchievements() {
                 <div className="space-y-3.5 bg-bg/40 border border-border rounded-2xl p-4 flex flex-col justify-between">
                   <div className="flex items-center justify-between border-b border-border pb-2">
                     <span className="text-[10px] font-black uppercase tracking-widest text-text-light">
-                      {t("userAchievements.modalLiveFeedMockup")}
+                      Live Feed Mockup
                     </span>
                     {/* Switch layout platform selector */}
                     <div className="flex gap-1.5">
@@ -727,7 +722,7 @@ export default function UserAchievements() {
                         </div>
                       </div>
                       <p className="text-xs text-slate-200 leading-relaxed break-words whitespace-pre-wrap">
-                        {shareStory || t("userAchievements.modalPreviewFallback")}
+                        {shareStory || "Write something in the composer..."}
                       </p>
                       
                       {/* Attached Card Mockup */}
@@ -759,7 +754,7 @@ export default function UserAchievements() {
                         </div>
                       </div>
                       <p className="text-xs leading-relaxed break-words whitespace-pre-wrap">
-                        {shareStory || t("userAchievements.modalPreviewFallback")}
+                        {shareStory || "Write something in the composer..."}
                       </p>
                       
                       {/* Attached Article Mockup */}

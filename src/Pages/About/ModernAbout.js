@@ -3,9 +3,8 @@ import { motion, useInView } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { useReducedMotion } from "../../hooks/useReducedMotion";
 import CountUpLib from "react-countup";
-import ErrorBoundary from "../../components/common/ErrorBoundary";
+import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
 const CountUp = CountUpLib.default;
 
@@ -67,7 +66,16 @@ const values = [
 
 export default function ModernAbout() {
   useDocumentTitle("Eventra | About");
-  const prefersReducedMotion = useReducedMotion();
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const handleChange = (e) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   const anim = (variants) => ({
     initial: "hidden",
@@ -141,7 +149,7 @@ export default function ModernAbout() {
             and experience events with ease.
           </motion.p>
 
-          <ErrorBoundary level="section" label="Statistics">
+          <SectionErrorBoundary label="Statistics">
             <motion.div
               variants={container}
               initial="hidden"
@@ -159,7 +167,7 @@ export default function ModernAbout() {
                 >
                   <h3 className="text-black dark:text-white text-xl sm:text-2xl font-bold mb-1">
                     {s.value.includes("+") ? (
-                      <CountUp start={0} end={parseInt(s.value, 10)} duration={3} suffix="+" enableScrollSpy scrollSpyOnce />
+                      <CountUp start={0} end={parseInt(s.value)} duration={3} suffix="+" enableScrollSpy scrollSpyOnce />
                     ) : (
                       s.value
                     )}
@@ -168,7 +176,7 @@ export default function ModernAbout() {
                 </motion.div>
               ))}
             </motion.div>
-          </ErrorBoundary>
+          </SectionErrorBoundary>
         </div>
       </section>
 

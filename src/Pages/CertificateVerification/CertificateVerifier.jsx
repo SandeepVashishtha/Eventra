@@ -21,12 +21,12 @@ export const CertificateVerifier = () => {
   const [result, setResult] = useState(null);
 
   const handleSearch = async () => {
-    const { success, data, error } = await verifyCertificate(uid.trim());
-    if (success) {
+    try {
+      const data = await verifyCertificate(uid.trim());
       setResult(data);
       toast.success('Certificate verified!');
-    } else {
-      toast.error(error || 'Verification failed');
+    } catch (e) {
+      toast.error('Verification failed');
       setResult(null);
     }
   };

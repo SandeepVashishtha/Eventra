@@ -231,15 +231,6 @@ const notifyClientsToSyncOfflineQueue = async () => {
   });
 };
 
-const isAllowedUrl = (url) => {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  } catch {
-    return false;
-  }
-};
-
 const openNotificationTarget = async (targetUrl) => {
   const allClients = await self.clients.matchAll({
     includeUncontrolled: true,
@@ -248,14 +239,7 @@ const openNotificationTarget = async (targetUrl) => {
 
   const appOrigin = self.location.origin;
   const fallbackUrl = `${appOrigin}/settings/notifications`;
-
-  let destination = fallbackUrl;
-  if (targetUrl && isAllowedUrl(targetUrl)) {
-    const resolved = new URL(targetUrl, appOrigin).href;
-    if (resolved.startsWith(appOrigin)) {
-      destination = resolved;
-    }
-  }
+  const destination = targetUrl ? new URL(targetUrl, appOrigin).href : fallbackUrl;
 
   for (const client of allClients) {
     if ('focus' in client) {
@@ -321,12 +305,6 @@ self.addEventListener('fetch', (event) => {
   // Skip non-HTTP(S) requests e.g. chrome-extension://
   if (!event.request.url.startsWith('http')) return;
 
-  // Skip cross-origin requests (e.g. Google Fonts, external CDNs).
-  // Calling event.respondWith() on these can throw a TypeError when the
-  // fetch is blocked (CSP, CORS, network) and the catch path returns
-  // undefined instead of a valid Response. Let the browser handle them.
-  if (requestUrl.origin !== self.location.origin) return;
-
   // SECURITY: Network-First strategy for API routes with sensitive data filtering
   if (requestUrl.pathname.startsWith('/api/')) {
     event.respondWith(
@@ -379,11 +357,11 @@ self.addEventListener('fetch', (event) => {
           .then((response) => {
             if (response && response.status === 200 && response.type === 'basic') {
               caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, response).catch(() => { });
+                cache.put(event.request, response).catch(() => {});
               });
             }
           })
-          .catch(() => {/* Ignore bg fetch failures when offline */ });
+          .catch(() => {/* Ignore bg fetch failures when offline */});
 
         return cachedResponse;
       }
@@ -403,10 +381,6 @@ self.addEventListener('fetch', (event) => {
           if (event.request.mode === 'navigate') {
             return caches.match('/index.html');
           }
-          // Return an explicit offline response for non-navigate requests
-          // (e.g. CSS, JS, images). Returning undefined here would cause
-          // "Failed to convert value to 'Response'" TypeError.
-          return new Response('', { status: 503, statusText: 'Service Unavailable' });
         });
     })
   );
