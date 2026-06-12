@@ -7,7 +7,7 @@ import { useReducedMotion } from "../../hooks/useReducedMotion";
 import CountUpLib from "react-countup";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 
-const CountUp = CountUpLib.default;
+const CountUp = CountUpLib.default || CountUpLib;
 
 // Framer Motion Variants
 const container = {
