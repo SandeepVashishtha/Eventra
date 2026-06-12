@@ -19,7 +19,12 @@ const normalizeList = (value) => {
 
 const unique = (items) => Array.from(new Set(items.filter(Boolean)));
 
-const getEventId = (event) => String(event?.id ?? event?.eventId ?? event?.title ?? "");
+const getEventId = (event) => {
+  if (!event) return null;
+  const id = event.id ?? event.eventId;
+  if (id === undefined || id === null || id === "") return null;
+  return String(id);
+};
 
 const unwrapEvent = (entry) => entry?.event || entry?.eventSummary || entry || {};
 
@@ -66,8 +71,14 @@ const _cacheOrder = [];
 const MAX_CACHE_SIZE = 100;
 
 const _getCachedTags = (event) => {
+  // 🔥 FIX: Skip the cache entirely when the event has no real id.
+  // Previously getEventId fell back to the event title, so two events with
+  // the same title would collide on the same cache key and the last write
+  // would win — silently corrupting similarity scores. Returning the tags
+  // directly is correct here; the cache only exists to amortise work for
+  // events we expect to be re-encountered, and id-less events are not.
   const id = getEventId(event);
-  if (!id) return [];
+  if (!id) return getEventTags(event);
   if (_tagCache.has(id)) {
     const tags = _tagCache.get(id);
     const idx = _cacheOrder.indexOf(id);
