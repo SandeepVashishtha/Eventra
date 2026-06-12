@@ -282,7 +282,7 @@ const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
       </div>
     </motion.div>
   );
-});
+}));
 
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -465,7 +465,7 @@ const addToRecentEvents = (event) => {
     if (!cancelTarget) return;
     removeRegistration(cancelTarget.id);
     setCancelTarget(null);
-  };
+   }, [cancelTarget, removeRegistration]);
 
   return (
     <motion.div

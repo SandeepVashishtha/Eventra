@@ -299,19 +299,24 @@ const Login = () => {
 
             </motion.form>
 
-            {/* Sign up link */}
-            <div className="text-center">
+                      {/* Sign up link */}
+                      <div className="text-center">
               <p style={{ color: "var(--text-color-light)" }}>
                 Don&apos;t have an account?{' '}
-                <Link to="/signup" className="text-blue-600 hover:underline font-semibold">
+                <Link
+                  to="/signup"
+                  className="text-blue-600 hover:underline font-semibold"
+                >
                   Create one here
                 </Link>
               </p>
             </div>
-          </motion.div>
-        </div>
-      </motion.div>
-    );
+
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
 };
 
 export default Login;
