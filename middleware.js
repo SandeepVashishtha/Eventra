@@ -19,8 +19,74 @@
 //   2. vercel kv create <store-name>   (sets KV_REST_API_URL / KV_REST_API_TOKEN)
 // ---------------------------------------------------------------------------
 
-const API_RATE_LIMIT = 60;     // max requests
-const API_RATE_WINDOW_S = 60;  // per window in seconds
+const API_RATE_LIMIT = 60;
+const API_RATE_WINDOW_S = 60;
+
+// ---------------------------------------------------------------------------
+// JWT verification — uses Web Crypto API (native in Edge Runtime).
+// jsonwebtoken depends on Node.js crypto and is NOT available in Edge.
+// ---------------------------------------------------------------------------
+
+const base64urlDecode = (str) => {
+  let base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  while (base64.length % 4) base64 += "=";
+  return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+};
+
+const decodeBase64UrlJson = (str) => {
+  try {
+    const bytes = base64urlDecode(str);
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    return null;
+  }
+};
+
+const verifyJwt = async (token, secret) => {
+  if (typeof token !== "string") return null;
+
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+
+  const [headerStr, payloadStr, signatureStr] = parts;
+
+  // Reject non-HS256 tokens (algorithm-confusion protection)
+  const header = decodeBase64UrlJson(headerStr);
+  if (!header || header.alg !== "HS256") return null;
+
+  // Decode payload for expiry check and role extraction
+  const payload = decodeBase64UrlJson(payloadStr);
+  if (!payload) return null;
+
+  // Reject expired tokens
+  if (payload.exp && payload.exp * 1000 <= Date.now()) return null;
+
+  // Verify HMAC-SHA256 signature using Web Crypto API
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"],
+    );
+
+    const signingInput = `${headerStr}.${payloadStr}`;
+    const signatureBytes = base64urlDecode(signatureStr);
+
+    const valid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      signatureBytes,
+      encoder.encode(signingInput),
+    );
+
+    return valid ? payload : null;
+  } catch {
+    return null;
+  }
+};
 
 // ---------------------------------------------------------------------------
 // Distributed rate limiter — calls the KV REST API via fetch (Edge-safe).
@@ -31,7 +97,6 @@ const isRateLimited = async (ip) => {
   const kvUrl = process.env.KV_REST_API_URL;
   const kvToken = process.env.KV_REST_API_TOKEN;
 
-  // Graceful degradation: no KV store provisioned → skip rate limiting
   if (!kvUrl || !kvToken) return false;
 
   const key = `rl:${ip}`;
@@ -40,7 +105,6 @@ const isRateLimited = async (ip) => {
     "Content-Type": "application/json",
   };
 
-  // INCR is atomic — safe across concurrent Edge invocations
   const incrRes = await fetch(`${kvUrl}/incr/${key}`, {
     method: "POST",
     headers,
@@ -50,7 +114,6 @@ const isRateLimited = async (ip) => {
   const { result: count } = await incrRes.json();
 
   if (count === 1) {
-    // First request in this window: set TTL so the key auto-evicts
     await fetch(`${kvUrl}/expire/${key}/${API_RATE_WINDOW_S}`, {
       method: "POST",
       headers,
@@ -66,11 +129,26 @@ export const config = {
 };
 
 const SECURITY_HEADERS = {
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+  "Strict-Transport-Security":
+    "max-age=31536000; includeSubDomains; preload",
+
   "X-Frame-Options": "DENY",
+
   "X-Content-Type-Options": "nosniff",
+
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), display-capture=()",
+
+  "Permissions-Policy":
+    "camera=(), microphone=(), geolocation=(), display-capture=()",
+
+  "Content-Security-Policy":
+  "default-src 'self'; " +
+  "script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; " +
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+  "img-src 'self' data: https:; " +
+  "font-src 'self' https://fonts.gstatic.com; " +
+  "connect-src 'self' https://api.github.com https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net; " +
+  "frame-src 'self' https://accounts.google.com",
 };
 
 const addSecurityHeaders = (headers) => {
@@ -79,12 +157,124 @@ const addSecurityHeaders = (headers) => {
   }
 };
 
+const TICKET_ROLES = new Set([
+  "ORGANIZER",
+  "VOLUNTEER",
+  "ADMIN",
+  "SUPER_ADMIN",
+  "EVENT_MANAGER",
+]);
+
+const parseTokenFromCookie = (request) => {
+  const cookieHeader = request.headers.get("cookie") || "";
+  const tokenMatch = cookieHeader.match(/(?:^|;\s*)token\s*=\s*([^;]*)/);
+  return tokenMatch ? tokenMatch[1] : null;
+};
+
+const forbiddenResponse = (url) =>
+  new Response(
+    JSON.stringify({ error: "Forbidden: Insufficient permissions for ticket routes" }),
+    {
+      status: 403,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": url.origin,
+        "Access-Control-Allow-Credentials": "true",
+      },
+    },
+  );
+
+// ---------------------------------------------------------------------------
+// Geographic access restrictions — configurable via BLOCKED_COUNTRIES env var
+// ---------------------------------------------------------------------------
+
+const getBlockedCountries = () => {
+  return new Set(
+    (process.env.BLOCKED_COUNTRIES || "")
+      .split(",")
+      .map((country) => country.trim().toUpperCase())
+      .filter(Boolean)
+  );
+};
+
+const isCountryBlocked = (country) => {
+  const blockedCountries = getBlockedCountries();
+  return blockedCountries.has(country?.toUpperCase());
+};
+
+const createGeoBlockedResponse = () =>
+  new Response(
+    JSON.stringify({
+      error: "Unavailable For Legal Reasons",
+      code: "COUNTRY_BLOCKED"
+    }),
+    {
+      status: 451,
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }
+  );
+
 export default async function middleware(request) {
+  const country = request.geo?.country;
+  
+  if (isCountryBlocked(country)) {
+    console.warn(
+      `[Geo Restriction] Blocked request from country: ${country}`
+    );
+    return createGeoBlockedResponse();
+  }
+  
   const url = new URL(request.url);
 
-  // Skip preflight — let the backend handle CORS
-  if (request.method === "OPTIONS") {
-    return;
+  if (request.method === "OPTIONS") return;
+
+  // Strict Origin Validation
+  const origin = request.headers.get("origin");
+  const host = request.headers.get("host");
+  
+  if (origin) {
+    try {
+      const originUrl = new URL(origin);
+      if (originUrl.host !== host) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden: Invalid origin" }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: Malformed origin" }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }
+
+  // Session validation for API routes
+  if (url.pathname.startsWith("/api/")) {
+    const PUBLIC_PATHS = [
+      "/api/auth/login",
+      "/api/auth/signup",
+      "/api/auth/reset-password",
+      "/api/events",
+      "/api/hackathons",
+      "/api/projects",
+      "/api/validate"
+    ];
+
+    const isPublicPath = PUBLIC_PATHS.some(path => url.pathname.startsWith(path) && (request.method === "GET" || url.pathname.includes("/auth/") || url.pathname.includes("/validate/")));
+
+    if (!isPublicPath) {
+      const cookieHeader = request.headers.get("cookie") || "";
+      const tokenMatch = cookieHeader.match(/(?:^|;\s*)token\s*=\s*([^;]*)/);
+      if (!tokenMatch || !tokenMatch[1]) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized: Missing active user session" }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
   }
 
   // Per-IP rate limiting at the edge
@@ -110,75 +300,41 @@ export default async function middleware(request) {
     );
   }
 
-  // RBAC for ticket routes
+  // RBAC for ticket routes — requires a valid, non-expired JWT with a ticket role
   if (url.pathname.startsWith("/api/tickets/")) {
-    const cookieHeader = request.headers.get("cookie") || "";
-    const tokenMatch = cookieHeader.match(/(?:^|;\s*)token\s*=\s*([^;]*)/);
-    const token = tokenMatch ? tokenMatch[1] : null;
-    let roles = [];
-    let tokenVerified = false;
-    
-    if (token) {
-      try {
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          // Verify JWT signature using HMAC-SHA256 with Web Crypto API
-          const secret = process.env.JWT_SECRET;
-          if (secret) {
-            const encoder = new TextEncoder();
-            const key = await crypto.subtle.importKey(
-              'raw',
-              encoder.encode(secret),
-              { name: 'HMAC', hash: 'SHA-256' },
-              false,
-              ['verify']
-            );
-            
-            const signature = Uint8Array.from(
-              atob(parts[2].replace(/-/g, '+').replace(/_/g, '/')),
-              (c) => c.charCodeAt(0)
-            );
-            const data = encoder.encode(`${parts[0]}.${parts[1]}`);
-            
-            tokenVerified = await crypto.subtle.verify('HMAC', key, signature, data);
-          }
-          
-          if (tokenVerified) {
-            const payloadStr = atob(
-              parts[1].replace(/-/g, '+').replace(/_/g, '/')
-                .padEnd(parts[1].length + ((4 - (parts[1].length % 4)) % 4), '=')
-            );
-            const payload = JSON.parse(
-              decodeURIComponent(
-                Array.from(payloadStr, (c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
-              )
-            );
-            roles = payload.roles || [];
-          }
-        }
-      } catch (e) {
-        // Ignore parsing errors (treat as unauthenticated)
-      }
-    }
-    const hasAccess = roles.some(role => 
-      ["ORGANIZER", "VOLUNTEER", "ADMIN", "SUPER_ADMIN", "EVENT_MANAGER"].includes(role.toUpperCase())
-    );
-    
-    if (!hasAccess) {
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      // SECURITY: Fail-closed behavior - reject requests when JWT_SECRET is missing
+      // This prevents unauthorized access when configuration is incomplete
+      console.error(
+        "[middleware] JWT_SECRET is not configured. Rejecting ticket route request."
+      );
       return new Response(
-        JSON.stringify({ error: "Forbidden: Insufficient permissions for ticket routes" }),
+        JSON.stringify({
+          error: "Server configuration error"
+        }),
         {
-          status: 403,
+          status: 500,
           headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": url.origin,
-            "Access-Control-Allow-Credentials": "true",
-          },
+            "Content-Type": "application/json"
+          }
         }
       );
     }
+
+    const token = parseTokenFromCookie(request);
+    if (!token) return forbiddenResponse(url);
+
+    const payload = await verifyJwt(token, jwtSecret);
+    if (!payload) return forbiddenResponse(url);
+
+    const roles = Array.isArray(payload.roles) ? payload.roles : [];
+    const hasAccess = roles.some((role) =>
+      TICKET_ROLES.has(String(role).toUpperCase()),
+    );
+
+    if (!hasAccess) return forbiddenResponse(url);
   }
 
-  // Allow the request to proceed to the rewrite destination
   return;
 }

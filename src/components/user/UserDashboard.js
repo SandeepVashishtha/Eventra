@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
-import useDebounce from "../../hooks/useDebounce.js";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
@@ -12,10 +11,13 @@ import { useState, useEffect, useMemo } from "react";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { useAuth } from "../../context/AuthContext";
 import StatusBadge from "../common/StatusBadge";
+import { requestNotificationPermission, disableNotifications } from "../../utils/NotificationManager";
+import { readNotificationPreferences } from "../../utils/notificationPreferences";
 import EventsTab from "./EventsTab";
 import HackathonsTab from "./HackathonsTab";
 import ProjectsTab from "./ProjectsTab";
 import RegistrationsTab from "./RegistrationsTab";
+import AnalyticsTab from "./AnalyticsTab";
 import {
   DashboardListCardSkeleton,
   DashboardProfileSkeleton,
@@ -26,6 +28,7 @@ import {
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
+import DashboardEmptyState from "./DashboardEmptyState";
 import OfflineIndicator from "../common/OfflineIndicator";
 
 const fadeUp = (prefersReducedMotion) => ({
@@ -68,13 +71,23 @@ export default function UserDashboard() {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [filterType, setFilterType] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [greeting, setGreeting] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
   const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState(() => readNotificationPreferences().push);
+
+  const togglePushNotifications = async () => {
+    if (pushEnabled) {
+      disableNotifications();
+      setPushEnabled(false);
+    } else {
+      const granted = await requestNotificationPermission();
+      setPushEnabled(granted);
+    }
+  };
 
   const firstName = user?.firstName || user?.username || "there";
 
@@ -142,7 +155,7 @@ export default function UserDashboard() {
 
   const filteredData = useMemo(() =>
     MOCK_DATA.filter(item => {
-      const matchSearch = (item.title || "").toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+      const matchSearch = (item.title || "").toLowerCase().includes(searchQuery.toLowerCase());
       const matchType = filterType === "All" || item.type === filterType;
       const matchStatus = filterStatus === "All"
         || item.status === filterStatus
@@ -154,7 +167,7 @@ export default function UserDashboard() {
       if (!b.date) return -1;
       return new Date(b.date) - new Date(a.date);
     }),
-  [debouncedSearchQuery, filterType, filterStatus]);
+  [searchQuery, filterType, filterStatus]);
 
   const notifications = [
     { id: 1, text: "React Conference 2025 registration opens soon", time: "2h ago", unread: true },
@@ -180,6 +193,7 @@ export default function UserDashboard() {
             { id: "hackathons", icon: <Trophy size={18} />, label: "Hackathons" },
             { id: "projects", icon: <FolderOpen size={18} />, label: "Projects" },
             { id: "registrations", icon: <Users size={18} />, label: "Registrations" },
+            { id: "analytics", icon: <Activity size={18} />, label: "Analytics" },
           ].map(item => (
             <button
               key={item.id}
@@ -249,9 +263,20 @@ export default function UserDashboard() {
                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
                     transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
                   >
-                    <div className="ud-notif-header">
+                    <div className="ud-notif-header flex items-center justify-between">
                       <span>Notifications</span>
-                      <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                          <span className="text-gray-500">Push</span>
+                          <input 
+                            type="checkbox" 
+                            checked={pushEnabled} 
+                            onChange={togglePushNotifications}
+                            className="w-3 h-3 rounded text-indigo-600 focus:ring-indigo-500" 
+                          />
+                        </label>
+                        <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
+                      </div>
                     </div>
                     {notifications.map(n => (
                       <div key={n.id} className={`ud-notif-item ${n.unread ? "ud-notif-unread" : ""}`}>
@@ -295,6 +320,15 @@ export default function UserDashboard() {
                 </>
               ) : (
                 <>
+                  {/* Full-page premium empty state (#7453):
+                      shown when the user has no events, hackathons, or projects at all.
+                      Provides a direct CTA to browse events or create one. */}
+                  {stats.eventsTotal === 0 &&
+                    stats.hackathonsTotal === 0 &&
+                    stats.projectsTotal === 0 ? (
+                    <DashboardEmptyState />
+                  ) : (
+                  <>
                   <motion.div variants={stagger(prefersReducedMotion)} className="ud-stats-grid">
                     {[
                       { label: "Events", value: stats.eventsTotal, sub: `${stats.eventsCreated} hosted · ${stats.eventsJoined} joined`, icon: <Calendar size={20} />, accent: "#6366f1" },
@@ -345,12 +379,13 @@ export default function UserDashboard() {
                           icon={<Calendar size={32} className="text-indigo-500" />}
                           title="No Upcoming Events"
                           message="You haven't registered or joined any events yet. Check out the Events tab to find one!"
+                          onBrowseAll={() => navigate("/events")}
                         />
                       ) : (
                         upcomingEvents.map(ev => (
                           <div key={ev.id} className="ud-list-item">
                             <div className="min-w-0 flex-1">
-                              <p title={ev.title} className="ud-list-title">{ev.title}</p>
+                              <p className="ud-list-title" title={ev.title}>{ev.title}</p>
                               <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(ev.date)}</p>
                             </div>
                             <StatusBadge status={ev.participationType} />
@@ -372,12 +407,13 @@ export default function UserDashboard() {
                           icon={<Trophy size={32} className="text-pink-500" />}
                           title="No Active Hackathons"
                           message="There are currently no upcoming hackathons in your schedule."
+                          onBrowseAll={() => navigate("/hackathons")}
                         />
                       ) : (
                         upcomingHackathons.map(h => (
                           <div key={h.id} className="ud-list-item">
                             <div className="min-w-0 flex-1">
-                              <p title={h.title} className="ud-list-title">{h.title}</p>
+                              <p className="ud-list-title" title={h.title}>{h.title}</p>
                               <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(h.date)}</p>
                             </div>
                             <StatusBadge status={h.participationType} />
@@ -399,12 +435,13 @@ export default function UserDashboard() {
                           icon={<FolderOpen size={32} className="text-purple-500" />}
                           title="No Active Projects"
                           message="All your tracked development projects are currently completed or inactive."
+                          onBrowseAll={() => navigate("/projects")}
                         />
                       ) : (
                         activeProjects.map(p => (
                           <div key={p.id} className="ud-list-item">
                             <div className="min-w-0 flex-1">
-                              <p title={p.title} className="ud-list-title">{p.title}</p>
+                              <p className="ud-list-title" title={p.title}>{p.title}</p>
                               <p className="ud-list-meta">Updated: {p.lastUpdate}</p>
                             </div>
                             <StatusBadge status={p.projectStatus} />
@@ -413,6 +450,8 @@ export default function UserDashboard() {
                       )}
                     </motion.section>
                   </div>
+                  </>
+                  )} {/* end hasData ternary */}
                 </>
               )}
             </motion.div>
@@ -469,6 +508,15 @@ export default function UserDashboard() {
                   setFilterStatus={setFilterStatus}
                   setSelectedTicketEvent={setSelectedTicketEvent}
                 />
+              </ErrorBoundary>
+            </motion.div>
+          )}
+
+          {/* Analytics tab */}
+          {activeTab === "analytics" && (
+            <motion.div key="analytics" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <ErrorBoundary level="feature">
+                <AnalyticsTab loading={loading} />
               </ErrorBoundary>
             </motion.div>
           )}

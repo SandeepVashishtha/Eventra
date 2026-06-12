@@ -66,12 +66,21 @@ const ALLOWED_EXCEPTIONS = new Set([
   "REACT_APP_CSP_REPORT_URI",
 ]);
 
-const REQUIRED_VARS = ["VITE_API_URL"];
+const BACKEND_URL_VARS = ["BACKEND_URL", "VITE_API_URL", "REACT_APP_API_URL"];
+const REQUIRED_VARS = ["JWT_SECRET"];
 
 const FORMAT_VALIDATED_VARS = {
+  BACKEND_URL: {
+    pattern: /^https?:\/\/.+/,
+    message: "BACKEND_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
+  },
   VITE_API_URL: {
     pattern: /^https?:\/\/.+/,
     message: "VITE_API_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
+  },
+  REACT_APP_API_URL: {
+    pattern: /^https?:\/\/.+/,
+    message: "REACT_APP_API_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
   },
 };
 
@@ -83,13 +92,40 @@ const warnings = [];
 
 console.log("\n[validate-env] Scanning environment variables for security issues...\n");
 
-console.log("Required variables:");
+console.log("Required backend configuration:");
+const configuredBackendVars = BACKEND_URL_VARS.filter(
+  (varName) => process.env[varName] && process.env[varName].trim()
+);
+if (configuredBackendVars.length === 0) {
+  const msg =
+    "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application.";
+  errors.push(`[CONFIG ERROR] ${msg}`);
+  hasErrors = true;
+} else {
+  console.log(`  OK: ${configuredBackendVars.join(" or ")} = [set]`);
+}
+
+console.log("\nRequired server variables:");
 for (const varName of REQUIRED_VARS) {
   if (!process.env[varName]) {
-    console.warn(`  WARNING: missing ${varName} (app may fail to connect to backend)`);
-    warnings.push(`Required variable ${varName} is not set`);
+    const isJwtSecret = varName === "JWT_SECRET";
+    const errorMsg = isJwtSecret
+      ? `[CRITICAL SECURITY ERROR] ${varName} is missing. This is a critical security vulnerability that allows unauthorized access. Generate a secure secret using: openssl rand -base64 32`
+      : `Required variable ${varName} is not set`;
+    
+    console.error(`  ERROR: ${errorMsg}`);
+    errors.push(errorMsg);
+    hasErrors = true;
   } else {
-    console.log(`  OK: ${varName} = [set]`);
+    // Additional validation for JWT_SECRET to ensure it's not empty or whitespace
+    if (varName === "JWT_SECRET" && !process.env[varName].trim()) {
+      const errorMsg = `[CRITICAL SECURITY ERROR] JWT_SECRET is empty or whitespace-only. This is a critical security vulnerability. Generate a secure secret using: openssl rand -base64 32`;
+      console.error(`  ERROR: ${errorMsg}`);
+      errors.push(errorMsg);
+      hasErrors = true;
+    } else {
+      console.log(`  OK: ${varName} = [set]`);
+    }
   }
 }
 
@@ -114,6 +150,12 @@ if (OPTIONAL_VARS.length === 0) {
 }
 
 console.log("\nValidating variable formats...");
+  if (process.env.NODE_ENV === "production" && process.env.VITE_API_URL && !process.env.VITE_API_URL.startsWith("https://")) {
+    const msg = "[CRITICAL SECURITY WARNING] VITE_API_URL must use HTTPS in production";
+    errors.push(msg);
+    hasErrors = true;
+    console.error(`  ERROR: ${msg}`);
+  }
 for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   const value = process.env[varName];
   if (!value) continue;
@@ -173,7 +215,11 @@ if (errors.length > 0) {
 }
 
 const criticalErrors = errors.filter(
-  (e) => e.includes("[SECURITY LEAK]") || e.includes("[FORMAT ERROR]")
+  (e) =>
+    e.includes("[SECURITY LEAK]") ||
+    e.includes("[FORMAT ERROR]") ||
+    e.includes("[CRITICAL ERROR]") ||
+    e.includes("[CONFIG ERROR]")
 );
 if (criticalErrors.length > 0 || hasErrors) {
   console.error(

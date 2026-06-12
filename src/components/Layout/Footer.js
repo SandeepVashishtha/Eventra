@@ -63,7 +63,7 @@ const socialLinks = [
     href: "https://github.com/sandeepvashishtha/Eventra",
     icon: (
       <FaGithub
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 hover:-translate-y-1"
         size={20}
       />
     ),
@@ -73,7 +73,7 @@ const socialLinks = [
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
     icon: (
       <FaLinkedin
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 hover:-translate-y-1"
         size={20}
       />
     ),
@@ -92,7 +92,6 @@ const socialLinks = [
 
 /* ================================
    Secure External Link Handling
-================================ */
 
 const externalLinkProps = {
   target: "_blank",
@@ -353,7 +352,7 @@ const FooterLinksRender = () => {
 const Footer = () => {
   const { t } = useTranslation();
   return (
-    <footer className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors duration-500">
+    <footer className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100  dark:border-gray-800 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           <div className="space-y-4 lg:col-span-2">

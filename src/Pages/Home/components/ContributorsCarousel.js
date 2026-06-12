@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Github, ExternalLink, GitBranch, MapPin, Building, Users, Medal, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
@@ -24,11 +24,8 @@ const BATCH_DELAY_MS = 200;
 // keeping per-batch concurrency well within rate-limit budgets.
 const PROFILE_BATCH_SIZE = 10;
 
-// Inserts a small delay before each individual profile request to avoid
-// hammering GitHub's unauthenticated API (60 req/hr). Works in tandem with
-// fetchInBatches which adds BATCH_DELAY_MS between batches.
-const throttleProfileFetch = () =>
-  new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS / PROFILE_BATCH_SIZE));
+
+
 
 /**
  * Fetches items in parallel batches, inserting a short delay between batches
@@ -138,7 +135,6 @@ const Contributors = () => {
 
   // Fetches a single GitHub user profile via the backend proxy.
   const fetchGitHubProfile = useCallback(async (username) => {
-    await throttleProfileFetch();
     try {
       const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
         `/users/${username}`
@@ -211,7 +207,8 @@ const Contributors = () => {
       // load fall back to the default values from fetchGitHubProfile's catch.
       const settledProfiles = await fetchInBatches(
         allContributors,
-        async (c) => {
+        async (c, idx) => {
+          await new Promise((resolve) => setTimeout(resolve, idx * (BATCH_DELAY_MS / PROFILE_BATCH_SIZE)));
           const profile = await fetchGitHubProfile(c.login);
           return {
             ...c,
@@ -294,8 +291,8 @@ const Contributors = () => {
       )}
       <div className="max-w-7xl mx-auto px-6">
         <motion.h2
-          // UPDATED: Title text
-          className="text-5xl font-extrabold text-center mb-16 text-gray-800 dark:text-gray-100 tracking-tight"
+          // UPDATED: Title text (responsive text and mb-12 spacing)
+          className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-center mb-12 text-gray-800 dark:text-gray-100 tracking-tight"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
@@ -430,7 +427,7 @@ const Contributors = () => {
                         </span>
                       </div>
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                        <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
+                        <GitBranch className="text-gray-900 dark:text-indigo-400 mb-1 w-4 h-4" />
                         <span className="font-semibold">{c.contributions}</span>
                         <span className="text-xs text-gray-600 dark:text-gray-400">
                           Contribs
@@ -495,11 +492,11 @@ const Contributors = () => {
             ))}
           </div>
 
-          <div className="flex justify-center mt-8">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mt-8 w-full max-w-md mx-auto sm:max-w-none">
             <Link
               to="/contributors"
               onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out"
+              className="inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>View All Contributors</span>
               <FaExternalLinkAlt className="text-sm" />
@@ -507,7 +504,7 @@ const Contributors = () => {
             <Link
               to="/ContributorGuide"
               onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out ml-10"
+              className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>Guide</span>
               <FaExternalLinkAlt className="text-sm" />

@@ -8,6 +8,18 @@ This document describes the security architecture of Eventra, detailing the desi
 
 Eventra enforces cookie-based authentication using JSON Web Tokens (JWT) stored in secure, `HttpOnly` cookies. The client never handles the raw token directly in Javascript, mitigating Cross-Site Scripting (XSS) token exfiltration risks.
 
+### 1.1 Fail-Closed Security
+
+**CRITICAL**: Eventra enforces fail-closed security for JWT authentication. The `JWT_SECRET` environment variable is mandatory with NO fallback secret.
+
+- If `JWT_SECRET` is missing, empty, or whitespace-only:
+  - Build-time validation fails with a critical security error
+  - Runtime token signing throws an error
+  - Edge middleware returns HTTP 500 for protected routes
+  - RBAC is NEVER bypassed
+
+This prevents unauthorized access when configuration is incomplete.
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -18,7 +30,7 @@ sequenceDiagram
     Client->>API: POST /api/auth/signup or /login (Credentials)
     API->>Store: Lookup User / Compare Password (BCrypt)
     Store-->>API: User Verified
-    API->>API: Sign JWT with JWT_SECRET
+    API->>API: Sign JWT with JWT_SECRET (Mandatory)
     API-->>Client: 200/201 JSON (Set-Cookie: token=JWT; HttpOnly; SameSite=Strict; Secure)
     
     Note over Client, API: Subsequent requests carry the cookie automatically
@@ -93,9 +105,66 @@ Always choose the appropriate helper for the context of user input:
 
 For state-changing actions (POST, PUT, PATCH, DELETE), the frontend attaches a unique, session-bound token:
 
-1. The CSRF token is obtained via `getCSRFToken()`.
+1. The CSRF token is obtained via `getCSRFToken()`, which checks the meta tag first, then cookies.
 2. Frontend requests append the token to the `X-CSRF-Token` header.
 3. The server validates this token against the request session, rejecting mismatched requests with `403 Forbidden`.
+
+### Token Sources
+
+The CSRF token can be provided through two sources (checked in order):
+
+1. **Meta Tag**: `<meta name="csrf-token" content="TOKEN_VALUE">` in `index.html`
+2. **Cookie**: `XSRF-TOKEN` cookie (or custom name via `getCSRFTokenFromCookie(name)`)
+
+### Enforcement Modes
+
+CSRF protection behavior is configurable via the `VITE_CSRF_ENFORCEMENT_MODE` environment variable:
+
+- **warning** (default): Logs missing CSRF tokens to console (structured JSON in production) but allows requests to proceed. Suitable for gradual rollout or development.
+- **strict**: Blocks requests when CSRF token is missing by throwing a `CSRFError`. Recommended for production environments with complete CSRF token setup.
+- **disabled**: Disables CSRF protection entirely. Not recommended except for specific legacy scenarios.
+
+### Configuration
+
+Set the enforcement mode in `.env` or `.env.local`:
+
+```bash
+VITE_CSRF_ENFORCEMENT_MODE=strict
+```
+
+### Production Visibility
+
+Missing CSRF tokens are logged using structured logging in production:
+
+```json
+{
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "event": "csrf_token_missing",
+  "method": "POST",
+  "url": "/api/events",
+  "enforcementMode": "warning"
+}
+```
+
+This allows monitoring and alerting on CSRF token issues without exposing sensitive token values.
+
+### API Integration
+
+The request interceptor in `src/config/api/interceptors.js` automatically:
+
+- Checks if the request method requires CSRF protection
+- Validates token presence based on enforcement mode
+- Attaches the token to the `X-CSRF-Token` header when present
+- Throws `CSRFError` in strict mode when token is missing
+- Logs security events for monitoring
+
+### Error Handling
+
+When a request is blocked due to missing CSRF token (strict mode), a `CSRFError` is thrown with:
+
+- Message: "CSRF token required for {METHOD} request. Please ensure the CSRF token is available in the meta tag or cookie."
+- Status: 403
+- Integrates with the existing API error handling system
 
 ---
 

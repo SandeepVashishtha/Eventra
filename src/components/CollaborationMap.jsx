@@ -39,7 +39,7 @@ export default function CollaborationMap() {
   }, []);
 
   return (
-    <section className="py-20 bg-slate-950 text-white relative overflow-hidden">
+    <section className="py-20 dark:bg-slate-950 dark:text-white bg-white text-slate-900 relative overflow-hidden">
       <style>{`
         /* 🔥 FIX: Namespace prefixed to prevent global CSS pollution */
         @keyframes eventra-map-dash {
@@ -65,7 +65,7 @@ export default function CollaborationMap() {
           <span className="inline-block text-xs uppercase tracking-[0.25em] text-indigo-400 font-bold bg-indigo-500/10 px-3.5 py-1.5 rounded-full border border-indigo-500/20">
             Global Network
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-500 dark:bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text">
             Collaboration Hubs
           </h2>
           <p className="max-w-xl mx-auto text-sm sm:text-base text-slate-400">

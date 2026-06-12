@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
   const { t } = useTranslation();
-  useReducedMotion();
+  const prefersReducedMotion = useReducedMotion();
   const [hoveredRating, setHoveredRating] = useState(0);
 
   const handleStarClick = (star) => {
@@ -42,8 +42,8 @@ const StarRating = ({ rating, onRatingChange, error }) => {
             onMouseEnter={() => setHoveredRating(star)}
             onMouseLeave={() => setHoveredRating(0)}
             className="focus:outline-none"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={prefersReducedMotion ? {} : { scale: 1.1 }}
+            whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
             aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
             title={`Click to rate ${star} star${star > 1 ? "s" : ""
               } (click again to deselect)`}
@@ -186,7 +186,7 @@ const CustomFloatingSelect = ({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [dropdownRef]);
+  }, []);
 
   const handleSelect = (optionValue) => {
     const selectedOption = options.find((opt) => opt.value === optionValue);

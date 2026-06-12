@@ -1,9 +1,11 @@
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
+import ThemeToggleButton from "../Layout/ThemeToggleButton";
 import AuthButtons from "./AuthButtons";
 import InstallAppButton from "../common/InstallAppButton";
 import LanguageSelector from "../LanguageSelector";
@@ -17,6 +19,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef(null);
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
 
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
@@ -88,7 +91,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
           {/* Logo - Left Section */}
           <Link to="/" aria-label="Eventra home logo template" className="relative z-10 flex items-center shrink-0">
             <div className="flex items-center gap-2 sm:gap-2.5">
@@ -127,6 +130,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               <InstallAppButton />
               <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             </div>
+            <ThemeToggleButton 
+              isDarkMode={isDarkMode}
+              toggleTheme={toggleTheme}
+              isMobile={false}
+              setIsCustomizerOpen={setIsCustomizerOpen}
+            />
 
             <div className="flex items-center gap-1 lg:hidden">
               {authenticated && <NotificationBell />}

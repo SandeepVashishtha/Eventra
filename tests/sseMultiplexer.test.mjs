@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 
+process.env.REACT_APP_API_URL = "https://api.example.test";
+
 // Mock environment and globals before importing sseMultiplexer
 
 const store = {};
@@ -88,8 +90,8 @@ class MockEventSource {
 }
 globalThis.EventSource = MockEventSource;
 
-// Now import the multiplexer
-import { sseMultiplexer } from "../src/utils/sseMultiplexer.js";
+// Now import the multiplexer dynamically to ensure environment variable is set first
+const { sseMultiplexer } = await import("../src/utils/sseMultiplexer.js");
 
 // Force mock sseMultiplexer state to be the leader for initial tests
 sseMultiplexer.isLeader = true;
@@ -171,7 +173,10 @@ const runTests = async () => {
   assert.equal(analyticsSource.closed, true);
 
   // Test 5: Heartbeat mechanisms (PING/PONG and pruning)
-  // Override sseMultiplexer.channel to use MockBroadcastChannel because of ES Module import hoisting
+  // Replace the import-time channel so the test controls every active mock channel.
+  // Leaving the old channel open lets status broadcasts loop back into the same
+  // singleton through a stale listener, which creates recursive warning noise.
+  sseMultiplexer.channel?.close();
   sseMultiplexer.channel = new globalThis.BroadcastChannel("eventra_sse_multiplexer");
   sseMultiplexer.channel.onmessage = (e) => sseMultiplexer.handleBroadcastMessage(e.data);
 
@@ -269,6 +274,9 @@ const runTests = async () => {
   } finally {
     Math.random = originalRandom;
     sseMultiplexer.stopHeartbeatChecks();
+    sseMultiplexer.channel?.close();
+    followerChannel?.close();
+    channels.clear();
     if (sseMultiplexer.heartbeatInterval) {
       clearInterval(sseMultiplexer.heartbeatInterval);
       sseMultiplexer.heartbeatInterval = null;

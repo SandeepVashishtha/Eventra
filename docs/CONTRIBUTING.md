@@ -70,8 +70,8 @@ git checkout -b feature/short-description
   - `docs/` for documentation updates (e.g., `docs/fix-contributing-format`)
   - `enhancement/` for visual/behavior improvements (e.g., `enhancement/dashboard-empty-state`)
 
-3. Make your changes in small, reviewable commits.
-4. Run quality checks locally:
+1. Make your changes in small, reviewable commits.
+2. Run quality checks locally:
 
 ```bash
 npm run lint

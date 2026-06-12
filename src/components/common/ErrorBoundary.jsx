@@ -1,6 +1,7 @@
 import React from "react";
 import "./ErrorBoundary.css";
 import { logError, persistErrors } from "../../utils/errorLogger";
+import { logSecurityEvent } from "../../utils/securityLogger";
 
 function generateErrorId() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -103,8 +104,8 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
       const snap = {};
       for (let i = 0; i < sessionStorage.length; i++) {
         const k = sessionStorage.key(i);
-        if (k && !k.includes("token") && !k.includes("password")) {
-          try { snap[k] = sessionStorage.getItem(k)?.slice(0, 200); } catch {}
+        if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
+          try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (sessionStorage.getItem(k)?.slice(0, 200)); } catch {}
         }
       }
       return JSON.stringify(snap, null, 2);
@@ -179,6 +180,7 @@ class ErrorBoundary extends React.Component {
 
     logError(error, errorInfo, { level, label: errorLabel });
 
+    logSecurityEvent("SYSTEM_CRASH", { message: error?.toString() || "Unknown error", level });
     persistErrors("error_log", {
       errorId,
       level,
