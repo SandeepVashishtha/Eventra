@@ -25,9 +25,10 @@ const FormField = ({ htmlFor, label, icon: Icon, error, children, required, hint
   );
 };
 
-const EventLocationSection = ({ formData, handleInputChange, handleNestedChange, errors }) => {
-  // Deep Fix 2: Calculate today's date dynamically to prevent time-travel event creation
-  const todayString = new Date().toISOString().split('T')[0];
+const EventLocationSection = ({ formData, handleInputChange, handleNestedChange, handleFieldBlur, errors }) => {
+  // Today's date in YYYY-MM-DD — used as the `min` attribute on date pickers
+  // so the browser's native date-picker UI also blocks past dates.
+  const todayStr = new Date().toISOString().split('T')[0];
 
   return (
     <div className="space-y-8">
@@ -60,15 +61,15 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
         {formData.isVirtual ? (
           <FormField htmlFor="virtual-link-input" label="Meeting Link" icon={Link2} error={errors.virtualLink} required>
             <input
-              type="url"
               id="virtual-link-input"
               name="virtualLink"
               value={formData.virtualLink}
               onChange={handleInputChange}
+              onBlur={handleFieldBlur}
               aria-invalid={!!errors.virtualLink}
               aria-describedby={errors.virtualLink ? "virtual-link-input-error" : undefined}
               placeholder="https://zoom.us/j/..."
-              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
                 errors.virtualLink ? "border-red-500" : "border-gray-300 dark:border-gray-600"
               }`}
             />
@@ -76,15 +77,16 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
         ) : (
           <>
             <FormField htmlFor="venue-name-input" label="Venue Name" icon={MapPin} error={errors.location} required>
-              <input
                 type="text"
                 id="venue-name-input"
+                name="location"
                 value={formData.location.name}
                 onChange={(e) => handleNestedChange("location", "name", e.target.value)}
+                onBlur={handleFieldBlur}
                 aria-invalid={!!errors.location}
                 aria-describedby={errors.location ? "venue-name-input-error" : undefined}
                 placeholder="e.g., Grand Ballroom, Hotel Plaza"
-                className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
                   errors.location ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                 }`}
               />
@@ -111,11 +113,12 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
             id="date-input"
             name="date"
             value={formData.date}
-            min={todayString} // Deep Fix 2: Prevent time-travel selection
+            min={todayStr}
             onChange={handleInputChange}
+            onBlur={handleFieldBlur}
             aria-invalid={!!errors.date}
             aria-describedby={errors.date ? "date-input-error" : undefined}
-            className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+            className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
               errors.date ? "border-red-500" : "border-gray-300 dark:border-gray-600"
             }`}
           />
@@ -128,9 +131,10 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
               name="startTime"
               value={formData.startTime}
               onChange={handleInputChange}
+              onBlur={handleFieldBlur}
               aria-invalid={!!errors.startTime}
               aria-describedby={errors.startTime ? "start-time-input-error" : undefined}
-              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
                 errors.startTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
               }`}
             />
@@ -142,9 +146,10 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
               name="endTime"
               value={formData.endTime}
               onChange={handleInputChange}
+              onBlur={handleFieldBlur}
               aria-invalid={!!errors.endTime}
               aria-describedby={errors.endTime ? "end-time-input-error" : undefined}
-              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
                 errors.endTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
               }`}
             />

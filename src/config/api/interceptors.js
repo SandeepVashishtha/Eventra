@@ -1,7 +1,7 @@
-import { logger } from "../../utils/logger.js";
-import { getCSRFToken } from "../../utils/csrfToken.js";
 import { syncServerTimeFromHeader } from "../../utils/timeSync.js";
-import { ApiError, RateLimitError, normalizeApiError } from "./errors.js";
+import { getCSRFToken, requiresCSRF } from "../../utils/csrfToken.js";
+import { logger } from "../../utils/logger.js";
+import { ApiError, RateLimitError, CSRFError } from "./errors.js";
 
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
 const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
@@ -113,6 +113,16 @@ const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
   );
 };
 
+const getCSRFEnforcementMode = () => {
+  if (typeof import.meta.env !== "undefined" && import.meta.env.VITE_CSRF_ENFORCEMENT_MODE) {
+    return import.meta.env.VITE_CSRF_ENFORCEMENT_MODE;
+  }
+  if (typeof process !== "undefined" && process.env?.VITE_CSRF_ENFORCEMENT_MODE) {
+    return process.env.VITE_CSRF_ENFORCEMENT_MODE;
+  }
+  return "warning";
+};
+
 export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized }) {
   api.interceptors.request.use((config) => {
     if (isDev) {
@@ -125,12 +135,30 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
     }
 
     const method = config.method?.toUpperCase();
-    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    if (requiresCSRF(method)) {
       const csrf = getCSRFToken();
-      if (csrf) {
+      const enforcementMode = getCSRFEnforcementMode();
+
+      if (!csrf) {
+        if (enforcementMode === "strict") {
+          logger.security("csrf_token_missing", {
+            method,
+            url: config.url || "unknown",
+            enforcementMode,
+          });
+          throw new CSRFError(
+            `CSRF token required for ${method} request. Please ensure the CSRF token is available in the meta tag or cookie.`,
+            { status: 403 },
+          );
+        } else {
+          logger.security("csrf_token_missing", {
+            method,
+            url: config.url || "unknown",
+            enforcementMode,
+          });
+        }
+      } else {
         config.headers["X-CSRF-Token"] = csrf;
-      } else if (process.env.NODE_ENV !== "production") {
-        console.warn("[CSRF] Token missing for mutating request:", method, config.url);
       }
 
       if (!config.headers["Idempotency-Key"]) {
