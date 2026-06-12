@@ -111,7 +111,11 @@ export default async function login(req, res, deps = {}) {
 
     // 4. Verify credentials. Always run the comparison shape regardless of
     //    whether the user exists to avoid leaking timing/enumeration signals.
-    const passwordHash = user?.password ?? "";
+    //    A valid dummy bcrypt hash is used for non-existent users to prevent
+    //    bcrypt from throwing errors on invalid/empty hashes, which would
+    //    leak the user's non-existence via an HTTP 500 response.
+    const dummyHash = "$2b$10$v18wNUUU7wTXyTbRPTFZTeze3aHS//qr4FKA9gu1E/GfNQqTsFfRG";
+    const passwordHash = user?.password ?? dummyHash;
     const isValid = await comparePassword(password, passwordHash);
 
     if (!user || !isValid) {
