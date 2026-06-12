@@ -465,19 +465,7 @@ export const decryptWithKey = async (key, stored) => {
   return new TextDecoder().decode(decrypted);
 };
 
-const isCryptoAvailable = () => {
-  try {
-    return (
-      typeof window !== 'undefined' &&
-      typeof crypto !== 'undefined' &&
-      typeof crypto.subtle !== 'undefined' &&
-      typeof crypto.getRandomValues === 'function' &&
-      window.isSecureContext !== false
-    );
-  } catch {
-    return false;
-  }
-};
+
 
 
 // ---------------------------------------------------------------------------
