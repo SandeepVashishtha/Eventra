@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -21,6 +21,7 @@ import StatusBadge from "../common/StatusBadge";
 import { safeParseJson } from "../../utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
+import VirtualizedGrid from "../common/VirtualizedGrid";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
 
@@ -88,7 +89,7 @@ const EmptyState = () => {
   );
 };
 
-const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
+const EventCard = memo(({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const isOffline = useOfflineStatus();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
@@ -224,9 +225,9 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
       </div>
     </motion.div>
   );
-};
+});
 
-const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
+const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const { user } = useAuth();
@@ -281,7 +282,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
       </div>
     </motion.div>
   );
-};
+});
 
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -399,7 +400,11 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const hostedCount = hostedEvents.length;
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
-
+  const columnCount = useMemo(() => {
+  if (window.innerWidth < 768) return 1;
+  if (window.innerWidth < 1200) return 2;
+  return 3;
+}, []);
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
   const handleCancelConfirm = () => {
@@ -585,73 +590,23 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                 </span>
               </div>
               <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {filteredRegisteredEvents.map((event, index) => (
-                  <EventCard
-                    key={event.eventId || event.id}
-                    event={event}
-                    index={index}
-                    onRemoveRegistration={handleCancelClick}
-                    showCancel
-                    onViewTicket={onViewTicket}
-                  />
-                ))}
-              </motion.div>
-            </section>
-          )}
+              <VirtualizedGrid
+  items={filteredRegisteredEvents}
+  columnCount={columnCount}
+  renderItem={(event, index) => (
+    <EventCard
+      key={event.eventId || event.id}
+      event={event}
+      index={index}
+      onRemoveRegistration={handleCancelClick}
+      showCancel
+      onViewTicket={onViewTicket}
+    />
+  )}
+/>
+            
 
-          {filteredHostedEvents.length > 0 && (
-            <section className="space-y-4">
-              <div className="ud-tab-header">
-                <h3 className="ud-page-title">
-                  <Calendar size={18} /> Hosted Events
-                </h3>
-                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                  {filteredHostedEvents.length} event{filteredHostedEvents.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {filteredHostedEvents.map((event, index) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    showCancel={false}
-                  />
-                ))}
-              </motion.div>
-            </section>
-          )}
-
-          {waitlistEvents.length > 0 && (
-            <section className="space-y-4 mt-6">
-              <div className="ud-tab-header">
-                <h3 className="ud-page-title flex items-center gap-2">
-                  <Clock size={18} className="text-amber-500" /> Waitlisted Events
-                </h3>
-                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                  {waitlistEvents.length} event{waitlistEvents.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {waitlistEvents.map((event, index) => (
-                  <WaitlistCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    onLeaveWaitlist={async (id) => {
-                      if (window.confirm(`Are you sure you want to leave the waitlist for "${event.title}"?`)) {
-                        try {
-                          const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
-                          await leaveWaitlist(id, user.id || user.email);
-                          toast.success("Left the waitlist successfully.");
-                          triggerWaitlistUpdate();
-                        } catch (err) {
-                          toast.error(err.message || "Failed to leave waitlist.");
-                        }
-                      }
-                    }}
-                  />
-                ))}
+              
               </motion.div>
             </section>
           )}
