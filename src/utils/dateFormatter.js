@@ -1,15 +1,30 @@
-import { getUserTimezone } from './timezoneUtils';
+/**
+ * Timezone-aware Date Formatting Utility
+ *
+ * Uses Intl.DateTimeFormat to format dates in the user's local timezone.
+ * Falls back gracefully if the Intl API is not available.
+ */
+
+/**
+ * Gets the user's timezone from the browser.
+ * @returns {string} IANA timezone string (e.g., "America/New_York")
+ */
+export function getUserTimezone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return "UTC";
+  }
+}
 
 /**
  * Formats a date string for display in the user's local timezone.
- * * @param {string|Date} date - ISO date string or Date object.
- * @param {Object} [options] - Configuration for formatting.
- * @param {string} [options.timezone] - Override the default timezone.
- * @param {string} [options.locale] - Locale string (e.g., 'en-US').
- * @param {string} [options.format="medium"] - "full", "long", "medium", or "short".
- * @returns {string} The formatted date string.
- * * @example
- * formatEventDate('2026-06-12T10:00:00Z', { format: 'long' }); // "June 12, 2026, 10:00 AM GMT"
+ * @param {string|Date} date - ISO date string or Date object
+ * @param {Object} [options]
+ * @param {string} [options.timezone] - Override timezone
+ * @param {string} [options.locale] - Locale string (default: browser default)
+ * @param {string} [options.format] - "full", "long", "medium", "short" (default: "medium")
+ * @returns {string} Formatted date string
  */
 export function formatEventDate(date, options = {}) {
   try {
@@ -71,7 +86,7 @@ export function formatEventDate(date, options = {}) {
     }
 
     return new Intl.DateTimeFormat(locale, formatOptions).format(d);
-  } catch {
+  } catch (err) {
     // Fallback for environments without Intl support
     const d = date instanceof Date ? date : new Date(date);
     return d.toLocaleString();
@@ -80,12 +95,10 @@ export function formatEventDate(date, options = {}) {
 
 /**
  * Formats a date range (start - end) for event display.
- * * @param {string|Date} start - The start date.
- * @param {string|Date} end - The end date.
- * @param {Object} [options] - Configuration for formatting (same as formatEventDate).
- * @returns {string} The formatted date range string.
- * * @example
- * formatEventDateRange('2026-06-12T10:00:00Z', '2026-06-12T12:00:00Z'); // "Jun 12, 2026, 10:00 AM - 12:00 PM"
+ * @param {string|Date} start
+ * @param {string|Date} end
+ * @param {Object} [options] - Same as formatEventDate
+ * @returns {string}
  */
 export function formatEventDateRange(start, end, options = {}) {
   const startStr = formatEventDate(start, { ...options, format: "medium" });
@@ -95,10 +108,8 @@ export function formatEventDateRange(start, end, options = {}) {
 
 /**
  * Returns a relative time string (e.g., "in 3 days", "2 hours ago").
- * * @param {string|Date} date - The target date to calculate relative time from.
- * @returns {string} The relative time string.
- * * @example
- * getRelativeTime('2026-06-12T14:00:00Z'); // "in 1 day"
+ * @param {string|Date} date
+ * @returns {string}
  */
 export function getRelativeTime(date) {
   try {
@@ -117,7 +128,6 @@ export function getRelativeTime(date) {
     if (Math.abs(diffMin) >= 1) return rtf.format(diffMin, "minute");
     return rtf.format(diffSec, "second");
   } catch {
-    const d = date instanceof Date ? date : new Date(date);
-    return isNaN(d.getTime()) ? "" : d.toLocaleString();
+    return "";
   }
 }

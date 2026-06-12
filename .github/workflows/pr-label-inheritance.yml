@@ -31,7 +31,6 @@ jobs:
               'level:',       // owned by difficulty.yml
               'type:',        // owned by type-labeler.yml
               'quality:',     // owned by quality-labeler.yml
-              'size/',         // owned by pr-size-labeler.yml
               'gssoc:',       // owned by pr-auto-assign.yml
               'mentor:',      // managed manually by mentors
             ];

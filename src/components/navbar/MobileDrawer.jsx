@@ -1,28 +1,18 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { LogIn, UserPlus, Info, HelpCircle, Sun, Moon, MousePointer, Bell } from "lucide-react";
-import { useNotification } from "../../context/NotificationContext";
+import { LogIn, UserPlus, Info, HelpCircle } from "lucide-react";
 import NavbarLinks from "./NavbarLinks";
-import LanguageSelector from "../LanguageSelector";
-import { useTheme } from "../../context/ThemeContext";
-
 
 const MobileDrawer = ({
   isOpen,
   closeMenu,
   isAuthenticated,
   logout,
-  cursorEnabled,
-  toggleCursor,
 }) => {
-  const { t } = useTranslation();
   const location = useLocation();
   const drawerRef = useRef(null);
   const closeButtonRef = useRef(null);
   const isActive = (path) => location.pathname === path;
-  const { isDarkMode, toggleTheme } = useTheme();
-  const { unreadCount } = useNotification();
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -60,35 +50,16 @@ const MobileDrawer = ({
       previouslyFocusedElement?.focus?.();
     };
   }, [closeMenu, isOpen]);
-  // Scroll lock: prevent background scroll when drawer is open
-  useEffect(() => {
-    if (!isOpen) return;
 
-    const scrollY = window.scrollY;
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = "100%";
+  if (!isOpen) return null;
 
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      window.scrollTo(0, scrollY);
-    };
-  }, [isOpen]);   
   return (
-    <div
-      className={`fixed inset-0 z-50 lg:hidden ${
-        isOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"
-      }`}
-    >
+    <div className="fixed inset-0 z-50 xl:hidden">
       <button
         type="button"
         aria-label="Close navigation menu"
         onClick={closeMenu}
-        className={`absolute inset-0 h-full w-full bg-black/50 transition-opacity duration-300 ease-in-out ${
+        className={`absolute inset-0 h-full w-full bg-black/50 transition-opacity duration-200 ${
           isOpen ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -122,7 +93,7 @@ const MobileDrawer = ({
             type="button"
             onClick={closeMenu}
             aria-label="Close navigation menu"
-            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl px-3 text-xl font-semibold text-text-light transition-colors hover:bg-bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl px-3 text-xl font-semibold text-text-light transition-colors hover:bg-bg-secondary"
           >
             <span aria-hidden="true">X</span>
           </button>
@@ -133,10 +104,6 @@ const MobileDrawer = ({
             vertical
             onClick={closeMenu}
           />
-
-          <div className="mt-4 px-1">
-            <LanguageSelector className="w-full" />
-          </div>
 
           <div className="mt-6 border-t border-border pt-4">
             {isAuthenticated ? (
@@ -150,7 +117,7 @@ const MobileDrawer = ({
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  {t("nav.dashboard")}
+                  Dashboard
                 </Link>
                 <Link
                   to="/dashboard/profile"
@@ -161,24 +128,7 @@ const MobileDrawer = ({
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  {t("nav.viewProfile")}
-                </Link>
-                <Link
-                  to="/notifications"
-                  onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
-                    isActive("/notifications")
-                      ? "border-primary bg-bg-secondary text-text"
-                      : "border-transparent text-text-light hover:bg-bg hover:text-text"
-                  }`}
-                >
-                  <Bell className="w-5 h-5" />
-                  Notifications
-                  {unreadCount > 0 && (
-                    <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </span>
-                  )}
+                  View Profile
                 </Link>
                 <Link
                   to="/about"
@@ -190,7 +140,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   <Info className="w-5 h-5" />
-                  {t("nav.about")}
+                  About
                 </Link>
                 <Link
                   to="/faq"
@@ -202,7 +152,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   <HelpCircle className="w-5 h-5" />
-                  {t("nav.faqFull")}
+                  Frequently Asked Questions
                 </Link>
                 <button
                   type="button"
@@ -213,7 +163,7 @@ const MobileDrawer = ({
                   className="mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 border-transparent px-3 py-2 text-left text-sm font-medium text-text-light transition-all duration-200 hover:bg-bg hover:text-text"
                 >
                   <LogIn className="w-5 h-5" />
-                  {t("nav.signOut")}
+                  Logout
                 </button>
               </div>
             ) : (
@@ -228,7 +178,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   <Info className="w-5 h-5" />
-                  {t("nav.about")}
+                  About
                 </Link>
                 <Link
                   to="/faq"
@@ -240,7 +190,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   <HelpCircle className="w-5 h-5" />
-                  {t("nav.faqFull")}
+                  Frequently Asked Questions
                 </Link>
                 <Link
                   to="/login"
@@ -252,7 +202,7 @@ const MobileDrawer = ({
                   }`}
                 >
                   <LogIn className="w-5 h-5" />
-                  {t("nav.signIn")}
+                  Sign In
                 </Link>
                 <Link
                   to="/signup"
@@ -264,39 +214,10 @@ const MobileDrawer = ({
                   }`}
                 >
                   <UserPlus className="w-5 h-5" />
-                  {t("nav.signUp")}
+                  Sign Up
                 </Link>
               </div>
             )}
-          </div>
-
-          {/* Preferences Section (Theme & Cursor Toggles) - Unified Semantic Classes */}
-          <div className="mt-6 border-t border-border pt-4 sm:hidden">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-light/80 mb-3 px-3">
-              Preferences
-            </h3>
-            <div className="flex items-center gap-3 px-3">
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-border text-sm font-medium text-text-light hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-                <span>{isDarkMode ? "Light" : "Dark"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={toggleCursor}
-                className={`flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                  cursorEnabled
-                    ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-border text-text-light hover:bg-bg-secondary"
-                }`}
-              >
-                <MousePointer size={16} />
-                <span>Cursor: {cursorEnabled ? "On" : "Off"}</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>

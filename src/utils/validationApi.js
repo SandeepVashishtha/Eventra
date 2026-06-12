@@ -1,4 +1,4 @@
-import { apiUtils } from "../config/api.js";
+import { apiUtils } from "../config/api";
 
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRIES = 1;
@@ -164,11 +164,11 @@ export const requestValidation = async (endpoint, options = {}) => {
       const data = error.data;
 
       // If the API explicitly returned a validation failure (like 400, 409)
-      if (status === 401 || status === 403) {
+      if (status && !RETRYABLE_STATUS_CODES.includes(status) && status < 500) {
         return createValidationResponse(
           false,
-          networkMessage,
-          { status, data }
+          data?.message || invalidMessage,
+          { status, data },
         );
       }
 

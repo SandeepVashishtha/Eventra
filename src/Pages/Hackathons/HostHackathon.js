@@ -6,8 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { useAuth } from "../../context/AuthContext";
-
-import { hostHackathon } from "../../services/hackathonService";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { sanitizeInputText } from "../../utils/inputSanitization";
 
 const HostHackathon = () => {
@@ -37,33 +36,22 @@ const HostHackathon = () => {
   });
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
-  const hackathonNameRef = useRef(null);
-  const organizerNameRef = useRef(null);
-  const emailRef = useRef(null);
-  const locationRef = useRef(null);
-  const startDateRef = useRef(null);
-  const endDateRef = useRef(null);
-  const descriptionRef = useRef(null);
-  const participantLimitRef = useRef(null);
-  const prizeDetailsRef = useRef(null);
-  const websiteRef = useRef(null);
-
   const inputRefs = {
-    hackathonName: hackathonNameRef,
-    organizerName: organizerNameRef,
-    email: emailRef,
-    location: locationRef,
-    startDate: startDateRef,
-    endDate: endDateRef,
-    description: descriptionRef,
-    participantLimit: participantLimitRef,
-    prizeDetails: prizeDetailsRef,
-    website: websiteRef,
+    hackathonName: useRef(null),
+    organizerName: useRef(null),
+    email: useRef(null),
+    location: useRef(null),
+    startDate: useRef(null),
+    endDate: useRef(null),
+    description: useRef(null),
+    participantLimit: useRef(null),
+    prizeDetails: useRef(null),
+    website: useRef(null),
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [name]: value });
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -119,6 +107,7 @@ const HostHackathon = () => {
     }
 
     // Date validations
+    const today = new Date().toISOString().split("T")[0];
     if (data.startDate && data.startDate < today) {
       newErrors.startDate = "Start date cannot be in the past!";
     }
@@ -172,7 +161,8 @@ const HostHackathon = () => {
 
     setIsSubmitting(true);
     try {
-      await hostHackathon(
+      await apiUtils.post(
+        API_ENDPOINTS.HACKATHONS.HOST,
         {
           ...formData,
           // Sanitize description and other text inputs
@@ -185,7 +175,7 @@ const HostHackathon = () => {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: token
           }
         }
       );

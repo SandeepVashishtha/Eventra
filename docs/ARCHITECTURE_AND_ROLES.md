@@ -22,7 +22,6 @@ This guide explains **who can do what**, **how events flow through the system**,
 Before diving into the architecture, ensure your development environment is properly set up:
 
 **📖 [Environment Setup & Configuration Guide](ENV_SETUP_GUIDE.md)** – Covers:
-
 - Backend API endpoint configuration
 - Local development setup (frontend + backend)
 - Environment variable reference table
@@ -368,7 +367,6 @@ graph LR
 ### Detailed Stage Breakdown
 
 #### 1. **Draft** 📝
-
 - **Who Can Access:** Event creator, ADMIN
 - **What Happens:**
   - Event form is incomplete
@@ -379,7 +377,6 @@ graph LR
 - **Key Properties:** `status: 'DRAFT'`, `isPublished: false`
 
 #### 2. **Review** 👀
-
 - **Who Can Access:** Event creator, ADMIN, SUPER_ADMIN
 - **What Happens:**
   - Submitted for approval
@@ -390,7 +387,6 @@ graph LR
 - **Key Properties:** `status: 'REVIEW'`, `reviewedBy: admin_id`, `reviewNotes: string`
 
 #### 3. **Registration Open** 📋
-
 - **Who Can Access:** All users (public), registrations visible to organizer
 - **What Happens:**
   - Event is published and visible to everyone
@@ -402,7 +398,6 @@ graph LR
 - **Key Properties:** `status: 'REGISTRATION_OPEN'`, `capacity: number`, `registeredCount: number`
 
 #### 4. **Live** 🔴
-
 - **Who Can Access:** Organizer, registered attendees, volunteers
 - **What Happens:**
   - Event is currently happening
@@ -414,7 +409,6 @@ graph LR
 - **Key Properties:** `status: 'LIVE'`, `startTime: timestamp`, `isLive: true`
 
 #### 5. **Feedback** 📝
-
 - **Who Can Access:** Registered attendees (survey), organizer (view responses)
 - **What Happens:**
   - Event has ended
@@ -426,7 +420,6 @@ graph LR
 - **Key Properties:** `status: 'FEEDBACK'`, `feedbackFormId: string`, `surveyResponses: array`
 
 #### 6. **Archived** 📦
-
 - **Who Can Access:** Everyone (read-only), full history available
 - **What Happens:**
   - Event is complete
@@ -438,7 +431,6 @@ graph LR
 - **Key Properties:** `status: 'ARCHIVED'`, `archiveDate: timestamp`
 
 #### 7. **Analytics** 📊
-
 - **Who Can Access:** Organizer, ADMIN, SUPER_ADMIN
 - **What Happens:**
   - Post-event reports generated
@@ -594,7 +586,6 @@ finalScore =
 ### Analytics Dashboard (ADMIN + ORGANIZER Access)
 
 **Event Analytics:**
-
 - Total registrations over time (Recharts line chart)
 - Registration by source (Recharts pie chart)
 - Attendee demographics
@@ -603,7 +594,6 @@ finalScore =
 - Average rating & sentiment
 
 **Hackathon Analytics:**
-
 - Team participation trends
 - Project submission status
 - Judge scoring distribution
@@ -611,7 +601,6 @@ finalScore =
 - Average hackathon score
 
 **Query Example:**
-
 ```javascript
 // Frontend (src/Pages/Events/EventAnalytics.jsx)
 const [analyticsData, setAnalyticsData] = useState(null);
@@ -636,7 +625,6 @@ useEffect(() => {
 ### Feedback Collection
 
 **Feedback Types:**
-
 - Post-event surveys (customizable)
 - NPS (Net Promoter Score)
 - Satisfaction ratings (1-5 stars)
@@ -644,7 +632,6 @@ useEffect(() => {
 - Photo/media uploads
 
 **Survey Trigger:**
-
 1. Event enters FEEDBACK stage
 2. Automated emails sent to attendees
 3. In-app notification bell activated
@@ -703,7 +690,6 @@ sequenceDiagram
 ### Notification System
 
 **Notification Types:**
-
 - Event reminders (24h, 1h before)
 - Registration confirmation
 - Team invitations
@@ -713,7 +699,6 @@ sequenceDiagram
 - System alerts
 
 **Implementation:**
-
 ```javascript
 // src/context/NotificationContext.js
 const NotificationContext = createContext();
@@ -848,7 +833,6 @@ const { data } = await api.post(endpoints.customFeature.create(), payload);
 ### Authentication Flow for Contributors
 
 **To understand user flow:**
-
 1. User logs in → `LoginForm.js` submits credentials
 2. Backend returns JWT → `AuthContext` stores it
 3. `SessionRecoveryContext` recovers on page reload
@@ -856,7 +840,6 @@ const { data } = await api.post(endpoints.customFeature.create(), payload);
 5. Components use `useAuth()` for role info
 
 **To debug auth issues:**
-
 1. Check `AuthContext.js` for user/token state
 2. Verify JWT in browser DevTools → Application → sessionStorage
 3. Check `src/utils/auth.js` for token validation logic
@@ -867,7 +850,6 @@ const { data } = await api.post(endpoints.customFeature.create(), payload);
 ## 📱 Dashboard Access by Role
 
 ### SUPER_ADMIN Dashboard
-
 - Complete system overview
 - All user management
 - Event moderation queue
@@ -876,7 +858,6 @@ const { data } = await api.post(endpoints.customFeature.create(), payload);
 - Revenue reports
 
 ### ADMIN Dashboard
-
 - Organization overview
 - Events under administration
 - Attendee management
@@ -885,7 +866,6 @@ const { data } = await api.post(endpoints.customFeature.create(), payload);
 - Hackathon administration
 
 ### ORGANIZER Dashboard
-
 - My Events (created)
 - Attendee lists (per event)
 - Event analytics
@@ -894,7 +874,6 @@ const { data } = await api.post(endpoints.customFeature.create(), payload);
 - Team management
 
 ### VOLUNTEER Dashboard
-
 - Assigned events
 - Task list
 - Team notifications
@@ -902,7 +881,6 @@ const { data } = await api.post(endpoints.customFeature.create(), payload);
 - Leaderboard position
 
 ### ATTENDEE Dashboard
-
 - Registered events
 - Event reminders
 - Feedback surveys

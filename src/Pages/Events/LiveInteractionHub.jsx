@@ -31,7 +31,7 @@ const LiveInteractionHub = () => {
             ))}
           </Tab.List>
           <Tab.Panels className="p-6">
-            <AnimatePresence mode="wait">
+            <AnimatePresence exitBeforeEnter>
               {selectedIndex === 0 && (
                 <motion.div
                   key="qa"

@@ -3,7 +3,6 @@
  * @module hooks/useModelContext
  */
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 
 /**
  * A custom React hook that registers Eventra's tools with the browser's
@@ -26,8 +25,6 @@ import { useNavigate } from "react-router-dom";
  * }
  */
 export const useModelContext = () => {
-  const navigate = useNavigate();
-
   useEffect(() => {
     if (typeof window !== "undefined" && navigator.modelContext) {
       navigator.modelContext.provideContext({
@@ -42,7 +39,7 @@ export const useModelContext = () => {
               }
             },
             execute: async ({ query }) => {
-              navigate(`/events?search=${encodeURIComponent(query)}`);
+              window.location.href = `/events?search=${encodeURIComponent(query)}`;
               return { success: true, message: `Searching for ${query}` };
             }
           },
@@ -51,12 +48,12 @@ export const useModelContext = () => {
             description: "Get information about Eventra APIs",
             inputSchema: { type: "object", properties: {} },
             execute: async () => {
-              navigate("/api-docs");
+              window.location.href = "/api-docs";
               return { success: true, message: "Navigating to API documentation" };
             }
           }
         ]
       });
     }
-  }, [navigate]);
+  }, []);
 };

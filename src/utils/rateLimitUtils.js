@@ -10,7 +10,7 @@
 /** sessionStorage key names for persisted rate-limit state. */
 export const STORAGE_KEY_ATTEMPTS = 'eventra:login:attempts';
 export const STORAGE_KEY_LOCKOUT_UNTIL = 'eventra:login:lockoutUntil';
-export const STORAGE_KEY_RESET_LAST_SUBMIT = 'eventra:reset:lastSubmit';
+
 /** Maximum number of failed login attempts before a lockout is imposed. */
 export const MAX_LOGIN_ATTEMPTS = 5;
 

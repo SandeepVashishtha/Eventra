@@ -1,11 +1,9 @@
-import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import { Star, MessageSquare } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, FileText, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import SEOHead from "../../components/SEOHead";
-import { useTranslation } from "react-i18next";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 const FloatingField = ({
@@ -97,7 +95,6 @@ const FloatingField = ({
 };
 
 const ContactUsInner = () => {
-  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({
     name: "",
@@ -120,34 +117,34 @@ const ContactUsInner = () => {
 
     // Name validation
     if (!formData.name.trim()) {
-      newErrors.name = t("validation.nameRequired");
+      newErrors.name = "Name is required";
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = t("validation.nameMinLength");
+      newErrors.name = "Name must be at least 2 characters";
     } else if (!/^[A-Za-z\s]+$/.test(formData.name)) {
-      newErrors.name = t("validation.nameLettersOnly");
+      newErrors.name = "Name should contain only letters";
     }
 
     // Email validation (unchanged)
     if (!formData.email.trim()) {
-      newErrors.email = t("validation.emailRequired");
+      newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = t("validation.emailValid");
+      newErrors.email = "Please enter a valid email";
     }
 
     // Subject validation
     if (!formData.subject.trim()) {
-      newErrors.subject = t("validation.subjectRequired");
+      newErrors.subject = "Subject is required";
     } else if (formData.subject.trim().length < 5) {
-      newErrors.subject = t("validation.subjectMinLength");
+      newErrors.subject = "Subject must be at least 5 characters";
     } else if (!/[a-zA-Z]{2,}/.test(formData.subject)) {
-      newErrors.subject = t("validation.subjectMeaningful");
+      newErrors.subject = "Please enter a meaningful subject";
     }
 
     // Message validation
     if (!formData.message.trim()) {
-      newErrors.message = t("validation.messageRequired");
+      newErrors.message = "Message is required";
     } else if (formData.message.trim().length < 10) {
-      newErrors.message = t("validation.messageMinLength");
+      newErrors.message = "Message must be at least 10 characters";
     }
 
     setErrors(newErrors);
@@ -190,13 +187,10 @@ const ContactUsInner = () => {
 
     // Simulate API call
     try {
-  await apiUtils.post(API_ENDPOINTS.CONTACT, {
-    name: formData.name,
-    email: formData.email,
-    subject: formData.subject,
-    message: formData.message,
-  });
-  toast.success(t("contactUs.toastSuccess"));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Show success toast
+      toast.success("Your message has been sent successfully! We'll get back to you soon.");
 
       // Reset form
       setFormData({
@@ -205,8 +199,8 @@ const ContactUsInner = () => {
         subject: "",
         message: "",
       });
-    } catch {
-      toast.error(t("contactUs.toastError"));
+    } catch (error) {
+      toast.error("There was an error sending your message. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -238,10 +232,11 @@ const ContactUsInner = () => {
                   className="text-4xl font-extrabold mb-6 tracking-wide"
                   style={{ fontFamily: '"Anton", sans-serif' }}
                 >
-                  {t("contactUs.heroHeading")}
+                  Get in Touch
                 </h2>
                 <p className="mb-8 text-lg text-slate-100/95 leading-relaxed">
-                  {t("contactUs.heroDescription")}
+                  Questions about our events platform? We&apos;re here to help. Reach
+                  out and we&apos;ll respond promptly.
                 </p>
 
                 <div className="space-y-6">
@@ -268,9 +263,9 @@ const ContactUsInner = () => {
                       </svg>
                     </div>
                     <div className="min-w-0 overflow-hidden break-words max-w-full">
-                      <p className="font-semibold text-white">{t("contactUs.infoEmailTitle")}</p>
+                      <p className="font-semibold text-white">Email Us</p>
                       <p className="text-sm font-medium text-slate-100/90 break-all max-w-full leading-snug">
-                        {t("contactUs.infoEmailValue")}
+                        sandeepvashishtha@outlook.in
                       </p>
                     </div>
                   </div>
@@ -285,9 +280,9 @@ const ContactUsInner = () => {
                       <MessageSquare className="w-7 h-7 text-white" aria-hidden="true" />
                     </div>
                     <div className="min-w-0 overflow-hidden max-w-full">
-                      <p className="font-semibold text-white">{t("contactUs.infoQuickResponseTitle")}</p>
+                      <p className="font-semibold text-white">Quick Response</p>
                       <p className="text-sm text-slate-100/90 leading-snug">
-                        {t("contactUs.infoQuickResponseDescription")}
+                        We aim to reply to all inquiries within 24 hours.
                       </p>
                     </div>
                   </div>
@@ -303,10 +298,10 @@ const ContactUsInner = () => {
                     </div>
                     <div className="min-w-0 overflow-hidden max-w-full">
                       <p className="font-semibold text-white">
-                        {t("contactUs.infoMultipleChannelsTitle")}
+                        Multiple Channels
                       </p>
                       <p className="text-sm text-slate-100/90 leading-snug">
-                        {t("contactUs.infoMultipleChannelsDescription")}
+                        Reach us via email, phone, or the contact form.
                       </p>
                     </div>
                   </div>
@@ -326,10 +321,10 @@ const ContactUsInner = () => {
                   className="text-3xl font-extrabold text-gray-900 dark:text-gray-100"
                   style={{ fontFamily: '"Anton", sans-serif' }}
                 >
-                  {t("contactUs.formHeading")}
+                  Send us a Message
                 </h2>
                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  {t("contactUs.formSubtitle")}
+                  We typically respond within 24 hours
                 </p>
               </div>
 
@@ -341,7 +336,7 @@ const ContactUsInner = () => {
                 <div className="space-y-5">
                   <FloatingField
                     id="name"
-                    label={t("contactUs.formName")}
+                    label="Your Name"
                     value={formData.name}
                     onChange={handleChange}
                     error={errors.name}
@@ -351,7 +346,7 @@ const ContactUsInner = () => {
 
                   <FloatingField
                     id="email"
-                    label={t("contactUs.formEmail")}
+                    label="Email Address"
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
@@ -363,7 +358,7 @@ const ContactUsInner = () => {
 
                 <FloatingField
                   id="subject"
-                  label={t("contactUs.formSubject")}
+                  label="Subject"
                   value={formData.subject}
                   onChange={handleChange}
                   error={errors.subject}
@@ -373,7 +368,7 @@ const ContactUsInner = () => {
 
                 <FloatingField
                   id="message"
-                  label={t("contactUs.formMessage")}
+                  label="Your Message"
                   as="textarea"
                   rows={5}
                   value={formData.message}
@@ -413,7 +408,7 @@ const ContactUsInner = () => {
                         ></path>
                       </svg>
                     ) : null}
-                    {isSubmitting ? t("contactUs.formSending") : t("contactUs.formSendMessage")}
+                    {isSubmitting ? "Sending..." : "Send Message"}
                   </motion.button>
                 </div>
               </form>
@@ -425,19 +420,16 @@ const ContactUsInner = () => {
   );
 };
 
-const ContactUs = () => {
-  const { t } = useTranslation();
-  return (
-    <>
-      <SEOHead
-        title={t("contactUs.pageTitle")}
-        description={t("contactUs.pageDescription")}
-        url={window.location.href}
-      />
-      <ContactUsInner />
-    </>
-  );
-};
+const ContactUs = () => (
+  <>
+    <SEOHead
+      title="Contact Us"
+      description="Get in touch with the Eventra team. We're here to help with questions, feedback, and support."
+      url={window.location.href}
+    />
+    <ContactUsInner />
+  </>
+);
 
 export default ContactUs;
 

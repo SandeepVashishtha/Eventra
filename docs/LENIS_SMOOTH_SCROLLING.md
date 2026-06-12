@@ -1,21 +1,17 @@
 # Lenis Smooth Scrolling Implementation
 
 ## Overview
-
 Lenis smooth scrolling has been integrated across all pages of the Eventra website for a premium, buttery-smooth scrolling experience.
 
 ## What's Included
 
 ### 1. Core Implementation
-
 - **Package**: `@studio-freight/lenis` (installed)
 - **Hook**: `src/hooks/useLenis.js` - Custom React hook for Lenis initialization
 - **Integration**: Added to `App.js` for global application
 
 ### 2. Configuration
-
 The default Lenis configuration includes:
-
 - **Duration**: 1.2s for smooth transitions
 - **Easing**: Custom easing function for natural deceleration
 - **Direction**: Vertical scrolling
@@ -24,7 +20,6 @@ The default Lenis configuration includes:
 - **Touch Multiplier**: 2 (enhanced touch scrolling)
 
 ### 3. Utility Functions
-
 Located in `src/utils/lenisUtils.js`:
 
 ```javascript
@@ -47,9 +42,7 @@ const position = getScrollPosition();
 ```
 
 ### 4. CSS Styles
-
 Added to `src/index.css`:
-
 - Lenis-specific classes for proper scroll behavior
 - Prevents conflicts with existing scroll implementations
 - Handles iframe pointer events during scroll
@@ -57,7 +50,6 @@ Added to `src/index.css`:
 ## Usage Examples
 
 ### Basic Scroll to Element
-
 ```javascript
 import { scrollToElement } from '../utils/lenisUtils';
 
@@ -70,7 +62,6 @@ const handleClick = () => {
 ```
 
 ### Modal Integration
-
 ```javascript
 import { stopScroll, startScroll } from '../utils/lenisUtils';
 
@@ -86,7 +77,6 @@ const closeModal = () => {
 ```
 
 ### Custom Scroll Behavior
-
 ```javascript
 // Access the global Lenis instance
 if (window.lenis) {
@@ -98,21 +88,18 @@ if (window.lenis) {
 ```
 
 ## Browser Compatibility
-
 - ✅ Chrome/Edge (latest)
 - ✅ Firefox (latest)
 - ✅ Safari (latest)
 - ✅ Mobile browsers (native touch scrolling)
 
 ## Performance Notes
-
 - Lenis uses `requestAnimationFrame` for optimal performance
 - Smooth scrolling is disabled on touch devices by default (native behavior)
 - No impact on page load time
 - Minimal JavaScript overhead
 
 ## Customization
-
 To modify Lenis behavior, edit the configuration in `src/hooks/useLenis.js`:
 
 ```javascript
@@ -126,18 +113,14 @@ const lenis = new Lenis({
 ## Troubleshooting
 
 ### Scrolling feels too fast/slow
-
 Adjust the `duration` parameter in `useLenis.js`
 
 ### Conflicts with other scroll libraries
-
 Ensure no other smooth scroll implementations are active (e.g., `scroll-behavior: smooth` in CSS)
 
 ### Modal background still scrolls
-
 Use `stopScroll()` when opening modals and `startScroll()` when closing
 
 ## Resources
-
 - [Lenis Documentation](https://github.com/studio-freight/lenis)
 - [Lenis Examples](https://lenis.studiofreight.com/)

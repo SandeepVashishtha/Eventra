@@ -26,13 +26,10 @@ const EventCountdown = ({ eventDate }) => {
       }
       return { days: 0, hours: 0, minutes: 0, seconds: 0 };
     };
-    let timerId = null;
-    timerId = setInterval(() => {
+    const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
-    return () => {
-      if (timerId !== null) clearInterval(timerId);
-    };
+    return () => clearInterval(timer);
   }, [eventDate]);
 
   const formatNumber = (num) => String(num).padStart(2, '0');
