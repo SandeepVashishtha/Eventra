@@ -39,8 +39,32 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { useAuth } from "./AuthContext";
 
 import { saveToOfflineCache, getFromOfflineCache } from "../utils/indexedDB";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const MyEventsContext = createContext(null);
+
+export const reconcileRegistrations = (listA, listB) => {
+  const merged = new Map();
+  const processList = (list) => {
+    if (!Array.isArray(list)) return;
+    for (const item of list) {
+      if (!item || typeof item.eventId === "undefined") continue;
+      const existing = merged.get(item.eventId);
+      if (!existing) {
+        merged.set(item.eventId, item);
+      } else {
+        const timeExisting = new Date(existing.registeredAt || 0).getTime();
+        const timeNew = new Date(item.registeredAt || 0).getTime();
+        if (timeNew > timeExisting) {
+          merged.set(item.eventId, item);
+        }
+      }
+    }
+  };
+  processList(listA);
+  processList(listB);
+  return Array.from(merged.values());
+};
 
 // Use a hashed or opaque key so the localStorage key itself does not expose
 // the userId (which is often the user's email address).
@@ -76,10 +100,33 @@ const toPersistedRecord = (eventId, registeredAt, event, registrationId, qrToken
 // IndexedDB helpers
 // ---------------------------------------------------------------------------
 
-const loadFromIDB = async (userId) => {
+export const loadFromIDB = async (userId) => {
   if (!userId) return [];
-  const data = await getFromOfflineCache(storageKey(userId), []);
-  return Array.isArray(data) ? data : [];
+  const key = storageKey(userId);
+  const idbData = await getFromOfflineCache(key, []);
+  
+  let lsData = [];
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      lsData = safeJsonParse(raw, []);
+    }
+  } catch {
+    // ignore
+  }
+
+  const reconciled = reconcileRegistrations(idbData, lsData);
+  
+  if (lsData.length > 0) {
+    await saveToOfflineCache(key, reconciled);
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // ignore
+    }
+  }
+
+  return reconciled;
 };
 
 const saveToIDB = async (userId, records) => {

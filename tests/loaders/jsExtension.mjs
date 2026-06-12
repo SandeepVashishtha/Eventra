@@ -85,6 +85,25 @@ export async function resolve(specifier, context, nextResolve) {
 }
 
 export async function load(url, context, nextLoad) {
+  if (url.includes("MyEventsContext.js")) {
+    const filePath = fileURLToPath(url);
+    let rawSource = fs.readFileSync(filePath, "utf-8");
+    rawSource = rawSource.replace(/import\s+{\s*useAuth\s*}\s+from\s+["'].*AuthContext["'];?/g, "const useAuth = () => ({});");
+    const providerIndex = rawSource.indexOf("export const MyEventsProvider");
+    if (providerIndex !== -1) {
+      rawSource = rawSource.substring(0, providerIndex);
+      rawSource += `
+export const MyEventsProvider = () => null;
+export const useMyEvents = () => ({});
+export default MyEventsContext;
+`;
+    }
+    return {
+      format: "module",
+      source: rawSource,
+      shortCircuit: true
+    };
+  }
   if (url.endsWith(".json")) {
     const filePath = fileURLToPath(url);
     const rawSource = fs.readFileSync(filePath, "utf-8");
