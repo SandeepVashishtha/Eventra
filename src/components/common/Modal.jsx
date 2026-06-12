@@ -112,5 +112,3 @@ const Modal = ({
 };
 
 export default Modal;
-
-// Optimized for lazy loading

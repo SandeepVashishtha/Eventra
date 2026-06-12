@@ -5,7 +5,8 @@
 Before working with the API, ensure your environment is properly configured:
 
 **\u2705 [Environment Setup Guide](ENV_SETUP_GUIDE.md)** – Complete configuration instructions including:
-- Backend API URL configuration (`REACT_APP_API_URL`)
+
+- Backend API URL configuration (`BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL`)
 - Running the backend locally
 - Troubleshooting connection issues
 - Mock API vs real API modes
@@ -505,7 +506,6 @@ GET /api/events
 
 ---
 
-
 | Method | Endpoint |
 |--------|----------|
 | GET | `/api/events/{id}` |
@@ -679,7 +679,6 @@ GET /api/users/my-events
 
 Creates a new event. This endpoint is restricted to authenticated users with `ORGANIZER` or `ADMIN` authority.
 
-
 ### Authentication
 
 ---
@@ -738,7 +737,6 @@ Authorization: Bearer <token>
 | `401 Unauthorized` | Missing or invalid JWT |
 | `403 Forbidden` | Authenticated user is not an `ORGANIZER` or `ADMIN` |
 
-
 ---
 
 ## Update Event
@@ -795,7 +793,6 @@ Authorization: Bearer <token>
 | `404 Not Found` | Event ID does not exist |
 | `409 Conflict` | Capacity is lower than current registeredCount |
 
-
 ---
 
 ## Delete Event
@@ -845,23 +842,28 @@ Authorization: Bearer <token>
 Opens a Server-Sent Events stream connection for event updates.
 
 ### Authentication
+
 Public. No authentication required.
 
 ### Purpose
+
 - This endpoint currently establishes a basic SSE connection.
 - It sends an initial connected event to confirm the stream is active.
 - It prepares the backend for future real-time event broadcasts.
 - *Note: Full real-time event create/update/register broadcasting is not yet implemented.*
 
 ### Response Media Type
+
 `text/event-stream`
 
 ### Manual Test Command
+
 ```bash
 curl -N http://localhost:8080/api/events/stream
 ```
 
 ### Example Stream Output
+
 ```text
 event:connected
 data:Stream connected successfully
@@ -934,6 +936,7 @@ Returns the list of projects for the Projects gallery/module.
 *This documentation update corresponds to the backend implementation PR for `GET /api/projects`.*
 
 ### Authentication
+
 Not required. Public endpoint.
 
 ### Example Request
@@ -943,11 +946,12 @@ GET /api/projects
 ```
 
 ### Success Response
+
 Status: `200 OK`
 
 Returns a JSON array of project objects. Returns `[]` if no projects exist.
 
-#### Response Example:
+#### Response Example
 
 ```json
 [
@@ -983,9 +987,10 @@ Returns a JSON array of project objects. Returns `[]` if no projects exist.
 Returns the details of a specific project by its ID.
 
 ### Authentication
+
 Not required. Public endpoint.
 
-### Success response example:
+### Success response example
 
 ```json
 {
@@ -999,7 +1004,7 @@ Not required. Public endpoint.
 }
 ```
 
-### Missing project response example:
+### Missing project response example
 
 ```json
 {
@@ -1022,12 +1027,14 @@ Not required. Public endpoint.
 Increments the upvote count for a project by 1 and returns the updated project details.
 
 ### Authentication
+
 Requires a valid Bearer JWT in the `Authorization` header. Any authenticated user can upvote.
 
 ### Success Response
+
 Status: `200 OK`
 
-#### Response Example:
+#### Response Example
 
 ```json
 {
@@ -1059,15 +1066,19 @@ Status: `200 OK`
 Returns the static list of supported project categories used by the Projects gallery/module.
 
 ### Authentication
+
 Not required. Public endpoint.
 
 ### Request
+
 No request body.
 
 ### Success Response
+
 Status: `200 OK`
 
-#### Response example:
+#### Response example
+
 ```json
 [
   "Mobile Development",
@@ -1082,6 +1093,7 @@ Status: `200 OK`
 ```
 
 ### Notes
+
 - This endpoint is public and does not require JWT authentication.
 - This PR only documents the project categories endpoint.
 - Other Projects APIs will be documented separately when implemented.
@@ -1101,14 +1113,17 @@ Status: `200 OK`
 Fetches the list of available hackathons.
 
 ### Authentication
+
 Public. No authentication required.
 
 ### Example Request
+
 ```bash
 curl http://localhost:8080/api/hackathons
 ```
 
 ### Successful Response (200)
+
 Returns a JSON array of hackathon objects. Returns `[]` if no hackathons exist.
 
 ```json
@@ -1140,6 +1155,7 @@ Returns complete details for a single hackathon by its ID.
 *This documentation update corresponds to the backend implementation for GET /api/hackathons/{id}.*
 
 ### Authentication
+
 Not required. Public endpoint.
 
 ### Example Request
@@ -1187,6 +1203,7 @@ GET /api/hackathons/1
 Creates a new hackathon. Restricted to authorized roles: `ORGANIZER`, `ADMIN`, `SUPER_ADMIN`.
 
 ### Authentication
+
 Protected endpoint. Requires Bearer JWT authentication.
 
 ### Request Headers
@@ -1257,6 +1274,7 @@ Content-Type: application/json
 Updates an existing hackathon by id. Restricted to authorized roles: `ORGANIZER`, `ADMIN`, `SUPER_ADMIN`.
 
 ### Authentication
+
 Protected endpoint. Requires Bearer JWT authentication.
 
 ### Request Headers
@@ -1328,15 +1346,19 @@ Content-Type: application/json
 Deletes an existing hackathon by id. Restricted to authorized roles: `ADMIN`, `SUPER_ADMIN`.
 
 ### Authentication
+
 Protected endpoint. Requires Bearer JWT authentication.
 
 ### Path Parameter
+
 - `id`: Long, hackathon id
 
 ### Successful Response (204)
+
 No response body.
 
 ### Error Responses
+
 - **401 Unauthorized**: JWT is missing or invalid.
 - **403 Forbidden**: Authenticated user does not have the required role (`ADMIN` or `SUPER_ADMIN`).
 - **404 Not Found**: Hackathon id does not exist.
@@ -1350,12 +1372,15 @@ No response body.
 Registers the authenticated user for a hackathon by id.
 
 ### Authentication
+
 Protected endpoint. Requires Bearer JWT authentication. Any authenticated user can register.
 
 ### Path Parameter
+
 - `id`: Long, hackathon id
 
 ### Request Body
+
 No request body required.
 
 ### Successful Response (201)
@@ -1372,12 +1397,115 @@ No request body required.
 ```
 
 ### Error Responses
+
 - **400 Bad Request**: Registration deadline has passed / registration is closed.
 - **401 Unauthorized**: JWT is missing or invalid.
 - **404 Not Found**: Hackathon id does not exist.
 - **409 Conflict**: User is already registered for the hackathon.
 
 *Note: The backend implementation is handled in the Eventra-Backend repository. This docs PR only syncs API documentation with the backend behavior.*
+
+---
+
+# Feedback APIs
+
+## Submit Feedback
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/feedback` |
+
+This endpoint allows an authenticated user to submit feedback for an event they are registered for. The backend validates the event, authenticated user, and event registration before saving feedback. Duplicate feedback from the same user for the same event is rejected.
+
+### Authentication
+
+Requires a valid Bearer JWT in the `Authorization` header. Any authenticated user can submit feedback, but the user must be registered for the event.
+
+### Request Body
+
+```json
+{
+  "eventId": 1,
+  "rating": 5,
+  "comment": "Great event!"
+}
+```
+
+### Request Validation
+
+- `eventId` is required
+- `rating` is required and must be between `1` and `5`
+- `comment` is optional and can be up to `1000` characters
+
+### Successful Response (201)
+
+```json
+{
+  "id": 1,
+  "eventId": 1,
+  "userId": 1,
+  "rating": 5,
+  "comment": "Great event!",
+  "submittedAt": "2026-06-07T18:06:22.334156"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Invalid request body or validation failure |
+| `401 Unauthorized` | If the request is unauthenticated |
+| `403 Forbidden` | If the authenticated user is not registered for the event |
+| `404 Not Found` | If the event or authenticated user does not exist |
+| `409 Conflict` | If the user has already submitted feedback for the event |
+
+---
+
+# Notification APIs
+
+## Get Notifications
+
+| Method | Endpoint             |
+| ------ | -------------------- |
+| GET    | `/api/notifications` |
+
+Returns the authenticated user’s notifications sorted by newest first.
+
+### Authentication
+
+Requires Bearer JWT authentication.
+
+### Success Response
+
+Status: `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Welcome Notification",
+    "message": "This is a manual test notification.",
+    "read": false,
+    "createdAt": "2026-06-09T00:38:52.335113"
+  }
+]
+```
+
+### Empty Response
+
+If the authenticated user has no notifications:
+
+```json
+[]
+```
+
+### Notes
+
+- Only notifications belonging to the authenticated user are returned.
+- The response includes read/unread status using the `read` field.
+- Notifications are returned in newest-first order.
+- Pagination is not currently included.
 
 ---
 

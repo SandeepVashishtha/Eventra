@@ -28,24 +28,28 @@ export function decodeJwtPayload(token) {
 
 export function isTokenExpired(token) {
   const payload = decodeJwtPayload(token);
-  if (!payload || typeof payload.exp !== "number") {
-    return true;
-  }
-
-  const nowInSeconds = Math.floor(Date.now() / 1000);
-  return payload.exp - CLOCK_SKEW_BUFFER <= nowInSeconds;
+  if (!payload) return true;
+  // If 'exp' is missing, the token does not expire by time per RFC 7519
+  if (typeof payload.exp === 'undefined') return false;
+  
+  return payload.exp * 1000 < Date.now() + CLOCK_SKEW_BUFFER * 1000;
 }
 
 export function isTokenValid(token) {
-  if (!token || typeof token !== "string") return false;
+  const payload = decodeJwtPayload(token);
+  if (!payload) return false;
+  
   return !isTokenExpired(token);
 }
 
 export function getTokenTTL(token) {
   const payload = decodeJwtPayload(token);
-  if (!payload || typeof payload.exp !== "number") return -1;
-  
-  // 🔥 FIX: Apply the CLOCK_SKEW_BUFFER so the TTL matches the expiration logic.
-  // This prevents the background refresh timer from firing too late.
-  return (payload.exp - CLOCK_SKEW_BUFFER) - Math.floor(Date.now() / 1000);
+  if (!payload) {
+    return 0;
+  }
+  if (typeof payload.exp === "undefined") {
+    return -1;
+  }
+  const now = Math.floor(Date.now() / 1000);
+  return payload.exp - now - CLOCK_SKEW_BUFFER;
 }

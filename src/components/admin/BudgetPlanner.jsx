@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { exportToCSV, exportToJSON } from '../../utils/exportUtils';
 import { Sparkles } from 'lucide-react';
+import { toast } from 'react-toastify'; 
 
 // Mock data for budgeting
 const initialBudget = {
@@ -56,7 +57,7 @@ const BudgetPlanner = () => {
 
   const handleOptimize = () => {
     // Placeholder for AI optimizer – currently just shows a toast
-    alert('AI optimizer is not yet implemented.');
+    toast.info('AI optimizer is not yet implemented. Stay tuned!');
   };
 
   return (
