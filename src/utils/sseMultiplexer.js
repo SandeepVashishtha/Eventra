@@ -307,6 +307,7 @@ class SseMultiplexer {
           if (currentStatus) {
             this.broadcastMessage({
               type: "SSE_STATUS",
+              tabId: this.tabId,
               path: msg.path,
               status: currentStatus,
             });
@@ -345,6 +346,7 @@ class SseMultiplexer {
               if (currentStatus) {
                 this.broadcastMessage({
                   type: "SSE_STATUS",
+                  tabId: this.tabId,
                   path: p,
                   status: currentStatus,
                 });

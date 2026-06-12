@@ -19,6 +19,12 @@ export class RateLimitError extends ApiError {
   }
 }
 
+export class CSRFError extends ApiError {
+  constructor(message, { status = 403, data = null } = {}) {
+    super(message, { status, data });
+    this.name = "CSRFError";
+  }
+}
 export const normalizeApiError = (error) => {
   const config = error.config || {};
   const status = error?.response?.status;

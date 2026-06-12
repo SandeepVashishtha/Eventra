@@ -173,7 +173,10 @@ const runTests = async () => {
   assert.equal(analyticsSource.closed, true);
 
   // Test 5: Heartbeat mechanisms (PING/PONG and pruning)
-  // Override sseMultiplexer.channel to use MockBroadcastChannel because of ES Module import hoisting
+  // Replace the import-time channel so the test controls every active mock channel.
+  // Leaving the old channel open lets status broadcasts loop back into the same
+  // singleton through a stale listener, which creates recursive warning noise.
+  sseMultiplexer.channel?.close();
   sseMultiplexer.channel = new globalThis.BroadcastChannel("eventra_sse_multiplexer");
   sseMultiplexer.channel.onmessage = (e) => sseMultiplexer.handleBroadcastMessage(e.data);
 
@@ -271,6 +274,9 @@ const runTests = async () => {
   } finally {
     Math.random = originalRandom;
     sseMultiplexer.stopHeartbeatChecks();
+    sseMultiplexer.channel?.close();
+    followerChannel?.close();
+    channels.clear();
     if (sseMultiplexer.heartbeatInterval) {
       clearInterval(sseMultiplexer.heartbeatInterval);
       sseMultiplexer.heartbeatInterval = null;
@@ -303,6 +309,7 @@ const runTests = async () => {
 
   assert.ok(receivedStatusMsg !== null, "Follower should receive current connection status on SUBSCRIBE");
   assert.equal(receivedStatusMsg.status, "connected");
+  assert.equal(receivedStatusMsg.tabId, sseMultiplexer.tabId, "Broadcast message should contain leader's tabId");
 
   // Verify same for SUBSCRIBERS_RESPONSE
   receivedStatusMsg = null;
@@ -313,6 +320,7 @@ const runTests = async () => {
   });
   assert.ok(receivedStatusMsg !== null, "Follower responding with active path should receive current connection status");
   assert.equal(receivedStatusMsg.status, "connected");
+  assert.equal(receivedStatusMsg.tabId, sseMultiplexer.tabId, "Broadcast message should contain leader's tabId");
 
   statusTestChannel.close();
 

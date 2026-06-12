@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { isValidShareUrl } from "../../utils/shareUtils";
+import { createShareModalData } from "../../utils/shareModalUtils.js";
 const ModalCloseButton = memo(({ onClick }) => (
   <button
     type="button"
@@ -29,37 +29,7 @@ ModalCloseButton.displayName = "ModalCloseButton";
 const ShareModal = ({ isOpen, onClose, event }) => {
   const { containerRef } = useFocusTrap(isOpen, onClose);
   const shareData = useMemo(() => {
-    if (!event) {
-      return null;
-    }
-
-    if (!event.id) {
-      console.warn("[ShareModal] event.id is missing — share URL cannot be constructed.");
-      return null;
-    }
-
-    const shareUrl = `${window.location.origin}/events/${event.id}`;
-    if (!isValidShareUrl(shareUrl)) {
-      console.warn("[ShareModal] Rejected invalid share URL:", shareUrl);
-      return null;
-    }
-    const shareText = `Check out this event: ${event.title}`;
-
-    return {
-      title: event.title,
-      image: event.image,
-      description: event.description ?? "",
-      shareUrl,
-      shareText,
-      links: {
-        twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
-        whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
-        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-        telegram: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
-        email: `mailto:?subject=${encodeURIComponent(event.title)}&body=${encodeURIComponent(`${shareText}\n\n${shareUrl}`)}`,
-      },
-    };
+    return createShareModalData(event);
   }, [event]);
 
   const copyLink = useCallback(async () => {
