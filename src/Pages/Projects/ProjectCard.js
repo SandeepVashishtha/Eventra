@@ -68,7 +68,7 @@ const ConcentricTechRings = ({ techStack }) => {
   return (
     <div className="flex items-center gap-5 p-4 rounded-2xl bg-slate-50/40 dark:bg-slate-950/35 border border-slate-100/50 dark:border-slate-800/20 backdrop-blur-xs">
       {/* SVG Container */}
-      <div className="relative w-[92px] h-[92px] shrink-0">
+      <div className="relative w-23 h-23 shrink-0">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88">
           <defs>
             {techGradients.map((grad, i) => (
@@ -125,7 +125,7 @@ const ConcentricTechRings = ({ techStack }) => {
       <div className="flex-1 space-y-2.5 min-w-0">
         {list.map((tech, i) => {
           const pct = sweeps[i];
-          const grad = techGradients[i];
+          // const grad = techGradients[i];
 
           return (
             <div key={tech} className="space-y-1">
@@ -150,13 +150,13 @@ const ConcentricTechRings = ({ techStack }) => {
 const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   useReducedMotion();
   const { token, isAuthenticated } = useAuth();
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
 
   // Mouse Tracking state for dynamic light glow bubble
   const cardRef = useRef(null);
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const [setCoords] = useState({ x: 0, y: 0 });
   
 
   const handleMouseMove = (e) => {
@@ -361,7 +361,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           onLoad={() => setIsLoaded(true)}
           className="relative w-full h-full object-cover hover:scale-102 transition-transform duration-500 z-10"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none z-20" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent pointer-events-none z-20" />
       </div>
 
       {/* Main Content Layout */}
@@ -396,7 +396,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         {/* Author / Committer Header */}
         <div className="flex items-center justify-between pt-1 border-t border-slate-100/80 dark:border-slate-800/30">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-pink-500 text-white flex items-center justify-center text-xs font-black uppercase shrink-0 shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-pink-500 text-white flex items-center justify-center text-xs font-black uppercase shrink-0 shadow-sm">
               {project.author?.charAt(0) || "U"}
             </div>
             <div className="flex flex-col min-w-0">

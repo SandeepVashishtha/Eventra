@@ -168,7 +168,67 @@ When a request is blocked due to missing CSRF token (strict mode), a `CSRFError`
 
 ---
 
-## 7. Security Policy and Reporting
+## 7. Cross-Origin Resource Sharing (CORS) Policy
+
+Eventra enforces a strict allowlist-based CORS policy to prevent unauthorized cross-origin access to API endpoints.
+
+### 7.1 Allowlist-Based Origin Validation
+
+**CRITICAL**: Eventra does not use wildcard (`*`) CORS origins. All origins must be explicitly allowed through the `ALLOWED_ORIGINS` environment variable.
+
+- Origins are validated against a comma-separated allowlist
+- Only trusted origins receive `Access-Control-Allow-Origin` headers
+- Untrusted origins receive no CORS headers (fail closed)
+- Exact string matching is used (no regex patterns)
+- `Vary: Origin` is always returned to prevent caching issues
+
+### 7.2 Configuration
+
+Set allowed origins via the `ALLOWED_ORIGINS` environment variable:
+
+```env
+ALLOWED_ORIGINS=https://eventra.com,https://www.eventra.com,https://api.eventra.com
+```
+
+**Security Requirements:**
+- Never use wildcard (`*`) in production
+- Specify exact origins including protocol (http/https) and port if non-standard
+- Origins are case-sensitive and must match exactly
+- Whitespace around origins is automatically trimmed
+
+### 7.3 Development Support
+
+In non-production environments (`NODE_ENV !== "production"`), common localhost origins are automatically allowed for development convenience:
+
+- `http://localhost:3000`
+- `http://localhost:5173`
+- `http://127.0.0.1:3000`
+- `http://127.0.0.1:5173`
+
+**Security Note**: These development origins are **blocked** in production unless explicitly added to `ALLOWED_ORIGINS`.
+
+### 7.4 Fail-Closed Behavior
+
+When an origin is not in the allowlist:
+
+- No `Access-Control-Allow-Origin` header is returned
+- The browser blocks the cross-origin request
+- No error message is leaked to the client
+- This prevents information disclosure about allowed origins
+
+### 7.5 Implementation Details
+
+The CORS policy is implemented in `api/auth/cors.js`:
+
+- `getAllowedOrigins()`: Parses and validates the environment variable
+- `isAllowedOrigin(origin)`: Checks if an origin is trusted
+- `buildCorsHeaders(req)`: Generates CORS headers for requests
+
+All functions include comprehensive test coverage in `src/__tests__/corsProtection.test.js`.
+
+---
+
+## 8. Security Policy and Reporting
 
 For vulnerabilities, do not open public GitHub issues. Please refer to our responsible disclosure policy outlined in [SECURITY.md](../SECURITY.md) or email the maintenance team directly.
 
