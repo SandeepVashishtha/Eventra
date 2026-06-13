@@ -14,56 +14,45 @@
  *
  * @returns {Set<string>} Set of normalized allowed origins
  */
-function getAllowedOrigins() {
-  const origins = new Set();
-
-  // Check for explicit ALLOWED_ORIGINS first (highest priority)
-  if (process.env.ALLOWED_ORIGINS) {
-    const explicitOrigins = process.env.ALLOWED_ORIGINS
-      .split(',')
-      .map(origin => origin.trim())
-      .filter(Boolean);
-    explicitOrigins.forEach(origin => {
-      try {
-        const normalized = normalizeOrigin(origin);
-        if (normalized) origins.add(normalized);
-      } catch (e) {
-        // Silently ignore invalid URLs
-      }
-    });
+function addOriginIfValid(origins, origin) {
+  try {
+    const normalized = normalizeOrigin(origin);
+    if (normalized) origins.add(normalized);
+  } catch (e) {
   }
+}
 
-  // Extract origins from common environment variables
-  const envVars = [
-    'BACKEND_URL',
-    'VITE_API_URL',
-    'REACT_APP_API_URL',
-    'REACT_APP_PUBLIC_URL',
-  ];
+function addExplicitOrigins(origins) {
+  if (!process.env.ALLOWED_ORIGINS) return;
+  const explicitOrigins = process.env.ALLOWED_ORIGINS
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+  explicitOrigins.forEach(origin => addOriginIfValid(origins, origin));
+}
 
+function addEnvVarOrigins(origins) {
+  const envVars = ['BACKEND_URL', 'VITE_API_URL', 'REACT_APP_API_URL', 'REACT_APP_PUBLIC_URL'];
   envVars.forEach(varName => {
     const url = process.env[varName];
-    if (url) {
-      try {
-        const normalized = normalizeOrigin(url);
-        if (normalized) origins.add(normalized);
-      } catch (e) {
-        // Silently ignore invalid URLs
-      }
-    }
+    if (url) addOriginIfValid(origins, url);
   });
+}
 
-  // In development, add common localhost ports if not already present
-  if (process.env.NODE_ENV !== 'production') {
-    const devPorts = [3000, 5173, 8080];
-    devPorts.forEach(port => {
-      const devOrigin = `http://localhost:${port}`;
-      if (!origins.has(devOrigin)) {
-        origins.add(devOrigin);
-      }
-    });
-  }
+function addDevOrigins(origins) {
+  if (process.env.NODE_ENV === 'production') return;
+  const devPorts = [3000, 5173, 8080];
+  devPorts.forEach(port => {
+    const devOrigin = `http://localhost:${port}`;
+    if (!origins.has(devOrigin)) origins.add(devOrigin);
+  });
+}
 
+function getAllowedOrigins() {
+  const origins = new Set();
+  addExplicitOrigins(origins);
+  addEnvVarOrigins(origins);
+  addDevOrigins(origins);
   return origins;
 }
 

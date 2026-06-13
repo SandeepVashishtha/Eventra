@@ -83,9 +83,8 @@ export default async function login(req, res, deps = {}) {
     return corsResponse(req, res, 400, { error: validation.message });
   }
 
-  // Runtime protection: Reject requests if storage is unavailable
-  // In development, in-memory storage is allowed. In production, persistent storage is required.
-  if (!isPersistentStorageConfigured() || !users || !usersByUsername) {
+  const isStorageAvailable = isPersistentStorageConfigured() && users && usersByUsername;
+  if (!isStorageAvailable) {
     console.error("[login.js] Authentication service unavailable: storage not initialized");
     return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
   }

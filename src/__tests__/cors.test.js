@@ -23,13 +23,30 @@ import {
 describe('CORS Origin Validation Security Tests', () => {
   const originalEnv = process.env;
 
+  function createMockResponse() {
+    const setHeaderCalls = [];
+    const statusCalls = [];
+    const jsonCalls = [];
+    const endCalls = [];
+    return {
+      setHeaderCalls,
+      statusCalls,
+      jsonCalls,
+      endCalls,
+      res: {
+        setHeader: (key, value) => setHeaderCalls.push([key, value]),
+        status: (code) => { statusCalls.push(code); return { json: (body) => jsonCalls.push(body), end: () => endCalls.push(true) }; },
+        json: (body) => jsonCalls.push(body),
+        end: () => endCalls.push(true),
+      },
+    };
+  }
+
   beforeEach(() => {
-    // Reset environment before each test
     process.env = { ...originalEnv };
   });
 
   afterEach(() => {
-    // Restore original environment
     process.env = originalEnv;
   });
 
@@ -260,14 +277,7 @@ describe('CORS Origin Validation Security Tests', () => {
     it('should handle OPTIONS requests with allowed origin', () => {
       process.env.ALLOWED_ORIGINS = 'https://trusted.example.com';
       const req = { headers: { origin: 'https://trusted.example.com' } };
-      const setHeaderCalls = [];
-      const statusCalls = [];
-      const endCalls = [];
-      const res = {
-        setHeader: (key, value) => setHeaderCalls.push([key, value]),
-        status: (code) => { statusCalls.push(code); return res; },
-        end: () => endCalls.push(true),
-      };
+      const { setHeaderCalls, statusCalls, endCalls, res } = createMockResponse();
       
       handlePreflight(req, res);
       
@@ -279,13 +289,7 @@ describe('CORS Origin Validation Security Tests', () => {
     it('should handle OPTIONS requests with untrusted origin', () => {
       process.env.ALLOWED_ORIGINS = 'https://trusted.example.com';
       const req = { headers: { origin: 'https://attacker.example.com' } };
-      const setHeaderCalls = [];
-      const statusCalls = [];
-      const res = {
-        setHeader: (key, value) => setHeaderCalls.push([key, value]),
-        status: (code) => { statusCalls.push(code); return res; },
-        end: () => {},
-      };
+      const { setHeaderCalls, statusCalls, res } = createMockResponse();
       
       handlePreflight(req, res);
       
@@ -295,12 +299,7 @@ describe('CORS Origin Validation Security Tests', () => {
 
     it('should include Vary: Origin in preflight response', () => {
       const req = { headers: { origin: 'https://example.com' } };
-      const setHeaderCalls = [];
-      const res = {
-        setHeader: (key, value) => setHeaderCalls.push([key, value]),
-        status: (code) => { return res; },
-        end: () => {},
-      };
+      const { setHeaderCalls, res } = createMockResponse();
       
       handlePreflight(req, res);
       
@@ -320,12 +319,7 @@ describe('CORS Origin Validation Security Tests', () => {
     it('should never return wildcard origin in corsResponse', () => {
       process.env.ALLOWED_ORIGINS = '';
       const req = { headers: { origin: 'https://any-origin.com' } };
-      const setHeaderCalls = [];
-      const res = {
-        setHeader: (key, value) => setHeaderCalls.push([key, value]),
-        status: (code) => { return res; },
-        json: (body) => {},
-      };
+      const { setHeaderCalls, res } = createMockResponse();
       
       corsResponse(req, res, 200, {});
       
@@ -339,12 +333,7 @@ describe('CORS Origin Validation Security Tests', () => {
     it('should never return wildcard origin in handlePreflight', () => {
       process.env.ALLOWED_ORIGINS = '';
       const req = { headers: { origin: 'https://any-origin.com' } };
-      const setHeaderCalls = [];
-      const res = {
-        setHeader: (key, value) => setHeaderCalls.push([key, value]),
-        status: (code) => { return res; },
-        end: () => {},
-      };
+      const { setHeaderCalls, res } = createMockResponse();
       
       handlePreflight(req, res);
       
