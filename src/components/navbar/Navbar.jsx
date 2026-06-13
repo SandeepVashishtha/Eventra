@@ -110,10 +110,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </div>
           </Link>
 
-          {/* Desktop Links - Wrapping instead of absolute positioning */}
-          <div className="hidden lg:flex items-center justify-center flex-1 overflow-x-auto">
-            <DesktopNavbar />
-          </div>
+          {/* Desktop Links - safe centered to prevent overlapping */}
+          <DesktopNavbar />
 
           {/* Right Controls Container */}
           <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0">
