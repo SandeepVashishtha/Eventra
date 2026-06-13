@@ -17,8 +17,8 @@ jobs:
         with:
           script: |
             const cfg = {
-              warningDays: 5,
-              staleDays: 10,
+              warningDays: 2,
+              staleDays: 4,
               // Ignore bot/app actors when computing human activity
               ignoredActorTypes: ['Bot', 'Organization', 'User'],
               // If issue has any of these labels, never unassign
