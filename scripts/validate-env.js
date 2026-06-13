@@ -53,40 +53,7 @@ try {
 } catch (error) {
   // Ignore missing or malformed .env files
 }
-function loadEnvFile() {
-  try {
-    const envPath = path.resolve(process.cwd(), ".env");
 
-    if (!fs.existsSync(envPath)) return;
-
-    const content = fs.readFileSync(envPath, "utf8");
-
-    content.split(/\r?\n/).forEach((line) => {
-      const trimmed = line.trim();
-
-      if (
-        !trimmed ||
-        trimmed.startsWith("#") ||
-        !trimmed.includes("=")
-      ) {
-        return;
-      }
-
-      const [key, ...valueParts] = trimmed.split("=");
-      const value = valueParts
-        .join("=")
-        .replace(/^['"]|['"]$/g, "");
-
-      if (key && !process.env[key]) {
-        process.env[key.trim()] = value.trim();
-      }
-    });
-  } catch {
-    console.warn("[validate-env] Could not load .env file");
-  }
-}
-
-loadEnvFile();
 
 const SENSITIVE_KEY_PATTERNS = [
   /private[_\-]?key/i,
