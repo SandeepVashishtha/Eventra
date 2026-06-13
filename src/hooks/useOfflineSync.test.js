@@ -162,13 +162,13 @@ describe("useOfflineSync", () => {
       return null;
     };
 
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
 
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     await act(async () => {
       window.dispatchEvent(new Event("online"));
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -211,13 +211,13 @@ describe("useOfflineSync", () => {
       return null;
     };
 
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
 
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     await act(async () => {
       window.dispatchEvent(new Event("online"));
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -246,13 +246,13 @@ describe("useOfflineSync", () => {
       return null;
     };
 
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
 
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     await act(async () => {
       window.dispatchEvent(new Event("online"));
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -283,13 +283,13 @@ describe("useOfflineSync", () => {
       return null;
     };
 
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
 
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+     
     await act(async () => {
       window.dispatchEvent(new Event("online"));
       await new Promise((resolve) => setTimeout(resolve, 100));

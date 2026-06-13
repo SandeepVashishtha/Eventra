@@ -1,11 +1,10 @@
 import React, { forwardRef } from "react";
 import "./Button.css";
 
-// 🔥 FIX: Hoisted static arrays outside the render cycle to prevent memory reallocation on every single button render
+// 🔥 FIX: Hoisted static arrays outside the render cycle
 const validVariants = ["primary", "secondary", "danger", "outline"];
 const validSizes = ["small", "medium", "large"];
 
-// 🔥 FIX: Wrapped component in forwardRef to allow focus management and integration with external libraries
 export const Button = forwardRef(
   (
     {
@@ -15,16 +14,13 @@ export const Button = forwardRef(
       className = "",
       type = "button",
       disabled = false,
-      ariaLabel,
+      "aria-label": ariaLabel, // Changed to destructure standard aria-label
       ...props
     },
     ref
   ) => {
-    // Allowed variants and sizes
-
     // Fallback protection
     const safeVariant = validVariants.includes(variant) ? variant : "primary";
-
     const safeSize = validSizes.includes(size) ? size : "medium";
 
     // Combined class names
@@ -32,11 +28,11 @@ export const Button = forwardRef(
 
     return (
       <button
-        ref={ref} // 🔥 FIX: Attached the forwarded ref to the actual DOM node
+        ref={ref}
         type={type}
         disabled={disabled}
         aria-disabled={disabled}
-        aria-label={ariaLabel}
+        aria-label={ariaLabel} // Now uses the destructured prop correctly
         className={buttonClass.trim()}
         {...props}
       >
@@ -46,5 +42,4 @@ export const Button = forwardRef(
   }
 );
 
-// 🔥 FIX: Added displayName for clean debugging in React DevTools
 Button.displayName = "Button";

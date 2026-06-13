@@ -557,7 +557,7 @@ const EventRegistration = () => {
         isSubmittingRef.current = false;
         registrationLocks.delete(eventId);
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+       
     },
     [
       isAuthenticated,
@@ -597,7 +597,7 @@ const EventRegistration = () => {
       setShowConflictModal(false);
       navigate(`/events/${alternativeEvent.id}/register`);
       toast.info(t("eventRegistration.toastRedirectingTo", { title: alternativeEvent.title }));
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+       
     },
     [navigate]
   );
