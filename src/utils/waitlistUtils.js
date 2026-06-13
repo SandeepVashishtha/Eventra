@@ -169,7 +169,11 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
     if (response.ok) {
       const newEntry = {
         userId,
-        userName: registrationForm.eventTitle || "the event",
+        userName:
+          user.fullName ||
+          `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+          user.username ||
+          "Anonymous",
         userEmail: user.email,
         phone: registrationForm.phone || "",
         eventId: id,
