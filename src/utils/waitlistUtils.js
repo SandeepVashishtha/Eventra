@@ -1,11 +1,11 @@
-import { get as idbGet, set as idbSet } from "idb-keyval";
+
 import { safeJsonParse } from "./safeJsonParse.js";
 import { apiUtils, API_ENDPOINTS } from "../config/api";
 import { logger } from "./logger.js";
 import { getOrMigrateKey } from "./storageKeyManager.js";
 
 const GLOBAL_WAITLIST_KEY = "eventra_global_waitlists";
-const NOTIFICATIONS_STORAGE_KEY = "eventra_notifications";
+
 
 /**
  * Coerce an eventId value to a safe integer.
@@ -31,20 +31,23 @@ const parseEventId = (eventId) => {
   return id;
 };
 
-// Helper to add local notifications using IndexedDB
+// Helper to add local notifications using localStorage
 export const addLocalNotification = async (title, message) => {
   try {
-    const raw = await idbGet(NOTIFICATIONS_STORAGE_KEY);
+    const canonicalKey = "eventra_notification_inbox";
+    const raw = localStorage.getItem(canonicalKey);
     const notifications = raw ? safeJsonParse(raw, []) : [];
     const newNotification = {
-      id: Date.now() + Math.floor(Math.random() * 1000),
-      read: false,
+      id: `local-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      isRead: false,
       createdAt: new Date().toISOString(),
+      timestamp: new Date().toISOString(),
       title,
       message,
+      category: "registrations",
     };
     notifications.unshift(newNotification);
-    await idbSet(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications));
+    localStorage.setItem(canonicalKey, JSON.stringify(notifications));
     // Trigger cross-component real-time sync
     window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
   } catch (error) {
