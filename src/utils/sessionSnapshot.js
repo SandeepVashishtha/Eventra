@@ -1,3 +1,5 @@
+import { broadcastSessionTerminated } from './sessionBroadcast';
+
 const SESSION_ID_KEY = "session_id";
 const SESSION_USER_KEY = "session_user_id";
 
@@ -76,6 +78,7 @@ export const clearSessionSnapshot = () => {
   try {
     storage.removeItem(SESSION_ID_KEY);
     storage.removeItem(SESSION_USER_KEY);
+    broadcastSessionTerminated();
   } catch {
     // Storage may be unavailable in private browsing contexts.
   }

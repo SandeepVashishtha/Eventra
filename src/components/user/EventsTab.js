@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import ReactDOM from "react-dom";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { Calendar, MapPin, Clock, Tag, Search, X, Ticket, Trash2, Activity } from "lucide-react";
@@ -211,7 +211,7 @@ const EventCard = ({
   );
 };
 
-const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
+const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const { user } = useAuth();
@@ -277,7 +277,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
       </div>
     </motion.div>
   );
-};
+});
 
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -374,7 +374,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const availableTypes = useMemo(() => {
     const types = [
       ...new Set(
-        [...registeredEvents, ...hostedEvents].map((event) => event?.type).filter(Boolean)
+        ...[registeredEvents, hostedEvents].map((event) => event?.type).filter(Boolean)
       ),
     ];
     return types.map((type) => type.charAt(0).toUpperCase() + type.slice(1));
@@ -777,11 +777,11 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                       ) {
                         try {
                           const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
-                          await leaveWaitlist(id, user.id || user.email);
-                          toast.success("Left the waitlist successfully.");
+                          leaveWaitlist(id, user.id || user.email);
                           triggerWaitlistUpdate();
-                        } catch (err) {
-                          toast.error(err.message || "Failed to leave waitlist.");
+                          toast.success("Successfully left the waitlist.");
+                        } catch (error) {
+                          toast.error("Failed to leave waitlist.");
                         }
                       }
                     }}
@@ -792,56 +792,6 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           )}
         </>
       )}
-
-      {/* Fixed: Restored the complete structural breakdown logic for the cancel modal portal below */}
-      <AnimatePresence>
-        {cancelTarget &&
-          ReactDOM.createPortal(
-            <motion.div
-              className="my-events-dialog-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={handleCancelDismiss}
-            >
-              <motion.div
-                className="my-events-dialog mx-4 w-full max-w-md rounded-3xl border border-gray-100 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900"
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h3 className="mb-2 text-xl font-bold text-gray-950 dark:text-white">
-                  Cancel Registration
-                </h3>
-                <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">
-                  Are you sure you want to cancel your registration for{" "}
-                  <strong className="text-indigo-600 dark:text-indigo-400">
-                    "{cancelTarget.title}"
-                  </strong>
-                  ? This action cannot be undone.
-                </p>
-                <div className="flex items-center justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={handleCancelDismiss}
-                    className="cursor-pointer rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-                  >
-                    Keep Registration
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCancelConfirm}
-                    className="cursor-pointer rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-red-500/10 transition hover:bg-red-700"
-                  >
-                    Yes, Cancel
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>,
-            document.body
-          )}
-      </AnimatePresence>
     </motion.div>
   );
 };

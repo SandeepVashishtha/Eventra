@@ -1305,11 +1305,18 @@ html:not(.dark) ::placeholder {
       0 20px 25px -5px rgba(0, 0, 0, 0.3),
       0 10px 10px -5px rgba(0, 0, 0, 0.2);
   }
+}
 
+<<<<<<< HEAD
   .project-card,
   .project-card * {
     color: white !important;
   }
+=======
+.project-card,
+.project-card * {
+  color: white !important;
+>>>>>>> 740dd6dedb1080a80bf65684c9b8d04817350723
 }
 
 /* Custom react-toastify overrides for premium visual consistency */
