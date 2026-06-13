@@ -1,4 +1,4 @@
-import { broadcastSessionTerminated } from './sessionBroadcast';
+import { broadcastSessionTerminated } from './sessionBroadcast.js';
 
 const SESSION_ID_KEY = "session_id";
 const SESSION_USER_KEY = "session_user_id";
