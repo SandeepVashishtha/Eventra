@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { joinWaitlist, leaveWaitlist, getWaitlistStatus, getWaitlistCount } from '../../services/waitlistService';
 
-const WaitlistButton = ({ eventId, isFullyBooked, waitlistEnabled, token, isAuthenticated }) => {
+// Custom hook - extracts all state & async logic
+const useWaitlist = (eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token) => {
   const [onWaitlist, setOnWaitlist] = useState(false);
   const [position, setPosition] = useState(null);
   const [waitlistCount, setWaitlistCount] = useState(0);
@@ -19,8 +20,6 @@ const WaitlistButton = ({ eventId, isFullyBooked, waitlistEnabled, token, isAuth
       });
     }
   }, [eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token]);
-
-  if (!isFullyBooked || !waitlistEnabled) return null;
 
   const handleClick = async () => {
     if (!isAuthenticated) {
@@ -47,29 +46,47 @@ const WaitlistButton = ({ eventId, isFullyBooked, waitlistEnabled, token, isAuth
     }
   };
 
+  return { onWaitlist, position, waitlistCount, loading, handleClick };
+};
+
+// Sub-component: count & position info
+const WaitlistInfo = ({ waitlistCount, position, onWaitlist }) => (
+  <div>
+    <span className="text-sm text-gray-500">
+      Event is full · {waitlistCount} {waitlistCount === 1 ? 'person' : 'people'} on waitlist
+    </span>
+    {onWaitlist && position && (
+      <span className="block text-sm font-medium text-blue-600">
+        You are #{position} on the waitlist
+      </span>
+    )}
+  </div>
+);
+
+// Sub-component: the button
+const WaitlistToggleButton = ({ onWaitlist, loading, onClick }) => (
+  <button
+    onClick={onClick}
+    disabled={loading}
+    className={`px-4 py-2 rounded-md font-medium text-white transition-colors ${
+      onWaitlist ? 'bg-gray-500 hover:bg-gray-600' : 'bg-yellow-500 hover:bg-yellow-600'
+    } disabled:opacity-50`}
+  >
+    {loading ? 'Please wait...' : onWaitlist ? 'Leave Waitlist' : 'Join Waitlist'}
+  </button>
+);
+
+// Main component - thin orchestrator
+const WaitlistButton = ({ eventId, isFullyBooked, waitlistEnabled, token, isAuthenticated }) => {
+  const { onWaitlist, position, waitlistCount, loading, handleClick } =
+    useWaitlist(eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token);
+
+  if (!isFullyBooked || !waitlistEnabled) return null;
+
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-sm text-gray-500">
-        Event is full · {waitlistCount} {waitlistCount === 1 ? 'person' : 'people'} on waitlist
-      </span>
-
-      {onWaitlist && position && (
-        <span className="text-sm font-medium text-blue-600">
-          You are #{position} on the waitlist
-        </span>
-      )}
-
-      <button
-        onClick={handleClick}
-        disabled={loading}
-        className={`px-4 py-2 rounded-md font-medium text-white transition-colors ${
-          onWaitlist
-            ? 'bg-gray-500 hover:bg-gray-600'
-            : 'bg-yellow-500 hover:bg-yellow-600'
-        } disabled:opacity-50`}
-      >
-        {loading ? 'Please wait...' : onWaitlist ? 'Leave Waitlist' : 'Join Waitlist'}
-      </button>
+      <WaitlistInfo waitlistCount={waitlistCount} position={position} onWaitlist={onWaitlist} />
+      <WaitlistToggleButton onWaitlist={onWaitlist} loading={loading} onClick={handleClick} />
     </div>
   );
 };
