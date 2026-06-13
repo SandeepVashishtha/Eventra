@@ -50,8 +50,27 @@ const EventDetails = () => {
   const [exportingRegistrants, setExportingRegistrants] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [event, setEvent] = useState(null);
-  const [fetchLoading, setFetchLoading] = useState(true);
+  
+  const [event, setEvent] = useState(() => {
+    try {
+      const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
+      const cached = viewedEvents.find((item) => String(item.id) === String(eventId));
+      return cached || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [fetchLoading, setFetchLoading] = useState(() => {
+    try {
+      const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
+      const cached = viewedEvents.find((item) => String(item.id) === String(eventId));
+      return !cached;
+    } catch {
+      return true;
+    }
+  });
+
   const [fetchError, setFetchError] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
@@ -94,7 +113,10 @@ const EventDetails = () => {
       if (fallback) {
         setEvent({ ...fallback, status: getEventStatus(fallback) });
       } else {
-        setFetchError("Event not found.");
+        setEvent(prev => {
+          if (!prev) setFetchError("Event not found.");
+          return prev;
+        });
       }
     } finally {
       const shouldFinishLoading = isLatestRequest();
@@ -108,11 +130,25 @@ const EventDetails = () => {
   }, [eventId, setEvent, setFetchLoading, setFetchError]);
 
   useEffect(() => {
+    try {
+      const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
+      const cached = viewedEvents.find((item) => String(item.id) === String(eventId));
+      if (cached) {
+        setEvent(cached);
+        setFetchLoading(false);
+      } else {
+        setEvent(null);
+        setFetchLoading(true);
+      }
+    } catch {
+      setEvent(null);
+      setFetchLoading(true);
+    }
     loadEvent();
     return () => {
       abortControllerRef.current?.abort();
     };
-  }, [loadEvent]);
+  }, [eventId, loadEvent]);
 
   // Safely handle localStorage cache updates via hook
   useEffect(() => {
@@ -482,9 +518,18 @@ const EventDetails = () => {
                 </div>
               )}
 
-              <Link to="/events" className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800">
+              <button
+                onClick={() => {
+                  if (window.history.length > 1) {
+                    navigate(-1);
+                  } else {
+                    navigate("/events");
+                  }
+                }}
+                className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+              >
                 Back to Events
-              </Link>
+              </button>
             </div>
           </div>
 
