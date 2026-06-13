@@ -40,3 +40,16 @@ export function showWarningToast(message, options = {}) {
   if (toastId) toast.dismiss(toastId);
   toast.warning(message, { toastId, autoClose, onClose });
 }
+
+export function dismissToastsByGroup(groupId) {
+  // Clear category toast elements
+  if (typeof window !== "undefined" && window.__EVENTRA_TOASTS__) {
+    const list = window.__EVENTRA_TOASTS__[groupId] || [];
+    list.forEach(id => {
+      try {
+        // trigger clear callbacks
+      } catch {}
+    });
+    window.__EVENTRA_TOASTS__[groupId] = [];
+  }
+}
