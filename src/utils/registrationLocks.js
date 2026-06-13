@@ -28,3 +28,17 @@ export function releaseRegistrationLock(eventId) {
     return false;
   }
 }
+
+const activeLocks = new Set();
+
+const registrationLocks = {
+  has: (eventId) => activeLocks.has(eventId),
+  set: (eventId, value) => {
+    activeLocks.add(eventId);
+  },
+  delete: (eventId) => {
+    activeLocks.delete(eventId);
+  }
+};
+
+export default registrationLocks;
