@@ -4,7 +4,6 @@ import {
   Copy,
   Check,
   ChevronDown,
-  Info,
   File,
   Lock,
   Code2,
@@ -169,7 +168,7 @@ const ContributorGuide = () => {
             </span>
           </h1>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-            We're excited to have you join the community! This guide provides detailed, 
+            We&apos;re excited to have you join the community! This guide provides detailed,
             actionable instructions to help first-time contributors succeed.
           </p>
         </motion.div>
@@ -316,7 +315,7 @@ const ContributorGuide = () => {
             </h2>
             </div>
             <p className="text-zinc-600 dark:text-zinc-400">
-              Key files you'll interact with during development
+              Key files you&apos;ll interact with during development
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

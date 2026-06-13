@@ -1,4 +1,4 @@
-/* eslint-disable-next-line no-console */
+ 
 /**
  * @file secureStorage.js
  * @module utils/secureStorage
@@ -86,7 +86,7 @@ const CRYPTO_CONFIG = {
 const CRYPTO_ALGORITHM = CRYPTO_CONFIG.ALGORITHM;
 const KEY_LENGTH = CRYPTO_CONFIG.KEY_LENGTH;
 const IV_LENGTH = CRYPTO_CONFIG.IV_LENGTH;
-// eslint-disable-next-line no-unused-vars -- Kept for backward compatibility
+ 
 const PBKDF2_ITERATIONS = CRYPTO_CONFIG.PBKDF2_ITERATIONS;
 
 const isCryptoAvailable = () => {
@@ -329,7 +329,7 @@ const decryptValue = async (storageKey, stored) => {
       // Versioned payload - use migration framework if needed
       return await decryptVersionedPayload(storageKey, payload, key);
     }
-  } catch (_e) {
+  } catch {
     // Not JSON or invalid - fall through to legacy format
   }
 
@@ -402,7 +402,6 @@ const decryptV1 = async (storageKey, payload, key, encoder) => {
  * @param {string} plaintext - The decrypted plaintext
  * @returns {Promise<string>} Re-encrypted value with new version
  */
-// eslint-disable-next-line no-unused-vars -- Reserved for future migration implementations
 const migratePayload = async (fromVersion, toVersion, storageKey, plaintext) => {
   // Future migrations can be implemented here
   // For now, v1 is current, so no migration needed

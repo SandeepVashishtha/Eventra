@@ -3,7 +3,7 @@ export const pushToNotificationQueue = (action, payload) => {
     const queue = JSON.parse(localStorage.getItem('eventra_notif_queue') || '[]');
     queue.push({ action, payload, timestamp: Date.now() });
     localStorage.setItem('eventra_notif_queue', JSON.stringify(queue));
-  } catch (e) {}
+  } catch {}
 };
 
 export const syncNotificationQueue = async (apiUtils) => {

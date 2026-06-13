@@ -1,4 +1,3 @@
-import React from "react";
 import { FixedSizeGrid as Grid } from "react-window";
 
 const VirtualizedGrid = ({

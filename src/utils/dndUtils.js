@@ -10,7 +10,7 @@ export const isDndActive = () => {
       return currentHour >= start || currentHour < end;
     }
     return currentHour >= start && currentHour < end;
-  } catch (e) {
+  } catch {
     return false;
   }
 };
