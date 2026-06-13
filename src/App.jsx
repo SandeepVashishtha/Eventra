@@ -40,7 +40,7 @@ const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
-const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+// const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
 const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
 
 // Non-critical UI - deferred after first paint
@@ -48,11 +48,10 @@ const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
 const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
 const OnboardingChecklist = lazy(() => import("./components/user/OnboardingChecklist"));
 const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
-const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
-const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
+// const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
 
 
 const OfflineSyncManager = () => {
@@ -280,14 +279,13 @@ function App() {
                 </ErrorBoundary>
 
                 <Suspense fallback={null}>
-                  <ScrollToTopButton />
-                </Suspense>
-                {/* Enhanced back-to-top with progress ring - appears at 400px */}
-                <Suspense fallback={null}>
                   <BackToTop />
                 </Suspense>
                 <Suspense fallback={null}>
                   <FeedbackButton />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <ThemeCustomizerDrawer />
                 </Suspense>
                 <Suspense fallback={null}>
                   <SessionRecovery />

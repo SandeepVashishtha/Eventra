@@ -40,7 +40,7 @@ const EventFiltersToolbar = ({
   currentFilterConfig,
   onApplyPreset,
   visibleEvents = [],
-  totalElements = 0,
+  // totalElements = 0,
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const [presetName, setPresetName] = useState("");

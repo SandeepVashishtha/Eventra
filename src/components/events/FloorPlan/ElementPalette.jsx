@@ -1,6 +1,6 @@
 import {
   Layout, Users, Grid, MapPin, Minimize2, RotateCcw,
-   Image, Download, FileJson, Upload, AlertTriangle,
+   Image, Download, FileJson, Upload,
    Sparkles
 } from "lucide-react";
 
@@ -9,7 +9,8 @@ const SNIPPET_TIP = "Place round tables, select them, then assign registered VIP
 export default function ElementPalette({
   elements, totalOccupiedSeats, totalMaxSeats,
   snapToGrid, setSnapToGrid, onAddElement,
-  loadPreset, handleExportPNG, handleExportSVG,
+  // loadPreset, 
+  handleExportPNG, handleExportSVG,
   handleDownloadJSON, handleImportJSON
 }) {
   return (
