@@ -6,7 +6,7 @@ import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2, Check } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { DRAFT_KEY } from "../../constants/eventDefaults";
@@ -25,7 +25,7 @@ import { ROLES } from "../../config/roles";
 import { marked } from "marked";
 import ShareModal from "../../components/common/ShareModal";
 import SocialShareButtons from "../../components/common/SocialShareButtons";
-import { generateEventSharingData } from "../../utils/shareUtils";
+// import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
@@ -310,7 +310,7 @@ const EventDetails = () => {
                 {event.type}
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight break-words" title={event.title}>{event.title}</h1>
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight wrap-break-word" title={event.title}>{event.title}</h1>
                 <button
                   onClick={handleCopy}
                   className={`p-2 rounded-full transition-colors ${linkCopied 

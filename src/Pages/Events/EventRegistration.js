@@ -553,7 +553,7 @@ const EventRegistration = () => {
 
   const isEventFull = event ? event.attendees >= event.maxAttendees : false;
   const status = getEventStatus(event);
-  const isPastEvent = status === "past" || status === "ended";
+  // const isPastEvent = status === "past" || status === "ended";
   const isCancelledEvent = status === "cancelled";
   const isRegistrationBlocked = isEventRegistrationClosed(event);
 
@@ -687,7 +687,7 @@ const EventRegistration = () => {
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
-            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 break-words min-w-0">
+            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 wrap-break-word min-w-0">
               {event.title}
             </h3>
 
@@ -725,7 +725,7 @@ const EventRegistration = () => {
                 href={googleCalendarUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
@@ -736,7 +736,7 @@ const EventRegistration = () => {
                 href={outlookCalendarUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
@@ -747,7 +747,7 @@ const EventRegistration = () => {
                 href={yahooCalendarUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
@@ -757,7 +757,7 @@ const EventRegistration = () => {
               <a
                 href={icsBlobUrl || '#'}
                 download={event.title ? `${event.title}.ics` : 'event.ics'}
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 3h-14c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-4v-4h-2l4-4 4 4h-2v4z" />
@@ -854,7 +854,7 @@ const EventRegistration = () => {
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 title={event.title} className="text-3xl font-bold mb-2 break-words">{event.title}</h1>
+              <h1 title={event.title} className="text-3xl font-bold mb-2 wrap-break-word">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />

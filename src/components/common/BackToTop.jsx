@@ -44,7 +44,7 @@ const BackToTop = ({
       window.removeEventListener("scroll", handleScroll);
       observer.disconnect();
     };
-  }, [handleScroll]);
+  }, [handleScroll, avoidChatbot]);
 
   const scrollToTop = () => {
     if (window.lenis) {

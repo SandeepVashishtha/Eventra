@@ -217,7 +217,7 @@ const SignupFormExample = ({ onSignupSuccess }) => {
     } catch {
       alert("Registration failed. Please audit inputs or try again later.");
     }
-  }), [handleSubmit, resetForm, onSignupSuccess,validationState]);
+  }), [handleSubmit, resetForm, onSignupSuccess,errors,]);
 
   return (
     <motion.div
