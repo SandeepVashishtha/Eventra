@@ -155,7 +155,7 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-{trending.map(({ event, registrations, pageViews, bookmarks, engagement }, idx) => (
+{trending.map(({ event, registrations, pageViews, bookmarks, engagement }) => (
             <div key={event.id} className="rounded-3xl overflow-hidden">
               <EventCard
                 event={{
