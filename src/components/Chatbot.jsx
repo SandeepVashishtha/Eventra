@@ -17,8 +17,9 @@ import {
   Navigation,
   Ticket,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import useLocalStorage from "../hooks/useLocalStorage";
-import { quickPrompts, getAssistantReply, INITIAL_MESSAGES } from "../config/chatbotKnowledge";
+import { getQuickPrompts, getAssistantReply, getInitialMessages } from "../config/chatbotKnowledge";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
 const ICON_MAP = {
@@ -57,8 +58,13 @@ function renderMarkdownToReact(text) {
       } else if (match[6]) {
         inlineParts.push(<code key={inlineKey++} className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-xs">{match[6]}</code>);
       } else if (match[9]) {
+        const rawUrl = match[9].trim();
+        const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(rawUrl);
+        const isSafeScheme = /^(https?:|mailto:|tel:)/i.test(rawUrl);
+        const isSafeUrl = !hasScheme || isSafeScheme;
+        const safeUrl = isSafeUrl ? rawUrl : "#";
         inlineParts.push(
-          <a key={inlineKey++} href={match[9]} target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline">
+          <a key={inlineKey++} href={safeUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline">
             {match[8]}
           </a>
         );
@@ -90,12 +96,15 @@ const MAX_STORED_MESSAGES = 100;
 // ─── Component ────────────────-----------------------------------------------
 
 export default function Chatbot() {
+  const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [draft, setDraft] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [messages, setMessages] = useLocalStorage("eventra_chatbot_history", INITIAL_MESSAGES);
+  const [messages, setMessages] = useLocalStorage("eventra_chatbot_history", getInitialMessages(t));
   const replyTimerRef = useRef(null);
+  const prevLangRef = useRef(i18n.language);
+  const quickPrompts = useMemo(() => getQuickPrompts(t), [t]);
 
   const clearReplyTimer = useCallback(() => {
     if (replyTimerRef.current) {
@@ -104,19 +113,26 @@ export default function Chatbot() {
     }
   }, []);
 
+  useEffect(() => {
+    if (prevLangRef.current !== i18n.language) {
+      setMessages(getInitialMessages(t));
+      prevLangRef.current = i18n.language;
+    }
+  }, [i18n.language, setMessages, t]);
+
   // Expiration check on mount (2 hours threshold)
   useEffect(() => {
     try {
       const lastActive = localStorage.getItem("eventra_chatbot_last_active");
       const twoHours = 2 * 60 * 60 * 1000;
       if (lastActive && Date.now() - parseInt(lastActive, 10) > twoHours) {
-        setMessages(INITIAL_MESSAGES);
+        setMessages(getInitialMessages(t));
       }
       localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
-    } catch (e) {
+    } catch {
       console.warn("localStorage unavailable for Chatbot expiration check");
     }
-  }, [setMessages]);
+  }, [setMessages, t]);
 
   useEffect(() => {
     return () => {
@@ -128,7 +144,7 @@ export default function Chatbot() {
   useEffect(() => {
     try {
       localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
-    } catch (e) {
+    } catch {
       console.warn("localStorage unavailable for Chatbot sync");
     }
   }, [messages]);
@@ -137,24 +153,24 @@ export default function Chatbot() {
     toast(
       ({ closeToast }) => (
         <div>
-          <p className="text-sm font-semibold mb-2">Clear conversation history?</p>
-          <p className="text-xs text-gray-500 mb-3">This action cannot be undone.</p>
+          <p className="text-sm font-semibold mb-2">{t("chatbot.clearHistory")}</p>
+          <p className="text-xs text-gray-500 mb-3">{t("chatbot.clearWarning")}</p>
           <div className="flex gap-2">
             <button
               onClick={() => {
-                setMessages(INITIAL_MESSAGES);
-                toast.success("Conversation cleared!");
+                setMessages(getInitialMessages(t));
+                toast.success(t("chatbot.clearSuccess"));
                 closeToast();
               }}
               className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-colors"
             >
-              Yes, Clear
+              {t("chatbot.clearConfirm")}
             </button>
             <button
               onClick={closeToast}
               className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition-colors"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
           </div>
         </div>
@@ -252,7 +268,7 @@ export default function Chatbot() {
     // Simulated network/AI response latency
     clearReplyTimer();
     replyTimerRef.current = setTimeout(() => {
-      const reply = getAssistantReply(cleanMessage);
+      const reply = getAssistantReply(cleanMessage, t);
       setMessages((prev) => {
         const next = [...prev, { role: "assistant", content: reply.answer, actions: reply.actions }];
         return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
@@ -279,7 +295,7 @@ export default function Chatbot() {
           {isOpen && isMinimized && (
             <div
               className="
-                fixed bottom-6 right-6 z-[100]
+                fixed bottom-6 right-6 z-100
                 hidden sm:flex              /* hide strip on mobile, show FAB instead */
                 items-center justify-between gap-3
                 w-72 rounded-2xl
@@ -308,7 +324,7 @@ export default function Chatbot() {
                     type="button"
                     onClick={handleClose}
                     className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                    aria-label="Close assistant"
+                    aria-label={t("chatbot.close")}
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -321,9 +337,9 @@ export default function Chatbot() {
             onClick={handleOpen}
             whileHover={{ scale: 1.1, rotate: 5 }}
             className={`
-              fixed bottom-6 right-6 z-[100]
+              fixed bottom-6 right-6 z-100
               flex h-14 w-14 items-center justify-center
-              rounded-full bg-gradient-to-br from-indigo-600 to-pink-600 text-white
+              rounded-full bg-linear-to-br from-indigo-600 to-pink-600 text-white
               shadow-[0_8px_30px_rgb(99,102,241,0.4)]
               hover:shadow-[0_8px_30px_rgb(236,72,153,0.5)]
               focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2
@@ -331,7 +347,7 @@ export default function Chatbot() {
               fixed-floating-widget
               ${isMinimized ? "sm:hidden" : ""}
             `}
-            aria-label="Open Eventra assistant"
+            aria-label={t("chatbot.open")}
           >
             <Bot className="h-6 w-6" />
           </motion.button>
@@ -351,7 +367,7 @@ export default function Chatbot() {
             exit={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.2 }}
             className="
-              fixed bottom-6 right-6 z-[100]
+              fixed bottom-6 right-6 z-100
               flex flex-col                        /* KEY FIX: flex column layout */
               w-[calc(100vw-2rem)] max-w-sm sm:max-w-sm
               rounded-2xl
@@ -362,14 +378,14 @@ export default function Chatbot() {
               transition-opacity duration-300
       
               /* KEY FIX: constrain total height to viewport so it never overflows.
-                 bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
+                 .bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
               max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-5rem)]
             "
           >
             {/* ── Header — always visible, never scrolls away ── */}
             <header
               className="
-              flex flex-shrink-0 items-center justify-between gap-3
+              flex shrink-0 items-center justify-between gap-3
               border-b border-slate-200 dark:border-slate-700
               bg-slate-950 px-4 py-3 text-white
               rounded-t-2xl
@@ -380,8 +396,8 @@ export default function Chatbot() {
                   <Sparkles className="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold">Eventra Assist</h2>
-                  <p className="text-xs text-slate-300">Events, workshops, and support</p>
+                  <h2 className="text-sm font-bold">{t("chatbot.title")}</h2>
+                  <p className="text-xs text-slate-300">{t("chatbot.subtitle")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -399,7 +415,7 @@ export default function Chatbot() {
                   type="button"
                   onClick={handleMinimize}
                   className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  aria-label="Minimize assistant"
+                  aria-label={t("chatbot.minimize")}
                 >
                   <Minus className="h-4 w-4" />
                 </button>
@@ -407,7 +423,7 @@ export default function Chatbot() {
                   type="button"
                   onClick={handleClose}
                   className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  aria-label="Close assistant"
+                  aria-label={t("chatbot.close")}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -434,7 +450,7 @@ export default function Chatbot() {
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     className={`max-w-[85%] rounded-[1.25rem] px-4 py-3 text-sm leading-relaxed shadow-sm ${
                       message.role === "user"
-                        ? "bg-gradient-to-r from-indigo-600 to-pink-600 text-white rounded-br-sm"
+                        ? "bg-linear-to-r from-indigo-600 to-pink-600 text-white rounded-br-sm"
                         : "bg-slate-100 dark:bg-slate-800/80 backdrop-blur-sm text-slate-800 dark:text-slate-100 rounded-bl-sm border border-slate-200/30 dark:border-slate-700/20"
                     }`}
                   >
@@ -482,7 +498,7 @@ export default function Chatbot() {
             {/* Footer controls */}
             <div
               className="
-              flex-shrink-0
+              shrink-0
               px-4 py-4
               bg-white/90 dark:bg-slate-900/90
               border-t border-slate-200/50 dark:border-slate-800/40
@@ -495,7 +511,7 @@ export default function Chatbot() {
                     key={prompt}
                     type="button"
                     onClick={() => sendMessage(prompt)}
-                    className="rounded-full border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:scale-[1.03] focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    className="rounded-full border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-linear-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:scale-[1.03] focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   >
                     {prompt}
                   </button>
@@ -532,15 +548,15 @@ export default function Chatbot() {
                 <input
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Ask about Eventra..."
-                  aria-label="Message input"
+                  placeholder={t("chatbot.placeholder")}
+                  aria-label={t("chatbot.placeholder")}
                   className="min-w-0 flex-1 rounded-xl border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/30 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
                 />
                 <button
                   type="submit"
                   disabled={!draft.trim() || isTyping}
-                  aria-label="Send message"
-                  title="Send message"
+                  aria-label={t("chatbot.send")}
+                  title={t("chatbot.send")}
                   className="rounded-xl bg-slate-900 dark:bg-white p-2.5 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 transition-all shadow hover:scale-105 active:scale-95 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 >
                   <Send className="h-4 w-4" />

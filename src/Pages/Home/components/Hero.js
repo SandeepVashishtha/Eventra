@@ -1,16 +1,18 @@
-import Fuse from "fuse.js";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
-  AnimatePresence,
-  MotionConfig,
   motion,
   useAnimation,
+  AnimatePresence,
+  MotionConfig,
   useScroll,
-  useTransform,
+  useTransform
 } from "framer-motion";
+
+import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -23,36 +25,11 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 
 const CountUp = CountUpLib.default || CountUpLib;
+
+// ─── MOTION LINK SUB-COMPONENT ──────────────────────────────────────────────
 const MotionLink = motion(Link);
 
-const HEADLINE_PHRASES = [
-  "Amazing Tech Events",
-  "Exciting Hackathons Today",
-  "Innovative Dev Workshops",
-  "Cutting-Edge Tech Meetups",
-];
-
-const TAGLINE_TEXTS = ["Discover & Join", "Innovate & Create", "Learn & Grow"];
-const SEARCH_RESULT_LIMIT = 5;
-
-const SEARCH_ROUTES = {
-  event: "/events",
-  hackathon: "/hackathons",
-  project: "/projects",
-};
-
-const SEARCH_ICONS = {
-  event: Calendar,
-  hackathon: Trophy,
-  project: Code,
-};
-
-const HERO_STATS = [
-  { value: 1500, label: "Developers", suffix: "+", icon: Users },
-  { value: 75, label: "Events", suffix: "+", icon: Calendar },
-  { value: 30, label: "Partners", suffix: "+", icon: Handshake },
-];
-
+// ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
   id: item.id,
   title: item.title,
@@ -70,6 +47,28 @@ const allSearchItems = [
   ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
 ];
 
+const HEADLINE_PHRASES = [
+  "Amazing Tech Events",
+  "Exciting Hackathons Today",
+  "Innovative Dev Workshops",
+  "Cutting-Edge Tech Meetups",
+];
+const TAGLINE_TEXTS = ["Discover & Join"];
+const SEARCH_RESULT_LIMIT = 5;
+
+
+const SEARCH_ROUTES = {
+  event: "/events",
+  hackathon: "/hackathons",
+  project: "/projects",
+};
+
+const SEARCH_ICONS = {
+  event: Calendar,
+  hackathon: Trophy,
+  project: Code,
+};
+
 const searchIndex = new Fuse(allSearchItems, {
   keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
   threshold: 0.3,
@@ -86,11 +85,14 @@ const getResultIcon = (type) => {
   return <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />;
 };
 
+const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
 const Hero = () => {
+  const { t, i18n } = useTranslation();
+  const controls = useAnimation();
+  const prefersReducedMotion = useReducedMotion();
+
   useDocumentTitle("Eventra | Home");
 
-  const prefersReducedMotion = useReducedMotion();
-  const controls = useAnimation();
   const containerRef = useRef(null);
 
   const [isTouch, setIsTouch] = useState(false);
@@ -110,32 +112,9 @@ const Hero = () => {
   const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-  };
-
-  const fadeUp = {
-    hidden: { y: 32, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
-    },
-  };
 
   useEffect(() => {
-    const pointerQuery = window.matchMedia("(pointer: coarse)");
-    const updateTouchState = () => setIsTouch(pointerQuery.matches);
-
-    updateTouchState();
-    if (pointerQuery.addEventListener) {
-      pointerQuery.addEventListener("change", updateTouchState);
-      return () => pointerQuery.removeEventListener("change", updateTouchState);
-    }
-
-    pointerQuery.addListener(updateTouchState);
-    return () => pointerQuery.removeListener(updateTouchState);
+    setIsTouch(window.matchMedia("(pointer: coarse)").matches);
   }, []);
 
   useEffect(() => {
@@ -148,7 +127,6 @@ const Hero = () => {
 
   useEffect(() => {
     controls.start("show");
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [controls]);
 
   useEffect(() => {
@@ -174,24 +152,41 @@ const Hero = () => {
     clearSearchTerm();
   }, [clearSearchTerm]);
 
+
+
+  const HERO_STATS = useMemo(
+    () => [
+      {
+        value: 1500,
+        label: t("landing.hero.stats.developers"),
+        suffix: "+",
+        icon: Users,
+      },
+      {
+        value: 75,
+        label: t("landing.hero.stats.events"),
+        suffix: "+",
+        icon: Calendar,
+      },
+      {
+        value: 30,
+        label: t("landing.hero.stats.partners"),
+        suffix: "+",
+        icon: Handshake,
+      },
+    ],
+    [t]
+  );
+
   return (
     <section
       ref={containerRef}
       aria-label="Hero section"
-      className="relative overflow-hidden border-b border-gray-100 pb-16 text-slate-900 sm:pb-20 md:pb-24"
-      style={{ background: "linear-gradient(180deg, #F8FBFD 0%, #F3F7FA 10%, #EAF1F7 42%, #DAE3ED 100%)" }}
+      className="relative overflow-hidden border-b border-gray-100 dark:border-slate-800 pb-16 text-slate-900 dark:text-white sm:pb-20 md:pb-24"
+      /* MODIFIED: Implemented premium brand-violet background gradient tokens */
+      style={{ background: "linear-gradient(180deg, rgba(109, 40, 217, 0.06) 0%, rgba(109, 40, 217, 0.02) 20%, var(--bg-color) 100%)" }}
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 150,
-            background: "linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.2) 100%)",
-          }}
-        />
         <div
           style={{
             position: "absolute",
@@ -200,7 +195,7 @@ const Hero = () => {
             width: 260,
             height: 160,
             borderRadius: "50%",
-            background: "#E6F0F7",
+            background: "rgba(109, 40, 217, 0.08)",
             filter: "blur(36px)",
             opacity: 0.8,
           }}
@@ -213,27 +208,20 @@ const Hero = () => {
             width: 180,
             height: 120,
             borderRadius: "50%",
-            background: "#EFF6FB",
+            background: "rgba(109, 40, 217, 0.04)",
             filter: "blur(28px)",
             opacity: 0.7,
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: 20,
-            left: "12%",
-            width: 220,
-            height: 90,
-            borderRadius: "50%",
-            background: "#F7FAFC",
-            filter: "blur(20px)",
-            opacity: 0.85,
           }}
         />
       </div>
 
       <motion.div
+        initial="hidden"
+        animate="show"
+        variants={{
+          hidden: {},
+          show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+        }}
         className="relative z-10 px-4 pt-20 sm:px-6 sm:pt-24 md:pt-28 lg:px-8"
         style={{
           y: isTouch || prefersReducedMotion ? 0 : yText,
@@ -241,18 +229,13 @@ const Hero = () => {
           willChange: "transform, opacity",
         }}
       >
-        <motion.div className="mx-auto max-w-5xl text-center" variants={container} initial="hidden" animate={controls}>
+        <motion.div className="mx-auto max-w-5xl text-center">
           <MotionConfig reducedMotion="never">
             <motion.h1
               className="flex flex-col items-center gap-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-4xl lg:text-5xl"
               style={{ fontFamily: "\"Inter\", system-ui, sans-serif" }}
             >
-              <motion.span
-                className="block text-sm font-medium text-gray-500"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.08 }}
-              >
+              <motion.span className="block text-sm font-medium text-gray-500 dark:text-gray-400">
                 <RespawningText texts={TAGLINE_TEXTS} />
               </motion.span>
 
@@ -260,13 +243,7 @@ const Hero = () => {
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={phraseIndex}
-                    className="block text-2xl font-extrabold text-gray-900 sm:text-3xl md:text-4xl lg:text-5xl"
-                    initial={{ opacity: 0, y: 24 }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" },
-                    }}
+                    className="block text-2xl font-extrabold text-gray-900 dark:text-white sm:text-3xl md:text-4xl lg:text-5xl"
                     exit={{
                       opacity: 0,
                       y: -16,
@@ -283,7 +260,7 @@ const Hero = () => {
 
           <motion.p
             variants={fadeUp}
-            className="mx-auto mb-8 mt-4 max-w-3xl text-base leading-relaxed text-gray-600 sm:mb-10 sm:mt-6 sm:text-lg md:text-lg"
+            className="mx-auto mb-8 mt-4 max-w-3xl text-base leading-relaxed text-gray-600 dark:text-gray-300 sm:mb-10 sm:mt-6 sm:text-lg md:text-lg"
           >
             Connect with developers, learn new skills, and grow your network at curated tech events, hackathons, and
             workshops.
@@ -291,14 +268,14 @@ const Hero = () => {
 
           <motion.div variants={fadeUp} className="mx-auto mb-10 w-full max-w-2xl">
             <div className="relative">
-              <div className="relative rounded-lg border border-gray-200 bg-white shadow-sm">
+              <div className="relative rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm focus-within:border-brand-violet/50 transition-colors">
                 <ModernSearchInput
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search events, hackathons, projects..."
                   onFocus={() => searchTerm && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
-                  className="border-0 bg-transparent text-gray-700 placeholder-gray-400 focus:ring-0"
+                  inputClassName="border-0 bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0"
                 >
                   <AnimatePresence>
                     {showResults && (
@@ -307,7 +284,7 @@ const Hero = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.98 }}
                         transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
-                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg"
+                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg"
                         role="listbox"
                         aria-label="Search results"
                       >
@@ -330,12 +307,12 @@ const Hero = () => {
                                     role="option"
                                     aria-label={`Open ${result.item.title}`}
                                   >
-                                    <div className="shrink-0 rounded-lg bg-gray-100 p-2 text-gray-700 transition-transform group-hover:scale-105">
+                                    <div className="shrink-0 rounded-lg bg-gray-100 dark:bg-slate-800 p-2 text-gray-700 dark:text-gray-300 transition-transform group-hover:scale-105 group-hover:bg-brand-violet/10 group-hover:text-brand-violet">
                                       {getResultIcon(result.item.type)}
                                     </div>
                                     <div className="min-w-0 flex-1">
                                       <div className="mb-0.5 flex items-center gap-2">
-                                        <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                                        <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white group-hover:text-brand-violet transition-colors">
                                           {result.item.title}
                                         </h4>
                                         <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-slate-800 dark:text-gray-300">
@@ -349,7 +326,7 @@ const Hero = () => {
                                       </p>
                                     </div>
                                     <ExternalLink
-                                      className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-indigo-500"
+                                      className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-brand-violet"
                                       aria-hidden="true"
                                     />
                                   </MotionLink>
@@ -389,17 +366,18 @@ const Hero = () => {
                   <motion.div
                     key={stat.label}
                     variants={fadeUp}
-                    whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                    className="flex flex-col items-center justify-center rounded-md border border-gray-100 bg-white p-4 shadow-sm transition-shadow sm:p-5"
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    /* MODIFIED: Added premium hover state with brand-violet border, deep shadows, and theme colors */
+                    className="flex flex-col items-center justify-center rounded-xl border border-brand-violet/50 bg-white dark:bg-slate-900 p-5 shadow-sm hover:shadow-xl hover:border-brand-violet transition-all duration-300"
                   >
-                    <div className="mb-2 rounded-full bg-gray-100 p-2 text-gray-700">
+                    {/* MODIFIED: Icon wraps now subtly highlight into your brand colors on card hover */}
+                    <div className="mb-2 rounded-full bg-gray-100 dark:bg-slate-800 p-2 text-gray-700 dark:text-gray-300 border border-transparent transition-colors">
                       <stat.icon className="h-5 w-5" aria-hidden="true" />
                     </div>
-                    <p className="mb-1 text-2xl font-semibold tabular-nums text-gray-900 sm:text-3xl">
+                    <p className="mb-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-white sm:text-3xl">
                       {statsReady ? (
                         <CountUp
-                          start={0}
-                          end={Number.isFinite(stat.value) ? stat.value : 0}
+                          end={stat.value}
                           duration={2.2}
                           suffix={stat.suffix || ""}
                         />
@@ -410,7 +388,7 @@ const Hero = () => {
                         </>
                       )}
                     </p>
-                    <p className="text-center text-xs font-medium uppercase tracking-wider text-gray-600 sm:text-sm">
+                    <p className="text-center text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 sm:text-sm">
                       {stat.label}
                     </p>
                   </motion.div>
@@ -425,7 +403,7 @@ const Hero = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2 }}
-        className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-gray-500 dark:text-gray-400 md:flex"
+        className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-gray-400 dark:text-gray-500 md:flex"
         aria-hidden="true"
       >
         <span className="text-xs font-medium">Scroll to explore</span>

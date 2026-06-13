@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Modal Portal
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -203,7 +203,7 @@ const EditProfile = () => {
     return Math.round((filled / 10) * 100);
   };
 
-  const completionPercentage = calculateCompletion();
+  const completionPercentage = useMemo(() => calculateCompletion(), [calculateCompletion]);
 
   const addSkill = (skill) => {
     const trimmedSkill = skill.trim();
@@ -277,7 +277,7 @@ const EditProfile = () => {
       
       try {
         await syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
-      } catch (e) {
+      } catch {
         console.warn("Could not save to secure storage, quota exceeded.");
       }
 
@@ -295,14 +295,18 @@ const EditProfile = () => {
     }
   };
 
-  const filteredSuggestions = allSkillSuggestions
-    .filter(
-      (suggestion) =>
-        currentSkillInput &&
-        suggestion.toLowerCase().includes(currentSkillInput.toLowerCase()) &&
-        !form.skills.some((s) => s.toLowerCase() === suggestion.toLowerCase())
-    )
-    .slice(0, 7);
+  const filteredSuggestions = useMemo(
+    () =>
+      allSkillSuggestions
+        .filter(
+          (suggestion) =>
+            currentSkillInput &&
+            suggestion.toLowerCase().includes(currentSkillInput.toLowerCase()) &&
+            !form.skills.some((s) => s.toLowerCase() === suggestion.toLowerCase())
+        )
+        .slice(0, 7),
+    [currentSkillInput, form.skills]
+  );
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 py-10 px-4">
@@ -314,7 +318,7 @@ const EditProfile = () => {
             <button
               type="button"
               onClick={() => setAiModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl shadow-md transition-all active:scale-[0.98]"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl shadow-md transition-all active:scale-[0.98]"
             >
               <Sparkles size={16} />
               Auto-fill with AI

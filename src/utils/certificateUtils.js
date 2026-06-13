@@ -1,3 +1,5 @@
+import { API_BASE_URL, validateBackendConfig } from "../config/backendConfig.js";
+
 const sanitizeUid = (uid) => {
   if (typeof uid !== "string") return "";
   return uid.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 128);
@@ -9,11 +11,19 @@ export async function verifyCertificate(uid) {
     return { success: false, error: "UID is required" };
   }
 
-  const apiBaseUrl = process.env.REACT_APP_API_URL || import.meta.env.VITE_API_URL || "";
+  const apiBaseUrl = API_BASE_URL;
+
+  if (!apiBaseUrl) {
+    const validation = validateBackendConfig();
+    return {
+      success: false,
+      error: validation.error || "Certificate verification API URL is not configured.",
+    };
+  }
 
   try {
     const response = await fetch(
-      `${apiBaseUrl}/api/verify-certificate/${encodeURIComponent(cleanUid)}`
+      `${apiBaseUrl}/verify-certificate/${encodeURIComponent(cleanUid)}`
     );
 
     if (!response.ok) {
