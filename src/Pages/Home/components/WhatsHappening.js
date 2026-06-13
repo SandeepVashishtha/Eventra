@@ -40,13 +40,22 @@ const WhatsHappening = () => {
     const dayMs = 1000 * 60 * 60 * 24;
 
     const getEventTimeLeft = (event) => {
-      const startDate = new Date(event.startDate || event.date);
+      // Always derive the start instant from startDate first, then date as fallback.
+      // Never reference 'event.rawDate' which is a display-only field set later in .map().
+      const rawStart = event.startDate || event.date;
+      if (!rawStart) return "TBA";
+
+      const startDate = new Date(rawStart);
+      if (isNaN(startDate.getTime())) return "TBA";
+
       const endDate = event.endDate
         ? new Date(event.endDate)
-        : new Date(new Date(event.date).setHours(23, 59, 59, 999));
+        : new Date(new Date(rawStart).setHours(23, 59, 59, 999));
 
       if (now < startDate) {
         const daysUntilStart = Math.ceil((startDate - now) / dayMs);
+        // Guard against 0 or negative values from timezone rounding
+        if (daysUntilStart <= 0) return "Starting today";
         return `${daysUntilStart} day${daysUntilStart === 1 ? "" : "s"}`;
       }
       if (now <= endDate) {
@@ -54,6 +63,7 @@ const WhatsHappening = () => {
       }
       return "Ended";
     };
+
 
     return events
       .filter((event) => {
