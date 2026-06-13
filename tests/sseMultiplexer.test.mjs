@@ -290,6 +290,8 @@ const runTests = async () => {
 
   // Test 7: Leader broadcasts current path status immediately upon receiving a SUBSCRIBE or SUBSCRIBERS_RESPONSE request from a follower tab
   sseMultiplexer.isLeader = true;
+  sseMultiplexer.channel = new globalThis.BroadcastChannel("eventra_sse_multiplexer");
+  sseMultiplexer.channel.onmessage = (e) => sseMultiplexer.handleBroadcastMessage(e.data);
   sseMultiplexer.updatePathStatus("/stream/status_sync", "connected");
 
   let receivedStatusMsg = null;
@@ -307,6 +309,9 @@ const runTests = async () => {
     path: "/stream/status_sync",
   });
 
+  // Wait for the async connection open simulated by MockEventSource (5ms)
+  await new Promise((resolve) => setTimeout(resolve, 15));
+
   assert.ok(receivedStatusMsg !== null, "Follower should receive current connection status on SUBSCRIBE");
   assert.equal(receivedStatusMsg.status, "connected");
   assert.equal(receivedStatusMsg.tabId, sseMultiplexer.tabId, "Broadcast message should contain leader's tabId");
@@ -318,6 +323,10 @@ const runTests = async () => {
     tabId: "tab_b",
     paths: ["/stream/status_sync"],
   });
+
+  // Wait for any status update to complete
+  await new Promise((resolve) => setTimeout(resolve, 15));
+
   assert.ok(receivedStatusMsg !== null, "Follower responding with active path should receive current connection status");
   assert.equal(receivedStatusMsg.status, "connected");
   assert.equal(receivedStatusMsg.tabId, sseMultiplexer.tabId, "Broadcast message should contain leader's tabId");
