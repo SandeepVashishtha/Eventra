@@ -203,8 +203,7 @@ const useEventListing = () => {
 
   const setAdvancedFilters = useCallback((filters) => {
     setAdvancedFiltersState(normalizeAdvancedFilters(filters));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setAdvancedFiltersState, normalizeAdvancedFilters]);
 
   const priceStats = useMemo(() => getPriceStats(events), [events]);
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);

@@ -412,9 +412,11 @@ html {
   --primary-color: var(--evt-brand-primary);
   --primary-hover: var(--evt-brand-primary-hover);
   --secondary-color: var(--evt-brand-secondary);
-  --accent-gradient: linear-gradient(135deg,
-      var(--evt-brand-primary) 0%,
-      var(--evt-brand-accent) 100%);
+  --accent-gradient: linear-gradient(
+    135deg,
+    var(--evt-brand-primary) 0%,
+    var(--evt-brand-accent) 100%
+  );
   --glow-color: var(--evt-glow-brand);
   --danger-bg: var(--evt-danger-soft);
   --danger-border: var(--evt-danger-border);
@@ -512,9 +514,11 @@ html {
   --primary-color: var(--evt-brand-primary);
   --primary-hover: var(--evt-brand-primary-hover);
   --secondary-color: var(--evt-brand-secondary);
-  --accent-gradient: linear-gradient(135deg,
-      var(--evt-brand-primary) 0%,
-      var(--evt-brand-accent) 100%);
+  --accent-gradient: linear-gradient(
+    135deg,
+    var(--evt-brand-primary) 0%,
+    var(--evt-brand-accent) 100%
+  );
   --glow-color: var(--evt-glow-brand);
   --danger-bg: var(--evt-danger-soft);
   --danger-border: var(--evt-danger-border);
@@ -882,29 +886,31 @@ code {
 }
 
 /* Issue #862: keep mobile and coarse-pointer controls comfortable to tap. */
-@media (max-width: 768px),
-(hover: none) and (pointer: coarse) {
-
-  :where(button,
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  :where(
+    button,
     [role="button"],
     input[type="button"],
     input[type="reset"],
     input[type="submit"],
     select,
-    summary) {
+    summary
+  ) {
     min-height: var(--touch-target-min);
     min-width: var(--touch-target-min);
     touch-action: manipulation;
   }
 
-  :where(a[href].btn-primary,
+  :where(
+    a[href].btn-primary,
     a[href].btn-secondary,
     a[href].btn-outline,
     a[href].cta-button,
     a[href].button,
     a[href][class*="rounded"],
     nav a[href],
-    .mobile-nav-link) {
+    .mobile-nav-link
+  ) {
     min-height: var(--touch-target-min);
     touch-action: manipulation;
   }
@@ -923,13 +929,15 @@ code {
     padding-bottom: 0.75rem;
   }
 
-  :where(.share-button-pop,
+  :where(
+    .share-button-pop,
     .social-link,
     .theme-toggle,
     .profile-button,
     .mobile-menu-button,
     .mobile-drawer-link,
-    .ud-search-clear) {
+    .ud-search-clear
+  ) {
     align-items: center;
     display: inline-flex;
     justify-content: center;
@@ -937,7 +945,8 @@ code {
     min-width: var(--touch-target-min);
   }
 
-  :where(.filter-controls,
+  :where(
+    .filter-controls,
     .view-controls,
     .event-actions,
     .hackathon-actions,
@@ -945,7 +954,8 @@ code {
     .cta-actions,
     .mobile-auth,
     .navbar-auth,
-    .social-links) {
+    .social-links
+  ) {
     gap: max(var(--touch-target-gap), 0.75rem);
   }
 }
@@ -988,18 +998,26 @@ input::-webkit-password-toggle {
 .pastel-grid-bg {
   background-color: var(--bg-color);
   background-image:
-    linear-gradient(to right,
+    linear-gradient(
+      to right,
       color-mix(in srgb, var(--evt-brand-primary-strong) 32%, transparent) 1px,
-      transparent 1px),
-    linear-gradient(to bottom,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
       color-mix(in srgb, var(--evt-skip-focus) 32%, transparent) 1px,
-      transparent 1px),
-    linear-gradient(45deg,
+      transparent 1px
+    ),
+    linear-gradient(
+      45deg,
       color-mix(in srgb, var(--evt-brand-primary) 10%, transparent) 1px,
-      transparent 1px),
-    linear-gradient(-45deg,
+      transparent 1px
+    ),
+    linear-gradient(
+      -45deg,
       color-mix(in srgb, var(--evt-skip-focus) 10%, transparent) 1px,
-      transparent 1px);
+      transparent 1px
+    );
   background-size:
     40px 40px,
     40px 40px,
@@ -1009,7 +1027,6 @@ input::-webkit-password-toggle {
 
 /* Shake Animation (Global) */
 @keyframes shake {
-
   0%,
   100% {
     transform: translateX(0);
@@ -1265,13 +1282,18 @@ html:not(.dark) ::placeholder {
 /* Standardized hover transitions for primary event cards mapped under media query for touch device safety */
 @media (hover: hover) {
   .event-card-hoverable {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+    transition:
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.3s ease;
   }
 
   .event-card-hoverable:hover {
     z-index: 50;
     transform: translateY(-6px) scale(1.005);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
     border-color: #a5b4fc !important;
     /* border-indigo-300 */
   }
@@ -1279,20 +1301,24 @@ html:not(.dark) ::placeholder {
   .dark .event-card-hoverable:hover {
     border-color: #4338ca !important;
     /* border-indigo-700 */
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.3),
+      0 10px 10px -5px rgba(0, 0, 0, 0.2);
   }
+}
 
-  .project-card,
+.project-card,
 .project-card * {
   color: white !important;
-}
 }
 
 /* Custom react-toastify overrides for premium visual consistency */
 .Toastify__toast {
   border-radius: 12px !important;
   font-family: inherit !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.08),
+    0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Light Theme Toast Styles */
