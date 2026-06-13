@@ -150,9 +150,20 @@ try {
   );
 
   // ===========================================================================
-  // Test Group 8: Validation of Expose Error Constant Objects
+  // Test Group 8: Bounded Keyword Pattern Gaps
   // ===========================================================================
-  console.log("Running Test Group 8: Static Error Constant Dictionaries...");
+  console.log("Running Test Group 8: Bounded Regex Keyword Gaps...");
+  const oversizedKeywordGap = `email ${"x ".repeat(250)} already ${"x ".repeat(250)} exist`;
+  assert.equal(
+    getPublicErrorMessage({ message: oversizedKeywordGap }, "Safe fallback"),
+    "Safe fallback",
+    "Keyword regex matching should not span unbounded attacker-controlled message gaps"
+  );
+
+  // ===========================================================================
+  // Test Group 9: Validation of Expose Error Constant Objects
+  // ===========================================================================
+  console.log("Running Test Group 9: Static Error Constant Dictionaries...");
   assert.equal(typeof AUTH_ERRORS.loginFailed, "string");
   assert.ok(AUTH_ERRORS.loginFailed.length > 0);
   assert.equal(typeof AUTH_ERRORS.sessionExpired, "string");
