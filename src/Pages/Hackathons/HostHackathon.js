@@ -1,7 +1,7 @@
 import { ArrowRightIcon, ChartBarIcon, UserGroupIcon, StarIcon, ClipboardDocumentListIcon, BuildingOffice2Icon, EnvelopeIcon, MapPinIcon, TrophyIcon, LinkIcon, CalendarDaysIcon, DocumentTextIcon, ComputerDesktopIcon } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { useNavigate } from "react-router-dom";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";

@@ -3,7 +3,7 @@ import { Star, MessageSquare } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, FileText, AlertCircle } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import SEOHead from "../../components/SEOHead";
 import { useTranslation } from "react-i18next";
 

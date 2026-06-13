@@ -26,7 +26,7 @@ vi.mock('../utils/offlineQueue', () => ({
   clearQueue: vi.fn(),
 }));
 
-vi.mock('react-toastify', () => ({
+vi.mock('react-hot-toast', () => ({
   toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() },
 }));
 

@@ -3,7 +3,7 @@ import { X, Download, ShieldCheck, Calendar, MapPin, Clock, User, Mail, Award, L
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import QRCode from "react-qr-code";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import "./EventTicket.css";
 import { useMyEvents } from "../../context/MyEventsContext";
 import SpatialSeatSelector from "../events/SpatialSeatSelector";
@@ -122,7 +122,7 @@ const EventTicket = ({ event, user, onClose }) => {
   const handleDownload = async (format = "png") => {
     if (!ticketRef.current) return;
     setDownloading(true);
-    toast.info(`Generating your high-resolution ticket ${format.toUpperCase()}...`);
+    toast(`Generating your high-resolution ticket ${format.toUpperCase()}...`);
 
     try {
       // Force temporary state to front-side without rotation to capture cleanly

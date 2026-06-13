@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { showAuthToast } from "../../utils/toast";
 import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 import useReducedMotion from "../../hooks/useReducedMotion";

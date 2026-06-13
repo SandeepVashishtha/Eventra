@@ -3,7 +3,7 @@ import {
   BarChart, Users, Link as LinkIcon, MessageSquare,
   Save, Layout, Shield, Mail, Briefcase, Info, Download, Trash2, CheckCircle2
 } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const DEFAULT_SETTINGS = {

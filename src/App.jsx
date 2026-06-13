@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
@@ -140,7 +140,7 @@ function App() {
       });
     };
     const handleOffline = () => {
-      toast.warning(t("app.offline"), {
+      toast(t("app.offline"), {
         position: "bottom-right",
         autoClose: 5000,
       });

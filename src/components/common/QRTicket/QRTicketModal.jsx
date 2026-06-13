@@ -31,7 +31,7 @@
 import { useRef, useEffect } from "react";
 import QRTicket from "./QRTicket";
 import { useTicketDownload } from "./useTicketDownload";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 
 export default function QRTicketModal({ isOpen, onClose, ticket }) {
   const ticketRef = useRef(null);

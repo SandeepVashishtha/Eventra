@@ -3,7 +3,7 @@ import {
   X, Briefcase, Mail, Globe, Linkedin, Twitter, Github,
   Send, User, MessageSquare, ArrowLeft
 } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { safeJsonParse } from "../../utils/safeJsonParse";
 import { useAuth } from "../../context/AuthContext";
 

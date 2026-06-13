@@ -3,7 +3,7 @@ import CountdownTimer from "../../components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2, Check } from "lucide-react";

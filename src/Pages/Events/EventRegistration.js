@@ -7,7 +7,7 @@ import { getGoogleCalendarUrl, getOutlookCalendarUrl, getYahooCalendarUrl, gener
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import {
   ArrowLeft,
   Briefcase,
@@ -198,7 +198,7 @@ const EventRegistration = () => {
             },
           });
 
-          toast.warning(t("eventRegistration.toastShowingCached", { label: getCacheAgeLabel(cached.cachedAt) }));
+          toast(t("eventRegistration.toastShowingCached", { label: getCacheAgeLabel(cached.cachedAt) }));
           return;
         }
 
@@ -406,7 +406,7 @@ const EventRegistration = () => {
           const offlineRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-offline-${Date.now()}`;
           addRegistration(event, formData, offlineRegId, "");
           clearSession();
-          toast.warning(t("eventRegistration.toastNetworkQueued"), {
+          toast(t("eventRegistration.toastNetworkQueued"), {
             autoClose: 4000,
           });
         } else {
@@ -427,7 +427,7 @@ const EventRegistration = () => {
         // may differ from the authoritative server record.
         addRegistration(event, {}, existingRegId, "");
         clearSession();
-        toast.info(failureMessage);
+        toast(failureMessage);
         return;
       }
 
@@ -528,7 +528,7 @@ const EventRegistration = () => {
   // Handle conflict modal actions
   const handleConflictCancel = useCallback(() => {
     setShowConflictModal(false);
-    toast.info(t("eventRegistration.toastConflictCancelled"));
+    toast(t("eventRegistration.toastConflictCancelled"));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -547,7 +547,7 @@ const EventRegistration = () => {
   const handleSelectAlternative = useCallback((alternativeEvent) => {
     setShowConflictModal(false);
     navigate(`/events/${alternativeEvent.id}/register`);
-    toast.info(t("eventRegistration.toastRedirectingTo", { title: alternativeEvent.title }));
+    toast(t("eventRegistration.toastRedirectingTo", { title: alternativeEvent.title }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 

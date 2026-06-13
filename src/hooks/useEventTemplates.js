@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import {
   getTemplates,
   saveTemplate,
@@ -40,7 +40,7 @@ export const useEventTemplates = () => {
       }
 
       if (templateNameExists(templateName)) {
-        toast.warning(`Template "${templateName}" already exists.`);
+        toast(`Template "${templateName}" already exists.`);
         return false;
       }
 

@@ -17,7 +17,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { pushToQueue } from "../../utils/offlineQueue";
 import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "../../services/ticketService";
 import "./TicketScanner.css";
@@ -255,7 +255,7 @@ export default function TicketScanner() {
         data: ticketData,
         message: "Check-in queued offline — will sync when connection resumes.",
       });
-      toast.info(`Offline check-in queued for ${userName}.`);
+      toast(`Offline check-in queued for ${userName}.`);
       await pushToQueue({
         actionType: "TICKET_CHECK_IN",
         ticketId,
@@ -288,7 +288,7 @@ export default function TicketScanner() {
           data: ticketData,
           message: "This ticket has already been checked in!",
         });
-        toast.warning(`Duplicate Attempt: ${ticketData.userName} is already checked in.`);
+        toast(`Duplicate Attempt: ${ticketData.userName} is already checked in.`);
         addToHistory({
           id: `dup-${Date.now()}`,
           ticketId: ticketData.ticketId,

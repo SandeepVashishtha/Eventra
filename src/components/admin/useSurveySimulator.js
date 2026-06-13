@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 
 export function useSurveySimulator(questions, feedbackPool) {
   const [totalSubmissions, setTotalSubmissions] = useState(142);
