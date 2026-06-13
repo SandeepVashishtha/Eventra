@@ -357,14 +357,19 @@ const Login = () => {
             </motion.button>
           </motion.form>
 
-          {/* Sign up link */}
-          <div className="text-center">
-            <p style={{ color: "var(--text-color-light)" }}>
-              Don&apos;t have an account?{" "}
-              <Link to="/signup" className="font-semibold text-blue-600 hover:underline">
-                Create one here
-              </Link>
-            </p>
+                      {/* Sign up link */}
+                      <div className="text-center">
+              <p style={{ color: "var(--text-color-light)" }}>
+                Don&apos;t have an account?{' '}
+                <Link
+                  to="/signup"
+                  className="text-blue-600 hover:underline font-semibold"
+                >
+                  Create one here
+                </Link>
+              </p>
+            </div>
+
           </div>
         </motion.div>
       </div>

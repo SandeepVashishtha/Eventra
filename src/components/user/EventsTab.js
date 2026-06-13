@@ -209,9 +209,9 @@ const EventCard = ({
       </div>
     </motion.div>
   );
-};
+);
 
-const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
+const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const { user } = useAuth();
@@ -277,7 +277,7 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
       </div>
     </motion.div>
   );
-};
+}));
 
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -462,7 +462,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     if (!cancelTarget) return;
     removeRegistration(cancelTarget.id);
     setCancelTarget(null);
-  };
+   }, [cancelTarget, removeRegistration]);
 
   return (
     <motion.div
