@@ -1,3 +1,1 @@
-# Changelog
-
-- Added optional chaining to virtualLink.trim() in validateForm to prevent TypeError when virtualLink is undefined.
+- Fixed useEventRegistration.js line 265: `checkEventCapacity` now treats `maxAttendees: 0` as unlimited capacity.

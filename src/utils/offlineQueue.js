@@ -3,6 +3,8 @@
 // ---------------------------------------------------------------------------
 import { safeJsonParse } from "./safeJsonParse.js";
 import { logger } from "./logger.js";
+import { ensureSessionSnapshot } from "./sessionSnapshot.js";
+import offlineSyncConfig from "../config/offlineSyncConfig.json" with { type: "json" };
 
 const QUEUE_KEY = "eventra_offline_queue";
 const DB_NAME = "eventra_offline_db";
@@ -337,12 +339,13 @@ export const pushToQueue = async (item, userId = null) => {
     eventId: item.eventId || null,
     payload: item.payload || {},
     endpoint: item.endpoint || null,
+    idempotencyKey: item.idempotencyKey || null,
+    conflictStrategy:
+      item.conflictStrategy ||
+      offlineSyncConfig.defaultConflictStrategy,
     // SECURITY: Attach user ID to validate ownership on replay
     userId: userId || null,
-    sessionId:
-      typeof sessionStorage !== "undefined"
-        ? sessionStorage.getItem("session_id") || null
-        : null,
+    sessionId: ensureSessionSnapshot(userId),
   };
 
   // Guard against oversized payloads before they reach localStorage.
@@ -363,20 +366,34 @@ export const pushToQueue = async (item, userId = null) => {
     }
     return false;
   }
-  // 1. Check authoritative IndexedDB store for limit enforcement
-  const queue = await getQueueIndexedDB();
-  if (queue.length >= 15) {
+
+  // 1. Sync mirror updates immediately (Synchronous fallback)
+  const queue = getQueue();
+  if (queue.length >= offlineSyncConfig.maxQueueSize) {
     logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
-    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
-      window.dispatchEvent(
-        new CustomEvent("eventra-offline-queue-full", {
-          detail: { eventId: item.eventId, limit: 15 },
-        })
-      );
-    }
     return false;
   }
-  queue.push(actionItem);
+  const isDuplicate = queue.some((existing) => {
+  if (actionItem.idempotencyKey && existing.idempotencyKey) {
+    return existing.idempotencyKey === actionItem.idempotencyKey;
+  }
+
+  return (
+    existing.eventId === actionItem.eventId &&
+    existing.userId === actionItem.userId &&
+    existing.actionType === actionItem.actionType
+  );
+});
+
+if (isDuplicate) {
+  logger.warn(
+    `[OfflineQueue] Duplicate action detected for event ${actionItem.eventId} ` +
+      `(user ${actionItem.userId}, type ${actionItem.actionType}). Skipping enqueue.`
+  );
+  return true;
+}
+
+queue.push(actionItem);
 
   let localStorageSuccess = false;
   try {
@@ -445,7 +462,7 @@ export const setQueue = async (newQueue) => {
         newQueue.forEach((item) => store.put(item));
 
         tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
+        tx.onerror = (e) => reject(e.target?.error || new Error('IndexedDB transaction failed'));
       };
       clearReq.onerror = () => reject(clearReq.error);
     });
@@ -518,6 +535,58 @@ export const filterQueueByOwnership = (queue, currentUserId) => {
   });
 
   return validatedQueue;
+};
+
+/**
+ * SECURITY (Issue #5727): Validate that the current session is still valid and
+ * belongs to the same user before replaying queued actions.
+ *
+ * The offline queue stores a `sessionId` snapshot taken from sessionStorage at
+ * the time the action was enqueued. When connectivity restores, the session may
+ * have changed (user logged out and a different user logged in). This function
+ * compares the stored session ID against the current sessionStorage value and
+ * rejects items whose session no longer matches.
+ *
+ * IMPORTANT: This is an additional defence layer on top of filterQueueByOwnership.
+ * Both checks must pass for an item to be replayed:
+ *  1. filterQueueByOwnership — userId must match the current authenticated user.
+ *  2. validateQueueSession   — sessionId must match the current session.
+ *
+ * Legacy items with a null/missing sessionId are migrated to the current
+ * session after ownership validation has already confirmed the user match.
+ *
+ * @param {Array}  queue          - Ownership-filtered offline queue
+ * @param {string} currentSession - Current session ID from sessionStorage
+ * @returns {Array} Items whose stored sessionId matches the current session
+ */
+export const validateQueueSession = (queue, currentSession) => {
+  if (!currentSession) {
+    logger.warn(
+      "[Security] No current session ID available — dropping all queued actions as a safety precaution."
+    );
+    return [];
+  }
+
+  return queue.reduce((validatedItems, item) => {
+    if (!item.sessionId) {
+      logger.warn(
+        `[OfflineQueue] Migrating queued action ${item.id}: no sessionId stored. ` +
+          "Binding legacy item to the current verified session."
+      );
+      validatedItems.push({ ...item, sessionId: currentSession });
+      return validatedItems;
+    }
+    if (item.sessionId !== currentSession) {
+      logger.warn(
+        `[Security] Dropping queued action ${item.id}: ` +
+          `stored sessionId does not match current session. ` +
+          "This prevents stale-session cross-user action replay."
+      );
+      return validatedItems;
+    }
+    validatedItems.push(item);
+    return validatedItems;
+  }, []);
 };
 
 // ---------------------------------------------------------------------------
@@ -634,12 +703,29 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
  * 4. Removes permanently failed items after MAX_RETRY_COUNT
  * 5. Dispatches eventra-offline-queue-processed custom event
  *
- * @param {string}   currentUserId - User ID for ownership validation
+ * @param {string}   currentUserId - User ID for ownership validation (REQUIRED — replay is
+ *                                   blocked if this is missing or falsy to prevent cross-user
+ *                                   action execution)
  * @param {function} fetchFn       - Async HTTP fetch function
  * @param {object}   [options]     - { signal, onConflict }
  * @returns {Promise<{processed: number, succeeded: number, dropped: number, remaining: number}>}
+ * @throws {Error} If currentUserId is not provided (mandatory security guard)
  */
 export const processQueue = async (currentUserId, fetchFn, options = {}) => {
+  // SECURITY (Issue #5727): currentUserId is MANDATORY. Replay must never proceed
+  // without a verified user identity — omitting it would allow actions queued by
+  // User A to execute under User B's authenticated session.
+  if (!currentUserId) {
+    logger.error(
+      "[Security] processQueue called without currentUserId — replay blocked. " +
+        "Always pass the authenticated user's ID to prevent cross-user action execution."
+    );
+    throw new Error(
+      "[OfflineQueue] currentUserId is required to process the queue. " +
+        "Replay is blocked without a verified user identity."
+    );
+  }
+
   const { signal } = options;
 
   const queue = await getQueueIndexedDB();
@@ -651,11 +737,20 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
     return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
   }
 
+  // SECURITY (Issue #5727): Re-validate session ID so actions queued under a
+  // previous session cannot replay under a new session, even if the userId matches.
+  const currentSession = ensureSessionSnapshot(currentUserId);
+  const sessionValidated = validateQueueSession(validated, currentSession);
+  if (sessionValidated.length === 0) {
+    await clearQueue();
+    return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
+  }
+
   const succeeded = [];
   const dropped = [];
   const failed = [];
 
-  for (const item of validated) {
+  for (const item of sessionValidated) {
     if (signal?.aborted) break;
 
     if (item.retryCount >= MAX_RETRY_COUNT) {
@@ -690,7 +785,7 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
   notifyQueueProcessed({ succeeded: succeeded.length, dropped: dropped.length, remaining });
 
   return {
-    processed: validated.length,
+    processed: sessionValidated.length,
     succeeded: succeeded.length,
     dropped: dropped.length,
     remaining,

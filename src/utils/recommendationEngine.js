@@ -19,7 +19,12 @@ const normalizeList = (value) => {
 
 const unique = (items) => Array.from(new Set(items.filter(Boolean)));
 
-const getEventId = (event) => String(event?.id ?? event?.eventId ?? event?.title ?? "");
+const getEventId = (event) => {
+  if (!event) return null;
+  const id = event.id ?? event.eventId;
+  if (id === undefined || id === null || id === "") return null;
+  return String(id);
+};
 
 const unwrapEvent = (entry) => entry?.event || entry?.eventSummary || entry || {};
 
@@ -66,8 +71,14 @@ const _cacheOrder = [];
 const MAX_CACHE_SIZE = 100;
 
 const _getCachedTags = (event) => {
+  // 🔥 FIX: Skip the cache entirely when the event has no real id.
+  // Previously getEventId fell back to the event title, so two events with
+  // the same title would collide on the same cache key and the last write
+  // would win — silently corrupting similarity scores. Returning the tags
+  // directly is correct here; the cache only exists to amortise work for
+  // events we expect to be re-encountered, and id-less events are not.
   const id = getEventId(event);
-  if (!id) return [];
+  if (!id) return getEventTags(event);
   if (_tagCache.has(id)) {
     const tags = _tagCache.get(id);
     const idx = _cacheOrder.indexOf(id);
@@ -83,11 +94,6 @@ const _getCachedTags = (event) => {
   _tagCache.set(id, tags);
   _cacheOrder.push(id);
   return tags;
-};
-
-const clearTagCache = () => {
-  _tagCache.clear();
-  _cacheOrder.length = 0;
 };
 
 const getSimilarityScore = (candidate, interactedEvents) => {
@@ -299,7 +305,6 @@ export const buildPersonalizedRecommendations = ({
   includeInteracted = false,
   limit = 8,
 } = {}) => {
-  clearTagCache();
   const interactionProfile = buildInteractionProfile({
     registeredEvents,
     bookmarkedEvents,
@@ -308,18 +313,22 @@ export const buildPersonalizedRecommendations = ({
   });
 
   return events
-    .filter((event) => includeInteracted || !interactionProfile.registeredIds.has(getEventId(event)))
-    .map((event) => {
-      const result = calculateRecommendationScore(event, userProfile, interactionProfile);
-      return {
-        ...event,
-        calculatedMatch: result.score,
-        recommendationScore: result.score,
-        recommendationReasons: result.reasons,
-        breakdown: result.breakdown,
-      };
-    })
-    .filter((event) => event.recommendationScore > 0)
+    .reduce((acc, event) => {
+      if (includeInteracted || !interactionProfile.registeredIds.has(getEventId(event))) {
+        const result = calculateRecommendationScore(event, userProfile, interactionProfile);
+        const scored = {
+          ...event,
+          calculatedMatch: result.score,
+          recommendationScore: result.score,
+          recommendationReasons: result.reasons,
+          breakdown: result.breakdown,
+        };
+        if (scored.recommendationScore > 0) {
+          acc.push(scored);
+        }
+      }
+      return acc;
+    }, [])
     .sort((a, b) => b.recommendationScore - a.recommendationScore)
     .slice(0, limit);
 };

@@ -1,30 +1,54 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import { describe, it, expect } from '@jest/globals';
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import assert from "node:assert/strict";
+import NavbarLinks from "../src/components/navbar/NavbarLinks.jsx";
 
-import Navbar from '../src/components/navbar/Navbar';
+// Mock prefetchRoute to avoid dynamic import errors
+vi.mock("../src/utils/prefetchUtils", () => ({
+  prefetchRoute: vi.fn(),
+}));
 
-describe('Navbar keyboard interactions', () => {
-  it('renders navigation links and supports keyboard navigation', () => {
+vi.mock("../src/utils/routePrefetch", () => ({
+  prefetchRoute: vi.fn(),
+}));
+
+// Mock react-i18next
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key, options) => {
+      if (key === "nav.expandSubmenu") {
+        return `Expand ${options?.name || ""} submenu`;
+      }
+      if (key === "nav.collapseSubmenu") {
+        return `Collapse ${options?.name || ""} submenu`;
+      }
+      return key;
+    },
+  }),
+}));
+
+describe("Navbar Keyboard & Accessibility Interactions", () => {
+  test("toggles submenu on Enter/Space keyboard events and closes on Escape", () => {
     render(
-      <BrowserRouter>
-        <Navbar />
-      </BrowserRouter>
+      <MemoryRouter>
+        <NavbarLinks vertical={false} />
+      </MemoryRouter>
     );
 
-    const nav = screen.getByRole('navigation');
-    expect(nav).toBeInTheDocument();
+    // Get the expand/collapse button for the first submenu item (e.g., "Events")
+    const toggleButton = screen.getAllByLabelText(/expand.*submenu/i)[0];
+    assert.ok(toggleButton);
 
-    const links = screen.getAllByRole('link');
-    expect(links.length).toBeGreaterThan(0);
+    // Initial state: expanded attribute is false
+    assert.equal(toggleButton.getAttribute("aria-expanded"), "false");
 
-    const firstLink = links[0];
-    firstLink.focus();
-    expect(document.activeElement).toBe(firstLink);
+    // Fire Enter keypress
+    fireEvent.keyDown(toggleButton, { key: "Enter", code: "Enter" });
+    assert.equal(toggleButton.getAttribute("aria-expanded"), "true");
 
-    if (links.length > 1) {
-      fireEvent.keyDown(firstLink, { key: 'ArrowRight', code: 'ArrowRight' });
-    }
+    // Fire Escape keypress to close submenu
+    fireEvent.keyDown(document, { key: "Escape", code: "Escape" });
+    assert.equal(toggleButton.getAttribute("aria-expanded"), "false");
   });
 });

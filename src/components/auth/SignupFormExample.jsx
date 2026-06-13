@@ -174,7 +174,34 @@ const SignupFormExample = ({ onSignupSuccess }) => {
   );
 
   // Form submission execution pipeline
-  const handleFormSubmit = useMemo(() => handleSubmit(async (formValues) => {
+  const handleFormSubmit = useMemo(
+  () =>
+    handleSubmit(async (formValues) => {
+      const fieldOrder = [
+        "firstName",
+        "lastName",
+        "username",
+        "email",
+        "password",
+        "confirmPassword",
+      ];
+
+      const firstInvalidField = fieldOrder.find(
+         (field) => errors[field]
+      );
+
+      if (firstInvalidField) {
+        const element = document.getElementById(firstInvalidField);
+
+        element?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+
+        element?.focus();
+
+        return;
+      }
     try {
       logger.info("Form validation pipeline passed. Submitting credentials payload:", formValues);
       
@@ -190,7 +217,7 @@ const SignupFormExample = ({ onSignupSuccess }) => {
     } catch {
       alert("Registration failed. Please audit inputs or try again later.");
     }
-  }), [handleSubmit, resetForm, onSignupSuccess]);
+  }), [handleSubmit, resetForm, onSignupSuccess,errors,]);
 
   return (
     <motion.div
@@ -285,16 +312,20 @@ const SignupFormExample = ({ onSignupSuccess }) => {
           onBlur={handleBlur}
           placeholder="••••••••"
         />
-
+        {Object.keys(errors).some((key) => touched[key] && errors[key]) && (
+          <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+            Please correct the highlighted fields before continuing.
+          </div>
+        )}
         {/* Action Button Segment Wrapper */}
         <div className="pt-2 action-submission-wrapper">
           <motion.button
             type="submit"
-            disabled={!isFormValid || isSubmitting}
-            whileHover={{ scale: isFormValid && !isSubmitting ? 1.015 : 1 }}
-            whileTap={{ scale: isFormValid && !isSubmitting ? 0.985 : 1 }}
+            disabled={isSubmitting}
+            whileHover={{ scale: !isSubmitting ? 1.015 : 1 }}
+            whileTap={{ scale: !isSubmitting ? 0.985 : 1 }}
             className={`w-full py-3 rounded-xl font-bold transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 tracking-wide text-sm ${
-              isFormValid && !isSubmitting
+              !isSubmitting
                 ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-blue-500/10"
                 : "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none"
             }`}

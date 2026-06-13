@@ -58,6 +58,9 @@ const SENSITIVE_API_PATTERNS = [
   '/api/admin/',
   '/api/volunteers/me',
   '/api/organizers/me',
+
+  // Leaderboard (user-specific)
+  '/api/leaderboard/me',
 ];
 
 /**
@@ -311,60 +314,175 @@ self.addEventListener('sync', (event) => {
   event.waitUntil(notifyClientsToSyncOfflineQueue());
 });
 
-// Intercept fetch requests and apply offline caching strategies
-self.addEventListener('fetch', (event) => {
-  const requestUrl = new URL(event.request.url);
+/**
+ * Handle stale-while-revalidate caching and revalidation for the leaderboard endpoint.
+ *
+ * @param {FetchEvent} event - The fetch event
+ * @param {URL} requestUrl - The parsed request URL
+ */
+function handleLeaderboardFetch(event, requestUrl) {
+  const LEADERBOARD_TTL = 60 * 1000; // 60 seconds Cache expiration (TTL)
 
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
+  // Helper to compare two JSON responses
+  const responsesDiffer = async (resp1, resp2) => {
+    try {
+      const text1 = await resp1.clone().text();
+      const text2 = await resp2.clone().text();
+      return text1 !== text2;
+    } catch {
+      return true;
+    }
+  };
 
-  // Skip non-HTTP(S) requests e.g. chrome-extension://
-  if (!event.request.url.startsWith('http')) return;
+  // Helper to clone a response and append custom caching timestamp header
+  const createCachedResponse = async (response, timestamp) => {
+    const responseCopy = response.clone();
+    const text = await responseCopy.text();
+    const headers = new Headers(responseCopy.headers);
+    headers.set('x-sw-cached-at', timestamp.toString());
+    return new Response(text, {
+      status: responseCopy.status,
+      statusText: responseCopy.statusText,
+      headers: headers
+    });
+  };
 
-  // SECURITY: Network-First strategy for API routes with sensitive data filtering
-  if (requestUrl.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // SECURITY: Only cache responses that are safe according to security rules
-          if (response.status === 200 && isSafeToCache(requestUrl.pathname, response)) {
-            const responseCopy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              log(`[Service Worker] Caching public API response: ${requestUrl.pathname}`);
-              cache.put(event.request, responseCopy);
-            });
-          } else if (response.status === 200) {
-            log(`[Service Worker] Skipping cache for sensitive API: ${requestUrl.pathname}`);
+  // Helper to notify all active windows of new leaderboard rankings
+  const notifyClientsOfLeaderboardUpdate = async (newData) => {
+    const clients = await self.clients.matchAll({
+      includeUncontrolled: true,
+      type: 'window',
+    });
+    clients.forEach((client) => {
+      client.postMessage({
+        type: 'LEADERBOARD_UPDATED',
+        data: newData,
+      });
+    });
+  };
+
+  event.respondWith(
+    caches.match(event.request).then(async (cachedResponse) => {
+      const now = Date.now();
+
+      if (cachedResponse) {
+        const cachedAt = cachedResponse.headers.get('x-sw-cached-at');
+        const age = cachedAt ? now - parseInt(cachedAt, 10) : Infinity;
+
+        if (age < LEADERBOARD_TTL) {
+          log('[Service Worker] Serving fresh cached leaderboard');
+          return cachedResponse;
+        }
+
+        log('[Service Worker] Serving stale leaderboard, revalidating in background...');
+        // Stale, trigger background revalidation
+        fetch(event.request.clone())
+          .then(async (networkResponse) => {
+            if (networkResponse.status === 200) {
+              const cache = await caches.open(CACHE_NAME);
+              const isDifferent = await responsesDiffer(cachedResponse, networkResponse);
+
+              if (isDifferent) {
+                log('[Service Worker] Leaderboard data changed. Updating cache and notifying clients.');
+                const updatedCachedResponse = await createCachedResponse(networkResponse, now);
+                await cache.put(event.request, updatedCachedResponse);
+
+                const data = await networkResponse.clone().json();
+                notifyClientsOfLeaderboardUpdate(data.data || data);
+              } else {
+                log('[Service Worker] Leaderboard data unchanged. Updating cache timestamp.');
+                const updatedCachedResponse = await createCachedResponse(cachedResponse, now);
+                await cache.put(event.request, updatedCachedResponse);
+              }
+            }
+          })
+          .catch((err) => {
+            log('[Service Worker] Background revalidation failed:', err);
+          });
+
+        return cachedResponse;
+      }
+
+      // Cache miss: fetch from network
+      return fetch(event.request)
+        .then(async (networkResponse) => {
+          if (networkResponse.status === 200) {
+            const cache = await caches.open(CACHE_NAME);
+            const updatedCachedResponse = await createCachedResponse(networkResponse, now);
+            await cache.put(event.request, updatedCachedResponse);
           }
-          return response;
+          return networkResponse;
         })
         .catch(() => {
-          // Only serve cached response if it was safe to cache (public endpoint)
-          return caches.match(event.request).then((cachedResponse) => {
-            // Only return cached response if it's from a public endpoint
-            if (cachedResponse && isSafeToCache(requestUrl.pathname, cachedResponse)) {
-              log(`[Service Worker] Serving cached public API response: ${requestUrl.pathname}`);
-              return cachedResponse;
+          // Offline fallback: since cache miss, we return a fallback response
+          return new Response(
+            JSON.stringify({
+              error: 'You are currently offline. Leaderboard data will update once connection is re-established.',
+              offline: true
+            }),
+            {
+              headers: { 'Content-Type': 'application/json' },
+              status: 503
             }
+          );
+        });
+    })
+  );
+}
 
-            // For sensitive endpoints or cache miss, return offline error
-            return new Response(
-              JSON.stringify({
-                error: 'You are currently offline. Event details will synchronize automatically once reconnected.',
-                offline: true
-              }),
-              {
-                headers: { 'Content-Type': 'application/json' },
-                status: 503
-              }
-            );
+/**
+ * Handle network-first caching for generic API requests.
+ *
+ * @param {FetchEvent} event - The fetch event
+ * @param {URL} requestUrl - The parsed request URL
+ */
+function handleApiFetch(event, requestUrl) {
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // SECURITY: Only cache responses that are safe according to security rules
+        if (response.status === 200 && isSafeToCache(requestUrl.pathname, response)) {
+          const responseCopy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            log(`[Service Worker] Caching public API response: ${requestUrl.pathname}`);
+            cache.put(event.request, responseCopy);
           });
-        })
-    );
-    return;
-  }
+        } else if (response.status === 200) {
+          log(`[Service Worker] Skipping cache for sensitive API: ${requestUrl.pathname}`);
+        }
+        return response;
+      })
+      .catch(() => {
+        // Only serve cached response if it was safe to cache (public endpoint)
+        return caches.match(event.request).then((cachedResponse) => {
+          // Only return cached response if it's from a public endpoint
+          if (cachedResponse && isSafeToCache(requestUrl.pathname, cachedResponse)) {
+            log(`[Service Worker] Serving cached public API response: ${requestUrl.pathname}`);
+            return cachedResponse;
+          }
 
-  // Cache-First strategy for static assets and page views
+          // For sensitive endpoints or cache miss, return offline error
+          return new Response(
+            JSON.stringify({
+              error: 'You are currently offline. Event details will synchronize automatically once reconnected.',
+              offline: true
+            }),
+            {
+              headers: { 'Content-Type': 'application/json' },
+              status: 503
+            }
+          );
+        });
+      })
+  );
+}
+
+/**
+ * Handle cache-first caching for static assets.
+ *
+ * @param {FetchEvent} event - The fetch event
+ */
+function handleStaticFetch(event) {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -373,11 +491,11 @@ self.addEventListener('fetch', (event) => {
           .then((response) => {
             if (response && response.status === 200 && response.type === 'basic') {
               caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, response).catch(() => {});
+                cache.put(event.request, response).catch(() => { });
               });
             }
           })
-          .catch(() => {/* Ignore bg fetch failures when offline */});
+          .catch(() => {/* Ignore bg fetch failures when offline */ });
 
         return cachedResponse;
       }
@@ -397,7 +515,44 @@ self.addEventListener('fetch', (event) => {
           if (event.request.mode === 'navigate') {
             return caches.match('/index.html');
           }
+          // Return an explicit offline response for non-navigate requests
+          // (e.g. CSS, JS, images). Returning undefined here would cause
+          // "Failed to convert value to 'Response'" TypeError.
+          return new Response('', { status: 503, statusText: 'Service Unavailable' });
         });
     })
   );
+}
+
+// Intercept fetch requests and apply offline caching strategies
+self.addEventListener('fetch', (event) => {
+  const requestUrl = new URL(event.request.url);
+
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+
+  // Skip non-HTTP(S) requests e.g. chrome-extension://
+  if (!event.request.url.startsWith('http')) return;
+
+  // Skip cross-origin requests (e.g. Google Fonts, external CDNs).
+  // Calling event.respondWith() on these can throw a TypeError when the
+  // fetch is blocked (CSP, CORS, network) and the catch path returns
+  // undefined instead of a valid Response. Let the browser handle them.
+  if (requestUrl.origin !== self.location.origin) return;
+
+  // CUSTOM CACHING STRATEGY: Stale-While-Revalidate with TTL for leaderboard data.
+  // Ensures fast response, offline support, and automatic revalidation/client notification.
+  if (requestUrl.pathname === '/api/leaderboard') {
+    handleLeaderboardFetch(event, requestUrl);
+    return;
+  }
+
+  // SECURITY: Network-First strategy for API routes with sensitive data filtering
+  if (requestUrl.pathname.startsWith('/api/')) {
+    handleApiFetch(event, requestUrl);
+    return;
+  }
+
+  // Cache-First strategy for static assets and page views
+  handleStaticFetch(event);
 });

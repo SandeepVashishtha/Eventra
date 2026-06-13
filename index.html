@@ -38,14 +38,13 @@
     <meta property="og:title" content="Eventra - Platform for Builders" />
     <meta property="og:description" content="A premium, modern platform for organizing and attending events, hackathons, and projects." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://eventra.vercel.app/" />
-    <meta property="og:image" content="/Eventra.png" />
+    <meta property="og:url" content="https://eventra.sandeepvashishtha.in/" />
+    <meta property="og:image" content="https://eventra.sandeepvashishtha.in/logo_transparent.png" />
+
+    <!-- CSRF Protection -->
+    <meta name="csrf-token" content="%CSRF_TOKEN%" />
 
     <!-- Google Sign In -->
-    <meta
-      name="google-signin-client_id"
-      content="%VITE_GOOGLE_CLIENT_ID%"
-    />
 
     <script
       src="https://accounts.google.com/gsi/client"
@@ -59,15 +58,8 @@
       async
     ></script>
   </head>
-  <body>
-    <div id="root"></div>
-
-    <noscript>
-      <div style="padding: 1rem; text-align: center">
-        <strong>Eventra requires JavaScript to run. Please enable JavaScript in your browser.</strong>
-      </div>
-    </noscript>
-
-    <script type="module" src="/src/index.jsx"></script>
-  </body>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/index.jsx"></script>
+</body>
 </html>
