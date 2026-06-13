@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
-import { createRateLimiter, signupRateLimiter } from "../lib/rateLimiter.js";
+import { signupRateLimiter } from "../lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { assertPersistentStorageConfigured, isInMemoryStorageAllowed } from "./storage-config.js";
 
@@ -117,31 +117,57 @@ function setCookie(res, token) {
 }
 
 function getClientIp(req) {
-  return req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-    || req.headers?.["x-real-ip"]
-    || req.socket?.remoteAddress
-    || "unknown";
+  const forwarded = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim();
+  if (forwarded) return forwarded;
+  const realIp = req.headers?.["x-real-ip"];
+  if (realIp) return realIp;
+  const socketIp = req.socket?.remoteAddress;
+  if (socketIp) return socketIp;
+  return "unknown";
+}
+
+function validateNameField(name, fieldName) {
+  const validation = validateName(name);
+  if (!validation.valid) return `${fieldName}: ${validation.message}`;
+  return null;
+}
+
+function validateEmailField(email) {
+  if (!email || !email.trim()) return "Email is required";
+  return null;
+}
+
+function validatePasswordField(password) {
+  if (!password) return "Password is required";
+  const validation = validatePassword(password);
+  if (!validation.valid) return validation.message;
+  return null;
+}
+
+function validateConfirmPassword(password, confirmPassword) {
+  if (!confirmPassword) return "Please confirm your password";
+  if (password !== confirmPassword) return "Passwords do not match";
+  return null;
 }
 
 function validateSignupInput(body) {
   const { firstName, lastName, email, password, confirmPassword } = body;
   const errors = [];
   
-  const firstNameValidation = validateName(firstName);
-  if (!firstNameValidation.valid) errors.push(`First name: ${firstNameValidation.message}`);
+  const firstNameError = validateNameField(firstName, "First name");
+  if (firstNameError) errors.push(firstNameError);
   
-  const lastNameValidation = validateName(lastName);
-  if (!lastNameValidation.valid) errors.push(`Last name: ${lastNameValidation.message}`);
+  const lastNameError = validateNameField(lastName, "Last name");
+  if (lastNameError) errors.push(lastNameError);
   
-  if (!email || !email.trim()) errors.push("Email is required");
+  const emailError = validateEmailField(email);
+  if (emailError) errors.push(emailError);
   
-  if (password) {
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.valid) errors.push(passwordValidation.message);
-  }
+  const passwordError = validatePasswordField(password);
+  if (passwordError) errors.push(passwordError);
   
-  if (!confirmPassword) errors.push("Please confirm your password");
-  if (password && confirmPassword && password !== confirmPassword) errors.push("Passwords do not match");
+  const confirmPasswordError = validateConfirmPassword(password, confirmPassword);
+  if (confirmPasswordError) errors.push(confirmPasswordError);
   
   return errors;
 }

@@ -213,29 +213,44 @@ function createFailClosedLimiter(message) {
   };
 }
 
-export const createRateLimiter = (windowMs, maxRequests) => {
-  if (NODE_ENV === 'production' && !USE_KV_REST && !USE_REDIS) {
-    console.error(
-      '[rateLimiter] CRITICAL: Production requires distributed storage. ' +
-      'Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN.'
-    );
-  }
+function logProductionWarning() {
+  console.error(
+    '[rateLimiter] CRITICAL: Production requires distributed storage. ' +
+    'Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN.'
+  );
+}
 
-  if (USE_MEMORY) {
-    if (NODE_ENV === 'production') {
-      console.error('[rateLimiter] ERROR: RATE_LIMIT_MODE=memory is not allowed in production');
-      return createFailClosedLimiter('Rate limiting is not configured for production. Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN.');
-    }
-    console.warn('[rateLimiter] Using in-memory storage (not suitable for production)');
-    return new InMemoryRateLimiter(windowMs, maxRequests);
+function createMemoryLimiter(windowMs, maxRequests) {
+  if (NODE_ENV === 'production') {
+    console.error('[rateLimiter] ERROR: RATE_LIMIT_MODE=memory is not allowed in production');
+    return createFailClosedLimiter('Rate limiting is not configured for production. Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN.');
   }
+  console.warn('[rateLimiter] Using in-memory storage (not suitable for production)');
+  return new InMemoryRateLimiter(windowMs, maxRequests);
+}
 
+function createDistributedLimiter(windowMs, maxRequests) {
   if (USE_KV_REST) {
     return new KvRateLimiter(windowMs, maxRequests);
   }
-
   if (USE_REDIS) {
     return new RedisRateLimiter(windowMs, maxRequests);
+  }
+  return null;
+}
+
+export const createRateLimiter = (windowMs, maxRequests) => {
+  if (NODE_ENV === 'production' && !USE_KV_REST && !USE_REDIS) {
+    logProductionWarning();
+  }
+
+  if (USE_MEMORY) {
+    return createMemoryLimiter(windowMs, maxRequests);
+  }
+
+  const distributedLimiter = createDistributedLimiter(windowMs, maxRequests);
+  if (distributedLimiter) {
+    return distributedLimiter;
   }
 
   if (NODE_ENV === 'development') {
