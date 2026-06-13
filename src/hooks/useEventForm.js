@@ -307,6 +307,7 @@ export const useEventForm = () => {
       throw new Error(errorMessage);
     }
 
+    resetForm();
     return result;
   });
 
