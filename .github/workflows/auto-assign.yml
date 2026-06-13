@@ -1,0 +1,220 @@
+name: Auto Assign Issue
+
+on:
+  issue_comment:
+    types: [created]
+
+# Least privilege: we only need to write issues (add assignees, comments)
+permissions:
+  issues: write
+
+jobs:
+  auto-assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-assign issue to commenter (robust)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const cfg = {
+              cooldownHours: 6,
+              // Only assign issues that do NOT have any of these labels
+              denyLabels: [
+                'wontfix',
+                'invalid',
+                'duplicate',
+                'blocked',
+                'help wanted',
+                'good first issue',
+                'priority: low',
+                'status: blocked'
+              ],
+              // If non-empty, at least one of these labels must be present
+              requireAnyLabel: [
+                // Example: 'priority: high'
+              ],
+              // Comment triggers (regex-based, handled below)
+              triggerRegexes: [
+                /^\s*(take|assign)\b/i,
+                /^\s*\/\s*(take|assign)\b/i,
+                /^\s*i\s+(want|would like)\s+to\s+(work on|start)\s+this\b/i,
+                /^\s*i\s+can\s+work\s+on\s+this\b/i,
+                /^\s*claim\b/i
+              ],
+              // If true, only assign if issue currently has no assignees
+              onlyWhenUnassigned: true,
+              // Used to reduce comment spam
+              confirmationCommentCooldownHours: 24
+            };
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Basic guards
+            const payload = context.payload;
+            const issue = payload.issue;
+            const comment = payload.comment;
+
+            if (!issue || issue.pull_request) {
+              console.log('Not an issue (or is a PR).');
+              return;
+            }
+
+            const commenter = comment.user.login;
+
+            // If the commenter is an automated account, avoid auto-assign.
+            if (comment.user.type && comment.user.type !== 'User') {
+              console.log(`Skipping non-user commenter type=${comment.user.type}`);
+              return;
+            }
+
+            const commentBody = (comment.body || '').trim();
+            const normalized = commentBody.toLowerCase();
+
+            const isTrigger = cfg.triggerRegexes.some((re) => re.test(commentBody));
+            if (!isTrigger) {
+              console.log('Comment does not match any assignment intent regex.');
+              return;
+            }
+
+            // Permission/authorization check: ensure GitHub can write issues.
+            // (We rely on workflow permissions; we still avoid doing work if missing.)
+            // @actions/github-script exposes github client with auth from token.
+
+            // Re-fetch issue to mitigate race conditions
+            const freshIssue = await github.rest.issues.get({ owner, repo, issue_number: issue.number });
+            const fresh = freshIssue.data;
+
+            if (fresh.pull_request) {
+              console.log('Issue became a PR.');
+              return;
+            }
+
+            // Cooldown / spam control per user based on recent comments
+            // - Look for recent claim-trigger comments by this user
+            const recentComments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner,
+                repo,
+                issue_number: issue.number,
+                per_page: 100
+              }
+            );
+
+            const now = Date.now();
+            const cooldownMs = cfg.cooldownHours * 60 * 60 * 1000;
+
+            const userRecentClaims = recentComments.filter(c => {
+              if (c.user?.login !== commenter) return false;
+              const body = (c.body || '').trim();
+              if (!body) return false;
+              return cfg.triggerRegexes.some(re => re.test(body));
+            });
+
+            if (userRecentClaims.length > 0) {
+              const latest = userRecentClaims
+                .map(c => new Date(c.created_at).getTime())
+                .sort((a,b)=>b-a)[0];
+              if (latest && (now - latest) < cooldownMs) {
+                // Avoid spamming confirmation/denial
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  body: `Hi @${commenter}, please wait ${cfg.cooldownHours}h before claiming this issue again (cooldown active).` 
+                });
+                return;
+              }
+            }
+
+            const labels = (fresh.labels || []).map(l => l.name);
+
+            // Label deny filtering
+            const denied = cfg.denyLabels.some(deny => labels.includes(deny));
+            if (denied) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: `Hi @${commenter}, I can’t auto-assign this issue because it has a disallowed label. Please follow the contribution workflow for this issue.`
+              });
+              return;
+            }
+
+            // Require any label (optional)
+            if (cfg.requireAnyLabel.length > 0) {
+              const ok = cfg.requireAnyLabel.some(req => labels.includes(req));
+              if (!ok) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  body: `Hi @${commenter}, this issue doesn’t match the required label(s) for auto-claim. Labels required: ${cfg.requireAnyLabel.join(', ')}.`
+                });
+                return;
+              }
+            }
+
+            // Only when unassigned
+            const assignees = fresh.assignees || [];
+            const currentAssignees = assignees.map(a => a.login);
+
+            if (cfg.onlyWhenUnassigned && currentAssignees.length > 0) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: `Hi @${commenter}, this issue is already assigned to @${currentAssignees.join(', @')}. Please pick another unassigned issue.`
+              });
+              return;
+            }
+
+            // If commenter already assigned, respond politely
+            if (currentAssignees.includes(commenter)) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: `Hi @${commenter}, you’re already assigned to this issue.`
+              });
+              return;
+            }
+
+            // Race-check: re-verify right before assigning by fetching assignees again
+            const finalIssue = await github.rest.issues.get({ owner, repo, issue_number: issue.number });
+            const finalAssignees = (finalIssue.data.assignees || []).map(a => a.login);
+            if (cfg.onlyWhenUnassigned && finalAssignees.length > 0) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: `Hi @${commenter}, it looks like someone else claimed this issue just now (@${finalAssignees.join(', @')}). Please choose another unassigned issue.`
+              });
+              return;
+            }
+
+            // Assign
+            await github.rest.issues.addAssignees({
+              owner,
+              repo,
+              issue_number: issue.number,
+              assignees: [commenter]
+            });
+
+            // Confirmation (avoid duplicates if user claimed repeatedly)
+            const confirmationCooldownMs = cfg.confirmationCommentCooldownHours * 60 * 60 * 1000;
+            const alreadyConfirmed = recentComments.some(c => {
+              return c.user?.login === commenter &&
+                (c.body || '').includes('successfully assigned') &&
+                (now - new Date(c.created_at).getTime()) < confirmationCooldownMs;
+            });
+
+            if (!alreadyConfirmed) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: `Hi @${commenter}, this issue has been successfully assigned to you! 🎉\n\nMake sure to read our [Contributing Guidelines](CONTRIBUTING.md) and submit your PR within the project’s contribution window. Happy coding! 🚀`
+              });
+            }

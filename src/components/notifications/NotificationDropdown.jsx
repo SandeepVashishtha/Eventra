@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bell, CheckCheck, ExternalLink, Settings } from "lucide-react";
 import { useNotification } from "../../context/NotificationContext";
-import { NOTIFICATION_CATEGORIES } from "../../utils/notificationPreferences";
 import EmptyState from "../common/EmptyState";
 import NotificationItem from "./NotificationItem";
 

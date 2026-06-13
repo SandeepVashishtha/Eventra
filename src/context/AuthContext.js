@@ -8,6 +8,7 @@ import { useTokenExpiry } from "../hooks/useTokenExpiry.js";
 import { isTokenValid } from "../utils/tokenUtils.js";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles.js";
+import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED } from "../utils/sessionBroadcast.js";
 
 // Create context for Authentication
 const AuthContext = createContext();
@@ -119,8 +120,34 @@ export const AuthProvider = ({ children }) => {
     return true;
   }, []);
 
+  // Ref so the broadcast handler can call clearSession without stale closure
+  const clearSessionRef = useRef(null);
+  useEffect(() => {
+    clearSessionRef.current = clearSession;
+  }, [clearSession]);
+
+  // Cross-tab session logout synchronizer
+  useEffect(() => {
+    const channel = getSessionChannel();
+    if (!channel) return;
+
+    const handleMessage = (event) => {
+      if (event.data?.type === SESSION_TERMINATED) {
+        clearSessionRef.current?.();
+        window.location.replace("/login");
+      }
+    };
+
+    channel.addEventListener("message", handleMessage);
+
+    return () => {
+      channel.removeEventListener("message", handleMessage);
+      closeSessionChannel();
+    };
+  }, []);
+
   // Hook to handle periodic token validation and auto-logout on expiration
-  const { clearExpiredSession: handleExpiredSession } = useTokenExpiry({
+  useTokenExpiry({
     token,
     user,
     onExpired: clearSession
@@ -142,6 +169,13 @@ export const AuthProvider = ({ children }) => {
     
     if (!hadPreviousSession || expiryToastShownRef.current) return;
     expiryToastShownRef.current = true;
+    toast.info(
+      "Security notice: Your session has expired. Please log in again to continue securely.",
+      {
+        toastId: "session-expired",
+        autoClose: 5000,
+      }
+    );
     
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",
@@ -180,7 +214,7 @@ export const AuthProvider = ({ children }) => {
         } else {
           // If network is offline, attempt to fall back to securely cached user details
           try {
-            const cachedUser = syncSecureStorage.getItem("user");
+            const cachedUser = await syncSecureStorage.getItemAsync("user");
             if (cachedUser) {
               setUser(JSON.parse(cachedUser));
               setToken("cookie-managed");
@@ -259,7 +293,7 @@ export const AuthProvider = ({ children }) => {
     
     try {
       // Security Contract: Strip authorization keys from display profile object stored in localStorage
-      const { roles, permissions, scopes, ...displayProfile } = sessionUser;
+      const { roles: _roles, permissions: _permissions, scopes: _scopes, ...displayProfile } = sessionUser;
       await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {
       console.error("[AuthContext] Error persisting user profile safely:", error);

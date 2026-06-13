@@ -36,7 +36,7 @@ function TableRow({ c, rank, badge, streak, index }) {
             {rank}
           </span>
           <RankMovementIndicator liveDifference={streak?.rankDifference} />
-          {c.points > 1000 && <span className="ml-2 text-xs bg-gradient-to-r from-blue-400 to-purple-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">DIAMOND</span>}
+          {c.points > 1000 && <span className="ml-2 text-xs bg-linear-to-r from-blue-400 to-purple-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">DIAMOND</span>}
           {c.points > 500 && c.points <= 1000 && <span className="ml-2 text-xs bg-yellow-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">GOLD</span>}
           {c.points > 100 && c.points <= 500 && <span className="ml-2 text-xs bg-gray-400 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">SILVER</span>}
         </div>
@@ -47,7 +47,7 @@ function TableRow({ c, rank, badge, streak, index }) {
           <div className="relative">
             {rank <= 3 && (
               <span
-                className={`absolute -inset-0.5 rounded-full blur-xs opacity-75 animate-pulse bg-gradient-to-r ${
+                className={`absolute -inset-0.5 rounded-full blur-xs opacity-75 animate-pulse bg-linear-to-r ${
                   rank === 1
                     ? "from-yellow-400 to-amber-500"
                     : rank === 2
@@ -96,7 +96,7 @@ function TableRow({ c, rank, badge, streak, index }) {
         <div className="flex flex-wrap items-center gap-2">
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r border shadow-sm transition-all select-none cursor-default ${badge.color}`}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-linear-to-r border shadow-sm transition-all select-none cursor-default ${badge.color}`}
             title={badge.description}
           >
             <badge.icon className="w-3.5 h-3.5" aria-hidden="true" />
@@ -108,7 +108,7 @@ function TableRow({ c, rank, badge, streak, index }) {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: [1, 1.08, 1], opacity: 1 }}
               transition={{ scale: { repeat: Infinity, duration: 1.2, ease: "easeInOut" } }}
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-orange-500 via-red-500 to-amber-500 text-white border border-red-400/30 shadow-[0_0_12px_rgba(239,68,68,0.4)] cursor-default select-none"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-linear-to-r from-orange-500 via-red-500 to-amber-500 text-white border border-red-400/30 shadow-[0_0_12px_rgba(239,68,68,0.4)] cursor-default select-none"
               title="On Fire: Rapid rank improvements!"
             >
               <motion.span
@@ -281,7 +281,7 @@ export default function LeaderboardTable({
 
   return (
     <section
-      className="overflow-hidden rounded-[32px] border border-slate-200/70 bg-white/90 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl"
+      className="overflow-hidden rounded-4xl border border-slate-200/70 bg-white/90 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl"
       aria-labelledby="leaderboard-table-title"
     >
       <h2 id="leaderboard-table-title" className="sr-only">Contributor Rankings</h2>

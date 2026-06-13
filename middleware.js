@@ -23,6 +23,84 @@ const API_RATE_LIMIT = 60;
 const API_RATE_WINDOW_S = 60;
 
 // ---------------------------------------------------------------------------
+// CSP Backend Origin Configuration
+// Reads backend origins from environment variables and validates them
+// for use in the Content-Security-Policy connect-src directive.
+// ---------------------------------------------------------------------------
+
+/**
+ * Validates a URL string and returns the origin if valid.
+ * @param {string} urlStr - The URL string to validate
+ * @returns {string|null} The origin if valid, null otherwise
+ */
+export const validateBackendOrigin = (urlStr) => {
+  if (!urlStr || typeof urlStr !== "string") {
+    return null;
+  }
+
+  // Trim whitespace
+  const trimmed = urlStr.trim();
+
+  // Skip empty strings
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    
+    // Only allow http and https protocols
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      console.warn(
+        `[CSP] Invalid backend origin protocol: ${url.protocol}. Only http and https are allowed.`
+      );
+      return null;
+    }
+
+    // Return the origin (protocol + host + port)
+    return url.origin;
+  } catch (e) {
+    console.warn(`[CSP] Invalid backend origin URL: ${trimmed}. Error: ${e.message}`);
+    return null;
+  }
+};
+
+/**
+ * Reads and validates backend origins from environment variables.
+ * Checks BACKEND_URL, VITE_API_URL, and REACT_APP_API_URL in that order.
+ * @returns {string[]} Array of valid backend origins
+ */
+export const getBackendOrigins = () => {
+  const origins = new Set();
+
+  // Check environment variables in priority order
+  const envVars = [
+    process.env.BACKEND_URL,
+    process.env.VITE_API_URL,
+    process.env.REACT_APP_API_URL,
+  ];
+
+  for (const envVar of envVars) {
+    if (envVar) {
+      const origin = validateBackendOrigin(envVar);
+      if (origin) {
+        origins.add(origin);
+      }
+    }
+  }
+
+  // If no valid origins found, log a warning
+  if (origins.size === 0) {
+    console.warn(
+      "[CSP] No valid backend origins configured in BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL. " +
+      "CSP connect-src will not include backend origins. API calls may be blocked."
+    );
+  }
+
+  return Array.from(origins);
+};
+
+// ---------------------------------------------------------------------------
 // JWT verification — uses Web Crypto API (native in Edge Runtime).
 // jsonwebtoken depends on Node.js crypto and is NOT available in Edge.
 // ---------------------------------------------------------------------------
@@ -128,13 +206,27 @@ export const config = {
   matcher: "/api/:path*",
 };
 
-const SECURITY_HEADERS = {
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+export const SECURITY_HEADERS = {
+  "Strict-Transport-Security":
+    "max-age=31536000; includeSubDomains; preload",
+
   "X-Frame-Options": "DENY",
+
   "X-Content-Type-Options": "nosniff",
+
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), display-capture=()",
-  "Content-Security-Policy": "default-src 'self'; script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.github.com; frame-src 'self' https://accounts.google.com",
+
+  "Permissions-Policy":
+    "camera=(), microphone=(), geolocation=(), display-capture=()",
+
+  "Content-Security-Policy":
+  "default-src 'self'; " +
+  "script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; " +
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+  "img-src 'self' data: https:; " +
+  "font-src 'self' https://fonts.gstatic.com; " +
+  "connect-src 'self' https://api.github.com " + getBackendOrigins().join(" ") + "; " +
+  "frame-src 'self' https://accounts.google.com",
 };
 
 const addSecurityHeaders = (headers) => {
@@ -169,16 +261,49 @@ const forbiddenResponse = (url) =>
       },
     },
   );
-const BLOCKED_COUNTRIES = ['CU', 'IR', 'KP', 'SY', 'RU'];
+
+// ---------------------------------------------------------------------------
+// Geographic access restrictions — configurable via BLOCKED_COUNTRIES env var
+// ---------------------------------------------------------------------------
+
+const getBlockedCountries = () => {
+  return new Set(
+    (process.env.BLOCKED_COUNTRIES || "")
+      .split(",")
+      .map((country) => country.trim().toUpperCase())
+      .filter(Boolean)
+  );
+};
+
+const isCountryBlocked = (country) => {
+  const blockedCountries = getBlockedCountries();
+  return blockedCountries.has(country?.toUpperCase());
+};
+
+const createGeoBlockedResponse = () =>
+  new Response(
+    JSON.stringify({
+      error: "Unavailable For Legal Reasons",
+      code: "COUNTRY_BLOCKED"
+    }),
+    {
+      status: 451,
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }
+  );
 
 export default async function middleware(request) {
-  const country = request.geo?.country || 'US';
-  if (BLOCKED_COUNTRIES.includes(country)) {
-    return new Response(JSON.stringify({ error: "Unavailable For Legal Reasons" }), {
-      status: 451,
-      headers: { "Content-Type": "application/json" }
-    });
+  const country = request.geo?.country;
+  
+  if (isCountryBlocked(country)) {
+    console.warn(
+      `[Geo Restriction] Blocked request from country: ${country}`
+    );
+    return createGeoBlockedResponse();
   }
+  
   const url = new URL(request.url);
 
   if (request.method === "OPTIONS") return;

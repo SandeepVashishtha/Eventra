@@ -82,6 +82,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   return (
     <>
+      {/* Skip link — visually hidden until keyboard-focused; satisfies WCAG 2.4.1 Bypass Blocks */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded"
+      >
+        Skip to main content
+      </a>
       <nav
         ref={navRef}
         aria-label="Primary navigation"
@@ -91,7 +98,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
           {/* Logo - Left Section */}
           <Link to="/" aria-label="Eventra home logo template" className="relative z-10 flex items-center shrink-0">
             <div className="flex items-center gap-2 sm:gap-2.5">

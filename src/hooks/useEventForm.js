@@ -14,6 +14,7 @@ import { sanitizeHtml } from "../utils/sanitizeHtml";
 import { logger } from "../utils/logger";
 import { useAuth } from "../context/AuthContext";
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { getOrMigrateKey } from "../utils/storageKeyManager";
 
 // 🎯 Constants for better maintainability
 const MAX_CAPACITY = 100000;
@@ -263,7 +264,8 @@ const DEBOUNCE_DELAY = 1000;
  */
 export const useEventForm = () => {
   const { user } = useAuth();
-  const scopedDraftKey = `${DRAFT_KEY}_${user?.id || "guest"}`;
+  const legacyKey = `${DRAFT_KEY}_${user?.id || "guest"}`;
+  const scopedDraftKey = getOrMigrateKey(DRAFT_KEY, user?.id, legacyKey);
   // 📊 State Management
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
@@ -354,9 +356,23 @@ export const useEventForm = () => {
   }, [formData, isDraftLoaded, scopedDraftKey]);
 
   // 🔍 Validation Logic
+
+  /**
+   * Returns today's date string in YYYY-MM-DD format (local time) — used
+   * as the `min` attribute on date pickers and for past-date comparisons.
+   */
+  const getTodayDateString = () => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   const validateForm = useCallback(() => {
     const newErrors = {};
     const data = formDataRef.current;
+    const todayStr = getTodayDateString();
 
     const title = data.title?.trim();
     if (!title) {
@@ -369,13 +385,24 @@ export const useEventForm = () => {
     if (!data.category) newErrors.category = "Please select a category";
 
     if (data.isMultiDay) {
-      if (!data.startDate) newErrors.startDate = "Start date is required";
-      if (!data.endDate) newErrors.endDate = "End date is required";
-      if (data.startDate && data.endDate && new Date(data.endDate) < new Date(data.startDate)) {
+      if (!data.startDate) {
+        newErrors.startDate = "Start date is required";
+      } else if (data.startDate < todayStr) {
+        newErrors.startDate = "Event date cannot be in the past";
+      }
+      if (!data.endDate) {
+        newErrors.endDate = "End date is required";
+      } else if (data.endDate < todayStr) {
+        newErrors.endDate = "Event date cannot be in the past";
+      } else if (data.startDate && data.endDate && new Date(data.endDate) < new Date(data.startDate)) {
         newErrors.endDate = "End date must be after start date";
       }
     } else {
-      if (!data.date) newErrors.date = "Event date is required";
+      if (!data.date) {
+        newErrors.date = "Event date is required";
+      } else if (data.date < todayStr) {
+        newErrors.date = "Event date cannot be in the past";
+      }
     }
 
     if (!data.startTime) newErrors.startTime = "Start time is required";
@@ -425,6 +452,101 @@ export const useEventForm = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, []);
+
+  /**
+   * validateField — validates a single named field on blur and merges the
+   * result into `errors`.  Supports the same field names used by validateForm.
+   * Called by `handleFieldBlur` which form inputs wire up to their `onBlur`.
+   */
+  const validateField = useCallback((fieldName, value) => {
+    const data = formDataRef.current;
+    const todayStr = getTodayDateString();
+    let fieldError = "";
+
+    switch (fieldName) {
+      case "title": {
+        const title = (value ?? data.title)?.trim();
+        if (!title) fieldError = "Event title is required";
+        else if (title.length < MIN_TITLE_LENGTH || title.length > MAX_TITLE_LENGTH)
+          fieldError = `Title must be between ${MIN_TITLE_LENGTH} and ${MAX_TITLE_LENGTH} characters`;
+        break;
+      }
+      case "description":
+        if (!(value ?? data.description)?.trim()) fieldError = "Event description is required";
+        break;
+      case "category":
+        if (!(value ?? data.category)) fieldError = "Please select a category";
+        break;
+      case "date": {
+        const date = value ?? data.date;
+        if (!date) fieldError = "Event date is required";
+        else if (date < todayStr) fieldError = "Event date cannot be in the past";
+        break;
+      }
+      case "startDate": {
+        const startDate = value ?? data.startDate;
+        if (!startDate) fieldError = "Start date is required";
+        else if (startDate < todayStr) fieldError = "Event date cannot be in the past";
+        break;
+      }
+      case "endDate": {
+        const endDate = value ?? data.endDate;
+        if (!endDate) fieldError = "End date is required";
+        else if (endDate < todayStr) fieldError = "Event date cannot be in the past";
+        else if (data.startDate && new Date(endDate) < new Date(data.startDate))
+          fieldError = "End date must be after start date";
+        break;
+      }
+      case "startTime":
+        if (!(value ?? data.startTime)) fieldError = "Start time is required";
+        break;
+      case "endTime": {
+        const endTime = value ?? data.endTime;
+        if (!endTime) {
+          fieldError = "End time is required";
+        } else if (data.startTime && !data.isMultiDay) {
+          const startMin = parseTimeToMinutes(data.startTime);
+          const endMin = parseTimeToMinutes(endTime);
+          if (startMin >= endMin) fieldError = "End time must be after start time";
+        }
+        break;
+      }
+      case "location": {
+        if (!data.isVirtual && !(value ?? data.location?.name)?.trim())
+          fieldError = "Location name is required for in-person events";
+        break;
+      }
+      case "virtualLink": {
+        const link = (value ?? data.virtualLink)?.trim();
+        if (data.isVirtual) {
+          if (!link) fieldError = "Virtual link is required for online events";
+          else if (!/^https:\/\//i.test(link)) fieldError = "Virtual link must use HTTPS protocol";
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    setErrors((prev) => {
+      if (!fieldError) {
+        const next = { ...prev };
+        delete next[fieldName];
+        return next;
+      }
+      return { ...prev, [fieldName]: fieldError };
+    });
+  }, []);
+
+  /**
+   * handleFieldBlur — standard `onBlur` handler to wire to any <input> /
+   * <select> / <textarea>.  Reads the field name from `e.target.name` and
+   * delegates to validateField.
+   */
+  const handleFieldBlur = useCallback((e) => {
+    const { name, value } = e.target;
+    if (name) validateField(name, value);
+  }, [validateField]);
 
   const resetForm = useCallback(() => {
     setFormData(initialFormData);
@@ -576,12 +698,14 @@ export const useEventForm = () => {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setFormData((prev) => ({ ...prev, banner: file, bannerPreview: event.target.result }));
-      setErrors((prev) => ({ ...prev, banner: "" }));
-    };
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    setFormData((prev) => {
+      if (prev.bannerPreview && prev.bannerPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(prev.bannerPreview);
+      }
+      return { ...prev, banner: file, bannerPreview: objectUrl };
+    });
+    setErrors((prev) => ({ ...prev, banner: "" }));
   }, []);
 
   // Browser guard for unsaved changes
@@ -595,6 +719,40 @@ export const useEventForm = () => {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges]);
+
+  // Cleanup ObjectURLs on unmount
+  useEffect(() => {
+    return () => {
+      const preview = formDataRef.current?.bannerPreview;
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, []);
+
+  /**
+   * isFormValid — true when the errors object is empty AND all required
+   * fields have been touched / filled.  Used to disable the submit button
+   * before the user has attempted any submission.
+   */
+  const isFormValid = useMemo(() => {
+    if (Object.keys(errors).length > 0) return false;
+    const data = formData;
+    const todayStr = getTodayDateString();
+    if (!data.title?.trim() || data.title.trim().length < MIN_TITLE_LENGTH) return false;
+    if (!data.description?.trim()) return false;
+    if (!data.category) return false;
+    if (data.isMultiDay) {
+      if (!data.startDate || data.startDate < todayStr) return false;
+      if (!data.endDate || data.endDate < todayStr) return false;
+    } else {
+      if (!data.date || data.date < todayStr) return false;
+    }
+    if (!data.startTime || !data.endTime) return false;
+    if (!data.isVirtual && !data.location?.name?.trim()) return false;
+    if (data.isVirtual && !data.virtualLink?.trim()) return false;
+    return true;
+  }, [formData, errors]);
 
   return {
     formData,
@@ -612,6 +770,9 @@ export const useEventForm = () => {
     submitSuccess,
     submitEventForm,
     validateForm,
+    validateField,
+    handleFieldBlur,
+    isFormValid,
     resetForm,
     handleInputChange,
     handleNestedChange,
