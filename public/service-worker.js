@@ -314,6 +314,122 @@ self.addEventListener('sync', (event) => {
   event.waitUntil(notifyClientsToSyncOfflineQueue());
 });
 
+/**
+ * Handle stale-while-revalidate caching and revalidation for the leaderboard endpoint.
+ *
+ * @param {FetchEvent} event - The fetch event
+ * @param {URL} requestUrl - The parsed request URL
+ */
+function handleLeaderboardFetch(event, requestUrl) {
+  const LEADERBOARD_TTL = 60 * 1000; // 60 seconds Cache expiration (TTL)
+
+  // Helper to compare two JSON responses
+  const responsesDiffer = async (resp1, resp2) => {
+    try {
+      const text1 = await resp1.clone().text();
+      const text2 = await resp2.clone().text();
+      return text1 !== text2;
+    } catch {
+      return true;
+    }
+  };
+
+  // Helper to clone a response and append custom caching timestamp header
+  const createCachedResponse = async (response, timestamp) => {
+    const responseCopy = response.clone();
+    const text = await responseCopy.text();
+    const headers = new Headers(responseCopy.headers);
+    headers.set('x-sw-cached-at', timestamp.toString());
+    return new Response(text, {
+      status: responseCopy.status,
+      statusText: responseCopy.statusText,
+      headers: headers
+    });
+  };
+
+  // Helper to notify all active windows of new leaderboard rankings
+  const notifyClientsOfLeaderboardUpdate = async (newData) => {
+    const clients = await self.clients.matchAll({
+      includeUncontrolled: true,
+      type: 'window',
+    });
+    clients.forEach((client) => {
+      client.postMessage({
+        type: 'LEADERBOARD_UPDATED',
+        data: newData,
+      });
+    });
+  };
+
+  event.respondWith(
+    caches.match(event.request).then(async (cachedResponse) => {
+      const now = Date.now();
+
+      if (cachedResponse) {
+        const cachedAt = cachedResponse.headers.get('x-sw-cached-at');
+        const age = cachedAt ? now - parseInt(cachedAt, 10) : Infinity;
+
+        if (age < LEADERBOARD_TTL) {
+          log('[Service Worker] Serving fresh cached leaderboard');
+          return cachedResponse;
+        }
+
+        log('[Service Worker] Serving stale leaderboard, revalidating in background...');
+        // Stale, trigger background revalidation
+        fetch(event.request.clone())
+          .then(async (networkResponse) => {
+            if (networkResponse.status === 200) {
+              const cache = await caches.open(CACHE_NAME);
+              const isDifferent = await responsesDiffer(cachedResponse, networkResponse);
+
+              if (isDifferent) {
+                log('[Service Worker] Leaderboard data changed. Updating cache and notifying clients.');
+                const updatedCachedResponse = await createCachedResponse(networkResponse, now);
+                await cache.put(event.request, updatedCachedResponse);
+
+                const data = await networkResponse.clone().json();
+                notifyClientsOfLeaderboardUpdate(data.data || data);
+              } else {
+                log('[Service Worker] Leaderboard data unchanged. Updating cache timestamp.');
+                const updatedCachedResponse = await createCachedResponse(cachedResponse, now);
+                await cache.put(event.request, updatedCachedResponse);
+              }
+            }
+          })
+          .catch((err) => {
+            log('[Service Worker] Background revalidation failed:', err);
+          });
+
+        return cachedResponse;
+      }
+
+      // Cache miss: fetch from network
+      return fetch(event.request)
+        .then(async (networkResponse) => {
+          if (networkResponse.status === 200) {
+            const cache = await caches.open(CACHE_NAME);
+            const updatedCachedResponse = await createCachedResponse(networkResponse, now);
+            await cache.put(event.request, updatedCachedResponse);
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Offline fallback: since cache miss, we return a fallback response
+          return new Response(
+            JSON.stringify({
+              error: 'You are currently offline. Leaderboard data will update once connection is re-established.',
+              offline: true
+            }),
+            {
+              headers: { 'Content-Type': 'application/json' },
+              status: 503
+            }
+          );
+        });
+    })
+  );
+}
+
 // Intercept fetch requests and apply offline caching strategies
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
@@ -333,113 +449,7 @@ self.addEventListener('fetch', (event) => {
   // CUSTOM CACHING STRATEGY: Stale-While-Revalidate with TTL for leaderboard data.
   // Ensures fast response, offline support, and automatic revalidation/client notification.
   if (requestUrl.pathname === '/api/leaderboard') {
-    const LEADERBOARD_TTL = 60 * 1000; // 60 seconds Cache expiration (TTL)
-
-    // Helper to compare two JSON responses
-    const responsesDiffer = async (resp1, resp2) => {
-      try {
-        const text1 = await resp1.clone().text();
-        const text2 = await resp2.clone().text();
-        return text1 !== text2;
-      } catch {
-        return true;
-      }
-    };
-
-    // Helper to clone a response and append custom caching timestamp header
-    const createCachedResponse = async (response, timestamp) => {
-      const responseCopy = response.clone();
-      const text = await responseCopy.text();
-      const headers = new Headers(responseCopy.headers);
-      headers.set('x-sw-cached-at', timestamp.toString());
-      return new Response(text, {
-        status: responseCopy.status,
-        statusText: responseCopy.statusText,
-        headers: headers
-      });
-    };
-
-    // Helper to notify all active windows of new leaderboard rankings
-    const notifyClientsOfLeaderboardUpdate = async (newData) => {
-      const clients = await self.clients.matchAll({
-        includeUncontrolled: true,
-        type: 'window',
-      });
-      clients.forEach((client) => {
-        client.postMessage({
-          type: 'LEADERBOARD_UPDATED',
-          data: newData,
-        });
-      });
-    };
-
-    event.respondWith(
-      caches.match(event.request).then(async (cachedResponse) => {
-        const now = Date.now();
-
-        if (cachedResponse) {
-          const cachedAt = cachedResponse.headers.get('x-sw-cached-at');
-          const age = cachedAt ? now - parseInt(cachedAt, 10) : Infinity;
-
-          if (age < LEADERBOARD_TTL) {
-            log('[Service Worker] Serving fresh cached leaderboard');
-            return cachedResponse;
-          }
-
-          log('[Service Worker] Serving stale leaderboard, revalidating in background...');
-          // Stale, trigger background revalidation
-          fetch(event.request.clone())
-            .then(async (networkResponse) => {
-              if (networkResponse.status === 200) {
-                const cache = await caches.open(CACHE_NAME);
-                const isDifferent = await responsesDiffer(cachedResponse, networkResponse);
-
-                if (isDifferent) {
-                  log('[Service Worker] Leaderboard data changed. Updating cache and notifying clients.');
-                  const updatedCachedResponse = await createCachedResponse(networkResponse, now);
-                  await cache.put(event.request, updatedCachedResponse);
-
-                  const data = await networkResponse.clone().json();
-                  notifyClientsOfLeaderboardUpdate(data.data || data);
-                } else {
-                  log('[Service Worker] Leaderboard data unchanged. Updating cache timestamp.');
-                  const updatedCachedResponse = await createCachedResponse(cachedResponse, now);
-                  await cache.put(event.request, updatedCachedResponse);
-                }
-              }
-            })
-            .catch((err) => {
-              log('[Service Worker] Background revalidation failed:', err);
-            });
-
-          return cachedResponse;
-        }
-
-        // Cache miss: fetch from network
-        return fetch(event.request)
-          .then(async (networkResponse) => {
-            if (networkResponse.status === 200) {
-              const cache = await caches.open(CACHE_NAME);
-              const updatedCachedResponse = await createCachedResponse(networkResponse, now);
-              await cache.put(event.request, updatedCachedResponse);
-            }
-            return networkResponse;
-          })
-          .catch(() => {
-            // Offline fallback: since cache miss, we return a fallback response
-            return new Response(
-              JSON.stringify({
-                error: 'You are currently offline. Leaderboard data will update once connection is re-established.',
-                offline: true
-              }),
-              {
-                headers: { 'Content-Type': 'application/json' },
-                status: 503
-              }
-            );
-          });
-      })
-    );
+    handleLeaderboardFetch(event, requestUrl);
     return;
   }
 

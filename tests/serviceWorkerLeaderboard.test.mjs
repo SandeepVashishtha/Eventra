@@ -169,259 +169,262 @@ const dispatchFetchEvent = async (url, method = "GET") => {
   return respondedWithPromise;
 };
 
+// --- Test Case Functions ---
+
+const testInitialCaching = async () => {
+  mockCacheStore.clear();
+  const mockRankings = {
+    status: 200,
+    data: [{ rank: 1, username: "dev_bob", points: 100 }]
+  };
+
+  currentFetchMock = async (req) => {
+    assert.equal(req.url, "https://eventra.test/api/leaderboard");
+    return new MockResponse(JSON.stringify(mockRankings), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  };
+
+  const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard");
+  const response = await responsePromise;
+  assert.equal(response.status, 200);
+
+  const json = await response.json();
+  assert.deepEqual(json, mockRankings);
+
+  // Verify cache has been populated with custom timestamp header
+  const cached = mockCacheStore.get("https://eventra.test/api/leaderboard");
+  assert.ok(cached);
+  const cachedAt = cached.headers.get("x-sw-cached-at");
+  assert.ok(cachedAt);
+  assert.ok(Date.now() - parseInt(cachedAt, 10) < 5000);
+  console.log("✔ Initial cache miss successfully fetches and caches rankings");
+};
+
+const testCacheHitFresh = async () => {
+  const freshTime = Date.now() - 10000; // 10 seconds ago
+  const cachedRankings = {
+    status: 200,
+    data: [{ rank: 1, username: "dev_bob", points: 100 }]
+  };
+
+  const cachedHeaders = new MockHeaders();
+  cachedHeaders.set("x-sw-cached-at", freshTime.toString());
+  const cachedResponse = new MockResponse(JSON.stringify(cachedRankings), {
+    status: 200,
+    headers: cachedHeaders
+  });
+
+  mockCacheStore.set("https://eventra.test/api/leaderboard", cachedResponse);
+
+  // Setup fetch to fail if called (it shouldn't be called for fresh cache)
+  currentFetchMock = () => {
+    assert.fail("Fetch should not be called when cache is fresh");
+  };
+
+  const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard");
+  const response = await responsePromise;
+  assert.equal(response.status, 200);
+
+  const json = await response.json();
+  assert.deepEqual(json, cachedRankings);
+  console.log("✔ Cache hit for fresh data returns immediately without network request");
+};
+
+const testCacheHitStaleSameData = async () => {
+  const staleTime = Date.now() - 70000; // 70 seconds ago
+  const cachedRankings = {
+    status: 200,
+    data: [{ rank: 1, username: "dev_bob", points: 100 }]
+  };
+
+  const cachedHeaders = new MockHeaders();
+  cachedHeaders.set("x-sw-cached-at", staleTime.toString());
+  const cachedResponse = new MockResponse(JSON.stringify(cachedRankings), {
+    status: 200,
+    headers: cachedHeaders
+  });
+
+  mockCacheStore.set("https://eventra.test/api/leaderboard", cachedResponse);
+
+  let fetchCalled = false;
+  currentFetchMock = async () => {
+    fetchCalled = true;
+    return new MockResponse(JSON.stringify(cachedRankings), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  };
+
+  let clientMessageSent = false;
+  mockClients = [{
+    postMessage: () => {
+      clientMessageSent = true;
+    }
+  }];
+
+  const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard");
+  const response = await responsePromise;
+  assert.equal(response.status, 200);
+
+  // Verify stale response returned immediately
+  const json = await response.json();
+  assert.deepEqual(json, cachedRankings);
+
+  // Give background revalidation a moment to complete
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  assert.ok(fetchCalled);
+  assert.ok(!clientMessageSent, "No update client message should be sent if data did not change");
+
+  // Verify cache timestamp was updated to mark it fresh
+  const cached = mockCacheStore.get("https://eventra.test/api/leaderboard");
+  const cachedAt = cached.headers.get("x-sw-cached-at");
+  assert.ok(Date.now() - parseInt(cachedAt, 10) < 5000);
+  console.log("✔ Cache hit for stale data returns immediately, revalidates background, updates timestamp");
+};
+
+const testCacheHitStaleNewData = async () => {
+  const staleTime = Date.now() - 70000; // 70 seconds ago
+  const cachedRankings = {
+    status: 200,
+    data: [{ rank: 1, username: "dev_bob", points: 100 }]
+  };
+  const newRankings = {
+    status: 200,
+    data: [
+      { rank: 1, username: "dev_bob", points: 100 },
+      { rank: 2, username: "dev_alice", points: 90 }
+    ]
+  };
+
+  const cachedHeaders = new MockHeaders();
+  cachedHeaders.set("x-sw-cached-at", staleTime.toString());
+  const cachedResponse = new MockResponse(JSON.stringify(cachedRankings), {
+    status: 200,
+    headers: cachedHeaders
+  });
+
+  mockCacheStore.set("https://eventra.test/api/leaderboard", cachedResponse);
+
+  let fetchCalled = false;
+  currentFetchMock = async () => {
+    fetchCalled = true;
+    return new MockResponse(JSON.stringify(newRankings), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  };
+
+  let receivedMsg = null;
+  mockClients = [{
+    postMessage: (msg) => {
+      receivedMsg = msg;
+    }
+  }];
+
+  const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard");
+  const response = await responsePromise;
+  assert.equal(response.status, 200);
+
+  // Give background revalidation a moment to complete
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  assert.ok(fetchCalled);
+  assert.ok(receivedMsg);
+  assert.equal(receivedMsg.type, "LEADERBOARD_UPDATED");
+  assert.deepEqual(receivedMsg.data, newRankings.data);
+
+  // Verify cache was updated with new data and fresh timestamp
+  const cached = mockCacheStore.get("https://eventra.test/api/leaderboard");
+  const cachedAt = cached.headers.get("x-sw-cached-at");
+  assert.ok(Date.now() - parseInt(cachedAt, 10) < 5000);
+  const cachedJson = await cached.json();
+  assert.deepEqual(cachedJson, newRankings);
+  console.log("✔ Cache hit for stale data revalidates background, updates cache, and dispatches change event");
+};
+
+const testOfflineFallbackCacheMiss = async () => {
+  mockCacheStore.clear();
+  currentFetchMock = async () => {
+    throw new Error("TypeError: Failed to fetch");
+  };
+
+  const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard");
+  const response = await responsePromise;
+  assert.equal(response.status, 503);
+
+  const json = await response.json();
+  assert.ok(json.error.includes("offline"));
+  console.log("✔ Cache miss when offline returns elegant 503 error JSON response");
+};
+
+const testOfflineFallbackCacheHit = async () => {
+  const staleTime = Date.now() - 70000;
+  const cachedRankings = {
+    status: 200,
+    data: [{ rank: 1, username: "dev_bob", points: 100 }]
+  };
+
+  const cachedHeaders = new MockHeaders();
+  cachedHeaders.set("x-sw-cached-at", staleTime.toString());
+  const cachedResponse = new MockResponse(JSON.stringify(cachedRankings), {
+    status: 200,
+    headers: cachedHeaders
+  });
+
+  mockCacheStore.set("https://eventra.test/api/leaderboard", cachedResponse);
+
+  currentFetchMock = async () => {
+    throw new Error("TypeError: Failed to fetch");
+  };
+
+  const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard");
+  const response = await responsePromise;
+  assert.equal(response.status, 200);
+
+  const json = await response.json();
+  assert.deepEqual(json, cachedRankings);
+  console.log("✔ Stale cache hit when offline gracefully falls back to cached data");
+};
+
+const testSensitivePathNeverCached = async () => {
+  mockCacheStore.clear();
+  const mockMeData = {
+    rank: 5,
+    username: "user_me",
+    points: 50
+  };
+
+  currentFetchMock = async (req) => {
+    assert.equal(req.url, "https://eventra.test/api/leaderboard/me");
+    return new MockResponse(JSON.stringify(mockMeData), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  };
+
+  const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard/me");
+  const response = await responsePromise;
+  assert.equal(response.status, 200);
+
+  // Verify response is NOT in the cache store
+  assert.equal(mockCacheStore.size, 0);
+  console.log("✔ Sensitive path /api/leaderboard/me is never cached by service worker");
+};
+
 // --- Test Suite Execution ---
 const runTests = async () => {
   console.log("Starting service worker leaderboard caching tests...");
 
-  // 1. Initial caching behavior (Cache Miss)
-  {
-    mockCacheStore.clear();
-    const mockRankings = {
-      status: 200,
-      data: [{ rank: 1, username: "dev_bob", points: 100 }]
-    };
-
-    currentFetchMock = async (req) => {
-      assert.equal(req.url, "https://eventra.test/api/leaderboard");
-      return new MockResponse(JSON.stringify(mockRankings), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
-    };
-
-    const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard");
-    const response = await responsePromise;
-    assert.equal(response.status, 200);
-
-    const json = await response.json();
-    assert.deepEqual(json, mockRankings);
-
-    // Verify cache has been populated with custom timestamp header
-    const cached = mockCacheStore.get("https://eventra.test/api/leaderboard");
-    assert.ok(cached);
-    const cachedAt = cached.headers.get("x-sw-cached-at");
-    assert.ok(cachedAt);
-    assert.ok(Date.now() - parseInt(cachedAt, 10) < 5000);
-    console.log("✔ Initial cache miss successfully fetches and caches rankings");
-  }
-
-  // 2. Cache Hit (Fresh Cache < TTL)
-  {
-    const freshTime = Date.now() - 10000; // 10 seconds ago
-    const cachedRankings = {
-      status: 200,
-      data: [{ rank: 1, username: "dev_bob", points: 100 }]
-    };
-
-    const cachedHeaders = new MockHeaders();
-    cachedHeaders.set("x-sw-cached-at", freshTime.toString());
-    const cachedResponse = new MockResponse(JSON.stringify(cachedRankings), {
-      status: 200,
-      headers: cachedHeaders
-    });
-
-    mockCacheStore.set("https://eventra.test/api/leaderboard", cachedResponse);
-
-    // Setup fetch to fail if called (it shouldn't be called for fresh cache)
-    currentFetchMock = () => {
-      assert.fail("Fetch should not be called when cache is fresh");
-    };
-
-    const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard");
-    const response = await responsePromise;
-    assert.equal(response.status, 200);
-
-    const json = await response.json();
-    assert.deepEqual(json, cachedRankings);
-    console.log("✔ Cache hit for fresh data returns immediately without network request");
-  }
-
-  // 3. Cache Hit (Stale Cache -> background revalidation -> same data)
-  {
-    const staleTime = Date.now() - 70000; // 70 seconds ago
-    const cachedRankings = {
-      status: 200,
-      data: [{ rank: 1, username: "dev_bob", points: 100 }]
-    };
-
-    const cachedHeaders = new MockHeaders();
-    cachedHeaders.set("x-sw-cached-at", staleTime.toString());
-    const cachedResponse = new MockResponse(JSON.stringify(cachedRankings), {
-      status: 200,
-      headers: cachedHeaders
-    });
-
-    mockCacheStore.set("https://eventra.test/api/leaderboard", cachedResponse);
-
-    let fetchCalled = false;
-    currentFetchMock = async () => {
-      fetchCalled = true;
-      return new MockResponse(JSON.stringify(cachedRankings), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
-    };
-
-    let clientMessageSent = false;
-    mockClients = [{
-      postMessage: () => {
-        clientMessageSent = true;
-      }
-    }];
-
-    const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard");
-    const response = await responsePromise;
-    assert.equal(response.status, 200);
-
-    // Verify stale response returned immediately
-    const json = await response.json();
-    assert.deepEqual(json, cachedRankings);
-
-    // Give background revalidation a moment to complete
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    assert.ok(fetchCalled);
-    assert.ok(!clientMessageSent, "No update client message should be sent if data did not change");
-
-    // Verify cache timestamp was updated to mark it fresh
-    const cached = mockCacheStore.get("https://eventra.test/api/leaderboard");
-    const cachedAt = cached.headers.get("x-sw-cached-at");
-    assert.ok(Date.now() - parseInt(cachedAt, 10) < 5000);
-    console.log("✔ Cache hit for stale data returns immediately, revalidates background, updates timestamp");
-  }
-
-  // 4. Cache Hit (Stale Cache -> background revalidation -> new data -> notify clients)
-  {
-    const staleTime = Date.now() - 70000; // 70 seconds ago
-    const cachedRankings = {
-      status: 200,
-      data: [{ rank: 1, username: "dev_bob", points: 100 }]
-    };
-    const newRankings = {
-      status: 200,
-      data: [
-        { rank: 1, username: "dev_bob", points: 100 },
-        { rank: 2, username: "dev_alice", points: 90 }
-      ]
-    };
-
-    const cachedHeaders = new MockHeaders();
-    cachedHeaders.set("x-sw-cached-at", staleTime.toString());
-    const cachedResponse = new MockResponse(JSON.stringify(cachedRankings), {
-      status: 200,
-      headers: cachedHeaders
-    });
-
-    mockCacheStore.set("https://eventra.test/api/leaderboard", cachedResponse);
-
-    let fetchCalled = false;
-    currentFetchMock = async () => {
-      fetchCalled = true;
-      return new MockResponse(JSON.stringify(newRankings), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
-    };
-
-    let receivedMsg = null;
-    mockClients = [{
-      postMessage: (msg) => {
-        receivedMsg = msg;
-      }
-    }];
-
-    const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard");
-    const response = await responsePromise;
-    assert.equal(response.status, 200);
-
-    // Give background revalidation a moment to complete
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    assert.ok(fetchCalled);
-    assert.ok(receivedMsg);
-    assert.equal(receivedMsg.type, "LEADERBOARD_UPDATED");
-    assert.deepEqual(receivedMsg.data, newRankings.data);
-
-    // Verify cache was updated with new data and fresh timestamp
-    const cached = mockCacheStore.get("https://eventra.test/api/leaderboard");
-    const cachedAt = cached.headers.get("x-sw-cached-at");
-    assert.ok(Date.now() - parseInt(cachedAt, 10) < 5000);
-    const cachedJson = await cached.json();
-    assert.deepEqual(cachedJson, newRankings);
-    console.log("✔ Cache hit for stale data revalidates background, updates cache, and dispatches change event");
-  }
-
-  // 5. Offline Fallback (Cache Miss)
-  {
-    mockCacheStore.clear();
-    currentFetchMock = async () => {
-      throw new Error("TypeError: Failed to fetch");
-    };
-
-    const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard");
-    const response = await responsePromise;
-    assert.equal(response.status, 503);
-
-    const json = await response.json();
-    assert.ok(json.error.includes("offline"));
-    console.log("✔ Cache miss when offline returns elegant 503 error JSON response");
-  }
-
-  // 6. Offline Fallback (Cache Hit when offline)
-  {
-    const staleTime = Date.now() - 70000;
-    const cachedRankings = {
-      status: 200,
-      data: [{ rank: 1, username: "dev_bob", points: 100 }]
-    };
-
-    const cachedHeaders = new MockHeaders();
-    cachedHeaders.set("x-sw-cached-at", staleTime.toString());
-    const cachedResponse = new MockResponse(JSON.stringify(cachedRankings), {
-      status: 200,
-      headers: cachedHeaders
-    });
-
-    mockCacheStore.set("https://eventra.test/api/leaderboard", cachedResponse);
-
-    currentFetchMock = async () => {
-      throw new Error("TypeError: Failed to fetch");
-    };
-
-    const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard");
-    const response = await responsePromise;
-    assert.equal(response.status, 200);
-
-    const json = await response.json();
-    assert.deepEqual(json, cachedRankings);
-    console.log("✔ Stale cache hit when offline gracefully falls back to cached data");
-  }
-
-  // 7. Sensitive endpoint `/api/leaderboard/me` is never cached
-  {
-    mockCacheStore.clear();
-    const mockMeData = {
-      rank: 5,
-      username: "user_me",
-      points: 50
-    };
-
-    currentFetchMock = async (req) => {
-      assert.equal(req.url, "https://eventra.test/api/leaderboard/me");
-      return new MockResponse(JSON.stringify(mockMeData), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
-    };
-
-    const responsePromise = await dispatchFetchEvent("https://eventra.test/api/leaderboard/me");
-    const response = await responsePromise;
-    assert.equal(response.status, 200);
-
-    // Verify response is NOT in the cache store
-    assert.equal(mockCacheStore.size, 0);
-    console.log("✔ Sensitive path /api/leaderboard/me is never cached by service worker");
-  }
+  await testInitialCaching();
+  await testCacheHitFresh();
+  await testCacheHitStaleSameData();
+  await testCacheHitStaleNewData();
+  await testOfflineFallbackCacheMiss();
+  await testOfflineFallbackCacheHit();
+  await testSensitivePathNeverCached();
 
   console.log("All service worker leaderboard caching tests passed successfully! ✓");
 };
