@@ -1,0 +1,209 @@
+name: Auto-label issues
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add labels based on keywords
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.payload.issue.number;
+            const issue = context.payload.issue;
+
+            const title = (issue.title || '').toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+            const text = `${title}\n${body}`;
+
+            const normalizeLabel = (s) => s.trim().toLowerCase();
+
+            // If any matching rule triggers, we ADD labels only if missing.
+            // This ensures we don't override user-applied labels.
+            const patterns = [
+              {
+                label: 'GSSoC \'26',
+                // GSSOC / GSoC / Google Summer of Code / World GSSOC
+                match: [
+                  /\bgssoc\b/i,
+                  /\bgsoc\b/i,
+                  /g\s*soc/i,
+                  /google\s+summer\s+of\s+code/i,
+                  /world\s+gssoc/i,
+                  /gssoc\s*['’]?\s*26/i,
+                  /gsoc\s*['’]?\s*26/i,
+                  /gssoc\s*26/i,
+                  /gsoc\s*26/i,
+                ],
+              },
+              {
+                label: 'gssoc-2026',
+                // Existing label support
+                match: [
+                  /\bgssoc\b/i,
+                  /\bgsoc\b/i,
+                  /google\s+summer\s+of\s+code/i,
+                  /world\s+gssoc/i,
+                ],
+              },
+              {
+                label: 'backend',
+                match: [
+                  /\bbackend\b/i,
+                  /\bapi\b/i,
+                  /server/i,
+                  /route/i,
+                  /routes/i,
+                  /middleware/i,
+                  /database/i,
+                  /\bdb\b/i,
+                  /auth/i,
+                  /authentication/i,
+                  /token/i,
+                ],
+              },
+              {
+                label: 'frontend',
+                match: [
+                  /\bfrontend\b/i,
+                  /client\b/i,
+                  /\bui\b/i,
+                  /\bux\b/i,
+                  /react/i,
+                  /vite/i,
+                  /\bcss\b/i,
+                  /\bdesign\b/i,
+                  /\btheme\b/i,
+                  /\bhtml\b/i,
+                  /\bjavascript\b/i,
+                  /\bjs\b/i,
+                  /\btypescript\b/i,
+                  /\bts\b/i,
+                ],
+              },
+              {
+                label: 'bug',
+                match: [
+                  /\bbug\b/i,
+                  /crash/i,
+                  /error/i,
+                  /fails?/i,
+                  /issue\s+with/i,
+                  /doesn\'t\s+work/i,
+                  /doesnt\s+work/i,
+                  /not\s+working/i,
+                  /regression/i,
+                ],
+              },
+              {
+                label: 'enhancement',
+                match: [
+                  /\benhancement\b/i,
+                  /\bimprovement\b/i,
+                  /upgrade/i,
+                  /add\s+.*(improvement|capability|support|option)/i,
+                  /feature\s+request/i,
+                ],
+              },
+              {
+                label: 'feature',
+                match: [
+                  /\bfeature\b/i,
+                  /enhancement/i,
+                  /add\s+.*(feature|support|module)/i,
+                  /implement/i,
+                  /capability/i,
+                  /request\s+for/i,
+                ],
+              },
+              {
+                label: 'documentation',
+                match: [
+                  /\bdocs?\b/i,
+                  /documentation/i,
+                  /readme/i,
+                  /guide/i,
+                  /improve\s+.*(doc|docs)/i,
+                  /changelog/i,
+                ],
+              },
+              {
+                label: 'good first issue',
+                match: [
+                  /good first issue/i,
+                  /help\s*wanted/i,
+                  /needs?\s+help/i,
+                  /beginner\b/i,
+                  /easy\b/i,
+                  /starter\b/i,
+                  /first\s+timer/i,
+                ],
+              },
+            ];
+
+            const shouldApply = (pattern, text) => {
+              if (!pattern || !pattern.length) return false;
+              return pattern.some((re) => re.test(text));
+            };
+
+            const repoLabels = await github.rest.issues.listLabelsForRepo({
+              owner,
+              repo,
+              per_page: 100,
+            });
+
+            const existingLabelNames = new Set((repoLabels.data || []).map((l) => normalizeLabel(l.name)));
+
+            const currentIssueLabels = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const currentIssueLabelNames = new Set((currentIssueLabels.data || []).map((l) => normalizeLabel(l.name)));
+
+            const labelsToAdd = [];
+            for (const p of patterns) {
+              const labelName = p.label;
+              const labelKey = normalizeLabel(labelName);
+
+              // Only consider labels that exist in the repo (prevents API errors).
+              if (!existingLabelNames.has(labelKey)) continue;
+
+              const matched = shouldApply(p.match, text);
+              if (!matched) continue;
+
+              // Don't override/manual-apply: add only if missing.
+              if (currentIssueLabelNames.has(labelKey)) continue;
+
+              labelsToAdd.push(labelName);
+              currentIssueLabelNames.add(labelKey);
+            }
+
+            // De-dupe
+            const uniq = [...new Set(labelsToAdd)];
+
+            if (uniq.length === 0) {
+              core.info('No matching labels to add.');
+              return;
+            }
+
+            core.info(`Adding labels: ${uniq.join(', ')}`);
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: uniq,
+            });
+
+      - name: Summary
+        run: echo "Auto-label workflow executed."

@@ -1,14 +1,4 @@
 node_modules
 dist
 build
-public
 coverage
-*.md
-package-lock.json
-.next
-out
-node_modules/
-build/
-dist/
-coverage/
-.vercel/

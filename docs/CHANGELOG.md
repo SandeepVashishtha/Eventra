@@ -12,41 +12,48 @@ and this project adheres to Semantic Versioning.
 ### Added
 
 #### Authentication System
+
 - User signup and login functionality
 - Google OAuth authentication integration
 - Protected routes and session handling
 - Secure authentication flow
 
 #### Event Management
+
 - Event creation and management features
 - Event registration system
 - RSVP and participation handling
 - Event listing and filtering
 
 #### Dashboard
+
 - Interactive admin dashboard
 - User activity overview
 - Event analytics and statistics
 - Responsive dashboard UI
 
 #### Hackathon Hub
+
 - Dedicated hackathon showcase section
 - Hackathon discovery and participation
 - Team collaboration support
 - Community-driven hackathon experience
 
 #### UI/UX Enhancements
+
 - Dark and light theme support
 - Responsive modern UI design
 - Framer Motion animations
 - Reusable component architecture
 
 #### Performance & Optimization
+
 - Lazy loading optimizations
 - Asset preloading improvements
 - External resource preconnect optimization
 
 #### Additional Features
+
 - Global error boundary implementation
 - EmailJS integration for notifications
 - SEO metadata improvements
@@ -57,12 +64,18 @@ and this project adheres to Semantic Versioning.
 ## Upcoming
 
 ### Planned
+
 - Real-time notifications
 - Chat and messaging support
 - Advanced analytics
 - Calendar integrations
 - AI-powered event recommendations
 - Improved release documentation readability and maintainability
+- Fixed authorization bypass in ticket token generation via dynamic memory recovery.
+- Fixed cross-event ticket validation via request body eventId override.
+- Fixed TicketScanner crash on valid JSON primitive QR code scans.
+- Fixed offline queue limit bypass via localStorage/IndexedDB desync.
 
 ### Phase Validation Checklist
+
 - Build production bundles to verify bundle size before release.
