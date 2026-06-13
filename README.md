@@ -133,6 +133,48 @@ npm run dev
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
 
+
+## Common Setup Issues
+
+### Dependency Installation Warnings
+
+Some users may see peer dependency or engine warnings during `npm install`. In most cases, the installation still completes successfully.
+
+If installation fails, try:
+
+```bash
+npm install --legacy-peer-deps
+```
+
+### Port Already in Use
+
+If port `3000` is already occupied, stop the existing process or run:
+
+```bash
+npx kill-port 3000
+```
+
+### Vite Cache Issues
+
+If the frontend shows unexpected build or parsing errors, clear the Vite cache and restart the server:
+
+```bash
+rm -rf node_modules/.vite
+npm run dev
+```
+
+For Windows PowerShell:
+
+```powershell
+Remove-Item -Recurse -Force node_modules/.vite
+npm run dev
+```
+
+### Environment Variable Issues
+
+Make sure `.env` is created correctly from `.env.example` before starting the development server.
+
+
 ## Docker Development
 
 You can run Eventra fully containerized using Docker Compose to ensure a consistent environment:
