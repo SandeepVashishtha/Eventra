@@ -11,7 +11,7 @@ import {
   PieChart,
   Pie,
 } from "recharts";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { useAnalyticsStream, SSE_STATUS } from "../../context/RealTimeContext";
 import BudgetPlanner from "./BudgetPlanner";
 import { safeJsonParse } from "../../utils/safeJsonParse";
@@ -134,11 +134,11 @@ const AnalyticsDashboard = () => {
     });
 
     if (cleanCheckinData.status === "Flagged") {
-      toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${cleanCheckinData.name}`);
+      toast(`⚠️ Security Alert: Flagged entry attempt from ${cleanCheckinData.name}`);
     } else if (String(cleanCheckinData.id).includes("manual")) {
       toast.success(`🚀 Simulator: Successfully injected real-time check-in record for ${cleanCheckinData.name}!`);
     } else {
-      toast.info(`🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`);
+      toast(`🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`);
     }
   }, []);
 
@@ -195,9 +195,9 @@ const AnalyticsDashboard = () => {
       });
 
       if (randomStatus === "Flagged") {
-        toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${randomName}`);
+        toast(`⚠️ Security Alert: Flagged entry attempt from ${randomName}`);
       } else {
-        toast.info(`🔔 Check-in Verified: ${randomName} matched to ${randomEvent}`);
+        toast(`🔔 Check-in Verified: ${randomName} matched to ${randomEvent}`);
       }
     }, 12000);
 

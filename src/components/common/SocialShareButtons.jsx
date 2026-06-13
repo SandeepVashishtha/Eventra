@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from "react";
 import { Copy, Facebook, Linkedin, Mail, MessageCircle, Send, Twitter } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { isValidShareUrl } from "../../utils/shareUtils";
 
 const SocialShareButtons = ({ event, layout = "grid" }) => {

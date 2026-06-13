@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle, Undo2, Redo2 } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import ConfirmationModal from "../../common/ConfirmationModal";
 import ElementPalette from "./FloorPlan/ElementPalette";
 import PropertiesPanel from "./FloorPlan/PropertiesPanel";

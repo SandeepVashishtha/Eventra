@@ -14,7 +14,7 @@ jest.mock("../../../utils/toast", () => ({
   }),
 }));
 
-jest.mock("react-toastify", () => ({
+jest.mock('react-hot-toast', () => ({
   toast: {
     error: jest.fn(),
   },

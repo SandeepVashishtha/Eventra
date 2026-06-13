@@ -18,7 +18,7 @@ import {
   Share2,
   AlertTriangle,
 } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import LazyImage from "../../components/common/LazyImage";
 import ShareModal from "../../components/common/ShareModal";
 import StatusBadge from "../../components/common/StatusBadge";
@@ -116,7 +116,7 @@ const EventCard = ({ event }) => {
 
       if (isBookmarked) {
         removeBookmarkedEvent(event.id);
-        toast.info("Removed from bookmarked events.", {
+        toast("Removed from bookmarked events.", {
           toastId: `bookmark-${event.id}`,
           autoClose: 1800,
           className: "custom-toast",

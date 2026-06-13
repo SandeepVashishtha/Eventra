@@ -9,7 +9,7 @@ import {
   Save,
   Users,
 } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import useEventScheduling from "../../hooks/useEventScheduling";
 import {
@@ -201,7 +201,7 @@ const EventSchedulerCalendar = () => {
       return response;
     } catch (error) {
       writeScheduleOverride(eventId, event);
-      toast.info("Saved locally. The schedule will remain available in this browser.");
+      toast("Saved locally. The schedule will remain available in this browser.");
       return { ok: true, offline: true, error };
     }
   }, []);
@@ -303,7 +303,7 @@ const EventSchedulerCalendar = () => {
   const handleUndo = async () => {
     const result = await undoLastChange();
     if (result.ok) {
-      toast.info("Schedule change undone.");
+      toast("Schedule change undone.");
     }
   };
 

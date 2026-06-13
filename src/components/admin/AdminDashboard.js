@@ -34,7 +34,7 @@ import "./AdminDashboard.css";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import TicketScanner from "./TicketScanner";
 import ErrorBoundary from "../common/ErrorBoundary";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 
 import { ROLES, PERMISSIONS } from "../../config/roles";
 import {
@@ -574,7 +574,7 @@ const AdminDashboard = () => {
                               <td>
                                 <div className="ad-action-btns">
                                   {hasPermission(PERMISSIONS.EDIT_USER) && (
-                                    <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}><Edit2 size={14} /></button>
+                                    <button className="ad-icon-action" title="Edit" onClick={() => toast('Edit coming soon')}><Edit2 size={14} /></button>
                                   )}
                                   {hasPermission(PERMISSIONS.DELETE_USER) && (
                                     <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('user', u.id)}><Trash2 size={14} /></button>
@@ -655,7 +655,7 @@ const AdminDashboard = () => {
                                     <Clock size={14} />
                                   </button>
                                   {hasPermission(PERMISSIONS.EDIT_EVENT) && (
-                                    <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}><Edit2 size={14} /></button>
+                                    <button className="ad-icon-action" title="Edit" onClick={() => toast('Edit coming soon')}><Edit2 size={14} /></button>
                                   )}
                                   {hasPermission(PERMISSIONS.DELETE_EVENT) && (
                                     <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('event', ev.id)}><Trash2 size={14} /></button>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { API_ENDPOINTS } from "../config/api";
 import { eventService } from "../services/eventService";
 import { useFormSubmit } from "./useFormSubmit";

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   Zap, CheckCircle, Gift, Target,

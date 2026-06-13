@@ -5,7 +5,7 @@ import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { fetchGitHubRepo, getGitHubRepoDetails } from "../../utils/githubApiClient.js";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 import { useAuth } from "../../context/AuthContext.js";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { projectService } from "../../services/projectService.js";
 
 // Cache Keys & Constants

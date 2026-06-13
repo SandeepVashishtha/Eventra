@@ -1,6 +1,6 @@
 import { useState } from "react";
 import jsPDF from "jspdf";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import { useAuth } from "../context/AuthContext";
 
 const sanitizeText = (text, maxLength) => {

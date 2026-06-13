@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useMemo, useState, Fragment } from "rea
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 import {
   Bot,
   Minus,

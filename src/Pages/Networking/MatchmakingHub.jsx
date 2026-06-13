@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { fetchRecommendedConnections } from "../../utils/aiMatchmaking";
 import { Calendar, MessageSquare, Zap, Star } from "lucide-react";
-import { toast } from "react-toastify";
+import toast from 'react-hot-toast';
 
 // 1. IMPORT THE MASTER SKIN LAYOUT SHELL
 import DashboardLayout from "../../components/Layout/DashboardLayout"; 

@@ -1,27 +1,29 @@
-import { ToastContainer } from "react-toastify";
+import { Toaster } from "react-hot-toast";
 import { useTheme } from "../../context/ThemeContext";
-import "react-toastify/dist/ReactToastify.css";
 
 const NotificationToastContainer = () => {
   const { isDarkMode } = useTheme();
 
   return (
-    <ToastContainer
+    <Toaster
       position="bottom-right"
-      autoClose={3000}
-      hideProgressBar={false}
-      newestOnTop
-      closeOnClick
-      closeButton
-      rtl={false}
-      pauseOnFocusLoss
-      draggable
-      pauseOnHover
-      theme={isDarkMode ? "dark" : "light"}
-      limit={3}
-      style={{ 
-        zIndex: 10050,
-        marginBottom: '1rem'
+      toastOptions={{
+        duration: 3000,
+        style: {
+          zIndex: 10050,
+        },
+        success: {
+          style: {
+            background: isDarkMode ? "#1f2937" : "#fff",
+            color: isDarkMode ? "#e5e7eb" : "#111827",
+          },
+        },
+        error: {
+          style: {
+            background: isDarkMode ? "#1f2937" : "#fff",
+            color: isDarkMode ? "#e5e7eb" : "#111827",
+          },
+        },
       }}
     />
   );
