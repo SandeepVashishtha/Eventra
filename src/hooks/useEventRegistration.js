@@ -242,7 +242,9 @@ const useEventRegistration = (eventIdParam) => {
   // Proceed with registration after conflict check or user confirmation
   const proceedWithRegistration = useCallback(async () => {
     if (!isAuthenticated() || !user?.id) {
-      toast.error("Please log in to register for events.");
+      toast.error(
+        "Authentication required. Please log in to register for events."
+      );
       navigate("/login", {
         state: { from: registrationPath },
       });
