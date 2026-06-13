@@ -2,13 +2,30 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-// Read backend target from environment variables; fall back to localhost for local development.
-// Set BACKEND_URL (or REACT_APP_API_URL / VITE_API_URL) in your .env to point at a remote backend.
-const backendTarget =
-  process.env.BACKEND_URL ||
-  process.env.VITE_API_URL ||
-  process.env.REACT_APP_API_URL?.replace('/api', '') ||
-  'http://localhost:8080';
+// Resolve backend target for proxy (Node.js context)
+// Resolution order matches centralized config: BACKEND_URL > VITE_API_URL > REACT_APP_API_URL
+// Falls back to localhost:8080 in development if none set
+const resolveBackendTarget = () => {
+  const backendUrl = process.env.BACKEND_URL;
+  if (backendUrl) {
+    return backendUrl.replace(/\/+$/, '').replace(/\/api$/, '');
+  }
+
+  const viteUrl = process.env.VITE_API_URL;
+  if (viteUrl) {
+    return viteUrl.replace(/\/+$/, '').replace(/\/api$/, '');
+  }
+
+  const reactUrl = process.env.REACT_APP_API_URL;
+  if (reactUrl) {
+    return reactUrl.replace(/\/+$/, '').replace(/\/api$/, '');
+  }
+
+  // Development fallback
+  return 'http://localhost:8080';
+};
+
+const backendTarget = resolveBackendTarget();
 
 module.exports = function (app) {
   app.use(

@@ -1,4 +1,4 @@
- 
+/* eslint-disable-next-line no-console */
 /**
  * @file secureStorage.js
  * @module utils/secureStorage
@@ -465,19 +465,6 @@ export const decryptWithKey = async (key, stored) => {
   return new TextDecoder().decode(decrypted);
 };
 
-const isCryptoAvailable = () => {
-  try {
-    return (
-      typeof window !== 'undefined' &&
-      typeof crypto !== 'undefined' &&
-      typeof crypto.subtle !== 'undefined' &&
-      typeof crypto.getRandomValues === 'function' &&
-      window.isSecureContext !== false
-    );
-  } catch {
-    return false;
-  }
-};
 
 
 // ---------------------------------------------------------------------------
@@ -531,13 +518,6 @@ if (typeof window !== 'undefined') {
 // written to localStorage, so this Map is the only in-flight plaintext store.
 const pendingWrites = new Map();
 
-// Per-key write queue — chains encryption operations so concurrent writes to
-// the same key complete sequentially. When a newer write is queued before the
-// previous encryption finishes, the older write skips its localStorage write
-// entirely, preventing stale ciphertext from overwriting newer values.
-const writeQueue = new Map();
-const writeCounters = new Map();
-
 /**
  * Encrypts `value` and writes the ciphertext to localStorage under `key`.
  *
@@ -561,46 +541,6 @@ const writeWithEncryption = async (key, value) => {
   }
   const encrypted = await encryptValue(key, value);
   localStorage.setItem(key, encrypted);
-};
-
-const KEYS_METADATA_KEY = 'eventra:keys';
-
-const trackKey = (key) => {
-  try {
-    if (key === KEYS_METADATA_KEY || key === MATERIAL_STORAGE_KEY || key === SALT_STORAGE_KEY) {
-      return;
-    }
-    const stored = localStorage.getItem(KEYS_METADATA_KEY);
-    let keys = [];
-    if (stored) {
-      keys = JSON.parse(stored);
-      if (!Array.isArray(keys)) keys = [];
-    }
-    if (!keys.includes(key)) {
-      keys.push(key);
-      localStorage.setItem(KEYS_METADATA_KEY, JSON.stringify(keys));
-    }
-  } catch (e) {
-    // Ignore localStorage/JSON errors
-  }
-};
-
-const untrackKey = (key) => {
-  try {
-    const stored = localStorage.getItem(KEYS_METADATA_KEY);
-    if (stored) {
-      let keys = JSON.parse(stored);
-      if (Array.isArray(keys)) {
-        const idx = keys.indexOf(key);
-        if (idx !== -1) {
-          keys.splice(idx, 1);
-          localStorage.setItem(KEYS_METADATA_KEY, JSON.stringify(keys));
-        }
-      }
-    }
-  } catch (e) {
-    // Ignore localStorage/JSON errors
-  }
 };
 
 export const syncSecureStorage = {
@@ -628,31 +568,13 @@ export const syncSecureStorage = {
   setItem: async (key, value) => {
     try {
       pendingWrites.set(key, value);
-      trackKey(key);
-
-      const counter = (writeCounters.get(key) || 0) + 1;
-      writeCounters.set(key, counter);
-      const ourCounter = counter;
-
-      const prev = (writeQueue.get(key) || Promise.resolve())
-        .catch(() => {});
-      const next = prev.then(async () => {
-        if (writeCounters.get(key) !== ourCounter) return;
-        await writeWithEncryption(key, value);
-      });
-      writeQueue.set(key, next);
-
-      await next;
-
-      if (writeCounters.get(key) !== ourCounter) return true;
-
-      writeCounters.delete(key);
+      await writeWithEncryption(key, value);
       pendingWrites.delete(key);
-      writeQueue.delete(key);
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
       /* Removed destructive cleanup to prevent queued writes from being dropped silently */
+      pendingWrites.delete(key);
       return false;
     }
   },
@@ -735,49 +657,22 @@ export const syncSecureStorage = {
   removeItem: (key) => {
     try {
       /* Removed destructive cleanup to prevent queued writes from being dropped silently */
+      pendingWrites.delete(key);
       localStorage.removeItem(key);
       localStorage.removeItem(key + PLAINTEXT_SUFFIX);
-      untrackKey(key);
     } catch (error) {
       console.error('[secureStorage] removeItem failed:', error);
     }
   },
 
   /**
-   * Clears all Eventra-managed keys from localStorage.
-   *
-   * Iterates only over keys starting with the Eventra prefix ('eventra:')
-   * so data from other applications on the same origin is never touched.
+   * Clears all localStorage data for the current origin.
+   * Use with caution: this removes ALL keys, not just Eventra's.
    */
   clear: () => {
     try {
       pendingWrites.clear();
-      writeQueue.clear();
-      writeCounters.clear();
-
-      try {
-        const stored = localStorage.getItem(KEYS_METADATA_KEY);
-        if (stored) {
-          const keys = JSON.parse(stored);
-          if (Array.isArray(keys)) {
-            keys.forEach((k) => {
-              localStorage.removeItem(k);
-              localStorage.removeItem(k + PLAINTEXT_SUFFIX);
-            });
-          }
-        }
-      } catch (e) {
-        // Ignore JSON errors
-      }
-
-      const prefix = "eventra:";
-      const toRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith(prefix)) toRemove.push(k);
-      }
-      toRemove.forEach((k) => localStorage.removeItem(k));
-
+      localStorage.clear();
       _keyPromise = null;
     } catch (error) {
       console.error('[secureStorage] clear failed:', error);

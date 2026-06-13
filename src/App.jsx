@@ -48,7 +48,6 @@ const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
 const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
 const OnboardingChecklist = lazy(() => import("./components/user/OnboardingChecklist"));
 const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
-const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
@@ -280,14 +279,13 @@ function App() {
                 </ErrorBoundary>
 
                 <Suspense fallback={null}>
-                  <ScrollToTopButton />
-                </Suspense>
-                {/* Enhanced back-to-top with progress ring - appears at 400px */}
-                <Suspense fallback={null}>
                   <BackToTop />
                 </Suspense>
                 <Suspense fallback={null}>
                   <FeedbackButton />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <ThemeCustomizerDrawer />
                 </Suspense>
                 <Suspense fallback={null}>
                   <SessionRecovery />
