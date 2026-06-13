@@ -42,7 +42,13 @@ export const set = (key, val) => {
   return makeSyncThenable(undefined);
 };
 
+export const del = (key) => {
+  globalThis.localStorage.removeItem(key);
+  return makeSyncThenable(undefined);
+};
+
 export default {
   get,
-  set
+  set,
+  del
 };

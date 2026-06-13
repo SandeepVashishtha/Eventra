@@ -9,10 +9,10 @@ export default function CTASection() {
       {/* Main CTA Section */}
       <section className="relative max-w-6xl mx-auto py-16 sm:py-20 px-6 sm:px-12 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-2xl shadow-indigo-500/10 dark:shadow-black/50">
         
-        {/* ✅ FIXED: Background opacity 90%/95% kar diya hai taaki text hamesha crystal clear dikhe */}
+        {/* Increased background opacity to keep text readable */}
         <div className="absolute inset-0 bg-white/90 dark:bg-slate-900/95 backdrop-blur-md -z-10" />
 
-        {/* Soft Background Orbs (Thoda bright kiya hai taaki effect dikhe) */}
+        {/* Soft Background Orbs */}
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-indigo-500/20 dark:bg-indigo-500/15 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-pink-500/20 dark:bg-pink-500/15 blur-3xl pointer-events-none" />
 
@@ -48,7 +48,7 @@ export default function CTASection() {
             </div>
           </motion.h2>
 
-          {/* ✅ FIXED: Description text ko dark mode mein 'slate-200' kar diya hai maximum readability ke liye */}
+          {/* Lightened description color in dark mode for readability */}
           <motion.p 
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -71,7 +71,7 @@ export default function CTASection() {
             transition={{ delay: 0.3 }}
             className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mb-10"
           >
-            {/* ✅ FIXED: 'group' class add ki hai taaki arrow hover animation kaam kare */}
+            {/* Added 'group' class to enable arrow hover animation */}
             <Link
               to="/hackathons"
               className="group inline-flex items-center justify-center gap-2 px-8 py-4 w-full sm:w-auto rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 ease-out"
@@ -81,7 +81,7 @@ export default function CTASection() {
               <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
             </Link>
 
-            {/* ✅ FIXED: Secondary button text ko dark mode mein 'white' aur border ko thoda visible kiya hai */}
+            {/* Brightened secondary button text and border in dark mode */}
             <Link
               to="/about"
               className="group inline-flex items-center justify-center gap-2 px-8 py-4 w-full sm:w-auto rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-bold border border-slate-200 dark:border-slate-600 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 ease-out"
@@ -91,7 +91,7 @@ export default function CTASection() {
             </Link>
           </motion.div>
 
-          {/* ✅ FIXED: Last line text ko bhi thoda bright kiya hai (slate-300) */}
+          {/* Slightly brightened footer text in dark mode */}
           <motion.p 
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}

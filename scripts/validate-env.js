@@ -8,6 +8,33 @@
 
 "use strict";
 
+import fs from "fs";
+import path from "path";
+
+try {
+  const envPath = path.resolve(process.cwd(), ".env");
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, "utf-8");
+    const lines = envContent.split(/\r?\n/);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith("#") && trimmed.includes("=")) {
+        const eqIdx = trimmed.indexOf("=");
+        const key = trimmed.substring(0, eqIdx).trim();
+        let val = trimmed.substring(eqIdx + 1).trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.substring(1, val.length - 1);
+        }
+        if (key && !process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    }
+  }
+} catch (e) {
+  // Ignore
+}
+
 const SENSITIVE_KEY_PATTERNS = [
   /private[_\-]?key/i,
   /secret[_\-]?key/i,
@@ -66,12 +93,22 @@ const ALLOWED_EXCEPTIONS = new Set([
   "REACT_APP_CSP_REPORT_URI",
 ]);
 
-const REQUIRED_VARS = ["VITE_API_URL", "JWT_SECRET"];
+const BACKEND_URL_VARS = ["BACKEND_URL", "VITE_API_URL", "REACT_APP_API_URL"];
+const REQUIRED_VARS = ["JWT_SECRET"];
+const PRODUCTION_REQUIRED_VARS = ["DATABASE_URL"];
 
 const FORMAT_VALIDATED_VARS = {
+  BACKEND_URL: {
+    pattern: /^https?:\/\/.+/,
+    message: "BACKEND_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
+  },
   VITE_API_URL: {
     pattern: /^https?:\/\/.+/,
     message: "VITE_API_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
+  },
+  REACT_APP_API_URL: {
+    pattern: /^https?:\/\/.+/,
+    message: "REACT_APP_API_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
   },
 };
 
@@ -83,7 +120,20 @@ const warnings = [];
 
 console.log("\n[validate-env] Scanning environment variables for security issues...\n");
 
-console.log("Required variables:");
+console.log("Required backend configuration:");
+const configuredBackendVars = BACKEND_URL_VARS.filter(
+  (varName) => process.env[varName] && process.env[varName].trim()
+);
+if (configuredBackendVars.length === 0) {
+  const msg =
+    "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application.";
+  errors.push(`[CONFIG ERROR] ${msg}`);
+  hasErrors = true;
+} else {
+  console.log(`  OK: ${configuredBackendVars.join(" or ")} = [set]`);
+}
+
+console.log("\nRequired server variables:");
 for (const varName of REQUIRED_VARS) {
   if (!process.env[varName]) {
     const isJwtSecret = varName === "JWT_SECRET";
@@ -128,6 +178,33 @@ if (OPTIONAL_VARS.length === 0) {
 }
 
 console.log("\nValidating variable formats...");
+  if (process.env.NODE_ENV === "production" && process.env.VITE_API_URL && !process.env.VITE_API_URL.startsWith("https://")) {
+    const msg = "[CRITICAL SECURITY WARNING] VITE_API_URL must use HTTPS in production";
+    errors.push(msg);
+    hasErrors = true;
+    console.error(`  ERROR: ${msg}`);
+  }
+
+console.log("\nValidating production-specific requirements...");
+if (process.env.NODE_ENV === "production") {
+  for (const varName of PRODUCTION_REQUIRED_VARS) {
+    if (!process.env[varName]) {
+      const errorMsg = `[CRITICAL ERROR] ${varName} is required in production. Authentication data must not be stored in memory.`;
+      console.error(`  ERROR: ${errorMsg}`);
+      errors.push(errorMsg);
+      hasErrors = true;
+    } else if (!process.env[varName].trim()) {
+      const errorMsg = `[CRITICAL ERROR] ${varName} is empty or whitespace-only in production. Authentication data must not be stored in memory.`;
+      console.error(`  ERROR: ${errorMsg}`);
+      errors.push(errorMsg);
+      hasErrors = true;
+    } else {
+      console.log(`  OK: ${varName} = [set]`);
+    }
+  }
+} else {
+  console.log(`  (skipping production-specific checks: NODE_ENV=${process.env.NODE_ENV || "undefined"})`);
+}
 for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   const value = process.env[varName];
   if (!value) continue;
@@ -187,7 +264,11 @@ if (errors.length > 0) {
 }
 
 const criticalErrors = errors.filter(
-  (e) => e.includes("[SECURITY LEAK]") || e.includes("[FORMAT ERROR]") || e.includes("[CRITICAL ERROR]")
+  (e) =>
+    e.includes("[SECURITY LEAK]") ||
+    e.includes("[FORMAT ERROR]") ||
+    e.includes("[CRITICAL ERROR]") ||
+    e.includes("[CONFIG ERROR]")
 );
 if (criticalErrors.length > 0 || hasErrors) {
   console.error(

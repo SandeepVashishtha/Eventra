@@ -35,7 +35,8 @@ export function useTokenExpiry({ token, user, onExpired }) {
 
     let timeoutId;
     if (typeof expSeconds === "number") {
-      const delayMs = Math.max(expSeconds * 1000 - Date.now() + 1000, 0);
+      let delayMs = Math.max(expSeconds * 1000 - Date.now() + 1000, 0);
+      if (delayMs > 2147483647) delayMs = 2147483647;
       timeoutId = setTimeout(() => {
         if (token === "cookie-managed" ? Date.now() >= expSeconds * 1000 : !isTokenValid(token)) {
           clearExpiredSession();

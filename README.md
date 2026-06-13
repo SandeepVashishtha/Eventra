@@ -3,7 +3,7 @@
 Modern event and hackathon platform for communities, organizers, and contributors.
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![React](https://img.shields.io/badge/React-19.x-blue.svg)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-18.2-blue.svg)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.x-646CFF.svg)](https://vitejs.dev/)
 
 ---
@@ -60,7 +60,7 @@ This repository contains the frontend application. The Spring Boot backend is ma
 
 ## Tech Stack
 
-- React 19
+- React 18.2
 - React Router 7
 - Vite 8
 - Tailwind CSS 4
@@ -120,20 +120,18 @@ cd Eventra
 npm install
 ```
 
-2. Create your env file:
+1. Create your env file:
 
 ```bash
 cp .env.example .env
 ```
 > **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
 
-3. Start dev server:
+1. Start dev server:
 
 npm run dev
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
-
-
 
 ## Docker Development
 
@@ -165,18 +163,60 @@ The production-optimized build will be served via Nginx at `http://localhost:808
 
 ## Environment Variables
 
-Use `.env.example` as the source of truth.
+Use `.env.example` as the source of truth. See [docs/ENV_SETUP_GUIDE.md](docs/ENV_SETUP_GUIDE.md) for detailed configuration information.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `REACT_APP_API_URL` | Yes | Backend API base URL used by client requests and SSE streams |
+| `BACKEND_URL` | No | Backend origin (highest priority, overrides others) |
+| `VITE_API_URL` | No | Backend API base URL (Vite - preferred) |
+| `REACT_APP_API_URL` | No | Backend API base URL (CRA compatibility) |
 | `REACT_APP_GITHUB_REPO` | No | Public repo identifier used in metadata |
 | `REACT_APP_PUBLIC_URL` | No | Canonical public app URL |
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public web-push key |
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
 | `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN, used only in production |
+| `JWT_SECRET` | Yes (server-side) | JWT signing secret for Edge Middleware auth verification |
+| `BLOCKED_COUNTRIES` | No (server-side) | Comma-separated ISO 3166-1 alpha-2 country codes to block |
+
+Examples:
+
+```env
+VITE_API_URL=https://api.example.com
+```
+
+or:
+
+```env
+BACKEND_URL=https://api.example.com
+```
+
+**Backend Configuration**: All backend endpoint configuration is centralized in `src/config/backendConfig.js`. The system resolves backend URLs in priority order: `BACKEND_URL` → `VITE_API_URL` → `REACT_APP_API_URL`. In development, defaults to `http://localhost:8080`. In production, no automatic fallback - configuration must be explicitly set to avoid configuration drift.
 
 Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variables because they are exposed to the client bundle.
+
+### Geographic Access Restrictions
+
+The Edge Middleware supports configurable country-based access restrictions via the `BLOCKED_COUNTRIES` environment variable. This is a server-side configuration that affects all incoming requests.
+
+**Configuration:**
+- Set `BLOCKED_COUNTRIES` to a comma-separated list of two-letter ISO 3166-1 alpha-2 country codes
+- Leave empty to allow access from all countries (default behavior)
+- Country codes are case-insensitive and whitespace is trimmed automatically
+
+**Examples:**
+```env
+# Block specific countries
+BLOCKED_COUNTRIES=CU,IR,KP,SY,RU
+
+# Allow all countries (default)
+BLOCKED_COUNTRIES=
+```
+
+**Behavior:**
+- Requests from blocked countries receive HTTP 451 (Unavailable For Legal Reasons)
+- Blocked requests are logged with the country code for monitoring
+- Self-hosted deployments can configure this based on their requirements
+- No restrictions are applied when the variable is empty or unset
 
 ## Available Scripts
 
@@ -211,9 +251,13 @@ For local realtime testing:
 node sse-mock-server.js
 ```
 
+Required environment variables:
+
+- `JWT_SECRET` - JWT signing secret for token generation and validation. Generate with: `openssl rand -base64 32`
+
 Optional environment flags:
 
-- `SSE_MOCK_PORT` (default `4001`)
+- `SSE_MOCK_PORT` (default `8080`)
 - `ALLOWED_ORIGIN` (default `http://localhost:3000`)
 - `SSE_DEBUG` (`true` or `false`)
 

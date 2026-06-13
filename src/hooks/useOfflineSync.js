@@ -9,6 +9,7 @@ import { API_ENDPOINTS } from '../config/api';
 
 import { logger } from "../utils/logger";
 import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership, validateQueueSession } from '../utils/offlineQueue';
+import { ensureSessionSnapshot } from "../utils/sessionSnapshot";
 // isTokenValid import removed; authentication is now checked via isAuthenticated()
 // from AuthContext, which handles both token-based and cookie-managed sessions.
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
@@ -219,7 +220,7 @@ const useOfflineSync = () => {
       // when useOfflineSync called isTokenValid("cookie-managed") directly.
       if (!currentIsAuthenticated()) {
         toast.warning(
-          "Offline actions are pending but your session has expired. Please log in again to sync them.",
+          "Security notice: Offline actions are pending, but your session has expired. Please log in again to synchronize them.",
           { autoClose: 6000 }
         );
         return;
@@ -261,10 +262,7 @@ const useOfflineSync = () => {
       // SECURITY (Issue #5727): Re-validate session IDs — actions queued under a
       // previous session must not replay under a new session even if the userId
       // matches (e.g. same user, different device/tab login cycle).
-      const currentSession =
-        typeof sessionStorage !== "undefined"
-          ? sessionStorage.getItem("session_id") || null
-          : null;
+      const currentSession = ensureSessionSnapshot(currentUserId);
       const sessionValidatedQueue = validateQueueSession(validatedQueue, currentSession);
 
       if (sessionValidatedQueue.length === 0 && validatedQueue.length > 0) {
@@ -292,14 +290,19 @@ const useOfflineSync = () => {
 
       isSyncing.current = true;
 
+      // 🔥 FIX: Hoist counters and the failure list ABOVE the try so the
+      // `finally` block can read them. Previously they were declared inside
+      // the try (block-scoped) and the dispatch in finally threw
+      // ReferenceError on every successful sync, leaving the OfflineManager
+      // spinner stuck permanently.
+      let successCount = 0;
+      let droppedCount = 0;
+      let failedQueue = [];
+
       try {
         toast.info(`Syncing ${sessionValidatedQueue.length} cached offline action(s)...`, {
           autoClose: 2000,
         });
-
-        const failedQueue = [];
-        let successCount = 0;
-        let droppedCount = 0;
 
         for (const item of sessionValidatedQueue) {
           // Halt the zombie loop immediately if the session changed or component unmounted.
@@ -377,6 +380,23 @@ const useOfflineSync = () => {
         }
       } finally {
         isSyncing.current = false;
+
+        // Emit the unified completion event so UI components (e.g. OfflineManager)
+        // that listen for eventra-offline-queue-processed can reset their sync state.
+        // offlineQueue.processQueue() emits this event via notifyQueueProcessed(),
+        // but useOfflineSync runs its own replay loop independently and previously
+        // never emitted it, leaving the OfflineManager spinner stuck permanently.
+        if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+          window.dispatchEvent(
+            new CustomEvent("eventra-offline-queue-processed", {
+              detail: {
+                succeeded: successCount,
+                dropped: droppedCount,
+                remaining: failedQueue.length,
+              },
+            })
+          );
+        }
       }
     };
 
@@ -517,8 +537,7 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, user?.id]);
+  }, [token, user?.id, isAuthenticated, loading]);
 };
 
 export default useOfflineSync;
