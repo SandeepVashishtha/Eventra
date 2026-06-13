@@ -1,0 +1,201 @@
+name: Unassign Stale Contributors
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Runs daily at midnight UTC
+  workflow_dispatch: # Allows running manually
+
+permissions:
+  issues: write
+
+jobs:
+  unassign-stale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Unassign stale assignees (nuanced)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const cfg = {
+              warningDays: 5,
+              staleDays: 10,
+              // Ignore bot/app actors when computing human activity
+              ignoredActorTypes: ['Bot', 'Organization', 'User'],
+              // If issue has any of these labels, never unassign
+              excludedLabels: [
+                'priority: high',
+                'good first issue',
+                'pinned',
+                'status: blocked'
+              ],
+              // If issue has these labels, skip stale logic entirely (optional)
+              protectedStateLabels: [
+                'keep',
+                'pinned'
+              ],
+              // Marker label to avoid repeating warnings
+              warningLabel: 'stale-assignees:warning',
+              // If assignee has a recent “work” comment, don’t unassign
+              recentIntentDays: 3,
+              // When evaluating activity, consider only non-bot comments
+              // and ignore comments by the issue author bots.
+              lookbackComments: 500
+            };
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const ms = {
+              day: 24 * 60 * 60 * 1000
+            };
+
+            const warningMs = cfg.warningDays * ms.day;
+            const staleMs = cfg.staleDays * ms.day;
+            const recentIntentMs = cfg.recentIntentDays * ms.day;
+
+            const now = Date.now();
+
+            // Helper: determine if actor is bot-ish
+            function isBotActor(user) {
+              // GitHub user objects include type (e.g. Bot) when available from API.
+              const t = user?.type;
+              if (t && t === 'Bot') return true;
+              const login = (user?.login || '').toLowerCase();
+              return login.includes('[bot]') || login.includes('dependabot') || login.includes('github-actions');
+            }
+
+            function labelNames(issue) {
+              return (issue.labels || []).map(l => l.name);
+            }
+
+            function hasAnyLabel(labels, arr) {
+              return arr.some(x => labels.includes(x));
+            }
+
+            // Fetch all open issues with pagination
+            const issues = await github.paginate(
+              github.rest.issues.listForRepo,
+              {
+                owner,
+                repo,
+                state: 'open',
+                assignee: '*',
+                per_page: 100
+              }
+            );
+
+            for (const issue of issues) {
+              if (issue.pull_request) continue;
+
+              const issueNumber = issue.number;
+
+              // Re-fetch to get latest labels/assignees
+              const fresh = (await github.rest.issues.get({ owner, repo, issue_number: issueNumber })).data;
+              const assignees = fresh.assignees || [];
+              if (assignees.length === 0) continue;
+
+              const labels = labelNames(fresh);
+              if (hasAnyLabel(labels, cfg.excludedLabels) || hasAnyLabel(labels, cfg.protectedStateLabels)) {
+                console.log(`Skipping #${issueNumber} due to excluded/protected labels.`);
+                continue;
+              }
+
+              // Grab recent comments (pagination, but capped via lookbackComments to keep runtime sane)
+              const comments = await github.paginate(
+                github.rest.issues.listComments,
+                {
+                  owner,
+                  repo,
+                  issue_number: issueNumber,
+                  per_page: 100
+                }
+              );
+
+              const sliced = comments.slice(-cfg.lookbackComments);
+
+              // Compute last *human* activity time (ignore bots and the issue itself)
+              const humanComments = sliced.filter(c => {
+                const u = c.user;
+                // Ignore bot actors
+                if (isBotActor(u)) return false;
+                // Ignore empty bodies
+                const body = (c.body || '').trim();
+                if (!body) return false;
+                return true;
+              });
+
+              const lastHumanAt = humanComments.length
+                ? new Date(humanComments[humanComments.length - 1].created_at).getTime()
+                : new Date(fresh.created_at).getTime();
+
+              const elapsed = now - lastHumanAt;
+
+              // Intent check: if any assignee has recent human comment, skip
+              const recentIntent = humanComments.some(c => {
+                const u = c.user?.login;
+                if (!u) return false;
+                const assignedLogins = assignees.map(a => a.login);
+                if (!assignedLogins.includes(u)) return false;
+                const t = new Date(c.created_at).getTime();
+                return now - t < recentIntentMs;
+              });
+
+              if (recentIntent) {
+                console.log(`Skipping #${issueNumber}; assignee has recent intent/activity.`);
+                continue;
+              }
+
+              const currentAssignees = assignees.map(a => a.login);
+
+              // Warning stage
+              const hasWarning = labels.includes(cfg.warningLabel);
+              if (elapsed > warningMs && elapsed <= staleMs && !hasWarning) {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: issueNumber,
+                  labels: [cfg.warningLabel]
+                });
+
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issueNumber,
+                  body: `Hi @${currentAssignees.join(', @')}, this issue appears inactive for ${cfg.warningDays}+ days.\n\nIf you’re still working on it, reply here (with an update) to keep it assigned. Otherwise it may be unassigned after ${cfg.staleDays} days.`
+                });
+                continue;
+              }
+
+              // Unassign stage
+              if (elapsed > staleMs) {
+                console.log(`Unassigning #${issueNumber} due to inactivity (last human activity ${Math.round(elapsed/ms.day)} days ago).`);
+
+                if (labels.includes(cfg.warningLabel)) {
+                  // Optional: remove warning label after stale action
+                  try {
+                    await github.rest.issues.removeLabel({
+                      owner,
+                      repo,
+                      issue_number: issueNumber,
+                      name: cfg.warningLabel
+                    });
+                  } catch (e) {
+                    console.log(`Failed to remove warning label (non-fatal): ${e?.message}`);
+                  }
+                }
+
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issueNumber,
+                  body: `Hi @${currentAssignees.join(', @')}, this issue has been unassigned due to inactivity (no human updates for ${cfg.staleDays}+ days).\n\nIf you’re ready to work again, you can re-assign by commenting with the assignment command/keyword.`
+                });
+
+                await github.rest.issues.removeAssignees({
+                  owner,
+                  repo,
+                  issue_number: issueNumber,
+                  assignees: currentAssignees
+                });
+              }
+            }
