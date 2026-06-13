@@ -4,11 +4,11 @@ import { Sun, Moon, Palette } from "lucide-react";
 const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerOpen }) => {
   if (isMobile) {
     return (
-      <div className="flex flex-col gap-2.5 w-full">
+      <div className="flex flex-col gap-1.5 w-full">
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={toggleTheme}
-          className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-semibold border border-zinc-200 dark:border-zinc-700/50 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 transition-all cursor-pointer"
+          className="flex items-center justify-center gap-1 px-2 py-2 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-semibold border border-zinc-200 dark:border-zinc-700/50 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 transition-all cursor-pointer"
         >
           {isDarkMode ? (
             <Sun className="w-5 h-5 text-amber-500" />
@@ -22,7 +22,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerO
           onClick={() => {
              setIsCustomizerOpen(true);
             }}       
-   className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
+   className="flex items-center justify-center gap-1 px-2 py-2 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
         >
           <Palette className="w-5 h-5" />
           <span>THEME Customizer</span>
