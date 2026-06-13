@@ -104,8 +104,6 @@ const ProfileMenu = ({ user, logout }) => {
       {isOpen && (
         <div
           role="menu"
-          aria-modal="true"
-          aria-orientation="vertical"
           aria-label="Profile menu"
           className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
         >
