@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Calendar, Search, ArrowLeft } from "lucide-react";
+import { Home, Calendar, Search, ArrowLeft, Zap } from "lucide-react";
 import { Helmet } from "react-helmet-async";
+import { useState } from "react";
 
 // ─── Animation variants ───────────────────────────────────────────────────────
 const containerVariants = {
@@ -26,12 +27,22 @@ const floatVariants = {
 
 // ─── Quick-nav links shown below the primary CTA ─────────────────────────────
 const quickLinks = [
-  { to: "/events",     label: "Browse Events",  Icon: Calendar },
-  { to: "/explore",   label: "Explore",         Icon: Search   },
+  { to: "/events",     label: "Browse Events",     Icon: Calendar },
+  { to: "/hackathons", label: "Hackathons",         Icon: Zap      },
+  { to: "/explore",   label: "Explore",             Icon: Search   },
 ];
 
 const NotFoundPage = () => {
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (q) {
+      navigate(`/events?q=${encodeURIComponent(q)}`);
+    }
+  };
 
   return (
     <>
@@ -161,10 +172,41 @@ const NotFoundPage = () => {
                          focus-visible:outline-indigo-300
                          active:scale-95"
               type="button"
+              aria-label="Go back to the previous page"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Go Back
             </button>
+          </motion.div>
+
+          {/* ── Inline event search hint ── */}
+          <motion.div variants={itemVariants} className="w-full">
+            <p className="mb-2 text-sm text-indigo-300">Looking for a specific event?</p>
+            <form onSubmit={handleSearch} className="flex gap-2" role="search" aria-label="Search events">
+              <label htmlFor="not-found-search" className="sr-only">Search events</label>
+              <input
+                id="not-found-search"
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="e.g. React, AI Hackathon…"
+                className="flex-1 rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white placeholder-indigo-300
+                           backdrop-blur-sm ring-1 ring-white/20 outline-none
+                           focus:ring-2 focus:ring-indigo-300 transition"
+                aria-describedby="search-hint"
+              />
+              <button
+                type="submit"
+                disabled={!searchQuery.trim()}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white
+                           hover:bg-indigo-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Search events"
+              >
+                <Search className="h-4 w-4" aria-hidden="true" />
+                Search
+              </button>
+            </form>
+            <p id="search-hint" className="sr-only">Type an event name to be taken to the events page with results filtered.</p>
           </motion.div>
         </motion.div>
       </section>
