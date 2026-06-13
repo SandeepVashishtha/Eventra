@@ -68,6 +68,7 @@ const ALLOWED_EXCEPTIONS = new Set([
 
 const BACKEND_URL_VARS = ["BACKEND_URL", "VITE_API_URL", "REACT_APP_API_URL"];
 const REQUIRED_VARS = ["JWT_SECRET"];
+const PRODUCTION_REQUIRED_VARS = ["DATABASE_URL"];
 
 const FORMAT_VALIDATED_VARS = {
   BACKEND_URL: {
@@ -156,6 +157,27 @@ console.log("\nValidating variable formats...");
     hasErrors = true;
     console.error(`  ERROR: ${msg}`);
   }
+
+console.log("\nValidating production-specific requirements...");
+if (process.env.NODE_ENV === "production") {
+  for (const varName of PRODUCTION_REQUIRED_VARS) {
+    if (!process.env[varName]) {
+      const errorMsg = `[CRITICAL ERROR] ${varName} is required in production. Authentication data must not be stored in memory.`;
+      console.error(`  ERROR: ${errorMsg}`);
+      errors.push(errorMsg);
+      hasErrors = true;
+    } else if (!process.env[varName].trim()) {
+      const errorMsg = `[CRITICAL ERROR] ${varName} is empty or whitespace-only in production. Authentication data must not be stored in memory.`;
+      console.error(`  ERROR: ${errorMsg}`);
+      errors.push(errorMsg);
+      hasErrors = true;
+    } else {
+      console.log(`  OK: ${varName} = [set]`);
+    }
+  }
+} else {
+  console.log(`  (skipping production-specific checks: NODE_ENV=${process.env.NODE_ENV || "undefined"})`);
+}
 for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   const value = process.env[varName];
   if (!value) continue;

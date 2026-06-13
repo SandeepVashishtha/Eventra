@@ -47,7 +47,7 @@ export const createRequestInterceptor = (isDev) => (config) => {
 
 export const createResponseInterceptor = (API) => {
   const fulfill = (response) => {
-    const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
+    const headerValue = response.headers?.["x-server-time"] || response.headers?.["date"] || (typeof response.headers?.get === 'function' ? (response.headers.get("x-server-time") || response.headers.get("date")) : null);
     if (headerValue) syncServerTimeFromHeader(headerValue);
     return response;
   };
@@ -179,7 +179,7 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
 export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthorized }) {
   api.interceptors.response.use(
     (response) => {
-      const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
+      const headerValue = response.headers?.["x-server-time"] || response.headers?.["date"] || (typeof response.headers?.get === 'function' ? (response.headers.get("x-server-time") || response.headers.get("date")) : null);
       if (headerValue) {
         syncServerTimeFromHeader(headerValue);
       }

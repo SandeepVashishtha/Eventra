@@ -11,7 +11,7 @@ export default defineConfig({
       name: "jsx-in-js",
       enforce: "pre",
       async transform(code, id) {
-        if (!/[/\\]src[/\\].*\.js$/.test(id)) return null;
+        if (!/[/\\](src|tests)[/\\].*\.js$/.test(id)) return null;
         if (!JSX_HINT_RE.test(code)) return null;
         return transformWithOxc(code, id, { lang: "jsx" });
       },
@@ -24,8 +24,8 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./src/setupTests.js"],
-    include: ["src/**/*.test.{js,jsx,ts,tsx}"],
-    exclude: ["src/**/*.spec.{js,jsx}", "tests/**"],
+    include: ["src/**/*.test.{js,jsx,ts,tsx}", "tests/navbar.keyboard.test.js"],
+    exclude: ["src/**/*.spec.{js,jsx}", "tests/e2e/**", "tests/helpers/**", "tests/loaders/**", "tests/*.test.mjs"],
     css: true,
   },
   resolve: {

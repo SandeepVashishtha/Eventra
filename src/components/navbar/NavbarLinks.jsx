@@ -70,7 +70,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     };
   }, [vertical]);
 
-  const getNavLinkClasses = (active, isSecondary = false, isDropdown = false) => {
+  const getNavLinkClasses = (active, isDropdown = false) => {
     return vertical
       ? `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-all duration-200 w-full py-2 px-3 border-l-2 rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
           active

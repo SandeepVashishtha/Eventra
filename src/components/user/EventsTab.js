@@ -450,7 +450,7 @@ const addToRecentEvents = (event) => {
 
   const filtered = existing.filter((e) => e.id !== event.id);
 
-  const updated = [event, ...filtered].slice(0, 6);
+  const updated = [{ id: event.id, title: event.title || event.name, date: event.date }, ...filtered].slice(0, 6);
 
   localStorage.setItem("recentEvents", JSON.stringify(updated));
 
@@ -682,12 +682,17 @@ const addToRecentEvents = (event) => {
             itemLabel="events"
             browseLabel="Browse Events"
             browsePath="/events"
-            onClear={() => {
-              setSearchQuery("");
-              setFilterStatus("All");
-              setFilterType("All");
-              setSortBy("soonest");
-            }}
+          onClear={() => {
+  setSearchQuery("");
+  setFilterStatus("All");
+  setFilterType("All");
+  setSortBy("soonest");
+
+  removeFromStorage("eventSearchQuery");
+  removeFromStorage("eventFilterStatus");
+  removeFromStorage("eventFilterType");
+  removeFromStorage("eventSortBy");
+}}
           />
         </motion.div>
       ) : (

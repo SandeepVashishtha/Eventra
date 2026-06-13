@@ -1,4 +1,4 @@
-import { Github, ExternalLink, GitBranch, MapPin, Building, Users, Medal, ChevronLeft, ChevronRight } from "lucide-react";
+import { GitBranch, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
@@ -278,7 +278,7 @@ const Contributors = () => {
     <section
       ref={sectionRef}
       // UPDATED: Section background
-      className="py-20 bg-gradient-to-b from-indigo-50 via-indigo-100 to-white dark:from-gray-900 dark:via-indigo-900/20 dark:to-black "
+      className="py-20 bg-linear-to-b from-indigo-50 via-indigo-100 to-white dark:from-gray-900 dark:via-indigo-900/20 dark:to-black "
       // AOS Implementation
       data-aos="slide-up"
       data-aos-duration="1000"
@@ -345,7 +345,7 @@ const Contributors = () => {
                         flex: `0 0 calc((100% - ${itemsPerView - 1
                           } * 1.5rem) / ${itemsPerView})`,
                       }}
-                      className="flex-shrink-0 mb-6"
+                      className="shrink-0 mb-6"
                     />
                   );
                 }
@@ -353,7 +353,7 @@ const Contributors = () => {
                 return (
                   <motion.div
                     key={c.id}
-                    className="relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out flex-shrink-0"
+                    className="relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out shrink-0"
                     style={{
                       flex: `0 0 calc((100% - ${itemsPerView - 1
                         } * 1.5rem) / ${itemsPerView})`,
@@ -375,7 +375,7 @@ const Contributors = () => {
                         <img loading="lazy" decoding="async" width="65" height="65"
                           src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || c.login || "Anon")}&background=random`}
                           alt={`${c.name || c.login || "Contributor"}'s GitHub profile`}
-                          className="w-[65px] h-[65px] rounded-full border-4 border-gray-900 dark:border-gray-300 shadow-md relative z-10"
+                          className="w-16.25 h-16.25 rounded-full border-4 border-gray-900 dark:border-gray-300 shadow-md relative z-10"
                         />
                         <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>
                       </div>

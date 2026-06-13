@@ -128,13 +128,6 @@ cp .env.example .env
 > **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
 
 1. Start dev server:
-Set at least one backend URL before starting the app:
-
-```env
-VITE_API_URL=http://localhost:8080
-```
-
-1. Start dev server:
 
 npm run dev
 
@@ -170,13 +163,13 @@ The production-optimized build will be served via Nginx at `http://localhost:808
 
 ## Environment Variables
 
-Use `.env.example` as the source of truth. Backend configuration is explicit: set at least one of `BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL`. The app no longer falls back to a production backend when these values are missing.
+Use `.env.example` as the source of truth. See [docs/ENV_SETUP_GUIDE.md](docs/ENV_SETUP_GUIDE.md) for detailed configuration information.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `VITE_API_URL` | One of backend URLs | Backend API base URL used by Vite client builds and the dev proxy |
-| `BACKEND_URL` | One of backend URLs | Backend origin used by the Vite dev proxy |
-| `REACT_APP_API_URL` | One of backend URLs | Compatibility API base URL used by client requests and the dev proxy |
+| `BACKEND_URL` | No | Backend origin (highest priority, overrides others) |
+| `VITE_API_URL` | No | Backend API base URL (Vite - preferred) |
+| `REACT_APP_API_URL` | No | Backend API base URL (CRA compatibility) |
 | `REACT_APP_GITHUB_REPO` | No | Public repo identifier used in metadata |
 | `REACT_APP_PUBLIC_URL` | No | Canonical public app URL |
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public web-push key |
@@ -196,6 +189,8 @@ or:
 ```env
 BACKEND_URL=https://api.example.com
 ```
+
+**Backend Configuration**: All backend endpoint configuration is centralized in `src/config/backendConfig.js`. The system resolves backend URLs in priority order: `BACKEND_URL` → `VITE_API_URL` → `REACT_APP_API_URL`. In development, defaults to `http://localhost:8080`. In production, no automatic fallback - configuration must be explicitly set to avoid configuration drift.
 
 Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variables because they are exposed to the client bundle.
 
@@ -256,9 +251,13 @@ For local realtime testing:
 node sse-mock-server.js
 ```
 
+Required environment variables:
+
+- `JWT_SECRET` - JWT signing secret for token generation and validation. Generate with: `openssl rand -base64 32`
+
 Optional environment flags:
 
-- `SSE_MOCK_PORT` (default `4001`)
+- `SSE_MOCK_PORT` (default `8080`)
 - `ALLOWED_ORIGIN` (default `http://localhost:3000`)
 - `SSE_DEBUG` (`true` or `false`)
 
