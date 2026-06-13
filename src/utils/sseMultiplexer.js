@@ -300,7 +300,18 @@ class SseMultiplexer {
     switch (msg.type) {
       case "SUBSCRIBE":
         this.addGlobalSubscriber(msg.path, msg.tabId);
-        if (this.isLeader) this.reconcileConnections();
+        if (this.isLeader) {
+          this.reconcileConnections();
+          const currentStatus = this.pathStatuses.get(msg.path);
+          if (currentStatus) {
+            this.broadcastMessage({
+              type: "SSE_STATUS",
+              tabId: this.tabId,
+              path: msg.path,
+              status: currentStatus,
+            });
+          }
+        }
         break;
 
       case "UNSUBSCRIBE":
@@ -327,7 +338,20 @@ class SseMultiplexer {
 
       case "SUBSCRIBERS_RESPONSE":
         if (msg.paths) {
-          msg.paths.forEach((p) => this.addGlobalSubscriber(p, msg.tabId));
+          msg.paths.forEach((p) => {
+            this.addGlobalSubscriber(p, msg.tabId);
+            if (this.isLeader) {
+              const currentStatus = this.pathStatuses.get(p);
+              if (currentStatus) {
+                this.broadcastMessage({
+                  type: "SSE_STATUS",
+                  tabId: this.tabId,
+                  path: p,
+                  status: currentStatus,
+                });
+              }
+            }
+          });
           if (this.isLeader) this.reconcileConnections();
         }
         break;

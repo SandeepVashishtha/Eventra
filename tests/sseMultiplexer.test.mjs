@@ -288,6 +288,42 @@ const runTests = async () => {
     delete store.eventra_sse_leader_heartbeat;
   }
 
+  // Test 7: Leader broadcasts current path status immediately upon receiving a SUBSCRIBE or SUBSCRIBERS_RESPONSE request from a follower tab
+  sseMultiplexer.isLeader = true;
+  sseMultiplexer.updatePathStatus("/stream/status_sync", "connected");
+
+  let receivedStatusMsg = null;
+  const statusTestChannel = new globalThis.BroadcastChannel("eventra_sse_multiplexer");
+  statusTestChannel.onmessage = (e) => {
+    if (e.data && e.data.type === "SSE_STATUS" && e.data.path === "/stream/status_sync") {
+      receivedStatusMsg = e.data;
+    }
+  };
+
+  // Simulate follower tab subscribing to "/stream/status_sync"
+  sseMultiplexer.handleBroadcastMessage({
+    type: "SUBSCRIBE",
+    tabId: "tab_b",
+    path: "/stream/status_sync",
+  });
+
+  assert.ok(receivedStatusMsg !== null, "Follower should receive current connection status on SUBSCRIBE");
+  assert.equal(receivedStatusMsg.status, "connected");
+  assert.equal(receivedStatusMsg.tabId, sseMultiplexer.tabId, "Broadcast message should contain leader's tabId");
+
+  // Verify same for SUBSCRIBERS_RESPONSE
+  receivedStatusMsg = null;
+  sseMultiplexer.handleBroadcastMessage({
+    type: "SUBSCRIBERS_RESPONSE",
+    tabId: "tab_b",
+    paths: ["/stream/status_sync"],
+  });
+  assert.ok(receivedStatusMsg !== null, "Follower responding with active path should receive current connection status");
+  assert.equal(receivedStatusMsg.status, "connected");
+  assert.equal(receivedStatusMsg.tabId, sseMultiplexer.tabId, "Broadcast message should contain leader's tabId");
+
+  statusTestChannel.close();
+
   console.log("🟢 All SSE Multiplexer unit tests completed successfully!");
 };
 
