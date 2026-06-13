@@ -503,33 +503,14 @@ export const rotateKey = async () => {
   }
 };
 
-/**
- * Get the current key metadata.
- *
- * @returns {Object|null} Key metadata object or null if unavailable
- */
 export const getKeyMetadata = () => {
   return _keyMetadata;
 };
 
-/**
- * Get the current crypto configuration.
- *
- * @returns {Object} Crypto configuration object
- */
 export const getCryptoConfig = () => {
   return { ...CRYPTO_CONFIG };
 };
 
-/**
- * Derives an AES-256-GCM key from an explicit password and salt using PBKDF2.
- * Useful for callers (e.g. SessionRecoveryContext) that manage their own
- * key material outside the module-level DERIVED_KEY_MATERIAL / DERIVED_KEY_SALT.
- *
- * @param {string|Uint8Array} password - PBKDF2 input keying material
- * @param {Uint8Array}        salt     - PBKDF2 salt (at least 16 bytes recommended)
- * @returns {Promise<CryptoKey>}
- */
 export const deriveKey = async (password, salt) => {
   const encoder = new TextEncoder();
   const material = password instanceof Uint8Array ? password : encoder.encode(password);
@@ -543,15 +524,6 @@ export const deriveKey = async (password, salt) => {
   );
 };
 
-/**
- * Encrypts plaintext with an already-derived AES-256-GCM key.
- * Returns ciphertext in the same `ivBase64:ctBase64` format used by the
- * module-level encryptValue, but does NOT attach additional authenticated data.
- *
- * @param {CryptoKey} key       - AES-GCM key from deriveKey()
- * @param {string}    plaintext - Value to encrypt
- * @returns {Promise<string>} `ivBase64:ctBase64`
- */
 export const encryptWithKey = async (key, plaintext) => {
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
   const encrypted = await crypto.subtle.encrypt(
@@ -562,13 +534,6 @@ export const encryptWithKey = async (key, plaintext) => {
   return `${btoa(String.fromCharCode(...iv))}:${btoa(String.fromCharCode(...new Uint8Array(encrypted)))}`;
 };
 
-/**
- * Decrypts a ciphertext produced by encryptWithKey or the old encryptSession.
- *
- * @param {CryptoKey} key      - AES-GCM key from deriveKey()
- * @param {string}    stored   - Ciphertext string in `ivBase64:ctBase64` format
- * @returns {Promise<string>} Decrypted plaintext
- */
 export const decryptWithKey = async (key, stored) => {
   const colonIdx = stored.indexOf(":");
   if (colonIdx === -1) throw new Error("Invalid ciphertext format");
@@ -578,35 +543,8 @@ export const decryptWithKey = async (key, stored) => {
   return new TextDecoder().decode(decrypted);
 };
 
-
-// ---------------------------------------------------------------------------
-// Encrypted key-value storage wrapper (localStorage — AES-GCM encrypted)
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Legacy plaintext-fallback cleanup
-// ---------------------------------------------------------------------------
-// Previous versions of this module wrote `key + ':plaintext'` to localStorage
-// synchronously before encryption completed so that data would survive a
-// page close. This left sensitive values permanently in plaintext whenever
-// the page was closed during the async encryption window.
-//
-// PLAINTEXT_SUFFIX is kept ONLY so that cleanupPlaintextFallbacks() can
-// identify and remove those legacy keys on load. It must NOT be used for
-// any new localStorage write.
-// ---------------------------------------------------------------------------
-
 const PLAINTEXT_SUFFIX = ':plaintext';
 
-/**
- * Scans localStorage for keys ending in `':plaintext'` left behind by
- * the previous write strategy and removes them. Called once at module load.
- *
- * This is a one-time migration helper. Once all active clients have loaded
- * this version at least once, there will be no legacy keys left to clean up.
- *
- * @private
- */
 const cleanupPlaintextFallbacks = () => {
   try {
     const toRemove = [];
