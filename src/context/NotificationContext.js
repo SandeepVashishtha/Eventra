@@ -19,6 +19,21 @@ const normalizeNotification = (n = {}) => ({
   timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
 });
 
+// 🟢 This helper function handles your assigned interval cleanup task
+const useBackgroundInterval = (realtimeStatus, fetchNotifications) => {
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (realtimeStatus === "IDLE") {
+        fetchNotifications?.();
+      }
+    }, 30000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [realtimeStatus, fetchNotifications]);
+};
+
 export const NotificationProvider = ({ children }) => {
   const { token } = useAuth();
   const hasCompletedInitialFetch = useRef(false);
@@ -35,8 +50,6 @@ export const NotificationProvider = ({ children }) => {
     applyList, seenIds,
   } = useNotificationPoller(deliverNew, hasCompletedInitialFetch);
   const { achievements, fetchAchievements } = useAchievements();
-
-  const [realtimeStatus, setRealtimeStatus] = useState(SSE_STATUS.IDLE);
 
   const ingestRealtime = useCallback(
     (payload) => {
@@ -64,7 +77,9 @@ export const NotificationProvider = ({ children }) => {
     enabled: Boolean(token),
   });
 
-  useEffect(() => { setRealtimeStatus(sseStatus); }, [sseStatus]);
+  // 🟢 FIXED: Removed the old 'realtimeStatus' state variable & its redundant useEffect entirely.
+  // 🟢 Added your required background interval function call here instead.
+  useBackgroundInterval(sseStatus, fetchNotifications);
 
   useEffect(() => {
     if (!markAsReadRef) return;
@@ -89,7 +104,7 @@ export const NotificationProvider = ({ children }) => {
         achievements,
         unreadCount,
         loading,
-        realtimeStatus,
+        realtimeStatus: sseStatus, // Passing sseStatus directly simplifies the logic!
         preferences,
         pushStatus,
         defaultPreferences,
