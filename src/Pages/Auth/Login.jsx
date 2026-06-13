@@ -1,11 +1,8 @@
 import React from "react";
+import LoginComponent from "../../components/auth/Login";
 
 const Login = () => {
-  return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <h1 className="text-2xl font-bold">Login Page (Coming Soon)</h1>
-    </div>
-  );
+  return <LoginComponent />;
 };
 
 export default Login;

@@ -1,11 +1,8 @@
 import React from "react";
+import SignupComponent from "../../components/auth/Signup";
 
 const Signup = () => {
-  return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <h1 className="text-2xl font-bold">Signup Page (Coming Soon)</h1>
-    </div>
-  );
+  return <SignupComponent />;
 };
 
 export default Signup;
