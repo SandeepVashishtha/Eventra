@@ -26,7 +26,7 @@ const MODES = {
   },
 };
 
-const usePomodoroStorage = (mode, timeLeft, isActive, setMode, setTimeLeft, setIsActive) => {
+const usePomodoroStorage = ({ mode, timeLeft, isActive, setMode, setTimeLeft, setIsActive }) => {
   // Load state from local storage on mount
   useEffect(() => {
     try {
@@ -66,7 +66,7 @@ const usePomodoroStorage = (mode, timeLeft, isActive, setMode, setTimeLeft, setI
   }, [mode, timeLeft, isActive]);
 };
 
-const usePomodoroInterval = (isActive, timeLeft, setTimeLeft, setIsActive) => {
+const usePomodoroInterval = ({ isActive, timeLeft, setTimeLeft, setIsActive }) => {
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -88,8 +88,8 @@ const usePomodoroLogic = () => {
   const [timeLeft, setTimeLeft] = useState(MODES.FOCUS.minutes * 60);
   const [isActive, setIsActive] = useState(false);
 
-  usePomodoroStorage(mode, timeLeft, isActive, setMode, setTimeLeft, setIsActive);
-  usePomodoroInterval(isActive, timeLeft, setTimeLeft, setIsActive);
+  usePomodoroStorage({ mode, timeLeft, isActive, setMode, setTimeLeft, setIsActive });
+  usePomodoroInterval({ isActive, timeLeft, setTimeLeft, setIsActive });
 
   const toggleTimer = () => setIsActive(!isActive);
 
