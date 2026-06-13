@@ -207,7 +207,7 @@ export const AuthProvider = ({ children }) => {
         } else {
           // If network is offline, attempt to fall back to securely cached user details
           try {
-            const cachedUser = syncSecureStorage.getItem("user");
+            const cachedUser = await syncSecureStorage.getItemAsync("user");
             if (cachedUser) {
               setUser(JSON.parse(cachedUser));
               setToken("cookie-managed");
