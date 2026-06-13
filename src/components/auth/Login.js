@@ -126,7 +126,6 @@ const Login = () => {
           <div className="pointer-events-none absolute top-8 left-6 h-16 w-16 rounded-full bg-blue-100 opacity-60 blur-sm"></div>
           <div className="pointer-events-none absolute bottom-10 left-20 h-20 w-20 rounded-full bg-pink-100 opacity-60 blur-sm"></div>
           <div className="pointer-events-none absolute top-16 right-10 h-14 w-14 rounded-full bg-yellow-100 opacity-60 blur-sm"></div>
-          <div className="section-theme relative z-10 w-full space-y-6 p-10 backdrop-blur-xl" />
 
           {/* Session-expired banner */}
           {sessionExpired && (
@@ -182,7 +181,7 @@ const Login = () => {
               type: "spring",
               stiffness: 200,
             }}
-            className="space-y-4 text-center"
+            className="space-y-4 text-center mb-6"
           >
             <motion.div
               whileHover={{ scale: 1.05, rotate: 5 }}
@@ -194,6 +193,7 @@ const Login = () => {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -258,6 +258,7 @@ const Login = () => {
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"
@@ -291,7 +292,7 @@ const Login = () => {
                   className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 transition-colors hover:text-gray-600"
                 >
                   {showPassword ? (
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -300,7 +301,7 @@ const Login = () => {
                       />
                     </svg>
                   ) : (
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -357,19 +358,14 @@ const Login = () => {
             </motion.button>
           </motion.form>
 
-                      {/* Sign up link */}
-                      <div className="text-center">
-              <p style={{ color: "var(--text-color-light)" }}>
-                Don&apos;t have an account?{' '}
-                <Link
-                  to="/signup"
-                  className="text-blue-600 hover:underline font-semibold"
-                >
-                  Create one here
-                </Link>
-              </p>
-            </div>
-
+          {/* Sign up link */}
+          <div className="text-center mt-6">
+            <p style={{ color: "var(--text-color-light)" }}>
+              Don&apos;t have an account?{" "}
+              <Link to="/signup" className="text-blue-600 hover:underline font-semibold">
+                Create one here
+              </Link>
+            </p>
           </div>
         </motion.div>
       </div>

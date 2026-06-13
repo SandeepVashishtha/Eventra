@@ -90,22 +90,16 @@ const socialLinks = [
       />
     ),
   },
-  {
-    name: "Discord",
-    href: "https://discord.gg/6MQ9r5nHT",
-    icon: (
-      <SiDiscord
-        className="size-10 rounded-full bg-white p-2 text-black shadow-sm transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:bg-gray-100 hover:shadow-lg dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
-        size={20}
-    name: "Discord",
-    href: "https://discord.gg/6MQ9r5nHT",
-    icon: (
-      <SiDiscord
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
-        size={20}
-      />
-    ),
-  },
+{
+  name: "Discord",
+  href: "https://discord.gg/6MQ9r5nHT",
+  icon: (
+    <SiDiscord
+      className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow..." 
+      size={20}
+    />
+  )
+},
 ].filter(Boolean);
 
 /* ================================
