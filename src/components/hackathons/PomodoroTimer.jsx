@@ -26,12 +26,7 @@ const MODES = {
   },
 };
 
-const usePomodoroLogic = () => {
-  const [mode, setMode] = useState("FOCUS");
-  const [timeLeft, setTimeLeft] = useState(MODES.FOCUS.minutes * 60);
-  const [isActive, setIsActive] = useState(false);
-  const timerRef = useRef(null);
-
+const usePomodoroStorage = (mode, timeLeft, isActive, setMode, setTimeLeft, setIsActive) => {
   // Load state from local storage on mount
   useEffect(() => {
     try {
@@ -57,7 +52,7 @@ const usePomodoroLogic = () => {
     } catch (err) {
       console.error("Failed to parse pomodoro state:", err);
     }
-  }, []);
+  }, [setMode, setTimeLeft, setIsActive]);
 
   // Save state to local storage whenever critical state changes
   useEffect(() => {
@@ -69,8 +64,11 @@ const usePomodoroLogic = () => {
     };
     localStorage.setItem("pomodoroState", JSON.stringify(stateToSave));
   }, [mode, timeLeft, isActive]);
+};
 
-  // Timer countdown logic
+const usePomodoroInterval = (isActive, timeLeft, setTimeLeft, setIsActive) => {
+  const timerRef = useRef(null);
+
   useEffect(() => {
     if (isActive && timeLeft > 0) {
       timerRef.current = setInterval(() => {
@@ -82,7 +80,16 @@ const usePomodoroLogic = () => {
     }
 
     return () => clearInterval(timerRef.current);
-  }, [isActive, timeLeft]);
+  }, [isActive, timeLeft, setTimeLeft, setIsActive]);
+};
+
+const usePomodoroLogic = () => {
+  const [mode, setMode] = useState("FOCUS");
+  const [timeLeft, setTimeLeft] = useState(MODES.FOCUS.minutes * 60);
+  const [isActive, setIsActive] = useState(false);
+
+  usePomodoroStorage(mode, timeLeft, isActive, setMode, setTimeLeft, setIsActive);
+  usePomodoroInterval(isActive, timeLeft, setTimeLeft, setIsActive);
 
   const toggleTimer = () => setIsActive(!isActive);
 
