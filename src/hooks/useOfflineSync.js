@@ -290,14 +290,19 @@ const useOfflineSync = () => {
 
       isSyncing.current = true;
 
+      // 🔥 FIX: Hoist counters and the failure list ABOVE the try so the
+      // `finally` block can read them. Previously they were declared inside
+      // the try (block-scoped) and the dispatch in finally threw
+      // ReferenceError on every successful sync, leaving the OfflineManager
+      // spinner stuck permanently.
+      let successCount = 0;
+      let droppedCount = 0;
+      let failedQueue = [];
+
       try {
         toast.info(`Syncing ${sessionValidatedQueue.length} cached offline action(s)...`, {
           autoClose: 2000,
         });
-
-        const failedQueue = [];
-        let successCount = 0;
-        let droppedCount = 0;
 
         for (const item of sessionValidatedQueue) {
           // Halt the zombie loop immediately if the session changed or component unmounted.
