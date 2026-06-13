@@ -682,12 +682,17 @@ const addToRecentEvents = (event) => {
             itemLabel="events"
             browseLabel="Browse Events"
             browsePath="/events"
-            onClear={() => {
-              setSearchQuery("");
-              setFilterStatus("All");
-              setFilterType("All");
-              setSortBy("soonest");
-            }}
+          onClear={() => {
+  setSearchQuery("");
+  setFilterStatus("All");
+  setFilterType("All");
+  setSortBy("soonest");
+
+  removeFromStorage("eventSearchQuery");
+  removeFromStorage("eventFilterStatus");
+  removeFromStorage("eventFilterType");
+  removeFromStorage("eventSortBy");
+}}
           />
         </motion.div>
       ) : (
