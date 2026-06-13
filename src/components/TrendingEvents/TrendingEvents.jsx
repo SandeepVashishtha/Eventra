@@ -9,13 +9,12 @@ const toNumber = (value) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-const firstNumber = (event, keys) => {
-  for (const key of keys) {
-    const val = toNumber(event?.[key]);
-    if (val) return val;
-  }
-  return 0;
-};
+const firstNumber = (event, keys) => keys.reduce((acc, key) => {
+  if (acc) return acc;
+  const val = toNumber(event?.[key]);
+  return val ? val : 0;
+}, 0);
+
 
 /**
  * Derive a score for trending using whatever metrics are available on
@@ -156,7 +155,7 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {trending.map(({ event, registrations, pageViews, bookmarks, engagement }) => (
+{trending.map(({ event, registrations, pageViews, bookmarks, engagement }, idx) => (
             <div key={event.id} className="rounded-3xl overflow-hidden">
               <EventCard
                 event={{
