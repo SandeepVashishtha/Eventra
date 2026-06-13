@@ -1,10 +1,10 @@
-/* eslint-disable no-console */
+ 
 import { lazy } from "react";
 
 export function lazyWithRetry(importFn, retries = 2, delay = 1000) {
-  let attempt = 0;
-
   const retryImport = async () => {
+    let attempt = 0;
+
     while (attempt <= retries) {
       try {
         return await importFn();

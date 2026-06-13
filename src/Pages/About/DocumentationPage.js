@@ -1,8 +1,25 @@
-import { BookOpen, Layers, Cpu, Code2, Play, GitBranch, Users, Info, PlayCircle, CheckCircle, Smartphone, AlertCircle, PlusCircle, Bell, Lock } from "lucide-react";
+import {
+  BookOpen,
+  Layers,
+  Cpu,
+  Code2,
+  Play,
+  GitBranch,
+  Users,
+  Info,
+  PlayCircle,
+  CheckCircle,
+  Smartphone,
+  AlertCircle,
+  PlusCircle,
+  Bell,
+  Lock,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 // src/Pages/Documentation/DocumentationPage.jsx
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp } from "lucide-react"; // make sure these are imported
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 export default function DocumentationPage() {
   useDocumentTitle("Documentation | Eventra");
@@ -33,7 +50,7 @@ export default function DocumentationPage() {
       question: "What platforms does Eventra support?",
       answer:
         "Eventra is accessible on Web and Mobile platforms, ensuring you can check events anytime, anywhere.",
-      icon: <Smartphone className="w-6 h-6 text-black" />,
+      icon: <Smartphone className="w-6 h-6 text-slate-400" />,
     },
     {
       question: "How can I suggest an event or report an issue?",
@@ -45,7 +62,7 @@ export default function DocumentationPage() {
       question: "Can I create my own events on Eventra?",
       answer:
         "Yes! Eventra allows registered users to create and manage their own events, hackathons, or project showcases directly from the platform.",
-      icon: <PlusCircle className="w-6 h-6 text-black" />,
+      icon: <PlusCircle className="w-6 h-6 text-slate-400" />,
     },
     {
       question: "How do I stay updated about upcoming events?",
@@ -63,13 +80,13 @@ export default function DocumentationPage() {
       question: "Is my personal information safe on Eventra?",
       answer:
         "Yes. Eventra prioritizes user privacy and security. All personal information is stored securely and is never shared without consent.",
-      icon: <Lock className="w-6 h-6 text-gray-700" />,
+      icon: <Lock className="w-6 h-6 text-slate-400" />,
     },
   ];
 
   // UPDATED: Code block styles for dark mode
   const codeBlockClass =
-    "bg-gray-100 p-6 rounded-xl overflow-x-auto shadow text-black text-lg font-mono";
+    "bg-slate-950 border border-slate-800 p-6 rounded-2xl overflow-x-auto text-slate-200 text-sm md:text-base font-mono";
   const [openIndex, setOpenIndex] = useState(null);
 
   const toggleFAQ = (index) => {
@@ -92,11 +109,7 @@ export default function DocumentationPage() {
         >
           Eventra Documentation
         </motion.h1>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-black text-xl"
-        >
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-black text-xl">
           Modern Event Management Platform for Builders & Communities
         </motion.p>
       </header>
@@ -114,45 +127,44 @@ export default function DocumentationPage() {
         data-aos-delay="0"
       >
         <div className="relative z-10">
-        {/* UPDATED: Title icon and text colors */}
-        <div className="flex items-center mb-6 text-black">
-          <BookOpen className="mr-3 text-3xl" />
-          <h2 className="text-3xl font-bold">Features</h2>
-        </div>
-        <div className="grid md:grid-cols-2 gap-6 text-black">
-          <div className="space-y-2">
-            <h3 className="font-semibold text-xl">Core Features</h3>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Create and manage hackathons</li>
-              <li>Register participants and teams</li>
-              <li>Project submission and tracking</li>
-              <li>Event schedule and agenda management</li>
-              <li>Real-time updates and notifications</li>
-              <li>Judging and scoring system</li>
-              <li>Winner announcement and certificates</li>
-              <li>Discussion forums for participants</li>
-              <li>Resource sharing (guides, datasets, APIs)</li>
-              <li>Customizable hackathon branding</li>
-            </ul>
+          {/* UPDATED: Title icon and text colors */}
+          <div className="flex items-center mb-6 text-black">
+            <BookOpen className="mr-3 text-3xl" />
+            <h2 className="text-3xl font-bold">Features</h2>
           </div>
-          <div className="space-y-2">
-            <h3 className="font-semibold text-xl">Platform Features</h3>
-            <ul className="list-disc list-inside space-y-1">
-              <li>User authentication and profiles</li>
-              <li>Dark mode and theme support</li>
-              <li>Responsive and mobile-friendly design</li>
-              <li>Search and filter events/projects</li>
-              <li>Integration with calendar apps</li>
-              <li>Notifications for upcoming deadlines</li>
-              <li>Team collaboration tools</li>
-              <li>Analytics dashboard for organizers</li>
-              <li>Social media sharing and promotion</li>
-              <li>Cloud storage for project files</li>
-            </ul>
+          <div className="grid md:grid-cols-2 gap-6 text-black">
+            <div className="space-y-2">
+              <h3 className="font-semibold text-xl">Core Features</h3>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Create and manage hackathons</li>
+                <li>Register participants and teams</li>
+                <li>Project submission and tracking</li>
+                <li>Event schedule and agenda management</li>
+                <li>Real-time updates and notifications</li>
+                <li>Judging and scoring system</li>
+                <li>Winner announcement and certificates</li>
+                <li>Discussion forums for participants</li>
+                <li>Resource sharing (guides, datasets, APIs)</li>
+                <li>Customizable hackathon branding</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-xl">Platform Features</h3>
+              <ul className="list-disc list-inside space-y-1">
+                <li>User authentication and profiles</li>
+                <li>Dark mode and theme support</li>
+                <li>Responsive and mobile-friendly design</li>
+                <li>Search and filter events/projects</li>
+                <li>Integration with calendar apps</li>
+                <li>Notifications for upcoming deadlines</li>
+                <li>Team collaboration tools</li>
+                <li>Analytics dashboard for organizers</li>
+                <li>Social media sharing and promotion</li>
+                <li>Cloud storage for project files</li>
+              </ul>
+            </div>
           </div>
         </div>
-        </div>
-
       </motion.section>
 
       {/* Tech Stack Section */}
@@ -371,9 +383,7 @@ npm start`}
           <Code2 className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">License</h2>
         </div>
-        <p className="text-black text-lg">
-          Apache License 2.0 - see the LICENSE file for details.
-        </p>
+        <p className="text-black text-lg">Apache License 2.0 - see the LICENSE file for details.</p>
       </motion.section>
 
       {/* Contributing Section */}
@@ -410,7 +420,7 @@ npm start`}
       </motion.section>
 
       {/* FAQ Section */}
-      <section 
+      <section
         className="max-w-5xl mx-auto p-6 bg-gray-50 rounded-2xl shadow-lg"
         // AOS Implementation
         data-aos="fade-up"
@@ -431,9 +441,7 @@ npm start`}
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-6">
                   {faq.icon}
-                  <h3 className="text-lg font-semibold text-black">
-                    {faq.question}
-                  </h3>
+                  <h3 className="text-lg font-semibold text-black">{faq.question}</h3>
                 </div>
                 {openIndex === index ? (
                   <ChevronUp className="w-5 h-5 text-black" />
@@ -460,14 +468,13 @@ npm start`}
       </section>
 
       {/* UPDATED: Footer text, border, and link colors */}
-      <footer 
+      <footer
         className="text-center text-black mt-24 border-t border-gray-300 pt-8 pb-6"
         data-aos="fade-up"
         data-aos-offset="50"
       >
         <p className="text-black text-lg font-medium">
-          Built with <span className="text-black">❤️</span> by the Eventra
-          Team.
+          Built with <span className="text-black">❤️</span> by the Eventra Team.
         </p>
         <p className="mt-2 text-black text-base">
           Visit{" "}

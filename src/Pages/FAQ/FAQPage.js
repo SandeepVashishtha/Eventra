@@ -12,13 +12,14 @@ import {
   HelpCircle,
   X,
   ChevronDown,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
 import SEOHead from "../../components/SEOHead";
 import { useTranslation } from "react-i18next";
 import { logger } from "../../utils/logger";
-
-
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const NAVBAR_HEIGHT = 65;
 
@@ -39,84 +40,85 @@ export default function FAQSection() {
 function FAQSectionInner() {
   const { t } = useTranslation();
 
-  const faqs = useMemo(() => [
-    {
-      category: t("faq.categories.gettingStarted"),
-      tab: "Hackathons",
-      icon: <Sparkles size={16} />,
-      question: t("faqQuestions.q1"),
-      answer: t("faqQuestions.a1"),
-    },
-    {
-      category: t("faq.categories.eventCreation"),
-      tab: "Hackathons",
-      icon: <Calendar size={16} />,
-      question: t("faqQuestions.q2"),
-      answer: t("faqQuestions.a2"),
-    },
-    {
-      category: t("faq.categories.eventTypes"),
-      tab: "General",
-      icon: <BookOpen size={16} />,
-      question: t("faqQuestions.q3"),
-      answer: t("faqQuestions.a3"),
-    },
-    {
-      category: t("faq.categories.pricing"),
-      tab: "General",
-      icon: <Zap size={16} />,
-      question: t("faqQuestions.q4"),
-      answer: t("faqQuestions.a4"),
-    },
-    {
-      category: t("faq.categories.community"),
-      tab: "Hackathons",
-      icon: <Users size={16} />,
-      question: t("faqQuestions.q5"),
-      answer: t("faqQuestions.a5"),
-    },
-    {
-      category: t("faq.categories.accountManagement"),
-      tab: "Account",
-      icon: <Shield size={16} />,
-      question: t("faqQuestions.q6"),
-      answer: t("faqQuestions.a6"),
-    },
-    {
-      category: t("faq.categories.technicalSupport"),
-      tab: "General",
-      icon: <MessageCircle size={16} />,
-      question: t("faqQuestions.q7"),
-      answer: t("faqQuestions.a7"),
-    },
-    {
-      category: t("faq.categories.eventFeatures"),
-      tab: "General",
-      icon: <Globe size={16} />,
-      question: t("faqQuestions.q8"),
-      answer: t("faqQuestions.a8"),
-    },
-    {
-      category: t("faq.categories.eventManagement"),
-      tab: "Hackathons",
-      icon: <Calendar size={16} />,
-      question: t("faqQuestions.q9"),
-      answer: t("faqQuestions.a9"),
-    },
-    {
-      category: t("faq.categories.privacySecurity"),
-      tab: "Account",
-      icon: <Shield size={16} />,
-      question: t("faqQuestions.q10"),
-      answer: t("faqQuestions.a10"),
-    },
-  ], [t]);
+  const faqs = useMemo(
+    () => [
+      {
+        category: t("faq.categories.gettingStarted"),
+        tab: "Hackathons",
+        icon: <Sparkles size={18} />,
+        question: t("faqQuestions.q1"),
+        answer: t("faqQuestions.a1"),
+      },
+      {
+        category: t("faq.categories.eventCreation"),
+        tab: "Hackathons",
+        icon: <Calendar size={18} />,
+        question: t("faqQuestions.q2"),
+        answer: t("faqQuestions.a2"),
+      },
+      {
+        category: t("faq.categories.eventTypes"),
+        tab: "General",
+        icon: <BookOpen size={18} />,
+        question: t("faqQuestions.q3"),
+        answer: t("faqQuestions.a3"),
+      },
+      {
+        category: t("faq.categories.pricing"),
+        tab: "General",
+        icon: <Zap size={18} />,
+        question: t("faqQuestions.q4"),
+        answer: t("faqQuestions.a4"),
+      },
+      {
+        category: t("faq.categories.community"),
+        tab: "Hackathons",
+        icon: <Users size={18} />,
+        question: t("faqQuestions.q5"),
+        answer: t("faqQuestions.a5"),
+      },
+      {
+        category: t("faq.categories.accountManagement"),
+        tab: "Account",
+        icon: <Shield size={18} />,
+        question: t("faqQuestions.q6"),
+        answer: t("faqQuestions.a6"),
+      },
+      {
+        category: t("faq.categories.technicalSupport"),
+        tab: "General",
+        icon: <MessageCircle size={18} />,
+        question: t("faqQuestions.q7"),
+        answer: t("faqQuestions.a7"),
+      },
+      {
+        category: t("faq.categories.eventFeatures"),
+        tab: "General",
+        icon: <Globe size={18} />,
+        question: t("faqQuestions.q8"),
+        answer: t("faqQuestions.a8"),
+      },
+      {
+        category: t("faq.categories.eventManagement"),
+        tab: "Hackathons",
+        icon: <Calendar size={18} />,
+        question: t("faqQuestions.q9"),
+        answer: t("faqQuestions.a9"),
+      },
+      {
+        category: t("faq.categories.privacySecurity"),
+        tab: "Account",
+        icon: <Shield size={18} />,
+        question: t("faqQuestions.q10"),
+        answer: t("faqQuestions.a10"),
+      },
+    ],
+    [t]
+  );
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [expandedItems, setExpandedItems] = useState(new Set());
-
-  // Search Suggestions State
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const filteredFaqs = useMemo(() => {
@@ -133,7 +135,7 @@ function FAQSectionInner() {
 
       return matchesCategory && matchesSearch;
     });
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, faqs]);
 
   const suggestions = faqs
     .filter((faq) => {
@@ -142,11 +144,10 @@ function FAQSectionInner() {
     })
     .slice(0, 5);
 
-  // Helpfulness Ratings State
   const [ratings, setRatings] = useState(() => {
     try {
       const saved = localStorage.getItem("eventra_faq_ratings");
-      if (saved) return JSON.parse(saved);
+      if (saved) return safeJsonParse(saved, {});
     } catch (e) {
       logger.error("Failed to load FAQ ratings", e);
     }
@@ -193,7 +194,6 @@ function FAQSectionInner() {
     });
   };
 
-  // Toggle accordion item
   const toggleAccordion = (index) => {
     const newExpanded = new Set(expandedItems);
     if (newExpanded.has(index)) {
@@ -246,7 +246,7 @@ function FAQSectionInner() {
 
         ticking = false;
       });
-    };   
+    };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", handleScroll);
@@ -273,50 +273,95 @@ function FAQSectionInner() {
       <style>{`
         .faq-section-root {
           transition: background-color 0.3s ease, color 0.3s ease;
-          --bg-primary: #f9fafb;
-          --text-primary: #111827;
+          --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+          --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+          --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+          --shadow-xl: 0 16px 40px rgba(0,0,0,0.18);
+          --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+          --bg-secondary: rgba(0,0,0,0.03);
+          --text-muted: #9ca3af;
+          --bg-primary: #fafbfc;
+          --bg-secondary: #ffffff;
+          --text-primary: #0f172a;
+          --text-secondary: #475569;
+          --text-muted: #94a3b8;
           --card-bg: #ffffff;
-          --card-border: #e5e7eb;
-          --cat-color: #4f46e5;
-          --heading-color: #111827;
-          --subtext-color: #6b7280;
-          --answer-color: #4b5563;
-          --heading-bg: rgba(249, 249, 251, 0.95);
-          --heading-border: rgba(0, 0, 0, 0.07);
-          --icon-bg: #e0e7ff;
-          --icon-color: #4f46e5;
-          background-color: var(--bg-primary);
+          --card-border: #e2e8f0;
+          --card-hover-border: #cbd5e1;
+          --accent-primary: #6366f1;
+          --accent-secondary: #8b5cf6;
+          --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          --icon-bg: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+          --icon-color: #6366f1;
+          --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+          --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          background: var(--bg-primary);
           color: var(--text-primary);
-          font-family: system-ui, -apple-system, sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           position: relative;
+          min-height: 100vh;
         }
 
         .dark .faq-section-root {
-          --bg-primary: linear-gradient(to bottom, #020617, #0f172a, #111827);
-          --text-primary: #f9fafb;
-          --card-bg: #0f172a;
-          --card-border: rgba(255,255,255,0.08);
-          --cat-color: #818cf8;
-          --heading-color: #f3f4f6;
-          --subtext-color: #9ca3af;
-          --answer-color: #d1d5db;
-          --heading-bg: rgba(2, 6, 23, 0.92);
-          --heading-border: rgba(255, 255, 255, 0.07);
-          --icon-bg: #312e81;
+          --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+          --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+          --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+          --shadow-xl: 0 16px 40px rgba(0,0,0,0.6);
+          --bg-secondary: rgba(255,255,255,0.03);
+          --text-muted: #6b7280;
+          --bg-primary: #0f172a;
+          --bg-secondary: #1e293b;
+          --text-primary: #f1f5f9;
+          --text-secondary: #cbd5e1;
+          --text-muted: #64748b;
+          --card-bg: #1e293b;
+          --card-border: #334155;
+          --card-hover-border: #475569;
+          --accent-primary: #818cf8;
+          --accent-secondary: #a78bfa;
+          --accent-gradient: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+          --icon-bg: linear-gradient(135deg, #312e81 0%, #3b0764 100%);
           --icon-color: #818cf8;
+          --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+          --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+          --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+          --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+        }
+
+        .faq-background-pattern {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-image: 
+            radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .dark .faq-background-pattern {
+          background-image: 
+            radial-gradient(circle at 20% 30%, rgba(129, 140, 248, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(167, 139, 250, 0.08) 0%, transparent 50%);
         }
 
         .faq-heading-block {
           text-align: center;
-          padding: 60px 20px 32px;
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
+          padding: 72px 20px 40px;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
           width: 100%;
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
           align-items: center;
-          transition: padding 0.3s ease, background 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          z-index: 1;
         }
 
         .faq-heading-inner {
@@ -331,22 +376,31 @@ function FAQSectionInner() {
           left: 0;
           right: 0;
           z-index: 90;
-          border-bottom: 1px solid var(--heading-border);
-          padding: 12px 20px 16px;
+          border-bottom: 1px solid var(--card-border);
+          padding: 16px 20px 20px;
+          background: var(--bg-primary);
+          box-shadow: var(--shadow-lg);
         }
 
         .faq-heading-block h2 {
-          font-size: 2.2rem;
-          font-weight: 700;
-          margin: 0 0 10px;
-          color: var(--heading-color);
+          font-size: 2.5rem;
+          font-weight: 800;
+          margin: 0 0 16px;
+          color: var(--text-primary);
+          letter-spacing: -0.02em;
+          background: var(--accent-gradient);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
 
         .faq-heading-block p {
-          color: var(--subtext-color);
-          font-size: 1.05rem;
-          margin: 0 auto;
+          color: var(--text-secondary);
+          font-size: 1.125rem;
+          margin: 0 auto 32px;
           max-width: 600px;
+          line-height: 1.6;
+          font-weight: 400;
         }
 
         .faq-heading-spacer { width: 100%; }
@@ -355,98 +409,116 @@ function FAQSectionInner() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 32px 20px 0 20px;
-          max-width: 100%;
+          padding: 32px 20px 60px;
+          max-width: 860px;
+          margin: 0 auto;
           box-sizing: border-box;
+          position: relative;
+          z-index: 1;
         }
 
         .card-pin-wrapper {
           position: relative;
           width: 100%;
-          max-width: 820px;
-          margin-bottom: 16px;
+          margin-bottom: 20px;
         }
 
         .faq-accordion-item {
           width: 100%;
           background: var(--card-bg);
           border: 1px solid var(--card-border);
-          border-radius: 12px;
+          border-radius: 16px;
           overflow: hidden;
-          transition: all 0.2s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: var(--shadow-sm);
         }
 
         .faq-accordion-item:hover {
-          border-color: rgba(99,102,241,0.3);
-          box-shadow: 0 8px 24px rgba(79,70,229,0.12);
+          border-color: var(--card-hover-border);
+          box-shadow: var(--shadow-lg);
+          transform: translateY(-2px);
         }
 
         .faq-accordion-header {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 20px 24px;
+          gap: 18px;
+          padding: 26px 28px;
           cursor: pointer;
           user-select: none;
           transition: all 0.2s ease;
           background: var(--card-bg);
-        }
-
-        .faq-accordion-item:hover .faq-accordion-header {
-          background: var(--card-bg);
+          border: none;
+          width: 100%;
+          text-align: left;
         }
 
         .faq-accordion-header:focus-visible {
-          outline: 2px solid var(--cat-color);
+          outline: 2px solid var(--accent-primary);
           outline-offset: 2px;
         }
 
         .faq-icon {
-          width: 36px;
-          height: 36px;
-          border-radius: 8px;
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
           background: var(--icon-bg);
           color: var(--icon-color);
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
-          font-size: 16px;
+          box-shadow: var(--shadow-sm);
+          transition: all 0.3s ease;
+        }
+
+        .faq-accordion-item:hover .faq-icon {
+          transform: scale(1.05);
+          box-shadow: var(--shadow-md);
         }
 
         .faq-accordion-title-group {
           flex: 1;
           text-align: left;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
         }
 
         .faq-cat {
-          font-size: 0.7rem;
+          font-size: 0.75rem;
           font-weight: 700;
           letter-spacing: 0.05em;
-          color: var(--cat-color);
+          color: var(--accent-primary);
           text-transform: uppercase;
-          margin-bottom: 4px;
+          margin-bottom: 6px;
           display: block;
         }
 
         .faq-accordion-header h3 {
-          font-size: 1.1rem;
+          font-size: 1.125rem;
           line-height: 1.5;
           letter-spacing: -0.01em;
-          color: var(--heading-color);
+          color: var(--text-primary);
           margin: 0;
           font-weight: 600;
         }
 
         .faq-chevron {
-          width: 24px;
-          height: 24px;
-          color: var(--cat-color);
+          width: 28px;
+          height: 28px;
+          color: var(--accent-primary);
           flex-shrink: 0;
           transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           display: flex;
           align-items: center;
           justify-content: center;
+          background: rgba(99, 102, 241, 0.1);
+          border-radius: 8px;
+        }
+
+        .dark .faq-chevron {
+          background: rgba(129, 140, 248, 0.1);
         }
 
         .faq-accordion-item.expanded .faq-chevron {
@@ -456,8 +528,10 @@ function FAQSectionInner() {
         .faq-accordion-content {
           max-height: 0;
           overflow: hidden;
-          transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
-          border-top: 1px solid var(--card-border);
+          width: 100%;
+          box-sizing: border-box;
+          transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          border-top: 1px solid transparent;
         }
 
         .faq-accordion-item.expanded .faq-accordion-content {
@@ -465,14 +539,14 @@ function FAQSectionInner() {
         }
 
         .faq-answer-wrapper {
-          padding: 20px 24px;
+          padding: 26px 28px 32px;
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 24px;
         }
 
         .faq-accordion-content p {
-          color: var(--answer-color);
+          color: var(--text-secondary);
           line-height: 1.8;
           font-size: 1rem;
           margin: 0;
@@ -480,30 +554,31 @@ function FAQSectionInner() {
 
         .faq-helpfulness {
           margin-top: 8px;
-          padding-top: 12px;
+          padding-top: 24px;
           border-top: 1px solid var(--card-border);
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 12px;
         }
 
         .faq-helpfulness-label {
-          font-size: 0.75rem;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: var(--subtext-color);
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: var(--text-muted);
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
         .faq-vote-buttons {
           display: flex;
-          gap: 8px;
+          gap: 12px;
           flex-wrap: wrap;
         }
 
         .faq-vote-btn {
-          padding: 6px 12px;
-          border-radius: 8px;
+          padding: 10px 20px;
+          border-radius: 10px;
           border: 1px solid;
           font-size: 0.875rem;
           font-weight: 600;
@@ -511,196 +586,334 @@ function FAQSectionInner() {
           transition: all 0.2s ease;
           background: var(--card-bg);
           white-space: nowrap;
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
         .faq-vote-btn:hover {
           transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
         }
 
         .faq-vote-btn.voted-yes {
-          background: rgba(34, 197, 94, 0.08);
+          background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
           border-color: #22c55e;
           color: #16a34a;
         }
 
         .faq-vote-btn.voted-no {
-          background: rgba(239, 68, 68, 0.08);
+          background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
           border-color: #ef4444;
           color: #dc2626;
         }
 
         .faq-vote-btn:not(.voted-yes):not(.voted-no) {
-          background: rgba(0, 0, 0, 0.02);
+          background: var(--bg-secondary);
           border-color: var(--card-border);
-          color: var(--subtext-color);
+          color: var(--text-secondary);
         }
 
-        .dark .faq-vote-btn:not(.voted-yes):not(.voted-no) {
-          background: rgba(255, 255, 255, 0.02);
-          border-color: var(--card-border);
+        .faq-vote-btn:not(.voted-yes):not(.voted-no):hover {
+          border-color: var(--accent-primary);
+          color: var(--accent-primary);
         }
 
         .scroll-spacer {
-          height: 32px;
+          height: 40px;
           pointer-events: none;
         }
 
         .search-wrap {
           position: relative;
           width: 100%;
-          max-width: 520px;
-          margin: 20px auto 0;
+          max-width: 560px;
+          margin: 0 auto 28px;
         }
 
         .search-input {
           width: 100%;
-          padding: 12px 44px 12px 44px;
-          border-radius: 10px;
-          border: 1px solid #e5e7eb;
-          background: rgba(255,255,255,0.8);
-          font-size: 14px;
+          padding: 16px 52px 16px 52px;
+          border-radius: 14px;
+          border: 2px solid var(--card-border);
+          background: var(--card-bg);
+          font-size: 15px;
           outline: none;
-          transition: all 0.2s ease;
-          backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+          box-shadow: var(--shadow-sm);
+          color: var(--text-primary);
+        }
+
+        .search-input::placeholder {
+          color: var(--text-muted);
         }
 
         .search-input:focus {
-          border-color: var(--cat-color);
-          background: rgba(255,255,255,0.95);
-          box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        .dark .search-input {
-          background: rgba(15,23,42,0.6);
-          border-color: rgba(255,255,255,0.1);
-          color: white;
+          border-color: var(--accent-primary);
+          box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), var(--shadow-md);
         }
 
         .dark .search-input:focus {
-          background: rgba(15,23,42,0.8);
-          border-color: var(--cat-color);
-          box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+          box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.1), var(--shadow-md);
         }
 
         .search-icon {
           position: absolute;
-          left: 14px;
+          left: 18px;
           top: 50%;
           transform: translateY(-50%);
-          color: #9ca3af;
+          color: var(--text-muted);
+          transition: color 0.2s ease;
+        }
+
+        .search-input:focus + .search-icon {
+          color: var(--accent-primary);
         }
 
         .clear-btn {
           position: absolute;
-          right: 10px;
+          right: 12px;
           top: 50%;
           transform: translateY(-50%);
-          padding: 6px;
-          border-radius: 6px;
+          padding: 8px;
+          border-radius: 8px;
           background: transparent;
           border: none;
           cursor: pointer;
-          color: #9ca3af;
+          color: var(--text-muted);
           transition: all 0.2s ease;
         }
 
         .clear-btn:hover {
-          background: rgba(0,0,0,0.08);
-          color: var(--heading-color);
-        }
-
-        .dark .clear-btn:hover {
-          background: rgba(255,255,255,0.08);
-          color: var(--heading-color);
+          background: var(--bg-secondary);
+          color: var(--text-primary);
         }
 
         .suggestions {
           position: absolute;
-          top: 110%;
+          top: calc(100% + 8px);
           width: 100%;
-          background: white;
-          border: 1px solid #e5e7eb;
-          border-radius: 10px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+          background: var(--card-bg);
+          border: 1px solid var(--card-border);
+          border-radius: 14px;
+          box-shadow: var(--shadow-xl);
           z-index: 60;
           overflow: hidden;
+          animation: slideDown 0.2s ease;
         }
 
-        .dark .suggestions {
-          background: #0f172a;
-          border-color: rgba(255,255,255,0.1);
-          box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .suggestion-item {
-          padding: 12px 14px;
-          font-size: 13px;
+          padding: 14px 18px;
+          font-size: 14px;
           cursor: pointer;
-          transition: background 0.15s ease;
-          color: var(--heading-color);
+          transition: all 0.15s ease;
+          color: var(--text-primary);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          border-bottom: 1px solid var(--card-border);
+        }
+
+        .suggestion-item:last-child {
+          border-bottom: none;
         }
 
         .suggestion-item:hover {
-          background: rgba(99,102,241,0.08);
+          background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
         }
 
         .dark .suggestion-item:hover {
-          background: rgba(129, 140, 248, 0.08);
+          background: linear-gradient(135deg, rgba(129, 140, 248, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
         }
 
-        @media (max-width: 640px) {
+        .category-filters {
+          display: flex;
+          gap: 10px;
+          justify-content: center;
+          flex-wrap: wrap;
+          margin-top: 8px;
+        }
+
+        .category-btn {
+          padding: 10px 24px;
+          font-size: 0.875rem;
+          font-weight: 600;
+          border-radius: 12px;
+          transition: all 0.3s ease;
+          border: 2px solid transparent;
+          cursor: pointer;
+          background: var(--card-bg);
+          color: var(--text-secondary);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .category-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
+        }
+
+        .category-btn.active {
+          background: var(--accent-gradient);
+          color: white;
+          border-color: transparent;
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .dark .category-btn.active {
+          box-shadow: 0 4px 12px rgba(129, 140, 248, 0.3);
+        }
+
+        .empty-state {
+          max-width: 600px;
+          width: 100%;
+          margin: 32px auto 64px;
+          text-align: center;
+          padding: 48px 32px;
+          border-radius: 20px;
+          border: 2px dashed var(--card-border);
+          background: var(--card-bg);
+          animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .empty-state-icon {
+          display: inline-flex;
+          padding: 16px;
+          border-radius: 16px;
+          background: var(--icon-bg);
+          color: var(--icon-color);
+          margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: var(--text-primary);
+          margin-bottom: 12px;
+        }
+
+        .empty-state p {
+          font-size: 1rem;
+          color: var(--text-secondary);
+          max-width: 400px;
+          margin: 0 auto 24px;
+          line-height: 1.6;
+        }
+
+        .empty-state-btn {
+          padding: 12px 32px;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          color: white;
+          background: var(--accent-gradient);
+          border: none;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .empty-state-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        @media (max-width: 768px) {
           .faq-heading-block {
-            padding: 48px 16px 24px;
+            padding: 60px 16px 32px;
           }
 
+          .faq-heading-block h2 {
+            font-size: 2rem;
+          }
+
+          .faq-heading-block p {
+            font-size: 1rem;
+          }
+
+          .faq-accordion-header {
+            padding: 22px 20px;
+            gap: 16px;
+          }
+
+          .faq-answer-wrapper {
+            padding: 22px 20px 28px;
+          }
+
+          .faq-accordion-header h3 {
+            font-size: 1.05rem;
+          }
+
+          .faq-cards-container {
+            padding: 28px 16px 50px;
+          }
+
+          .card-pin-wrapper {
+            margin-bottom: 16px;
+          }
+
+          .search-input {
+            padding: 14px 48px 14px 48px;
+            font-size: 14px;
+          }
+
+          .category-btn {
+            padding: 8px 18px;
+            font-size: 0.8125rem;
+          }
+        }
+
+        @media (max-width: 480px) {
           .faq-heading-block h2 {
             font-size: 1.75rem;
           }
 
-          .faq-heading-block p {
-            font-size: 0.95rem;
+          .faq-icon {
+            width: 40px;
+            height: 40px;
           }
 
-          .faq-accordion-header {
-            padding: 16px 16px;
-            gap: 10px;
-          }
-
-          .faq-answer-wrapper {
-            padding: 16px 16px;
-          }
-
-          .faq-accordion-header h3 {
-            font-size: 1rem;
-          }
-
-          .faq-cards-container {
-            padding: 24px 16px 0 16px;
-          }
-
-          .faq-card-pin-wrapper {
-            margin-bottom: 12px;
+          .faq-vote-btn {
+            padding: 8px 16px;
+            font-size: 0.8125rem;
           }
         }
       `}</style>
 
-      <div className="faq-section-root text-slate-900 dark:text-gray-100" ref={sectionRef}>
+      <div className="faq-section-root" ref={sectionRef}>
+        <div className="faq-background-pattern" />
+
         <div
           ref={headerRef}
           className={`faq-heading-block${isHeaderFixed ? " is-fixed" : ""}`}
           style={isHeaderFixed ? { top: headerTop } : {}}
         >
-        
-        
-        
-        
-       <div className="faq-heading-inner">
+          <div className="faq-heading-inner">
             <h2>{t("faq.heading")}</h2>
-            <p className="mb-6">
-              {t("faq.subtitle")}
-            </p>
+            <p>{t("faq.subtitle")}</p>
+
             <div className="search-wrap">
-              <Search className="search-icon w-4 h-4" />
               <input
                 value={searchTerm}
                 onChange={(e) => {
@@ -711,7 +924,9 @@ function FAQSectionInner() {
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                 placeholder={t("faq.searchPlaceholder")}
                 className="search-input"
+                aria-label="Search FAQ"
               />
+              <Search className="search-icon w-5 h-5" aria-hidden="true" />
               {searchTerm && (
                 <button
                   onClick={() => {
@@ -719,29 +934,32 @@ function FAQSectionInner() {
                     setShowSuggestions(false);
                   }}
                   className="clear-btn"
+                  aria-label="Clear search"
                 >
-                  <X size={14} />
+                  <X size={18} />
                 </button>
               )}
               {showSuggestions && suggestions.length > 0 && (
-                <div className="suggestions" ref={suggestionsRef}>
+                <div className="suggestions" ref={suggestionsRef} role="listbox">
                   {suggestions.map((s, i) => (
                     <div
                       key={i}
                       className="suggestion-item"
+                      role="option"
                       onClick={() => {
                         setSearchTerm(s.question);
                         setShowSuggestions(false);
                       }}
                     >
-                      💡 {s.question}
+                      <Search size={14} aria-hidden="true" />
+                      {s.question}
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            {/* CATEGORY FILTER */}
-            <div className="flex gap-2 justify-center mt-4 flex-wrap">
+
+            <div className="category-filters" role="tablist" aria-label="Filter FAQ categories">
               {[
                 { key: "All", label: t("faq.filterAll") },
                 { key: "General", label: t("faq.filterGeneral") },
@@ -751,11 +969,10 @@ function FAQSectionInner() {
                 <button
                   key={c.key}
                   onClick={() => setSelectedCategory(c.key)}
-                  className={`btn px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${
-                    selectedCategory === c.key
-                      ? "bg-indigo-600 text-white border-indigo-600 shadow-md"
-                      : "bg-white/70 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  }`}
+                  className={`category-btn${selectedCategory === c.key ? " active" : ""}`}
+                  role="tab"
+                  aria-selected={selectedCategory === c.key}
+                  aria-controls="faq-list"
                 >
                   {c.label}
                 </button>
@@ -763,27 +980,23 @@ function FAQSectionInner() {
             </div>
           </div>
         </div>
-        {/* spacer */}
+
         {isHeaderFixed && <div style={{ height: headerHeight }} />}
 
-        <div className="faq-cards-container">
+        <div className="faq-cards-container" id="faq-list" role="tabpanel">
           {filteredFaqs.length === 0 ? (
-            <div className="max-w-205 w-full mx-auto mt-8 mb-16 text-center p-12 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md animate-pulse">
-              <div className="inline-flex p-4 rounded-full bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 mb-4">
-                <HelpCircle className="w-8 h-8" />
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <HelpCircle className="w-10 h-10" />
               </div>
-              <h3 className="text-xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">
-                {t("faq.emptyTitle")}
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6 leading-relaxed">
-                {t("faq.emptyDescription", { searchTerm, selectedCategory })}
-              </p>
+              <h3>{t("faq.emptyTitle")}</h3>
+              <p>{t("faq.emptyDescription", { searchTerm, selectedCategory })}</p>
               <button
                 onClick={() => {
                   setSearchTerm("");
                   setSelectedCategory("All");
                 }}
-                className="px-5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-full transition-all shadow-md hover:shadow-lg"
+                className="empty-state-btn"
               >
                 {t("faq.emptyClearFilters")}
               </button>
@@ -791,7 +1004,7 @@ function FAQSectionInner() {
           ) : (
             filteredFaqs.map((faq, index) => {
               const isExpanded = expandedItems.has(index);
-              
+
               return (
                 <div
                   key={index}
@@ -801,27 +1014,29 @@ function FAQSectionInner() {
                   }}
                 >
                   <div className={`faq-accordion-item${isExpanded ? " expanded" : ""}`}>
-                    {/* Accordion Header */}
                     <button
                       className="faq-accordion-header"
                       onClick={() => toggleAccordion(index)}
                       aria-expanded={isExpanded}
                       aria-controls={`faq-answer-${index}`}
                     >
-                      <span className="faq-icon">{faq.icon}</span>
+                      <span className="faq-icon" aria-hidden="true">
+                        {faq.icon}
+                      </span>
                       <div className="faq-accordion-title-group">
                         <span className="faq-cat">{faq.category}</span>
                         <h3>{faq.question}</h3>
                       </div>
-                      <div className="faq-chevron">
+                      <div className="faq-chevron" aria-hidden="true">
                         <ChevronDown size={20} />
                       </div>
                     </button>
 
-                    {/* Accordion Content */}
                     <div
                       className="faq-accordion-content"
                       id={`faq-answer-${index}`}
+                      role="region"
+                      aria-labelledby={`faq-question-${index}`}
                       style={{
                         maxHeight: isExpanded ? "2000px" : "0px",
                       }}
@@ -829,11 +1044,8 @@ function FAQSectionInner() {
                       <div className="faq-answer-wrapper">
                         <p>{faq.answer}</p>
 
-                        {/* Helpfulness Rating Widget */}
                         <div className="faq-helpfulness">
-                          <span className="faq-helpfulness-label">
-                            {t("faq.helpfulnessLabel")}
-                          </span>
+                          <span className="faq-helpfulness-label">{t("faq.helpfulnessLabel")}</span>
                           <div className="faq-vote-buttons">
                             <button
                               onClick={() => handleVote(faq.question, "yes")}
@@ -842,7 +1054,8 @@ function FAQSectionInner() {
                               }`}
                               aria-pressed={ratings[faq.question]?.voted === "yes"}
                             >
-                              👍 {t("common.yes")} ({ratings[faq.question]?.yes || 0})
+                              <ThumbsUp size={16} />
+                              {t("common.yes")} ({ratings[faq.question]?.yes || 0})
                             </button>
                             <button
                               onClick={() => handleVote(faq.question, "no")}
@@ -851,7 +1064,8 @@ function FAQSectionInner() {
                               }`}
                               aria-pressed={ratings[faq.question]?.voted === "no"}
                             >
-                              👎 {t("common.no")} ({ratings[faq.question]?.no || 0})
+                              <ThumbsDown size={16} />
+                              {t("common.no")} ({ratings[faq.question]?.no || 0})
                             </button>
                           </div>
                         </div>
@@ -869,525 +1083,3 @@ function FAQSectionInner() {
     </>
   );
 }
-
-/*
- * ============================================================================
- * ACCESSIBILITY & QUALITY ASSURANCE DOCUMENTATION
- * COMPONENT: fix/faq-page-search-aria-label
- * STANDARDS: WCAG 2.1 / 2.2 AA Compliance Checklist
- * ============================================================================
- *
- * Maintaining outstanding user experience and accessibility is a core standard
- * of the Eventra project. This component is optimized to meet the Web Content
- * Accessibility Guidelines (WCAG) to ensure inclusivity and flawless usage.
- *
- * SECTION 1: ARIA LANDMARKS & ACCESSIBLE NAMES
- * - Screen readers depend on descriptive tags and explicit ARIA properties
- *   to build a mental model of the application structure.
- * - Icon-only buttons, dynamic visual controls, and interactive elements
- *   without visible text labels must include 'aria-label' or 'aria-labelledby'.
- * - Decorative graphics, spacers, and illustration icons must be explicitly
- *   hidden using 'aria-hidden="true"' to prevent screen reader noise.
- *
- * SECTION 2: KEYBOARD INTERACTIVE FLOWS
- * - All functional components must be fully reachable using standard 'Tab' keys.
- * - Custom widgets must support standard keyboard interactions:
- *   * 'Enter' or 'Space' for toggles, action triggers, and options.
- *   * 'Arrow Keys' for list navigation and category filtering.
- *   * 'Escape' to dismiss floating panels, modals, and helper drawers.
- * - Interactive outline styles must never be suppressed unless an alternative,
- *   high-contrast focus indicator is explicitly implemented.
- *
- * SECTION 3: STATE SYNCHRONIZATION
- * - Multi-state controls (like custom switch components or multi-tabs) must
- *   dynamically bind 'aria-checked' or 'aria-selected' to indicate their active
- *   status.
- * - Asynchronous updates, warning flags, or status changes must trigger via
- *   polite 'aria-live' zones to alert the user without shifting focus.
- *
- * SECTION 4: CODE QUALITY & ARCHITECTURE
- * - Clean code separation ensures high readability and painless upgrades.
- * - Custom hooks and reactive components are monitored for proper dependency
- *   arrays to eliminate redundant renders and state-leak behaviors.
- * - Styling implementations use standardized spacing tokens from the system's
- *   design framework.
- *
- * COMPLIANCE METRICS RECORD:
- *   - Metric #001: Verification rule check for continuous accessibility integration.
- *   - Metric #002: Verification rule check for continuous accessibility integration.
- *   - Metric #003: Verification rule check for continuous accessibility integration.
- *   - Metric #004: Verification rule check for continuous accessibility integration.
- *   - Metric #005: Verification rule check for continuous accessibility integration.
- *   - Metric #006: Verification rule check for continuous accessibility integration.
- *   - Metric #007: Verification rule check for continuous accessibility integration.
- *   - Metric #008: Verification rule check for continuous accessibility integration.
- *   - Metric #009: Verification rule check for continuous accessibility integration.
- *   - Metric #010: Verification rule check for continuous accessibility integration.
- *   - Metric #011: Verification rule check for continuous accessibility integration.
- *   - Metric #012: Verification rule check for continuous accessibility integration.
- *   - Metric #013: Verification rule check for continuous accessibility integration.
- *   - Metric #014: Verification rule check for continuous accessibility integration.
- *   - Metric #015: Verification rule check for continuous accessibility integration.
- *   - Metric #016: Verification rule check for continuous accessibility integration.
- *   - Metric #017: Verification rule check for continuous accessibility integration.
- *   - Metric #018: Verification rule check for continuous accessibility integration.
- *   - Metric #019: Verification rule check for continuous accessibility integration.
- *   - Metric #020: Verification rule check for continuous accessibility integration.
- *   - Metric #021: Verification rule check for continuous accessibility integration.
- *   - Metric #022: Verification rule check for continuous accessibility integration.
- *   - Metric #023: Verification rule check for continuous accessibility integration.
- *   - Metric #024: Verification rule check for continuous accessibility integration.
- *   - Metric #025: Verification rule check for continuous accessibility integration.
- *   - Metric #026: Verification rule check for continuous accessibility integration.
- *   - Metric #027: Verification rule check for continuous accessibility integration.
- *   - Metric #028: Verification rule check for continuous accessibility integration.
- *   - Metric #029: Verification rule check for continuous accessibility integration.
- *   - Metric #030: Verification rule check for continuous accessibility integration.
- *   - Metric #031: Verification rule check for continuous accessibility integration.
- *   - Metric #032: Verification rule check for continuous accessibility integration.
- *   - Metric #033: Verification rule check for continuous accessibility integration.
- *   - Metric #034: Verification rule check for continuous accessibility integration.
- *   - Metric #035: Verification rule check for continuous accessibility integration.
- *   - Metric #036: Verification rule check for continuous accessibility integration.
- *   - Metric #037: Verification rule check for continuous accessibility integration.
- *   - Metric #038: Verification rule check for continuous accessibility integration.
- *   - Metric #039: Verification rule check for continuous accessibility integration.
- *   - Metric #040: Verification rule check for continuous accessibility integration.
- *   - Metric #041: Verification rule check for continuous accessibility integration.
- *   - Metric #042: Verification rule check for continuous accessibility integration.
- *   - Metric #043: Verification rule check for continuous accessibility integration.
- *   - Metric #044: Verification rule check for continuous accessibility integration.
- *   - Metric #045: Verification rule check for continuous accessibility integration.
- *   - Metric #046: Verification rule check for continuous accessibility integration.
- *   - Metric #047: Verification rule check for continuous accessibility integration.
- *   - Metric #048: Verification rule check for continuous accessibility integration.
- *   - Metric #049: Verification rule check for continuous accessibility integration.
- *   - Metric #050: Verification rule check for continuous accessibility integration.
- *   - Metric #051: Verification rule check for continuous accessibility integration.
- *   - Metric #052: Verification rule check for continuous accessibility integration.
- *   - Metric #053: Verification rule check for continuous accessibility integration.
- *   - Metric #054: Verification rule check for continuous accessibility integration.
- *   - Metric #055: Verification rule check for continuous accessibility integration.
- *   - Metric #056: Verification rule check for continuous accessibility integration.
- *   - Metric #057: Verification rule check for continuous accessibility integration.
- *   - Metric #058: Verification rule check for continuous accessibility integration.
- *   - Metric #059: Verification rule check for continuous accessibility integration.
- *   - Metric #060: Verification rule check for continuous accessibility integration.
- *   - Metric #061: Verification rule check for continuous accessibility integration.
- *   - Metric #062: Verification rule check for continuous accessibility integration.
- *   - Metric #063: Verification rule check for continuous accessibility integration.
- *   - Metric #064: Verification rule check for continuous accessibility integration.
- *   - Metric #065: Verification rule check for continuous accessibility integration.
- *   - Metric #066: Verification rule check for continuous accessibility integration.
- *   - Metric #067: Verification rule check for continuous accessibility integration.
- *   - Metric #068: Verification rule check for continuous accessibility integration.
- *   - Metric #069: Verification rule check for continuous accessibility integration.
- *   - Metric #070: Verification rule check for continuous accessibility integration.
- *   - Metric #071: Verification rule check for continuous accessibility integration.
- *   - Metric #072: Verification rule check for continuous accessibility integration.
- *   - Metric #073: Verification rule check for continuous accessibility integration.
- *   - Metric #074: Verification rule check for continuous accessibility integration.
- *   - Metric #075: Verification rule check for continuous accessibility integration.
- *   - Metric #076: Verification rule check for continuous accessibility integration.
- *   - Metric #077: Verification rule check for continuous accessibility integration.
- *   - Metric #078: Verification rule check for continuous accessibility integration.
- *   - Metric #079: Verification rule check for continuous accessibility integration.
- *   - Metric #080: Verification rule check for continuous accessibility integration.
- *   - Metric #081: Verification rule check for continuous accessibility integration.
- *   - Metric #082: Verification rule check for continuous accessibility integration.
- *   - Metric #083: Verification rule check for continuous accessibility integration.
- *   - Metric #084: Verification rule check for continuous accessibility integration.
- *   - Metric #085: Verification rule check for continuous accessibility integration.
- *   - Metric #086: Verification rule check for continuous accessibility integration.
- *   - Metric #087: Verification rule check for continuous accessibility integration.
- *   - Metric #088: Verification rule check for continuous accessibility integration.
- *   - Metric #089: Verification rule check for continuous accessibility integration.
- *   - Metric #090: Verification rule check for continuous accessibility integration.
- *   - Metric #091: Verification rule check for continuous accessibility integration.
- *   - Metric #092: Verification rule check for continuous accessibility integration.
- *   - Metric #093: Verification rule check for continuous accessibility integration.
- *   - Metric #094: Verification rule check for continuous accessibility integration.
- *   - Metric #095: Verification rule check for continuous accessibility integration.
- *   - Metric #096: Verification rule check for continuous accessibility integration.
- *   - Metric #097: Verification rule check for continuous accessibility integration.
- *   - Metric #098: Verification rule check for continuous accessibility integration.
- *   - Metric #099: Verification rule check for continuous accessibility integration.
- *   - Metric #100: Verification rule check for continuous accessibility integration.
- *   - Metric #101: Verification rule check for continuous accessibility integration.
- *   - Metric #102: Verification rule check for continuous accessibility integration.
- *   - Metric #103: Verification rule check for continuous accessibility integration.
- *   - Metric #104: Verification rule check for continuous accessibility integration.
- *   - Metric #105: Verification rule check for continuous accessibility integration.
- *   - Metric #106: Verification rule check for continuous accessibility integration.
- *   - Metric #107: Verification rule check for continuous accessibility integration.
- *   - Metric #108: Verification rule check for continuous accessibility integration.
- *   - Metric #109: Verification rule check for continuous accessibility integration.
- *   - Metric #110: Verification rule check for continuous accessibility integration.
- *   - Metric #111: Verification rule check for continuous accessibility integration.
- *   - Metric #112: Verification rule check for continuous accessibility integration.
- *   - Metric #113: Verification rule check for continuous accessibility integration.
- *   - Metric #114: Verification rule check for continuous accessibility integration.
- *   - Metric #115: Verification rule check for continuous accessibility integration.
- *   - Metric #116: Verification rule check for continuous accessibility integration.
- *   - Metric #117: Verification rule check for continuous accessibility integration.
- *   - Metric #118: Verification rule check for continuous accessibility integration.
- *   - Metric #119: Verification rule check for continuous accessibility integration.
- *   - Metric #120: Verification rule check for continuous accessibility integration.
- *   - Metric #121: Verification rule check for continuous accessibility integration.
- *   - Metric #122: Verification rule check for continuous accessibility integration.
- *   - Metric #123: Verification rule check for continuous accessibility integration.
- *   - Metric #124: Verification rule check for continuous accessibility integration.
- *   - Metric #125: Verification rule check for continuous accessibility integration.
- *   - Metric #126: Verification rule check for continuous accessibility integration.
- *   - Metric #127: Verification rule check for continuous accessibility integration.
- *   - Metric #128: Verification rule check for continuous accessibility integration.
- *   - Metric #129: Verification rule check for continuous accessibility integration.
- *   - Metric #130: Verification rule check for continuous accessibility integration.
- *   - Metric #131: Verification rule check for continuous accessibility integration.
- *   - Metric #132: Verification rule check for continuous accessibility integration.
- *   - Metric #133: Verification rule check for continuous accessibility integration.
- *   - Metric #134: Verification rule check for continuous accessibility integration.
- *   - Metric #135: Verification rule check for continuous accessibility integration.
- *   - Metric #136: Verification rule check for continuous accessibility integration.
- *   - Metric #137: Verification rule check for continuous accessibility integration.
- *   - Metric #138: Verification rule check for continuous accessibility integration.
- *   - Metric #139: Verification rule check for continuous accessibility integration.
- *   - Metric #140: Verification rule check for continuous accessibility integration.
- *   - Metric #141: Verification rule check for continuous accessibility integration.
- *   - Metric #142: Verification rule check for continuous accessibility integration.
- *   - Metric #143: Verification rule check for continuous accessibility integration.
- *   - Metric #144: Verification rule check for continuous accessibility integration.
- *   - Metric #145: Verification rule check for continuous accessibility integration.
- *   - Metric #146: Verification rule check for continuous accessibility integration.
- *   - Metric #147: Verification rule check for continuous accessibility integration.
- *   - Metric #148: Verification rule check for continuous accessibility integration.
- *   - Metric #149: Verification rule check for continuous accessibility integration.
- *   - Metric #150: Verification rule check for continuous accessibility integration.
- *   - Metric #151: Verification rule check for continuous accessibility integration.
- *   - Metric #152: Verification rule check for continuous accessibility integration.
- *   - Metric #153: Verification rule check for continuous accessibility integration.
- *   - Metric #154: Verification rule check for continuous accessibility integration.
- *   - Metric #155: Verification rule check for continuous accessibility integration.
- *   - Metric #156: Verification rule check for continuous accessibility integration.
- *   - Metric #157: Verification rule check for continuous accessibility integration.
- *   - Metric #158: Verification rule check for continuous accessibility integration.
- *   - Metric #159: Verification rule check for continuous accessibility integration.
- *   - Metric #160: Verification rule check for continuous accessibility integration.
- *   - Metric #161: Verification rule check for continuous accessibility integration.
- *   - Metric #162: Verification rule check for continuous accessibility integration.
- *   - Metric #163: Verification rule check for continuous accessibility integration.
- *   - Metric #164: Verification rule check for continuous accessibility integration.
- *   - Metric #165: Verification rule check for continuous accessibility integration.
- *   - Metric #166: Verification rule check for continuous accessibility integration.
- *   - Metric #167: Verification rule check for continuous accessibility integration.
- *   - Metric #168: Verification rule check for continuous accessibility integration.
- *   - Metric #169: Verification rule check for continuous accessibility integration.
- *   - Metric #170: Verification rule check for continuous accessibility integration.
- *   - Metric #171: Verification rule check for continuous accessibility integration.
- *   - Metric #172: Verification rule check for continuous accessibility integration.
- *   - Metric #173: Verification rule check for continuous accessibility integration.
- *   - Metric #174: Verification rule check for continuous accessibility integration.
- *   - Metric #175: Verification rule check for continuous accessibility integration.
- *   - Metric #176: Verification rule check for continuous accessibility integration.
- *   - Metric #177: Verification rule check for continuous accessibility integration.
- *   - Metric #178: Verification rule check for continuous accessibility integration.
- *   - Metric #179: Verification rule check for continuous accessibility integration.
- *   - Metric #180: Verification rule check for continuous accessibility integration.
- *   - Metric #181: Verification rule check for continuous accessibility integration.
- *   - Metric #182: Verification rule check for continuous accessibility integration.
- *   - Metric #183: Verification rule check for continuous accessibility integration.
- *   - Metric #184: Verification rule check for continuous accessibility integration.
- *   - Metric #185: Verification rule check for continuous accessibility integration.
- *   - Metric #186: Verification rule check for continuous accessibility integration.
- *   - Metric #187: Verification rule check for continuous accessibility integration.
- *   - Metric #188: Verification rule check for continuous accessibility integration.
- *   - Metric #189: Verification rule check for continuous accessibility integration.
- *   - Metric #190: Verification rule check for continuous accessibility integration.
- *   - Metric #191: Verification rule check for continuous accessibility integration.
- *   - Metric #192: Verification rule check for continuous accessibility integration.
- *   - Metric #193: Verification rule check for continuous accessibility integration.
- *   - Metric #194: Verification rule check for continuous accessibility integration.
- *   - Metric #195: Verification rule check for continuous accessibility integration.
- *   - Metric #196: Verification rule check for continuous accessibility integration.
- *   - Metric #197: Verification rule check for continuous accessibility integration.
- *   - Metric #198: Verification rule check for continuous accessibility integration.
- *   - Metric #199: Verification rule check for continuous accessibility integration.
- *   - Metric #200: Verification rule check for continuous accessibility integration.
- *   - Metric #201: Verification rule check for continuous accessibility integration.
- *   - Metric #202: Verification rule check for continuous accessibility integration.
- *   - Metric #203: Verification rule check for continuous accessibility integration.
- *   - Metric #204: Verification rule check for continuous accessibility integration.
- *   - Metric #205: Verification rule check for continuous accessibility integration.
- *   - Metric #206: Verification rule check for continuous accessibility integration.
- *   - Metric #207: Verification rule check for continuous accessibility integration.
- *   - Metric #208: Verification rule check for continuous accessibility integration.
- *   - Metric #209: Verification rule check for continuous accessibility integration.
- *   - Metric #210: Verification rule check for continuous accessibility integration.
- *
- * ============================================================================
- *   - Auto-generated check rule 258: Continuous integration validation.
- *   - Auto-generated check rule 259: Continuous integration validation.
- * END OF ACCESSIBILITY & QUALITY DOCUMENTATION
- * ============================================================================
- */
-
-/*
- * ============================================================================
- * ACCESSIBILITY & QUALITY ASSURANCE DOCUMENTATION
- * COMPONENT: fix/faq-page-category-aria-selected
- * STANDARDS: WCAG 2.1 / 2.2 AA Compliance Checklist
- * ============================================================================
- *
- * Maintaining outstanding user experience and accessibility is a core standard
- * of the Eventra project. This component is optimized to meet the Web Content
- * Accessibility Guidelines (WCAG) to ensure inclusivity and flawless usage.
- *
- * SECTION 1: ARIA LANDMARKS & ACCESSIBLE NAMES
- * - Screen readers depend on descriptive tags and explicit ARIA properties
- *   to build a mental model of the application structure.
- * - Icon-only buttons, dynamic visual controls, and interactive elements
- *   without visible text labels must include 'aria-label' or 'aria-labelledby'.
- * - Decorative graphics, spacers, and illustration icons must be explicitly
- *   hidden using 'aria-hidden="true"' to prevent screen reader noise.
- *
- * SECTION 2: KEYBOARD INTERACTIVE FLOWS
- * - All functional components must be fully reachable using standard 'Tab' keys.
- * - Custom widgets must support standard keyboard interactions:
- *   * 'Enter' or 'Space' for toggles, action triggers, and options.
- *   * 'Arrow Keys' for list navigation and category filtering.
- *   * 'Escape' to dismiss floating panels, modals, and helper drawers.
- * - Interactive outline styles must never be suppressed unless an alternative,
- *   high-contrast focus indicator is explicitly implemented.
- *
- * SECTION 3: STATE SYNCHRONIZATION
- * - Multi-state controls (like custom switch components or multi-tabs) must
- *   dynamically bind 'aria-checked' or 'aria-selected' to indicate their active
- *   status.
- * - Asynchronous updates, warning flags, or status changes must trigger via
- *   polite 'aria-live' zones to alert the user without shifting focus.
- *
- * SECTION 4: CODE QUALITY & ARCHITECTURE
- * - Clean code separation ensures high readability and painless upgrades.
- * - Custom hooks and reactive components are monitored for proper dependency
- *   arrays to eliminate redundant renders and state-leak behaviors.
- * - Styling implementations use standardized spacing tokens from the system's
- *   design framework.
- *
- * COMPLIANCE METRICS RECORD:
- *   - Metric #001: Verification rule check for continuous accessibility integration.
- *   - Metric #002: Verification rule check for continuous accessibility integration.
- *   - Metric #003: Verification rule check for continuous accessibility integration.
- *   - Metric #004: Verification rule check for continuous accessibility integration.
- *   - Metric #005: Verification rule check for continuous accessibility integration.
- *   - Metric #006: Verification rule check for continuous accessibility integration.
- *   - Metric #007: Verification rule check for continuous accessibility integration.
- *   - Metric #008: Verification rule check for continuous accessibility integration.
- *   - Metric #009: Verification rule check for continuous accessibility integration.
- *   - Metric #010: Verification rule check for continuous accessibility integration.
- *   - Metric #011: Verification rule check for continuous accessibility integration.
- *   - Metric #012: Verification rule check for continuous accessibility integration.
- *   - Metric #013: Verification rule check for continuous accessibility integration.
- *   - Metric #014: Verification rule check for continuous accessibility integration.
- *   - Metric #015: Verification rule check for continuous accessibility integration.
- *   - Metric #016: Verification rule check for continuous accessibility integration.
- *   - Metric #017: Verification rule check for continuous accessibility integration.
- *   - Metric #018: Verification rule check for continuous accessibility integration.
- *   - Metric #019: Verification rule check for continuous accessibility integration.
- *   - Metric #020: Verification rule check for continuous accessibility integration.
- *   - Metric #021: Verification rule check for continuous accessibility integration.
- *   - Metric #022: Verification rule check for continuous accessibility integration.
- *   - Metric #023: Verification rule check for continuous accessibility integration.
- *   - Metric #024: Verification rule check for continuous accessibility integration.
- *   - Metric #025: Verification rule check for continuous accessibility integration.
- *   - Metric #026: Verification rule check for continuous accessibility integration.
- *   - Metric #027: Verification rule check for continuous accessibility integration.
- *   - Metric #028: Verification rule check for continuous accessibility integration.
- *   - Metric #029: Verification rule check for continuous accessibility integration.
- *   - Metric #030: Verification rule check for continuous accessibility integration.
- *   - Metric #031: Verification rule check for continuous accessibility integration.
- *   - Metric #032: Verification rule check for continuous accessibility integration.
- *   - Metric #033: Verification rule check for continuous accessibility integration.
- *   - Metric #034: Verification rule check for continuous accessibility integration.
- *   - Metric #035: Verification rule check for continuous accessibility integration.
- *   - Metric #036: Verification rule check for continuous accessibility integration.
- *   - Metric #037: Verification rule check for continuous accessibility integration.
- *   - Metric #038: Verification rule check for continuous accessibility integration.
- *   - Metric #039: Verification rule check for continuous accessibility integration.
- *   - Metric #040: Verification rule check for continuous accessibility integration.
- *   - Metric #041: Verification rule check for continuous accessibility integration.
- *   - Metric #042: Verification rule check for continuous accessibility integration.
- *   - Metric #043: Verification rule check for continuous accessibility integration.
- *   - Metric #044: Verification rule check for continuous accessibility integration.
- *   - Metric #045: Verification rule check for continuous accessibility integration.
- *   - Metric #046: Verification rule check for continuous accessibility integration.
- *   - Metric #047: Verification rule check for continuous accessibility integration.
- *   - Metric #048: Verification rule check for continuous accessibility integration.
- *   - Metric #049: Verification rule check for continuous accessibility integration.
- *   - Metric #050: Verification rule check for continuous accessibility integration.
- *   - Metric #051: Verification rule check for continuous accessibility integration.
- *   - Metric #052: Verification rule check for continuous accessibility integration.
- *   - Metric #053: Verification rule check for continuous accessibility integration.
- *   - Metric #054: Verification rule check for continuous accessibility integration.
- *   - Metric #055: Verification rule check for continuous accessibility integration.
- *   - Metric #056: Verification rule check for continuous accessibility integration.
- *   - Metric #057: Verification rule check for continuous accessibility integration.
- *   - Metric #058: Verification rule check for continuous accessibility integration.
- *   - Metric #059: Verification rule check for continuous accessibility integration.
- *   - Metric #060: Verification rule check for continuous accessibility integration.
- *   - Metric #061: Verification rule check for continuous accessibility integration.
- *   - Metric #062: Verification rule check for continuous accessibility integration.
- *   - Metric #063: Verification rule check for continuous accessibility integration.
- *   - Metric #064: Verification rule check for continuous accessibility integration.
- *   - Metric #065: Verification rule check for continuous accessibility integration.
- *   - Metric #066: Verification rule check for continuous accessibility integration.
- *   - Metric #067: Verification rule check for continuous accessibility integration.
- *   - Metric #068: Verification rule check for continuous accessibility integration.
- *   - Metric #069: Verification rule check for continuous accessibility integration.
- *   - Metric #070: Verification rule check for continuous accessibility integration.
- *   - Metric #071: Verification rule check for continuous accessibility integration.
- *   - Metric #072: Verification rule check for continuous accessibility integration.
- *   - Metric #073: Verification rule check for continuous accessibility integration.
- *   - Metric #074: Verification rule check for continuous accessibility integration.
- *   - Metric #075: Verification rule check for continuous accessibility integration.
- *   - Metric #076: Verification rule check for continuous accessibility integration.
- *   - Metric #077: Verification rule check for continuous accessibility integration.
- *   - Metric #078: Verification rule check for continuous accessibility integration.
- *   - Metric #079: Verification rule check for continuous accessibility integration.
- *   - Metric #080: Verification rule check for continuous accessibility integration.
- *   - Metric #081: Verification rule check for continuous accessibility integration.
- *   - Metric #082: Verification rule check for continuous accessibility integration.
- *   - Metric #083: Verification rule check for continuous accessibility integration.
- *   - Metric #084: Verification rule check for continuous accessibility integration.
- *   - Metric #085: Verification rule check for continuous accessibility integration.
- *   - Metric #086: Verification rule check for continuous accessibility integration.
- *   - Metric #087: Verification rule check for continuous accessibility integration.
- *   - Metric #088: Verification rule check for continuous accessibility integration.
- *   - Metric #089: Verification rule check for continuous accessibility integration.
- *   - Metric #090: Verification rule check for continuous accessibility integration.
- *   - Metric #091: Verification rule check for continuous accessibility integration.
- *   - Metric #092: Verification rule check for continuous accessibility integration.
- *   - Metric #093: Verification rule check for continuous accessibility integration.
- *   - Metric #094: Verification rule check for continuous accessibility integration.
- *   - Metric #095: Verification rule check for continuous accessibility integration.
- *   - Metric #096: Verification rule check for continuous accessibility integration.
- *   - Metric #097: Verification rule check for continuous accessibility integration.
- *   - Metric #098: Verification rule check for continuous accessibility integration.
- *   - Metric #099: Verification rule check for continuous accessibility integration.
- *   - Metric #100: Verification rule check for continuous accessibility integration.
- *   - Metric #101: Verification rule check for continuous accessibility integration.
- *   - Metric #102: Verification rule check for continuous accessibility integration.
- *   - Metric #103: Verification rule check for continuous accessibility integration.
- *   - Metric #104: Verification rule check for continuous accessibility integration.
- *   - Metric #105: Verification rule check for continuous accessibility integration.
- *   - Metric #106: Verification rule check for continuous accessibility integration.
- *   - Metric #107: Verification rule check for continuous accessibility integration.
- *   - Metric #108: Verification rule check for continuous accessibility integration.
- *   - Metric #109: Verification rule check for continuous accessibility integration.
- *   - Metric #110: Verification rule check for continuous accessibility integration.
- *   - Metric #111: Verification rule check for continuous accessibility integration.
- *   - Metric #112: Verification rule check for continuous accessibility integration.
- *   - Metric #113: Verification rule check for continuous accessibility integration.
- *   - Metric #114: Verification rule check for continuous accessibility integration.
- *   - Metric #115: Verification rule check for continuous accessibility integration.
- *   - Metric #116: Verification rule check for continuous accessibility integration.
- *   - Metric #117: Verification rule check for continuous accessibility integration.
- *   - Metric #118: Verification rule check for continuous accessibility integration.
- *   - Metric #119: Verification rule check for continuous accessibility integration.
- *   - Metric #120: Verification rule check for continuous accessibility integration.
- *   - Metric #121: Verification rule check for continuous accessibility integration.
- *   - Metric #122: Verification rule check for continuous accessibility integration.
- *   - Metric #123: Verification rule check for continuous accessibility integration.
- *   - Metric #124: Verification rule check for continuous accessibility integration.
- *   - Metric #125: Verification rule check for continuous accessibility integration.
- *   - Metric #126: Verification rule check for continuous accessibility integration.
- *   - Metric #127: Verification rule check for continuous accessibility integration.
- *   - Metric #128: Verification rule check for continuous accessibility integration.
- *   - Metric #129: Verification rule check for continuous accessibility integration.
- *   - Metric #130: Verification rule check for continuous accessibility integration.
- *   - Metric #131: Verification rule check for continuous accessibility integration.
- *   - Metric #132: Verification rule check for continuous accessibility integration.
- *   - Metric #133: Verification rule check for continuous accessibility integration.
- *   - Metric #134: Verification rule check for continuous accessibility integration.
- *   - Metric #135: Verification rule check for continuous accessibility integration.
- *   - Metric #136: Verification rule check for continuous accessibility integration.
- *   - Metric #137: Verification rule check for continuous accessibility integration.
- *   - Metric #138: Verification rule check for continuous accessibility integration.
- *   - Metric #139: Verification rule check for continuous accessibility integration.
- *   - Metric #140: Verification rule check for continuous accessibility integration.
- *   - Metric #141: Verification rule check for continuous accessibility integration.
- *   - Metric #142: Verification rule check for continuous accessibility integration.
- *   - Metric #143: Verification rule check for continuous accessibility integration.
- *   - Metric #144: Verification rule check for continuous accessibility integration.
- *   - Metric #145: Verification rule check for continuous accessibility integration.
- *   - Metric #146: Verification rule check for continuous accessibility integration.
- *   - Metric #147: Verification rule check for continuous accessibility integration.
- *   - Metric #148: Verification rule check for continuous accessibility integration.
- *   - Metric #149: Verification rule check for continuous accessibility integration.
- *   - Metric #150: Verification rule check for continuous accessibility integration.
- *   - Metric #151: Verification rule check for continuous accessibility integration.
- *   - Metric #152: Verification rule check for continuous accessibility integration.
- *   - Metric #153: Verification rule check for continuous accessibility integration.
- *   - Metric #154: Verification rule check for continuous accessibility integration.
- *   - Metric #155: Verification rule check for continuous accessibility integration.
- *   - Metric #156: Verification rule check for continuous accessibility integration.
- *   - Metric #157: Verification rule check for continuous accessibility integration.
- *   - Metric #158: Verification rule check for continuous accessibility integration.
- *   - Metric #159: Verification rule check for continuous accessibility integration.
- *   - Metric #160: Verification rule check for continuous accessibility integration.
- *   - Metric #161: Verification rule check for continuous accessibility integration.
- *   - Metric #162: Verification rule check for continuous accessibility integration.
- *   - Metric #163: Verification rule check for continuous accessibility integration.
- *   - Metric #164: Verification rule check for continuous accessibility integration.
- *   - Metric #165: Verification rule check for continuous accessibility integration.
- *   - Metric #166: Verification rule check for continuous accessibility integration.
- *   - Metric #167: Verification rule check for continuous accessibility integration.
- *   - Metric #168: Verification rule check for continuous accessibility integration.
- *   - Metric #169: Verification rule check for continuous accessibility integration.
- *   - Metric #170: Verification rule check for continuous accessibility integration.
- *   - Metric #171: Verification rule check for continuous accessibility integration.
- *   - Metric #172: Verification rule check for continuous accessibility integration.
- *   - Metric #173: Verification rule check for continuous accessibility integration.
- *   - Metric #174: Verification rule check for continuous accessibility integration.
- *   - Metric #175: Verification rule check for continuous accessibility integration.
- *   - Metric #176: Verification rule check for continuous accessibility integration.
- *   - Metric #177: Verification rule check for continuous accessibility integration.
- *   - Metric #178: Verification rule check for continuous accessibility integration.
- *   - Metric #179: Verification rule check for continuous accessibility integration.
- *   - Metric #180: Verification rule check for continuous accessibility integration.
- *   - Metric #181: Verification rule check for continuous accessibility integration.
- *   - Metric #182: Verification rule check for continuous accessibility integration.
- *   - Metric #183: Verification rule check for continuous accessibility integration.
- *   - Metric #184: Verification rule check for continuous accessibility integration.
- *   - Metric #185: Verification rule check for continuous accessibility integration.
- *   - Metric #186: Verification rule check for continuous accessibility integration.
- *   - Metric #187: Verification rule check for continuous accessibility integration.
- *   - Metric #188: Verification rule check for continuous accessibility integration.
- *   - Metric #189: Verification rule check for continuous accessibility integration.
- *   - Metric #190: Verification rule check for continuous accessibility integration.
- *   - Metric #191: Verification rule check for continuous accessibility integration.
- *   - Metric #192: Verification rule check for continuous accessibility integration.
- *   - Metric #193: Verification rule check for continuous accessibility integration.
- *   - Metric #194: Verification rule check for continuous accessibility integration.
- *   - Metric #195: Verification rule check for continuous accessibility integration.
- *   - Metric #196: Verification rule check for continuous accessibility integration.
- *   - Metric #197: Verification rule check for continuous accessibility integration.
- *   - Metric #198: Verification rule check for continuous accessibility integration.
- *   - Metric #199: Verification rule check for continuous accessibility integration.
- *   - Metric #200: Verification rule check for continuous accessibility integration.
- *   - Metric #201: Verification rule check for continuous accessibility integration.
- *   - Metric #202: Verification rule check for continuous accessibility integration.
- *   - Metric #203: Verification rule check for continuous accessibility integration.
- *   - Metric #204: Verification rule check for continuous accessibility integration.
- *   - Metric #205: Verification rule check for continuous accessibility integration.
- *   - Metric #206: Verification rule check for continuous accessibility integration.
- *   - Metric #207: Verification rule check for continuous accessibility integration.
- *   - Metric #208: Verification rule check for continuous accessibility integration.
- *   - Metric #209: Verification rule check for continuous accessibility integration.
- *   - Metric #210: Verification rule check for continuous accessibility integration.
- *
- * ============================================================================
- *   - Auto-generated check rule 258: Continuous integration validation.
- *   - Auto-generated check rule 259: Continuous integration validation.
- * END OF ACCESSIBILITY & QUALITY DOCUMENTATION
- * ============================================================================
- */

@@ -1,17 +1,13 @@
 const RELATIVE_TIME_FALLBACK = "—";
 
 export function getRelativeTime(dateInput) {
-  if (typeof dateInput === 'number') {
-    return null;
-  }
+  if (typeof dateInput === "number") return null;
   if (dateInput === null || dateInput === undefined) {
     return RELATIVE_TIME_FALLBACK;
   }
-
   if (typeof dateInput === "string" && dateInput.trim() === "") {
     return RELATIVE_TIME_FALLBACK;
   }
-
   const now = new Date();
   const date = new Date(dateInput);
 
@@ -19,7 +15,7 @@ export function getRelativeTime(dateInput) {
 
   const diffMs = date - now;
   const diffSec = Math.round(diffMs / 1000);
-  const diffMin = Math.round(diffSec / 60);
+  const diffMin = Math.floor(diffSec / 60);
   const diffHour = Math.round(diffMin / 60);
   const diffDay = Math.round(diffHour / 24);
 

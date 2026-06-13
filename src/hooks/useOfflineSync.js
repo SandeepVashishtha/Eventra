@@ -6,11 +6,14 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
+
 import { logger } from "../utils/logger";
-import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership } from '../utils/offlineQueue';
+import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership, validateQueueSession } from '../utils/offlineQueue';
+import { ensureSessionSnapshot } from "../utils/sessionSnapshot";
 // isTokenValid import removed; authentication is now checked via isAuthenticated()
 // from AuthContext, which handles both token-based and cookie-managed sessions.
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
@@ -38,15 +41,28 @@ const useOfflineSync = () => {
   const isSyncing = useRef(false);
   const isLockPending = useRef(false); // 🔥 FIX: Protects against asynchronous race conditions during Web Lock acquisition
   const conflictControllerRef = useRef(new AbortController());
+  const heartbeatIntervalRef = useRef(null);
+  const syncLockAborted = useRef(false);
+
+  // Use a mutable ref to hold auth parameters to prevent stale closures
+  // inside listeners without re-creating event listeners on every auth update.
+  const authRef = useRef({ token, user, isAuthenticated, loading });
+  useEffect(() => {
+    authRef.current = { token, user, isAuthenticated, loading };
+  }, [token, user, isAuthenticated, loading]);
 
   // Clean up controller on full unmount
   useEffect(() => {
     return () => {
       conflictControllerRef.current.abort();
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+      }
     };
   }, []);
 
   useEffect(() => {
+    syncLockAborted.current = false;
   /**
    * resolveConflict
    *
@@ -185,6 +201,7 @@ const useOfflineSync = () => {
     const conflictController = conflictControllerRef.current;
 
     const executeSync = async () => {
+      const { token: currentToken, user: currentUser, isAuthenticated: currentIsAuthenticated, loading: currentLoading } = authRef.current;
       const queue = await getQueueIndexedDB();
       if (queue.length === 0) {
         return;
@@ -193,7 +210,7 @@ const useOfflineSync = () => {
       // Wait for AuthContext to finish initial session validation before
       // attempting to sync. During loading, token and user are still null even
       // for valid cookie-managed sessions, so any check here would be premature.
-      if (loading) {
+      if (currentLoading) {
         return;
       }
 
@@ -201,16 +218,16 @@ const useOfflineSync = () => {
       // isAuthenticated() correctly handles both token-based and cookie-managed
       // sessions, avoiding the false "session expired" failure that occurred
       // when useOfflineSync called isTokenValid("cookie-managed") directly.
-      if (!isAuthenticated()) {
+      if (!currentIsAuthenticated()) {
         toast.warning(
-          "Offline actions are pending but your session has expired. Please log in again to sync them.",
+          "Security notice: Offline actions are pending, but your session has expired. Please log in again to synchronize them.",
           { autoClose: 6000 }
         );
         return;
       }
 
       // SECURITY: Validate queue ownership to prevent cross-user action replay.
-      const currentUserId = user?.id;
+      const currentUserId = currentUser?.id;
       if (!currentUserId) {
         logger.error('[Security] Cannot sync queue: current user ID is missing');
         toast.error(
@@ -242,24 +259,52 @@ const useOfflineSync = () => {
         return;
       }
 
+      // SECURITY (Issue #5727): Re-validate session IDs — actions queued under a
+      // previous session must not replay under a new session even if the userId
+      // matches (e.g. same user, different device/tab login cycle).
+      const currentSession = ensureSessionSnapshot(currentUserId);
+      const sessionValidatedQueue = validateQueueSession(validatedQueue, currentSession);
+
+      if (sessionValidatedQueue.length === 0 && validatedQueue.length > 0) {
+        logger.warn(
+          "[Security] Clearing offline queue: all actions have stale session IDs. " +
+            "This prevents stale-session cross-user action replay."
+        );
+        await clearQueue();
+        toast.warning(
+          "Offline actions from a previous login session have been cleared for security.",
+          { autoClose: 5000 }
+        );
+        return;
+      }
+
+      if (sessionValidatedQueue.length === 0) {
+        return;
+      }
+
       // Cookie-managed sessions authenticate via the HttpOnly session cookie
       // sent automatically by the browser. Do not forward the "cookie-managed"
       // sentinel string as a Bearer token value; pass null instead so the
       // Authorization header is omitted and the session cookie is used.
-      const authToken = token === "cookie-managed" ? null : token;
+      const authToken = currentToken === "cookie-managed" ? null : currentToken;
 
       isSyncing.current = true;
 
+      // 🔥 FIX: Hoist counters and the failure list ABOVE the try so the
+      // `finally` block can read them. Previously they were declared inside
+      // the try (block-scoped) and the dispatch in finally threw
+      // ReferenceError on every successful sync, leaving the OfflineManager
+      // spinner stuck permanently.
+      let successCount = 0;
+      let droppedCount = 0;
+      let failedQueue = [];
+
       try {
-        toast.info(`Syncing ${validatedQueue.length} cached offline action(s)...`, {
+        toast.info(`Syncing ${sessionValidatedQueue.length} cached offline action(s)...`, {
           autoClose: 2000,
         });
 
-        const failedQueue = [];
-        let successCount = 0;
-        let droppedCount = 0;
-
-        for (const item of validatedQueue) {
+        for (const item of sessionValidatedQueue) {
           // Halt the zombie loop immediately if the session changed or component unmounted.
           // This prevents making requests with stale tokens and protects IndexedDB from being falsely overwritten below.
           if (conflictController.signal.aborted) {
@@ -295,10 +340,10 @@ const useOfflineSync = () => {
 
               if (resolution.resolution === "local") {
                 // Retry with force flag
-                res = await postWithBackoff(url, item.payload, token, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff(url, item.payload, authToken, 0, true, conflictController.signal, item.id);
               } else if (resolution.resolution === "merge") {
                 // Post merged content
-                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff(url, resolution.mergedPayload, authToken, 0, true, conflictController.signal, item.id);
               } else {
                 // Discard local (treated as handled success so we proceed)
                 res = { status: "success" };
@@ -335,6 +380,23 @@ const useOfflineSync = () => {
         }
       } finally {
         isSyncing.current = false;
+
+        // Emit the unified completion event so UI components (e.g. OfflineManager)
+        // that listen for eventra-offline-queue-processed can reset their sync state.
+        // offlineQueue.processQueue() emits this event via notifyQueueProcessed(),
+        // but useOfflineSync runs its own replay loop independently and previously
+        // never emitted it, leaving the OfflineManager spinner stuck permanently.
+        if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+          window.dispatchEvent(
+            new CustomEvent("eventra-offline-queue-processed", {
+              detail: {
+                succeeded: successCount,
+                dropped: droppedCount,
+                remaining: failedQueue.length,
+              },
+            })
+          );
+        }
       }
     };
 
@@ -347,12 +409,12 @@ const useOfflineSync = () => {
 
       if (lockVal) {
         try {
-          const parsed = JSON.parse(lockVal);
+          const parsed = safeJsonParse(lockVal, {});
           if (parsed && parsed.timestamp && now - parsed.timestamp < LOCK_TIMEOUT_MS) {
             logger.log("[useOfflineSync] Local sync lock is held by another active tab. Skipping.");
             return;
           }
-        } catch (e) {}
+        } catch {}
       }
 
       const currentTabId = Math.random().toString(36).slice(2, 9);
@@ -360,17 +422,17 @@ const useOfflineSync = () => {
       
       try {
         localStorage.setItem(LOCK_KEY, lockData);
-      } catch (e) {
+      } catch {
         // If localStorage fails (private mode etc.), run sync directly to avoid blocking
         await executeSync();
         return;
       }
 
       const heartbeatInterval = setInterval(() => {
-        if (syncLockAborted) { clearInterval(heartbeatInterval); return; }
+        if (syncLockAborted.current) { clearInterval(heartbeatInterval); return; }
         try {
           localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
-        } catch (e) {}
+        } catch {}
       }, 10_000);
       heartbeatIntervalRef.current = heartbeatInterval;
 
@@ -381,12 +443,12 @@ const useOfflineSync = () => {
         try {
           const checkVal = localStorage.getItem(LOCK_KEY);
           if (checkVal) {
-            const parsed = JSON.parse(checkVal);
+            const parsed = safeJsonParse(checkVal, {});
             if (parsed && parsed.tabId === currentTabId) {
               localStorage.removeItem(LOCK_KEY);
             }
           }
-        } catch (e) {}
+        } catch {}
       }
     };
 
@@ -436,8 +498,6 @@ const useOfflineSync = () => {
 
     let idleId = null;
     let timeoutId = null;
-    const heartbeatIntervalRef = { current: null };
-    let syncLockAborted = false;
 
     if (navigator.onLine) {
       if (typeof window.requestIdleCallback === "function") {
@@ -464,7 +524,7 @@ const useOfflineSync = () => {
       
       // Signal the sync lock heartbeat to stop — it runs outside React's
       // lifecycle and won't be caught by the normal finally block on unmount.
-      syncLockAborted = true;
+      syncLockAborted.current = true;
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
         heartbeatIntervalRef.current = null;
@@ -477,7 +537,7 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, [token, user?.id]);
+  }, [token, user?.id, isAuthenticated, loading]);
 };
 
 export default useOfflineSync;

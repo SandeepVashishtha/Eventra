@@ -1,5 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import * as Sentry from "@sentry/react";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
@@ -7,9 +9,9 @@ import { toast } from "react-toastify";
 
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
+import SkipToContent from "./components/accessibility/SkipToContent";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
-import UpdateAvailableBanner from "./components/common/UpdateAvailableBanner";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -24,29 +26,34 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
-import { getAuthRoutes, getProtectedRoutes } from "./components/routes/ProtectedRoutes";
 import {
   AuthFormSkeleton,
   ExploreEventsSkeleton,
+  EventDetailSkeleton,
 } from "./components/common/SkeletonLoaders";
 
 // Route-level lazy splits - loaded only when route is visited
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
+const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
-const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
+const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
+// const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
 const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
 const OnboardingChecklist = lazy(() => import("./components/user/OnboardingChecklist"));
 const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
-const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
+const ThemeCustomizer = lazy(() => import("./components/Layout/ThemeCustomizer"));
+// const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
 
 
 const OfflineSyncManager = () => {
@@ -55,12 +62,13 @@ const OfflineSyncManager = () => {
 };
 
 function App() {
+  const { t } = useTranslation();
   const location = useLocation();
   const isDashboardOrAdmin =
     location?.pathname === "/dashboard" || location?.pathname === "/admin";
   const pageLoader = (
     <div className="flex items-center justify-center min-h-screen text-gray-500">
-      Loading page...
+      {t("app.loading")}
     </div>
   );
   const [cursorEnabled, setCursorEnabled] = useState(() => {
@@ -128,13 +136,13 @@ function App() {
 
   useEffect(() => {
     const handleOnline = () => {
-      toast.success("Back online! Your connections have been restored and sync is complete.", {
+      toast.success(t("app.backOnline"), {
         position: "bottom-right",
         autoClose: 4000,
       });
     };
     const handleOffline = () => {
-      toast.warning("You are currently offline. Running in secure local offline caching mode.", {
+      toast.warning(t("app.offline"), {
         position: "bottom-right",
         autoClose: 5000,
       });
@@ -150,7 +158,7 @@ function App() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, []);
+  }, [t]);
 
   return (
     <ErrorBoundary>
@@ -165,6 +173,7 @@ function App() {
               <OfflineSyncManager />
 
               <div className="App">
+                <SkipToContent />
                 <ErrorBoundary level="section" label="Navigation Bar">
                   <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                 </ErrorBoundary>
@@ -192,41 +201,56 @@ function App() {
                   <PageTransition>
                     <ErrorBoundary>
                       <Routes location={location} key={location?.pathname || "default"}>
-                        {/* /explore is a legacy alias for the Events page */}
+                        <Route
+                          path="/register/:id"
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={<AuthFormSkeleton />}>
+                                <EventRegistration />
+                              </Suspense>
+                            </ProtectedRoute>
+                          }
+                        />
                         <Route
                           path="/explore"
                           element={
                             <Suspense fallback={<ExploreEventsSkeleton />}>
-                              <ExploreEvents />
+                              <EventsPage />
                             </Suspense>
                           }
                         />
                         <Route
-                          path="/event-recommendation"
+                          path="/events/:id"
                           element={
-                            <Suspense fallback={null}>
-                              <EventRecommendation />
+                            <Suspense fallback={<EventDetailSkeleton />}>
+                              <EventDetails />
                             </Suspense>
                           }
                         />
-                        {getAuthRoutes()}
-                        {getProtectedRoutes()}
+                        {/* TODO: Implement missing auth/dashboard routes
+                          Pages do not exist:
+                          - ./Pages/auth/Login
+                          - ./Pages/auth/Signup
+                          - ./Pages/dashboard/Dashboard
+                          - ./Pages/Admin/AdminPanel
+                          - ./Pages/user/Profile
+                        */}
                         <Route
                           path="/event-recommendation"
                           element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
                         />
                         <Route
                           path="/saved-events"
+                          element={<Suspense fallback={null}><SavedEventsPage /></Suspense>}
+                        />
+                        <Route
+                          path="/matchmaking"
                           element={
                             <ProtectedRoute>
-                              <Suspense fallback={<AuthFormSkeleton />}>
-                                <SavedEventsPage />
-                              </Suspense>
+                              <Suspense fallback={null}><MatchmakingHub /></Suspense>
                             </ProtectedRoute>
                           }
                         />
-                        {/* All other routes (auth, dashboard, admin, profile, events, etc.)
-                            are handled by AppRoutes → PublicRoutes / ProtectedRoutes */}
                         <Route
                           path="*"
                           element={
@@ -235,6 +259,7 @@ function App() {
                             </Suspense>
                           }
                         />
+
                       </Routes>
                     </ErrorBoundary>
                   </PageTransition>
@@ -256,14 +281,13 @@ function App() {
                 </ErrorBoundary>
 
                 <Suspense fallback={null}>
-                  <ScrollToTopButton />
-                </Suspense>
-                {/* Enhanced back-to-top with progress ring - appears at 400px */}
-                <Suspense fallback={null}>
                   <BackToTop />
                 </Suspense>
                 <Suspense fallback={null}>
                   <FeedbackButton />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <ThemeCustomizer />
                 </Suspense>
                 <Suspense fallback={null}>
                   <SessionRecovery />
@@ -274,10 +298,11 @@ function App() {
                     <Suspense fallback={null}>
                       <FluidCursor enabled={cursorEnabled} />
                     </Suspense>
-                  </ErrorBoundary>
+                </ErrorBoundary>
                 )}
+
+                <ErrorButton />
               </div>
-              <UpdateAvailableBanner />
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>
@@ -285,4 +310,31 @@ function App() {
     </ErrorBoundary>
   );
 }
+
+function ErrorButton() {
+  return (
+    <button
+      onClick={() => {
+        throw new Error('This is your first error!');
+      }}
+      style={{
+        position: "fixed",
+        bottom: "20px",
+        left: "20px",
+        zIndex: 9999,
+        padding: "10px 15px",
+        backgroundColor: "#e11d48",
+        color: "white",
+        border: "none",
+        borderRadius: "5px",
+        cursor: "pointer",
+        fontWeight: "bold",
+        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+      }}
+    >
+      Break the world
+    </button>
+  );
+}
+
 export default App;
