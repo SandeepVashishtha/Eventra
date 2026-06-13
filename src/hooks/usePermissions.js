@@ -31,22 +31,24 @@ export const normalizeRoles = (roles = []) => {
  */
 export function usePermissions(user) {
   // 1. Normalize and memoize roles list
+  const roles = user?.roles;
   const normalizedRoles = useMemo(() => {
-    if (!user || !user.roles) {
+    if (!roles) {
       return [];
     }
-    return normalizeRoles(user.roles);
-  }, [user]);
+    return normalizeRoles(roles);
+  }, [roles]);
 
   // 2. Extract and memoize explicit permissions
+  const permissions = user?.permissions;
   const allPermissions = useMemo(() => {
-    if (!user || !user.permissions) {
+    if (!permissions) {
       return [];
     }
-    return Array.isArray(user.permissions)
-      ? user.permissions.map((p) => String(p))
-      : [String(user.permissions)];
-  }, [user]);
+    return Array.isArray(permissions)
+      ? permissions.map((p) => String(p))
+      : [String(permissions)];
+  }, [permissions]);
 
   // 3. Compile and memoize final helper utility functions
   return useMemo(() => {
