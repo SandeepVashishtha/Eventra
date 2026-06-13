@@ -467,7 +467,6 @@ export const decryptWithKey = async (key, stored) => {
 
 
 
-
 // ---------------------------------------------------------------------------
 // Encrypted key-value storage wrapper (localStorage — AES-GCM encrypted)
 // ---------------------------------------------------------------------------
